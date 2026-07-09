@@ -50,6 +50,7 @@ import { buildInvoiceDeleteConfirmationMessage, canDeleteInvoiceRow } from './in
 import {
   buildInvoiceImportSuccessMessage,
   filterInvoiceSupplierCategories,
+  filterVisibleInvoiceListItems,
   getInvoiceListErrorMessage,
   isInvoiceListRawInvoice,
   mapInvoicesToListTableRows,
@@ -193,23 +194,6 @@ export function useInvoicesListScreen() {
     [t, deleteInvoiceMut],
   );
 
-  const columns = useMemo(
-    () =>
-      buildInvoiceListColumns({
-        t,
-        lang,
-        fmt,
-        STATUS_MAP,
-        KIND_MAP,
-        userRole,
-        companyId,
-        setViewingInvoice: (row) => setViewingInvoice(toInvoiceListViewSource(row)),
-        setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
-        confirmAndDeleteInvoice,
-      }),
-    [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice, fmt],
-  );
-
   const { suppliers } = useSuppliers(companyId);
   const { flatCategories } = useCategories(companyId);
   const supplierCategories = useMemo(
@@ -282,10 +266,13 @@ export function useInvoicesListScreen() {
     pageSize: PAGE_SIZE,
   });
 
-  const tableData = useMemo(
-    () => mapInvoicesToListTableRows({ invoices: items.filter(isInvoiceListRawInvoice), t, lang }),
-    [items, t, lang],
-  );
+  const tableData = useMemo(() => {
+    const visibleItems = filterVisibleInvoiceListItems({
+      invoices: items.filter(isInvoiceListRawInvoice),
+      showCancelled,
+    });
+    return mapInvoicesToListTableRows({ invoices: visibleItems, t, lang });
+  }, [items, showCancelled, t, lang]);
 
   const displayedTotal = total || 0;
 
@@ -310,7 +297,7 @@ export function useInvoicesListScreen() {
   const serverInflow = sums.inflow;
   const serverOutflow = sums.outflow;
 
-  const { handleExportExcel, handlePrintInvoices } = useInvoicesListActions({
+  const { handleExportExcel, handlePrintInvoices, handlePrintSingleInvoice, printPreviewModal } = useInvoicesListActions({
     companyId,
     displayedTotal,
     invoiceQueryStartDate,
@@ -342,6 +329,24 @@ export function useInvoicesListScreen() {
     serverAll,
   });
 
+  const columns = useMemo(
+    () =>
+      buildInvoiceListColumns({
+        t,
+        lang,
+        fmt,
+        STATUS_MAP,
+        KIND_MAP,
+        userRole,
+        companyId,
+        setViewingInvoice: (row) => setViewingInvoice(toInvoiceListViewSource(row)),
+        setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
+        printInvoice: handlePrintSingleInvoice,
+        confirmAndDeleteInvoice,
+      }),
+    [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice, fmt, handlePrintSingleInvoice],
+  );
+
   const handlePrintCashReport = useCallback(() => {
     setCashReportOpen(true);
   }, []);
@@ -371,9 +376,10 @@ export function useInvoicesListScreen() {
         userRole,
         companyId,
         setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
+        printInvoice: handlePrintSingleInvoice,
         confirmAndDeleteInvoice,
       }),
-    [KIND_MAP, STATUS_MAP, userRole, companyId, t, lang, confirmAndDeleteInvoice],
+    [KIND_MAP, STATUS_MAP, userRole, companyId, t, lang, confirmAndDeleteInvoice, handlePrintSingleInvoice],
   );
 
   const renderCompactRow = useMemo(
@@ -386,9 +392,10 @@ export function useInvoicesListScreen() {
         companyId,
         setViewingInvoice: (row) => setViewingInvoice(toInvoiceListViewSource(row)),
         setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
+        printInvoice: handlePrintSingleInvoice,
         confirmAndDeleteInvoice,
       }),
-    [KIND_MAP, STATUS_MAP, userRole, companyId, t, confirmAndDeleteInvoice],
+    [KIND_MAP, STATUS_MAP, userRole, companyId, t, confirmAndDeleteInvoice, handlePrintSingleInvoice],
   );
 
   const importExportExportFetcher = useCallback(async () => {
@@ -403,6 +410,7 @@ export function useInvoicesListScreen() {
       supplierId: filterSupplierId,
       supplierCategoryId: filterSupplierCategoryId,
       q: debouncedQ,
+      includeCancelled: showCancelled,
       hasNotes: filterHasNotesOnly,
       vaultId: filterVaultId,
       batchId: invoiceBatchIdFromUrl,
@@ -422,6 +430,7 @@ export function useInvoicesListScreen() {
     filterSupplierId,
     filterSupplierCategoryId,
     debouncedQ,
+    showCancelled,
     filterHasNotesOnly,
     filterVaultId,
     invoiceBatchIdFromUrl,
@@ -452,6 +461,7 @@ export function useInvoicesListScreen() {
     displayedTotal,
     handleExportExcel,
     handlePrintInvoices,
+    printPreviewModal,
     handlePrintCashReport,
     editingInvoice,
     setEditingInvoice,

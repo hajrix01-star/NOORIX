@@ -3,9 +3,8 @@ import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
-import { openPrintWindow } from '../../utils/printUtils';
 import { fmtTax } from '../../utils/format';
-import { Badge, Button, Checkbox, FilterToolbar, FmtNum, Input, SearchableOptionsPicker } from '../../ui';
+import { Badge, Button, Checkbox, FilterToolbar, FmtNum, Input, SearchableOptionsPicker, usePrintPreview } from '../../ui';
 import {
   INPUT_ROWS,
   OUTPUT_ROWS,
@@ -50,6 +49,12 @@ export default function TaxReportTab() {
   const companyName = lang === 'en'
     ? (company?.nameEn || company?.nameAr || '')
     : (company?.nameAr || company?.nameEn || '');
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: lang === 'ar' ? '?????? ???????' : 'Print preview',
+    closeLabel: t('close') || '?????',
+    printLabel: `${t('print')} / PDF`,
+  });
   const periodOptions = useMemo(() => buildTaxPeriodOptions(lang), [lang]);
 
   useEffect(() => {
@@ -75,9 +80,10 @@ export default function TaxReportTab() {
 
   function handlePrint() {
     const vatTitle = lang === 'ar' ? 'نموذج الإفصاح الضريبي - ضريبة القيمة المضافة' : 'VAT Tax Disclosure Form';
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: lang === 'ar' ? 'تقرير الضرائب' : 'Tax Report',
       companyName: companyName || '',
+      logoUrl: companyLogoUrl,
       subtitle: `${vatTitle} - ${periodKey}`,
       body: buildTaxReportPrintBody({ data, totals, lang, t }),
     });

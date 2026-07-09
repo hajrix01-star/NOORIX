@@ -25,6 +25,8 @@ export { default as InlineSelect    } from './InlineSelect';
 export { default as Card            } from './Card';
 export { default as Badge           } from './Badge';
 export { default as Modal           } from './Modal';
+export { default as PrintPreviewModal } from './PrintPreviewModal';
+export { usePrintPreview } from './usePrintPreview';
 export { default as AdaptiveSheet   } from './AdaptiveSheet';
 export { useAdaptiveSheetNarrow } from './responsive';
 export {

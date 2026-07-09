@@ -35,7 +35,6 @@ export type DayCloseOperationSource = {
   expenseLineName?: string | null;
   expenseLineNameAr?: string | null;
   expenseLineNameEn?: string | null;
-  notes?: string | null;
 };
 
 export type DayCloseCashKpis = {
@@ -203,7 +202,7 @@ export function resolveDayCloseCounterpartyLabel(op: DayCloseOperationSource, la
     op.expenseLineNameEn,
   );
   if (expenseLine !== EMPTY_REPORT_VALUE) return expenseLine;
-  return op.notes || EMPTY_REPORT_VALUE;
+  return EMPTY_REPORT_VALUE;
 }
 
 export function isValidDayCloseDate(value: string) {

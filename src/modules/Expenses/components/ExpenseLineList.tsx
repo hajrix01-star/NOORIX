@@ -1,10 +1,9 @@
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
 import { fmt } from '../../../utils/format';
-import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, KebabMenu, FilterToolbar, SearchableOptionsPicker } from '../../../ui';
+import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, KebabMenu, FilterToolbar, SearchableOptionsPicker, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
@@ -99,6 +98,12 @@ export default function ExpenseLineList({
   const { activeCompanyId, companies = [] } = useApp();
   const activeCompany = companies.find((company) => company.id === activeCompanyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
+  const companyLogoUrl = String(activeCompany?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('expenseLinesPrintTitle'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
 
   const kindFilterOptions = useMemo(
@@ -250,9 +255,10 @@ export default function ExpenseLineList({
     const thMonthly = t('expenseLineListMonthlyAmount');
     const thAnnual = t('expenseLineListAnnualAmount');
     const printTitle = t('expenseLinesPrintTitle');
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: printTitle,
       companyName,
+      logoUrl: companyLogoUrl,
       subtitle: printTitle,
       body: buildPrintRecordsTableHtml({
         records: exportData,
@@ -272,6 +278,7 @@ export default function ExpenseLineList({
 
   return (
     <ScreenShell embedded={!!embedded} className={cn(embedded && 'pt-4')}>
+      {printPreviewModal}
       <FilterToolbar
         className="mb-3 min-h-11 min-w-0 border-b border-noorix-border pb-3"
         filtersClassName="nx-toolbar min-w-0 max-w-full flex-1 overflow-x-auto pb-0.5"
@@ -295,9 +302,8 @@ export default function ExpenseLineList({
           />
         </div>
         <Button size="sm" className="shrink-0 whitespace-nowrap" icon={REFRESH_ICON} onClick={onRefresh}>{t('refresh')}</Button>
-        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!tableData.length}>{t('print')}</Button>
         <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>{t('exportExcel')}</Button>
-        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: t('expenseLinesPrintTitle'), filename: 'expense-lines.pdf' })} disabled={!tableData.length}>{t('exportPdf')}</Button>
+        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!tableData.length}>{t('print')} / PDF</Button>
       </FilterToolbar>
 
       <div className="nx-expense-line-table-wrap min-w-0">

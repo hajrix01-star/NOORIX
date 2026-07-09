@@ -1,12 +1,12 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Badge, Button, FmtNum, Modal, SmartTable } from '../../../ui';
+import { Badge, Button, FmtNum, Modal, SmartTable, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui/SmartTable/types';
 import { useInvoices } from '../../../hooks/useInvoices';
+import { useApp } from '../../../context/AppContext';
 import { fetchAllInvoicesForExport } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDateISO } from '../../../utils/saudiDate';
-import { openPrintWindow } from '../../../utils/printUtils';
 import type { InvoiceListItem } from '../../../services/domains/apiEndpoints/invoice-list-response';
 import type {
   SupplierCategoryRecord,
@@ -52,9 +52,20 @@ export function SupplierProfileModal({
   onClose,
 }: SupplierProfileModalProps) {
   const { t, lang } = useTranslation();
+  const { companies = [] } = useApp();
   const [page, setPage] = useState(1);
   const supplierId = supplier?.id || '';
   const supplierLabel = getSupplierName(supplier, lang);
+  const company = companies.find((item) => item.id === companyId);
+  const companyName = lang === 'en'
+    ? (company?.nameEn || company?.nameAr || '')
+    : (company?.nameAr || company?.nameEn || '');
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('supplierProfile'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
   const category = useMemo(
     () => findSupplierCategory(flatCategories, supplier),
     [flatCategories, supplier],
@@ -87,24 +98,26 @@ export function SupplierProfileModal({
 
   const handlePrintInvoices = useCallback(async () => {
     const invoices = await loadAllInvoices();
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('supplierProfileInvoicesPrintTitle'),
-      companyName: supplierLabel,
-      subtitle: t('supplierProfileInvoicesSubtitle', String(invoices.length)),
+      companyName: companyName || supplierLabel,
+      logoUrl: companyLogoUrl,
+      subtitle: `${supplierLabel} - ${t('supplierProfileInvoicesSubtitle', String(invoices.length))}`,
       landscape: true,
       body: buildSupplierInvoicesPrintHtml(invoices, t),
       htmlLang: lang === 'en' ? 'en' : 'ar',
       htmlDir: lang === 'en' ? 'ltr' : 'rtl',
       autoPrint: false,
     });
-  }, [lang, loadAllInvoices, supplierLabel, t]);
+  }, [companyLogoUrl, companyName, lang, loadAllInvoices, supplierLabel, t]);
 
   const handlePrintProfile = useCallback(async () => {
     const invoices = await loadAllInvoices();
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('supplierProfilePrintTitle'),
-      companyName: supplierLabel,
-      subtitle: buildSupplierProfilePrintSubtitle(t),
+      companyName: companyName || supplierLabel,
+      logoUrl: companyLogoUrl,
+      subtitle: `${supplierLabel} - ${buildSupplierProfilePrintSubtitle(t)}`,
       body: buildSupplierProfilePrintHtml({
         supplier,
         category,
@@ -122,7 +135,7 @@ export function SupplierProfileModal({
       htmlDir: lang === 'en' ? 'ltr' : 'rtl',
       autoPrint: false,
     });
-  }, [category, lang, loadAllInvoices, supplier, supplierLabel, t, total, totals]);
+  }, [category, companyLogoUrl, companyName, lang, loadAllInvoices, supplier, supplierLabel, t, total, totals]);
 
   const columns = useMemo<SmartTableColumn<InvoiceListItem>[]>(
     () => [
@@ -198,6 +211,7 @@ export function SupplierProfileModal({
         </>
       )}
     >
+      {printPreviewModal}
       <div className="space-y-4">
         <div className="grid gap-3 md:grid-cols-[1.2fr_2fr]">
           <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-4">

@@ -2,7 +2,7 @@ import Decimal from 'decimal.js';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { fmt } from '../../../utils/format';
 import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import type { CostAppsPlResult } from '../costAccountingAppsModel';
 import { parseMoneyInput, type FixedLine } from './costAccountingAppsScreenUtils';
 
@@ -99,9 +99,10 @@ export function buildCostAppsPrintBody(params: {
   ].join('\n');
 }
 
-export function printCostAppsReport(params: {
+export function buildCostAppsReportPrintHtml(params: {
   t: TranslateFn;
   companyName: string;
+  logoUrl?: string;
   appSalesRowLabel: string;
   withAppsScenarioLabel: string;
   plWith: CostAppsPlResult;
@@ -110,10 +111,11 @@ export function printCostAppsReport(params: {
   salaryStr: string;
   expensesMonthlyTotal: Decimal;
   expensesAnnualTotal: Decimal;
-}) {
-  openPrintWindow({
+}): string {
+  return buildPrintDocumentHtml({
     title: params.t('reportCostAppsTitle'),
     companyName: params.companyName || params.t('reports'),
+    logoUrl: params.logoUrl || '',
     subtitle: params.t('reportCostAppsTitle'),
     landscape: false,
     showPageCounter: false,
@@ -131,6 +133,7 @@ export function printCostAppsReport(params: {
 export async function exportCostAppsReportExcel(params: {
   t: TranslateFn;
   companyName: string;
+  logoUrl?: string;
   appSalesRowLabel: string;
   withAppsScenarioLabel: string;
   plWith: CostAppsPlResult;
@@ -159,6 +162,7 @@ export async function exportCostAppsReportExcel(params: {
     filename: 'cost-apps-calculator.xlsx',
     title: t('reportCostAppsTitle'),
     companyName: params.companyName || '',
+    logoUrl: params.logoUrl || '',
     sheetName: 'P&L',
     columns: [
       { key: 'item', label: t('reportItem') },

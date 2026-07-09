@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getInvoiceDayCloseReport, throwIfApiFailed } from '../../../services/api';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
-import { Button, Modal, DateRangeField, TransactionDatePicker, Toolbar, cn } from '../../../ui';
+import { Button, Modal, DateRangeField, TransactionDatePicker, Toolbar, usePrintPreview } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { buildDayCloseWhatsAppText, openDayCloseWhatsApp } from '../utils/dayCloseWhatsApp';
 import { DayCloseReportBody } from './DayCloseReportBody';
 import { DAY_CLOSE_REPORT_STYLES } from './dayCloseReportStyles';
-import { printCurrentInvoiceWindow, printCurrentInvoiceWindowNextFrame } from '../invoicePrintModel';
 import {
   type DayClosePrintRow,
   type DayCloseReportData,
@@ -39,14 +39,6 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-function waitForPrintFrame() {
-  return new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      window.setTimeout(resolve, 50);
-    });
-  });
-}
-
 export default function DayCloseReportModal({
   companyId,
   isOpen,
@@ -58,12 +50,16 @@ export default function DayCloseReportModal({
   const reportTitle = t('dayCloseTitle');
   const { companies, activeCompanyId } = useApp();
   const { showToast } = useToast();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: reportTitle,
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const [dateStr, setDateStr] = useState(() => resolveInitialDayCloseDate(defaultDateYmd));
   const [rangeFrom, setRangeFrom] = useState(() => resolveInitialDayCloseDate(defaultDateYmd));
   const [rangeTo, setRangeTo] = useState(() => resolveInitialDayCloseDate(defaultDateYmd));
   const [rangePrintLoading, setRangePrintLoading] = useState(false);
-  const [multiDayPrint, setMultiDayPrint] = useState<DayClosePrintRow[] | null>(null);
 
   const companyName = useMemo(
     () => resolveDayCloseCompanyName({ companies, activeCompanyId, companyId, lang }),
@@ -98,20 +94,11 @@ export default function DayCloseReportModal({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) {
-      setMultiDayPrint(null);
-      return;
-    }
+    if (!isOpen) return;
     const baseDate = resolveInitialDayCloseDate(defaultDateYmd);
     setRangeFrom(baseDate);
     setRangeTo(baseDate);
   }, [isOpen, defaultDateYmd]);
-
-  useEffect(() => {
-    const onAfterPrint = () => setMultiDayPrint(null);
-    window.addEventListener('afterprint', onAfterPrint);
-    return () => window.removeEventListener('afterprint', onAfterPrint);
-  }, []);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useApiQuery<DayCloseReportData>({
     queryKey: invoiceKeys.dayClose(companyId, dateStr),
@@ -124,7 +111,9 @@ export default function DayCloseReportModal({
   if (!isOpen) return null;
 
   const reportDateLabel = formatDayCloseReportDateLabel(dateStr);
-  const printMode = multiDayPrint?.length ? 'multi' : 'single';
+  const isReportDateValid = isValidDayCloseDate(dateStr);
+  const rangeDates = enumerateDayCloseYmdDates(rangeFrom, rangeTo);
+  const canPrintRange = rangeDates.length > 0 && rangeDates.length <= MAX_DAY_CLOSE_RANGE_DAYS;
 
   const toastError = (message: string) => showToast(message, 'error');
 
@@ -145,18 +134,47 @@ export default function DayCloseReportModal({
     openDayCloseWhatsApp(text);
   };
 
+  const buildDayClosePrintSection = (row: DayClosePrintRow) => {
+    const itemDateLabel = formatDayCloseReportDateLabel(row.date);
+    return renderToStaticMarkup(
+      <section className="day-close-report day-close-preview-section">
+        <DayCloseReportBody
+          data={row.data}
+          kindLabel={kindLabel}
+          t={t}
+          reportDateLabel={itemDateLabel}
+          lang={lang}
+          compact={compact}
+        />
+      </section>,
+    );
+  };
+
   const handlePrintSingleDay = () => {
-    setMultiDayPrint(null);
-    printCurrentInvoiceWindowNextFrame();
+    if (!data) {
+      toastError(t('dayCloseLoadFailed'));
+      return;
+    }
+    openPrintDocumentPreview({
+      title: reportTitle,
+      companyName,
+      subtitle: `${t('dayCloseReportDate')}: ${reportDateLabel}`,
+      body: buildDayClosePrintSection({ date: dateStr, data }),
+      extraCss: `${DAY_CLOSE_REPORT_STYLES}
+        .day-close-preview-section + .day-close-preview-section { page-break-before: always; margin-top: 18px; }
+      `,
+      htmlDir: lang === 'ar' ? 'rtl' : 'ltr',
+      htmlLang: lang === 'ar' ? 'ar' : 'en',
+      showPageCounter: true,
+    });
   };
 
   const handlePrintRange = async () => {
-    const dates = enumerateDayCloseYmdDates(rangeFrom, rangeTo);
-    if (dates.length === 0) {
+    if (rangeDates.length === 0) {
       toastError(t('dayClosePrintRangeInvalid'));
       return;
     }
-    if (dates.length > MAX_DAY_CLOSE_RANGE_DAYS) {
+    if (rangeDates.length > MAX_DAY_CLOSE_RANGE_DAYS) {
       toastError(t('dayClosePrintRangeTooMany', MAX_DAY_CLOSE_RANGE_DAYS));
       return;
     }
@@ -165,17 +183,25 @@ export default function DayCloseReportModal({
     setRangePrintLoading(true);
     try {
       const rows: DayClosePrintRow[] = [];
-      for (const date of dates) {
+      for (const date of rangeDates) {
         const response = await getInvoiceDayCloseReport(companyId, date);
         throwIfApiFailed(response, t('dayCloseLoadFailed'));
         rows.push({ date, data: normalizeDayCloseReportData(response.data) });
       }
-      setMultiDayPrint(rows);
-      await waitForPrintFrame();
-      printCurrentInvoiceWindow();
+      openPrintDocumentPreview({
+        title: reportTitle,
+        companyName,
+        subtitle: `${formatDayCloseReportDateLabel(rangeFrom)} - ${formatDayCloseReportDateLabel(rangeTo)}`,
+        body: rows.map(buildDayClosePrintSection).join(''),
+        extraCss: `${DAY_CLOSE_REPORT_STYLES}
+          .day-close-preview-section + .day-close-preview-section { page-break-before: always; margin-top: 18px; }
+        `,
+        htmlDir: lang === 'ar' ? 'rtl' : 'ltr',
+        htmlLang: lang === 'ar' ? 'ar' : 'en',
+        showPageCounter: true,
+      });
     } catch (caughtError: unknown) {
       toastError(getErrorMessage(caughtError, t('dayCloseLoadFailed')));
-      setMultiDayPrint(null);
     } finally {
       setRangePrintLoading(false);
     }
@@ -183,12 +209,13 @@ export default function DayCloseReportModal({
 
   return (
     <Modal open={isOpen} onClose={onClose} size="xl" closeOnBackdrop={false} hideClose className="day-close-modal">
+      {printPreviewModal}
       <style>{DAY_CLOSE_REPORT_STYLES}</style>
 
       <div
         className="day-close-print-root relative w-full"
         dir={lang === 'ar' ? 'rtl' : 'ltr'}
-        data-print-mode={printMode}
+        data-print-mode="single"
       >
         <div className="day-close-report">
           <Toolbar className="day-close-no-print gap-3 mb-[14px]" direction="column" align="stretch">
@@ -198,14 +225,14 @@ export default function DayCloseReportModal({
                   {reportTitle}
                 </h2>
                 <label className="flex items-center gap-3 text-[13px]">
-                  <span className="text-noorix-muted">{t('date')}</span>
+                  <span className="text-noorix-muted">{t('dayCloseReportDate')}</span>
                   <TransactionDatePicker
                     value={dateStr}
                     onValueChange={setDateStr}
                     className="rounded-lg py-1 px-2 border border-noorix-border"
                   />
                 </label>
-                <Button size="sm" onClick={() => refetch()} disabled={isFetching}>
+                <Button size="sm" onClick={() => refetch()} disabled={isFetching || !isReportDateValid}>
                   {t('dayCloseRefresh')}
                 </Button>
               </Toolbar>
@@ -213,7 +240,7 @@ export default function DayCloseReportModal({
                 <Button size="sm" variant="success" onClick={handleWhatsApp} disabled={!data || isLoading}>
                   {t('dayCloseWhatsApp')}
                 </Button>
-                <Button size="sm" onClick={handlePrintSingleDay}>
+                <Button size="sm" onClick={handlePrintSingleDay} disabled={!data || isLoading || !isReportDateValid}>
                   {t('dayClosePrint')}
                 </Button>
                 <Button size="sm" onClick={onClose}>
@@ -221,8 +248,10 @@ export default function DayCloseReportModal({
                 </Button>
               </Toolbar>
             </Toolbar>
-            <Toolbar className="gap-3 pt-1 border-t border-noorix-border border-dashed" align="end">
-              <span className="text-[12px] font-bold text-noorix-text">{t('dayClosePrintRangeSection')}</span>
+            <Toolbar className="gap-3 pt-1 border-t border-noorix-border border-dashed flex-wrap" align="center">
+              <span className="text-[12px] font-bold text-noorix-text whitespace-nowrap">
+                {t('dayClosePrintRangeSection')}
+              </span>
               <DateRangeField
                 startLabel={t('dayClosePrintRangeFrom')}
                 endLabel={t('dayClosePrintRangeTo')}
@@ -232,8 +261,18 @@ export default function DayCloseReportModal({
                 onStartChange={setRangeFrom}
                 onEndChange={setRangeTo}
                 size="sm"
+                className="flex-row items-center gap-2 flex-wrap"
+                separatorClassName="text-noorix-muted"
+                startContainerClassName="flex-row items-center gap-2"
+                endContainerClassName="flex-row items-center gap-2"
+                startFieldProps={{
+                  className: 'min-w-[118px]',
+                }}
+                endFieldProps={{
+                  className: 'min-w-[118px]',
+                }}
               />
-              <Button size="sm" variant="primary" onClick={handlePrintRange} disabled={rangePrintLoading}>
+              <Button size="sm" variant="primary" onClick={handlePrintRange} disabled={rangePrintLoading || !canPrintRange}>
                 {rangePrintLoading ? t('dayClosePrintRangeLoading') : t('dayClosePrintRange')}
               </Button>
             </Toolbar>
@@ -265,35 +304,6 @@ export default function DayCloseReportModal({
                 lang={lang}
                 compact={compact}
               />
-            </div>
-          )}
-
-          {multiDayPrint && multiDayPrint.length > 0 && (
-            <div className="day-close-multi-print" aria-hidden>
-              {multiDayPrint.map((item, index) => {
-                const itemDateLabel = formatDayCloseReportDateLabel(item.date);
-                return (
-                  <div key={item.date} className={cn(index > 0 && 'day-close-multi-day--break')}>
-                    <div className="day-close-print-only dc-print-block">
-                      <header className="dc-print-header">
-                        <p className="dc-print-header__co">{companyName || getEmptyDayCloseValue()}</p>
-                        <p className="dc-print-header__doc">{reportTitle}</p>
-                        <p className="dc-print-header__date">
-                          {t('dayCloseReportDate')}: {itemDateLabel}
-                        </p>
-                      </header>
-                    </div>
-                    <DayCloseReportBody
-                      data={item.data}
-                      kindLabel={kindLabel}
-                      t={t}
-                      reportDateLabel={itemDateLabel}
-                      lang={lang}
-                      compact={compact}
-                    />
-                  </div>
-                );
-              })}
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
 /**
  * طباعة مسير توقيع لكل موظف في المسيرة — ورقة A4 لكل موظف، أمر طباعة واحد.
  */
-import { openPrintWindow } from '../../../utils/printUtils';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
@@ -146,7 +146,7 @@ body { font-family: 'Cairo', 'Tajawal', Tahoma, sans-serif; }
  * @param {Record<string, string>} opts.labels — نصوص جاهزة من t()
  * @param {boolean} opts.netOnly — إخفاء البدلات وتفاصيل الاستحقاق؛ الصافي فقط
  */
-export function openPayrollRunEmployeeSlipsPrint({
+export function buildPayrollRunEmployeeSlipsPrintHtml({
   run,
   companyName,
   companyNameEn = '',
@@ -156,7 +156,7 @@ export function openPayrollRunEmployeeSlipsPrint({
   netOnly,
 }: PayrollSlipPrintOptions) {
   const items = Array.isArray(run?.items) ? run.items : [];
-  if (!items.length) return;
+  if (!items.length) return '';
 
   const monthLabel = formatSaudiDate(run.payrollMonth);
   const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', {
@@ -296,10 +296,9 @@ export function openPayrollRunEmployeeSlipsPrint({
 
   const body = `<div class="ps-wrap">${pages}</div>`;
 
-  openPrintWindow({
+  return buildPrintDocumentHtml({
     title: labels.windowTitle || String(run.runNumber || 'Payroll slips'),
-    companyName: '',
-    subtitle: '',
+    subtitle: `${esc(labels.runLabel)}: ${esc(run.runNumber || '')} - ${esc(labels.lblPayrollMonth)}: ${esc(monthLabel)}`,
     landscape: false,
     extraCss: SLIP_PRINT_CSS,
     showPageCounter: true,

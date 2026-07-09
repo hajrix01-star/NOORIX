@@ -17,7 +17,6 @@ import {
   type InvoiceTableLang,
   type InvoiceTableRow,
 } from './invoiceTableRowModel';
-import { printCurrentInvoiceWindow } from './invoicePrintModel';
 
 type Translate = (key: string, ...args: unknown[]) => string;
 type StatusMap = Record<string, unknown>;
@@ -35,6 +34,7 @@ type InvoiceListColumnsParams = {
   companyId?: string;
   setViewingInvoice: InvoiceRowSetter;
   setEditingInvoice: InvoiceRowSetter;
+  printInvoice: InvoiceRowAction;
   confirmAndDeleteInvoice: InvoiceRowAction;
 };
 
@@ -60,6 +60,7 @@ type InvoiceRowRendererParams = {
   companyId?: string;
   setViewingInvoice?: InvoiceRowSetter;
   setEditingInvoice: InvoiceRowSetter;
+  printInvoice: InvoiceRowAction;
   confirmAndDeleteInvoice: InvoiceRowAction;
 };
 
@@ -159,6 +160,7 @@ export function buildInvoiceListColumns({
   companyId,
   setViewingInvoice,
   setEditingInvoice,
+  printInvoice,
   confirmAndDeleteInvoice,
 }: InvoiceListColumnsParams): SmartTableColumn<InvoiceTableRow>[] {
   return [
@@ -280,7 +282,7 @@ export function buildInvoiceListColumns({
           userRole={userRole}
           companyId={companyId}
           onView={(invoiceRow: InvoiceTableRow) => setViewingInvoice(invoiceRow)}
-          onPrint={printCurrentInvoiceWindow}
+          onPrint={printInvoice}
           onEdit={(invoiceRow: InvoiceTableRow) => setEditingInvoice(invoiceRow)}
           onDelete={confirmAndDeleteInvoice}
         />
@@ -332,6 +334,7 @@ export function createInvoiceCompactRowRenderer({
   companyId,
   setViewingInvoice,
   setEditingInvoice,
+  printInvoice,
   confirmAndDeleteInvoice,
 }: InvoiceRowRendererParams) {
   return (row: InvoiceTableRow) => {
@@ -397,6 +400,7 @@ export function createInvoiceListMobileCardRenderer({
   userRole,
   companyId,
   setEditingInvoice,
+  printInvoice,
   confirmAndDeleteInvoice,
 }: InvoiceRowRendererParams) {
   return (row: InvoiceTableRow) => (
@@ -453,7 +457,7 @@ export function createInvoiceListMobileCardRenderer({
           row={row}
           userRole={userRole}
           companyId={companyId}
-          onPrint={printCurrentInvoiceWindow}
+          onPrint={printInvoice}
           onEdit={(invoiceRow: InvoiceTableRow) => setEditingInvoice(invoiceRow)}
           onDelete={confirmAndDeleteInvoice}
         />

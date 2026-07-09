@@ -161,7 +161,10 @@ export function InvoicesListFiltersToolbar({
         </Button>
         <Button
           size="sm"
-          onClick={() => setShowCancelled((value) => !value)}
+          onClick={() => {
+            setShowCancelled((value) => !value);
+            setPage(1);
+          }}
           style={
             showCancelled
               ? {

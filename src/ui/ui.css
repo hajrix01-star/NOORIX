@@ -1574,10 +1574,6 @@
   text-align: center;
 }
 
-.noorix-table .nx-asset-name-trigger--table {
-  width: 100%;
-}
-
 .nx-cr__line1 > .nx-asset-name-trigger--table {
   flex: 1 1 0;
   max-width: none;

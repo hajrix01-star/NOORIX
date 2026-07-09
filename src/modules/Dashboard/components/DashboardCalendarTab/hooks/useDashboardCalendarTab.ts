@@ -6,7 +6,7 @@ import { useDashboardSalesPack } from '../../../../../hooks/useDashboardSalesPac
 import { useDashboardCalendarData } from '../../../../../hooks/useDashboardCalendarData';
 import { fmt } from '../../../../../utils/format';
 import { buildPrintHtmlTable, buildPrintTableHtml } from '../../../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../../../utils/printUtils';
+import { usePrintPreview } from '../../../../../ui';
 import { getSaudiNow, toYmd } from '../../../../../utils/saudiDate';
 import { vaultDisplayName } from '../../../../../utils/vaultDisplay';
 import type {
@@ -153,6 +153,12 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
 
   const company = companies.find((item) => item.id === companyId);
   const companyName = dashboardDisplayName(company, lang);
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('dashboardCalendar'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const showSaveError = useCallback(
     (error: unknown) => {
@@ -308,14 +314,15 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
           { value: `${fmt(totalAmount)} SR`, align: 'end' },
         ]],
       });
-      openPrintWindow({
+      openPrintDocumentPreview({
         title: `${t('transactions')} - ${dateStr}`,
         companyName,
+        logoUrl: companyLogoUrl,
         subtitle: `${t('dashboardCalendar')} - ${dateStr}`,
         body: `${targetInfo}${tableHtml}`,
       });
     },
-    [t, companyName, lang],
+    [t, companyName, companyLogoUrl, lang, openPrintDocumentPreview],
   );
 
   const monthLabel = MONTH_LABELS_EN[month - 1];
@@ -368,13 +375,14 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
       bodyRows: rows,
       emptyColSpan: 7,
     });
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('dashboardCalendar'),
       companyName,
+      logoUrl: companyLogoUrl,
       subtitle: `${t('dashboardCalendar')} - ${monthLabel} ${year}`,
       body: tableHtml,
     });
-  }, [daysInMonth, year, month, monthLabel, companyName, t, lang, maxAmount]);
+  }, [daysInMonth, year, month, monthLabel, companyName, companyLogoUrl, t, lang, maxAmount, openPrintDocumentPreview]);
 
   const selectedDatesSorted = useMemo(
     () => [...selectedDates].filter((date) => date >= startDate && date <= endDate).sort(),
@@ -414,6 +422,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     daysInMonth,
     maxAmount,
     companyName,
+    printPreviewModal,
     targetsVersion,
     isDefaultTargets,
     hasMonthOverride,

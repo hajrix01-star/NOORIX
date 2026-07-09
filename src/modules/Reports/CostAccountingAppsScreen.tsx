@@ -77,6 +77,7 @@ export default function CostAccountingAppsScreen() {
     handleApplyReverse,
     handleApplyAppShare,
     handlePrint,
+    printPreviewModal,
     handleExportExcel,
     clearDraft,
     handleSaveCalculatorSlot,
@@ -96,6 +97,7 @@ export default function CostAccountingAppsScreen() {
 
   return (
     <div className="cost-apps-calc mx-auto flex w-full max-w-7xl flex-col gap-4 md:gap-5 print:max-w-none print:gap-2">
+      {printPreviewModal}
       <header className="noorix-print-hidden overflow-hidden rounded-2xl border border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-1)] to-[var(--noorix-surface-1)] p-4 shadow-sm sm:p-5 print:hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">

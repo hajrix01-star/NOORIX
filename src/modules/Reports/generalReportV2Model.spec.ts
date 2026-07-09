@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPrintableGeneralReportV2Html, buildStatementRowsForV2, buildV2ExportRows } from './generalReportV2Model';
+import { buildStatementRowsForV2, buildV2ExportRows } from './generalReportV2Model';
 import type { GeneralProfitLossReport } from './reportTypes';
 import { buildFlatRows, buildVisibleRows } from './reportHelpers';
 
@@ -64,21 +64,4 @@ describe('generalReportV2Model', () => {
     expect(exported[0]).toMatchObject({ Item: '  Sales invoices', Jan: '100' });
   });
 
-  it('builds printable HTML outside the React screen', () => {
-    const rows = buildStatementRowsForV2(buildVisibleRows(buildFlatRows(report), {}));
-    const html = buildPrintableGeneralReportV2Html({
-      report,
-      visibleRows: rows,
-      selectedMonthNumber: 1,
-      monthLabel: 'Jan',
-      year: 2026,
-      lang: 'en',
-      t,
-      companyName: 'Noorix',
-    });
-
-    expect(html).toContain('<' + 'table class="print-table">');
-    expect(html).toContain('Noorix');
-    expect(html).toContain('Jan 2026');
-  });
 });

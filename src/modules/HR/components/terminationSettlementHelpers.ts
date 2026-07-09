@@ -5,7 +5,7 @@ import {
 } from '../../../services/api';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { toLocalDayKey } from '../utils/payrollAttendanceMath';
 import { hrFmt } from '../utils/hrFmt';
@@ -97,17 +97,18 @@ export async function hasTerminationMovementForInvoiceNumber(
   return list.some((movement) => String(movement.notes || '').includes(marker));
 }
 
-export function openTerminationSettlementPrintWindow(input: {
+export function buildTerminationSettlementPrintHtml(input: {
   employee: HrEmployee;
   lang: string;
   companyName: string;
+  companyLogoUrl?: string;
   terminationYmd: string;
   monthFirst: string;
   preview: TerminationSettlementPrintPreview;
   advancesRemaining: number;
   t: Translate;
-}): void {
-  const { employee, lang, companyName, terminationYmd, monthFirst, preview, advancesRemaining, t } = input;
+}): string {
+  const { employee, lang, companyName, companyLogoUrl, terminationYmd, monthFirst, preview, advancesRemaining, t } = input;
   const name = employeeDisplayName(employee, lang);
   const endDisplay = formatSaudiDate(preview.pr.effectiveEnd || terminationYmd);
   const monthDisplay = formatSaudiDate(monthFirst);
@@ -136,13 +137,14 @@ export function openTerminationSettlementPrintWindow(input: {
     <div style="font-family:Cairo,Tahoma,sans-serif;direction:rtl;padding:16px;max-width:720px;margin:0 auto">
       <h1 style="font-size:18px;margin:0 0 8px">${esc(t('terminationSettlementTitle'))}</h1>
       <p style="font-size:12px;color:#64748b;margin:0 0 16px">${esc(t('terminationSettlementDisclaimer'))}</p>
-      <p style="font-size:13px;margin:0 0 8px"><strong>${esc(t('terminationSettlementCompany'))}:</strong> ${esc(companyName || '-')}</p>
       ${settlementTable}
     </div>`;
 
-  openPrintWindow({
+  return buildPrintDocumentHtml({
     title: t('terminationSettlementTitle'),
     companyName: companyName || undefined,
+    logoUrl: companyLogoUrl || '',
+    subtitle: name,
     body,
   });
 }

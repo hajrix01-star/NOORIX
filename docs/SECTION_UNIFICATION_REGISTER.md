@@ -1399,12 +1399,12 @@ Closed on 2026-07-08 with local commit `6c535623`.
 - Central print utility:
   - `src/utils/printUtils.ts`
   - `src/utils/printUtils.test.ts`
-- Current-window print adapters:
+- Removed legacy current-window print adapters:
   - `src/modules/Invoices/invoicePrintModel.ts`
   - `src/modules/Purchases/batch/purchaseBatchPrintModel.ts`
 - Existing protected print table foundation remains in:
   - `src/utils/printTableHtml.ts`
-  - `src/utils/pdfTableExport.ts`
+  - `src/ui/PrintPreviewModal.tsx`
   - `src/utils/exportUtils.ts`
 - Governance:
   - `scripts/check-print-export-governance.mjs`
@@ -1412,26 +1412,23 @@ Closed on 2026-07-08 with local commit `6c535623`.
 
 ### Centralized
 
-- `printUtils` now owns current-window print scheduling through:
-  - `printCurrentWindow`
-  - `printCurrentWindowNextFrame`
-  - `printCurrentWindowAfterDelay`
-- Invoice print adapters delegate to the central print utility instead of owning `window.print()` or frame scheduling.
-- Purchase batch print adapters delegate to the central print utility instead of owning `window.print()` or delayed scheduling.
+- `printUtils` now only builds central print document HTML for `PrintPreviewModal`.
+- Invoice day-close and cash reports now open the central print preview instead of printing the current window.
+- Purchase batch history and current draft prints now open the central print preview instead of printing the current window.
 - The central print utility no longer uses real `any`.
-- Print window HTML escaping and browser print scheduling are covered by a direct utility test.
-- Print/export governance now prevents reintroducing local browser print scheduling in the closed invoice and purchase adapter boundaries.
-- HR employee document print helper now returns the real central print window result instead of a local fake window stub.
+- Print document HTML escaping and the preview toolbar action are covered by a direct utility test.
+- Print/export governance now prevents reintroducing legacy direct print adapters.
+- HR employee document print helper builds central print-preview HTML instead of a local fake window stub.
 
 ### Protected Exceptions
 
-- Financial report HTML bodies, HR document sheets, day-close print DOM, catalog order sheets, bank statement exports, and purchase batch print layout remain section-owned until each document layout has a dedicated conversion pass.
+- Financial report HTML bodies, HR document sheets, catalog order sheets, and bank statement exports remain section-owned until each document layout has a dedicated conversion pass.
 - This pass did not move official totals, tax values, accounting values, or export row calculations.
-- `openPrintWindow` remains the shared browser print shell; section-specific body HTML remains owned by the section or its approved model.
+- `PrintPreviewModal` remains the shared browser print shell; section-specific body HTML remains owned by the section or its approved model.
 
 ### Final System Unification Candidates
 
-- Convert additional safe print adapters to `printCurrentWindow` helpers when their section-specific behavior is confirmed.
+- Convert additional safe print adapters to `PrintPreviewModal` helpers when their section-specific behavior is confirmed.
 - Promote common export action feedback and filename normalization into a small central action helper after import/export utilities are audited.
 - Review protected financial document bodies one family at a time before converting any remaining manual print tables.
 

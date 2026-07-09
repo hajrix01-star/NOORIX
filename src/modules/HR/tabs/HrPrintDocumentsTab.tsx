@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HR print tab: payroll slip, annual statement, salary letter, and full entitlements (EOS).
  * Toolbar + side panels; print HTML is composed in hrPrintDocumentsTabPrintHtml.
  */
@@ -8,7 +8,7 @@ import type { CompanyListItem } from '../../../context/appTypes';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { useApiQuery } from '../../../hooks/useApiQuery';
-import { openPrintWindow } from '../../../utils/printUtils';
+import { usePrintPreview } from '../../../ui';
 import { getBrandLogo } from '../../../utils/appBranding';
 import { getEmployeeCompensationSnapshot } from '../../../services/api';
 import { hrKeys } from '../../../services/queryKeys';
@@ -57,6 +57,11 @@ export default function HrPrintDocumentsTab() {
   const companyNameArDefault = company?.nameAr || company?.name || '';
   const companyNameEnDefault = company?.nameEn || company?.nameAr || company?.name || '';
   const companyLogoUrl = String(company?.logoUrl || getBrandLogo() || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('hrTabPrintDocs'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const [docKind, setDocKind] = useState<HrPrintDocKind>('payroll');
   const [employeeId, setEmployeeId] = useState('');
@@ -224,10 +229,9 @@ export default function HrPrintDocumentsTab() {
       return;
     }
     if (!hrPrintComposed.inner) return;
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: hrPrintComposed.title,
-      companyName: '',
-      subtitle: '',
+      subtitle: hrPrintComposed.title,
       landscape: printLandscape,
       extraCss: HR_GEN_PRINT_CSS,
       showPageCounter: false,
@@ -265,6 +269,7 @@ export default function HrPrintDocumentsTab() {
 
   return (
     <div className={HR_TOOLS_ROOT_CLASS}>
+    {printPreviewModal}
     <div className="noorix-surface-card w-full min-w-0 p-4 sm:p-5">
       <div className="mb-4">
         <h3 className="m-0 text-[17px] font-bold text-noorix-text">{t('hrTabPrintDocs')}</h3>

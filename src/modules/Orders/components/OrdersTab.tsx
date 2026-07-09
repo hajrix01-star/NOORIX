@@ -16,7 +16,6 @@ import {
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
-import { openPrintWindow } from '../../../utils/printUtils';
 import {
   buildOrderPrintHtml,
   buildSingleOrderExportRows,
@@ -32,7 +31,7 @@ import { DateFilterBar } from '../../../ui/date';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
 import { OrderConfirmModal } from './OrderConfirmModal';
-import { Button, Badge, AdaptiveSheet, FilterToolbar, SmartTable, KebabMenu, FmtNum } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, FilterToolbar, SmartTable, KebabMenu, FmtNum, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import type { OrderLine, OrderProduct, OrderRecord } from '../../../types/api';
 
@@ -331,6 +330,15 @@ export function OrdersTab({
     setViewingOrder(order);
   }
 
+  const company = companies.find((c) => c.id === companyId);
+  const companyName = company?.nameAr || company?.nameEn || '';
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('ordersPrintOrder'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
+
   const handleExportSingleOrder = async (order: OrderRecord) => {
     try {
       const rows = buildSingleOrderExportRows(order, t);
@@ -343,9 +351,10 @@ export function OrdersTab({
 
   const handlePrintOrder = (order: OrderRecord) => {
     const bodyHtml = buildOrderPrintHtml(order, t);
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: `${t('ordersPrintOrder')} — ${order.orderNumber}`,
       companyName,
+      logoUrl: companyLogoUrl,
       subtitle: `${t('ordersViewOrder')} — ${order.orderNumber}`,
       body: bodyHtml,
     });
@@ -356,11 +365,11 @@ export function OrdersTab({
     setEditingOrder(null);
   }
 
-  const companyName = companies.find((c) => c.id === companyId)?.nameAr || companies.find((c) => c.id === companyId)?.nameEn || '';
   const printDate = `${year}/${String(month).padStart(2, '0')}`;
 
   return (
     <div className="nx-orders-tab-root flex min-w-0 flex-col gap-3 sm:gap-4">
+      {printPreviewModal}
       <OrderConfirmModal
         open={!!deleteTarget}
         title={t('confirmDelete')}

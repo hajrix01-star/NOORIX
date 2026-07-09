@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Modal, Toolbar } from '../../../ui';
+import { Button, Modal, Toolbar, usePrintPreview } from '../../../ui';
 import {
   fetchAllSalesSummariesForExport,
   getInvoices,
@@ -14,7 +14,6 @@ import {
   filterCashVaultRows,
   resolveInvoicesCashReportPeriodLine,
 } from '../invoicesCashReportModel';
-import { printCurrentInvoiceWindow } from '../invoicePrintModel';
 
 type Props = {
   companyId: string;
@@ -59,6 +58,11 @@ export function InvoicesCashReportModal({
   fmt,
 }: Props) {
   const [state, setState] = useState<CashReportState>({ status: 'idle', body: '', error: '' });
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('invoicesCashReportTitle'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const periodLine = useMemo(
     () =>
@@ -166,8 +170,23 @@ export function InvoicesCashReportModal({
 
   if (!isOpen) return null;
 
+  const handlePrintCashReport = () => {
+    if (state.status !== 'success') return;
+    openPrintDocumentPreview({
+      title: t('invoicesCashReportTitle'),
+      companyName,
+      subtitle: (fromUrl && toUrl ? periodLine : dateFilterLabel) || periodLine,
+      body: `<div class="day-close-report">${state.body}</div>`,
+      extraCss: `${DAY_CLOSE_REPORT_STYLES}\n${INVOICES_CASH_REPORT_PRINT_EXTRA_CSS}`,
+      htmlDir: lang === 'ar' ? 'rtl' : 'ltr',
+      htmlLang: lang === 'ar' ? 'ar' : 'en',
+      showPageCounter: true,
+    });
+  };
+
   return (
     <Modal open={isOpen} onClose={onClose} size="xl" closeOnBackdrop={false} hideClose className="day-close-modal">
+      {printPreviewModal}
       <style>{DAY_CLOSE_REPORT_STYLES}</style>
       <style>{INVOICES_CASH_REPORT_PRINT_EXTRA_CSS}</style>
       <div className="day-close-print-root w-full" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -179,7 +198,7 @@ export function InvoicesCashReportModal({
             </p>
           </div>
           <Toolbar className="gap-2" printHidden={false}>
-            <Button size="sm" onClick={printCurrentInvoiceWindow} disabled={state.status !== 'success'}>
+            <Button size="sm" onClick={handlePrintCashReport} disabled={state.status !== 'success'}>
               {t('print')}
             </Button>
             <Button size="sm" onClick={onClose}>

@@ -11,7 +11,7 @@ import {
 import { exportToExcel } from '../../utils/exportUtils';
 import { fmt, fmtTax } from '../../utils/format';
 import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../utils/printTableHtml';
-import { openPrintWindow } from '../../utils/printUtils';
+import { usePrintPreview } from '../../ui';
 import type { HajriTaxLanguage, HajriTaxTranslate, VatPlanningRecord } from '../../types/api/domains/hajriTax';
 import {
   companyDisplayName,
@@ -24,7 +24,7 @@ import {
 } from './hajriRegistryMetrics';
 import { fmtDisclosurePrintCell } from './hajriTaxScreenHelpers';
 
-type CompanyMeta = (id: string | null) => { name: string; tax: string };
+type CompanyMeta = (id: string | null) => { name: string; tax: string; logoUrl?: string };
 
 type HajriTaxExportsParams = {
   t: HajriTaxTranslate;
@@ -101,8 +101,14 @@ export function useHajriTaxExports({
   registryRows,
   currentYear,
 }: HajriTaxExportsParams) {
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('hajriTax'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
+
   const printDetail = useCallback(() => {
-    const { name } = companyMeta(detailCompanyId);
+    const { name, logoUrl } = companyMeta(detailCompanyId);
     const paymentTarget = parseDisplayPaymentTarget(paymentTargetStr);
     const detailTable = buildPrintHtmlTable({
       wrapperClassName: null,
@@ -121,15 +127,16 @@ export function useHajriTaxExports({
         ...taxLineRows({ rows: INPUT_ROWS, data: draftData, total: inputTotal, lang }),
       ],
     });
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('hajriTax'),
       companyName: name || '',
+      logoUrl: logoUrl || '',
       subtitle: `${periodLabel} - ${lang === 'ar' ? AR.planningNoAccountingImpact : 'Planning only, no accounting impact'}`,
       body: `<p>${lang === 'ar' ? AR.targetPayment : 'Target payment:'} ${paymentTarget == null ? '-' : `${fmtTax(paymentTarget)} SR`}</p>
 ${detailTable}
 <p><b>${lang === 'ar' ? AR.netPayable : 'Net payable'}:</b> ${fmtTax(netPayableDraft)} SR</p>`,
     });
-  }, [companyMeta, detailCompanyId, draftData, inputTotal, lang, netPayableDraft, outputTotal, paymentTargetStr, periodLabel, t]);
+  }, [companyMeta, detailCompanyId, draftData, inputTotal, lang, netPayableDraft, openPrintDocumentPreview, outputTotal, paymentTargetStr, periodLabel, t]);
 
   const exportDetailExcel = useCallback(() => {
     const rows: Array<{ Item: string; Amount: number | string; VAT: number }> = [];
@@ -168,10 +175,10 @@ ${detailTable}
   }, [currentYear, lang, registryRows, t]);
 
   const printConsolidated = useCallback(() => {
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: `${t('hajriTax')} - ${lang === 'ar' ? AR.registry : 'Registry'}`,
-      companyName: '',
-      subtitle: '',
+      companyName: t('hajriTax'),
+      subtitle: lang === 'ar' ? AR.registry : 'Registry',
       body: buildPrintHtmlTable({
         tableClassName: 'w-full',
         wrapperClassName: null,
@@ -212,7 +219,7 @@ ${detailTable}
         }),
       }),
     });
-  }, [lang, registryRows, t]);
+  }, [lang, openPrintDocumentPreview, registryRows, t]);
 
   const exportJsonBundle = useCallback(() => {
     const records = registryRows.map((row) => ({
@@ -241,5 +248,6 @@ ${detailTable}
     exportConsolidatedExcel,
     printConsolidated,
     exportJsonBundle,
+    printPreviewModal,
   };
 }

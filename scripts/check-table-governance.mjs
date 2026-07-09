@@ -219,7 +219,7 @@ for (const required of [
 for (const required of [
   'Status: foundation implemented; broad table conversion is not started.',
   '`src/utils/printTableHtml.ts`',
-  '`src/utils/pdfTableExport.ts`',
+  '`src/ui/PrintPreviewModal.tsx`',
   'Tax/VAT print documents',
   'This phase closes the foundation only. It does not claim that all remaining manual tables are converted.',
 ]) {

@@ -19,6 +19,7 @@ export default function InvoicesListScreen() {
 
   return (
     <ScreenShell>
+      {s.printPreviewModal}
       <InvoicesListPageHeader
         t={s.t}
         dateFilter={s.dateFilter}

@@ -1,5 +1,5 @@
 import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import {
   buildItemsCatalogPrintSubtitle,
   buildProductSpec,
@@ -220,18 +220,20 @@ function prepareItemsCatalogWeeklyDocument(opts: ItemsCatalogOutputOpts) {
   };
 }
 
-function openItemsCatalogWeeklyDocument(
+export function buildItemsCatalogWeeklyDocumentHtml(
   opts: ItemsCatalogOutputOpts,
   mode: 'print' | 'pdf',
-): { empty: boolean } {
+): { empty: true } | { empty: false; title: string; html: string } {
   const doc = prepareItemsCatalogWeeklyDocument(opts);
   if (doc.empty) return { empty: true };
 
-  openPrintWindow({
-    title: mode === 'pdf'
+  const title = mode === 'pdf'
       ? doc.pdfFilename.replace(/\.pdf$/i, '')
-      : opts.t('ordersPrintWeeklySheetTitle'),
+      : opts.t('ordersPrintWeeklySheetTitle');
+  const html = buildPrintDocumentHtml({
+    title,
     companyName: opts.companyName,
+    logoUrl: opts.logoUrl || '',
     subtitle: doc.subtitle,
     body: doc.body,
     extraCss: WEEKLY_PRINT_EXTRA_CSS,
@@ -242,13 +244,5 @@ function openItemsCatalogWeeklyDocument(
     htmlDir: opts.lang === 'en' ? 'ltr' : 'rtl',
   });
 
-  return { empty: false };
-}
-
-export function printItemsCatalogWeekly(opts: ItemsCatalogOutputOpts): { empty: boolean } {
-  return openItemsCatalogWeeklyDocument(opts, 'print');
-}
-
-export function exportItemsCatalogWeeklyToPdf(opts: ItemsCatalogOutputOpts): { empty: boolean } {
-  return openItemsCatalogWeeklyDocument(opts, 'pdf');
+  return { empty: false, title, html };
 }

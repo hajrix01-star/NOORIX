@@ -21,8 +21,6 @@ function fail(rel, message) {
 const requiredFiles = [
   'src/utils/printUtils.ts',
   'src/utils/printUtils.test.ts',
-  'src/modules/Invoices/invoicePrintModel.ts',
-  'src/modules/Purchases/batch/purchaseBatchPrintModel.ts',
   'src/modules/HR/components/EmployeeDocModal/utils/employeeDocPrint.ts',
   'src/modules/HR/components/EmployeeDocModal/types.ts',
 ];
@@ -42,38 +40,30 @@ for (const pattern of [
 }
 
 for (const exportName of [
-  'printCurrentWindow',
-  'printCurrentWindowNextFrame',
-  'printCurrentWindowAfterDelay',
-  'openPrintWindow',
+  'buildPrintDocumentHtml',
 ]) {
 if (!new RegExp(`export\\s+function\\s+${exportName}\\b`).test(printUtils)) {
     fail('src/utils/printUtils.ts', `missing central export ${exportName}.`);
   }
 }
-if (!/openPrintWindow[\s\S]*\):\s*Window\s*\|\s*null/.test(printUtils)) {
-  fail('src/utils/printUtils.ts', 'openPrintWindow must return the opened Window or null for popup handling.');
+for (const removedRel of [
+  'src/modules/Invoices/invoicePrintModel.ts',
+  'src/modules/Purchases/batch/purchaseBatchPrintModel.ts',
+]) {
+  if (fs.existsSync(abs(removedRel))) fail(removedRel, 'legacy current-window print adapter must be removed.');
 }
-
-const invoicePrint = read('src/modules/Invoices/invoicePrintModel.ts');
-if (!invoicePrint.includes("from '../../utils/printUtils'")) {
-  fail('src/modules/Invoices/invoicePrintModel.ts', 'invoice current-window printing must delegate to the central print utility.');
-}
-if (/window\.print|requestAnimationFrame/.test(invoicePrint)) {
-  fail('src/modules/Invoices/invoicePrintModel.ts', 'invoice print model must not own browser print scheduling.');
-}
-
-const purchasePrint = read('src/modules/Purchases/batch/purchaseBatchPrintModel.ts');
-if (!purchasePrint.includes("from '../../../utils/printUtils'")) {
-  fail('src/modules/Purchases/batch/purchaseBatchPrintModel.ts', 'purchase batch current-window printing must delegate to the central print utility.');
-}
-if (/window\.print|window\.setTimeout/.test(purchasePrint)) {
-  fail('src/modules/Purchases/batch/purchaseBatchPrintModel.ts', 'purchase batch print model must not own browser print scheduling.');
+for (const removedExport of ['openPrintWindow', 'printCurrentWindow', 'printCurrentWindowNextFrame', 'printCurrentWindowAfterDelay']) {
+  if (new RegExp(`export\\s+function\\s+${removedExport}\\b`).test(printUtils)) {
+    fail('src/utils/printUtils.ts', `legacy direct print export ${removedExport} must be removed.`);
+  }
 }
 
 const employeeDocPrint = read('src/modules/HR/components/EmployeeDocModal/utils/employeeDocPrint.ts');
-if (!/buildPrintWindow[\s\S]*:\s*Window\s*\|\s*null/.test(employeeDocPrint)) {
-  fail('src/modules/HR/components/EmployeeDocModal/utils/employeeDocPrint.ts', 'employee document print helper must return the real central print window result.');
+if (!/buildEmployeeDocPrintHtml[\s\S]*:\s*string/.test(employeeDocPrint)) {
+  fail('src/modules/HR/components/EmployeeDocModal/utils/employeeDocPrint.ts', 'employee document print helper must build central print-preview HTML.');
+}
+if (!employeeDocPrint.includes('buildPrintDocumentHtml')) {
+  fail('src/modules/HR/components/EmployeeDocModal/utils/employeeDocPrint.ts', 'employee document print helper must delegate to buildPrintDocumentHtml.');
 }
 if (/PrintWindowStub/.test(employeeDocPrint)) {
   fail('src/modules/HR/components/EmployeeDocModal/utils/employeeDocPrint.ts', 'employee document print helper must not use a fake print window stub.');
@@ -88,7 +78,7 @@ const register = read('docs/SECTION_UNIFICATION_REGISTER.md');
 for (const required of [
   '## Print / Export Foundation Finalization',
   '`check:print-export-governance`',
-  'printCurrentWindow',
+  'PrintPreviewModal',
 ]) {
   if (!register.includes(required)) fail('docs/SECTION_UNIFICATION_REGISTER.md', `missing print/export register note: ${required}`);
 }

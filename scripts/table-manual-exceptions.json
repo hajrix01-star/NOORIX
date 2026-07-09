@@ -18,7 +18,6 @@
     "src/modules/Orders/components/catalog/CatalogProductFormSheet.tsx": 1,
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": 1,
     "src/modules/Purchases/components/BatchEditPanel.tsx": 1,
-    "src/modules/Purchases/components/BatchPrintSheet.tsx": 1,
     "src/modules/Reports/BankStatementMappingModal.tsx": 1,
     "src/modules/Reports/CostAccountingAppsScreen.tsx": 1,
     "src/modules/Reports/GeneralPlTable.tsx": 1,

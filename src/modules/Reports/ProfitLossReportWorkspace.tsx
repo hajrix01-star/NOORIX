@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Button, FilterToolbar, Input, MetricCard, cn } from '../../ui';
 import GeneralPlTable from './GeneralPlTable';
 import type { PlDisplayLevel } from './reportHelpers';
@@ -35,8 +35,7 @@ type ProfitLossReportWorkspaceProps = {
   onToggleGroup: (key: string) => void;
   onOpenDetail: (payload: ReportDetailState) => void;
   onExportExcel: () => void;
-  onExportPdf: () => void;
-  onPrint: () => void;
+  onPrintPdf: () => void;
 };
 
 export default function ProfitLossReportWorkspace({
@@ -68,14 +67,13 @@ export default function ProfitLossReportWorkspace({
   onToggleGroup,
   onOpenDetail,
   onExportExcel,
-  onExportPdf,
-  onPrint,
+  onPrintPdf,
 }: ProfitLossReportWorkspaceProps) {
   const monthNames = getProfitLossMonthNames(lang);
   const activeMonthLabel = selectedMonthNumber ? monthNames[selectedMonthNumber - 1] : '';
   const periodLabel = selectedMonthNumber ? `${activeMonthLabel} ${year}` : String(year);
   const kpiCards = buildProfitLossKpiCards({ report, selectedMonthNumber, lang, year, t });
-  const directionLabel = lang === 'en' ? 'VAT inclusive' : 'شامل الضريبة';
+  const directionLabel = lang === 'en' ? 'VAT inclusive' : 'Ø´Ø§Ù…Ù„ Ø§Ù„Ø¶Ø±ÙŠØ¨Ø©';
   const modeLabel = selectedMonthNumber ? t('reportPeriodMonth') : t('reportPeriodYear');
 
   return (
@@ -106,11 +104,8 @@ export default function ProfitLossReportWorkspace({
               <Button size="sm" onClick={onExportExcel} disabled={!report}>
                 {t('exportExcel')}
               </Button>
-              <Button size="sm" onClick={onExportPdf} disabled={!report}>
-                طباعة / PDF
-              </Button>
-              <Button size="sm" onClick={onPrint} disabled={!report}>
-                {t('print')}
+              <Button size="sm" onClick={onPrintPdf} disabled={!report}>
+                Ø·Ø¨Ø§Ø¹Ø© / PDF
               </Button>
             </div>
           </FilterToolbar>

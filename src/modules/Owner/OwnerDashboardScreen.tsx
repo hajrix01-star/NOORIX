@@ -47,7 +47,7 @@ export default function OwnerDashboardScreen() {
     lang,
   });
 
-  const { handleExportExcel, handleExportPdf } = useOwnerDashboardExports(
+  const { handleExportExcel, handlePrintPdf, printPreviewModal } = useOwnerDashboardExports(
     data.overview.exportRows,
     lang,
     year,
@@ -72,10 +72,11 @@ export default function OwnerDashboardScreen() {
 
   return (
     <ScreenShell>
+      {printPreviewModal}
       <OwnerFilterBar
         dateFilter={dateFilter}
         onExportExcel={handleExportExcel}
-        onExportPdf={handleExportPdf}
+        onPrintPdf={handlePrintPdf}
         companyList={companyList}
         allSelected={allSelected}
         selectedCompanyIds={filters.selectedCompanyIds}

@@ -39,4 +39,42 @@ describe('buildInvoiceListQueryParts', () => {
     });
     expect(buildInvoiceListQueryParts(query()).where).not.toHaveProperty('AND');
   });
+
+  it('hides cancelled invoices unless the toolbar explicitly includes them', () => {
+    expect(buildInvoiceListQueryParts(query({ includeCancelled: false })).where).toMatchObject({
+      status: 'active',
+    });
+    expect(buildInvoiceListQueryParts(query({ includeCancelled: true })).where).not.toHaveProperty('status');
+  });
+
+  it('applies supplier and supplier category filters from multi-select controls', () => {
+    const { where } = buildInvoiceListQueryParts(
+      query({
+        supplierId: 'supplier-1,supplier-2',
+        supplierCategoryId: 'category-1,category-2',
+      }),
+    );
+
+    expect(where).toMatchObject({
+      supplierId: { in: ['supplier-1', 'supplier-2'] },
+      supplier: { is: { supplierCategoryId: { in: ['category-1', 'category-2'] } } },
+    });
+  });
+
+  it('filters vaults by direct vault and split allocations', () => {
+    const { where } = buildInvoiceListQueryParts(query({ vaultId: 'vault-1' }));
+
+    expect(where).toMatchObject({
+      OR: [{ vaultId: 'vault-1' }, { vaultAllocations: { some: { vaultId: 'vault-1' } } }],
+    });
+  });
+
+  it('supports created-by user filters including unrecorded invoices', () => {
+    expect(buildInvoiceListQueryParts(query({ createdByUserId: '__none__' })).where).toMatchObject({
+      createdByUserId: null,
+    });
+    expect(buildInvoiceListQueryParts(query({ createdByUserId: 'user-1,__none__' })).where).toMatchObject({
+      OR: [{ createdByUserId: null }, { createdByUserId: { in: ['user-1'] } }],
+    });
+  });
 });

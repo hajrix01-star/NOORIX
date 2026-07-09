@@ -20,6 +20,7 @@ describe('invoicesListTableModel', () => {
       companyId: 'c1',
       setViewingInvoice: noop,
       setEditingInvoice: noop,
+      printInvoice: noop,
       confirmAndDeleteInvoice: noop,
     });
     expect(cols.map((column) => column.key)).toEqual([
@@ -61,6 +62,7 @@ describe('invoicesListTableModel', () => {
       userRole: 'admin',
       companyId: 'c1',
       setEditingInvoice: noop,
+      printInvoice: noop,
       confirmAndDeleteInvoice: noop,
     });
     expect(typeof fn).toBe('function');

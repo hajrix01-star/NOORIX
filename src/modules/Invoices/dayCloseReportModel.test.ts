@@ -51,10 +51,10 @@ describe('dayCloseReportModel', () => {
     });
   });
 
-  it('resolves counterparty labels by supplier, employee, expense line, then notes', () => {
+  it('resolves counterparty labels by supplier, employee, expense line, then empty fallback', () => {
     expect(resolveDayCloseCounterpartyLabel({ supplierNameEn: 'Supplier' }, 'en')).toBe('Supplier');
     expect(resolveDayCloseCounterpartyLabel({ employeeName: 'Employee' }, 'en')).toBe('Employee');
     expect(resolveDayCloseCounterpartyLabel({ expenseLineNameEn: 'Utilities' }, 'en')).toBe('Utilities');
-    expect(resolveDayCloseCounterpartyLabel({ notes: 'Manual note' }, 'en')).toBe('Manual note');
+    expect(resolveDayCloseCounterpartyLabel({}, 'en')).toBe('—');
   });
 });

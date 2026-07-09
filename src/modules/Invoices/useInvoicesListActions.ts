@@ -1,10 +1,18 @@
 import { useCallback } from 'react';
 import { fetchAllInvoicesForExport } from '../../services/api';
 import { exportToExcel } from '../../utils/exportUtils';
-import { openPrintWindow } from '../../utils/printUtils';
+import { usePrintPreview } from '../../ui';
 import { toYmd } from '../../utils/saudiDate';
 import { buildPrintTableHtml } from '../../utils/printTableHtml';
 import { MAX_VAULT_SLOTS } from './invoicesListScreenHelpers';
+import {
+  asInvoiceTableNumber,
+  asInvoiceTableText,
+  formatInvoiceTableDate,
+  getInvoiceTableVaultName,
+  mapInvoiceTableVaultChips,
+  type InvoiceTableRow,
+} from './invoiceTableRowModel';
 import {
   buildInvoiceListFetchParams,
   type InvoiceListFetchParams,
@@ -55,7 +63,7 @@ type InvoiceListActionParams = {
   serverAll: InvoiceListActionTotals;
 };
 
-function buildExportFetchParams(params: InvoiceListActionParams): InvoiceListFetchParams {
+export function buildInvoiceListActionFetchParams(params: InvoiceListActionParams): InvoiceListFetchParams {
   return buildInvoiceListFetchParams({
     companyId: params.companyId,
     startDate: params.invoiceQueryStartDate,
@@ -81,6 +89,35 @@ function mapRawInvoicesForExport(
   mapInvoiceToExportRow: (invoice: InvoiceListRawInvoice) => InvoiceExportRow,
 ) {
   return invoices.filter(isInvoiceListRawInvoice).map(mapInvoiceToExportRow);
+}
+
+function invoicePrintRows(input: {
+  invoice: InvoiceTableRow;
+  lang: string;
+  fmt: (value: number) => string;
+  t: Translate;
+}): Record<string, string>[] {
+  const { invoice, lang, fmt, t } = input;
+  const documentNumber = asInvoiceTableText(invoice.supplierInvoiceNumber || invoice.invoiceNumber);
+  const vaultChips = mapInvoiceTableVaultChips({ row: invoice, lang, fmt });
+  const vaultLabel = vaultChips.length
+    ? vaultChips.map((chip) => `${chip.label}: ${fmt(chip.amount)} SR`).join(' | ')
+    : getInvoiceTableVaultName(invoice, lang);
+
+  const rows = [
+    [t('invoiceNumber'), documentNumber],
+    [t('date'), formatInvoiceTableDate(invoice.transactionDate)],
+    [t('type'), asInvoiceTableText(invoice.kind)],
+    [t('status'), asInvoiceTableText(invoice.status)],
+    [t('supplier'), asInvoiceTableText(invoice.supplierName)],
+    [t('invoiceVaultColumn'), vaultLabel],
+    [t('net'), `${fmt(asInvoiceTableNumber(invoice.netAmount))} SR`],
+    [t('tax'), `${fmt(asInvoiceTableNumber(invoice.taxAmount))} SR`],
+    [t('total'), `${fmt(asInvoiceTableNumber(invoice.totalAmount))} SR`],
+  ];
+
+  if (invoice.notes) rows.push([t('notes'), invoice.notes]);
+  return rows.map(([label, value]) => ({ [t('reportItem')]: label, [t('value')]: value }));
 }
 
 export function useInvoicesListActions(params: InvoiceListActionParams) {
@@ -115,12 +152,17 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
     setExportBusy,
     serverAll,
   } = params;
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('invoicesTitle'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const handleExportExcel = useCallback(async () => {
     if (!companyId || displayedTotal === 0) return;
     setExportBusy(true);
     try {
-      const all = await fetchAllInvoicesForExport(buildExportFetchParams(params));
+      const all = await fetchAllInvoicesForExport(buildInvoiceListActionFetchParams(params));
       const rows = mapRawInvoicesForExport(all, mapInvoiceToExportRow);
       const safeStart = toYmd(invoiceQueryStartDate).replace(/[^\d-]/g, '') || 'start';
       const safeEnd = toYmd(invoiceQueryEndDate).replace(/[^\d-]/g, '') || 'end';
@@ -165,13 +207,14 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
     invoiceBatchIdFromUrl,
     filterCreatedByUserId,
     setExportBusy,
+    openPrintDocumentPreview,
   ]);
 
   const handlePrintInvoices = useCallback(async () => {
     if (!companyId || displayedTotal === 0) return;
     setExportBusy(true);
     try {
-      const all = await fetchAllInvoicesForExport(buildExportFetchParams(params));
+      const all = await fetchAllInvoicesForExport(buildInvoiceListActionFetchParams(params));
       const rows = mapRawInvoicesForExport(all, mapInvoiceToExportRow);
       const baseMetaCols = 6;
       const vaultBlockCols = MAX_VAULT_SLOTS * 3;
@@ -188,7 +231,7 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
           { value: '', colSpan: 2 },
         ]],
       });
-      openPrintWindow({
+      openPrintDocumentPreview({
         title: t('invoicesTitle'),
         companyName,
         subtitle: `${t('invoicesTitle')} — ${(fromUrl && toUrl ? `${fromUrl} — ${toUrl}` : dateFilterLabel) || ''}`,
@@ -231,7 +274,26 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
     invoiceBatchIdFromUrl,
     filterCreatedByUserId,
     setExportBusy,
+    openPrintDocumentPreview,
   ]);
 
-  return { handleExportExcel, handlePrintInvoices };
+  const handlePrintSingleInvoice = useCallback((invoice: InvoiceTableRow) => {
+    const documentNumber = asInvoiceTableText(invoice.supplierInvoiceNumber || invoice.invoiceNumber);
+    openPrintDocumentPreview({
+      title: `${t('invoicesTitle')} - ${documentNumber}`,
+      companyName,
+      logoUrl,
+      subtitle: documentNumber,
+      landscape: false,
+      body: buildPrintTableHtml({
+        columns: [
+          { key: t('reportItem'), header: t('reportItem') },
+          { key: t('value'), header: t('value') },
+        ],
+        rows: invoicePrintRows({ invoice, lang, fmt, t }),
+      }),
+    });
+  }, [companyName, fmt, lang, logoUrl, openPrintDocumentPreview, t]);
+
+  return { handleExportExcel, handlePrintInvoices, handlePrintSingleInvoice, printPreviewModal };
 }

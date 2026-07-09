@@ -1,11 +1,9 @@
 import React from 'react';
 import { fmt } from '../../../utils/format';
 import {
-  calculateDayCloseCashKpis,
   type DayCloseKindLabels,
   type DayCloseReportData,
   type DayCloseSalesChannel,
-  formatDayCloseMonthStartLabel,
   getEmptyDayCloseValue,
   pickDayCloseBilingualName,
   resolveDayCloseCounterpartyLabel,
@@ -72,8 +70,7 @@ export function DayCloseReportBody({
   lang,
   compact = false,
 }: DayCloseReportBodyProps) {
-  const monthStartLabel = formatDayCloseMonthStartLabel(data.meta?.cashMonthScopeStart);
-  const { monthScoped, lifetime, showLifetimeFootnote } = calculateDayCloseCashKpis(data.cash);
+  const cashAvailable = data.cash?.availableCashMonthScoped ?? data.cash?.balanceEndOfDayCashVaults;
   const byKind = data.byKind ?? [];
   const paymentRows = data.outflowByPaymentMethod ?? [];
   const salesSummaries = data.salesSummaries ?? [];
@@ -86,9 +83,6 @@ export function DayCloseReportBody({
         <div>
           <div className="text-[11px] text-noorix-muted">{t('dayCloseReportDate')}</div>
           <div className="text-[15px] font-extrabold">{reportDateLabel}</div>
-        </div>
-        <div className="text-[10px] text-[var(--noorix-text-muted-2)] max-w-[340px] text-right leading-[1.45]">
-          {t(compact ? 'dayCloseVaultBalanceNoteCompact' : 'dayCloseVaultBalanceNote')}
         </div>
       </div>
 
@@ -123,14 +117,9 @@ export function DayCloseReportBody({
         <div className="dc-kpi-card dc-kpi-card--bal">
           <div className="dc-kpi-card__label">{t('dayCloseCashRemainingEod')}</div>
           <div className="dc-kpi-card__val">
-            {fmt(monthScoped)} <span className="nx-sar">SR</span>
+            {money(cashAvailable)} <span className="nx-sar">SR</span>
           </div>
           <div className="dc-kpi-card__sub">{t('dayCloseEodDefinition')}</div>
-          {showLifetimeFootnote && (
-            <div className="dc-kpi-card__footnote text-[10px] text-noorix-muted mt-1 leading-snug">
-              {t('dayCloseLifetimeCashFootnote', fmt(lifetime))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -138,17 +127,9 @@ export function DayCloseReportBody({
         <div className="dc-print-cash-line__row">
           <span className="dc-print-cash-line__label">{t('dayCloseCashRemainingEod')}:</span>
           <span className="dc-print-cash-line__amount">
-            {fmt(monthScoped)} <span className="nx-sar">SR</span>
-          </span>
-          <span className="dc-print-cash-line__meta">
-            {' '}
-            {SEPARATOR}{' '}
-            {t('dayCloseAvailableCashPrintScope', monthStartLabel, reportDateLabel)}
+            {money(cashAvailable)} <span className="nx-sar">SR</span>
           </span>
         </div>
-        {showLifetimeFootnote && (
-          <div className="dc-print-cash-line__sub">{t('dayCloseLifetimeCashFootnote', fmt(lifetime))}</div>
-        )}
       </div>
 
       <table className="dc-table day-close-print-only" aria-label={t('dayCloseKpiPrintCaption')}>
@@ -180,7 +161,7 @@ export function DayCloseReportBody({
           </tr>
           <tr>
             <td>{t('dayCloseCashRemainingEod')}</td>
-            <td className="dc-num">{fmt(monthScoped)}</td>
+            <td className="dc-num">{money(cashAvailable)}</td>
             <td className="dc-empty">{getEmptyDayCloseValue()}</td>
           </tr>
           <tr>

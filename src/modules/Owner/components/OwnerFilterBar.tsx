@@ -12,7 +12,7 @@ const COLORS = SERIES_RECHARTS_COLORS;
 type OwnerFilterBarProps = {
   dateFilter: DateFilterController;
   onExportExcel: () => void;
-  onExportPdf: () => void;
+  onPrintPdf: () => void;
   companyList: CompanyListItem[];
   allSelected: boolean;
   selectedCompanyIds: Set<string>;
@@ -24,7 +24,7 @@ type OwnerFilterBarProps = {
 export function OwnerFilterBar({
   dateFilter,
   onExportExcel,
-  onExportPdf,
+  onPrintPdf,
   companyList,
   allSelected,
   selectedCompanyIds,
@@ -49,7 +49,7 @@ export function OwnerFilterBar({
               <Button variant="primary" onClick={onExportExcel} size="sm">
                 Excel
               </Button>
-              <Button onClick={onExportPdf} size="sm">
+              <Button onClick={onPrintPdf} size="sm">
                 {lang === 'ar' ? 'طباعة / PDF' : 'Print / PDF'}
               </Button>
             </>

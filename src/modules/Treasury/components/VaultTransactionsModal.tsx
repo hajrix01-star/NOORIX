@@ -2,15 +2,15 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { getVaultTransactions, throwIfApiFailed } from '../../../services/api';
 import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useToast } from '../../../context/ToastContext';
+import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
 import { vaultKeys } from '../../../services/queryKeys';
-import { Button, AdaptiveSheet, FmtNum, SmartTable } from '../../../ui';
+import { Button, AdaptiveSheet, FmtNum, SmartTable, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import type {
   VaultRecord,
@@ -62,6 +62,7 @@ export default function VaultTransactionsModal({
   dateFilter,
 }: VaultTransactionsModalProps) {
   const { t, lang } = useTranslation();
+  const { companies = [] } = useApp();
   const { showToast } = useToast();
   const [page, setPage] = useState(1);
 
@@ -69,6 +70,16 @@ export default function VaultTransactionsModal({
   const endDate = dateFilter?.endDate || '';
   const periodLabel = dateFilter?.label || '';
   const hasOfficialPeriod = !!(startDate && endDate);
+  const activeCompany = companies.find((company) => company.id === companyId);
+  const companyName = lang === 'en'
+    ? (activeCompany?.nameEn || activeCompany?.nameAr || '')
+    : (activeCompany?.nameAr || activeCompany?.nameEn || '');
+  const companyLogoUrl = String(activeCompany?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('transactions'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   useEffect(() => { setPage(1); }, [startDate, endDate]);
 
@@ -137,10 +148,11 @@ export default function VaultTransactionsModal({
 
   const handlePrintPdf = () => {
     const vaultName = vaultDisplayName(vault, lang) || '';
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: `${vaultName} - ${t('transactions')}`,
-      companyName: vaultName,
-      subtitle: `${t('transactions')}${periodLabel ? ` - ${periodLabel}` : ''}`,
+      companyName: companyName || vaultName,
+      logoUrl: companyLogoUrl,
+      subtitle: `${vaultName} - ${t('transactions')}${periodLabel ? ` - ${periodLabel}` : ''}`,
       body: buildPrintHtmlTable({
         wrapperClassName: null,
         emptyMessage: t('noDataInPeriod'),
@@ -253,6 +265,7 @@ export default function VaultTransactionsModal({
       side="start"
       className="vault-transactions-drawer"
     >
+      {printPreviewModal}
       <div className="nx-toolbar mb-4">
         <Button size="sm" onClick={handleExportExcel} disabled={!data.total || !hasOfficialPeriod}>Excel</Button>
         <Button size="sm" onClick={handlePrintPdf} disabled={!items.length}>{t('print')} / PDF</Button>

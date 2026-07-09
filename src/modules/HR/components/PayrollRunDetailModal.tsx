@@ -10,10 +10,10 @@ import { getPayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Badge, Button, AdaptiveSheet, Checkbox, SmartTable, Modal } from '../../../ui';
+import { Badge, Button, AdaptiveSheet, Checkbox, SmartTable, Modal, PrintPreviewModal } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
-import { openPrintWindow } from '../../../utils/printUtils';
-import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSlipsPrint';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
+import { buildPayrollRunEmployeeSlipsPrintHtml } from '../utils/payrollRunSignatureSlipsPrint';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
 import { hrKeys } from '../../../services/queryKeys';
 import { computePayrollLineSummary, computePayrollRunTotals } from '../utils/hrCalculations/payroll';
@@ -56,6 +56,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
   const { t, lang } = useTranslation();
   const [slipModalOpen, setSlipModalOpen] = useState(false);
   const [slipNetOnly, setSlipNetOnly] = useState(false);
+  const [printPreview, setPrintPreview] = useState<{ title: string; html: string } | null>(null);
 
   const { data: run, isLoading } = useApiQuery<PayrollRunDetail>({
     queryKey: hrKeys.payrollRun(runId, companyId),
@@ -142,15 +143,14 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       </tr>`;
     }).join('');
 
-    const logoHtml = companyLogo
-      ? `<img src="${companyLogo}" alt="logo" style="height:52px;width:auto;object-fit:contain" />`
-      : '';
 
-    openPrintWindow({
+    const html = buildPrintDocumentHtml({
       title: run.runNumber || undefined,
+      companyName: companyName || undefined,
+      logoUrl: companyLogo || '',
+      subtitle: `${t('payrollRuns')} - ${monthLabel}`,
       extraCss: `
         .run-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid #0f172a; padding-bottom:12px; }
-        .run-title { font-size:20px; font-weight:700; margin:0; }
         .run-meta { font-size:13px; color:#334155; margin:2px 0; }
         table th { background:#f1f5f9; color:#0f172a; }
         .sig-cell { min-height:44px; min-width:110px; vertical-align:middle; }
@@ -162,11 +162,9 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       body: `
         <div class="run-header">
           <div>
-            <h1 class="run-title">${companyName || 'NOORIX'}</h1>
             <p class="run-meta">???? ???????: ${run.runNumber}</p>
             <p class="run-meta">?????: ${monthLabel}</p>
           </div>
-          <div>${logoHtml}</div>
         </div>
         <table>
           <thead><tr>
@@ -183,7 +181,9 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
           <div class="s-card"><div class="s-label">${t('payrollTotalAfterDeductions')}</div><div class="s-value">${hrFmt(totalNet)}</div></div>
         </div>
       `,
+      autoPrint: false,
     });
+    setPrintPreview({ title: run.runNumber || t('printPayroll'), html });
   };
 
   const handlePrintEmployeeSlips = () => {
@@ -192,8 +192,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
   };
 
   const confirmPrintEmployeeSlips = () => {
-    setSlipModalOpen(false);
-    openPayrollRunEmployeeSlipsPrint({
+    const html = buildPayrollRunEmployeeSlipsPrintHtml({
       run,
       companyName,
       companyNameEn,
@@ -202,6 +201,9 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       labels: buildSlipLabels(run),
       netOnly: slipNetOnly,
     });
+    if (!html) return;
+    setSlipModalOpen(false);
+    setPrintPreview({ title: `${t('payrollSlipBatchPrint')} - ${run.runNumber || ''}`, html });
   };
 
   const columns: SmartTableColumn<PayrollRunLine>[] = [
@@ -288,6 +290,16 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       {run.notes && (
         <p className="mt-4 mb-0 text-[13px] text-noorix-muted">{run.notes}</p>
       )}
+
+      <PrintPreviewModal
+        open={!!printPreview}
+        onClose={() => setPrintPreview(null)}
+        title={t('hrPrintPreview')}
+        html={printPreview?.html || ''}
+        closeLabel={t('close') || '?????'}
+        printLabel={`${t('print')} / PDF`}
+        iframeTitle={printPreview?.title || t('hrPrintPreview')}
+      />
 
       <Modal
         open={slipModalOpen}

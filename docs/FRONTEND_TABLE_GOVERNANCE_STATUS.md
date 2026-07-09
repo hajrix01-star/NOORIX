@@ -8,8 +8,8 @@ Status: governed; no new raw table is allowed without registry count and reason.
 
 | Metric | Count |
 |---|---:|
-| Manual `<table>` outside `src/ui` | 36 |
-| Files with manual tables outside `src/ui` | 23 |
+| Manual `<table>` outside `src/ui` | 35 |
+| Files with manual tables outside `src/ui` | 22 |
 | `SmartTable` JSX usages | 46 |
 | Files using `SmartTable` JSX | 36 |
 | `SimpleTable` JSX usages | 23 |
@@ -36,7 +36,7 @@ Status: governed; no new raw table is allowed without registry count and reason.
 
 | Phase | Target | Acceptance |
 |---|---|---|
-| PrintTable Foundation | Central print/export HTML table builder | `src/utils/pdfTableExport.ts` routes through `src/utils/printTableHtml.ts` |
+| PrintTable Foundation | Central print/export HTML table builder | `src/ui/PrintPreviewModal.tsx` previews documents built with `src/utils/printTableHtml.ts` |
 | PrintTable Conversion Batch 1 | Convert safe plain print/export tables | 7 manual tables removed; protected financial/tax/payroll/bank/purchases tables stay untouched |
 | PrintTable Conversion Batch 2 | Convert remaining safe print/export tables | 4 manual tables removed; calendar/catalog/payroll special layouts stay untouched |
 | SimpleTable Dashboard Conversion | Convert non-financial dashboard comparison table | 1 manual dashboard matrix table removed |

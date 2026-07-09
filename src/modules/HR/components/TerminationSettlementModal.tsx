@@ -29,7 +29,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
-import { Button, DateField, FileTrigger, Modal, FmtNum, Input } from '../../../ui';
+import { Button, DateField, FileTrigger, Modal, FmtNum, Input, usePrintPreview } from '../../../ui';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 
 type HrAny = ReturnType<typeof JSON.parse>;
@@ -37,7 +37,7 @@ import {
   effectiveEndYmd,
   findTerminationSalaryInvoiceThisMonth,
   hasTerminationMovementForInvoiceNumber,
-  openTerminationSettlementPrintWindow,
+  buildTerminationSettlementPrintHtml,
   terminationSalaryInvoiceTag,
 } from './terminationSettlementHelpers';
 
@@ -51,7 +51,7 @@ export default function TerminationSettlementModal({
 }: HrAny) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
-  const { userPermissions = [] } = useApp();
+  const { userPermissions = [], companies } = useApp();
   const queryClient = useQueryClient();
   const fileRef = useRef<HrAny>(null);
   const issuingLockRef = useRef(false);
@@ -68,6 +68,15 @@ export default function TerminationSettlementModal({
   const canCreateMovement = Array.isArray(userPermissions) && userPermissions.includes('HR_WRITE');
 
   const empId = employee?.id || '';
+  const activeCompany = (companies as Array<{ id?: string | null; logoUrl?: string | null }> | undefined)?.find(
+    (row) => row.id === companyId,
+  );
+  const companyLogoUrl = String(activeCompany?.logoUrl || '').trim();
+  const { openPrintPreview, printPreviewModal } = usePrintPreview({
+    title: t('terminationSettlementTitle'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
   const terminationYmd = useMemo(() => {
     const m = parseEmployeeNotesMeta(employee?.notes).meta?.terminationDate;
     return m ? toYmd(m) : '';
@@ -150,17 +159,19 @@ export default function TerminationSettlementModal({
 
   const handlePrint = useCallback(() => {
     if (!employee || !preview || !terminationYmd || !monthFirst) return;
-    openTerminationSettlementPrintWindow({
+    const html = buildTerminationSettlementPrintHtml({
       employee,
       lang,
       companyName,
+      companyLogoUrl,
       terminationYmd,
       monthFirst,
       preview,
       advancesRemaining,
       t,
     });
-  }, [employee, preview, advancesRemaining, companyName, lang, t, monthFirst, terminationYmd]);
+    openPrintPreview({ title: t('terminationSettlementTitle'), html });
+  }, [employee, preview, advancesRemaining, companyName, companyLogoUrl, lang, t, monthFirst, terminationYmd, openPrintPreview]);
 
   const handleFile = async (e: HrAny) => {
     const file = e?.target?.files?.[0];
@@ -317,6 +328,7 @@ export default function TerminationSettlementModal({
         <Button variant="ghost" onClick={onClose}>{t('terminationSettlementClose')}</Button>
       }
     >
+      {printPreviewModal}
       <p className="m-0 mb-3 text-[13px] text-noorix-muted">{t('terminationSettlementSubtitle')}</p>
       {compensationSnapshotLoading ? (
         <p className="m-0 text-[13px] text-noorix-muted">{t('loading')}</p>

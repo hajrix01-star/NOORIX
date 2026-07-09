@@ -1,363 +1,368 @@
-import React from 'react';
-import { Badge, Button, SimpleTable } from '../../ui';
+import React, { useMemo, useState } from 'react';
+import { Badge, Button, FilterToolbar, SimpleTable } from '../../ui';
 import type { SimpleTableColumn } from '../../ui';
+import { DateFilterBar, useDateFilter } from '../../ui/date';
 import { useTranslation } from '../../i18n/useTranslation';
 
-type Tone = 'mint' | 'ink' | 'sky' | 'gold' | 'rose';
+type DetailLevel = 1 | 2 | 3;
+type RowKind = 'line' | 'subtotal' | 'result';
+type PeriodMode = 'month' | 'quarter' | 'half' | 'year';
 
-type Metric = {
-  key: string;
-  labelAr: string;
-  labelEn: string;
-  value: string;
-  helperAr: string;
-  helperEn: string;
-  tone: Tone;
-};
-
-type Flow = {
-  key: string;
-  labelAr: string;
-  labelEn: string;
-  value: number;
-  captionAr: string;
-  captionEn: string;
-  tone: Tone;
-};
-
-type Signal = {
-  key: string;
-  titleAr: string;
-  titleEn: string;
-  bodyAr: string;
-  bodyEn: string;
-  value: string;
-  tone: Tone;
-};
-
-type TimelineRow = {
+type GeneralRow = {
   id: string;
-  laneAr: string;
-  laneEn: string;
-  titleAr: string;
-  titleEn: string;
-  ownerAr: string;
-  ownerEn: string;
-  amount: number;
-  statusAr: string;
-  statusEn: string;
+  labelAr: string;
+  labelEn: string;
+  level: DetailLevel;
+  kind: RowKind;
+  current: number;
+  previous: number;
 };
 
-const metrics: Metric[] = [
-  {
-    key: 'cash',
-    labelAr: 'السيولة المتاحة',
-    labelEn: 'Available liquidity',
-    value: '184,600 SR',
-    helperAr: 'تكفي 41 يوم تشغيل',
-    helperEn: 'Covers 41 operating days',
-    tone: 'mint',
-  },
-  {
-    key: 'margin',
-    labelAr: 'هامش التشغيل',
-    labelEn: 'Operating margin',
-    value: '24.8%',
-    helperAr: '+3.4 عن الشهر السابق',
-    helperEn: '+3.4 vs previous month',
-    tone: 'ink',
-  },
-  {
-    key: 'receivable',
-    labelAr: 'تحصيل قريب',
-    labelEn: 'Near-term collection',
-    value: '72,900 SR',
-    helperAr: 'خلال 7 أيام',
-    helperEn: 'Due within 7 days',
-    tone: 'sky',
-  },
-  {
-    key: 'risk',
-    labelAr: 'ضغط الالتزامات',
-    labelEn: 'Obligation pressure',
-    value: 'متوسط',
-    helperAr: 'موردان يحتاجان جدولة',
-    helperEn: '2 suppliers need scheduling',
-    tone: 'gold',
-  },
+const periodMeta: Record<PeriodMode, { factor: number }> = {
+  month: { factor: 1 },
+  quarter: { factor: 3.05 },
+  half: { factor: 6.1 },
+  year: { factor: 12.2 },
+};
+
+const levelOptions: { id: DetailLevel; labelAr: string; labelEn: string }[] = [
+  { id: 1, labelAr: 'المستوى 1', labelEn: 'Level 1' },
+  { id: 2, labelAr: 'المستوى 2', labelEn: 'Level 2' },
+  { id: 3, labelAr: 'المستوى 3', labelEn: 'Level 3' },
 ];
 
-const flows: Flow[] = [
-  { key: 'sales', labelAr: 'مبيعات', labelEn: 'Sales', value: 82, captionAr: 'نشاط قوي', captionEn: 'Strong activity', tone: 'mint' },
-  { key: 'collection', labelAr: 'تحصيل', labelEn: 'Collection', value: 67, captionAr: 'أقل من الهدف', captionEn: 'Below target', tone: 'sky' },
-  { key: 'cost', labelAr: 'تكلفة', labelEn: 'Cost', value: 54, captionAr: 'مستقرة', captionEn: 'Stable', tone: 'gold' },
-  { key: 'expenses', labelAr: 'مصروفات', labelEn: 'Expenses', value: 38, captionAr: 'تحت السيطرة', captionEn: 'Controlled', tone: 'rose' },
+const rows: GeneralRow[] = [
+  { id: 'cash', labelAr: 'النقد وما في حكمه', labelEn: 'Cash and equivalents', level: 1, kind: 'line', current: 184600, previous: 162400 },
+  { id: 'bank', labelAr: 'أرصدة البنوك', labelEn: 'Bank balances', level: 2, kind: 'line', current: 137800, previous: 121600 },
+  { id: 'petty-cash', labelAr: 'العهد والصناديق', labelEn: 'Petty cash and vaults', level: 2, kind: 'line', current: 46800, previous: 40800 },
+  { id: 'main-branch-vault', labelAr: 'صندوق الفرع الرئيسي', labelEn: 'Main branch vault', level: 3, kind: 'line', current: 19600, previous: 17800 },
+  { id: 'sales-vault', labelAr: 'عهد نقاط البيع', labelEn: 'POS cash custody', level: 3, kind: 'line', current: 27200, previous: 23000 },
+
+  { id: 'receivables', labelAr: 'الذمم المدينة والتحصيل', labelEn: 'Receivables and collection', level: 1, kind: 'line', current: 72900, previous: 68400 },
+  { id: 'customers', labelAr: 'عملاء تجاريون', labelEn: 'Trade customers', level: 2, kind: 'line', current: 48200, previous: 45900 },
+  { id: 'cards', labelAr: 'تسويات البطاقات', labelEn: 'Card settlements', level: 2, kind: 'line', current: 24700, previous: 22500 },
+  { id: 'due-week', labelAr: 'مستحق خلال 7 أيام', labelEn: 'Due within 7 days', level: 3, kind: 'line', current: 33100, previous: 30600 },
+
+  { id: 'inventory', labelAr: 'المخزون', labelEn: 'Inventory', level: 1, kind: 'line', current: 93600, previous: 88400 },
+  { id: 'food-stock', labelAr: 'مواد غذائية', labelEn: 'Food stock', level: 2, kind: 'line', current: 55800, previous: 53400 },
+  { id: 'packing-stock', labelAr: 'مواد تغليف', labelEn: 'Packaging stock', level: 2, kind: 'line', current: 21600, previous: 19700 },
+  { id: 'slow-stock', labelAr: 'مخزون بطيء الحركة', labelEn: 'Slow-moving stock', level: 3, kind: 'line', current: 16200, previous: 15300 },
+
+  { id: 'assets-total', labelAr: 'إجمالي الأصول التشغيلية', labelEn: 'Total operating assets', level: 1, kind: 'subtotal', current: 351100, previous: 319200 },
+
+  { id: 'payables', labelAr: 'الالتزامات قصيرة الأجل', labelEn: 'Short-term obligations', level: 1, kind: 'line', current: -126700, previous: -119500 },
+  { id: 'suppliers', labelAr: 'موردون', labelEn: 'Suppliers', level: 2, kind: 'line', current: -74400, previous: -69200 },
+  { id: 'tax', labelAr: 'ضرائب ورسوم مستحقة', labelEn: 'Taxes and fees payable', level: 2, kind: 'line', current: -23100, previous: -21800 },
+  { id: 'payroll-due', labelAr: 'مستحقات موظفين', labelEn: 'Employee accruals', level: 2, kind: 'line', current: -29200, previous: -28500 },
+  { id: 'critical-suppliers', labelAr: 'موردون يحتاجون جدولة', labelEn: 'Suppliers needing scheduling', level: 3, kind: 'line', current: -31800, previous: -29400 },
+
+  { id: 'working-capital', labelAr: 'صافي رأس المال العامل', labelEn: 'Net working capital', level: 1, kind: 'subtotal', current: 224400, previous: 199700 },
+  { id: 'period-result', labelAr: 'نتيجة الفترة التجريبية', labelEn: 'Mock period result', level: 1, kind: 'result', current: 97800, previous: 84200 },
 ];
 
-const signals: Signal[] = [
-  {
-    key: 'vat',
-    titleAr: 'الضريبة تبدو قابلة للتسوية',
-    titleEn: 'VAT appears reconcilable',
-    bodyAr: 'الفروقات التجريبية موزعة على قنوات دفع واضحة ولا توجد قفزة شاذة في العينة.',
-    bodyEn: 'Mock variances are spread across clear payment channels with no unusual jump in the sample.',
-    value: '92%',
-    tone: 'mint',
-  },
-  {
-    key: 'stock',
-    titleAr: 'مخزون سريع الدوران',
-    titleEn: 'Fast-moving stock',
-    bodyAr: 'أربع فئات تحقق أغلب التدفق، مع مساحة لعرض تنبيه نقص قبل أن يصبح مشكلة.',
-    bodyEn: 'Four categories drive most movement, with room for an early low-stock warning.',
-    value: '4 فئات',
-    tone: 'sky',
-  },
-  {
-    key: 'payables',
-    titleAr: 'نافذة دفع ضيقة',
-    titleEn: 'Tight payment window',
-    bodyAr: 'الالتزامات التجريبية مركزة في منتصف الفترة، لذلك يظهر اقتراح جدولة هادئ.',
-    bodyEn: 'Mock obligations cluster mid-period, so the concept surfaces a calm scheduling cue.',
-    value: '11 يوم',
-    tone: 'gold',
-  },
-];
+function monthSpanCount(startYear: number, startMonth: number, endYear: number, endMonth: number) {
+  const start = startYear * 12 + startMonth;
+  const end = endYear * 12 + endMonth;
+  return Math.abs(end - start) + 1;
+}
 
-const timelineRows: TimelineRow[] = [
-  {
-    id: 'A-102',
-    laneAr: 'تحصيل',
-    laneEn: 'Collection',
-    titleAr: 'دفعة عميل رئيسي',
-    titleEn: 'Key customer payment',
-    ownerAr: 'المبيعات',
-    ownerEn: 'Sales',
-    amount: 28900,
-    statusAr: 'منتظر',
-    statusEn: 'Pending',
-  },
-  {
-    id: 'P-044',
-    laneAr: 'التزامات',
-    laneEn: 'Payables',
-    titleAr: 'جدولة مورد مواد',
-    titleEn: 'Supplier scheduling',
-    ownerAr: 'المشتريات',
-    ownerEn: 'Purchasing',
-    amount: 17450,
-    statusAr: 'مراجعة',
-    statusEn: 'Review',
-  },
-  {
-    id: 'C-018',
-    laneAr: 'نقد',
-    laneEn: 'Cash',
-    titleAr: 'تغذية خزنة فرع',
-    titleEn: 'Branch vault top-up',
-    ownerAr: 'المالية',
-    ownerEn: 'Finance',
-    amount: 12000,
-    statusAr: 'جاهز',
-    statusEn: 'Ready',
-  },
-];
+function periodModeFromFilter(mode: string, state: ReturnType<typeof useDateFilter>['state']): PeriodMode {
+  if (mode === 'year') return 'year';
+  if (mode === 'quarter') return 'quarter';
+  if (mode === 'months') {
+    const count = monthSpanCount(
+      state.monthRangeStartYear,
+      state.monthRangeStartMonth,
+      state.monthRangeEndYear,
+      state.monthRangeEndMonth,
+    );
+    if (count >= 10) return 'year';
+    if (count >= 5) return 'half';
+    if (count >= 2) return 'quarter';
+  }
+  return 'month';
+}
 
-function money(value: number) {
+function factorFromFilter(mode: string, state: ReturnType<typeof useDateFilter>['state']) {
+  return periodMeta[periodModeFromFilter(mode, state)].factor;
+}
+
+function scale(value: number, factor: number) {
+  return Math.round(value * factor);
+}
+
+function formatMoney(value: number) {
+  const sign = value < 0 ? '-' : '';
+  return `${sign}${Math.abs(value).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function percent(current: number, previous: number) {
+  if (previous === 0) return null;
+  return ((current - previous) / Math.abs(previous)) * 100;
+}
+
+function formatPercent(value: number | null, isArabic: boolean) {
+  if (value == null || !Number.isFinite(value)) return isArabic ? 'غير منطقي' : 'N/A';
+  const rounded = Math.round(value * 10) / 10;
+  return `${rounded > 0 ? '+' : ''}${rounded.toLocaleString('en', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+}
+
+function rowClass(kind: RowKind) {
+  if (kind === 'result') return 'bg-slate-300/80 font-black';
+  if (kind === 'subtotal') return 'bg-slate-200/90 font-black';
+  return 'bg-white';
+}
+
+function numberClass(value: number, kind: RowKind) {
+  if (kind !== 'line') return 'text-slate-700';
+  if (value < 0) return 'text-slate-500';
+  return 'text-slate-700';
+}
+
+function ToolbarButton({
+  active,
+  children,
+  onClick,
+}: {
+  active?: boolean;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
-    <span dir="ltr" className="nx-cell-num font-black text-noorix-text">
-      {value.toLocaleString('en')} <span className="nx-sar">SR</span>
-    </span>
-  );
-}
-
-function toneClass(tone: Tone) {
-  return {
-    mint: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    ink: 'border-slate-300 bg-slate-900 text-white',
-    sky: 'border-sky-200 bg-sky-50 text-sky-800',
-    gold: 'border-amber-200 bg-amber-50 text-amber-800',
-    rose: 'border-rose-200 bg-rose-50 text-rose-800',
-  }[tone];
-}
-
-function barClass(tone: Tone) {
-  return {
-    mint: 'bg-emerald-500',
-    ink: 'bg-slate-800',
-    sky: 'bg-sky-500',
-    gold: 'bg-amber-500',
-    rose: 'bg-rose-500',
-  }[tone];
-}
-
-function MetricTile({ item, isArabic }: { item: Metric; isArabic: boolean }) {
-  return (
-    <div className={`min-h-[132px] rounded-lg border px-4 py-3 ${toneClass(item.tone)}`}>
-      <div className="text-[12px] font-extrabold opacity-80">{isArabic ? item.labelAr : item.labelEn}</div>
-      <div className="mt-3 text-[25px] font-black leading-none tracking-normal">{item.value}</div>
-      <div className="mt-3 text-[12px] font-bold opacity-75">{isArabic ? item.helperAr : item.helperEn}</div>
-    </div>
-  );
-}
-
-function FlowStrip({ item, isArabic }: { item: Flow; isArabic: boolean }) {
-  return (
-    <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[12px] font-black text-noorix-text">{isArabic ? item.labelAr : item.labelEn}</span>
-        <span className="text-[12px] font-extrabold text-noorix-muted">{item.value}%</span>
-      </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-noorix-bg-muted">
-        <div className={`h-full rounded-full ${barClass(item.tone)}`} style={{ width: `${item.value}%` }} />
-      </div>
-      <span className="text-[11px] font-semibold text-noorix-muted">{isArabic ? item.captionAr : item.captionEn}</span>
-    </div>
-  );
-}
-
-function SignalPanel({ item, isArabic }: { item: Signal; isArabic: boolean }) {
-  return (
-    <article className="rounded-lg border border-noorix-border bg-white px-4 py-3 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <h4 className="m-0 text-[13px] font-black leading-5 text-noorix-text">{isArabic ? item.titleAr : item.titleEn}</h4>
-        <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-black ${toneClass(item.tone)}`}>{item.value}</span>
-      </div>
-      <p className="m-0 mt-2 text-[12px] leading-5 text-noorix-muted">{isArabic ? item.bodyAr : item.bodyEn}</p>
-    </article>
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        'inline-flex h-8 items-center justify-center rounded-md border px-3 text-[12px] font-black transition-colors',
+        active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-slate-100 text-slate-900 hover:bg-slate-200',
+      ].join(' ')}
+    >
+      {children}
+    </button>
   );
 }
 
 export default function ThemeGeneralReportConceptTab() {
   const { lang } = useTranslation();
   const isArabic = lang === 'ar';
+  const [level, setLevel] = useState<DetailLevel>(1);
+  const dateFilter = useDateFilter();
+  const compareFilter = useDateFilter();
+  const currentFactor = factorFromFilter(dateFilter.state.mode, dateFilter.state);
+  const compareFactor = factorFromFilter(compareFilter.state.mode, compareFilter.state);
 
-  const columns: SimpleTableColumn<TimelineRow>[] = [
-    {
-      key: 'id',
-      label: isArabic ? 'المعرف' : 'ID',
-      width: '92px',
-      render: (_value, row) => <span className="font-black text-noorix-blue">{row.id}</span>,
+  const visibleRows = useMemo(
+    () => rows.filter((row) => row.level <= level),
+    [level],
+  );
+
+  const currentAssets = scale(351100, currentFactor);
+  const currentObligations = scale(-126700, currentFactor);
+  const currentResult = scale(97800, currentFactor);
+  const previousResult = scale(84200, compareFactor);
+
+  const labelColumn = useMemo<SimpleTableColumn<GeneralRow>>(() => ({
+    key: 'label',
+    label: '',
+    minWidth: 400,
+    align: 'start',
+    headerClassName: 'text-start',
+    cellClassName: 'text-start',
+    render: (_value, row) => {
+      const indent = row.level === 3 ? 'ps-36' : row.level === 2 ? 'ps-20' : 'ps-0';
+      const labelClass = row.kind !== 'line'
+        ? 'font-black text-slate-900'
+        : row.level === 3
+          ? 'font-semibold text-slate-500'
+          : row.level === 2
+            ? 'font-semibold text-slate-700'
+            : 'font-semibold text-slate-950';
+      return (
+        <div className={indent}>
+          <div className={`inline-flex items-center ${labelClass}`}>
+            {row.level === 2 && row.kind === 'line' ? <span className="me-2 h-1.5 w-1.5 rounded-full bg-slate-300" /> : null}
+            {row.level === 3 && row.kind === 'line' ? <span className="me-2 h-px w-5 bg-slate-300" /> : null}
+            {isArabic ? row.labelAr : row.labelEn}
+          </div>
+        </div>
+      );
     },
+  }), [isArabic]);
+
+  const columns = useMemo<SimpleTableColumn<GeneralRow>[]>(() => [
+    labelColumn,
     {
-      key: 'lane',
-      label: isArabic ? 'المسار' : 'Lane',
-      width: '120px',
-      render: (_value, row) => <Badge color="blue" size="sm">{isArabic ? row.laneAr : row.laneEn}</Badge>,
-    },
-    {
-      key: 'title',
-      label: isArabic ? 'الإشارة' : 'Signal',
-      minWidth: 210,
-      render: (_value, row) => (
-        <div className="min-w-0">
-          <div className="truncate text-[13px] font-black text-noorix-text">{isArabic ? row.titleAr : row.titleEn}</div>
-          <div className="mt-0.5 text-[11px] font-bold text-noorix-muted">{isArabic ? row.ownerAr : row.ownerEn}</div>
+      key: 'current',
+      label: (
+        <div className="grid gap-0.5 text-center">
+          <span className="font-black text-slate-900">2026</span>
+          <span className="max-w-[140px] truncate text-[11px] font-black text-slate-500">{dateFilter.label}</span>
         </div>
       ),
-    },
-    {
-      key: 'amount',
-      label: isArabic ? 'القيمة' : 'Amount',
       numeric: true,
-      width: '130px',
-      render: (_value, row) => money(row.amount),
+      width: 160,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+      render: (_value, row) => {
+        const current = scale(row.current, currentFactor);
+        return (
+          <span className={`inline-block min-w-[116px] text-end font-black ${numberClass(current, row.kind)}`} dir="ltr">
+            {formatMoney(current)}
+          </span>
+        );
+      },
     },
     {
-      key: 'status',
-      label: isArabic ? 'الحالة' : 'Status',
-      width: '110px',
-      render: (_value, row) => <Badge color={row.statusEn === 'Ready' ? 'green' : row.statusEn === 'Review' ? 'amber' : 'gray'} size="sm">{isArabic ? row.statusAr : row.statusEn}</Badge>,
+      key: 'compare',
+      label: (
+        <div className="grid gap-0.5 text-center">
+          <span className="font-black text-slate-900">2025</span>
+          <span className="max-w-[140px] truncate text-[11px] font-black text-slate-500">{compareFilter.label}</span>
+        </div>
+      ),
+      numeric: true,
+      width: 160,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+      render: (_value, row) => {
+        const previous = scale(row.previous, compareFactor);
+        return (
+          <span className={`inline-block min-w-[116px] text-end font-black ${numberClass(previous, row.kind)}`} dir="ltr">
+            {formatMoney(previous)}
+          </span>
+        );
+      },
     },
-  ];
+    {
+      key: 'change',
+      label: (
+        <div className="grid gap-0.5 text-center">
+          <span className="font-black text-slate-900">%</span>
+          <span className="text-[11px] font-black text-slate-500">{isArabic ? 'التغير' : 'Change'}</span>
+        </div>
+      ),
+      numeric: true,
+      width: 130,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+      render: (_value, row) => {
+        const current = scale(row.current, currentFactor);
+        const previous = scale(row.previous, compareFactor);
+        return (
+          <span className="inline-block min-w-[78px] text-end font-black text-slate-500" dir="ltr">
+            {formatPercent(percent(current, previous), isArabic)}
+          </span>
+        );
+      },
+    },
+  ], [compareFactor, compareFilter.label, currentFactor, dateFilter.label, isArabic, labelColumn]);
 
   return (
-    <div className="flex flex-col gap-5">
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-[linear-gradient(135deg,#101828_0%,#17424a_52%,#f7c948_160%)] text-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-        <div className="grid gap-6 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="flex flex-col gap-4">
+      <section className="rounded-lg border border-noorix-border bg-white shadow-sm">
+        <FilterToolbar
+          className="border-b border-noorix-border bg-slate-50 px-4 py-3"
+          filtersClassName="justify-center"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[12px] font-black text-slate-500">{isArabic ? 'الفترة' : 'Period'}</span>
+              <DateFilterBar filter={dateFilter} modes={['month', 'months', 'quarter', 'year']} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[12px] font-black text-slate-500">{isArabic ? 'المقارنة' : 'Compare with'}</span>
+              <DateFilterBar filter={compareFilter} modes={['month', 'months']} />
+            </div>
+          </div>
+        </FilterToolbar>
+
+        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-black text-white">
-                {isArabic ? 'تجربة معاينة فقط' : 'Preview experiment only'}
-              </span>
-              <span className="rounded-md border border-emerald-200/30 bg-emerald-300/10 px-2.5 py-1 text-[11px] font-black text-emerald-100">
-                {isArabic ? 'بيانات وهمية' : 'Mock data'}
-              </span>
+              <Badge color="blue" size="sm">{isArabic ? 'تصميم جدولي جديد' : 'New table concept'}</Badge>
+              <Badge color="amber" size="sm">{isArabic ? 'بيانات تجريبية' : 'Mock data'}</Badge>
             </div>
-            <h3 className="m-0 mt-4 max-w-[780px] text-[28px] font-black leading-tight text-white">
-              {isArabic ? 'مركز قيادة مالي للتقرير العام' : 'Financial command center for the general report'}
+            <h3 className="m-0 mt-3 text-[22px] font-black text-noorix-text">
+              {isArabic ? 'تقرير عام تجريبي' : 'General report concept'}
             </h3>
-            <p className="m-0 mt-3 max-w-[760px] text-[13px] leading-6 text-white/76">
+            <p className="m-0 mt-2 max-w-[760px] text-[13px] leading-6 text-noorix-muted">
               {isArabic
-                ? 'تصور بديل لا يعرض التقرير كجدول تقليدي، بل يقرأ الحالة المالية بسرعة: سيولة، ربحية، تحصيل، التزامات، وإشارات تستحق الانتباه.'
-                : 'An alternate concept that avoids the classic report table and reads the financial state quickly: liquidity, margin, collection, obligations, and signals worth attention.'}
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button size="sm" className="!border-white/25 !bg-white/12 !text-white hover:!bg-white/18">{isArabic ? 'عرض تنفيذي' : 'Executive view'}</Button>
-              <Button size="sm" className="!border-white/25 !bg-white/12 !text-white hover:!bg-white/18">{isArabic ? 'تحليل نقدي' : 'Cash analysis'}</Button>
-              <Button size="sm" className="!border-white/25 !bg-white/12 !text-white hover:!bg-white/18">{isArabic ? 'مراجعة الالتزامات' : 'Payables review'}</Button>
-            </div>
-          </div>
-          <div className="rounded-lg border border-white/16 bg-white/10 p-4 backdrop-blur">
-            <div className="text-[12px] font-bold text-white/70">{isArabic ? 'مؤشر صحة تجريبي' : 'Mock health score'}</div>
-            <div className="mt-3 flex items-end gap-2">
-              <span className="text-[46px] font-black leading-none text-white">78</span>
-              <span className="pb-1 text-[13px] font-black text-emerald-100">/100</span>
-            </div>
-            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/16">
-              <div className="h-full w-[78%] rounded-full bg-emerald-300" />
-            </div>
-            <p className="m-0 mt-3 text-[12px] leading-5 text-white/72">
-              {isArabic ? 'المؤشر للعرض البصري فقط ولا يمثل نتيجة محاسبية حقيقية.' : 'This score is visual-only and does not represent a real accounting result.'}
+                ? 'نسخة معاينة تعتمد جدولًا ماليًا مباشرًا بنفس روح تقرير الربح والخسارة، مع مستويات تفصيل واضحة وفلاتر مقارنة بين شهر أو أكثر.'
+                : 'A preview-only financial table in the same spirit as the profit and loss report, with clear detail levels and month or multi-month comparison filters.'}
             </p>
           </div>
-        </div>
-      </section>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((item) => <MetricTile key={item.key} item={item} isArabic={isArabic} />)}
-      </div>
-
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-        <div className="rounded-lg border border-noorix-border bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h4 className="m-0 text-[15px] font-black text-noorix-text">{isArabic ? 'نبض الفترة' : 'Period pulse'}</h4>
-              <p className="m-0 mt-1 text-[12px] leading-5 text-noorix-muted">
-                {isArabic ? 'قراءة مرئية مختصرة لمواضع القوة والضغط في العينة.' : 'A compact visual read of strength and pressure in the sample.'}
-              </p>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <span className="block text-[12px] font-black text-slate-500">{isArabic ? 'ملخص التقرير العام' : 'General summary'}</span>
+                <span className="mt-1 block text-[13px] font-bold text-slate-500">{dateFilter.label}</span>
+              </div>
+              <Badge color={currentResult >= previousResult ? 'green' : 'red'} size="sm">
+                {formatPercent(percent(currentResult, previousResult), isArabic)}
+              </Badge>
             </div>
-            <Badge color="green" size="sm">{isArabic ? 'Jul 2026' : 'Jul 2026'}</Badge>
-          </div>
-          <div className="mt-5 grid gap-4">
-            {flows.map((item) => <FlowStrip key={item.key} item={item} isArabic={isArabic} />)}
+
+            <div className="py-4">
+              <span className="block text-[12px] font-black text-slate-500">{isArabic ? 'نتيجة الفترة' : 'Period result'}</span>
+              <span className="mt-1 block text-[28px] font-black leading-none text-slate-950" dir="ltr">
+                {formatMoney(currentResult)}
+              </span>
+              <span className="mt-1 block text-[12px] font-black text-slate-500">SR</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-md bg-slate-50 p-3">
+                <span className="block text-[11px] font-black text-slate-500">{isArabic ? 'الأصول' : 'Assets'}</span>
+                <span className="mt-1 block text-[15px] font-black text-slate-900" dir="ltr">
+                  {formatMoney(currentAssets)}
+                </span>
+              </div>
+              <div className="rounded-md bg-slate-50 p-3">
+                <span className="block text-[11px] font-black text-slate-500">{isArabic ? 'الالتزامات' : 'Obligations'}</span>
+                <span className="mt-1 block text-[15px] font-black text-slate-900" dir="ltr">
+                  {formatMoney(currentObligations)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-bold text-slate-600">
+              {isArabic ? 'المقارنة مع' : 'Compared with'} {compareFilter.label}
+            </div>
           </div>
         </div>
 
-        <div className="grid gap-3">
-          {signals.map((item) => <SignalPanel key={item.key} item={item} isArabic={isArabic} />)}
-        </div>
-      </section>
-
-      <section className="overflow-hidden rounded-lg border border-noorix-border bg-white shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-noorix-border bg-noorix-bg-muted/45 px-4 py-3">
-          <div className="min-w-0">
-            <h4 className="m-0 text-[15px] font-black text-noorix-text">{isArabic ? 'مسار الأحداث المالية' : 'Financial event lane'}</h4>
-            <p className="m-0 mt-1 text-[12px] text-noorix-muted">
-              {isArabic ? 'جدول صغير داعم للفهم، وليس مركز التجربة.' : 'A small supporting table, not the center of the experience.'}
-            </p>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-noorix-border px-4 py-3">
           <div className="flex flex-wrap gap-2">
-            <Button size="sm">{isArabic ? 'تصدير عينة' : 'Export sample'}</Button>
-            <Button size="sm" variant="primary">{isArabic ? 'فتح تصور كامل' : 'Open full concept'}</Button>
+            {levelOptions.map((item) => (
+              <ToolbarButton key={item.id} active={level === item.id} onClick={() => setLevel(item.id)}>
+                {isArabic ? item.labelAr : item.labelEn}
+              </ToolbarButton>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[12px] font-bold text-noorix-muted">
+              {dateFilter.label} {isArabic ? 'مقارنة بـ' : 'vs'} {compareFilter.label}
+            </span>
+            <Button size="sm">PDF</Button>
+            <Button size="sm">XLSX</Button>
           </div>
         </div>
+      </section>
+
+      <section className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
         <SimpleTable
           columns={columns}
-          data={timelineRows}
-          tableMinWidth={760}
+          data={visibleRows}
+          tableMinWidth={850}
           compact
+          cellPadding="8px 14px"
           frameClassName="border-0 shadow-none rounded-none"
+          tableClassName="[&_th:not(:first-child)]:border [&_th:not(:first-child)]:border-slate-300 [&_th:not(:first-child)]:bg-white [&_td:not(:first-child)]:bg-slate-50/70"
+          getRowClassName={(row) => rowClass(row.kind)}
           emptyMessage={isArabic ? 'لا توجد بيانات تجريبية' : 'No mock data'}
         />
       </section>

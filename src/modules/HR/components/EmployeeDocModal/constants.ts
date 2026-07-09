@@ -99,6 +99,14 @@ export const EMPLOYEE_DOC_EXTRA_CSS = `
   table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10.5px}
   th,td{padding:4px 6px;border:1px solid #dbe1e8}
   th{background:#f1f5f9;font-weight:700;text-align:center;color:#334155}
+  .hr-doc-table[dir="ltr"] th,.hr-doc-table[dir="ltr"] td{text-align:left}
+  .hr-doc-table[dir="rtl"] th,.hr-doc-table[dir="rtl"] td{text-align:right}
+  .hr-doc-table .hr-doc-th{text-align:center!important}
+  .hr-doc-cell-start{text-align:start!important}
+  .hr-doc-cell-end{text-align:end!important}
+  .hr-doc-cell-center{text-align:center!important}
+  .hr-doc-cell-num{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;text-align:center!important;white-space:nowrap}
+  .hr-doc-table[dir="rtl"] .hr-doc-cell-num{text-align:center!important}
   .num{font-family:'Cairo',Arial,sans-serif}
   .footer{padding:10px 14px}
   .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
@@ -123,15 +131,20 @@ export const EMPLOYEE_DOC_EXTRA_CSS = `
   .hr-doc-frame-compact .hr-doc-frame-date{font-size:10px}
   .hr-doc-section{padding:18px 22px;border-bottom:1px solid #e5e7eb}
   .hr-doc-section-compact{padding:10px 14px;border-bottom:1px solid #e5e7eb}
-  .hr-doc-panel-section{padding:12px 22px;border-bottom:1px solid #e5e7eb;background:#f8fafc}
+  .hr-doc-panel-section{display:none!important}
   .hr-doc-box{padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff}
+  .hr-doc-box[dir="ltr"]{text-align:left}
+  .hr-doc-box[dir="rtl"]{text-align:right}
   .hr-doc-h3{margin:0 0 6px;font-size:12px;font-weight:800;text-align:center;color:#0f172a}
   .hr-doc-copy{line-height:1.45;margin:0;font-size:10.5px}
   .hr-doc-copy-follow{line-height:1.45;margin-top:8px;font-size:10.5px}
   .hr-doc-terms{margin:0;padding-inline-start:18px;line-height:1.45;font-size:10.5px}
   .hr-doc-calc-grid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:10.5px;line-height:1.3}
-  .hr-doc-num{font-variant-numeric:tabular-nums;white-space:nowrap}
-  .hr-doc-num-rtl{font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr;unicode-bidi:embed}
+  .hr-doc-calc-grid>span:nth-child(odd){text-align:start}
+  .hr-doc-calc-grid>span:nth-child(even){text-align:end}
+  [dir="rtl"] .hr-doc-calc-grid>span:nth-child(even){text-align:start}
+  .hr-doc-num{font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr;unicode-bidi:isolate;text-align:end!important}
+  .hr-doc-num-rtl{font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr;unicode-bidi:isolate;text-align:start!important}
   .hr-doc-signatures-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:22px;direction:ltr}
   .hr-doc-signatures-2{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:22px}
   .hr-doc-signature{padding-top:32px;border-top:1px solid #cbd5e1}

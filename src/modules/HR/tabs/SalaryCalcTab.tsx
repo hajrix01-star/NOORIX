@@ -28,10 +28,10 @@ import {
   computeSalaryCalculator,
 } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, FormRow, FmtNum } from '../../../ui';
+import { Button, Input, FormRow, FmtNum, usePrintPreview } from '../../../ui';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
-import { openSalaryCalcPrintWindow } from './salaryCalcPrint';
+import { buildSalaryCalcPrintHtml } from './salaryCalcPrint';
 
 type HrAny = ReturnType<typeof JSON.parse>;
 
@@ -67,6 +67,12 @@ export default function SalaryCalcTab() {
   const companyId = activeCompanyId ?? '';
   const company   = companies?.find((c: HrAny) => c.id === companyId);
   const companyName = company?.nameAr || company?.name || 'الشركة';
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintPreview, printPreviewModal } = usePrintPreview({
+    title: t('hrTabSalaryCalc'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
   const queryClient = useQueryClient();
   const { employees } = useEmployees(companyId);
 
@@ -216,8 +222,9 @@ export default function SalaryCalcTab() {
 
   // ── طباعة ────────────────────────────────────────────────
   function handlePrint() {
-    openSalaryCalcPrintWindow({
+    const html = buildSalaryCalcPrintHtml({
       companyName,
+      companyLogoUrl,
       employee: emp,
       allowanceRows: employeeAllowanceRows,
       hours,
@@ -243,11 +250,13 @@ export default function SalaryCalcTab() {
       calculatedTotal,
       netSalary,
     });
+    openPrintPreview({ title: t('hrTabSalaryCalc'), html });
   }
 
   // ── JSX ──────────────────────────────────────────────────
   return (
     <div className={HR_TOOLS_ROOT_CLASS}>
+      {printPreviewModal}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start w-full min-w-0">
 
         {/* ── عمود الإدخال ── */}

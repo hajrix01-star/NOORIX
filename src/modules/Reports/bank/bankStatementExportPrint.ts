@@ -1,7 +1,7 @@
 import { fmt } from '../../../utils/format';
 import { toYmd } from '../../../utils/saudiDate';
 import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import type { BankCategoryAgg } from './bankAnalysisUtils';
 import type { BankColumnTotals, BankStatementLite, BankTransactionLite } from './bankAnalysisTab.types';
 
@@ -20,6 +20,7 @@ type Worksheet = Record<string, SheetCell | unknown> & {
 type BankStatementExportArgs = {
   statement: BankStatementLite | null | undefined;
   companyName?: string;
+  logoUrl?: string;
   filteredTransactions: readonly BankTransactionLite[];
   columnTotals: BankColumnTotals;
   summaryByCategory: Record<string, BankCategoryAgg>;
@@ -147,17 +148,19 @@ export async function exportBankStatementExcel({
   XLSX.writeFile(wb, fileName);
 }
 
-export function printBankStatement({
+export function buildBankStatementPrintHtml({
   statement,
   companyName,
+  logoUrl,
   filteredTransactions,
   columnTotals,
-}: BankStatementPrintArgs): void {
-  if (!statement) return;
+}: BankStatementPrintArgs): string {
+  if (!statement) return '';
   const period = `${toYmd(statement.startDate)} — ${toYmd(statement.endDate)}`;
-  openPrintWindow({
+  return buildPrintDocumentHtml({
     title: `كشف حساب — ${companyName || ''}`,
     companyName: companyName || '',
+    logoUrl,
     subtitle: `${statement.bankName || ''} — ${period} | الملف: ${statement.fileName || ''}`,
     body: buildPrintHtmlTable({
       wrapperClassName: null,

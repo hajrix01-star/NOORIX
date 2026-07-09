@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Badge, Button, SimpleTable } from '../../ui';
+import { Badge, Button, FilterToolbar, SimpleTable } from '../../ui';
 import type { SimpleTableColumn } from '../../ui';
+import { DateFilterBar, useDateFilter } from '../../ui/date';
 import { useTranslation } from '../../i18n/useTranslation';
 
 type PeriodMode = 'month' | 'quarter' | 'half' | 'year';
@@ -19,12 +20,27 @@ type PlRow = {
   noteEn?: string;
 };
 
-const periodOptions: { id: PeriodMode; labelAr: string; labelEn: string; subAr: string; subEn: string; factor: number }[] = [
-  { id: 'month', labelAr: '2026 - يوليو', labelEn: '2026 - Jul', subAr: 'شهر واحد', subEn: 'One month', factor: 1 },
-  { id: 'quarter', labelAr: '2026 - 3 أشهر', labelEn: '2026 - 3 months', subAr: 'مايو - يوليو', subEn: 'May - Jul', factor: 3.05 },
-  { id: 'half', labelAr: '2026 - 6 أشهر', labelEn: '2026 - 6 months', subAr: 'فبراير - يوليو', subEn: 'Feb - Jul', factor: 6.1 },
-  { id: 'year', labelAr: '2026', labelEn: '2026', subAr: 'سنة كاملة', subEn: 'Full year', factor: 12.2 },
+const months: { key: string; labelAr: string; labelEn: string; factor: number }[] = [
+  { key: 'jan', labelAr: 'يناير', labelEn: 'Jan', factor: 0.82 },
+  { key: 'feb', labelAr: 'فبراير', labelEn: 'Feb', factor: 0.86 },
+  { key: 'mar', labelAr: 'مارس', labelEn: 'Mar', factor: 0.91 },
+  { key: 'apr', labelAr: 'أبريل', labelEn: 'Apr', factor: 0.95 },
+  { key: 'may', labelAr: 'مايو', labelEn: 'May', factor: 1.01 },
+  { key: 'jun', labelAr: 'يونيو', labelEn: 'Jun', factor: 1.04 },
+  { key: 'jul', labelAr: 'يوليو', labelEn: 'Jul', factor: 1 },
+  { key: 'aug', labelAr: 'أغسطس', labelEn: 'Aug', factor: 1.03 },
+  { key: 'sep', labelAr: 'سبتمبر', labelEn: 'Sep', factor: 1.06 },
+  { key: 'oct', labelAr: 'أكتوبر', labelEn: 'Oct', factor: 1.1 },
+  { key: 'nov', labelAr: 'نوفمبر', labelEn: 'Nov', factor: 1.14 },
+  { key: 'dec', labelAr: 'ديسمبر', labelEn: 'Dec', factor: 1.18 },
 ];
+
+const periodMeta: Record<PeriodMode, { subAr: string; subEn: string; factor: number }> = {
+  month: { subAr: 'شهر واحد', subEn: 'One month', factor: 1 },
+  quarter: { subAr: '3 أشهر', subEn: '3 months', factor: 3.05 },
+  half: { subAr: '6 أشهر', subEn: '6 months', factor: 6.1 },
+  year: { subAr: 'سنة كاملة', subEn: 'Full year', factor: 12.2 },
+};
 
 const levelOptions: { id: DetailLevel; labelAr: string; labelEn: string }[] = [
   { id: 1, labelAr: 'المستوى 1', labelEn: 'Level 1' },
@@ -76,6 +92,41 @@ function scale(value: number, factor: number) {
   return Math.round(value * factor);
 }
 
+function monthSpanCount(startYear: number, startMonth: number, endYear: number, endMonth: number) {
+  const start = startYear * 12 + startMonth;
+  const end = endYear * 12 + endMonth;
+  return Math.abs(end - start) + 1;
+}
+
+function periodModeFromFilter(mode: string, state: ReturnType<typeof useDateFilter>['state']): PeriodMode {
+  if (mode === 'year') return 'year';
+  if (mode === 'quarter') return 'quarter';
+  if (mode === 'months') {
+    const count = monthSpanCount(
+      state.monthRangeStartYear,
+      state.monthRangeStartMonth,
+      state.monthRangeEndYear,
+      state.monthRangeEndMonth,
+    );
+    if (count >= 10) return 'year';
+    if (count >= 5) return 'half';
+    if (count >= 2) return 'quarter';
+  }
+  return 'month';
+}
+
+function periodFactorFromFilter(mode: string, state: ReturnType<typeof useDateFilter>['state']) {
+  return periodMeta[periodModeFromFilter(mode, state)].factor;
+}
+
+function monthValue(row: PlRow, monthFactor: number) {
+  return Math.round(row.current * monthFactor);
+}
+
+function yearTotal(row: PlRow) {
+  return months.reduce((total, month) => total + monthValue(row, month.factor), 0);
+}
+
 function formatMoney(value: number) {
   const sign = value < 0 ? '-' : '';
   return `${sign}${Math.abs(value).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -98,9 +149,8 @@ function rowClass(kind: RowKind) {
   return 'bg-white';
 }
 
-function numberClass(value: number, kind: RowKind) {
+function numberClass(_value: number, kind: RowKind) {
   if (kind !== 'line') return 'text-slate-700';
-  if (value < 0) return 'text-slate-500';
   return 'text-slate-700';
 }
 
@@ -130,9 +180,12 @@ function ToolbarButton({
 export default function ThemeProfitLossConceptTab() {
   const { lang } = useTranslation();
   const isArabic = lang === 'ar';
-  const [period, setPeriod] = useState<PeriodMode>('year');
   const [level, setLevel] = useState<DetailLevel>(1);
-  const selectedPeriod = periodOptions.find((item) => item.id === period) ?? periodOptions[0];
+  const dateFilter = useDateFilter();
+  const compareFilter = useDateFilter();
+  const period = periodModeFromFilter(dateFilter.state.mode, dateFilter.state);
+  const selectedPeriod = periodMeta[period];
+  const compareFactor = periodFactorFromFilter(compareFilter.state.mode, compareFilter.state);
 
   const visibleRows = useMemo(
     () => rows.filter((row) => row.level <= level),
@@ -144,36 +197,47 @@ export default function ThemeProfitLossConceptTab() {
   const currentRevenue = scale(186000, selectedPeriod.factor);
   const margin = currentRevenue ? (currentNet / currentRevenue) * 100 : 0;
 
-  const columns = useMemo<SimpleTableColumn<PlRow>[]>(() => [
-    {
-      key: 'label',
-      label: '',
-      minWidth: 330,
-      align: 'start',
-      headerClassName: 'text-start',
-      cellClassName: 'text-start',
-      render: (_value, row) => {
-        const indent = row.level === 3 ? 'ps-10' : row.level === 2 ? 'ps-6' : 'ps-4';
-        return (
-          <div className={indent}>
-            <div className={row.kind === 'line' ? 'font-semibold text-slate-900' : 'font-black text-slate-900'}>
-              {isArabic ? row.labelAr : row.labelEn}
-            </div>
-            {row.noteAr || row.noteEn ? (
-              <div className="mt-0.5 text-[11px] font-bold text-slate-500">
-                {isArabic ? row.noteAr : row.noteEn}
-              </div>
-            ) : null}
+  const labelColumn = useMemo<SimpleTableColumn<PlRow>>(() => ({
+    key: 'label',
+    label: '',
+    minWidth: 380,
+    align: 'start',
+    headerClassName: 'text-start',
+    cellClassName: 'text-start',
+    render: (_value, row) => {
+      const indent = row.level === 3 ? 'ps-36' : row.level === 2 ? 'ps-20' : 'ps-0';
+      const labelClass = row.kind !== 'line'
+        ? 'font-black text-slate-900'
+        : row.level === 3
+          ? 'font-semibold text-slate-500'
+          : row.level === 2
+            ? 'font-semibold text-slate-700'
+            : 'font-semibold text-slate-950';
+      return (
+        <div className={indent}>
+          <div className={`inline-flex items-center ${labelClass}`}>
+            {row.level === 2 && row.kind === 'line' ? <span className="me-2 h-1.5 w-1.5 rounded-full bg-slate-300" /> : null}
+            {row.level === 3 && row.kind === 'line' ? <span className="me-2 h-px w-5 bg-slate-300" /> : null}
+            {isArabic ? row.labelAr : row.labelEn}
           </div>
-        );
-      },
+          {row.noteAr || row.noteEn ? (
+            <div className="mt-0.5 text-[11px] font-bold text-slate-500">
+              {isArabic ? row.noteAr : row.noteEn}
+            </div>
+          ) : null}
+        </div>
+      );
     },
+  }), [isArabic]);
+
+  const columns = useMemo<SimpleTableColumn<PlRow>[]>(() => [
+    labelColumn,
     {
       key: 'current',
       label: (
         <div className="grid gap-0.5 text-center">
           <span className="font-black text-slate-900">2026</span>
-          <span className="text-[11px] font-black text-slate-500">{isArabic ? 'الرصيد' : 'Balance'}</span>
+          <span className="max-w-[130px] truncate text-[11px] font-black text-slate-500">{dateFilter.label}</span>
         </div>
       ),
       numeric: true,
@@ -195,7 +259,7 @@ export default function ThemeProfitLossConceptTab() {
       label: (
         <div className="grid gap-0.5 text-center">
           <span className="font-black text-slate-900">2025</span>
-          <span className="text-[11px] font-black text-slate-500">{isArabic ? 'الرصيد' : 'Balance'}</span>
+          <span className="max-w-[130px] truncate text-[11px] font-black text-slate-500">{compareFilter.label}</span>
         </div>
       ),
       numeric: true,
@@ -204,7 +268,7 @@ export default function ThemeProfitLossConceptTab() {
       headerClassName: 'text-center',
       cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
       render: (_value, row) => {
-        const previous = scale(row.previous, selectedPeriod.factor);
+        const previous = scale(row.previous, compareFactor);
         return (
           <span className={`inline-block min-w-[112px] text-end font-black ${numberClass(previous, row.kind)}`} dir="ltr">
             {formatMoney(previous)}
@@ -227,7 +291,7 @@ export default function ThemeProfitLossConceptTab() {
       cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
       render: (_value, row) => {
         const current = scale(row.current, selectedPeriod.factor);
-        const previous = scale(row.previous, selectedPeriod.factor);
+        const previous = scale(row.previous, compareFactor);
         return (
           <span className="inline-block min-w-[78px] text-end font-black text-slate-500" dir="ltr">
             {formatPercent(percent(current, previous), isArabic)}
@@ -235,22 +299,77 @@ export default function ThemeProfitLossConceptTab() {
         );
       },
     },
-  ], [isArabic, selectedPeriod.factor]);
+  ], [compareFactor, compareFilter.label, dateFilter.label, isArabic, labelColumn, selectedPeriod.factor]);
+
+  const yearlyColumns = useMemo<SimpleTableColumn<PlRow>[]>(() => [
+    labelColumn,
+    ...months.map((month): SimpleTableColumn<PlRow> => ({
+      key: month.key,
+      label: (
+        <div className="grid gap-0.5 text-center">
+          <span className="font-black text-slate-900">{isArabic ? month.labelAr : month.labelEn}</span>
+          <span className="text-[11px] font-black text-slate-500">2026</span>
+        </div>
+      ),
+      numeric: true,
+      width: 112,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+      render: (_value, row) => {
+        const value = monthValue(row, month.factor);
+        return (
+          <span className={`inline-block min-w-[86px] text-end font-black ${numberClass(value, row.kind)}`} dir="ltr">
+            {formatMoney(value)}
+          </span>
+        );
+      },
+    })),
+    {
+      key: 'total',
+      label: (
+        <div className="grid gap-0.5 text-center">
+          <span className="font-black text-slate-900">{isArabic ? 'الإجمالي' : 'Total'}</span>
+          <span className="text-[11px] font-black text-slate-500">2026</span>
+        </div>
+      ),
+      numeric: true,
+      width: 132,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+      render: (_value, row) => {
+        const value = yearTotal(row);
+        return (
+          <span className={`inline-block min-w-[104px] text-end font-black ${numberClass(value, row.kind)}`} dir="ltr">
+            {formatMoney(value)}
+          </span>
+        );
+      },
+    },
+  ], [isArabic, labelColumn]);
+
+  const activeColumns = period === 'year' ? yearlyColumns : columns;
+  const tableMinWidth = period === 'year' ? 1860 : 760;
 
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-lg border border-noorix-border bg-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-center gap-2 border-b border-noorix-border bg-slate-50 px-4 py-3">
-          {periodOptions.map((item) => (
-            <ToolbarButton key={item.id} active={period === item.id} onClick={() => setPeriod(item.id)}>
-              {isArabic ? item.labelAr : item.labelEn}
-            </ToolbarButton>
-          ))}
-          <ToolbarButton active>{isArabic ? 'مقارنة %' : 'Compare %'}</ToolbarButton>
-          <ToolbarButton>{isArabic ? 'القيود المرحلة' : 'Posted entries'}</ToolbarButton>
-          <ToolbarButton>{isArabic ? 'الموازنة' : 'Budget'}</ToolbarButton>
-          <ToolbarButton>{isArabic ? 'SR' : 'SR'}</ToolbarButton>
-        </div>
+        <FilterToolbar
+          className="border-b border-noorix-border bg-slate-50 px-4 py-3"
+          filtersClassName="justify-center"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[12px] font-black text-slate-500">{isArabic ? 'الفترة' : 'Period'}</span>
+              <DateFilterBar filter={dateFilter} modes={['month', 'months', 'quarter', 'year']} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[12px] font-black text-slate-500">{isArabic ? 'المقارنة' : 'Compare with'}</span>
+              <DateFilterBar filter={compareFilter} modes={['month', 'months']} />
+            </div>
+          </div>
+        </FilterToolbar>
 
         <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_330px]">
           <div className="min-w-0">
@@ -268,20 +387,46 @@ export default function ThemeProfitLossConceptTab() {
             </p>
           </div>
 
-          <div className="grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[12px] font-black text-slate-500">{isArabic ? 'صافي الربح' : 'Net profit'}</span>
-              <span className="text-[13px] font-black text-slate-900" dir="ltr">{formatMoney(currentNet)} SR</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[12px] font-black text-slate-500">{isArabic ? 'هامش الربح' : 'Profit margin'}</span>
-              <span className="text-[13px] font-black text-slate-900" dir="ltr">{formatPercent(margin, isArabic)}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[12px] font-black text-slate-500">{isArabic ? 'مقارنة 2025' : 'Vs 2025'}</span>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <span className="block text-[12px] font-black text-slate-500">{isArabic ? 'ملخص التقرير' : 'Report summary'}</span>
+                <span className="mt-1 block text-[13px] font-bold text-slate-500">
+                  {period === 'year'
+                    ? (isArabic ? 'سنة كاملة' : 'Full year')
+                    : dateFilter.label}
+                </span>
+              </div>
               <Badge color={currentNet >= previousNet ? 'green' : 'red'} size="sm">
                 {formatPercent(percent(currentNet, previousNet), isArabic)}
               </Badge>
+            </div>
+
+            <div className="py-4">
+              <span className="block text-[12px] font-black text-slate-500">{isArabic ? 'صافي الربح' : 'Net profit'}</span>
+              <span className="mt-1 block text-[28px] font-black leading-none text-slate-950" dir="ltr">
+                {formatMoney(currentNet)}
+              </span>
+              <span className="mt-1 block text-[12px] font-black text-slate-500">SR</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-md bg-slate-50 p-3">
+                <span className="block text-[11px] font-black text-slate-500">{isArabic ? 'هامش الربح' : 'Profit margin'}</span>
+                <span className="mt-1 block text-[15px] font-black text-slate-900" dir="ltr">
+                  {formatPercent(margin, isArabic)}
+                </span>
+              </div>
+              <div className="rounded-md bg-slate-50 p-3">
+                <span className="block text-[11px] font-black text-slate-500">{isArabic ? 'الإيرادات' : 'Revenue'}</span>
+                <span className="mt-1 block text-[15px] font-black text-slate-900" dir="ltr">
+                  {formatMoney(currentRevenue)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-bold text-slate-600">
+              {isArabic ? 'المقارنة مع' : 'Compared with'} {compareFilter.label}
             </div>
           </div>
         </div>
@@ -296,7 +441,9 @@ export default function ThemeProfitLossConceptTab() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[12px] font-bold text-noorix-muted">
-              {isArabic ? selectedPeriod.subAr : selectedPeriod.subEn}
+              {period === 'year'
+                ? (isArabic ? 'السنة تعرض الأشهر كأعمدة للمقارنة بين شهرين أو أكثر' : 'Year view shows months as columns for multi-month comparison')
+                : `${dateFilter.label} ${isArabic ? 'مقارنة بـ' : 'vs'} ${compareFilter.label}`}
             </span>
             <Button size="sm">{isArabic ? 'PDF' : 'PDF'}</Button>
             <Button size="sm">{isArabic ? 'XLSX' : 'XLSX'}</Button>
@@ -306,9 +453,9 @@ export default function ThemeProfitLossConceptTab() {
 
       <section className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
         <SimpleTable
-          columns={columns}
+          columns={activeColumns}
           data={visibleRows}
-          tableMinWidth={760}
+          tableMinWidth={tableMinWidth}
           compact
           cellPadding="8px 14px"
           frameClassName="border-0 shadow-none rounded-none"

@@ -5,11 +5,10 @@ import { invoiceKeys } from '../../../services/queryKeys';
 import { useToast } from '../../../context/ToastContext';
 import { DateFilterBar, useDateFilter } from '../../../ui/date';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
-import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, Checkbox, FilterToolbar, FmtNum, SmartTable, SearchableOptionsPicker } from '../../../ui';
+import { Button, Badge, Checkbox, FilterToolbar, FmtNum, SmartTable, SearchableOptionsPicker, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
@@ -35,6 +34,12 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   const effectiveCompanyId = companyId || activeCompanyId || '';
   const activeCompany = companies.find((company) => company.id === effectiveCompanyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
+  const companyLogoUrl = String(activeCompany?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('paymentHistoryTab'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
   const internalDateFilter = useDateFilter();
   const dateFilter = externalDateFilter ?? internalDateFilter;
@@ -113,9 +118,10 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   );
 
   function handlePrint() {
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('paymentHistoryTab'),
       companyName,
+      logoUrl: companyLogoUrl,
       subtitle: `${t('paymentHistoryTab')} | ${t('total')}: ${officialSummary.totalAmount} SR`,
       body: buildPrintRecordsTableHtml({
         records: exportData,
@@ -178,6 +184,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
 
   return (
     <div>
+      {printPreviewModal}
       {!externalDateFilter ? (
         <FilterToolbar
           className="mb-3 border-b border-noorix-border pb-3"
@@ -208,9 +215,8 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
             options={kindFilterOptions}
           />
         </div>
-        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!activeItems.length}>{t('print')}</Button>
         <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>{t('exportExcel')}</Button>
-        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: t('paymentHistoryTab'), companyName, filename: 'payment-history.pdf' })} disabled={!activeItems.length}>{t('print')} / PDF</Button>
+        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!activeItems.length}>{t('print')} / PDF</Button>
       </FilterToolbar>
 
       <SmartTable

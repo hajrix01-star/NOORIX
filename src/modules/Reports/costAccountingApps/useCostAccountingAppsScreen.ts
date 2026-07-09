@@ -3,6 +3,7 @@ import Decimal from 'decimal.js';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
+import { usePrintPreview } from '../../../ui';
 import { fmt } from '../../../utils/format';
 import { getSaudiYearMonth } from '../../../utils/saudiDate';
 import {
@@ -28,7 +29,7 @@ import {
   ymdParts,
   type FixedLine,
 } from './costAccountingAppsScreenUtils';
-import { exportCostAppsReportExcel, printCostAppsReport } from './costAccountingAppsScreenActions';
+import { buildCostAppsReportPrintHtml, exportCostAppsReportExcel } from './costAccountingAppsScreenActions';
 import { useCostAccountingAppsImports } from './useCostAccountingAppsImports';
 import { useCostAccountingAppsSavedScenarios } from './useCostAccountingAppsSavedScenarios';
 
@@ -36,6 +37,7 @@ type AppCompanyLite = {
   id?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
+  logoUrl?: string | null;
 };
 
 export function useCostAccountingAppsScreen() {
@@ -47,6 +49,12 @@ export function useCostAccountingAppsScreen() {
   const company = companies?.find((c: AppCompanyLite) => c.id === activeCompanyId);
   const companyName =
     lang === 'en' ? company?.nameEn || company?.nameAr || '' : company?.nameAr || company?.nameEn || '';
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintPreview, printPreviewModal } = usePrintPreview({
+    title: t('reportCostAppsTitle'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const [grossAppStr, setGrossAppStr] = useState('');
   const [grossCashStr, setGrossCashStr] = useState('');
@@ -543,9 +551,10 @@ export function useCostAccountingAppsScreen() {
   }, [appSharePctStr, grossBank, grossCash, plWith.grossTotal, showToast, t]);
 
   const handlePrint = useCallback(() => {
-    printCostAppsReport({
+    const html = buildCostAppsReportPrintHtml({
       t,
       companyName,
+      logoUrl: companyLogoUrl,
       appSalesRowLabel,
       withAppsScenarioLabel,
       plWith,
@@ -555,18 +564,20 @@ export function useCostAccountingAppsScreen() {
       expensesMonthlyTotal,
       expensesAnnualTotal,
     });
-  }, [appSalesRowLabel, companyName, expensesAnnualTotal, expensesMonthlyTotal, fixedLines, plWith, plWithout, salaryStr, t, withAppsScenarioLabel]);
+    openPrintPreview({ title: t('reportCostAppsTitle'), html });
+  }, [appSalesRowLabel, companyLogoUrl, companyName, expensesAnnualTotal, expensesMonthlyTotal, fixedLines, openPrintPreview, plWith, plWithout, salaryStr, t, withAppsScenarioLabel]);
 
   const handleExportExcel = useCallback(async () => {
     await exportCostAppsReportExcel({
       t,
       companyName,
+      logoUrl: companyLogoUrl,
       appSalesRowLabel,
       withAppsScenarioLabel,
       plWith,
       plWithout,
     });
-  }, [appSalesRowLabel, companyName, plWith, plWithout, t, withAppsScenarioLabel]);
+  }, [appSalesRowLabel, companyLogoUrl, companyName, plWith, plWithout, t, withAppsScenarioLabel]);
   const clearDraft = useCallback(() => {
     if (!activeCompanyId) return;
     localStorage.removeItem(draftKey(activeCompanyId));
@@ -661,6 +672,7 @@ export function useCostAccountingAppsScreen() {
     handleApplyReverse,
     handleApplyAppShare,
     handlePrint,
+    printPreviewModal,
     handleExportExcel,
     clearDraft,
     handleSaveCalculatorSlot,

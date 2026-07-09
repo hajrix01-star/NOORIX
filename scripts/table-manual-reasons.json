@@ -82,11 +82,6 @@
       "decision": "leave",
       "reason": "purchase batch editing table; protected purchases scope."
     },
-    "src/modules/Purchases/components/BatchPrintSheet.tsx": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "purchase batch print sheet; protected financial print layout."
-    },
     "src/modules/Reports/BankStatementMappingModal.tsx": {
       "category": "bank-protected",
       "decision": "leave",

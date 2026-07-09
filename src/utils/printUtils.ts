@@ -1,13 +1,6 @@
 /**
- * printUtils — نافذة الطباعة المركزية لـ Noorix
- *
- * openPrintWindow(opts) — يبني HTML احترافياً ويفتح نافذة الطباعة
- *
- * الاستخدام البسيط (جداول):
- *   openPrintWindow({ companyName, subtitle, title, body: tableHtml });
- *
- * الاستخدام المتقدم (وثائق ذات تخطيط خاص):
- *   openPrintWindow({ title, body: fullDocHtml, extraCss: docSpecificCss });
+ * printUtils - builds the central Noorix print document HTML.
+ * Rendering and printing are handled by PrintPreviewModal.
  */
 
 const NOORIX_BLUE = '#185FA5';
@@ -130,19 +123,6 @@ tfoot tr td { font-weight: 700; background: #f1f5f9; }
 function escHtml(v: unknown) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-
-export function printCurrentWindow() {
-  window.print();
-}
-
-export function printCurrentWindowNextFrame() {
-  requestAnimationFrame(() => printCurrentWindow());
-}
-
-export function printCurrentWindowAfterDelay(delayMs = 300) {
-  return window.setTimeout(() => printCurrentWindow(), delayMs);
-}
-
 /**
  * يفتح نافذة طباعة احترافية بـ Cairo + @page + ترقيم صفحات + تذييل تلقائي
  *
@@ -158,7 +138,7 @@ export function printCurrentWindowAfterDelay(delayMs = 300) {
  * @param {string}  [opts.htmlDir]     - اتجاه المستند: rtl | ltr (افتراضي rtl)
  * @param {string}  [opts.htmlLang]    - لغة وسم html (افتراضي ar)
  */
-type OpenPrintWindowOpts = {
+export type PrintDocumentHtmlOptions = {
   title?: string;
   body?: string;
   companyName?: string;
@@ -173,7 +153,9 @@ type OpenPrintWindowOpts = {
   autoPrint?: boolean;
 };
 
-export function openPrintWindow({
+type OpenPrintWindowOpts = PrintDocumentHtmlOptions;
+
+export function buildPrintDocumentHtml({
   title = '',
   body = '',
   companyName = '',
@@ -186,7 +168,7 @@ export function openPrintWindow({
   htmlDir = 'rtl',
   htmlLang = 'ar',
   autoPrint = true,
-}: OpenPrintWindowOpts = {}): Window | null {
+}: PrintDocumentHtmlOptions = {}) {
   const headerHtml = companyName
     ? `<div class="print-header">
         ${logoUrl ? `<img src="${escHtml(logoUrl)}" alt="" />` : ''}
@@ -199,9 +181,10 @@ export function openPrintWindow({
     htmlLang === 'en'
       ? `Printed on: ${formatPrintFooterDate('en')}`
       : `طُبع بتاريخ: ${formatPrintFooterDate('ar')}`;
+  const printActionLabel = htmlLang === 'en' ? 'Print / Save PDF' : 'طباعة / حفظ PDF';
   const toolbarHtml = autoPrint
     ? ''
-    : `<div class="print-toolbar"><button class="print-toolbar__button" type="button" onclick="window.print()">${htmlLang === 'en' ? 'Print' : 'طباعة'}</button></div>`;
+    : `<div class="print-toolbar"><button class="print-toolbar__button" type="button" onclick="window.print()">${printActionLabel}</button></div>`;
 
   const html = `<!DOCTYPE html>
 <html dir="${escHtml(htmlDir)}" lang="${escHtml(htmlLang)}">
@@ -222,19 +205,5 @@ ${body}
 </body>
 </html>`;
 
-  const win = window.open('', '_blank');
-  if (!win) return null;
-  win.document.write(html);
-  win.document.close();
-  if (autoPrint) {
-    win.onafterprint = () => {
-      try {
-        win.close();
-      } catch (_: unknown) {
-        // Browser print windows can already be closed by the user.
-      }
-    };
-    win.onload = () => setTimeout(() => win.print(), 300);
-  }
-  return win;
+  return html;
 }

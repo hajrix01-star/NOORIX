@@ -3,13 +3,13 @@
  */
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApp } from '../../context/AppContext';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { fmt } from '../../utils/format';
 import { buildPrintHtmlTable } from '../../utils/printTableHtml';
-import { openPrintWindow } from '../../utils/printUtils';
 import { percentText, truncateText, isEmptyMetric, metricCardAmountValue } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
-import { Button, AdaptiveSheet, MetricCard, ScreenTabs, SmartTable } from '../../ui';
+import { Button, AdaptiveSheet, MetricCard, ScreenTabs, SmartTable, usePrintPreview } from '../../ui';
 import {
   ResponsiveContainer,
   BarChart,
@@ -95,16 +95,33 @@ type ReportsDetailModalProps = {
   t: TranslateFn;
   lang: string;
 };
+type ReportDetailCompanyRef = {
+  id?: string;
+  nameAr?: string | null;
+  nameEn?: string | null;
+  logoUrl?: string | null;
+};
 type TooltipPayload = { payload?: TrendChartRow };
 type TooltipProps = { active?: boolean; payload?: readonly TooltipPayload[] };
 
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }: ReportsDetailModalProps) {
   const navigate = useNavigate();
+  const { companies = [] } = useApp();
   const [invoiceListPage, setInvoiceListPage] = useState(1);
   const [activeTab, setActiveTab] = useState('summary');
   const safeYear = year ?? 0;
   const safeMonth = state?.month ?? 0;
   const safeGroupKey = state?.groupKey ?? '';
+  const company = (companies as ReportDetailCompanyRef[]).find((item) => item.id === companyId);
+  const companyName = lang === 'en'
+    ? (company?.nameEn || company?.nameAr || '')
+    : (company?.nameAr || company?.nameEn || '');
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('reportDetails'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
   const { data, isLoading, error } = useReportDetails({
     companyId,
     year: safeYear,
@@ -287,9 +304,10 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
       });
     }
 
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('reportDetails'),
-      companyName: t('reportGeneral'),
+      companyName: companyName || t('reports'),
+      logoUrl: companyLogoUrl,
       subtitle: `${title} · ${subtitleParts.join(' · ')}`,
       body,
       landscape: data.kind === 'invoices',
@@ -325,6 +343,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
 
   return (
     <AdaptiveSheet open={!!state} onClose={onClose} title={modalTitle} size="xl" side="start" className="reports-detail-drawer" footer={footerContent}>
+      {printPreviewModal}
       {isLoading && (
         <div className="p-6 text-center text-noorix-muted">{t('loading')}</div>
       )}

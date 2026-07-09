@@ -18,6 +18,7 @@ export type InvoiceListImportExportFetchSource = {
   supplierId: string;
   supplierCategoryId: string;
   q: string;
+  includeCancelled: boolean;
   hasNotes: boolean;
   vaultId: string;
   batchId: string;
@@ -39,7 +40,7 @@ export function buildInvoiceImportExportFetchParams(
     q: input.q,
     categoryId: input.urlExtra.categoryId,
     expenseLineId: input.urlExtra.expenseLineId,
-    includeCancelled: true,
+    includeCancelled: input.includeCancelled,
     hasNotes: input.hasNotes,
     vaultId: input.vaultId,
     batchId: input.batchId,

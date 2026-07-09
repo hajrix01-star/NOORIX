@@ -9,8 +9,9 @@ import { useOrdersItemsReportRange, useProductPurchaseHistory, useCategoryPurcha
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { DateFilterBar } from '../../../ui/date';
-import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
-import { Button, Input, AdaptiveSheet, SmartTable, SimpleTable, FmtNum, MetricCard, DataBar, FilterToolbar, SearchableOptionsPicker } from '../../../ui';
+import { exportToExcel } from '../../../utils/exportUtils';
+import { buildPrintTableHtml } from '../../../utils/printTableHtml';
+import { Button, Input, AdaptiveSheet, SmartTable, SimpleTable, FmtNum, MetricCard, DataBar, FilterToolbar, SearchableOptionsPicker, usePrintPreview } from '../../../ui';
 import { computeItemsReportDisplayTotals, sliceItemsReportByMode } from '../utils/ordersReportModel';
 import type { OrderItemsReportRow, OrderPurchaseHistoryRow } from '../../../types/api';
 
@@ -144,6 +145,11 @@ export function ItemsReportTab({
 }) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('ordersItemsReportTab'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
   const [filterMode, setFilterMode] = useState('all'); // all | top | bottom
   const [filterCount, setFilterCount] = useState(10);
   const [historyModal, setHistoryModal] = useState<{ product?: OrderItemsReportRow; category?: { id?: string; nameAr?: string | null; nameEn?: string | null } } | null>(null);
@@ -178,7 +184,7 @@ export function ItemsReportTab({
     }
   };
 
-  const handleExportPdf = async () => {
+  const handlePrintPdf = async () => {
     try {
       const cols = [t('product'), t('category'), t('quantity'), t('total'), t('ordersOrderCount')];
       const data = filtered.map((r) => ({
@@ -188,7 +194,18 @@ export function ItemsReportTab({
         [t('total')]: fmt(r.amount ?? 0),
         [t('ordersOrderCount')]: r.orderCount ?? 0,
       }));
-      await exportTableToPdf({ columns: cols, data, title: `${t('ordersItemsReportTab')} — ${year}/${month}`, filename: `orders-items-${year}-${month}.pdf` });
+      openPrintDocumentPreview({
+        title: `${t('ordersItemsReportTab')} - ${year}/${month}`,
+        subtitle: `orders-items-${year}-${month}.pdf`,
+        landscape: true,
+        body: buildPrintTableHtml({
+          columns: cols.map((label, index) => ({ key: String(index), header: label })),
+          rows: data.map((row) => cols.reduce<Record<string, unknown>>((acc, label, index) => {
+            acc[String(index)] = row[label] ?? '';
+            return acc;
+          }, {})),
+        }),
+      });
       showToast(t('exportSuccess'), 'success');
     } catch (error) {
       showToast(error instanceof Error ? error.message : t('exportFailed'), 'error');
@@ -197,6 +214,7 @@ export function ItemsReportTab({
 
   return (
     <div className="nx-orders-tab-root flex flex-col gap-3 sm:gap-4">
+      {printPreviewModal}
       <FilterToolbar
         className="nx-page-header nx-page-header--filter-row"
         actions={(
@@ -223,9 +241,8 @@ export function ItemsReportTab({
                 className="w-[80px]"
               />
             )}
-            <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>{t('print')}</Button>
             <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportExcel} disabled={filtered.length === 0}>Excel</Button>
-            <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>PDF</Button>
+            <Button type="button" size="sm" className="noorix-print-hide" onClick={handlePrintPdf} disabled={filtered.length === 0}>{t('print')} / PDF</Button>
           </>
         )}
       >

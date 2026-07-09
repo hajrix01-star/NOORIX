@@ -2462,6 +2462,11 @@ html[data-card-style="10"] .noorix-stat-card {
   padding: 5px 10px;
   white-space: nowrap;
 }
+
+.noorix-table .nx-asset-name-trigger--table {
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .noorix-actions-row .nx-btn,
   .noorix-table .noorix-actions-cell .nx-btn {
@@ -6743,6 +6748,33 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   vertical-align: top;
   word-break: break-word;
 }
+.employee-doc-preview-drawer .hr-doc-table[dir="ltr"] th,
+.employee-doc-preview-drawer .hr-doc-table[dir="ltr"] td {
+  text-align: left;
+}
+.employee-doc-preview-drawer .hr-doc-table[dir="rtl"] th,
+.employee-doc-preview-drawer .hr-doc-table[dir="rtl"] td {
+  text-align: right;
+}
+.employee-doc-preview-drawer .hr-doc-table .hr-doc-th {
+  text-align: center !important;
+}
+.employee-doc-preview-drawer .hr-doc-cell-start {
+  text-align: start !important;
+}
+.employee-doc-preview-drawer .hr-doc-cell-num {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+  text-align: center !important;
+  white-space: nowrap;
+}
+.employee-doc-preview-drawer .hr-doc-box[dir="ltr"] {
+  text-align: left;
+}
+.employee-doc-preview-drawer .hr-doc-box[dir="rtl"] {
+  text-align: right;
+}
 .employee-doc-preview-drawer .hr-doc-frame {
   border: 1px solid var(--noorix-border);
   border-radius: 14px;
@@ -6799,6 +6831,9 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   padding: 12px 22px;
   border-bottom: 1px solid var(--noorix-border);
   background: #f8fafc;
+}
+.employee-doc-render-mode .hr-doc-panel-section {
+  display: none !important;
 }
 .employee-doc-preview-drawer .hr-doc-box { padding: 8px 10px; border: 1px solid var(--noorix-border); border-radius: 8px; background: #fff; }
 .employee-doc-preview-drawer .hr-doc-h3 {

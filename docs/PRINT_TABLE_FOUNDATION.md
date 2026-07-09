@@ -14,14 +14,14 @@ The current foundation is:
 |---|---|
 | `src/utils/printTableHtml.ts` | pure HTML builder for print tables |
 | `src/utils/printTableHtml.test.ts` | escaping, class sanitation, empty state, footer coverage |
-| `src/utils/pdfTableExport.ts` | central PDF/export table route now uses the builder |
+| `src/ui/PrintPreviewModal.tsx` | in-app print/PDF preview route for exported print tables |
 | `src/utils/printUtils.ts` | shared print window CSS for print-table alignment and empty states |
 
 ## Allowed First Uses
 
 | Case | Decision |
 |---|---|
-| Generic PDF/export tables routed through `exportTableToPdf` | allowed |
+| Generic PDF/export tables routed through `PrintPreviewModal` + `buildPrintDocumentHtml` | allowed |
 | Non-financial print preview with plain rows and columns | allowed after focused test |
 | Simple document table without rowspan/colspan | allowed after visual smoke test |
 

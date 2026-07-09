@@ -37,7 +37,7 @@ const TABS = [
 ] as const;
 const BANK_STATEMENT_TAB_IDS = TABS.map((tab) => tab.id);
 
-type AppCompany = { id?: string; nameAr?: string | null; nameEn?: string | null; name?: string | null };
+type AppCompany = { id?: string; nameAr?: string | null; nameEn?: string | null; name?: string | null; logoUrl?: string | null };
 type BankSummaryData = {
   statementCount?: number | string | null;
   totalDeposits?: number | string | null;
@@ -61,6 +61,10 @@ export default function BankStatementAnalysisScreen() {
   const activeCompanyName = useMemo(() => {
     const c = (companies || []).find((x: AppCompany) => x.id === companyId);
     return c?.nameAr || c?.nameEn || c?.name || '';
+  }, [companies, companyId]);
+  const activeCompanyLogoUrl = useMemo(() => {
+    const c = (companies || []).find((x: AppCompany) => x.id === companyId);
+    return String(c?.logoUrl || '').trim();
   }, [companies, companyId]);
 
   const [selectedStatementId, setSelectedStatementId] = useState<string | null>(null);
@@ -175,6 +179,7 @@ export default function BankStatementAnalysisScreen() {
           statementId={selectedStatementId}
           companyId={companyId}
           companyName={activeCompanyName}
+          companyLogoUrl={activeCompanyLogoUrl}
           categories={categories}
           onBack={() => setSelectedStatementId(null)}
           onDelete={() => setDeleteConfirmId(selectedStatementId)}

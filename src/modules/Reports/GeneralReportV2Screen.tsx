@@ -1,11 +1,13 @@
-import React, { useLayoutEffect, useMemo, useState } from 'react';
+﻿import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
-import { getSaudiNow } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
+import { buildPrintDocumentHtml } from '../../utils/printUtils';
 import ReportsDetailModal from './ReportsDetailModal';
-import { Button, FilterToolbar, Input } from '../../ui';
+import { Badge, Button, FilterToolbar, Input, MetricCard, PrintPreviewModal, SimpleTable } from '../../ui';
+import type { SimpleTableColumn } from '../../ui';
+import { DateFilterBar, useDateFilter } from '../../ui/date';
 import {
   amountText,
   percentText,
@@ -13,115 +15,97 @@ import {
   buildVisibleRows,
   buildCollapsedGroupsForLevel,
   filterVisibleRowsByLabel,
-  getContextAmount,
-  getContextPercent,
   type PlDisplayLevel,
 } from './reportHelpers';
-import { MONTH_NAMES_AR, MONTH_NAMES_EN, getProfitLossCardRawValue } from './profitLossPresentationModel';
-import type { PlDisplayRow, ReportDetailState, ReportPeriodMode } from './reportTypes';
+import { MONTH_NAMES_AR, MONTH_NAMES_EN, getProfitLossCardRawValue, type ProfitLossKpiKey } from './profitLossPresentationModel';
+import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState } from './reportTypes';
 import {
-  buildPrintableGeneralReportV2Html,
   buildStatementRowsForV2 as buildStatementRowsForV2Model,
   buildV2ExportRows as buildV2ExportRowsModel,
   displayV2RowLabel as displayV2RowLabelModel,
   groupToneClass as groupToneClassModel,
-  lineIndentClass as lineIndentClassModel,
 } from './generalReportV2Model';
-import ReportDateFilter from './ReportDateFilter';
+import type { DatePeriodState } from '../../utils/datePeriod';
 
-const GROUP_TONE_CLASSES: Record<string, string> = {
-  sales: 'nx-gr2-score--sales',
-  purchases: 'nx-gr2-score--negative',
-  expenses: 'nx-gr2-score--negative',
-  grossProfit: 'nx-gr2-score--gross-profit',
-  netProfit: 'nx-gr2-score--net-profit',
+type ComparablePeriod = {
+  mode: 'all' | 'month' | 'months' | 'quarter' | 'year';
+  year: number;
+  month: number | null;
+  monthStart: number;
+  monthEnd: number;
 };
 
-const NEGATIVE_GROUPS = new Set(['purchases', 'expenses']);
+function deriveComparablePeriod(state: DatePeriodState): ComparablePeriod {
+  if (state.mode === 'all') {
+    return { mode: 'all', year: state.selYear, month: null, monthStart: 1, monthEnd: 12 };
+  }
+  if (state.mode === 'year') {
+    return { mode: 'year', year: state.selYear, month: null, monthStart: 1, monthEnd: 12 };
+  }
+  if (state.mode === 'quarter') {
+    const start = (state.selQuarter - 1) * 3 + 1;
+    return { mode: 'quarter', year: state.selYear, month: null, monthStart: start, monthEnd: start + 2 };
+  }
+  if (state.mode === 'month' || state.mode === 'months') {
+    const sameMonth =
+      state.monthRangeStartYear === state.monthRangeEndYear &&
+      state.monthRangeStartMonth === state.monthRangeEndMonth;
+    return {
+      mode: sameMonth ? 'month' : 'months',
+      year: state.monthRangeStartYear || state.selYear,
+      month: sameMonth ? state.monthRangeStartMonth : null,
+      monthStart: Math.min(state.monthRangeStartMonth, state.monthRangeEndMonth),
+      monthEnd: Math.max(state.monthRangeStartMonth, state.monthRangeEndMonth),
+    };
+  }
+  return { mode: 'month', year: state.selYear, month: state.selMonth, monthStart: state.selMonth, monthEnd: state.selMonth };
+}
+
+function numericAmount(value: unknown) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function periodAmount(row: PlDisplayRow, period: ComparablePeriod) {
+  if (period.mode === 'year' || period.mode === 'all') return numericAmount(row.total);
+  if (period.mode === 'month' && period.month) return numericAmount(row.months?.[period.month - 1]);
+  let total = 0;
+  for (let month = period.monthStart; month <= period.monthEnd; month++) {
+    total += numericAmount(row.months?.[month - 1]);
+  }
+  return total;
+}
+
+function cardAmount(report: GeneralProfitLossReport | null | undefined, key: ProfitLossKpiKey, period: ComparablePeriod) {
+  if (period.mode === 'year' || period.mode === 'all') return getProfitLossCardRawValue(report, key, null);
+  if (period.mode === 'month' && period.month) return getProfitLossCardRawValue(report, key, period.month);
+  const row = [
+    ...(report?.groups || []),
+    ...(report?.summaryRows || []),
+  ].find((item) => item.key === key);
+  if (!row) return 0;
+  let total = 0;
+  for (let month = period.monthStart; month <= period.monthEnd; month++) {
+    total += numericAmount(row.months?.[month - 1]);
+  }
+  return total;
+}
 
 function escHtml(value: unknown) {
   return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function groupToneClass(row: PlDisplayRow) {
-  if (row.rowType === 'groupTotal') return 'is-group-total';
-  if (NEGATIVE_GROUPS.has(String(row.groupKey || row.key || ''))) return 'is-negative';
-  if (row.rowType === 'summary' && Number(row.total || 0) < 0) return 'is-negative';
-  if (row.rowType === 'summary') return 'is-summary';
-  return '';
-}
-
-function lineIndentClass(row: PlDisplayRow) {
-  if (row.rowType === 'groupTotal' || row.rowType === 'summary') return 'nx-gr2-line--indent-total';
-  const depth = Math.max(0, Math.min(4, Number(row.depth || 0)));
-  return `nx-gr2-line--indent-${depth}`;
-}
-
-function displayV2RowLabel(row: PlDisplayRow, lang: string) {
-  const label = displayV2RowLabelModel(row, lang);
-  if (row.rowType !== 'groupTotal') return label;
-  return lang === 'en' ? `Total ${label}` : `مجموع ${label}`;
-}
-
-function buildStatementRowsForV2(rows: PlDisplayRow[]) {
-  const result: PlDisplayRow[] = [];
-  for (let index = 0; index < rows.length; index++) {
-    const row = rows[index];
-    if (row.rowType !== 'group') {
-      if (row.rowType === 'summary') result.push(row);
-      continue;
-    }
-    const children: PlDisplayRow[] = [];
-    let cursor = index + 1;
-    while (cursor < rows.length && rows[cursor].rowType !== 'group' && rows[cursor].rowType !== 'summary') {
-      children.push(rows[cursor]);
-      cursor++;
-    }
-    if (children.length) result.push(...children, { ...row, rowType: 'groupTotal', originalRowType: 'group' });
-    else result.push(row);
-    index = cursor - 1;
-  }
-  return result;
-}
-
-function buildV2ExportRows(rows: PlDisplayRow[], opts: {
-  lang: string;
-  t: (key: string) => string;
-  selectedMonthNumber: number | null;
-  monthLabel: string;
-  year: number;
-  monthLabels: string[];
-}) {
-  const { lang, t, selectedMonthNumber, monthLabel, year, monthLabels } = opts;
-  return rows.map((row) => {
-    const indent = row.rowType === 'groupTotal' || row.rowType === 'summary' || row.rowType === 'group'
-      ? ''
-      : '  '.repeat((row.depth || 0) + 1);
-    const base: Record<string, string> = {
-      [t('reportItem')]: `${indent}${displayV2RowLabel(row, lang)}`,
-    };
-    if (selectedMonthNumber) {
-      base[`${monthLabel} ${year}`] = amountText(getContextAmount(row, selectedMonthNumber));
-      base['%'] = percentText(getContextPercent(row, selectedMonthNumber));
-      return base;
-    }
-    monthLabels.forEach((label, index) => {
-      base[label] = amountText(row?.months?.[index]);
-    });
-    base[t('reportAnnualTotal')] = amountText(row.total);
-    base['%'] = percentText(row.percentOfSalesYear);
-    return base;
-  });
-}
-
 export default function GeneralReportV2Screen() {
   const { activeCompanyId, companies } = useApp();
   const { t, lang } = useTranslation();
-  const currentYear = getSaudiNow().year;
-  const [year, setYear] = useState(currentYear);
-  const [periodMode, setPeriodMode] = useState<ReportPeriodMode>('year');
-  const [selectedMonth, setSelectedMonth] = useState(String(getSaudiNow().month));
+  const dateFilter = useDateFilter();
+  const compareFilter = useDateFilter();
+  const currentPeriod = useMemo(() => deriveComparablePeriod(dateFilter.state), [dateFilter.state]);
+  const comparePeriod = useMemo(() => deriveComparablePeriod(compareFilter.state), [compareFilter.state]);
+  const compareEnabled = comparePeriod.mode !== 'all';
+  const year = currentPeriod.year;
   const [detailState, setDetailState] = useState<ReportDetailState | null>(null);
+  const [printPreviewHtml, setPrintPreviewHtml] = useState('');
   const [displayLevel, setDisplayLevel] = useState<PlDisplayLevel>(2);
   const [rowSearch, setRowSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
@@ -131,15 +115,21 @@ export default function GeneralReportV2Screen() {
   });
   const company = companies?.find((item) => item.id === activeCompanyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
-  const selectedMonthNumber = periodMode === 'month' ? Number(selectedMonth) : null;
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const selectedMonthNumber = currentPeriod.mode === 'month' ? currentPeriod.month : null;
   const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
-  const monthLabel = selectedMonthNumber ? monthNames[selectedMonthNumber - 1] : '';
-  const yearOptions = useMemo(() => Array.from({ length: 6 }, (_, index) => currentYear - index), [currentYear]);
+  const monthLabel = selectedMonthNumber ? monthNames[selectedMonthNumber - 1] : dateFilter.label;
 
   const { data: report, isLoading, error, isFetching, isPlaceholderData } = useReportsGeneralProfitLoss({
     companyId: activeCompanyId,
     year,
   });
+  const { data: loadedCompareReport, isFetching: isFetchingCompare } = useReportsGeneralProfitLoss({
+    companyId: activeCompanyId,
+    year: comparePeriod.year,
+    enabled: compareEnabled && comparePeriod.year !== year,
+  });
+  const compareReport = !compareEnabled ? null : comparePeriod.year === year ? report : loadedCompareReport;
 
   useLayoutEffect(() => {
     if (!report) return;
@@ -151,21 +141,20 @@ export default function GeneralReportV2Screen() {
   const statementRowsBase = useMemo(() => buildStatementRowsForV2Model(visibleRowsBase), [visibleRowsBase]);
   const visibleRows = useMemo(() => filterVisibleRowsByLabel(statementRowsBase, rowSearch, lang), [statementRowsBase, rowSearch, lang]);
 
-  const kpis = useMemo(() => {
-    const sales = getProfitLossCardRawValue(report, 'sales', selectedMonthNumber);
-    const purchases = getProfitLossCardRawValue(report, 'purchases', selectedMonthNumber);
-    const expenses = getProfitLossCardRawValue(report, 'expenses', selectedMonthNumber);
-    const grossProfit = getProfitLossCardRawValue(report, 'grossProfit', selectedMonthNumber);
-    const netProfit = getProfitLossCardRawValue(report, 'netProfit', selectedMonthNumber);
-    const ratio = (value: number) => (sales ? `${((value / sales) * 100).toFixed(1)}%` : '-');
-    return [
-      { key: 'sales', label: selectedMonthNumber ? `${t('revenueGroup')} ${monthLabel}` : t('annualSales'), value: sales, meta: selectedMonthNumber ? monthLabel : String(year), toneClass: GROUP_TONE_CLASSES.sales },
-      { key: 'grossProfit', label: t('annualGrossProfit'), value: grossProfit, meta: ratio(grossProfit), toneClass: GROUP_TONE_CLASSES.grossProfit },
-      { key: 'netProfit', label: t('annualNetProfit'), value: netProfit, meta: ratio(netProfit), toneClass: GROUP_TONE_CLASSES.netProfit },
-      { key: 'purchases', label: selectedMonthNumber ? `${t('purchasesGroup')} ${monthLabel}` : t('annualPurchases'), value: purchases, meta: ratio(purchases), toneClass: GROUP_TONE_CLASSES.purchases },
-      { key: 'expenses', label: selectedMonthNumber ? `${t('expensesGroup')} ${monthLabel}` : t('annualExpenses'), value: expenses, meta: ratio(expenses), toneClass: GROUP_TONE_CLASSES.expenses },
-    ];
-  }, [monthLabel, report, selectedMonthNumber, t, year]);
+  const compareFlatRows = useMemo(() => buildFlatRows(compareReport, collapsedGroups), [collapsedGroups, compareReport]);
+  const compareRows = useMemo(() => {
+    const map = new Map<string, PlDisplayRow>();
+    for (const row of buildStatementRowsForV2Model(buildVisibleRows(compareFlatRows, collapsedGroups))) {
+      map.set(`${row.groupKey || ''}:${row.itemKey || row.key || ''}:${row.rowType || ''}:${row.depth || 0}`, row);
+    }
+    return map;
+  }, [collapsedGroups, compareFlatRows]);
+
+  const currentSales = cardAmount(report, 'sales', currentPeriod);
+  const currentGrossProfit = cardAmount(report, 'grossProfit', currentPeriod);
+  const currentNetProfit = cardAmount(report, 'netProfit', currentPeriod);
+  const compareNetProfit = compareEnabled ? cardAmount(compareReport, 'netProfit', comparePeriod) : 0;
+  const currentMargin = currentSales ? (currentNetProfit / currentSales) * 100 : 0;
 
   const exportRows = useMemo(() => buildV2ExportRowsModel(visibleRows, {
     lang,
@@ -175,6 +164,193 @@ export default function GeneralReportV2Screen() {
     year,
     monthLabels: report?.months?.map((month) => month.label) || monthNames,
   }), [lang, monthLabel, monthNames, report?.months, selectedMonthNumber, t, visibleRows, year]);
+
+  const rowKey = (row: PlDisplayRow) => `${row.groupKey || ''}:${row.itemKey || row.key || ''}:${row.rowType || ''}:${row.depth || 0}`;
+
+  function percentChange(current: number, previous: number) {
+    if (!previous) return null;
+    return ((current - previous) / Math.abs(previous)) * 100;
+  }
+
+  function formatChange(value: number | null) {
+    if (value == null || !Number.isFinite(value)) return lang === 'ar' ? 'ØºÙŠØ± Ù…Ù†Ø·Ù‚ÙŠ' : 'N/A';
+    const rounded = Math.round(value * 10) / 10;
+    return `${rounded > 0 ? '+' : ''}${rounded.toLocaleString('en', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+  }
+
+  function tableRowClass(row: PlDisplayRow) {
+    const rowTone = groupToneClassModel(row);
+    if (row.rowType === 'summary') return rowTone ? 'bg-slate-300/80 font-black' : 'bg-slate-200/90 font-black';
+    if (row.rowType === 'groupTotal') return 'bg-slate-200/90 font-black';
+    return 'bg-white';
+  }
+
+  function valueClass(_value: number, row: PlDisplayRow) {
+    if (row.rowType === 'summary' || row.rowType === 'groupTotal') return 'text-slate-700';
+    return 'text-slate-700';
+  }
+
+  const labelColumn = useMemo<SimpleTableColumn<PlDisplayRow>>(() => ({
+    key: 'label',
+    label: '',
+    minWidth: 380,
+    align: 'start',
+    headerClassName: 'text-start',
+    cellClassName: 'text-start',
+    render: (_value, row) => {
+      const canCollapse = row.rowType === 'group' || row.rowType === 'groupTotal' || row.rowType === 'category';
+      const collapseKey = row.rowType === 'group' || row.rowType === 'groupTotal' ? row.groupKey : row.collapseKey;
+      const rowType = row.originalRowType || row.rowType;
+      const depth = row.rowType === 'summary' || row.rowType === 'groupTotal' ? 0 : Math.max(0, Math.min(3, Number(row.depth || 0)));
+      const indent = depth >= 2 ? 'ps-36' : depth === 1 ? 'ps-20' : 'ps-0';
+      const labelClass = row.rowType === 'summary' || row.rowType === 'groupTotal'
+        ? 'font-black text-slate-900'
+        : depth >= 2
+          ? 'font-semibold text-slate-500'
+          : depth === 1
+            ? 'font-semibold text-slate-700'
+            : 'font-semibold text-slate-950';
+      return (
+        <div className={indent}>
+          <Button
+            variant="raw"
+            type="button"
+            className={`inline-flex items-center gap-2 p-0 text-start ${labelClass}`}
+            onClick={() => canCollapse ? toggleGroup(String(collapseKey)) : openDetail(row, selectedMonthNumber, rowType === 'item')}
+          >
+            {canCollapse ? <span className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 text-[11px]">{collapsedGroups[String(collapseKey)] ? '+' : '-'}</span> : null}
+            {!canCollapse && depth === 1 ? <span className="h-1.5 w-1.5 rounded-full bg-slate-300" /> : null}
+            {!canCollapse && depth >= 2 ? <span className="h-px w-5 bg-slate-300" /> : null}
+            <span>{displayV2RowLabelModel(row, lang)}</span>
+          </Button>
+        </div>
+      );
+    },
+  }), [collapsedGroups, lang, selectedMonthNumber]);
+
+  const comparisonColumns = useMemo<SimpleTableColumn<PlDisplayRow>[]>(() => {
+    const columns: SimpleTableColumn<PlDisplayRow>[] = [
+      labelColumn,
+      {
+        key: 'current',
+        label: (
+          <div className="grid gap-0.5 text-center">
+            <span className="font-black text-white">{year}</span>
+            <span className="max-w-[140px] truncate text-[11px] font-black text-white/75">{dateFilter.label}</span>
+          </div>
+        ),
+        numeric: true,
+        width: 160,
+        align: 'end',
+        headerClassName: 'text-center',
+        cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+        render: (_value, row) => {
+          const current = periodAmount(row, currentPeriod);
+          return <span className={`inline-block min-w-[116px] text-end font-black ${valueClass(current, row)}`} dir="ltr">{amountText(current)}</span>;
+        },
+      },
+    ];
+    if (!compareEnabled) return columns;
+    columns.push(
+      {
+        key: 'compare',
+        label: (
+          <div className="grid gap-0.5 text-center">
+            <span className="font-black text-white">{comparePeriod.year}</span>
+            <span className="max-w-[140px] truncate text-[11px] font-black text-white/75">{compareFilter.label}</span>
+          </div>
+        ),
+        numeric: true,
+        width: 160,
+        align: 'end',
+        headerClassName: 'text-center',
+        cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+        render: (_value, row) => {
+          const compareRow = compareRows.get(rowKey(row));
+          const previous = compareRow ? periodAmount(compareRow, comparePeriod) : 0;
+          return <span className={`inline-block min-w-[116px] text-end font-black ${valueClass(previous, row)}`} dir="ltr">{compareRow ? amountText(previous) : '-'}</span>;
+        },
+      },
+      {
+        key: 'change',
+        label: (
+          <div className="grid gap-0.5 text-center">
+            <span className="font-black text-white">%</span>
+            <span className="text-[11px] font-black text-white/75">{lang === 'ar' ? 'Ø§Ù„ØªØºÙŠØ±' : 'Change'}</span>
+          </div>
+        ),
+        numeric: true,
+        width: 120,
+        align: 'end',
+        headerClassName: 'text-center',
+        cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+        render: (_value, row) => {
+          const compareRow = compareRows.get(rowKey(row));
+          const current = periodAmount(row, currentPeriod);
+          const previous = compareRow ? periodAmount(compareRow, comparePeriod) : 0;
+          return <span className="inline-block min-w-[78px] text-end font-black text-slate-500" dir="ltr">{compareRow ? formatChange(percentChange(current, previous)) : '-'}</span>;
+        },
+      },
+    );
+    return columns;
+  }, [compareEnabled, compareFilter.label, comparePeriod, compareRows, currentPeriod, dateFilter.label, labelColumn, lang, year]);
+
+  const yearlyColumns = useMemo<SimpleTableColumn<PlDisplayRow>[]>(() => [
+    labelColumn,
+    ...(report?.months || []).map((month): SimpleTableColumn<PlDisplayRow> => ({
+      key: `m${month.index}`,
+      label: (
+        <div className="grid gap-0.5 text-center">
+          <span className="font-black text-white">{month.label}</span>
+          <span className="text-[11px] font-black text-white/75">{year}</span>
+        </div>
+      ),
+      numeric: true,
+      width: 112,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+      render: (_value, row) => {
+        const value = numericAmount(row.months?.[month.index - 1]);
+        return (
+          <Button variant="raw" type="button" className={`inline-block min-w-[86px] p-0 text-end font-black ${valueClass(value, row)}`} onClick={() => openDetail(row, month.index, (row.originalRowType || row.rowType) === 'item')} dir="ltr">
+            {amountText(value)}
+          </Button>
+        );
+      },
+    })),
+    {
+      key: 'total',
+      label: (
+        <div className="grid gap-0.5 text-center">
+          <span className="font-black text-white">{t('reportAnnualTotal')}</span>
+          <span className="text-[11px] font-black text-white/75">{year}</span>
+        </div>
+      ),
+      numeric: true,
+      width: 132,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+      render: (_value, row) => {
+        const value = numericAmount(row.total);
+        return <span className={`inline-block min-w-[104px] text-end font-black ${valueClass(value, row)}`} dir="ltr">{amountText(value)}</span>;
+      },
+    },
+    {
+      key: 'percent',
+      label: '%',
+      numeric: true,
+      width: 96,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
+      render: (_value, row) => <span className="inline-block min-w-[72px] text-end font-black text-slate-500" dir="ltr">{percentText(row.percentOfSalesYear)}</span>,
+    },
+  ], [labelColumn, report?.months, t, year]);
+
+  const activeColumns = currentPeriod.mode === 'year' ? yearlyColumns : comparisonColumns;
+  const tableMinWidth = currentPeriod.mode === 'year' ? 1780 : compareEnabled ? 820 : 620;
 
   function toggleGroup(key: string) {
     setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -197,7 +373,7 @@ export default function GeneralReportV2Screen() {
       filename: `general-profit-loss-v2-${year}${selectedMonthNumber ? `-m${selectedMonthNumber}` : ''}.xlsx`,
       companyName: companyName || undefined,
       title: selectedMonthNumber ? `${t('reportIncomeStatementTitle')} - ${monthLabel} ${year}` : `${t('reportGeneralV2')} - ${year}`,
-      sheetName: lang === 'ar' ? 'قائمة الدخل' : 'Income statement',
+      sheetName: lang === 'ar' ? 'Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¯Ø®Ù„' : 'Income statement',
       rtl: lang !== 'en',
       headerColor: '111827',
       money2ColumnKeys: selectedMonthNumber ? [`${monthLabel} ${year}`] : [...(report?.months?.map((month) => month.label) || monthNames), t('reportAnnualTotal')],
@@ -205,154 +381,351 @@ export default function GeneralReportV2Screen() {
     });
   }
 
+  function buildFilteredPrintHtml() {
+    const isArabic = lang !== 'en';
+    const isYear = currentPeriod.mode === 'year';
+    const periodTitle = dateFilter.label;
+    const compareTitle = compareEnabled ? compareFilter.label : '';
+    const headerCells = isYear
+      ? [
+          t('reportItem'),
+          ...(report?.months || []).map((month) => month.label),
+          t('reportAnnualTotal'),
+          '%',
+        ]
+      : [
+          t('reportItem'),
+          `${year} ${periodTitle}`,
+          ...(compareEnabled ? [`${comparePeriod.year} ${compareTitle}`, '%'] : []),
+        ];
+    const rowsHtml = visibleRows.map((row) => {
+      const tone = groupToneClassModel(row);
+      const rowKind = row.rowType === 'summary' || row.rowType === 'groupTotal' ? ' total-row' : tone ? ` ${tone}` : '';
+      const depth = row.rowType === 'summary' || row.rowType === 'groupTotal' ? 0 : Math.max(0, Math.min(3, Number(row.depth || 0)));
+      const label = escHtml(displayV2RowLabelModel(row, lang));
+      const cells = isYear
+        ? [
+            ...(report?.months || []).map((month) => amountText(row.months?.[month.index - 1])),
+            amountText(row.total),
+            percentText(row.percentOfSalesYear),
+          ]
+        : (() => {
+            const current = periodAmount(row, currentPeriod);
+            if (!compareEnabled) return [amountText(current)];
+            const compareRow = compareRows.get(rowKey(row));
+            const previous = compareRow ? periodAmount(compareRow, comparePeriod) : 0;
+            return [
+              amountText(current),
+              compareRow ? amountText(previous) : '-',
+              compareRow ? formatChange(percentChange(current, previous)) : '-',
+            ];
+          })();
+      return `<tr class="${rowKind.trim()}"><td class="label" style="padding-inline-start:${12 + depth * 22}px">${label}</td>${cells.map((cell) => `<td class="num">${escHtml(cell)}</td>`).join('')}</tr>`;
+    }).join('');
+    const printBody = `
+<main class="gr-v2-print-sheet">
+  <section class="gr-v2-print-title">
+    <div>
+      <h1>${escHtml(t('reportGeneralV2'))}</h1>
+      <div class="gr-v2-print-meta">
+        <span>${escHtml(periodTitle)}</span>
+        ${compareEnabled ? `<span>${escHtml(isArabic ? 'Ù…Ù‚Ø§Ø±Ù†Ø© Ù…Ø¹' : 'Compared with')} ${escHtml(compareTitle)}</span>` : ''}
+        <span>${escHtml(t('reportAmountBasisGrossShort'))}</span>
+      </div>
+    </div>
+  </section>
+  <section class="gr-v2-print-summary">
+    <div><span>${escHtml(t('annualNetProfit'))}</span><strong>${escHtml(amountText(currentNetProfit))} SR</strong></div>
+    <div><span>${escHtml(t('annualGrossProfit'))}</span><strong>${escHtml(amountText(currentGrossProfit))} SR</strong></div>
+    <div><span>${escHtml(isArabic ? 'Ù‡Ø§Ù…Ø´ Ø§Ù„Ø±Ø¨Ø­' : 'Profit margin')}</span><strong>${escHtml(percentText(currentMargin))}</strong></div>
+  </section>
+  <table class="gr-v2-print-table">
+    <thead><tr>${headerCells.map((cell) => `<th>${escHtml(cell)}</th>`).join('')}</tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+  <div class="gr-v2-print-note">${escHtml(periodTitle)}${compareEnabled ? ` | ${escHtml(compareTitle)}` : ''}</div>
+</main>`;
+    const printCss = `
+.print-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  text-align: start;
+  border-bottom-width: 3px;
+}
+.print-header img {
+  margin: 0;
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  border: 1px solid #d8e2ef;
+  border-radius: 10px;
+  padding: 5px;
+}
+.print-header h1 { font-size: 18px; color: #0f172a; }
+.gr-v2-print-sheet {
+  width: ${isYear ? '276mm' : '190mm'};
+  max-width: 100%;
+  margin: 0 auto;
+}
+.gr-v2-print-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.gr-v2-print-title h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 900;
+}
+.gr-v2-print-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.gr-v2-print-meta span {
+  border: 1px solid #d8e2ef;
+  background: #f8fafc;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 800;
+}
+.gr-v2-print-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.gr-v2-print-summary div {
+  border: 1px solid #d8e2ef;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 10px;
+}
+.gr-v2-print-summary span {
+  display: block;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+}
+.gr-v2-print-summary strong {
+  display: block;
+  margin-top: 4px;
+  direction: ltr;
+  text-align: center;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 900;
+}
+.gr-v2-print-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+.gr-v2-print-table thead { display: table-header-group; }
+.gr-v2-print-table th {
+  background: #1d5fa7;
+  color: #fff;
+  border-color: rgba(255,255,255,.2);
+  padding: 9px 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 900;
+}
+.gr-v2-print-table td {
+  border-color: #dbe5f0;
+  padding: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  page-break-inside: avoid;
+}
+.gr-v2-print-table tr:nth-child(even) td { background: #f8fafc; }
+.gr-v2-print-table td.label {
+  text-align: start;
+  color: #172033;
+}
+.gr-v2-print-table td.num {
+  direction: ltr;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.gr-v2-print-table tr.total-row td,
+.gr-v2-print-table tr.is-group-total td,
+.gr-v2-print-table tr.is-summary td {
+  background: #e2e8f0 !important;
+  color: #0f172a;
+  font-weight: 900;
+}
+.gr-v2-print-note {
+  margin-top: 12px;
+  text-align: center;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+}
+@media print {
+  .gr-v2-print-sheet {
+    width: auto;
+    max-width: none;
+  }
+}
+`;
+    return buildPrintDocumentHtml({
+      title: t('reportGeneralV2'),
+      companyName: companyName || t('reports'),
+      subtitle: compareEnabled ? `${periodTitle} | ${compareTitle}` : periodTitle,
+      logoUrl: companyLogoUrl,
+      landscape: isYear,
+      body: printBody,
+      extraCss: printCss,
+      htmlDir: isArabic ? 'rtl' : 'ltr',
+      htmlLang: isArabic ? 'ar' : 'en',
+      autoPrint: true,
+      pageMarginMm: 10,
+    });
+  }
+
   function openPrintablePreview() {
     if (!report) return;
-    const html = buildPrintableGeneralReportV2Html({
-      report,
-      visibleRows,
-      selectedMonthNumber,
-      monthLabel,
-      year,
-      lang,
-      t,
-      companyName,
-    });
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
+    setPrintPreviewHtml(buildFilteredPrintHtml());
   }
 
-  function handleExportPdf() {
-    openPrintablePreview();
-  }
-
-  function handlePrint() {
+  function handlePrintPdf() {
     openPrintablePreview();
   }
 
   return (
-    <div className="nx-gr2">
+    <div className="flex flex-col gap-4">
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
-      <header className="nx-gr2-hero">
-        <div className="nx-gr2-hero__copy">
-          <div className="nx-gr2-kicker">{t('reportIncomeStatementTitle')}</div>
-          <h2>{t('reportGeneralV2')}</h2>
-          <div className="nx-gr2-meta">
-            <span>{companyName || t('reports')}</span>
-            <span>{selectedMonthNumber ? `${monthLabel} ${year}` : year}</span>
-            <span>{t('reportAmountBasisGrossShort')}</span>
-          </div>
-        </div>
-        <FilterToolbar variant="bare" className="nx-gr2-controls">
-          <ReportDateFilter
-            onYearChange={setYear}
-            onMonthChange={setSelectedMonth}
-            onModeChange={setPeriodMode}
-          />
-          <div className="nx-gr2-actions">
-            <Button variant="raw" type="button" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
-            <Button variant="raw" type="button" onClick={handleExportPdf} disabled={!report}>PDF</Button>
-            <Button variant="raw" type="button" onClick={handlePrint} disabled={!report}>{t('print')}</Button>
+      <PrintPreviewModal
+        open={!!printPreviewHtml}
+        onClose={() => setPrintPreviewHtml('')}
+        title={lang === 'ar' ? 'Ù…Ø¹Ø§ÙŠÙ†Ø© Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©' : 'Print preview'}
+        html={printPreviewHtml}
+        closeLabel={lang === 'ar' ? 'Ø¥ØºÙ„Ø§Ù‚' : 'Close'}
+        printLabel={lang === 'ar' ? 'Ø·Ø¨Ø§Ø¹Ø© / Ø­ÙØ¸ PDF' : 'Print / Save PDF'}
+        iframeTitle={lang === 'ar' ? 'Ù…Ø¹Ø§ÙŠÙ†Ø© Ø·Ø¨Ø§Ø¹Ø© Ø§Ù„ØªÙ‚Ø±ÙŠØ±' : 'Report print preview'}
+      />
+
+      <section className="rounded-lg border border-noorix-border bg-white shadow-sm">
+        <FilterToolbar
+          className="border-b border-noorix-border bg-slate-50 px-4 py-3"
+          filtersClassName="justify-center"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'Ø§Ù„ÙØªØ±Ø©' : 'Period'}</span>
+              <DateFilterBar filter={dateFilter} modes={['month', 'months', 'quarter', 'year']} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©' : 'Compare with'}</span>
+              <DateFilterBar filter={compareFilter} modes={['all', 'month', 'months', 'quarter', 'year']} />
+            </div>
           </div>
         </FilterToolbar>
-      </header>
 
-      {!activeCompanyId && <div className="nx-gr2-empty">{t('pleaseSelectCompany')}</div>}
-      {isLoading && <div className="nx-gr2-empty">{t('loading')}</div>}
-      {error && <div className="nx-gr2-empty nx-gr2-empty--error">{error.message}</div>}
+        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(260px,0.75fr)_minmax(0,1.5fr)]">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge color="blue" size="sm">{t('reportIncomeStatementTitle')}</Badge>
+              <Badge color="gray" size="sm">{companyName || t('reports')}</Badge>
+            </div>
+            <h2 className="m-0 mt-3 text-[22px] font-black text-noorix-text">{t('reportGeneralV2')}</h2>
+            <div className="mt-3 text-[12px] font-bold text-noorix-muted">{dateFilter.label}</div>
+          </div>
+
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard color="var(--color-nx-net-profit)" className="min-h-[138px]">
+              <MetricCard.Header label={t('annualNetProfit')} subLabel={dateFilter.label} />
+              <MetricCard.Value value={currentNetProfit} currency="SR" color="var(--color-nx-net-profit)" />
+              <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
+                {compareEnabled ? `${lang === 'ar' ? 'Ø§Ù„ØªØºÙŠØ±' : 'Change'} ${formatChange(percentChange(currentNetProfit, compareNetProfit))}` : (lang === 'ar' ? 'Ø¨Ø¯ÙˆÙ† Ù…Ù‚Ø§Ø±Ù†Ø©' : 'No comparison')}
+              </MetricCard.Footer>
+            </MetricCard>
+
+            <MetricCard color="var(--color-nx-profit)" className="min-h-[138px]">
+              <MetricCard.Header label={t('annualGrossProfit')} subLabel={dateFilter.label} />
+              <MetricCard.Value value={currentGrossProfit} currency="SR" color="var(--color-nx-profit)" />
+              <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
+                {lang === 'ar' ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙØªØ±Ø© Ø§Ù„Ù…Ø­Ø¯Ø¯Ø©' : 'Selected period total'}
+              </MetricCard.Footer>
+            </MetricCard>
+
+            <MetricCard color="var(--color-nx-sales)" className="min-h-[138px]">
+              <MetricCard.Header label={lang === 'ar' ? 'Ù‡Ø§Ù…Ø´ Ø§Ù„Ø±Ø¨Ø­' : 'Profit margin'} subLabel={dateFilter.label} />
+              <MetricCard.Value value={percentText(currentMargin)} color="var(--color-nx-sales)" />
+              <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
+                {lang === 'ar' ? 'ØµØ§ÙÙŠ Ø§Ù„Ø±Ø¨Ø­ Ø¥Ù„Ù‰ Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª' : 'Net profit to revenue'}
+              </MetricCard.Footer>
+            </MetricCard>
+
+            <MetricCard color={compareEnabled ? 'var(--color-nx-profit)' : 'var(--noorix-border)'} className="min-h-[138px]">
+              <MetricCard.Header label={lang === 'ar' ? 'Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©' : 'Comparison'} subLabel={compareEnabled ? compareFilter.label : (lang === 'ar' ? 'Ù…Ø¹Ø·Ù„Ø©' : 'Off')} />
+              <MetricCard.Value
+                value={compareEnabled ? formatChange(percentChange(currentNetProfit, compareNetProfit)) : (lang === 'ar' ? 'Ø¨Ø¯ÙˆÙ†' : 'Off')}
+                color={compareEnabled ? 'var(--color-nx-profit)' : 'var(--noorix-muted)'}
+              />
+              <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
+                {compareEnabled ? `${lang === 'ar' ? 'Ù…Ù‚Ø§Ø±Ù†Ø© Ù…Ø¹' : 'Compared with'} ${compareFilter.label}` : (lang === 'ar' ? 'Ù„Ø§ ØªØ¸Ù‡Ø± Ø£Ø¹Ù…Ø¯Ø© Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©' : 'Comparison columns hidden')}
+              </MetricCard.Footer>
+            </MetricCard>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-noorix-border px-4 py-3">
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3].map((level) => (
+              <Button
+                key={level}
+                size="sm"
+                variant={displayLevel === level ? 'primary' : 'default'}
+                type="button"
+                onClick={() => setDisplayLevel(level as PlDisplayLevel)}
+              >
+                {level === 1 ? t('reportPlLevel1') : level === 2 ? t('reportPlLevel2') : t('reportPlLevel3')}
+              </Button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              className="h-8 w-[210px]"
+              value={rowSearch}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setRowSearch(event.target.value)}
+              placeholder={t('reportPlRowFilterPlaceholder')}
+            />
+            <Button size="sm" type="button" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
+            <Button size="sm" type="button" onClick={handlePrintPdf} disabled={!report}>{t('print')} / PDF</Button>
+          </div>
+        </div>
+      </section>
+
+      {!activeCompanyId && <div className="rounded-lg border border-noorix-border bg-white p-5 text-center text-noorix-muted">{t('pleaseSelectCompany')}</div>}
+      {(isLoading || (compareEnabled && isFetchingCompare)) && <div className="rounded-lg border border-noorix-border bg-white p-5 text-center text-noorix-muted">{t('loading')}</div>}
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 p-5 text-center font-bold text-red-700">{error.message}</div>}
 
       {activeCompanyId && report && (
-        <>
-          <section className="nx-gr2-scoreboard" aria-label={t('reportPlExecutiveSummary')}>
-            {kpis.map((card) => (
-              <article key={card.key} className={`nx-gr2-score ${card.toneClass}`}>
-                <span>{card.label}</span>
-                <strong dir="ltr">{amountText(card.value)} <small>SR</small></strong>
-                <em>{card.meta}</em>
-              </article>
-            ))}
-          </section>
-
-          <section className={isFetching && isPlaceholderData ? 'nx-gr2-statement is-muted' : 'nx-gr2-statement'}>
-            <div className="nx-gr2-statement__bar">
-              <div>
-                <span>{t('reportPlToolbarPeriod')}</span>
-                <strong>{selectedMonthNumber ? `${monthLabel} ${year}` : year}</strong>
-              </div>
-              <FilterToolbar variant="bare" className="nx-gr2-statement__tools">
-                {[1, 2, 3].map((level) => (
-                  <Button variant="raw" key={level} type="button" className={displayLevel === level ? 'is-active' : ''} onClick={() => setDisplayLevel(level as PlDisplayLevel)}>
-                    {level === 1 ? t('reportPlLevel1') : level === 2 ? t('reportPlLevel2') : t('reportPlLevel3')}
-                  </Button>
-                ))}
-                <Input value={rowSearch} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setRowSearch(event.target.value)} placeholder={t('reportPlRowFilterPlaceholder')} />
-              </FilterToolbar>
-            </div>
-
-            <div className="nx-gr2-table-scroll">
-              <table className={selectedMonthNumber ? 'nx-gr2-table is-month' : 'nx-gr2-table is-year'}>
-                <thead>
-                  <tr>
-                    <th>{t('reportItem')}</th>
-                    {selectedMonthNumber ? <th>{monthLabel}</th> : report.months.map((month) => <th key={month.index}>{month.label}</th>)}
-                    {!selectedMonthNumber && <th>{t('reportAnnualTotal')}</th>}
-                    <th>%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleRows.map((row: PlDisplayRow) => {
-                    const canCollapse = row.rowType === 'group' || row.rowType === 'groupTotal' || row.rowType === 'category';
-                    const collapseKey = row.rowType === 'group' || row.rowType === 'groupTotal' ? row.groupKey : row.collapseKey;
-                    const amount = getContextAmount(row, selectedMonthNumber);
-                    const pct = getContextPercent(row, selectedMonthNumber);
-                    const rowTone = groupToneClassModel(row);
-                    const rowType = row.originalRowType || row.rowType;
-                    return (
-                      <tr
-                        key={`${row.groupKey}-${row.itemKey || row.key}-${row.rowType}-${row.depth || 0}`}
-                        className={rowTone}
-                        data-row-type={row.rowType}
-                        data-depth={row.depth || 0}
-                        data-group={row.groupKey}
-                      >
-                        <td>
-                          <Button
-                            variant="raw"
-                            type="button"
-                            className={`nx-gr2-line ${lineIndentClassModel(row)}`}
-                            onClick={() => canCollapse ? toggleGroup(String(collapseKey)) : openDetail(row, selectedMonthNumber, rowType === 'item')}
-                          >
-                            {canCollapse && <span>{collapsedGroups[String(collapseKey)] ? '+' : '-'}</span>}
-                            {displayV2RowLabelModel(row, lang)}
-                          </Button>
-                        </td>
-                        {selectedMonthNumber ? (
-                          <td>
-                            <Button variant="raw" type="button" className="nx-gr2-money" onClick={() => openDetail(row, selectedMonthNumber, rowType === 'item')}>
-                              {amountText(amount)}
-                            </Button>
-                          </td>
-                        ) : (
-                          (row.months ?? []).map((value, index) => (
-                            <td key={index}>
-                              <Button variant="raw" type="button" className="nx-gr2-money" onClick={() => openDetail(row, index + 1, rowType === 'item')}>
-                                {amountText(value)}
-                              </Button>
-                            </td>
-                          ))
-                        )}
-                        {!selectedMonthNumber && <td><span className="nx-gr2-total">{amountText(row.total)}</span></td>}
-                        <td><span className="nx-gr2-pct">{percentText(selectedMonthNumber ? pct : row.percentOfSalesYear)}</span></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </>
+        <section className={isFetching && isPlaceholderData ? 'opacity-70' : undefined}>
+          <SimpleTable
+            columns={activeColumns}
+            data={visibleRows}
+            tableMinWidth={tableMinWidth}
+            compact
+            cellPadding="8px 14px"
+            getRowClassName={(row) => tableRowClass(row)}
+            emptyMessage={lang === 'ar' ? 'Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª' : 'No data'}
+          />
+        </section>
       )}
     </div>
   );

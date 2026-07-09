@@ -2,11 +2,10 @@ import React, { type ChangeEvent, useMemo, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Modal, usePrintPreview } from '../../../ui';
 import {
-  exportItemsCatalogToPdf,
+  buildItemsCatalogDocumentHtml,
   filterProductsForCatalogPrint,
-  printItemsCatalog,
   type ItemsCatalogPrintFilters,
 } from '../utils/itemsCatalogPrint';
 import type { OrderCategory, OrderProduct, OrderProductType, OrderSection } from '../../../types/api';
@@ -37,6 +36,11 @@ export function ItemsCatalogPrintModal({
   const { t, lang } = useTranslation();
   const { companies = [] } = useApp();
   const { showToast } = useToast();
+  const { openPrintPreview, printPreviewModal } = usePrintPreview({
+    title: t('ordersPrintCatalog'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const [printSection, setPrintSection] = useState(initialSection);
   const [printCategory, setPrintCategory] = useState(initialCategoryId);
@@ -62,10 +66,18 @@ export function ItemsCatalogPrintModal({
     [products, filters],
   );
 
-  const companyName = useMemo(() => {
-    const c = companies.find((company) => company.id === companyId);
-    return c?.nameAr || c?.nameEn || '';
+  const company = useMemo(() => {
+    return companies.find((item) => item.id === companyId);
   }, [companies, companyId]);
+
+  const companyName = useMemo(() => {
+    const c = company;
+    return c?.nameAr || c?.nameEn || '';
+  }, [company]);
+
+  const companyLogoUrl = useMemo(() => {
+    return String(company?.logoUrl || '').trim();
+  }, [company]);
 
   const unitLabel = (u: string) => {
     const map: Record<string, string> = {
@@ -86,32 +98,25 @@ export function ItemsCatalogPrintModal({
     categories,
     sections,
     companyName,
+    logoUrl: companyLogoUrl,
     productTypeLabel,
     t,
     unitLabel,
     lang,
   };
 
-  function handlePrint() {
-    const result = printItemsCatalog(catalogOpts);
+  function handlePrintPdf() {
+    const result = buildItemsCatalogDocumentHtml(catalogOpts, 'pdf');
     if (result.empty) {
       showToast(t('ordersPrintCatalogEmpty'), 'error');
       return;
     }
-    onClose();
-  }
-
-  function handleExportPdf() {
-    const result = exportItemsCatalogToPdf(catalogOpts);
-    if (result.empty) {
-      showToast(t('ordersPrintCatalogEmpty'), 'error');
-      return;
-    }
-    onClose();
+    openPrintPreview({ title: result.title, html: result.html });
   }
 
   return (
     <Modal open={open} onClose={onClose} title={t('ordersPrintCatalog')} size="sm">
+      {printPreviewModal}
       <div className="flex flex-col gap-4">
         <p className="m-0 text-[13px] text-noorix-muted leading-[1.5]">
           {t('ordersPrintCatalogHint')}
@@ -153,11 +158,8 @@ export function ItemsCatalogPrintModal({
         <p className="m-0 text-[11px] text-noorix-muted">{t('ordersPrintCatalogPdfHint')}</p>
 
         <div className="flex gap-2 flex-wrap">
-          <Button variant="primary" size="sm" onClick={handlePrint} disabled={matchCount === 0}>
-            {t('print')}
-          </Button>
-          <Button size="sm" onClick={handleExportPdf} disabled={matchCount === 0}>
-            {t('exportPdf')}
+          <Button variant="primary" size="sm" onClick={handlePrintPdf} disabled={matchCount === 0}>
+            {t('print')} / PDF
           </Button>
           <Button size="sm" variant="ghost" onClick={onClose}>
             {t('cancel')}

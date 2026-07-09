@@ -14,14 +14,13 @@ import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
-import { openPrintWindow } from '../../../utils/printUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { PayrollRunFormModal } from '../components/PayrollRunFormModal';
 import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, DateField, Input, Modal, FmtNum, KebabMenu, SmartTable, YearDateFilter } from '../../../ui';
+import { Button, Badge, DateField, Input, Modal, FmtNum, KebabMenu, SmartTable, YearDateFilter, usePrintPreview } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -59,6 +58,11 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const activeCompany = companies?.find((c: HrAny) => c.id === companyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('payrollRuns'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
   const [year, setYear] = useState(new Date().getFullYear());
   const [showCreate, setShowCreate] = useState(false);
   const [editingRunId, setEditingRunId] = useState<HrAny>(null);
@@ -347,9 +351,10 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   }
 
   function handlePrint() {
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('payrollRuns'),
-      companyName: companyName || '??????',
+      companyName: companyName || t('payrollRuns'),
+      logoUrl: companyLogo || '',
       subtitle: `${t('hrTabPayroll')} - ${year}`,
       body: buildPayrollRunPrintTable(allFilteredData, payrollStatusMap, t),
     });
@@ -413,6 +418,8 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
         />
       )}
     >
+      {printPreviewModal}
+
       {showCreate && (
         <PayrollRunFormModal
           companyId={companyId}

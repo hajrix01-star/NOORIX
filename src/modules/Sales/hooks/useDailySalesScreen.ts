@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useDebouncedValue } from '../../../ui';
+import { useDebouncedValue, usePrintPreview } from '../../../ui';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '../../../hooks/useApiQuery';
@@ -14,9 +14,8 @@ import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } f
 import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { exportToExcel, exportToPdf } from '../../../utils/exportUtils';
-import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
+import { exportToExcel } from '../../../utils/exportUtils';
+import { buildPrintRecordsTableHtml, buildPrintTableHtml } from '../../../utils/printTableHtml';
 import { formatSalesForExport } from '../../../utils/importTemplates';
 import { hasPermission, PERMISSIONS } from '../../../constants/permissions';
 import { buildActiveCancelledStatusMap } from '../../../constants/badgeMaps';
@@ -72,6 +71,11 @@ export function useDailySalesScreen() {
   const activeCo = companies?.find((c) => c.id === activeCompanyId);
   const companyName = (lang === 'en' ? (activeCo?.nameEn || activeCo?.nameAr) : (activeCo?.nameAr || activeCo?.nameEn)) || '';
   const logoUrl = activeCo?.logoUrl || '';
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('salesDailySummary'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const { showToast } = useToast();
   const [showEntryModal, setShowEntryModal] = useState(false);
@@ -395,36 +399,6 @@ export function useDailySalesScreen() {
     }
   }
 
-  async function handleExportPdf() {
-    if (!companyId) return;
-    setExportBusy(true);
-    try {
-      const all = await fetchAllSalesSummariesForExport(
-        companyId,
-        dateFilter.startDate,
-        dateFilter.endDate,
-        debouncedQEffective,
-        sortKey,
-        sortDir,
-        showCancelledSales,
-        selectedShift,
-      );
-      const exportData = mapSummariesToExportRows(all);
-      exportToPdf({
-        columns: exportColumns,
-        data: exportData,
-        filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}`,
-        companyName,
-        title: `${t('salesDailySummary')} — ${dateFilter.label}`,
-        logoUrl,
-      });
-    } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : t('saveFailed'), 'error');
-    } finally {
-      setExportBusy(false);
-    }
-  }
-
   async function handlePrint() {
     if (!companyId) return;
     setExportBusy(true);
@@ -460,7 +434,7 @@ export function useDailySalesScreen() {
         [t('statusLabel')]: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
       };
     });
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('salesDailySummary'),
       companyName: companyName || 'الشركة',
       subtitle: `${t('salesDailySummary')} — ${dateFilter.label || ''}`,
@@ -550,8 +524,8 @@ export function useDailySalesScreen() {
     totalCustomers,
     avgPerCustomer,
     handleExportExcel,
-    handleExportPdf,
     handlePrint,
+    printPreviewModal,
     importExportFetcher,
     handleImportSuccess,
     showToast,

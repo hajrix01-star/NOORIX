@@ -1,6 +1,16 @@
-import { openPrintWindow } from '../../../../../utils/printUtils';
+import { buildPrintDocumentHtml } from '../../../../../utils/printUtils';
 import { EMPLOYEE_DOC_EXTRA_CSS } from '../constants';
 
-export function buildPrintWindow(title: string, html: string): Window | null {
-  return openPrintWindow({ title, body: html, extraCss: EMPLOYEE_DOC_EXTRA_CSS });
+export type EmployeeDocPrintOptions = {
+  companyName?: string;
+  companyLogo?: string;
+};
+
+export function buildEmployeeDocPrintHtml(title: string, html: string, _options: EmployeeDocPrintOptions = {}): string {
+  return buildPrintDocumentHtml({
+    title,
+    subtitle: title,
+    body: html,
+    extraCss: EMPLOYEE_DOC_EXTRA_CSS,
+  });
 }

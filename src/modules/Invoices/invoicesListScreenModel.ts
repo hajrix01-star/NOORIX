@@ -138,6 +138,13 @@ export function mapInvoicesToListTableRows(input: {
   );
 }
 
+export function filterVisibleInvoiceListItems(input: {
+  invoices?: InvoiceListRawInvoice[] | null;
+  showCancelled: boolean;
+}) {
+  return (input.invoices ?? []).filter((invoice) => input.showCancelled || invoice.status !== 'cancelled');
+}
+
 export function toInvoiceListViewSource(row: InvoiceListRawInvoice | InvoiceTableRow | null): InvoiceViewSource | null {
   if (!row?.id) return null;
   return {

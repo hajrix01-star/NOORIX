@@ -29,7 +29,7 @@
 - [x] `bankStatementExportPrint.js` بورقتين: العمليات + ملخص التصنيفات، كلاهما بـ RTL وتجميد وتنسيق
 
 ### تصدير PDF
-- [x] `exportTableToPdf` تفتح نافذة HTML احترافية (Cairo + @page + RTL)
+- [x] `PrintPreviewModal` تفتح نافذة HTML احترافية (Cairo + @page + RTL)
 - [x] المتصفح يعمل كمولّد PDF (Save as PDF) — لا تبعيات جديدة
 - [x] `EmployeeDocModal` يستخدم `jsPDF + html2canvas` لإنشاء PDF حقيقي للمستندات
 
@@ -57,7 +57,7 @@
 | لون رأس جداول الطباعة | `#2563eb` (أزرق Tailwind) | `#185FA5` (أزرق Noorix الرسمي) |
 | عدد الملفات المتأثرة | 12 ملف | ✅ موحّد |
 | `exportToExcel` — تنسيق | لا يوجد تنسيق (plain xlsx) | ✅ `xlsx-js-style`: رأس ملوّن + freeze + RTL + عرض تلقائي |
-| `exportTableToPdf` لون الرأس | `#2563eb` | `#185FA5` |
+| `PrintPreviewModal` لون الرأس | `#2563eb` | `#185FA5` |
 | `bankStatementExportPrint.js` | ملف واحد بدون RTL/freeze | ✅ ورقتان + RTL + freeze + تنسيق احترافي |
 | ترقيم الصفحات في الطباعة | غير موحّد (بعض الملفات فقط) | ✅ `@bottom-center` في كل ملف |
 | خط Cairo في الطباعة | غير موحّد | ✅ في كل نافذة طباعة |
@@ -70,7 +70,7 @@
 
 | الملف | النوع | الحالة |
 |-------|-------|--------|
-| `exportUtils.js` → `exportTableToPdf` | نافذة HTML | ✅ |
+| `print preview route` → `PrintPreviewModal` | نافذة HTML | ✅ |
 | `ReportsScreen.jsx` → `handlePrint` | نافذة HTML | ✅ |
 | `DailySalesScreen.jsx` → `handlePrint` | نافذة HTML | ✅ |
 | `PayrollTab.jsx` → `handlePrint` | نافذة HTML | ✅ |

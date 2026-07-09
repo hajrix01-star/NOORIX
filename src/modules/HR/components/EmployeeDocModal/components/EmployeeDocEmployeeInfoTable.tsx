@@ -67,8 +67,8 @@ export function EmployeeDocEmployeeInfoTable({
         <tbody>
           {infoRows.map((row) => (
             <tr key={row.enLabel}>
-              <td className="hr-doc-td text-left" dir="ltr">{row.enLabel}</td>
-              <td className="hr-doc-td text-left" dir="ltr">{row.enVal}</td>
+              <td className="hr-doc-td hr-doc-cell-start" dir="ltr">{row.enLabel}</td>
+              <td className="hr-doc-td hr-doc-cell-start" dir="ltr">{row.enVal}</td>
             </tr>
           ))}
         </tbody>
@@ -84,8 +84,8 @@ export function EmployeeDocEmployeeInfoTable({
         <tbody>
           {infoRows.map((row) => (
             <tr key={row.arLabel}>
-              <td className="hr-doc-td text-right">{row.arLabel}</td>
-              <td className="hr-doc-td text-right">{row.arVal}</td>
+              <td className="hr-doc-td hr-doc-cell-start">{row.arLabel}</td>
+              <td className="hr-doc-td hr-doc-cell-start">{row.arVal}</td>
             </tr>
           ))}
         </tbody>

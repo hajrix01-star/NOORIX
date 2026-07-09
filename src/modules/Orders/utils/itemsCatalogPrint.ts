@@ -1,4 +1,4 @@
-import { openPrintWindow } from '../../../utils/printUtils';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../../utils/printTableHtml';
 import type { OrderCategory, OrderProduct, OrderProductType, OrderProductVariant, OrderSection } from '../../../types/api';
 
@@ -250,6 +250,7 @@ export type ItemsCatalogOutputOpts = {
   categories: OrderCategory[];
   sections: OrderSection[];
   companyName: string;
+  logoUrl?: string;
   productTypeLabel: string;
   t: (key: string) => string;
   unitLabel: (u: string) => string;
@@ -317,16 +318,18 @@ function prepareItemsCatalogDocument(opts: ItemsCatalogOutputOpts) {
   };
 }
 
-function openItemsCatalogDocument(
+export function buildItemsCatalogDocumentHtml(
   opts: ItemsCatalogOutputOpts,
   mode: 'print' | 'pdf',
-): { empty: boolean } {
+): { empty: true } | { empty: false; title: string; html: string } {
   const doc = prepareItemsCatalogDocument(opts);
   if (doc.empty) return { empty: true };
 
-  openPrintWindow({
-    title: mode === 'pdf' ? doc.pdfFilename.replace(/\.pdf$/i, '') : opts.t('ordersPrintCatalogTitle'),
+  const title = mode === 'pdf' ? doc.pdfFilename.replace(/\.pdf$/i, '') : opts.t('ordersPrintCatalogTitle');
+  const html = buildPrintDocumentHtml({
+    title,
     companyName: opts.companyName,
+    logoUrl: opts.logoUrl || '',
     subtitle: doc.subtitle,
     body: doc.body,
     extraCss: CATALOG_PRINT_EXTRA_CSS,
@@ -337,13 +340,5 @@ function openItemsCatalogDocument(
     htmlDir: opts.lang === 'en' ? 'ltr' : 'rtl',
   });
 
-  return { empty: false };
-}
-
-export function printItemsCatalog(opts: ItemsCatalogOutputOpts): { empty: boolean } {
-  return openItemsCatalogDocument(opts, 'print');
-}
-
-export function exportItemsCatalogToPdf(opts: ItemsCatalogOutputOpts): { empty: boolean } {
-  return openItemsCatalogDocument(opts, 'pdf');
+  return { empty: false, title, html };
 }

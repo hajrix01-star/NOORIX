@@ -71,8 +71,8 @@ export default function DailySalesScreen() {
     totalCustomers,
     avgPerCustomer,
     handleExportExcel,
-    handleExportPdf,
     handlePrint,
+    printPreviewModal,
     importExportFetcher,
     handleImportSuccess,
     showToast,
@@ -200,6 +200,7 @@ export default function DailySalesScreen() {
 
   return (
     <ScreenShell>
+      {printPreviewModal}
       {editingSummary && (
         <SalesDayEditModal
           day={editingSummary}
@@ -333,8 +334,7 @@ export default function DailySalesScreen() {
               {salesFullHistory && (
                 <span className="flex flex-wrap gap-1.5 print:hidden">
                   <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportExcel')}</Button>
-                  <Button size="sm" onClick={handleExportPdf} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : '????? / PDF'}</Button>
-                  <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('print')}</Button>
+                  <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : `${t('print')} / PDF`}</Button>
                 </span>
               )}
             </>

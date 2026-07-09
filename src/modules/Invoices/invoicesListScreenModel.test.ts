@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildInvoiceImportSuccessMessage,
   filterInvoiceSupplierCategories,
+  filterVisibleInvoiceListItems,
   getInvoiceListCreatedByDisplayName,
   getInvoiceListErrorMessage,
   mapInvoicesToListTableRows,
@@ -75,6 +76,21 @@ describe('invoicesListScreenModel', () => {
       createdByDisplayName: 'sales@example.com',
       notesOrEmployee: '',
     });
+  });
+
+  it('removes cancelled invoices from visible table rows until the cancelled filter is enabled', () => {
+    const invoices = [
+      { id: 'active-1', status: 'active' },
+      { id: 'cancelled-1', status: 'cancelled' },
+    ];
+
+    expect(filterVisibleInvoiceListItems({ invoices, showCancelled: false }).map((invoice) => invoice.id)).toEqual([
+      'active-1',
+    ]);
+    expect(filterVisibleInvoiceListItems({ invoices, showCancelled: true }).map((invoice) => invoice.id)).toEqual([
+      'active-1',
+      'cancelled-1',
+    ]);
   });
 
   it('centralizes display fallbacks for creator, vault labels, import toast, and errors', () => {

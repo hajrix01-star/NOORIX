@@ -1,16 +1,16 @@
-﻿/**
- * عرض كشف كامل (صفحة) — بديل النافذة المنبثقة البسيطة؛ مستوحى من المشروع السابق.
+/**
+ * ??? ??? ???? (????) � ???? ??????? ???????? ???????? ?????? ?? ??????? ??????.
  */
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import useBankStatementView from '../../../hooks/useBankStatementView';
-import { Button, Modal, ScreenTabs, cn } from '../../../ui';
+import { Button, Modal, ScreenTabs, cn, usePrintPreview } from '../../../ui';
 import BankStatementSummaryCards from './BankStatementSummaryCards';
 import BankStatementAnalysisCardsTab from './BankStatementAnalysisCardsTab';
 import BankStatementTransactionsFullTab from './BankStatementTransactionsFullTab';
 import BankStatementReconciliationTab from './BankStatementReconciliationTab';
 import BankStatementSalesCompareTab from './BankStatementSalesCompareTab';
-import { exportBankStatementExcel, printBankStatement } from './bankStatementExportPrint';
+import { buildBankStatementPrintHtml, exportBankStatementExcel } from './bankStatementExportPrint';
 import { throwIfApiFailed } from '../../../services/api';
 import type { ApiParsedResult } from '../../../services/api';
 import type { BankCategoryLite, BankCreateCategoryBody } from './bankAnalysisTab.types';
@@ -19,6 +19,7 @@ type BankStatementDetailViewProps = {
   statementId: string;
   companyId: string;
   companyName?: string;
+  companyLogoUrl?: string;
   categories?: BankCategoryLite[];
   onBack: () => void;
   onDelete?: () => void;
@@ -35,6 +36,7 @@ export default function BankStatementDetailView({
   statementId,
   companyId,
   companyName,
+  companyLogoUrl,
   categories,
   onBack,
   onDelete,
@@ -43,6 +45,11 @@ export default function BankStatementDetailView({
   onRefresh,
 }: BankStatementDetailViewProps) {
   const { t } = useTranslation();
+  const { openPrintPreview, printPreviewModal } = usePrintPreview({
+    title: t('bankPrint'),
+    closeLabel: t('close') || '?????',
+    printLabel: `${t('print')} / PDF`,
+  });
   const vm = useBankStatementView(statementId, companyId, t);
   const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -75,7 +82,7 @@ export default function BankStatementDetailView({
   if (vm.isLoading) {
     return (
       <div className="text-center text-noorix-muted p-12">
-        {t('loading')}…
+        {t('loading')}�
       </div>
     );
   }
@@ -92,7 +99,7 @@ export default function BankStatementDetailView({
   if (vm.statement.status === 'mapping') {
     return (
       <div className="p-6">
-        <Button variant="ghost" onClick={onBack}>← {t('bankBackToList')}</Button>
+        <Button variant="ghost" onClick={onBack}>? {t('bankBackToList')}</Button>
         <p className="mt-4">{t('bankStatementMappingRequired')}</p>
       </div>
     );
@@ -115,21 +122,22 @@ export default function BankStatementDetailView({
 
   return (
     <div className="grid gap-5">
-      {/* ── رأس الصفحة: زر الرجوع + أدوات ── */}
+      {printPreviewModal}
+      {/* -- ??? ??????: ?? ?????? + ????? -- */}
       <div className="nx-page-header noorix-surface-card py-[14px] px-[18px]">
-        <Button size="sm" onClick={onBack}>← {t('bankBackToList')}</Button>
+        <Button size="sm" onClick={onBack}>? {t('bankBackToList')}</Button>
         <div className="nx-toolbar">
           <Button
             size="sm"
             disabled={vm.reclassifyMutation.isPending}
             onClick={() => {
               vm.reclassifyMutation.mutate(undefined, {
-                onSuccess: () => showToast?.(t('bankReclassifyDone') || 'تم إعادة التصنيف'),
+                onSuccess: () => showToast?.(t('bankReclassifyDone') || '?? ????? ???????'),
                 onError: (error: unknown) => showToast?.(errorMessage(error), 'error'),
               });
             }}
           >
-            {vm.reclassifyMutation.isPending ? '⟳ ' + t('loading') : t('bankReclassify')}
+            {vm.reclassifyMutation.isPending ? '? ' + t('loading') : t('bankReclassify')}
           </Button>
           <Button
             size="sm"
@@ -151,14 +159,16 @@ export default function BankStatementDetailView({
           </Button>
           <Button
             size="sm"
-            onClick={() =>
-              printBankStatement({
+            onClick={() => {
+              const html = buildBankStatementPrintHtml({
                 statement: stmt,
                 companyName,
+                logoUrl: companyLogoUrl,
                 filteredTransactions: vm.filteredTransactions,
                 columnTotals: vm.columnTotals,
-              })
-            }
+              });
+              if (html) openPrintPreview({ title: t('bankPrint'), html });
+            }}
           >
             {t('bankPrint')}
           </Button>
@@ -166,10 +176,10 @@ export default function BankStatementDetailView({
         </div>
       </div>
 
-      {/* ── بطاقات الملخص ── */}
+      {/* -- ?????? ?????? -- */}
       <BankStatementSummaryCards statement={stmt} t={t} />
 
-      {/* ── التبويبات ── */}
+      {/* -- ????????? -- */}
       <div
         className="noorix-surface-card overflow-hidden p-0"
       >

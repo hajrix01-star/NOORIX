@@ -67,49 +67,52 @@ export default function HajriTaxScreen() {
   if (s.detailCompanyId) {
     const { name, tax } = s.companyMeta(s.detailCompanyId);
     return (
-      <HajriTaxDetailEditor
-        t={s.t}
-        lang={s.lang}
-        periodLabel={s.periodLabel}
-        companyName={name}
-        taxNumber={tax}
-        closeDetail={s.closeDetail}
-        handleImportFromTaxReport={s.handleImportFromTaxReport}
-        importingReport={s.importingReport}
-        handleSaveDetail={s.handleSaveDetail}
-        savePending={s.upsertMutation.isPending}
-        printDetail={s.printDetail}
-        exportDetailExcel={s.exportDetailExcel}
-        saveHint={s.saveHint}
-        outputTotal={s.outputTotal}
-        inputTotal={s.inputTotal}
-        netPayableDraft={s.netPayableDraft}
-        netVat={s.netVat}
-        priorAdj={s.priorAdj}
-        balanceCarried={s.balanceCarried}
-        paymentTargetStr={s.paymentTargetStr}
-        setPaymentTargetStr={s.setPaymentTargetStr}
-        notes={s.notes}
-        setNotes={s.setNotes}
-        sourceSnapshot={s.sourceSnapshot}
-        showSimulator={s.showSimulator}
-        setShowSimulator={s.setShowSimulator}
-        handleBalancePayment={s.handleBalancePayment}
-        simulatorRequiredInputVat={s.simulatorRequiredInputVat}
-        simulatorEstimatedBaseAt15={s.simulatorEstimatedBaseAt15}
-        simulatorInvalidTarget={s.simulatorInvalidTarget}
-        paymentTargetParsed={s.paymentTargetParsed}
-        renderEditableCell={renderEditableCell}
-        updateRow={s.updateRow}
-        salesAmountIncludesVat={s.salesAmountIncludesVat}
-        setSalesAmountIncludesVat={s.setSalesAmountIncludesVat}
-        readOnly={s.detailReadOnly}
-        onSwitchToEdit={() => s.setDetailReadOnly(false)}
-        filingSubmitted={s.detailFilingSubmitted}
-        onApproveFiling={() => void s.persistDetailFilingSubmitted(true)}
-        onReopenFiling={() => void s.persistDetailFilingSubmitted(false)}
-        filingActionPending={s.upsertMutation.isPending}
-      />
+      <>
+        {s.printPreviewModal}
+        <HajriTaxDetailEditor
+          t={s.t}
+          lang={s.lang}
+          periodLabel={s.periodLabel}
+          companyName={name}
+          taxNumber={tax}
+          closeDetail={s.closeDetail}
+          handleImportFromTaxReport={s.handleImportFromTaxReport}
+          importingReport={s.importingReport}
+          handleSaveDetail={s.handleSaveDetail}
+          savePending={s.upsertMutation.isPending}
+          printDetail={s.printDetail}
+          exportDetailExcel={s.exportDetailExcel}
+          saveHint={s.saveHint}
+          outputTotal={s.outputTotal}
+          inputTotal={s.inputTotal}
+          netPayableDraft={s.netPayableDraft}
+          netVat={s.netVat}
+          priorAdj={s.priorAdj}
+          balanceCarried={s.balanceCarried}
+          paymentTargetStr={s.paymentTargetStr}
+          setPaymentTargetStr={s.setPaymentTargetStr}
+          notes={s.notes}
+          setNotes={s.setNotes}
+          sourceSnapshot={s.sourceSnapshot}
+          showSimulator={s.showSimulator}
+          setShowSimulator={s.setShowSimulator}
+          handleBalancePayment={s.handleBalancePayment}
+          simulatorRequiredInputVat={s.simulatorRequiredInputVat}
+          simulatorEstimatedBaseAt15={s.simulatorEstimatedBaseAt15}
+          simulatorInvalidTarget={s.simulatorInvalidTarget}
+          paymentTargetParsed={s.paymentTargetParsed}
+          renderEditableCell={renderEditableCell}
+          updateRow={s.updateRow}
+          salesAmountIncludesVat={s.salesAmountIncludesVat}
+          setSalesAmountIncludesVat={s.setSalesAmountIncludesVat}
+          readOnly={s.detailReadOnly}
+          onSwitchToEdit={() => s.setDetailReadOnly(false)}
+          filingSubmitted={s.detailFilingSubmitted}
+          onApproveFiling={() => void s.persistDetailFilingSubmitted(true)}
+          onReopenFiling={() => void s.persistDetailFilingSubmitted(false)}
+          filingActionPending={s.upsertMutation.isPending}
+        />
+      </>
     );
   }
 
@@ -139,6 +142,7 @@ export default function HajriTaxScreen() {
 
   return (
     <>
+      {s.printPreviewModal}
       <HajriTaxRegistryList
         t={s.t}
         lang={s.lang}

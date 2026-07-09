@@ -449,7 +449,7 @@ export function useHajriTaxScreen() {
       const c = companies?.find((x) => x.id === id);
       if (!c) return { name: id ?? '', tax: '' };
       const name = lang === 'en' ? (c.nameEn || c.nameAr || c.name || '') : (c.nameAr || c.name || c.nameEn || '');
-      return { name: name || id || '', tax: c.taxNumber || '' };
+      return { name: name || id || '', tax: c.taxNumber || '', logoUrl: String(c.logoUrl || '').trim() };
     },
     [companies, lang],
   );
@@ -460,6 +460,7 @@ export function useHajriTaxScreen() {
     exportConsolidatedExcel,
     printConsolidated,
     exportJsonBundle,
+    printPreviewModal,
   } = useHajriTaxExports({
     t,
     lang,
@@ -588,6 +589,7 @@ export function useHajriTaxScreen() {
     exportConsolidatedExcel,
     printConsolidated,
     exportJsonBundle,
+    printPreviewModal,
     jsonInputRef,
     onJsonImport,
     handleBulkImportSuccess,

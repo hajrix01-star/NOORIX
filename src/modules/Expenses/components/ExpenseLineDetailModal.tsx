@@ -4,10 +4,9 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { getExpenseLine, getExpenseLinePayments } from '../../../services/api';
 import { expenseKeys } from '../../../services/queryKeys';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
-import { Button, AdaptiveSheet, FmtNum, SmartTable } from '../../../ui';
+import { Button, AdaptiveSheet, FmtNum, SmartTable, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import { useApp } from '../../../context/AppContext';
 import type { ExpenseLinePaymentsPage, ExpenseLineRecord, ExpenseLinePaymentRecord } from '../../../types/api';
@@ -43,6 +42,12 @@ export default function ExpenseLineDetailModal({
   const { activeCompanyId, companies = [] } = useApp();
   const activeCompany = companies.find((company) => company.id === (companyId || activeCompanyId));
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
+  const companyLogoUrl = String(activeCompany?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('paymentHistoryTab'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
   const [page, setPage] = useState(1);
 
   const { data: lineData, isLoading: lineLoading } = useApiQuery<ExpenseLineRecord>({
@@ -96,9 +101,10 @@ export default function ExpenseLineDetailModal({
   const printTitle = `${t('paymentHistoryTab')} - ${lineName}`;
 
   function handlePrintPayments() {
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: printTitle,
       companyName,
+      logoUrl: companyLogoUrl,
       subtitle: formatExpenseSummarySubtitle(printTitle, periodSummary),
       body: buildPrintRecordsTableHtml({
         records: paymentExportData,
@@ -112,6 +118,7 @@ export default function ExpenseLineDetailModal({
 
   return (
     <AdaptiveSheet open onClose={onClose} title={modalTitle} size="xl" side="start" className="expense-line-detail-drawer">
+      {printPreviewModal}
       <div className="flex flex-wrap gap-3 text-[13px] text-noorix-muted mb-4">
         <span>{t('expenseLineKindCol')}: {expenseLineKindLabel(line?.kind, lang)}</span>
         <span>{t('category')}: {expenseCategoryDisplayName(line?.category, lang)}</span>
@@ -134,9 +141,8 @@ export default function ExpenseLineDetailModal({
       <div className="nx-page-header mb-3">
         <h3 className="text-[16px] font-semibold m-0">{t('paymentHistoryTab')}</h3>
         <div className="nx-toolbar">
-          <Button size="sm" onClick={handlePrintPayments} disabled={!payments.length}>{t('print')}</Button>
           <Button size="sm" onClick={() => exportToExcel(paymentExportData, `payments-${lineName}.xlsx`)} disabled={!payments.length}>Excel</Button>
-          <Button size="sm" onClick={() => exportTableToPdf({ data: paymentExportData, title: printTitle, companyName, filename: `payments-${lineName}.pdf` })} disabled={!payments.length}>{t('print')} / PDF</Button>
+          <Button size="sm" onClick={handlePrintPayments} disabled={!payments.length}>{t('print')} / PDF</Button>
         </div>
       </div>
 
