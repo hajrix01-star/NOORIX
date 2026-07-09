@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
 
 type FinancialCoreAccountingDelegate = Pick<
@@ -12,7 +12,10 @@ type CancelArgs = Parameters<FinancialCoreService['cancelOperation']>;
 
 @Injectable()
 export class AccountingCoreService {
-  constructor(private readonly financialCore: FinancialCoreAccountingDelegate) {}
+  constructor(
+    @Inject(FinancialCoreService)
+    private readonly financialCore: FinancialCoreAccountingDelegate,
+  ) {}
 
   postHrServiceExpense(...args: OutflowArgs) {
     return this.financialCore.processOutflow(...args);

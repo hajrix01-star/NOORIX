@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TaxVatCoreService, type TaxVatAggregateRow } from '../tax-vat-core/tax-vat-core.service';
 
 type ReportsTaxVatPrisma = {
@@ -15,7 +16,9 @@ type ReportsTaxVatCore = Pick<TaxVatCoreService, 'computeDisclosureFromInvoiceAg
 @Injectable()
 export class ReportsTaxVatService {
   constructor(
+    @Inject(TenantPrismaService)
     private readonly prisma: ReportsTaxVatPrisma,
+    @Inject(TaxVatCoreService)
     private readonly taxVatCore: ReportsTaxVatCore,
   ) {}
 
