@@ -43,7 +43,7 @@ export default function PermissionGuard({
 
   if (isSuperAdmin(userRole)) return children;
 
-  const allowed = requiredList.some((perm: any) => hasPermission(userRole, perm, userPermissions));
+  const allowed = requiredList.some((perm) => hasPermission(userRole, perm, userPermissions));
   if (!allowed) return <Forbidden403 />;
   return children;
 }

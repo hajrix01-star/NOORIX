@@ -30,7 +30,7 @@ const queryClient = new QueryClient({
       gcTime: 5 * 60 * 1000,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
-      retry(failureCount: any, error: any) {
+      retry(failureCount: number, error: unknown) {
         const err = error as Error & {
           code?: number;
           response?: { status?: number };

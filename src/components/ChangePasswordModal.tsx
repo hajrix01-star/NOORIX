@@ -103,7 +103,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }: ChangePasswo
             {newPassword && (
               <div className="mt-2" style={strengthStyle}>
                 <div className="flex gap-1 mb-1">
-                  {[1, 2, 3, 4].map((level: any) => (
+                  {[1, 2, 3, 4].map((level) => (
                     <div
                       key={level}
                       className={`password-strength-bar flex-1 h-1 rounded transition-[background] duration-200${strength >= level ? ' password-strength-bar--active' : ''}`}

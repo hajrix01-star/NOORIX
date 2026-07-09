@@ -6,16 +6,16 @@
  */
 type CompressOpts = { maxDim?: number; quality?: number };
 
-export function compressImageFileToJpegDataUrl(file: File, opts: CompressOpts = {}) {
+export function compressImageFileToJpegDataUrl(file: File, opts: CompressOpts = {}): Promise<string> {
   const { maxDim = 1600, quality = 0.82 } = opts;
-  return new Promise((resolve: any, reject: any) => {
+  return new Promise<string>((resolve, reject) => {
     if (!file?.type?.startsWith('image/')) {
       reject(new Error('Expected an image file'));
       return;
     }
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('read failed'));
-    reader.onload = (ev: any) => {
+    reader.onload = (ev: ProgressEvent<FileReader>) => {
       const src = ev.target?.result;
       if (typeof src !== 'string') {
         reject(new Error('read failed'));

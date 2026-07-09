@@ -426,7 +426,7 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
   const renderStaffRowMenuItems = useCallback((row: HrStaffTableRow) => [
     {
       key: 'profile',
-      label: t('viewProfile'),
+      label: t('viewEmployeeProfile'),
       onClick: () => navigate(`/hr/employee/${row.id}`),
     },
     {
@@ -437,13 +437,13 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     },
     ...(row.status === 'active' ? [{
       key: 'advance',
-      label: t('advance'),
+      label: t('quickAdvance'),
       style: { color: 'var(--noorix-accent-blue)' },
       onClick: () => setAdvanceEmployee(row),
     }] : []),
     ...(row.status !== 'terminated' && row.status !== 'archived' ? [{
       key: 'terminate',
-      label: t('terminate'),
+      label: t('terminateEmployee'),
       style: { color: 'var(--noorix-accent-amber)' },
       onClick: () => {
         setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
@@ -452,7 +452,7 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     }] : []),
     ...(canDeleteEmployee ? [{
       key: 'delete',
-      label: t('permanentDelete'),
+      label: t('deleteEmployeePermanent'),
       style: { color: 'var(--noorix-accent-red)' },
       onClick: () => handlePermanentDelete(row),
     }] : []),

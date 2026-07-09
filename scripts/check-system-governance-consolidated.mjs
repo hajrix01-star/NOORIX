@@ -14,6 +14,8 @@ const governanceChecks = [
   'check-chart-state-governance.mjs',
   'check-print-export-governance.mjs',
   'check-editable-grid-governance.mjs',
+  'check-display-grid-governance.mjs',
+  'check-any-typing-governance.mjs',
   'check-display-name-governance.mjs',
   'check-official-numbers-governance.mjs',
   'check-accounting-core-boundary-governance.mjs',

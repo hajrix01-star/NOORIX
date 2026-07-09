@@ -137,15 +137,19 @@ export function StatCard({ color = 'blue', label, value, delta, icon, className 
   );
 }
 
-export default function Card({ variant = 'surface', ...props }: { variant?: string } & Record<string, any>) {
-  const p = props as any;
+export type CardProps = {
+  variant?: string;
+} & Record<string, unknown>;
+
+export default function Card({ variant = 'surface', ...props }: CardProps) {
+  const p = props as Record<string, unknown>;
   if (variant === 'exec') return <ExecCard {...p} />;
   if (variant === 'stat') return <StatCard {...p} />;
   if (variant === 'plain') {
     const { padding = 'md', className = '', children, ...rest } = p;
     return (
-      <div className={cn(PAD[padding as keyof typeof PAD] ?? PAD.md, className)} {...rest}>
-        {children}
+      <div className={cn(PAD[padding as keyof typeof PAD] ?? PAD.md, String(className || ''))} {...rest}>
+        {children as ReactNode}
       </div>
     );
   }
