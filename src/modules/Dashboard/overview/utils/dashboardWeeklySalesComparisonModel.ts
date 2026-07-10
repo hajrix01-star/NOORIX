@@ -8,7 +8,7 @@ export type DashboardWeeklySalesComparisonRow = {
   weekIndex: number;
   dayStart: number;
   dayEnd: number;
-  avgDailyCurrent: number;
+  avgDailyCurrent: number | null;
   avgDailyBaseline: number;
   deltaPct: number | null;
 };
@@ -76,7 +76,7 @@ export function buildDashboardWeeklySalesComparisonRowsFromDaily(params: {
       baselineDays > 0
         ? sumMetricDays(baselineRows, params.baselineYear, params.baselineMonth, dayStart, baselineEffectiveEnd)
         : 0;
-    const avgDailyCurrent = currentDays > 0 ? computeSliceDailyAvg(currentTotal, currentDays) : 0;
+    const avgDailyCurrent = currentDays > 0 ? computeSliceDailyAvg(currentTotal, currentDays) : null;
     const avgDailyBaseline = computeSliceDailyAvg(baselineTotal, baselineDays);
 
     rows.push({
@@ -85,7 +85,7 @@ export function buildDashboardWeeklySalesComparisonRowsFromDaily(params: {
       dayEnd: currentWeekEnd,
       avgDailyCurrent,
       avgDailyBaseline,
-      deltaPct: currentDays > 0 ? pctChangeVsBaseline(avgDailyCurrent, avgDailyBaseline) : null,
+      deltaPct: avgDailyCurrent != null ? pctChangeVsBaseline(avgDailyCurrent, avgDailyBaseline) : null,
     });
   }
 

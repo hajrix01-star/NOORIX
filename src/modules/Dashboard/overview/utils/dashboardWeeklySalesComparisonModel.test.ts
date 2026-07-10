@@ -97,7 +97,7 @@ describe('dashboardWeeklySalesComparisonModel', () => {
       weekIndex: 3,
       dayStart: 15,
       dayEnd: 21,
-      avgDailyCurrent: 0,
+      avgDailyCurrent: null,
       avgDailyBaseline: 7000,
       deltaPct: null,
     });

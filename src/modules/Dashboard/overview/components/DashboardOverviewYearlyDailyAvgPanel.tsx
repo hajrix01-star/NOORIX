@@ -42,7 +42,7 @@ function deltaToneClass(delta: number | null): string {
 
 function rowHighlightClass(row: YearMonthlyDailyAvgRow, isSelected: boolean): string {
   return cn(
-    row.isCurrentMonth && 'bg-[color-mix(in_srgb,var(--color-nx-sales)_6%,transparent)]',
+    row.isCurrentMonth && 'bg-[color-mix(in_srgb,var(--color-nx-sales)_10%,transparent)] shadow-[inset_-3px_0_0_var(--color-nx-sales)]',
     isSelected && !row.isCurrentMonth && 'bg-noorix-bg-muted/40',
   );
 }
@@ -91,7 +91,6 @@ function MoneyValue({
   return (
     <span dir="ltr" className="inline-flex max-w-full items-baseline justify-center gap-0.5 whitespace-nowrap nx-font-numbers">
       <FmtNum n={value} className={cn('font-bold', className)} />
-      <span className="nx-sar text-[8px] text-noorix-muted">SR</span>
     </span>
   );
 }

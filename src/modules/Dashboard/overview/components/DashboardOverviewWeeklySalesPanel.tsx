@@ -32,40 +32,37 @@ type MonthDraft = {
 };
 
 function MonthHeader({
-  title,
   subtitle,
   monthLabel,
   year,
 }: {
-  title: React.ReactNode;
   subtitle: React.ReactNode;
   monthLabel: React.ReactNode;
   year: number;
 }) {
   return (
     <>
-      <div className="mb-0.5 text-[9px] font-bold leading-tight text-white sm:text-[11px]">
-        {title}
-      </div>
-      <div className="mb-1 text-[8px] font-semibold text-white/75 sm:text-[10px]">
-        {subtitle}
-      </div>
-      <div className="text-[8px] font-bold text-white/80 sm:text-[10px]">
+      <div className="mb-0.5 text-[10px] font-bold leading-tight text-white sm:text-[12px]">
         {monthLabel} {year}
+      </div>
+      <div className="text-[8px] font-semibold text-white/75 sm:text-[10px]">
+        {subtitle}
       </div>
     </>
   );
 }
 
-function MoneyCell({ value }: { value: number }) {
+function MoneyCell({ value }: { value: number | null }) {
+  if (value == null) {
+    return <span className="font-semibold text-noorix-muted">-</span>;
+  }
   return (
     <span dir="ltr">
       <FmtNum
         n={value}
         maxDecimals={2}
         className="font-semibold tabular-nums nx-font-numbers text-noorix-text"
-      />{' '}
-      <span className="nx-sar text-[8px] text-noorix-muted sm:text-[11px]">SR</span>
+      />
     </span>
   );
 }
@@ -188,7 +185,6 @@ export function DashboardOverviewWeeklySalesPanel({
         key: 'avgDailyCurrent',
         label: (
           <MonthHeader
-            title={t('dashboardWeeklySalesPeriodMainHeader')}
             subtitle={t('dashboardWeeklySalesAvgDailyShort')}
             monthLabel={monthALabel}
             year={panelYearA}
@@ -202,7 +198,6 @@ export function DashboardOverviewWeeklySalesPanel({
         key: 'avgDailyBaseline',
         label: (
           <MonthHeader
-            title={t('dashboardWeeklySalesPeriodCompareHeader')}
             subtitle={t('dashboardWeeklySalesAvgDailyShort')}
             monthLabel={monthBLabel}
             year={panelYearB}
@@ -236,7 +231,7 @@ export function DashboardOverviewWeeklySalesPanel({
       </div>
 
       <div className="p-3 sm:p-4">
-        <div className="mb-3 flex min-w-0 flex-col items-center justify-center gap-3 xl:flex-row">
+        <div className="mb-3 grid min-w-0 grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
           <MonthSelector
             title={t('dashboardWeeklySalesPeriodMainHeader')}
             draft={draftA}
@@ -257,7 +252,7 @@ export function DashboardOverviewWeeklySalesPanel({
             variant="primary"
             onClick={applyDraft}
             disabled={!hasDraftChanges}
-            className="min-w-24"
+            className="h-10 min-w-24"
           >
             {t('dateFilterApply')}
           </Button>
