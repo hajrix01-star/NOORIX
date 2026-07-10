@@ -39,6 +39,7 @@ export function buildPerformanceRows(params: {
   report: PlReportLike | null | undefined;
   timelineGrain: string;
   dailySummaries: SummaryLike[];
+  yearSummaries: SummaryLike[];
   lastDayChart: number;
   lang: string;
   t: TFn;
@@ -49,6 +50,7 @@ export function buildPerformanceRows(params: {
     report,
     timelineGrain,
     dailySummaries,
+    yearSummaries,
     lastDayChart,
     lang,
     t,
@@ -56,28 +58,55 @@ export function buildPerformanceRows(params: {
     enMonths,
   } = params;
 
+  const salesKey = t('annualSales');
+  const customersKey = t('dashboardTimelineCustomers');
+  const avgInvoiceKey = t('dashboardTimelineAvgInvoice');
+
   if (timelineGrain === 'daily') {
     const byDay = new Map<number, number>();
+    const customersByDay = new Map<number, number>();
     (dailySummaries || []).forEach((s) => {
       const d = toYmd(s.transactionDate);
       const dayNum = parseInt(d.slice(8, 10), 10);
       byDay.set(dayNum, (byDay.get(dayNum) || 0) + Number(s.totalAmount || 0));
+      customersByDay.set(dayNum, (customersByDay.get(dayNum) || 0) + Number(s.customerCount || 0));
     });
-    return Array.from({ length: lastDayChart }, (_, i) => ({
-      label: String(i + 1),
-      [t('annualSales')]: byDay.get(i + 1) || 0,
-    }));
+    return Array.from({ length: lastDayChart }, (_, i) => {
+      const day = i + 1;
+      const sales = byDay.get(day) || 0;
+      const customers = customersByDay.get(day) || 0;
+      return {
+        label: String(day),
+        [salesKey]: sales,
+        [customersKey]: customers,
+        [avgInvoiceKey]: customers > 0 ? sales / customers : 0,
+      };
+    });
   }
 
   const sg = report?.groups?.find((r) => r.key === 'sales');
   const pg = report?.groups?.find((r) => r.key === 'purchases');
   const eg = report?.groups?.find((r) => r.key === 'expenses');
-  return enMonths.map((lbl, i) => ({
-    label: lang === 'ar' ? monthNamesAr[i] : lbl,
-    [t('annualSales')]: Number(sg?.months?.[i] || 0),
-    [t('annualPurchases')]: Number(pg?.months?.[i] || 0),
-    [t('annualExpenses')]: Number(eg?.months?.[i] || 0),
-  }));
+  const customersByMonth = new Map<number, number>();
+  for (const summary of yearSummaries || []) {
+    const d = toYmd(summary.transactionDate);
+    const month = parseInt(d.slice(5, 7), 10);
+    if (!Number.isFinite(month) || month < 1 || month > 12) continue;
+    customersByMonth.set(month, (customersByMonth.get(month) || 0) + Number(summary.customerCount || 0));
+  }
+
+  return enMonths.map((lbl, i) => {
+    const sales = Number(sg?.months?.[i] || 0);
+    const customers = customersByMonth.get(i + 1) || 0;
+    return {
+      label: lang === 'ar' ? monthNamesAr[i] : lbl,
+      [salesKey]: sales,
+      [t('annualPurchases')]: Number(pg?.months?.[i] || 0),
+      [t('annualExpenses')]: Number(eg?.months?.[i] || 0),
+      [customersKey]: customers,
+      [avgInvoiceKey]: customers > 0 ? sales / customers : 0,
+    };
+  });
 }
 
 export function buildChannelPieRows(params: {

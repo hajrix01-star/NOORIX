@@ -505,13 +505,14 @@ export function useDashboardOverviewModel(
         report,
         timelineGrain,
         dailySummaries,
+        yearSummaries,
         lastDayChart,
         lang,
         t,
         monthNamesAr: MONTH_NAMES_AR,
         enMonths: EN_MONTHS,
       }),
-    [report, timelineGrain, dailySummaries, lastDayChart, lang, t],
+    [report, timelineGrain, dailySummaries, yearSummaries, lastDayChart, lang, t],
   );
 
   const channelPeriodLabel = useMemo(() => {
