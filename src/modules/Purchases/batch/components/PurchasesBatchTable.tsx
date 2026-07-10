@@ -1,7 +1,7 @@
 import { useMemo, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
 import Decimal from 'decimal.js';
-import { Button, Badge, KebabMenu, SmartTable } from '../../../../ui';
+import { Badge, SmartTable } from '../../../../ui';
 import type { SmartTableColumn } from '../../../../ui';
 import { formatSaudiDate, toYmd } from '../../../../utils/saudiDate';
 import { fmt } from '../../../../utils/format';
@@ -9,7 +9,6 @@ import { PAGE_SIZE } from '../constants';
 import { formatBatchesFooterLabel } from '../utils/purchasesBatchFormatters';
 import type {
   BatchTranslateFn,
-  PurchaseBatchStatus,
   PurchaseBatchSummaryRow,
 } from '../purchaseBatchTypes';
 
@@ -43,8 +42,6 @@ export interface PurchasesBatchTableProps {
     setter: Dispatch<SetStateAction<PurchaseBatchSummaryRow | null>>,
   ) => Promise<void>;
   setPrintingBatch: Dispatch<SetStateAction<PurchaseBatchSummaryRow | null>>;
-  setEditingBatch: Dispatch<SetStateAction<PurchaseBatchSummaryRow | null>>;
-  setCancellingBatch: Dispatch<SetStateAction<PurchaseBatchSummaryRow | null>>;
   activeOnlyLength: number;
   totalNet: Decimal;
   totalTax: Decimal;
@@ -55,10 +52,6 @@ function invoicesHref(dateFilter: PurchasesBatchDateFilter, batchId: string) {
   const from = toYmd(dateFilter.startDate);
   const to = toYmd(dateFilter.endDate);
   return `/invoices?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&batchId=${encodeURIComponent(batchId)}`;
-}
-
-function isCancelableBatch(status: PurchaseBatchStatus) {
-  return status === 'active' || status === 'partial';
 }
 
 export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
@@ -81,8 +74,6 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
     batchActionLoading,
     openBatchWithInvoices,
     setPrintingBatch,
-    setEditingBatch,
-    setCancellingBatch,
     activeOnlyLength,
     totalNet,
     totalTax,
@@ -97,10 +88,15 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         label: t('batchId'),
         sortable: true,
         size: 'document',
-        render: (value) => (
-          <span className="font-bold nx-cell-ellipsis text-noorix-blue nx-font-numbers">
+        render: (value, row) => (
+          <button
+            type="button"
+            className="font-bold nx-cell-ellipsis text-noorix-blue nx-font-numbers hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-noorix-blue rounded"
+            onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
+            disabled={batchActionLoading === row.batchId}
+          >
             {String(value ?? '')}
-          </span>
+          </button>
         ),
       },
       {
@@ -188,28 +184,6 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         label: t('statusLabel'),
         render: (value) => <Badge {...Badge.fromStatus(value, statusBadgeMap)} size="sm" />,
       },
-      {
-        key: 'actions',
-        kind: 'actions',
-        label: t('actions'),
-        align: 'center',
-        width: '48px',
-        render: (_value, row) => {
-          const loading = batchActionLoading === row.batchId;
-          return (
-            <KebabMenu
-              ariaLabel={t('actions')}
-              items={[
-                { key: 'print', label: t('print'), onClick: () => openBatchWithInvoices(row, setPrintingBatch), disabled: loading },
-                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => openBatchWithInvoices(row, setEditingBatch), disabled: loading },
-                ...(isCancelableBatch(row.status)
-                  ? [{ key: 'cancel', label: t('cancel'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => setCancellingBatch(row), disabled: loading }]
-                  : []),
-              ]}
-            />
-          );
-        },
-      },
     ],
     [
       t,
@@ -218,18 +192,22 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       openBatchWithInvoices,
       dateFilter,
       setPrintingBatch,
-      setEditingBatch,
-      setCancellingBatch,
     ],
   );
 
   const renderCompactRow = useCallback(
     (row: PurchaseBatchSummaryRow) => {
-      const loading = batchActionLoading === row.batchId;
       return (
         <div>
           <div className="nx-cr__line1">
-            <span className="nx-cr__id text-noorix-blue">{row.batchId}</span>
+            <button
+              type="button"
+              className="nx-cr__id text-noorix-blue hover:underline"
+              onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
+              disabled={batchActionLoading === row.batchId}
+            >
+              {row.batchId}
+            </button>
             <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
             <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
           </div>
@@ -240,35 +218,27 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
             </div>
             <div className="nx-cr__line2-end">
               <span className="nx-cr__amount">{fmt(row.totalAmount)} <span className="nx-sar">SR</span></span>
-              <div className="nx-cr__kebab" onClick={(event) => event.stopPropagation()}>
-                <KebabMenu
-                  ariaLabel={t('actions')}
-                  items={[
-                    { key: 'print', label: t('print'), onClick: () => openBatchWithInvoices(row, setPrintingBatch), disabled: loading },
-                    { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => openBatchWithInvoices(row, setEditingBatch), disabled: loading },
-                    ...(isCancelableBatch(row.status)
-                      ? [{ key: 'cancel', label: t('cancel'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => setCancellingBatch(row), disabled: loading }]
-                      : []),
-                  ]}
-                />
-              </div>
             </div>
           </div>
         </div>
       );
     },
-    [statusBadgeMap, t, batchActionLoading, openBatchWithInvoices, setPrintingBatch, setEditingBatch, setCancellingBatch],
+    [statusBadgeMap, batchActionLoading, openBatchWithInvoices, setPrintingBatch],
   );
 
   const renderBatchMobileCard = useCallback(
     (row: PurchaseBatchSummaryRow) => {
-      const loading = batchActionLoading === row.batchId;
       return (
         <div>
           <div className="flex mb-1 justify-between items-start">
-            <span className="font-bold text-[14px] text-noorix-blue nx-font-numbers">
+            <button
+              type="button"
+              className="font-bold text-[14px] text-noorix-blue nx-font-numbers hover:underline"
+              onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
+              disabled={batchActionLoading === row.batchId}
+            >
               {row.batchId}
-            </span>
+            </button>
             <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
           </div>
           <div className="flex gap-2.5 text-[12px] text-noorix-muted mb-1.5">
@@ -302,36 +272,10 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
               <div className="nx-mc__stat-value text-[14px] font-extrabold text-noorix-text">{fmt(row.totalAmount)}</div>
             </div>
           </div>
-          <div className="flex gap-1.5 flex-wrap justify-end">
-            <Button
-              size="sm"
-              onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
-              disabled={loading}
-            >
-              {t('print')}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => openBatchWithInvoices(row, setEditingBatch)}
-              disabled={loading}
-            >
-              {t('edit')}
-            </Button>
-            {isCancelableBatch(row.status) ? (
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={() => setCancellingBatch(row)}
-                disabled={loading}
-              >
-                {t('cancel')}
-              </Button>
-            ) : null}
-          </div>
         </div>
       );
     },
-    [statusBadgeMap, t, batchActionLoading, openBatchWithInvoices, dateFilter, setPrintingBatch, setEditingBatch, setCancellingBatch],
+    [statusBadgeMap, t, batchActionLoading, openBatchWithInvoices, dateFilter, setPrintingBatch],
   );
 
   const batchesFooterRow = useMemo(

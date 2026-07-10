@@ -1,5 +1,5 @@
 import { useTranslation } from '../../../i18n/useTranslation';
-import { PrintPreviewModal } from '../../../ui';
+import { Button, PrintPreviewModal } from '../../../ui';
 import { useApp } from '../../../context/AppContext';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
@@ -12,6 +12,9 @@ import type { PurchaseBatchInvoice, PurchaseBatchSummaryRow } from '../batch/pur
 export type BatchPrintSheetProps = {
   batch: PurchaseBatchSummaryRow;
   onClose: () => void;
+  onEdit: () => void;
+  onCancel: () => void;
+  canCancel: boolean;
 };
 
 function invoiceKindLabel(invoice: PurchaseBatchInvoice, t: (key: string, ...args: unknown[]) => string) {
@@ -76,7 +79,7 @@ export function buildPurchaseBatchPrintHtml(input: {
   });
 }
 
-export function BatchPrintSheet({ batch, onClose }: BatchPrintSheetProps) {
+export function BatchPrintSheet({ batch, onClose, onEdit, onCancel, canCancel }: BatchPrintSheetProps) {
   const { t, lang } = useTranslation();
   const { companies, activeCompanyId } = useApp();
   const company = companies?.find((item) => item.id === activeCompanyId);
@@ -99,6 +102,18 @@ export function BatchPrintSheet({ batch, onClose }: BatchPrintSheetProps) {
       html={html}
       closeLabel={t('close') || 'Close'}
       printLabel={`${t('print')} / PDF`}
+      footerExtra={(
+        <>
+          <Button type="button" onClick={onEdit}>
+            {t('edit')}
+          </Button>
+          {canCancel ? (
+            <Button type="button" variant="danger" onClick={onCancel}>
+              {t('cancel')}
+            </Button>
+          ) : null}
+        </>
+      )}
     />
   );
 }

@@ -17,6 +17,8 @@ export interface PurchasesBatchModalsProps {
   onClosePrint: () => void;
   onCloseEdit: () => void;
   onCloseCancel: () => void;
+  onEditPrintedBatch: (batch: PurchaseBatchSummaryRow) => void;
+  onCancelPrintedBatch: (batch: PurchaseBatchSummaryRow) => void;
   onSaveInvoice: (invoice: PurchaseBatchInvoice) => Promise<unknown>;
   onConfirmCancel: () => Promise<void>;
 }
@@ -32,6 +34,8 @@ export default function PurchasesBatchModals(props: PurchasesBatchModalsProps) {
     onClosePrint,
     onCloseEdit,
     onCloseCancel,
+    onEditPrintedBatch,
+    onCancelPrintedBatch,
     onSaveInvoice,
     onConfirmCancel,
   } = props;
@@ -40,7 +44,15 @@ export default function PurchasesBatchModals(props: PurchasesBatchModalsProps) {
 
   return (
     <>
-      {printingBatch && <BatchPrintSheet batch={printingBatch} onClose={onClosePrint} />}
+      {printingBatch && (
+        <BatchPrintSheet
+          batch={printingBatch}
+          onClose={onClosePrint}
+          onEdit={() => onEditPrintedBatch(printingBatch)}
+          onCancel={() => onCancelPrintedBatch(printingBatch)}
+          canCancel={printingBatch.status === 'active' || printingBatch.status === 'partial'}
+        />
+      )}
       {editingBatch && (
         <BatchEditPanel
           batch={editingBatch}

@@ -7,7 +7,7 @@ import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser, hardDeleteUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, ScreenShell, KebabMenu, SmartTable, type SmartTableColumn } from '../../../ui';
+import { Button, Badge, ScreenShell, SmartTable, type SmartTableColumn } from '../../../ui';
 import { settingsKeys } from '../../../services/queryKeys';
 import { UsersTabForms } from './UsersTabForms';
 import {
@@ -100,7 +100,20 @@ export default function UsersTab({ userRole: _userRole, activeCompanies = [] }: 
   }
 
   const columns: SmartTableColumn<SettingsUser>[] = [
-    { key: 'email', label: t('loginName'), render: (value) => <span className="font-semibold ltr">{toLoginName(String(value ?? ''))}</span> },
+    {
+      key: 'email',
+      label: t('loginName'),
+      render: (value, row) => (
+        <Button
+          variant="raw"
+          size="auto"
+          className="font-semibold ltr text-noorix-blue hover:underline"
+          onClick={() => openEdit(row)}
+        >
+          {toLoginName(String(value ?? ''))}
+        </Button>
+      ),
+    },
     {
       key: 'nameAr',
       label: t('nameAr'),
@@ -126,7 +139,6 @@ export default function UsersTab({ userRole: _userRole, activeCompanies = [] }: 
       ),
     },
     { key: 'status', label: t('status'), render: (_value, row) => <Badge color={row.isActive ? 'green' : 'red'} size="sm">{row.isActive ? t('active') : t('archived')}</Badge> },
-    { key: 'actions', label: t('actions'), render: (_value, row) => <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button> },
   ];
 
   return (
@@ -201,12 +213,7 @@ export default function UsersTab({ userRole: _userRole, activeCompanies = [] }: 
                   <span className="nx-cr__meta">{row.role?.nameAr || row.role?.name || '—'}</span>
                 </div>
                 <div className="nx-cr__line2-end">
-                  <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-                    <KebabMenu
-                      ariaLabel={t('actions')}
-                      items={[{ key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => openEdit(row) }]}
-                    />
-                  </div>
+                  <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button>
                 </div>
               </div>
             </div>

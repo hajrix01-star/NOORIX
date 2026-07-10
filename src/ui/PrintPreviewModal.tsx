@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, type ReactNode } from 'react';
 import Button from './Button';
 import Modal from './Modal';
 
@@ -10,6 +10,7 @@ type PrintPreviewModalProps = {
   printLabel?: string;
   closeLabel?: string;
   iframeTitle?: string;
+  footerExtra?: ReactNode;
 };
 
 export default function PrintPreviewModal({
@@ -20,6 +21,7 @@ export default function PrintPreviewModal({
   printLabel = 'طباعة / حفظ PDF',
   closeLabel = 'إغلاق',
   iframeTitle,
+  footerExtra,
 }: PrintPreviewModalProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
 
@@ -42,6 +44,7 @@ export default function PrintPreviewModal({
           <Button type="button" onClick={onClose}>
             {closeLabel}
           </Button>
+          {footerExtra}
           <Button type="button" variant="primary" onClick={printFrame}>
             {printLabel}
           </Button>

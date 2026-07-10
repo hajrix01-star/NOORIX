@@ -34,6 +34,7 @@ type CatalogProductFormSheetProps = {
   saving: boolean;
   onClose: () => void;
   onSave: () => void;
+  onDelete?: () => void;
   onAddSize: () => void;
   onAddPackaging: () => void;
   addVariant: () => void;
@@ -160,6 +161,7 @@ export function CatalogProductFormSheet({
   saving,
   onClose,
   onSave,
+  onDelete,
   onAddSize,
   onAddPackaging,
   addVariant,
@@ -201,8 +203,11 @@ export function CatalogProductFormSheet({
       size="lg"
       side="start"
       footer={(
-        <div className="grid w-full grid-cols-2 gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
           <Button type="button" variant="ghost" size="md" onClick={onClose} disabled={saving}>{t('cancel')}</Button>
+          {mode === 'edit' && onDelete ? (
+            <Button type="button" variant="danger" size="md" onClick={onDelete} disabled={saving}>{t('delete')}</Button>
+          ) : null}
           <Button type="button" variant="primary" size="md" onClick={onSave} loading={saving} disabled={saving}>{t('save')}</Button>
         </div>
       )}

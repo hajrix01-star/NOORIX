@@ -215,8 +215,6 @@ export default function PurchasesBatchScreen() {
                 batchActionLoading={state.batchActionLoading}
                 openBatchWithInvoices={actions.openBatchWithInvoices}
                 setPrintingBatch={state.setPrintingBatch}
-                setEditingBatch={state.setEditingBatch}
-                setCancellingBatch={state.setCancellingBatch}
                 activeOnlyLength={data.activeOnly.length}
                 totalNet={data.totalNet}
                 totalTax={data.totalTax}
@@ -237,6 +235,14 @@ export default function PurchasesBatchScreen() {
         onClosePrint={() => state.setPrintingBatch(null)}
         onCloseEdit={() => state.setEditingBatch(null)}
         onCloseCancel={() => state.setCancellingBatch(null)}
+        onEditPrintedBatch={(batch) => {
+          state.setPrintingBatch(null);
+          state.setEditingBatch(batch);
+        }}
+        onCancelPrintedBatch={(batch) => {
+          state.setPrintingBatch(null);
+          state.setCancellingBatch(batch);
+        }}
         onSaveInvoice={actions.saveInvoiceEdit}
         onConfirmCancel={() => {
           if (!state.cancellingBatch) return Promise.resolve();

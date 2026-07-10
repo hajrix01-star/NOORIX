@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { Checkbox, SmartTable, KebabMenu, Badge } from '../../../../ui';
+import { Button, Checkbox, SmartTable, Badge } from '../../../../ui';
 import {
   parseProductDisplayNames,
   productVariantsSummary,
@@ -14,7 +14,6 @@ type CatalogProductTableProps = {
   onToggleSelect: (id: string) => void;
   onToggleAll: (ids: string[]) => void;
   onEdit: (row: OrderProduct) => void;
-  onDeactivate: (row: OrderProduct) => void;
   isLoading?: boolean;
 };
 
@@ -24,7 +23,6 @@ export function CatalogProductTable({
   onToggleSelect,
   onToggleAll,
   onEdit,
-  onDeactivate,
   isLoading,
 }: CatalogProductTableProps) {
   const { t } = useTranslation();
@@ -89,23 +87,19 @@ export function CatalogProductTable({
           </div>
         )}
         <div className="flex items-center justify-between gap-2 min-w-0 ps-7">
-          <span
-            className="text-[13px] font-bold nx-font-numbers ltr min-w-0 flex-1 break-all"
+          <Button
+            variant="raw"
+            size="auto"
+            className="text-[13px] font-bold nx-font-numbers ltr min-w-0 flex-1 break-all text-noorix-blue hover:underline"
             title={priceFull}
+            onClick={() => onEdit(row)}
           >
             {priceShort}
-          </span>
-          <KebabMenu
-            ariaLabel={t('actions')}
-            items={[
-              { key: 'edit', label: t('edit'), onClick: () => onEdit(row), style: { color: 'var(--noorix-accent-green)' } },
-              { key: 'del', label: t('delete'), onClick: () => onDeactivate(row), style: { color: 'var(--noorix-accent-red)' } },
-            ]}
-          />
+          </Button>
         </div>
       </div>
     );
-  }, [selectedIds, onToggleSelect, onEdit, onDeactivate, t]);
+  }, [selectedIds, onToggleSelect, onEdit, t]);
 
   const columns = useMemo(() => [
     {
@@ -165,24 +159,17 @@ export function CatalogProductTable({
       label: t('ordersVariantPrice'),
       numeric: true,
       render: (_: unknown, row: OrderProduct) => (
-        <span className="nx-font-numbers ltr">{productVariantsSummary(row)}</span>
+        <Button
+          variant="raw"
+          size="auto"
+          className="nx-font-numbers ltr text-noorix-blue hover:underline"
+          onClick={() => onEdit(row)}
+        >
+          {productVariantsSummary(row)}
+        </Button>
       ),
     },
-    {
-      key: 'actions',
-      label: t('actions'),
-      align: 'center',
-      render: (_: unknown, row: OrderProduct) => (
-        <KebabMenu
-          ariaLabel={t('actions')}
-          items={[
-            { key: 'edit', label: t('edit'), onClick: () => onEdit(row), style: { color: 'var(--noorix-accent-green)' } },
-            { key: 'del', label: t('delete'), onClick: () => onDeactivate(row), style: { color: 'var(--noorix-accent-red)' } },
-          ]}
-        />
-      ),
-    },
-  ], [allSelected, allIds, selectedIds, onToggleSelect, onToggleAll, onEdit, onDeactivate, t]);
+  ], [allSelected, allIds, selectedIds, onToggleSelect, onToggleAll, onEdit, t]);
 
   return (
     <SmartTable

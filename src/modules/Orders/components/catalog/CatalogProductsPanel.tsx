@@ -178,10 +178,6 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
     }
   }
 
-  function handleDeactivateOne(row: OrderProduct) {
-    setDeactivateTarget(row);
-  }
-
   const variantHandlers = sheetMode === 'edit'
     ? {
         addVariant: () => setEditingProduct((p) => p ? ({
@@ -315,6 +311,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         saving={sheetMode === 'edit' ? updateProduct.isPending : createProduct.isPending}
         onClose={closeSheet}
         onSave={handleSave}
+        onDelete={sheetMode === 'edit' && editingProduct ? () => setDeactivateTarget(editingProduct) : undefined}
         onAddSize={() => setAddSizeModal(true)}
         onAddPackaging={() => setAddPackagingModal(true)}
         addVariant={variantHandlers.addVariant}
@@ -372,7 +369,6 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
             onToggleSelect={toggleProductSelection}
             onToggleAll={toggleAllProducts}
             onEdit={openEditSheet}
-            onDeactivate={handleDeactivateOne}
           />
         </div>
       </div>
