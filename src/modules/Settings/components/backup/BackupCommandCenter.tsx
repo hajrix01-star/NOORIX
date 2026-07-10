@@ -224,8 +224,7 @@ export function BackupCommandCenter({
       minWidth: 230,
       render: (_value, row) => (
         <div className="flex flex-col gap-1 min-w-0">
-          <span className="font-bold text-noorix-text truncate">{scopeLabel(row.scope, t)}</span>
-          <span className="text-[11px] text-noorix-muted truncate">
+          <span className="font-bold text-noorix-text truncate">
             {row.company ? row.company.nameAr || row.company.nameEn || '-' : label('النظام الكامل', 'Full system')}
           </span>
         </div>
