@@ -9,6 +9,11 @@ import {
   getRowTone,
 } from './reportHelpers';
 import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState } from './reportTypes';
+import {
+  periodAmount,
+  rowIdentity,
+  type ComparisonColumnPeriod,
+} from './reportsComparablePeriodModel';
 
 export type GeneralPlTableProps = {
   report: GeneralProfitLossReport;
@@ -21,6 +26,8 @@ export type GeneralPlTableProps = {
   selectedMonthNumber: number | null;
   monthNames: string[];
   onOpenDetail: (payload: ReportDetailState) => void;
+  compareColumnPeriods?: ComparisonColumnPeriod[];
+  compareRows?: Map<string, PlDisplayRow>;
 };
 
 export default function GeneralPlTable({
@@ -34,19 +41,26 @@ export default function GeneralPlTable({
   selectedMonthNumber,
   monthNames,
   onOpenDetail,
+  compareColumnPeriods = [],
+  compareRows = new Map<string, PlDisplayRow>(),
 }: GeneralPlTableProps) {
   const stickyEdge = lang === 'en' ? 'left' : 'right';
   const isMonthlyMode = selectedMonthNumber != null;
   const visibleMonthColumns = isMonthlyMode ? [] : (report?.months ?? []);
+  const showAnnualTotal = !isMonthlyMode;
+  const monthCompareColumns = isMonthlyMode ? compareColumnPeriods : [];
 
   return (
     <div className="nx-pl-table-scroll">
-      <table className={cn('nx-pl-table w-full table-fixed border-collapse', plMinWidthClass(isMobile, isMonthlyMode))}>
+      <table className={cn('nx-pl-table w-full table-fixed border-collapse', plMinWidthClass(isMobile, isMonthlyMode, monthCompareColumns.length))}>
         <colgroup>
-          <col className={isMobile ? 'w-[46%]' : isMonthlyMode ? 'w-[340px]' : 'w-[260px]'} />
-          {isMonthlyMode && <col className={isMobile ? 'w-[27%]' : 'w-[210px]'} />}
+          <col className={isMobile ? 'w-[48%]' : isMonthlyMode ? 'w-[300px]' : 'w-[260px]'} />
+          {isMonthlyMode && <col className={isMobile ? 'w-[26%]' : 'w-[170px]'} />}
+          {isMonthlyMode && monthCompareColumns.map((column) => (
+            <col key={column.key} className={isMobile ? 'w-[26%]' : 'w-[154px]'} />
+          ))}
           {!isMobile && visibleMonthColumns.map((month) => <col key={month.index} className="w-[76px]" />)}
-          <col className={isMobile ? 'w-[27%]' : 'w-[138px]'} />
+          {showAnnualTotal && <col className={isMobile ? 'w-[27%]' : 'w-[138px]'} />}
         </colgroup>
 
         <thead>
@@ -64,6 +78,14 @@ export default function GeneralPlTable({
                 {monthNames[selectedMonthNumber - 1]}
               </th>
             )}
+            {isMonthlyMode && monthCompareColumns.map((column) => (
+              <th
+                key={column.key}
+                className="nx-pl-table__th nx-pl-table__th--amount text-center font-primary text-noorix-text"
+              >
+                {column.label}
+              </th>
+            ))}
             {!isMobile &&
               visibleMonthColumns.map((month) => (
                 <th
@@ -73,9 +95,11 @@ export default function GeneralPlTable({
                   {month.label}
                 </th>
               ))}
-            <th className="nx-pl-table__th nx-pl-table__th--total text-end font-primary text-noorix-text">
-              {t('reportAnnualTotal')}
-            </th>
+            {showAnnualTotal && (
+              <th className="nx-pl-table__th nx-pl-table__th--total text-end font-primary text-noorix-text">
+                {t('reportAnnualTotal')}
+              </th>
+            )}
           </tr>
         </thead>
 
@@ -187,6 +211,24 @@ export default function GeneralPlTable({
                   </td>
                 )}
 
+                {isMonthlyMode && monthCompareColumns.map((column) => {
+                  const compareRow = compareRows.get(rowIdentity(row));
+                  const compareValue = compareRow ? periodAmount(compareRow, column.period) : null;
+                  return (
+                    <td
+                      key={`${row.groupKey}-${column.key}`}
+                      className={cn(
+                        'nx-pl-table__cell nx-pl-table__cell--amount text-center font-bold nx-font-numbers',
+                        compareValue == null ? 'text-noorix-muted' : plAmountColorClass(row, rowTone, isSummary, compareValue),
+                      )}
+                    >
+                      <div className="nx-pl-table__amount">
+                        {compareValue == null ? '-' : amountText(compareValue)}
+                      </div>
+                    </td>
+                  );
+                })}
+
                 {!isMobile &&
                   (row.months ?? []).map((value, index) => (
                     <td
@@ -221,19 +263,21 @@ export default function GeneralPlTable({
                     </td>
                   ))}
 
-                <td
-                  className={cn(
-                    'nx-pl-table__cell nx-pl-table__cell--total text-end font-extrabold nx-font-numbers',
-                    plAmountColorClass(row, rowTone, isSummary, row.total),
-                  )}
-                >
-                  <div className={cn('nx-pl-table__amount', isGroup || isSummary ? 'text-sm' : 'text-[13px]')}>
-                    {amountText(row.total)}
-                  </div>
-                  <div className="nx-pl-table__percent">
-                    {percentText(row.percentOfSalesYear)}
-                  </div>
-                </td>
+                {showAnnualTotal && (
+                  <td
+                    className={cn(
+                      'nx-pl-table__cell nx-pl-table__cell--total text-end font-extrabold nx-font-numbers',
+                      plAmountColorClass(row, rowTone, isSummary, row.total),
+                    )}
+                  >
+                    <div className={cn('nx-pl-table__amount', isGroup || isSummary ? 'text-sm' : 'text-[13px]')}>
+                      {amountText(row.total)}
+                    </div>
+                    <div className="nx-pl-table__percent">
+                      {percentText(row.percentOfSalesYear)}
+                    </div>
+                  </td>
+                )}
               </tr>
             );
           })}
@@ -243,9 +287,13 @@ export default function GeneralPlTable({
   );
 }
 
-function plMinWidthClass(isMobile: boolean, isMonthlyMode: boolean) {
+function plMinWidthClass(isMobile: boolean, isMonthlyMode: boolean, compareColumnCount: number) {
   if (isMobile) return 'min-w-full';
-  return isMonthlyMode ? 'min-w-[760px]' : 'min-w-[1320px]';
+  if (!isMonthlyMode) return 'min-w-[1320px]';
+  if (compareColumnCount >= 4) return 'min-w-[1080px]';
+  if (compareColumnCount >= 2) return 'min-w-[820px]';
+  if (compareColumnCount === 1) return 'min-w-[650px]';
+  return 'min-w-[500px]';
 }
 
 function plIndentClass(depth: number, extra: number) {

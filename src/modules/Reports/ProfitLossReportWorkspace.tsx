@@ -5,6 +5,8 @@ import type { PlDisplayLevel } from './reportHelpers';
 import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState, ReportPeriodMode } from './reportTypes';
 import { buildProfitLossKpiCards, getProfitLossMonthNames } from './profitLossPresentationModel';
 import ReportDateFilter from './ReportDateFilter';
+import { DateFilterBar, type DateFilterController } from '../../ui/date';
+import type { ComparisonColumnPeriod } from './reportsComparablePeriodModel';
 
 type ProfitLossReportWorkspaceProps = {
   activeCompanyId: string | number | null | undefined;
@@ -27,9 +29,17 @@ type ProfitLossReportWorkspaceProps = {
   isMobile: boolean;
   lang: string;
   t: (key: string) => string;
+  compareFilter: DateFilterController;
+  compareEnabled: boolean;
+  compareColumnPeriods: ComparisonColumnPeriod[];
+  compareRows: Map<string, PlDisplayRow>;
+  compareMonthSet: number[];
+  showCompareMonthPicker: boolean;
   onYearChange: (year: number) => void;
   onPeriodModeChange: (mode: ReportPeriodMode) => void;
   onSelectedMonthChange: (month: string) => void;
+  onToggleCompareMonth: (month: number) => void;
+  onClearCompareMonths: () => void;
   onDisplayLevelChange: (level: PlDisplayLevel) => void;
   onRowSearchChange: (value: string) => void;
   onToggleGroup: (key: string) => void;
@@ -59,9 +69,17 @@ export default function ProfitLossReportWorkspace({
   isMobile,
   lang,
   t,
+  compareFilter,
+  compareEnabled,
+  compareColumnPeriods,
+  compareRows,
+  compareMonthSet,
+  showCompareMonthPicker,
   onYearChange,
   onPeriodModeChange,
   onSelectedMonthChange,
+  onToggleCompareMonth,
+  onClearCompareMonths,
   onDisplayLevelChange,
   onRowSearchChange,
   onToggleGroup,
@@ -100,6 +118,10 @@ export default function ProfitLossReportWorkspace({
               onMonthChange={onSelectedMonthChange}
               onModeChange={onPeriodModeChange}
             />
+            <div className="nx-pl-compare-filter">
+              <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'المقارنة' : 'Compare'}</span>
+              <DateFilterBar filter={compareFilter} modes={['all', 'month', 'range', 'quarter', 'year']} />
+            </div>
             <div className="nx-pl-actions">
               <Button size="sm" onClick={onExportExcel} disabled={!report}>
                 {t('exportExcel')}
@@ -120,6 +142,7 @@ export default function ProfitLossReportWorkspace({
             <section
               className={cn(
                 'nx-pl-kpi-strip transition-opacity duration-200',
+                selectedMonthNumber && 'nx-pl-kpi-strip--compact',
                 isFetching && isPlaceholderData && 'pointer-events-none opacity-55',
               )}
             >
@@ -164,11 +187,43 @@ export default function ProfitLossReportWorkspace({
           )}
 
           {!isLoading && !error && report && visibleRows.length > 0 && (
-            <section className="nx-pl-statement-shell">
+            <section className={cn('nx-pl-statement-shell', selectedMonthNumber && 'nx-pl-statement-shell--compact')}>
+              {showCompareMonthPicker && (
+                <div className="nx-pl-compare-months">
+                  <span className="text-[12px] font-black text-slate-500">
+                    {lang === 'ar' ? 'أشهر المقارنة' : 'Compare months'}
+                  </span>
+                  {monthNames.map((name, index) => {
+                    const month = index + 1;
+                    const selected = compareMonthSet.includes(month);
+                    return (
+                      <Button
+                        key={month}
+                        size="sm"
+                        variant={selected ? 'primary' : 'default'}
+                        type="button"
+                        onClick={() => onToggleCompareMonth(month)}
+                      >
+                        {name}
+                      </Button>
+                    );
+                  })}
+                  {compareMonthSet.length > 0 && (
+                    <Button size="sm" type="button" onClick={onClearCompareMonths}>
+                      {lang === 'ar' ? 'إلغاء التخصيص' : 'Clear custom'}
+                    </Button>
+                  )}
+                </div>
+              )}
               <div className="nx-pl-statement-head">
                 <div>
                   <div className="nx-pl-eyebrow">{t('reportPlToolbarPeriod')}</div>
                   <h3 className="nx-pl-statement-title">{periodLabel}</h3>
+                  {compareEnabled && (
+                    <div className="mt-1 text-[12px] font-bold text-noorix-muted">
+                      {lang === 'ar' ? 'مقارنة مع' : 'Compared with'} {compareFilter.label}
+                    </div>
+                  )}
                 </div>
                 <FilterToolbar variant="bare" className="nx-pl-statement-tools">
                   <div className="nx-pl-level-group">
@@ -206,6 +261,8 @@ export default function ProfitLossReportWorkspace({
                 selectedMonthNumber={selectedMonthNumber}
                 monthNames={monthNames}
                 onOpenDetail={onOpenDetail}
+                compareColumnPeriods={compareColumnPeriods}
+                compareRows={compareRows}
               />
             </section>
           )}

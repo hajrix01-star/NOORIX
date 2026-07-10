@@ -1823,10 +1823,23 @@ html[data-card-style="10"] .noorix-stat-card {
   gap: 6px;
 }
 
+.nx-pl-compare-filter {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .nx-pl-kpi-strip {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
+}
+
+.nx-pl-kpi-strip--compact {
+  width: min(100%, 980px);
+  margin-inline: auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .nx-pl-kpi-card {
@@ -1877,6 +1890,22 @@ html[data-card-style="10"] .noorix-stat-card {
   border-radius: 8px;
   background: var(--noorix-bg-surface);
   box-shadow: 0 16px 42px rgba(15, 23, 42, 0.08);
+}
+
+.nx-pl-statement-shell--compact {
+  width: min(100%, 980px);
+  margin-inline: auto;
+}
+
+.nx-pl-compare-months {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--noorix-border);
+  background: color-mix(in srgb, var(--noorix-bg-muted) 64%, var(--noorix-bg-surface));
+  padding: 10px 12px;
 }
 
 .nx-pl-statement-head {
@@ -2127,6 +2156,7 @@ html[data-card-style="10"] .noorix-stat-card {
   }
 
   .nx-pl-command-center__controls,
+  .nx-pl-compare-filter,
   .nx-pl-statement-tools,
   .nx-pl-actions {
     justify-content: stretch;
@@ -2139,6 +2169,10 @@ html[data-card-style="10"] .noorix-stat-card {
   }
 
   .nx-pl-kpi-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .nx-pl-kpi-strip--compact {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

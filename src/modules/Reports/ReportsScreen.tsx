@@ -10,6 +10,7 @@ import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
 import { ScreenShell, usePrintPreview } from '../../ui';
 import { useIsNarrow700 } from '../../ui';
+import { useDateFilter } from '../../ui/date';
 import {
   EN_MONTHS,
   amountText,
@@ -28,6 +29,12 @@ import { MONTH_NAMES_AR, MONTH_NAMES_EN } from './profitLossPresentationModel';
 import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPlMonthPrint';
 import { getSaudiNow } from '../../utils/saudiDate';
 import type { PlDisplayRow, ReportDetailState, ReportPeriodMode } from './reportTypes';
+import {
+  applyCustomCompareMonths,
+  buildCompareColumnPeriods,
+  buildRowMap,
+  deriveComparablePeriod,
+} from './reportsComparablePeriodModel';
 
 export default function ReportsScreen() {
   const { activeCompanyId, companies } = useApp();
@@ -44,6 +51,8 @@ export default function ReportsScreen() {
     expenses: false,
   });
   const [rowSearch, setRowSearch] = useState('');
+  const compareFilter = useDateFilter('all');
+  const [compareSelectedMonths, setCompareSelectedMonths] = useState<number[]>([]);
   const company = companies?.find((item) => item.id === activeCompanyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
   const companyLogoUrl = String(company?.logoUrl || '').trim();
@@ -58,6 +67,19 @@ export default function ReportsScreen() {
     year,
   });
 
+  const comparePeriodBase = useMemo(() => deriveComparablePeriod(compareFilter.state), [compareFilter.state]);
+  const comparePeriod = useMemo(
+    () => applyCustomCompareMonths(comparePeriodBase, compareSelectedMonths),
+    [comparePeriodBase, compareSelectedMonths],
+  );
+  const compareEnabled = comparePeriod.mode !== 'all';
+  const { data: loadedCompareReport, isFetching: isFetchingCompare } = useReportsGeneralProfitLoss({
+    companyId: activeCompanyId,
+    year: comparePeriod.year,
+    enabled: compareEnabled && comparePeriod.year !== year,
+  });
+  const compareReport = !compareEnabled ? undefined : comparePeriod.year === year ? report : loadedCompareReport;
+
   const flatRows = useMemo(() => buildFlatRows(report, collapsedGroups), [report, collapsedGroups]);
 
   useLayoutEffect(() => {
@@ -71,12 +93,27 @@ export default function ReportsScreen() {
     [visibleRowsBase, rowSearch, lang],
   );
   const selectedMonthNumber = periodMode === 'month' ? Number(selectedMonth) : null;
+  const monthNames = useMemo(() => (lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN), [lang]);
+  const compareColumnPeriods = useMemo(
+    () => buildCompareColumnPeriods(comparePeriod, monthNames, compareFilter.label),
+    [compareFilter.label, comparePeriod, monthNames],
+  );
+  const compareFlatRows = useMemo(() => buildFlatRows(compareReport, collapsedGroups), [collapsedGroups, compareReport]);
+  const compareVisibleRows = useMemo(
+    () => buildVisibleRows(compareFlatRows, collapsedGroups),
+    [collapsedGroups, compareFlatRows],
+  );
+  const compareRows = useMemo(() => buildRowMap(compareVisibleRows), [compareVisibleRows]);
+  const compareMonthSet = useMemo(
+    () => [...new Set(compareSelectedMonths)].filter((month) => month >= 1 && month <= 12).sort((a, b) => a - b),
+    [compareSelectedMonths],
+  );
+  const showCompareMonthPicker = compareEnabled && (comparePeriodBase.mode === 'month' || comparePeriodBase.mode === 'months');
 
   const monthLabelForExport = useMemo(() => {
     if (!selectedMonthNumber) return '';
-    const names = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
-    return names[selectedMonthNumber - 1];
-  }, [selectedMonthNumber, lang]);
+    return monthNames[selectedMonthNumber - 1];
+  }, [selectedMonthNumber, monthNames]);
 
   const yearOptions = useMemo(() => Array.from({ length: 6 }, (_, index) => currentYear - index), [currentYear]);
 
@@ -84,6 +121,14 @@ export default function ReportsScreen() {
 
   function toggleGroup(collapseKey: string) {
     setCollapsedGroups((prev) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));
+  }
+
+  function toggleCompareMonth(month: number) {
+    setCompareSelectedMonths((prev) => (
+      prev.includes(month)
+        ? prev.filter((item) => item !== month)
+        : [...prev, month].sort((a, b) => a - b)
+    ));
   }
 
   const { exportRows, plExportRowMeta } = useMemo(() => {
@@ -209,7 +254,7 @@ export default function ReportsScreen() {
         isLoading={isLoading}
         error={error as Error | null}
         isFetching={isFetching}
-        isPlaceholderData={isPlaceholderData}
+        isPlaceholderData={isPlaceholderData || (compareEnabled && isFetchingCompare)}
         year={year}
         yearOptions={yearOptions}
         periodMode={periodMode}
@@ -223,9 +268,17 @@ export default function ReportsScreen() {
         isMobile={isMobile}
         lang={lang}
         t={t}
+        compareFilter={compareFilter}
+        compareEnabled={compareEnabled}
+        compareColumnPeriods={compareColumnPeriods}
+        compareRows={compareRows}
+        compareMonthSet={compareMonthSet}
+        showCompareMonthPicker={showCompareMonthPicker}
         onYearChange={setYear}
         onPeriodModeChange={setPeriodMode}
         onSelectedMonthChange={setSelectedMonth}
+        onToggleCompareMonth={toggleCompareMonth}
+        onClearCompareMonths={() => setCompareSelectedMonths([])}
         onDisplayLevelChange={setPlDisplayLevel}
         onRowSearchChange={setRowSearch}
         onToggleGroup={toggleGroup}
