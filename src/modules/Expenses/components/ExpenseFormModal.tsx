@@ -9,7 +9,7 @@ import { expenseKeys } from '../../../services/queryKeys';
 import { fmt } from '../../../utils/format';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
-import { Button, AdaptiveSheet, Checkbox, TransactionDatePicker, FileTrigger, Input, SearchableOptionsPicker } from '../../../ui';
+import { Button, AdaptiveSheet, Checkbox, DialogActions, TransactionDatePicker, FileTrigger, Input, SearchableOptionsPicker } from '../../../ui';
 import {
   canExemptThisExpensePayment,
   isExpensePaymentTaxable,
@@ -171,12 +171,19 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
   };
 
   const footer = (
-    <>
-      <Button onClick={onClose}>{t('cancel')}</Button>
-      <Button variant="primary" type="submit" form="expense-form-modal" disabled={createMutation.isPending}>
-        {createMutation.isPending ? t('saving') : t('save')}
-      </Button>
-    </>
+    <DialogActions
+      actions={[
+        { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+        {
+          key: 'save',
+          label: createMutation.isPending ? t('saving') : t('save'),
+          role: 'save',
+          type: 'submit',
+          form: 'expense-form-modal',
+          disabled: createMutation.isPending,
+        },
+      ]}
+    />
   );
 
   return (

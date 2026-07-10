@@ -3,7 +3,7 @@ import { createDeduction, updateInvoice, throwIfApiFailed } from '../../../servi
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { hrFmt } from '../utils/hrFmt';
-import { AdaptiveSheet, Button, Checkbox, DateField, Input } from '../../../ui';
+import { AdaptiveSheet, Checkbox, DateField, DialogActions, Input } from '../../../ui';
 
 type AdvanceSettlementRecord = {
   id: string;
@@ -95,10 +95,18 @@ export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, o
       side="start"
       className="hr-advance-settle-drawer"
       footer={(
-        <>
-          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" disabled={saving} onClick={submit}>{saving ? t('saving') : t('saveChanges')}</Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'save',
+              label: saving ? t('saving') : t('saveChanges'),
+              role: 'save',
+              disabled: saving,
+              onClick: submit,
+            },
+          ]}
+        />
       )}
     >
       <div className="text-[13px] mb-2">{t('advanceRemainingAmount')}: <strong>{hrFmt(remaining)}</strong></div>

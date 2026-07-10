@@ -75,7 +75,6 @@ export default function BankStatementPieDrilldownModal({
       size="full"
       side="start"
       className="bank-pie-drilldown-drawer"
-      footer={<Button onClick={onClose}>{t('close') || 'إغلاق'}</Button>}
     >
       <div className="text-[12px] text-noorix-muted mb-3 flex items-center flex flex-wrap gap-4">
         <span className="flex items-center gap-6">

@@ -15,7 +15,7 @@ import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { fmt } from '../../../utils/format';
 import { useToast } from '../../../context/ToastContext';
-import { Button, TransactionDatePicker, Input, AdaptiveSheet } from '../../../ui';
+import { DialogActions, TransactionDatePicker, Input, AdaptiveSheet } from '../../../ui';
 import type { VaultRecord, VaultTransferPayload, VaultTransferResult } from '../../../types/api';
 
 type VaultTransferModalProps = {
@@ -120,25 +120,24 @@ export default function VaultTransferModal({ companyId, onClose }: VaultTransfer
       side="start"
       className="vault-transfer-drawer"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose} type="button">
-            {t('cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            type="submit"
-            form="vault-transfer-form"
-            disabled={
-              transferMut.isPending ||
-              selectableVaults.length < 2 ||
-              !fromId ||
-              !toId ||
-              fromId === toId
-            }
-          >
-            {transferMut.isPending ? t('saving') : t('vaultTransferSubmit')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'submit',
+              label: transferMut.isPending ? t('saving') : t('vaultTransferSubmit'),
+              role: 'save',
+              type: 'submit',
+              form: 'vault-transfer-form',
+              disabled:
+                transferMut.isPending ||
+                selectableVaults.length < 2 ||
+                !fromId ||
+                !toId ||
+                fromId === toId,
+            },
+          ]}
+        />
       }
     >
       <p className="text-[12px] leading-relaxed text-noorix-muted m-0 mb-4">

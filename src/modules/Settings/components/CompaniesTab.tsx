@@ -13,7 +13,7 @@ import {
   resetCompanyCategories,
 } from '../../../services/api';
 import { fileToDataUrl } from '../constants/settingsConstants';
-import { Button, Checkbox, FileInput, Input, AdaptiveSheet, FilterToolbar } from '../../../ui';
+import { Button, Checkbox, DialogActions, FileInput, Input, AdaptiveSheet, FilterToolbar } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 import CompanyFinancialInsightThresholdsSection from './CompanyFinancialInsightThresholdsSection';
 import { buildCompanyUpdateBody, mergeCompanySavePatch } from '../utils/companyUpdateBody';
@@ -246,34 +246,48 @@ export default function CompaniesTab({
         side="start"
         className="companies-edit-drawer"
         footer={
-          <div className="flex items-center justify-end flex flex-wrap gap-2.5">
-            {editModal && editModal.isArchived && (
-              <Button
-                variant="primary"
-                onClick={() => updateMutation.mutate({ id: editModal.id, body: { isArchived: false } })}
-                disabled={updateMutation.isPending}
-                aria-label={`إعادة تفعيل الشركة ${editModal.nameAr || ''}`}
-              >
-                إعادة التفعيل
-              </Button>
-            )}
-            {editModal && !editModal.isArchived && (
-              <Button
-                variant="warning"
-                onClick={() => {
+          <DialogActions
+            actions={[
+              {
+                key: 'cancel',
+                label: 'إلغاء',
+                role: 'cancel',
+                onClick: () => setEditModal(null),
+              },
+              {
+                key: 'archive',
+                label: 'أرشفة',
+                role: 'secondary',
+                hidden: !editModal || editModal.isArchived,
+                disabled: updateMutation.isPending,
+                onClick: () => {
+                  if (!editModal) return;
                   if (!window.confirm('أرشفة هذه الشركة؟ لن تظهر في القوائم حتى تعيد تفعيلها من «عرض المؤرشفة».')) return;
                   updateMutation.mutate({ id: editModal.id, body: { isArchived: true } });
-                }}
-                disabled={updateMutation.isPending}
-              >
-                أرشفة
-              </Button>
-            )}
-            <Button onClick={() => setEditModal(null)}>إلغاء</Button>
-            <Button type="submit" form="edit-company-form" variant="primary" disabled={updateMutation.isPending || !editModal?.nameAr?.trim()} className="min-w-[120px]">
-              {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
-            </Button>
-          </div>
+                },
+              },
+              {
+                key: 'reactivate',
+                label: 'إعادة التفعيل',
+                role: 'primary',
+                hidden: !editModal?.isArchived,
+                disabled: updateMutation.isPending,
+                onClick: () => {
+                  if (!editModal) return;
+                  updateMutation.mutate({ id: editModal.id, body: { isArchived: false } });
+                },
+              },
+              {
+                key: 'save-company',
+                label: updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات',
+                role: 'save',
+                type: 'submit',
+                form: 'edit-company-form',
+                className: 'min-w-[120px]',
+                disabled: updateMutation.isPending || !editModal?.nameAr?.trim(),
+              },
+            ]}
+          />
         }
       >
         {editModal && (

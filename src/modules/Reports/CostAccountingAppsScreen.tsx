@@ -4,7 +4,7 @@
 import type { ChangeEvent } from 'react';
 import { fmt } from '../../utils/format';
 import { formatUiDateTime } from '../../utils/saudiDate';
-import { Button, Checkbox, FileTrigger, InlineSelect, Input, cn, Modal } from '../../ui';
+import { Button, Checkbox, DialogActions, FileTrigger, InlineSelect, Input, cn, Modal } from '../../ui';
 import Card from '../../ui/Card';
 import { type CostAppsCommissionBase } from './costAccountingAppsModel';
 import { Field, SectionHeading } from './costAccountingApps/CostAccountingAppsUiParts';
@@ -598,14 +598,16 @@ export default function CostAccountingAppsScreen() {
         size="xl"
         footer={
           previewSlot ? (
-            <>
-              <Button type="button" variant="ghost" onClick={() => setPreviewSlot(null)}>
-                {t('close')}
-              </Button>
-              <Button type="button" variant="primary" onClick={() => handleImportSavedSlot(previewSlot)}>
-                {t('reportCostAppsSavedImport')}
-              </Button>
-            </>
+            <DialogActions
+              actions={[
+                {
+                  key: 'import-saved-slot',
+                  label: t('reportCostAppsSavedImport'),
+                  role: 'primary',
+                  onClick: () => handleImportSavedSlot(previewSlot),
+                },
+              ]}
+            />
           ) : undefined
         }
       >

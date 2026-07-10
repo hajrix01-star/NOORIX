@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, DateField, Input, AdaptiveSheet , FmtNum } from '../../../ui';
+import { DateField, DialogActions, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { createMovement, updateEmployee, updateRaiseMovement, throwIfApiFailed } from '../../../services/api';
@@ -236,12 +236,18 @@ export function EmployeeCareerMovementModal({
       size="md"
       side="start"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose} disabled={saving}>{t('cancel')}</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={saving || raiseBlocked}>
-            {saving ? t('saving') : t('careerSaveMovement')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', disabled: saving, onClick: onClose },
+            {
+              key: 'save-movement',
+              label: saving ? t('saving') : t('careerSaveMovement'),
+              role: 'save',
+              disabled: saving || raiseBlocked,
+              onClick: handleSubmit,
+            },
+          ]}
+        />
       }
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">

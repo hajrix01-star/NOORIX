@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
 import { sumObjectValues } from '@noorix/finance-core';
-import { Button, TransactionDatePicker, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import { Button, DialogActions, TransactionDatePicker, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import type { DailySalesChannelEntry } from './DailySalesChannelsChips';
 import { SalesShiftPicker } from './SalesShiftPicker';
 import { SalesShiftEntryCard, isShiftEntryFormValid, buildShiftEntryPayload } from './SalesShiftEntryCard';
@@ -390,10 +390,27 @@ export function SalesEntryModal({
         side="start"
         className="sales-entry-success-drawer"
         footer={
-          <>
-            <Button onClick={() => { void resetForm(); }}>{t('addNewSummary')}</Button>
-            <Button variant="ghost" onClick={() => { onClose?.(); void resetForm(); }}>{t('close')}</Button>
-          </>
+          <DialogActions
+            actions={[
+              {
+                key: 'close',
+                label: t('close'),
+                role: 'close',
+                onClick: () => {
+                  onClose?.();
+                  void resetForm();
+                },
+              },
+              {
+                key: 'add-new-summary',
+                label: t('addNewSummary'),
+                role: 'primary',
+                onClick: () => {
+                  void resetForm();
+                },
+              },
+            ]}
+          />
         }
       >
         <div className="flex flex-col gap-4">
@@ -468,19 +485,25 @@ export function SalesEntryModal({
       className="sales-entry-drawer"
       footer={
         isBatch ? (
-          <Button onClick={resetForm} className="w-full">{t('reset')}</Button>
+          <DialogActions
+            actions={[
+              { key: 'reset', label: t('reset'), role: 'secondary', onClick: resetForm },
+            ]}
+            className="w-full"
+          />
         ) : (
-          <>
-            <Button
-              variant="primary"
-              disabled={saveDisabled}
-              onClick={() => handleSave(false)}
-              className="flex-1 min-w-0"
-            >
-              {saving ? t('saving') : t('saveSummary')}
-            </Button>
-            <Button onClick={resetForm}>{t('reset')}</Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'reset', label: t('reset'), role: 'secondary', onClick: resetForm },
+              {
+                key: 'save-summary',
+                label: saving ? t('saving') : t('saveSummary'),
+                role: 'save',
+                disabled: saveDisabled,
+                onClick: () => handleSave(false),
+              },
+            ]}
+          />
         )
       }
     >

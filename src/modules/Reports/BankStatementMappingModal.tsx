@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementConfirmMapping, bankStatementGet, bankStatementSuggestHeaderMetadata } from '../../services/api';
-import { Button, AdaptiveSheet, DateRangeField, Input } from '../../ui';
+import { Button, AdaptiveSheet, DateRangeField, DialogActions, Input } from '../../ui';
 import {
   autoDetectRows,
   autoDetectColumns,
@@ -268,12 +268,18 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
               </div>
             ) : null}
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-            <Button variant="primary" onClick={handleConfirm} disabled={!canConfirm || isSubmitting}>
-              {isSubmitting ? t('bankStatementAIApplying') : t('bankMapConfirmAnalyze')}
-            </Button>
-          </div>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+              {
+                key: 'confirm',
+                label: isSubmitting ? t('bankStatementAIApplying') : t('bankMapConfirmAnalyze'),
+                role: 'primary',
+                disabled: !canConfirm || isSubmitting,
+                onClick: handleConfirm,
+              },
+            ]}
+          />
         </div>
       }
     >

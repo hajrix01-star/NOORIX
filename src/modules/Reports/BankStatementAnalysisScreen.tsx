@@ -20,7 +20,7 @@ import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import { getSaudiNow, toYmd } from '../../utils/saudiDate';
 import { bankKeys } from '../../services/queryKeys';
-import { Button, Badge, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, FilterToolbar, SearchableOptionsPicker, cn } from '../../ui';
+import { Button, Badge, DialogActions, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, FilterToolbar, SearchableOptionsPicker, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
 import BankStatementDetailView from './bank/BankStatementDetailView';
@@ -195,18 +195,21 @@ export default function BankStatementAnalysisScreen() {
           size="sm"
           variant="danger"
           footer={
-            <>
-              <Button variant="ghost" size="sm" onClick={() => setDeleteConfirmId(null)}>{t('cancel')}</Button>
-              <Button
-                variant="danger"
-                disabled={deleteMutation.isPending || !deleteConfirmId}
-                onClick={() => {
-                  if (deleteConfirmId) deleteMutation.mutate(deleteConfirmId);
-                }}
-              >
-                {deleteMutation.isPending ? t('loading') : t('delete')}
-              </Button>
-            </>
+            <DialogActions
+              size="sm"
+              actions={[
+                { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setDeleteConfirmId(null) },
+                {
+                  key: 'delete',
+                  label: deleteMutation.isPending ? t('loading') : t('delete'),
+                  role: 'delete',
+                  disabled: deleteMutation.isPending || !deleteConfirmId,
+                  onClick: () => {
+                    if (deleteConfirmId) deleteMutation.mutate(deleteConfirmId);
+                  },
+                },
+              ]}
+            />
           }
         >
           <p className="text-noorix-muted text-[14px]">{t('bankDeleteStatementConfirm')}</p>

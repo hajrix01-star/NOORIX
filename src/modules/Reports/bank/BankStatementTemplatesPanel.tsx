@@ -6,7 +6,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStatementTemplateDelete } from '../../../services/api';
-import { Button, Modal } from '../../../ui';
+import { Button, DialogActions, Modal } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { bankKeys } from '../../../services/queryKeys';
 import type { BankTemplate, BankTemplateColumn, TranslationFn } from './bankAnalysisTab.types';
@@ -174,12 +174,18 @@ export default function BankStatementTemplatesPanel({ companyId }: { companyId: 
         size="sm"
         variant="danger"
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setDeleteId(null)}>{t('cancel')}</Button>
-            <Button variant="danger" disabled={deleteMut.isPending || !deleteId} onClick={() => deleteId && deleteMut.mutate(deleteId)}>
-              {deleteMut.isPending ? t('loading') : t('delete')}
-            </Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setDeleteId(null) },
+              {
+                key: 'delete',
+                label: deleteMut.isPending ? t('loading') : t('delete'),
+                role: 'delete',
+                disabled: deleteMut.isPending || !deleteId,
+                onClick: () => deleteId && deleteMut.mutate(deleteId),
+              },
+            ]}
+          />
         }
       >
         <p className="text-[14px] text-noorix-muted">{t('bankTemplatesDeleteBody')}</p>

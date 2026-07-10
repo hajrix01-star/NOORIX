@@ -2,7 +2,7 @@
  * نموذج إضافة/تعديل أصل — AdaptiveSheet (لوحة جانبية).
  */
 import React, { useState } from 'react';
-import { Button, AdaptiveSheet, DateField, TransactionDatePicker, Input } from '../../../ui';
+import { Button, AdaptiveSheet, DateField, DialogActions, TransactionDatePicker, Input } from '../../../ui';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { createCompanyAsset, throwIfApiFailed, updateCompanyAsset } from '../../../services/api';
 import type { AssetRegisterListItem, SupplierOption } from '../types';
@@ -76,14 +76,21 @@ export function AssetFormPanel({
       title={isEdit ? t('assetEdit') : t('assetAdd')}
       size="md"
       footer={
-        <>
-          <Button onClick={onClose}>{t('cancel')}</Button>
-          {canWrite ? (
-            <Button variant="primary" type="submit" form="asset-form" disabled={saving}>
-              {saving ? t('loading') : t('save')}
-            </Button>
-          ) : null}
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            ...(canWrite
+              ? [{
+                  key: 'save',
+                  label: saving ? t('loading') : t('save'),
+                  role: 'save' as const,
+                  type: 'submit' as const,
+                  form: 'asset-form',
+                  disabled: saving,
+                }]
+              : []),
+          ]}
+        />
       }
     >
       <form id="asset-form" onSubmit={submit} className="flex flex-col gap-3">

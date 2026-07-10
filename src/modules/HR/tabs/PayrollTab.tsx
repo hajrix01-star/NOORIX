@@ -19,7 +19,7 @@ import { PayrollRunFormModal } from '../components/PayrollRunFormModal';
 import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, DateField, Input, Modal, FmtNum, SmartTable, YearDateFilter, usePrintPreview } from '../../../ui';
+import { Button, Badge, DateField, DialogActions, Input, Modal, FmtNum, SmartTable, YearDateFilter, usePrintPreview } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -458,20 +458,22 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
         title={t('payrollPayConfirmTitle')}
         size="md"
         footer={(
-          <>
-            <Button
-              size="md"
-              variant="ghost"
-              disabled={issuePaymentMutation.isPending}
-              onClick={() => setPayModalRun(null)}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              size="md"
-              variant="primary"
-              loading={issuePaymentMutation.isPending}
-              onClick={() => {
+          <DialogActions
+            size="md"
+            actions={[
+              {
+                key: 'cancel',
+                label: t('cancel'),
+                role: 'cancel',
+                disabled: issuePaymentMutation.isPending,
+                onClick: () => setPayModalRun(null),
+              },
+              {
+                key: 'confirm-pay',
+                label: t('payrollPayConfirm'),
+                role: 'save',
+                loading: issuePaymentMutation.isPending,
+                onClick: () => {
                 if (!payModalRun || !payTransactionDate) return;
                 setPayVaultError('');
                 const netTotal = payModalRun.netTotal ?? 0;
@@ -493,11 +495,10 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
                   transactionDate: payTransactionDate,
                   vaultSplits,
                 });
-              }}
-            >
-              {t('payrollPayConfirm')}
-            </Button>
-          </>
+              },
+            },
+            ]}
+          />
         )}
       >
         <div className="flex flex-col gap-3">

@@ -1,9 +1,8 @@
 import React from 'react';
-import { Button } from '../../../../../ui';
+import { DialogActions } from '../../../../../ui';
 import type { EmployeeDocTFunction } from '../types';
 
 export function EmployeeDocToolbar({
-  onClose,
   onPrint,
   onSave,
   saving,
@@ -16,14 +15,22 @@ export function EmployeeDocToolbar({
   t: EmployeeDocTFunction;
 }) {
   return (
-    <>
-      <Button variant="ghost" onClick={onClose}>
-        {t('close')}
-      </Button>
-      <Button onClick={onPrint}>{t('print') || 'طباعة'}</Button>
-      <Button variant="primary" disabled={saving} onClick={onSave}>
-        {saving ? t('saving') : t('saveToDocuments') || 'حفظ في المستندات'}
-      </Button>
-    </>
+    <DialogActions
+      actions={[
+        {
+          key: 'print',
+          label: t('print') || 'طباعة',
+          role: 'print',
+          onClick: onPrint,
+        },
+        {
+          key: 'save',
+          label: saving ? t('saving') : t('saveToDocuments') || 'حفظ في المستندات',
+          role: 'save',
+          disabled: saving,
+          onClick: onSave,
+        },
+      ]}
+    />
   );
 }

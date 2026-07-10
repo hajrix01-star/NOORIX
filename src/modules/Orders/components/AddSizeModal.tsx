@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { DialogActions, Input, AdaptiveSheet } from '../../../ui';
 
 type CustomOptionDraft = { ar: string; en: string };
 
@@ -30,10 +30,12 @@ export function AddSizeModal({
       side="start"
       className="add-size-drawer"
       footer={
-        <>
-          <Button onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" onClick={onAdd}>{t('add')}</Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            { key: 'add', label: t('add'), role: 'primary', onClick: onAdd },
+          ]}
+        />
       }
     >
       <div className="grid gap-3">

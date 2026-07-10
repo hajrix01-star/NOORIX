@@ -1,5 +1,5 @@
 import React, { useRef, type ReactNode } from 'react';
-import Button from './Button';
+import DialogActions from './DialogActions';
 import Modal from './Modal';
 
 type PrintPreviewModalProps = {
@@ -40,15 +40,29 @@ export default function PrintPreviewModal({
       size="full"
       closeOnBackdrop={false}
       footer={(
-        <>
-          <Button type="button" onClick={onClose}>
-            {closeLabel}
-          </Button>
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
+          <DialogActions
+            actions={[
+              {
+                key: 'close',
+                label: closeLabel,
+                role: 'close',
+                onClick: onClose,
+              },
+            ]}
+          />
           {footerExtra}
-          <Button type="button" variant="primary" onClick={printFrame}>
-            {printLabel}
-          </Button>
-        </>
+          <DialogActions
+            actions={[
+              {
+                key: 'print',
+                label: printLabel,
+                role: 'print',
+                onClick: printFrame,
+              },
+            ]}
+          />
+        </div>
       )}
     >
       <iframe

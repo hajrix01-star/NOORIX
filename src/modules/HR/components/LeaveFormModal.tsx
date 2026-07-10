@@ -9,7 +9,7 @@ import { getEmployees, createLeave, updateLeave, throwIfApiFailed } from '../../
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys } from '../../../services/queryKeys';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, DateField, Input, AdaptiveSheet, Modal } from '../../../ui';
+import { DateField, DialogActions, Input, AdaptiveSheet, Modal } from '../../../ui';
 import { toDateInputYmd, getSaudiToday } from '../../../utils/saudiDate';
 import type { HrEmployee } from '../../../types/api';
 
@@ -243,27 +243,41 @@ export function LeaveFormModal({
         side="start"
         className="leave-form-drawer"
         footer={
-          <>
-            {isEdit && onDelete && (
-              <Button variant="danger" className="me-auto" onClick={() => onDelete(editLeave)}>
-                {t('delete')}
-              </Button>
-            )}
-            {isEdit && onReturnFromLeave && (
-              <Button variant="primary" onClick={onReturnFromLeave}>
-                {t('leaveReturnFromLeave')}
-              </Button>
-            )}
-            {isEdit && onSalarySettlement && (
-              <Button variant="success" onClick={onSalarySettlement}>
-                {t('leaveSalarySettlement')}
-              </Button>
-            )}
-            <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-            <Button type="submit" form={LEAVE_FORM_ID} variant="primary" disabled={submitting}>
-              {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}
-            </Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+              {
+                key: 'delete',
+                label: t('delete'),
+                role: 'delete',
+                hidden: !isEdit || !onDelete,
+                className: 'me-auto',
+                onClick: () => onDelete?.(editLeave),
+              },
+              {
+                key: 'return-from-leave',
+                label: t('leaveReturnFromLeave'),
+                role: 'primary',
+                hidden: !isEdit || !onReturnFromLeave,
+                onClick: onReturnFromLeave,
+              },
+              {
+                key: 'salary-settlement',
+                label: t('leaveSalarySettlement'),
+                role: 'success',
+                hidden: !isEdit || !onSalarySettlement,
+                onClick: onSalarySettlement,
+              },
+              {
+                key: 'save',
+                label: submitting ? t('saving') : (isEdit ? t('save') : t('add')),
+                role: 'save',
+                type: 'submit',
+                form: LEAVE_FORM_ID,
+                disabled: submitting,
+              },
+            ]}
+          />
         }
       >
         <form id={LEAVE_FORM_ID} onSubmit={handleSubmit}>
@@ -350,12 +364,18 @@ export function LeaveFormModal({
         title={t('leaveEditVoidSettlementTitle')}
         size="md"
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setVoidModalOpen(false)}>{t('cancel')}</Button>
-            <Button variant="primary" onClick={confirmVoidAndSave} disabled={submitting}>
-              {t('leaveVoidConfirmProceed')}
-            </Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setVoidModalOpen(false) },
+              {
+                key: 'confirm',
+                label: t('leaveVoidConfirmProceed'),
+                role: 'primary',
+                disabled: submitting,
+                onClick: confirmVoidAndSave,
+              },
+            ]}
+          />
         }
       >
         <p className="text-[13px] text-noorix-text leading-relaxed m-0">

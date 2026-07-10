@@ -1,5 +1,5 @@
 import React from 'react';
-import { AdaptiveSheet, Button, FileTrigger, Input, Radio } from '../../../../ui';
+import { AdaptiveSheet, DialogActions, FileTrigger, Input, Radio } from '../../../../ui';
 import type { CompanyOption } from '../hooks/useBankCategoryTreeData';
 
 export function BankCategoryRulesImportSheet({
@@ -43,14 +43,24 @@ export function BankCategoryRulesImportSheet({
       className="bank-rules-import-drawer"
       closeOnBackdrop={!importBusy}
       footer={
-        <>
-          <Button variant="ghost" disabled={importBusy} onClick={onClose}>
-            {t('cancel')}
-          </Button>
-          <Button variant="primary" disabled={importBusy} onClick={onRunImport}>
-            {importBusy ? t('loading') : t('bankRulesImportRun')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            {
+              key: 'cancel',
+              label: t('cancel'),
+              role: 'cancel',
+              disabled: importBusy,
+              onClick: onClose,
+            },
+            {
+              key: 'run-import',
+              label: importBusy ? t('loading') : t('bankRulesImportRun'),
+              role: 'primary',
+              disabled: importBusy,
+              onClick: onRunImport,
+            },
+          ]}
+        />
       }
     >
       <div className="grid gap-3 mt-3">

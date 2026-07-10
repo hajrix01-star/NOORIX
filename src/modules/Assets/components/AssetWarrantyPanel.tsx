@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, AdaptiveSheet, DateField, Input, TransactionDatePicker } from '../../../ui';
+import { Button, AdaptiveSheet, DateField, DialogActions, Input, TransactionDatePicker } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import {
   completeCompanyAssetFromInvoice,
@@ -140,14 +140,21 @@ export function AssetWarrantyPanel({
       title={t('warrantyCompleteSheetTitle')}
       size="lg"
       footer={(
-        <>
-          <Button onClick={onClose}>{t('cancel')}</Button>
-          {canWrite ? (
-            <Button variant="primary" type="submit" form="warranty-complete-form" disabled={saving}>
-              {saving ? t('loading') : t('save')}
-            </Button>
-          ) : null}
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            ...(canWrite
+              ? [{
+                  key: 'save',
+                  label: saving ? t('loading') : t('save'),
+                  role: 'save' as const,
+                  type: 'submit' as const,
+                  form: 'warranty-complete-form',
+                  disabled: saving,
+                }]
+              : []),
+          ]}
+        />
       )}
     >
       <form id="warranty-complete-form" onSubmit={submit} className="flex flex-col gap-3">

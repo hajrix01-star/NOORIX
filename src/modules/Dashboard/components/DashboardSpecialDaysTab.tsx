@@ -5,8 +5,7 @@ import React, { useState, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { useDashboardYearSpecialDays } from '../../../hooks/useDashboardYearSpecialDays';
-import { Button, ColorSwatch, DateRangeField, Input } from '../../../ui';
-import { Modal } from '../../../ui';
+import { Button, ColorSwatch, DateRangeField, DialogActions, Input, Modal } from '../../../ui';
 import { toYmd } from '../../../utils/saudiDate';
 import { getSaudiNow } from '../../../utils/saudiDate';
 import { DashboardSaudiOccasionsImportModal } from './DashboardSaudiOccasionsImportModal';
@@ -294,21 +293,21 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         title={t('confirmDelete')}
         size="sm"
         footer={(
-          <div className="flex justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setPendingDelete(null)}>
-              {t('cancel')}
-            </Button>
-            <Button
-              size="sm"
-              variant="danger"
-              disabled={saving}
-              onClick={() => {
-                if (pendingDelete) void handleRemove(pendingDelete.id);
-              }}
-            >
-              {t('delete')}
-            </Button>
-          </div>
+          <DialogActions
+            size="sm"
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setPendingDelete(null) },
+              {
+                key: 'delete',
+                label: t('delete'),
+                role: 'delete',
+                disabled: saving,
+                onClick: () => {
+                  if (pendingDelete) void handleRemove(pendingDelete.id);
+                },
+              },
+            ]}
+          />
         )}
       >
         <p className="m-0 text-[13px] text-noorix-muted">

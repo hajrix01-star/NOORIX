@@ -1,6 +1,6 @@
 import React, { type ChangeEvent, useEffect, useState } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { AdaptiveSheet, Button, Checkbox, Input } from '../../../../ui';
+import { AdaptiveSheet, Button, Checkbox, DialogActions, Input } from '../../../../ui';
 import type { OrderCategory, OrderProductType, OrderProductVariant, OrderSection } from '../../../../types/api';
 import { productHasAdvancedVariants } from './catalogProductUtils';
 
@@ -203,13 +203,15 @@ export function CatalogProductFormSheet({
       size="lg"
       side="start"
       footer={(
-        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
-          <Button type="button" variant="ghost" size="md" onClick={onClose} disabled={saving}>{t('cancel')}</Button>
-          {mode === 'edit' && onDelete ? (
-            <Button type="button" variant="danger" size="md" onClick={onDelete} disabled={saving}>{t('delete')}</Button>
-          ) : null}
-          <Button type="button" variant="primary" size="md" onClick={onSave} loading={saving} disabled={saving}>{t('save')}</Button>
-        </div>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', disabled: saving, onClick: onClose },
+            ...(mode === 'edit' && onDelete
+              ? [{ key: 'delete', label: t('delete'), role: 'delete' as const, disabled: saving, onClick: onDelete }]
+              : []),
+            { key: 'save', label: t('save'), role: 'save', loading: saving, disabled: saving, onClick: onSave },
+          ]}
+        />
       )}
     >
       <div className="flex flex-col gap-4">

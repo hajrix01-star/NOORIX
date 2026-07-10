@@ -5,7 +5,7 @@ import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
-import { Button, AdaptiveSheet, Checkbox, Input, SearchableOptionsPicker } from '../../../ui';
+import { AdaptiveSheet, Checkbox, DialogActions, Input, SearchableOptionsPicker } from '../../../ui';
 import type {
   ExpenseLineCreatePayload,
   ExpenseLineRecord,
@@ -130,12 +130,19 @@ export default function ExpenseLineFormModal({
   const isFixed = form.kind === 'fixed_expense';
 
   const footer = (
-    <>
-      <Button onClick={onClose} disabled={isPending}>{t('cancel')}</Button>
-      <Button variant="primary" type="submit" form="expense-line-form-modal" disabled={isPending}>
-        {isPending ? t('saving') : editing ? t('update') : t('save')}
-      </Button>
-    </>
+    <DialogActions
+      actions={[
+        { key: 'cancel', label: t('cancel'), role: 'cancel', disabled: isPending, onClick: onClose },
+        {
+          key: 'save',
+          label: isPending ? t('saving') : editing ? t('update') : t('save'),
+          role: 'save',
+          type: 'submit',
+          form: 'expense-line-form-modal',
+          disabled: isPending,
+        },
+      ]}
+    />
   );
 
   return (

@@ -12,7 +12,7 @@ import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { fmt } from '../../../utils/format';
-import { Button, Checkbox, Input, AdaptiveSheet } from '../../../ui';
+import { Checkbox, DialogActions, Input, AdaptiveSheet } from '../../../ui';
 import {
   HR_SERVICE_CATEGORIES,
   HR_SERVICE_CATEGORY_LABEL_KEYS,
@@ -280,22 +280,34 @@ export function ResidencyFormModal({
       side="start"
       className="residency-form-drawer"
       footer={
-        <>
-          {isEdit && onDelete && (
-            <Button variant="danger" className="me-auto" onClick={() => onDelete(residency)}>
-              {t('delete')}
-            </Button>
-          )}
-          {isEdit && onIssueInvoice && !residency?.invoiceId && (
-            <Button variant="success" onClick={() => onIssueInvoice(residency)}>
-              {t('hrServiceIssueInvoice')}
-            </Button>
-          )}
-          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button type="submit" form={RESIDENCY_FORM_ID} variant="primary" disabled={submitting}>
-            {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'delete',
+              label: t('delete'),
+              role: 'delete',
+              hidden: !isEdit || !onDelete,
+              className: 'me-auto',
+              onClick: () => onDelete?.(residency),
+            },
+            {
+              key: 'issue-invoice',
+              label: t('hrServiceIssueInvoice'),
+              role: 'success',
+              hidden: !isEdit || !onIssueInvoice || !!residency?.invoiceId,
+              onClick: () => onIssueInvoice?.(residency),
+            },
+            {
+              key: 'save',
+              label: submitting ? t('saving') : (isEdit ? t('save') : t('add')),
+              role: 'save',
+              type: 'submit',
+              form: RESIDENCY_FORM_ID,
+              disabled: submitting,
+            },
+          ]}
+        />
       }
     >
       <form id={RESIDENCY_FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-0">

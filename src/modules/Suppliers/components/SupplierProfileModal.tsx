@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Badge, Button, FmtNum, Modal, SmartTable, usePrintPreview } from '../../../ui';
+import { Badge, DialogActions, FmtNum, Modal, SmartTable, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui/SmartTable/types';
 import { useInvoices } from '../../../hooks/useInvoices';
 import { useApp } from '../../../context/AppContext';
@@ -208,35 +208,42 @@ export function SupplierProfileModal({
       title={`${t('supplierProfile')} - ${supplierLabel}`}
       size="full"
       footer={(
-        <>
-          <Button size="sm" onClick={handlePrintProfile}>{t('supplierProfilePrint')}</Button>
-          <Button size="sm" onClick={handlePrintInvoices}>{t('supplierProfilePrintInvoices')}</Button>
-          {onEdit && (
-            <Button
-              size="sm"
-              variant="success"
-              onClick={() => {
+        <DialogActions
+          actions={[
+            {
+              key: 'print-profile',
+              label: t('supplierProfilePrint'),
+              role: 'print',
+              onClick: handlePrintProfile,
+            },
+            {
+              key: 'print-invoices',
+              label: t('supplierProfilePrintInvoices'),
+              role: 'secondary',
+              onClick: handlePrintInvoices,
+            },
+            {
+              key: 'edit',
+              label: t('edit'),
+              role: 'edit',
+              hidden: !onEdit,
+              onClick: () => {
                 onClose();
-                onEdit(supplier);
-              }}
-            >
-              {t('edit')}
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={() => {
+                onEdit?.(supplier);
+              },
+            },
+            {
+              key: 'delete',
+              label: t('delete'),
+              role: 'delete',
+              hidden: !onDelete,
+              onClick: () => {
                 onClose();
-                onDelete(supplier);
-              }}
-            >
-              {t('delete')}
-            </Button>
-          )}
-          <Button size="sm" variant="ghost" onClick={onClose}>{t('close')}</Button>
-        </>
+                onDelete?.(supplier);
+              },
+            },
+          ]}
+        />
       )}
     >
       {printPreviewModal}

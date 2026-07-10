@@ -3,7 +3,7 @@
  */
 import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Modal, Button, FileTrigger } from '../../ui';
+import { Modal, Button, DialogActions, FileTrigger } from '../../ui';
 import { exportToExcel, importFromExcel } from '../../utils/exportUtils';
 import { disclosureFromBulkFlatRow, roundMoney2 } from '../../constants/taxDisclosure';
 import { upsertVatPlanning, throwIfApiFailed } from '../../services/api';
@@ -232,9 +232,7 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
       size="lg"
       footer={
         <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            {t('cancel')}
-          </Button>
+          <DialogActions size="sm" actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose }]} />
           <FileTrigger
             ref={fileRef}
             label={t('hajriTaxBulkImportChooseFile')}

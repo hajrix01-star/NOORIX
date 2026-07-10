@@ -2,7 +2,7 @@
  * نافذة إقرار جديد — اختيار شركة + سنة + ربع (أسلوب شرائح)
  */
 import React, { useMemo, useState } from 'react';
-import { Modal, Button } from '../../ui';
+import { Modal, Button, DialogActions } from '../../ui';
 import type {
   HajriTaxCompanyRef,
   HajriTaxNewDeclarationRequest,
@@ -54,14 +54,19 @@ export default function HajriTaxNewDeclarationModal({
       title={t('hajriTaxNewDeclarationTitle')}
       size="lg"
       footer={
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            {t('cancel')}
-          </Button>
-          <Button type="button" variant="primary" size="sm" disabled={!companyId} onClick={handleSubmit}>
-            {t('hajriTaxNewDeclarationStart')}
-          </Button>
-        </div>
+        <DialogActions
+          size="sm"
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'start',
+              label: t('hajriTaxNewDeclarationStart'),
+              role: 'primary',
+              disabled: !companyId,
+              onClick: handleSubmit,
+            },
+          ]}
+        />
       }
     >
       <div className="grid gap-6 text-start">

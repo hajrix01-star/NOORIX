@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../../utils/queryInvalidation';
 import { BatchPrintSheet } from '../../components/BatchPrintSheet';
 import { BatchEditPanel } from '../../components/BatchEditPanel';
-import { Button, Modal } from '../../../../ui';
+import { DialogActions, Modal } from '../../../../ui';
 import type { PurchaseBatchInvoice, PurchaseBatchSupplier, PurchaseBatchSummaryRow } from '../purchaseBatchTypes';
 import { useTranslation } from '../../../../i18n/useTranslation';
 
@@ -67,18 +67,29 @@ export default function PurchasesBatchModals(props: PurchasesBatchModalsProps) {
         />
       )}
       {cancellingBatch ? (
-        <Modal open onClose={onCloseCancel} title={t('cancel')} size="sm">
+        <Modal
+          open
+          onClose={onCloseCancel}
+          title={t('cancel')}
+          size="sm"
+          footer={(
+            <DialogActions
+              actions={[
+                {
+                  key: 'confirm-cancel',
+                  label: t('cancel'),
+                  role: 'delete',
+                  onClick: () => {
+                    void onConfirmCancel();
+                  },
+                },
+              ]}
+            />
+          )}
+        >
           <p className="text-[14px] text-noorix-muted m-0">
             {t('cancelBatchConfirm', cancellingBatch.batchId, cancellingBatch.invoiceCount)}
           </p>
-          <div className="flex justify-end gap-2 mt-5">
-            <Button type="button" variant="ghost" onClick={onCloseCancel}>
-              {t('close')}
-            </Button>
-            <Button type="button" variant="danger" onClick={onConfirmCancel}>
-              {t('cancel')}
-            </Button>
-          </div>
         </Modal>
       ) : null}
     </>

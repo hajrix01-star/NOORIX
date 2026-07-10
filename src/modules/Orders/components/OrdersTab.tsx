@@ -31,7 +31,7 @@ import { DateFilterBar } from '../../../ui/date';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
 import { OrderConfirmModal } from './OrderConfirmModal';
-import { Button, Badge, AdaptiveSheet, FilterToolbar, SmartTable, FmtNum, usePrintPreview } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, DialogActions, FilterToolbar, SmartTable, FmtNum, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import type { OrderLine, OrderProduct, OrderRecord } from '../../../types/api';
 
@@ -439,38 +439,34 @@ export function OrdersTab({
           side="start"
           className="orders-view-drawer"
           footer={
-            <>
-              <Button variant="primary" size="sm" onClick={() => handlePrintOrder(viewingOrder)}>
-                {t('ordersPrintOrder')}
-              </Button>
-              <Button size="sm" onClick={() => handleExportSingleOrder(viewingOrder)}>
-                {t('exportExcel')}
-              </Button>
-              <Button variant="success" size="sm" onClick={() => handleWhatsApp(viewingOrder)}>
-                {t('sendWhatsApp')}
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  const order = viewingOrder;
-                  setViewingOrder(null);
-                  handleEdit(order);
-                }}
-              >
-                {t('edit')}
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => {
-                  const order = viewingOrder;
-                  setViewingOrder(null);
-                  handleDelete(order);
-                }}
-              >
-                {t('delete')}
-              </Button>
-            </>
+            <DialogActions
+              size="sm"
+              actions={[
+                { key: 'print', label: t('ordersPrintOrder'), role: 'print', onClick: () => handlePrintOrder(viewingOrder) },
+                { key: 'excel', label: t('exportExcel'), role: 'secondary', onClick: () => handleExportSingleOrder(viewingOrder) },
+                { key: 'whatsapp', label: t('sendWhatsApp'), role: 'success', onClick: () => handleWhatsApp(viewingOrder) },
+                {
+                  key: 'edit',
+                  label: t('edit'),
+                  role: 'edit',
+                  onClick: () => {
+                    const order = viewingOrder;
+                    setViewingOrder(null);
+                    handleEdit(order);
+                  },
+                },
+                {
+                  key: 'delete',
+                  label: t('delete'),
+                  role: 'delete',
+                  onClick: () => {
+                    const order = viewingOrder;
+                    setViewingOrder(null);
+                    handleDelete(order);
+                  },
+                },
+              ]}
+            />
           }
         >
           <div className="text-[12px] text-noorix-muted mb-4">{companyName}</div>

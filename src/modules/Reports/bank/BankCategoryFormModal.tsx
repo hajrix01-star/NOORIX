@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useToast } from '../../../context/ToastContext';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, DialogActions, Input, AdaptiveSheet } from '../../../ui';
 import {
   bankStatementTreeCategoryCreate,
   bankStatementTreeCategoryUpdate,
@@ -151,14 +151,12 @@ export function BankCategoryFormModal({
       title={category ? t('bankTreeEditCategory') : t('bankTreeAddCategory')}
       className="bank-category-form-drawer"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            {t('cancel')}
-          </Button>
-          <Button variant="primary" onClick={handleSave} disabled={pending}>
-            {pending ? t('loading') : t('save')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            { key: 'save', label: pending ? t('loading') : t('save'), role: 'save', disabled: pending, onClick: handleSave },
+          ]}
+        />
       }
     >
       <div className="grid gap-3.5">

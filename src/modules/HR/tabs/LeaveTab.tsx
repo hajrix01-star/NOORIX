@@ -22,7 +22,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, DateField, Input, Modal, Spinner, SmartTable, YearDateFilter } from '../../../ui';
+import { Button, Badge, DateField, DialogActions, Input, Modal, Spinner, SmartTable, YearDateFilter } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
@@ -435,50 +435,51 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
         title={t('leaveSalarySettlementTitle')}
         size="sm"
         footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSettlementRow(null);
-                setSettlementAmount('');
-                setSettlementOverrideReason('');
-              }}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              variant="primary"
-              disabled={
-                issueSettlementMutation.isPending
-                || settlementPreviewLoading
-                || !settlementPreview
-                || !settlementAmount
-                || (
-                  Math.abs(Number(settlementAmount || 0) - Number(settlementPreview?.suggestedAmount ?? (settlementAmount || 0))) > 0.005
-                  && !settlementOverrideReason.trim()
-                )
-              }
-              onClick={() => {
-                if (!settlementRow) return;
-                issueSettlementMutation.mutate(
-                  {
-                    id: settlementRow.id,
-                    grossAmount: settlementAmount,
-                    manualOverrideReason: settlementOverrideReason,
-                  },
-                  {
-                    onSuccess: () => {
-                      setSettlementRow(null);
-                      setSettlementAmount('');
-                      setSettlementOverrideReason('');
+          <DialogActions
+            actions={[
+              {
+                key: 'cancel',
+                label: t('cancel'),
+                role: 'cancel',
+                onClick: () => {
+                  setSettlementRow(null);
+                  setSettlementAmount('');
+                  setSettlementOverrideReason('');
+                },
+              },
+              {
+                key: 'save',
+                label: issueSettlementMutation.isPending ? t('saving') : t('save'),
+                role: 'save',
+                disabled:
+                  issueSettlementMutation.isPending
+                  || settlementPreviewLoading
+                  || !settlementPreview
+                  || !settlementAmount
+                  || (
+                    Math.abs(Number(settlementAmount || 0) - Number(settlementPreview?.suggestedAmount ?? (settlementAmount || 0))) > 0.005
+                    && !settlementOverrideReason.trim()
+                  ),
+                onClick: () => {
+                  if (!settlementRow) return;
+                  issueSettlementMutation.mutate(
+                    {
+                      id: settlementRow.id,
+                      grossAmount: settlementAmount,
+                      manualOverrideReason: settlementOverrideReason,
                     },
-                  },
-                );
-              }}
-            >
-              {issueSettlementMutation.isPending ? t('saving') : t('save')}
-            </Button>
-          </>
+                    {
+                      onSuccess: () => {
+                        setSettlementRow(null);
+                        setSettlementAmount('');
+                        setSettlementOverrideReason('');
+                      },
+                    },
+                  );
+                },
+              },
+            ]}
+          />
         }
       >
         {settlementPreviewLoading && (
@@ -529,24 +530,26 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
         title={t('leaveReturnFromLeave')}
         size="sm"
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setReturnRow(null)}>{t('cancel')}</Button>
-            <Button
-              variant="primary"
-              disabled={returnMutation.isPending || !returnDate}
-              onClick={() => {
-                if (!returnRow) return;
-                returnMutation.mutate(
-                  { id: returnRow.id, actualReturnDate: returnDate },
-                  {
-                    onSuccess: () => setReturnRow(null),
-                  },
-                );
-              }}
-            >
-              {returnMutation.isPending ? t('saving') : t('save')}
-            </Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setReturnRow(null) },
+              {
+                key: 'save',
+                label: returnMutation.isPending ? t('saving') : t('save'),
+                role: 'save',
+                disabled: returnMutation.isPending || !returnDate,
+                onClick: () => {
+                  if (!returnRow) return;
+                  returnMutation.mutate(
+                    { id: returnRow.id, actualReturnDate: returnDate },
+                    {
+                      onSuccess: () => setReturnRow(null),
+                    },
+                  );
+                },
+              },
+            ]}
+          />
         }
       >
         <p className="text-[13px] text-noorix-muted mb-3">{t('leaveReturnEarlyHint')}</p>

@@ -8,7 +8,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { ProductSearchInput, type ProductSearchItem } from '../../../components/common/ProductSearchInput';
-import { Button, TransactionDatePicker, EditableNumberCell, Input, AdaptiveSheet, FmtNum, Modal, SummaryBar } from '../../../ui';
+import { Button, DialogActions, TransactionDatePicker, EditableNumberCell, Input, AdaptiveSheet, FmtNum, Modal, SummaryBar } from '../../../ui';
 import { useOrderSections } from '../../../hooks/useOrders';
 import type {
   CreateOrderLinePayload,
@@ -407,15 +407,18 @@ export function OrderFormModal({
         size="xl"
         side="start"
         footer={
-          <Button
-            variant="primary"
-            fullWidth
-            disabled={(isEdit ? updateOrder?.isPending : createOrder.isPending) || totalAmount.lte(0) || products.length === 0}
-            loading={isEdit ? updateOrder?.isPending : createOrder.isPending}
-            onClick={handleSave}
-          >
-            {t('save')}
-          </Button>
+          <DialogActions
+            className="w-full"
+            actions={[{
+              key: 'save',
+              label: t('save'),
+              role: 'save',
+              className: 'w-full justify-center',
+              disabled: (isEdit ? updateOrder?.isPending : createOrder.isPending) || totalAmount.lte(0) || products.length === 0,
+              loading: isEdit ? updateOrder?.isPending : createOrder.isPending,
+              onClick: handleSave,
+            }]}
+          />
         }
       >
         {/* ─── معلومات الطلب (صف مضغوط) ─── */}

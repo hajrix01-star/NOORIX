@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, DateField, Input, Modal } from '../../../ui';
+import { DateField, DialogActions, Input, Modal } from '../../../ui';
 import { StaffFormModal } from './StaffFormModal';
 import { AdvanceQuickModal } from './AdvanceQuickModal';
 import type { AdvanceCreateMutation } from './AdvanceQuickModal';
@@ -138,11 +138,19 @@ export function StaffListModals({
         size="md"
         variant="danger"
         footer={(
-          <>
-            <Button variant="ghost" onClick={() => setTerminatingEmployee(null)}>{t('cancel')}</Button>
-            <Button
-              variant="danger"
-              onClick={() => {
+          <DialogActions
+            actions={[
+              {
+                key: 'cancel',
+                label: t('cancel'),
+                role: 'cancel',
+                onClick: () => setTerminatingEmployee(null),
+              },
+              {
+                key: 'terminate',
+                label: t('terminateEmployee'),
+                role: 'delete',
+                onClick: () => {
                 const employeeForTermination = terminatingEmployee;
                 if (!employeeForTermination?.id) {
                   showToast(t('updateFailed'), 'error');
@@ -175,11 +183,10 @@ export function StaffListModals({
                     onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
                   },
                 );
-              }}
-            >
-              {t('terminateEmployee')}
-            </Button>
-          </>
+              },
+            },
+            ]}
+          />
         )}
       >
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">

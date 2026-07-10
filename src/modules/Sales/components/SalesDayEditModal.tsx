@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { sumObjectValues } from '@noorix/finance-core';
-import { Button, AdaptiveSheet, TransactionDatePicker, Input } from '../../../ui';
+import { Button, AdaptiveSheet, DialogActions, TransactionDatePicker, Input } from '../../../ui';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { DailySalesEditBody, DailySalesTableRow } from '../hooks/useDailySalesScreen';
@@ -109,38 +109,42 @@ export function SalesDayEditModal({
       size="xl"
       side="start"
       footer={
-        <>
-          {onWhatsApp && (
-            <Button
-              variant="success"
-              onClick={() => onWhatsApp(day)}
-              disabled={saving}
-            >
-              {t('printWhatsApp')}
-            </Button>
-          )}
-          {canDelete && onDelete && (
-            <Button
-              variant="danger"
-              onClick={() => {
+        <DialogActions
+          actions={[
+            {
+              key: 'cancel',
+              label: 'إلغاء',
+              role: 'cancel',
+              onClick: onClose,
+            },
+            {
+              key: 'whatsapp',
+              label: t('printWhatsApp'),
+              role: 'success',
+              hidden: !onWhatsApp,
+              disabled: saving,
+              onClick: () => onWhatsApp?.(day),
+            },
+            {
+              key: 'delete',
+              label: t('delete'),
+              role: 'delete',
+              hidden: !canDelete || !onDelete,
+              disabled: saving,
+              onClick: () => {
                 onClose();
-                onDelete(day);
-              }}
-              disabled={saving}
-            >
-              {t('delete')}
-            </Button>
-          )}
-          <Button
-            variant="primary"
-            disabled={saving || !valid}
-            onClick={handleSave}
-            className="flex-1 min-w-0"
-          >
-            {saving ? 'جاري الحفظ...' : 'حفظ اليوم كامل'}
-          </Button>
-          <Button variant="ghost" onClick={onClose}>إلغاء</Button>
-        </>
+                onDelete?.(day);
+              },
+            },
+            {
+              key: 'save-day',
+              label: saving ? 'جاري الحفظ...' : 'حفظ اليوم كامل',
+              role: 'save',
+              disabled: saving || !valid,
+              onClick: handleSave,
+            },
+          ]}
+        />
       }
     >
       {error && (

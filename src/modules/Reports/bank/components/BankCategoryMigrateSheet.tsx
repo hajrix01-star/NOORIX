@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, AdaptiveSheet } from '../../../../ui';
+import { DialogActions, AdaptiveSheet } from '../../../../ui';
 import type { MigrateGroup } from '../hooks/useBankCategoryTreeData';
 
 export function BankCategoryMigrateSheet({
@@ -29,14 +29,24 @@ export function BankCategoryMigrateSheet({
       className="bank-tree-migrate-drawer"
       closeOnBackdrop={!migrating}
       footer={
-        <>
-          <Button variant="ghost" disabled={migrating} onClick={onClose}>
-            {t('cancel')}
-          </Button>
-          <Button variant="primary" disabled={migrating} onClick={onRun}>
-            {migrating ? t('loading') : t('bankTreeMigrateRun')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            {
+              key: 'cancel',
+              label: t('cancel'),
+              role: 'cancel',
+              disabled: migrating,
+              onClick: onClose,
+            },
+            {
+              key: 'run',
+              label: migrating ? t('loading') : t('bankTreeMigrateRun'),
+              role: 'primary',
+              disabled: migrating,
+              onClick: onRun,
+            },
+          ]}
+        />
       }
     >
       <p className="text-[13px] text-noorix-muted">

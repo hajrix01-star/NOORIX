@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AdaptiveSheet, Badge, Button } from '../../../ui';
+import { AdaptiveSheet, Badge, DialogActions } from '../../../ui';
 import {
   getCompanyAsset,
   getCompanyAssetWarrantyAttachmentObjectUrl,
@@ -81,15 +81,24 @@ export function AssetWarrantyDetailModal({
       title={t('assetWarrantyDetails')}
       size="md"
       footer={(
-        <>
-          <Button variant="ghost" onClick={onClose}>{t('close')}</Button>
-          {canWrite ? (
-            <Button onClick={() => onEdit(detail)}>{t('edit')}</Button>
-          ) : null}
-          {canDelete ? (
-            <Button variant="danger" onClick={() => onDelete(detail)}>{t('delete')}</Button>
-          ) : null}
-        </>
+        <DialogActions
+          actions={[
+            {
+              key: 'edit',
+              label: t('edit'),
+              role: 'edit',
+              hidden: !canWrite,
+              onClick: () => onEdit(detail),
+            },
+            {
+              key: 'delete',
+              label: t('delete'),
+              role: 'delete',
+              hidden: !canDelete,
+              onClick: () => onDelete(detail),
+            },
+          ]}
+        />
       )}
     >
       <div className="flex flex-col gap-3">

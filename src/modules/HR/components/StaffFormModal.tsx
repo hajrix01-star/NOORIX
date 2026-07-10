@@ -16,7 +16,7 @@ import {
   computeEmployeeSalaryPackageBreakdown,
   sumSalaryCustomAllowances,
 } from '../utils/employeeSalaryMath';
-import { Button, DateField, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import { Button, DateField, DialogActions, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import type { HrEmployee } from '../../../types/api';
 
 const EMPTY = {
@@ -234,12 +234,18 @@ export const StaffFormModal = memo(function StaffFormModal({
       side="start"
       className="staff-form-drawer"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={isSaving || !form.name.trim()}>
-            {isSaving ? t('saving') : t('saveChanges')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'save',
+              label: isSaving ? t('saving') : t('saveChanges'),
+              role: 'save',
+              disabled: isSaving || !form.name.trim(),
+              onClick: handleSubmit,
+            },
+          ]}
+        />
       }
     >
       <form onSubmit={handleSubmit}>

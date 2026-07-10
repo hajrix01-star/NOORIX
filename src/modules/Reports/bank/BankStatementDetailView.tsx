@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import useBankStatementView from '../../../hooks/useBankStatementView';
-import { Button, Modal, ScreenTabs, cn, usePrintPreview } from '../../../ui';
+import { Button, DialogActions, Modal, ScreenTabs, cn, usePrintPreview } from '../../../ui';
 import BankStatementSummaryCards from './BankStatementSummaryCards';
 import BankStatementAnalysisCardsTab from './BankStatementAnalysisCardsTab';
 import BankStatementTransactionsFullTab from './BankStatementTransactionsFullTab';
@@ -273,10 +273,12 @@ export default function BankStatementDetailView({
         size="sm"
         variant="danger"
         footer={
-          <>
-            <Button variant="ghost" onClick={() => vm.setCardToDelete(null)}>{t('cancel')}</Button>
-            <Button variant="danger" onClick={() => vm.removeCard(vm.cardToDelete)}>{t('delete')}</Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => vm.setCardToDelete(null) },
+              { key: 'delete', label: t('delete'), role: 'delete', onClick: () => vm.removeCard(vm.cardToDelete) },
+            ]}
+          />
         }
       >
         <p className="mt-0">{t('bankConfirmRemoveCard')}</p>

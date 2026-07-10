@@ -8,7 +8,7 @@ import type { CompanyListItem } from '../context/appTypes';
 import type { AuthSessionUser } from '../types/api';
 import { useTranslation } from '../i18n/useTranslation';
 import UserMenu from './UserMenu';
-import { Button, FloatingPanel, Modal } from '../ui';
+import { Button, DialogActions, FloatingPanel, Modal } from '../ui';
 
 const MENU_WIDTH = 220;
 
@@ -262,10 +262,12 @@ export default function AppHeader({
         size="sm"
         title={t('switchCompanyConfirmTitle')}
         footer={
-          <>
-            <Button variant="ghost" onClick={cancelSwitch}>{t('cancel')}</Button>
-            <Button variant="primary" onClick={confirmSwitch}>{t('switchCompanyConfirmBtn')}</Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: cancelSwitch },
+              { key: 'confirm', label: t('switchCompanyConfirmBtn'), role: 'primary', onClick: confirmSwitch },
+            ]}
+          />
         }
       >
         <p className="m-0 text-[14px] text-noorix-text leading-relaxed">

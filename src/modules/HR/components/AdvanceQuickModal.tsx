@@ -14,7 +14,7 @@ import { roundMoney2 } from '../../../utils/moneyInput';
 import { fmt } from '../../../utils/format';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { Button, DateField, Input, AdaptiveSheet , FmtNum } from '../../../ui';
+import { DateField, DialogActions, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 import type { HrEmployee } from '../../../types/api';
 
@@ -134,12 +134,19 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
       side="start"
       className="advance-quick-drawer"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button type="submit" form={ADVANCE_FORM_ID} variant="primary" disabled={createAdvance.isPending}>
-            {createAdvance.isPending ? t('saving') : t('payAdvance')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'pay-advance',
+              label: createAdvance.isPending ? t('saving') : t('payAdvance'),
+              role: 'save',
+              type: 'submit',
+              form: ADVANCE_FORM_ID,
+              disabled: createAdvance.isPending,
+            },
+          ]}
+        />
       }
     >
       <form id={ADVANCE_FORM_ID} onSubmit={handleSubmit}>

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementUpload } from '../../services/api';
-import { Button, AdaptiveSheet, FileTrigger } from '../../ui';
+import { Button, AdaptiveSheet, DialogActions, FileTrigger } from '../../ui';
 import type { BankSheetData } from './bank/bankMappingAutoDetect';
 import type { BankStatementLite } from './bank/bankAnalysisTab.types';
 
@@ -109,16 +109,23 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
       side="start"
       className="bank-upload-drawer"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            {step >= 4 ? t('close') : t('cancel')}
-          </Button>
-          {step >= 4 && result?.status === 'mapping' && (
-            <Button variant="primary" onClick={onClose}>
-              {t('bankStatementGoToMapping')}
-            </Button>
-          )}
-        </>
+        <DialogActions
+          actions={[
+            {
+              key: 'close',
+              label: step >= 4 ? t('close') : t('cancel'),
+              role: step >= 4 ? 'close' : 'cancel',
+              onClick: onClose,
+            },
+            {
+              key: 'go-to-mapping',
+              label: t('bankStatementGoToMapping'),
+              role: 'primary',
+              hidden: step < 4 || result?.status !== 'mapping',
+              onClick: onClose,
+            },
+          ]}
+        />
       }
     >
       <div className="flex gap-1 mb-5">

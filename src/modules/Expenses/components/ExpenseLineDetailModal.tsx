@@ -6,7 +6,7 @@ import { expenseKeys } from '../../../services/queryKeys';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
-import { Button, AdaptiveSheet, FmtNum, SmartTable, usePrintPreview } from '../../../ui';
+import { Button, AdaptiveSheet, DialogActions, FmtNum, SmartTable, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import { useApp } from '../../../context/AppContext';
 import type { ExpenseLinePaymentsPage, ExpenseLineRecord, ExpenseLinePaymentRecord } from '../../../types/api';
@@ -129,28 +129,30 @@ export default function ExpenseLineDetailModal({
       side="start"
       className="expense-line-detail-drawer"
       footer={(
-        <>
-          <Button variant="ghost" onClick={onClose}>{t('close')}</Button>
-          <Button
-            onClick={() => {
-              if (!line) return;
-              onEditLine(line);
-            }}
-            disabled={!line}
-          >
-            {t('edit')}
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              if (!line) return;
-              onDeleteLine(line);
-            }}
-            disabled={!line}
-          >
-            {t('delete')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            {
+              key: 'edit',
+              label: t('edit'),
+              role: 'edit',
+              disabled: !line,
+              onClick: () => {
+                if (!line) return;
+                onEditLine(line);
+              },
+            },
+            {
+              key: 'delete',
+              label: t('delete'),
+              role: 'delete',
+              disabled: !line,
+              onClick: () => {
+                if (!line) return;
+                onDeleteLine(line);
+              },
+            },
+          ]}
+        />
       )}
     >
       {printPreviewModal}

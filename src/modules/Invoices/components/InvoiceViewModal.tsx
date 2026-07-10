@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { hasPermission } from '../../../constants/permissions';
 import { downloadInvoiceAttachment } from '../../../services/api';
-import { Button, Modal, FmtNum } from '../../../ui';
+import { Button, DialogActions, Modal, FmtNum } from '../../../ui';
 import {
   type InvoiceViewField,
   type InvoiceViewLang,
@@ -184,40 +184,41 @@ export function InvoiceViewModal({
           </div>
         )}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-noorix-border bg-noorix-bg-muted/60 px-5 py-3">
-        <Button variant="ghost" onClick={onClose}>
-          {t('close')}
-        </Button>
-        <div className="flex flex-wrap items-center gap-2">
-          {canPrint && (
-            <Button variant="primary" onClick={() => onPrint?.(invoice)}>
-              {t('print')}
-            </Button>
-          )}
-          {canEdit && (
-            <Button
-              variant="success"
-              onClick={() => {
-                onClose();
-                onEdit?.(invoice);
-              }}
-            >
-              {t('edit')}
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="danger"
-              onClick={() => {
-                onClose();
-                onDelete?.(invoice);
-              }}
-            >
-              {t('delete')}
-            </Button>
-          )}
+      {(canPrint || canEdit || canDelete) && (
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-noorix-border bg-noorix-bg-muted/60 px-5 py-3">
+          <DialogActions
+            actions={[
+              {
+                key: 'print',
+                label: t('print'),
+                role: 'print',
+                hidden: !canPrint,
+                onClick: () => onPrint?.(invoice),
+              },
+              {
+                key: 'edit',
+                label: t('edit'),
+                role: 'edit',
+                hidden: !canEdit,
+                onClick: () => {
+                  onClose();
+                  onEdit?.(invoice);
+                },
+              },
+              {
+                key: 'delete',
+                label: t('delete'),
+                role: 'delete',
+                hidden: !canDelete,
+                onClick: () => {
+                  onClose();
+                  onDelete?.(invoice);
+                },
+              },
+            ]}
+          />
         </div>
-      </div>
+      )}
     </Modal>
   );
 }

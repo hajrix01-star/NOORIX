@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt, sumAmounts } from '../../../utils/format';
-import { Button, AdaptiveSheet } from '../../../ui';
+import { DialogActions, AdaptiveSheet } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { useIsNarrow700 } from '../../../ui';
 import { toDateInputYmd } from '../../../utils/saudiDate';
@@ -105,9 +105,17 @@ export function BatchEditPanel({
       side="start"
       className="batch-edit-drawer"
       footer={
-        <Button variant="primary" disabled={saving} onClick={handleSave}>
-          {saving ? t('saving') : t('saveChanges')}
-        </Button>
+        <DialogActions
+          actions={[
+            {
+              key: 'save',
+              label: saving ? t('saving') : t('saveChanges'),
+              role: 'save',
+              disabled: saving,
+              onClick: handleSave,
+            },
+          ]}
+        />
       }
     >
       {error ? (

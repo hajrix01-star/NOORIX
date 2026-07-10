@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { updateInvoice, throwIfApiFailed } from '../../../services/api';
 import { toYmd } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { AdaptiveSheet, Button, DateField, FmtNum, Input } from '../../../ui';
+import { AdaptiveSheet, DateField, DialogActions, FmtNum, Input } from '../../../ui';
 
 type AdvanceEditRecord = {
   id: string;
@@ -76,10 +76,18 @@ export function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError
       side="start"
       className="hr-advance-edit-drawer"
       footer={(
-        <>
-          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" disabled={saving} onClick={submit}>{saving ? t('saving') : t('saveChanges')}</Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'save',
+              label: saving ? t('saving') : t('saveChanges'),
+              role: 'save',
+              disabled: saving,
+              onClick: submit,
+            },
+          ]}
+        />
       )}
     >
       <div className="grid gap-2.5">

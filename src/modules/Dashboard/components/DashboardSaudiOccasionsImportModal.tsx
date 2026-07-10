@@ -18,7 +18,7 @@ import {
   fetchSaudiOccasionsCatalog,
   isSaudiOccasionsApiMissing,
 } from '../../../utils/saudiOccasionsApply';
-import { Button, Checkbox, ColorSwatch, Modal, Spinner } from '../../../ui';
+import { Button, Checkbox, ColorSwatch, DialogActions, Modal, Spinner } from '../../../ui';
 import { cn } from '../../../ui/cn';
 import { shiftYmd } from '../../../utils/shiftYmd';
 
@@ -198,38 +198,57 @@ export function DashboardSaudiOccasionsImportModal({
   const footer = useMemo(() => {
     if (step === 'scope') {
       return (
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button size="sm" variant="ghost" onClick={() => setStep('pick')} disabled={applying}>
-            {t('dashboardBack')}
-          </Button>
-          <Button size="sm" onClick={() => void runApply('company')} disabled={applying}>
-            {t('dashboardImportSaudiScopeCompany')}
-          </Button>
-          <Button size="sm" variant="primary" onClick={() => void runApply('tenant')} disabled={applying}>
-            {t('dashboardImportSaudiScopeTenant')}
-          </Button>
-        </div>
+        <DialogActions
+          size="sm"
+          actions={[
+            { key: 'back', label: t('dashboardBack'), role: 'cancel', disabled: applying, onClick: () => setStep('pick') },
+            {
+              key: 'company',
+              label: t('dashboardImportSaudiScopeCompany'),
+              role: 'secondary',
+              disabled: applying,
+              onClick: () => void runApply('company'),
+            },
+            {
+              key: 'tenant',
+              label: t('dashboardImportSaudiScopeTenant'),
+              role: 'primary',
+              disabled: applying,
+              onClick: () => void runApply('tenant'),
+            },
+          ]}
+        />
       );
     }
     return (
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2">
-          <Button size="sm" variant="ghost" onClick={selectAll} disabled={!occasions.length || applying}>
-            {t('dashboardImportSaudiSelectAll')}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={clearAll} disabled={!selected.size || applying}>
-            {t('dashboardImportSaudiClear')}
-          </Button>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <Button size="sm" variant="ghost" onClick={onClose} disabled={applying}>
-            {t('cancel')}
-          </Button>
-          <Button size="sm" variant="primary" onClick={onApplyClick} disabled={applying || occasionsQuery.isLoading}>
-            {applying ? t('loading') : t('dashboardImportSaudiApply')}
-          </Button>
-        </div>
-      </div>
+      <DialogActions
+        size="sm"
+        className="justify-between"
+        actions={[
+          {
+            key: 'select-all',
+            label: t('dashboardImportSaudiSelectAll'),
+            role: 'secondary',
+            disabled: !occasions.length || applying,
+            onClick: selectAll,
+          },
+          {
+            key: 'clear',
+            label: t('dashboardImportSaudiClear'),
+            role: 'secondary',
+            disabled: !selected.size || applying,
+            onClick: clearAll,
+          },
+          { key: 'cancel', label: t('cancel'), role: 'cancel', disabled: applying, onClick: onClose },
+          {
+            key: 'apply',
+            label: applying ? t('loading') : t('dashboardImportSaudiApply'),
+            role: 'primary',
+            disabled: applying || occasionsQuery.isLoading,
+            onClick: onApplyClick,
+          },
+        ]}
+      />
     );
   }, [step, applying, occasions.length, selected.size, occasionsQuery.isLoading, t, onClose, onApplyClick]);
 

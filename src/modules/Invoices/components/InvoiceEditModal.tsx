@@ -13,7 +13,7 @@ import {
   throwIfApiFailed,
 } from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { Button, Checkbox, TransactionDatePicker, FileTrigger, Input, AdaptiveSheet, SearchableOptionsPicker } from '../../../ui';
+import { Button, Checkbox, DialogActions, TransactionDatePicker, FileTrigger, Input, AdaptiveSheet, SearchableOptionsPicker } from '../../../ui';
 
 import {
   EMPTY_INVOICE_EDIT_FORM,
@@ -197,14 +197,18 @@ export function InvoiceEditModal({
       side="start"
       className="invoice-edit-drawer"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            {t('cancel')}
-          </Button>
-          <Button variant="primary" disabled={saveMutation.isPending} onClick={handleSave}>
-            {saveMutation.isPending ? t('saving') : t('saveChanges')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'save',
+              label: saveMutation.isPending ? t('saving') : t('saveChanges'),
+              role: 'save',
+              disabled: saveMutation.isPending,
+              onClick: handleSave,
+            },
+          ]}
+        />
       }
     >
       <div className="invoice-edit-modal-body flex flex flex-col gap-3.5">

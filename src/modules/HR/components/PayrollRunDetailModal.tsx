@@ -10,7 +10,7 @@ import { getPayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Badge, Button, AdaptiveSheet, Checkbox, SmartTable, Modal, PrintPreviewModal } from '../../../ui';
+import { Badge, Button, AdaptiveSheet, Checkbox, DialogActions, SmartTable, Modal, PrintPreviewModal } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import { buildPayrollRunEmployeeSlipsPrintHtml } from '../utils/payrollRunSignatureSlipsPrint';
@@ -265,23 +265,50 @@ export function PayrollRunDetailModal({
       side="start"
       className="payroll-run-detail-drawer"
       footer={
-        <>
-          {isDraft && onEdit && (
-            <Button variant="default" onClick={() => onEdit(run)}>{t('edit')}</Button>
-          )}
-          {isDraft && onApprove && (
-            <Button variant="primary" onClick={() => onApprove(run)}>{t('payrollApprove')}</Button>
-          )}
-          {canPay && onPay && (
-            <Button variant="success" onClick={() => onPay(run)}>{t('payrollPay')}</Button>
-          )}
-          {onDelete && (
-            <Button variant="danger" onClick={() => onDelete(run)}>{t('delete')}</Button>
-          )}
-          <Button onClick={handlePrint}>{t('printPayroll')}</Button>
-          <Button variant="default" onClick={handlePrintEmployeeSlips}>{t('payrollSlipBatchPrint')}</Button>
-          <Button variant="ghost" onClick={onClose}>{t('close') || 'إغلاق'}</Button>
-        </>
+        <DialogActions
+          actions={[
+            {
+              key: 'print-slips',
+              label: t('payrollSlipBatchPrint'),
+              role: 'secondary',
+              onClick: handlePrintEmployeeSlips,
+            },
+            {
+              key: 'delete',
+              label: t('delete'),
+              role: 'delete',
+              hidden: !onDelete,
+              onClick: () => onDelete?.(run),
+            },
+            {
+              key: 'edit',
+              label: t('edit'),
+              role: 'edit',
+              hidden: !isDraft || !onEdit,
+              onClick: () => onEdit?.(run),
+            },
+            {
+              key: 'print-payroll',
+              label: t('printPayroll'),
+              role: 'print',
+              onClick: handlePrint,
+            },
+            {
+              key: 'pay',
+              label: t('payrollPay'),
+              role: 'success',
+              hidden: !canPay || !onPay,
+              onClick: () => onPay?.(run),
+            },
+            {
+              key: 'approve',
+              label: t('payrollApprove'),
+              role: 'primary',
+              hidden: !isDraft || !onApprove,
+              onClick: () => onApprove?.(run),
+            },
+          ]}
+        />
       }
     >
       <div className="mb-4">
@@ -335,10 +362,16 @@ export function PayrollRunDetailModal({
         onClose={() => setSlipModalOpen(false)}
         title={t('payrollSlipBatchModalTitle')}
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setSlipModalOpen(false)}>{t('close')}</Button>
-            <Button onClick={confirmPrintEmployeeSlips}>{t('payrollSlipConfirmPrint')}</Button>
-          </>
+          <DialogActions
+            actions={[
+              {
+                key: 'confirm-print',
+                label: t('payrollSlipConfirmPrint'),
+                role: 'print',
+                onClick: confirmPrintEmployeeSlips,
+              },
+            ]}
+          />
         }
       >
         <label className="flex cursor-pointer items-start gap-3 text-[13px] leading-snug text-noorix-text">

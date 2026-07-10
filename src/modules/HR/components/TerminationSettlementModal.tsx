@@ -29,7 +29,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
-import { Button, DateField, FileTrigger, Modal, FmtNum, Input, usePrintPreview } from '../../../ui';
+import { Button, DateField, DialogActions, FileTrigger, Modal, FmtNum, Input, usePrintPreview } from '../../../ui';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 
 type HrAny = ReturnType<typeof JSON.parse>;
@@ -325,7 +325,16 @@ export default function TerminationSettlementModal({
       title={t('terminationSettlementTitle')}
       size="md"
       footer={
-        <Button variant="ghost" onClick={onClose}>{t('terminationSettlementClose')}</Button>
+        <DialogActions
+          actions={[
+            {
+              key: 'close',
+              label: t('terminationSettlementClose'),
+              role: 'close',
+              onClick: onClose,
+            },
+          ]}
+        />
       }
     >
       {printPreviewModal}
