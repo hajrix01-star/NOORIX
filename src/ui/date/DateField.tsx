@@ -224,7 +224,7 @@ export default function DateField({
         <div
           ref={popoverRef}
           className="noorix-date-picker-popover"
-          style={popoverStyle ?? undefined}
+          style={popoverStyle ?? { position: 'fixed', top: 0, left: 0, width: 390, visibility: 'hidden' }}
           role="dialog"
           aria-label={typeof label === 'string' ? label : 'Date picker'}
         >

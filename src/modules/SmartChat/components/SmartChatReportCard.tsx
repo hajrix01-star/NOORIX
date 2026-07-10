@@ -7,6 +7,7 @@ import { formatSaudiDateTime } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { KPI_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import type { ChatAnswerExtras } from '../types';
+import type { ChatChartFinanceRatios, ChatChartMonthCompare } from '../../../types/api';
 import { formatMiniChartTooltipValue, formatMiniChartYAxisTick } from '../utils/smartChatFormatters';
 import { SimpleTable } from '../../../ui';
 
@@ -78,7 +79,7 @@ function ChatMiniChart({
   isAr,
   variant = 'belowText',
 }: {
-  chart: NonNullable<ChatAnswerExtras['chart']>;
+  chart: ChatChartMonthCompare;
   isAr: boolean;
   /** highlight: أعلى الكرت — بدون خط علوي طويل وبلا عنوان فرعي */
   variant?: 'belowText' | 'highlight';
@@ -148,7 +149,7 @@ function ChatFinanceRatiosStrip({
   chart,
   isAr,
 }: {
-  chart: NonNullable<ChatAnswerExtras['chart']>;
+  chart: ChatChartFinanceRatios;
   isAr: boolean;
 }) {
   const segments = chart?.segments;

@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as apiHttp from './core/apiHttp';
-import { getInsightThresholds, patchInsightThresholds, resetInsightThresholds } from './reportingInsightThresholdsApi';
+import {
+  getInsightThresholds,
+  patchInsightThresholds,
+  resetInsightThresholds,
+  type CompanyInsightThresholdsPayload,
+} from './reportingInsightThresholdsApi';
+
+const emptyThresholds = {} as CompanyInsightThresholdsPayload;
 
 describe('reportingInsightThresholdsApi', () => {
   beforeEach(() => {
@@ -26,7 +33,7 @@ describe('reportingInsightThresholdsApi', () => {
   it('patchInsightThresholds calls PATCH with body', async () => {
     const spy = vi.spyOn(apiHttp, 'apiPatch').mockResolvedValue({
       success: true,
-      data: { companyId: 'co1', thresholds: {} as any },
+      data: { companyId: 'co1', thresholds: emptyThresholds },
     });
     await patchInsightThresholds({
       companyId: 'co1',
@@ -41,7 +48,7 @@ describe('reportingInsightThresholdsApi', () => {
   it('resetInsightThresholds calls POST reset', async () => {
     const spy = vi.spyOn(apiHttp, 'apiPost').mockResolvedValue({
       success: true,
-      data: { companyId: 'co1', thresholds: {} as any },
+      data: { companyId: 'co1', thresholds: emptyThresholds },
     });
     await resetInsightThresholds('co1');
     expect(spy).toHaveBeenCalledWith('/api/v1/reporting/insights/thresholds/reset', { companyId: 'co1' });

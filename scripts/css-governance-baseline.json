@@ -1,15 +1,19 @@
 {
   "version": 1,
   "description": "Baseline for central CSS footprint. This check blocks unreviewed CSS growth while the theme cleanup runs incrementally.",
+  "changeNotes": [
+    "2026-07-10: Raised src/index.css limits for unified print preview, HR document preview/PDF alignment, invoice day-close filters, and report workspace presentation work included in PR #248.",
+    "2026-07-10: Rebased PR #248 on main and documented the final central filter/table CSS footprint after the staging deploy conflict resolution."
+  ],
   "files": {
     "src/index.css": {
-      "maxLines": 6660,
-      "maxMediaQueries": 52,
-      "maxImportant": 214,
+      "maxLines": 7193,
+      "maxMediaQueries": 55,
+      "maxImportant": 249,
       "maxKeyframes": 12,
       "maxCssVariableDefinitions": 237,
-      "maxCssVariableReferences": 1084,
-      "maxColorMix": 188
+      "maxCssVariableReferences": 1122,
+      "maxColorMix": 190
     },
     "src/ui/ui.css": {
       "maxLines": 1705,
@@ -54,7 +58,7 @@
       },
       "invoices": {
         "pattern": "(invoice|inv-)",
-        "maxMatches": 116
+        "maxMatches": 119
       },
       "orders": {
         "pattern": "(orders|catalog|items-manage)",
@@ -62,7 +66,7 @@
       },
       "hr": {
         "pattern": "(hr-|payroll|employee|staff|residency|salary|EOS|termination)",
-        "maxMatches": 184
+        "maxMatches": 255
       },
       "print": {
         "pattern": "(@media print|print-)",

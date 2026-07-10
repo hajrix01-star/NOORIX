@@ -86,6 +86,50 @@ for (const file of importSourceFiles) {
   if (!isDateUiIndex && text.includes('hooks/useDateFilter')) {
     fail(file, 'useDateFilter must be re-exported through src/ui/date; do not import hooks/useDateFilter directly');
   }
+
+  if (
+    text.includes('DateMonthScopePicker') ||
+    text.includes('DateFilterMonthPicker') ||
+    text.includes('./MonthScopePicker') ||
+    text.includes('./MonthPicker')
+  ) {
+    fail(file, 'legacy date filters are removed; use DateFilterBar, YearDateFilter, MonthDateFilter, or TransactionDatePicker');
+  }
+
+  if (
+    [
+      'src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx',
+      'src/modules/Purchases/components/BatchRow.tsx',
+      'src/modules/Purchases/components/BatchEditInvoiceLine.tsx',
+      'src/modules/Sales/components/SalesEntryModal.tsx',
+      'src/modules/Sales/components/SalesDayEditModal.tsx',
+      'src/modules/Expenses/components/ExpenseFormModal.tsx',
+      'src/modules/Expenses/components/ExpenseBatchTable.tsx',
+      'src/modules/Invoices/components/InvoiceEditModal.tsx',
+      'src/modules/Treasury/components/VaultTransferModal.tsx',
+      'src/modules/Orders/components/OrderFormModal.tsx',
+      'src/modules/Orders/components/StaffDigestSendModal.tsx',
+      'src/modules/Orders/StaffOrderPanel.tsx',
+      'src/modules/Sales/components/SalesDailyWhatsAppReportBar.tsx',
+      'src/modules/Reports/BankStatementMappingModal.tsx',
+      'src/modules/Invoices/components/DayCloseReportModal.tsx',
+    ].includes(normalized)
+    && /\bDateField\b/.test(text)
+  ) {
+    fail(file, 'transaction entry dates must use TransactionDatePicker, not DateField');
+  }
+
+  if (normalized === 'src/modules/Assets/components/AssetFormPanel.tsx') {
+    if (!text.includes('TransactionDatePicker') || !/TransactionDatePicker[\s\S]*assetPurchaseDate/.test(text)) {
+      fail(file, 'asset purchase date must use TransactionDatePicker; warranty dates may continue using DateField');
+    }
+  }
+
+  if (normalized === 'src/modules/Assets/components/AssetWarrantyPanel.tsx') {
+    if (!text.includes('TransactionDatePicker') || !/TransactionDatePicker[\s\S]*assetPurchaseDate/.test(text)) {
+      fail(file, 'asset warranty completion purchase date must use TransactionDatePicker; warranty dates may continue using DateField');
+    }
+  }
 }
 
 for (const file of docsFiles) {

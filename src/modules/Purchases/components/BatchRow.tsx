@@ -1,25 +1,50 @@
-﻿/**
- * BatchRow — صف إدخال فاتورة واحدة
- * layout="table" (افتراضي) | layout="stack" — بطاقة للجوال
+/**
+ * BatchRow - صف إدخال فاتورة واحدة
+ * layout="table" (افتراضي) | layout="stack" - بطاقة للجوال
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Card, Checkbox, DateField, FileTrigger, FormRow, cn } from '../../../ui';
+import { Input, Button, Card, Checkbox, TransactionDatePicker, FileTrigger, FormRow, SearchableOptionsPicker, cn } from '../../../ui';
 import { useBatchRowLogic, useBatchRowFieldIds } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
   BatchSupplierBookmarkButton,
   BatchNetTaxReadonly,
   BatchTaxToggleButton,
-  BatchKindOptions,
 } from './BatchRowParts';
 import { isWarrantyFollowUpKind } from '../utils/batchRowModel';
+import { purchaseBatchCategoryLabel } from '../batch/purchaseBatchDisplayModel';
+import type {
+  PurchaseBatchEntryRow,
+  PurchaseBatchKind,
+  PurchaseBatchSupplier,
+  PurchaseBatchSupplierCategory,
+  PurchaseBatchUpdateRow,
+} from '../batch/purchaseBatchTypes';
 
-function dateErrorClass(maxInvoiceDate: any, invoiceDate: any) {
+function dateErrorClass(maxInvoiceDate: string | undefined, invoiceDate: string) {
   return maxInvoiceDate && invoiceDate > maxInvoiceDate ? 'nx-batch-row-date-error' : '';
 }
 
-function BatchRowTable(props: Record<string, any>) {
+function toPurchaseBatchKind(value: string): PurchaseBatchKind {
+  if (value === 'expense' || value === 'fixed_expense') return value;
+  return 'purchase';
+}
+
+type BatchRowSharedProps = {
+  row: PurchaseBatchEntryRow;
+  index: number;
+  suppliers: PurchaseBatchSupplier[];
+  categories: PurchaseBatchSupplierCategory[];
+  bookmarkedIds: string[];
+  onUpdate: PurchaseBatchUpdateRow;
+  onRemove: (index: number) => void;
+  onBookmark: (id: string) => void;
+  maxInvoiceDate?: string;
+  vatRateDecimal?: number;
+};
+
+function BatchRowTable(props: BatchRowSharedProps) {
   const {
     row, index, suppliers, categories, bookmarkedIds, onUpdate, onRemove, onBookmark,
     maxInvoiceDate, vatRateDecimal,
@@ -31,8 +56,24 @@ function BatchRowTable(props: Record<string, any>) {
   });
 
   const dateTitle = useMemo(
-    () => (maxInvoiceDate ? `${t('date')} — ${maxInvoiceDate}` : undefined),
+    () => (maxInvoiceDate ? `${t('date')} - ${maxInvoiceDate}` : undefined),
     [maxInvoiceDate, t],
+  );
+  const kindOptions = useMemo(
+    () => [
+      { value: 'purchase', label: t('purchaseType') },
+      { value: 'expense', label: t('expenseType') },
+      { value: 'fixed_expense', label: t('fixedExpenseType') },
+    ],
+    [t],
+  );
+  const categoryPickerOptions = useMemo(
+    () =>
+      categoryOptions.map((c) => ({
+        value: c.id || '',
+        label: purchaseBatchCategoryLabel(c, lang),
+      })).filter((option) => option.value),
+    [categoryOptions, lang],
   );
 
   return (
@@ -56,11 +97,11 @@ function BatchRowTable(props: Record<string, any>) {
       <td style={cp}>
         <Input
           value={row.invoiceNumber}
-          onChange={(e: any) => onUpdate(index, 'invoiceNumber', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'invoiceNumber', e.target.value)}
           placeholder={t('invoiceNumberPlaceholder')}
           className="text-center w-full"
           style={inputSm}
-          aria-label={`${t('supplierInvoiceNumber')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+          aria-label={`${t('supplierInvoiceNumber')} - ${t('batchRowLineAriaLabel', index + 1)}`}
         />
       </td>
 
@@ -70,11 +111,11 @@ function BatchRowTable(props: Record<string, any>) {
           min="0"
           step="0.1"
           value={row.totalInclusive}
-          onChange={(e: any) => onUpdate(index, 'totalInclusive', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'totalInclusive', e.target.value)}
           placeholder={t('amountPlaceholderZero')}
           className="font-bold text-[13px] w-full text-right nx-font-numbers"
           style={inputSm}
-          aria-label={`${t('total')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+          aria-label={`${t('total')} - ${t('batchRowLineAriaLabel', index + 1)}`}
         />
       </td>
 
@@ -83,7 +124,7 @@ function BatchRowTable(props: Record<string, any>) {
       </td>
 
       <td style={cp}>
-        <DateField
+        <TransactionDatePicker
           dir="ltr"
           value={row.invoiceDate}
           max={maxInvoiceDate || undefined}
@@ -97,16 +138,16 @@ function BatchRowTable(props: Record<string, any>) {
           className={cn('text-center w-full', dateErrorClass(maxInvoiceDate, row.invoiceDate))}
           style={inputSm}
           title={dateTitle}
-          aria-label={`${t('date')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+          aria-label={`${t('date')} - ${t('batchRowLineAriaLabel', index + 1)}`}
         />
       </td>
 
       <td style={cp}>
-        <Input
-          type="select"
+        <SearchableOptionsPicker
+          mode="single"
           value={row.kind}
-          onChange={(e: any) => {
-            const kind = e.target.value;
+          onChange={(value: string) => {
+            const kind = toPurchaseBatchKind(value);
             onUpdate(index, {
               kind,
               categoryId: '',
@@ -114,10 +155,10 @@ function BatchRowTable(props: Record<string, any>) {
               warrantyFollowUp: isWarrantyFollowUpKind(kind) ? !!row.warrantyFollowUp : false,
             });
           }}
-          aria-label={`${t('type')} — ${t('batchRowLineAriaLabel', index + 1)}`}
-        >
-          <BatchKindOptions t={t} />
-        </Input>
+          options={kindOptions}
+          size="sm"
+          aria-label={`${t('type')} - ${t('batchRowLineAriaLabel', index + 1)}`}
+        />
       </td>
 
       <td className="text-center align-middle" style={cp}>
@@ -126,32 +167,30 @@ function BatchRowTable(props: Record<string, any>) {
             checked={!!row.warrantyFollowUp}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
             className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
-            aria-label={`${t('warrantyFollowUpCol')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+            aria-label={`${t('warrantyFollowUpCol')} - ${t('batchRowLineAriaLabel', index + 1)}`}
             label={<span className="hidden xl:inline">{t('warrantyFollowUpShort')}</span>}
             containerClassName="inline-flex items-center justify-center gap-1.5 cursor-pointer text-[11px] font-semibold text-noorix-muted"
           />
         ) : (
-          <span className="text-noorix-muted">—</span>
+          <span className="text-noorix-muted">-</span>
         )}
       </td>
 
       <td style={cp}>
-        <Input
-          type="select"
+        <SearchableOptionsPicker
+          mode="single"
           value={row.categoryId || ''}
-          onChange={(e: any) => {
-            const cat = categoryOptions.find((c: any) => c.id === e.target.value);
+          onChange={(value: string) => {
+            const cat = categoryOptions.find((c) => c.id === value);
             handleCategoryChange(cat || null);
           }}
-          aria-label={`${t('category')} — ${t('batchRowLineAriaLabel', index + 1)}`}
-        >
-          <option value="">{t('categoryPlaceholder')}</option>
-          {categoryOptions.map((c: any) => (
-            <option key={c.id} value={c.id}>
-              {(c.icon || '')} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}
-            </option>
-          ))}
-        </Input>
+          options={categoryPickerOptions}
+          allowEmpty
+          emptyValue=""
+          emptyLabel={t('categoryPlaceholder')}
+          size="sm"
+          aria-label={`${t('category')} - ${t('batchRowLineAriaLabel', index + 1)}`}
+        />
       </td>
 
       <td className="text-center" style={cp}>
@@ -161,12 +200,12 @@ function BatchRowTable(props: Record<string, any>) {
       <td style={cp}>
         <Input
           value={row.notes || ''}
-          onChange={(e: any) => onUpdate(index, 'notes', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'notes', e.target.value)}
           placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? t('batchNotesPlaceholderServiceName') : t('batchNotesPlaceholderEllipsis')}
           className="w-full"
           style={inputSm}
           title={!row.supplierId ? (t('notesRequiredForNoSupplier') || '') : ''}
-          aria-label={`${t('notes')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+          aria-label={`${t('notes')} - ${t('batchRowLineAriaLabel', index + 1)}`}
         />
       </td>
 
@@ -179,8 +218,8 @@ function BatchRowTable(props: Record<string, any>) {
           )}
           <FileTrigger
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-            aria-label={`${t('invoiceReceiptAttachment')} — ${t('batchRowLineAriaLabel', index + 1)}`}
-            onChange={(e: any) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+            aria-label={`${t('invoiceReceiptAttachment')} - ${t('batchRowLineAriaLabel', index + 1)}`}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
             label={row.attachmentFile ? row.attachmentFile.name : t('invoiceReceiptAttachment')}
             buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-[96px] truncate text-[9px] px-1' }}
           />
@@ -194,7 +233,7 @@ function BatchRowTable(props: Record<string, any>) {
           onClick={() => onRemove(index)}
           className="flex items-center justify-center text-[15px] w-8 h-8 min-w-8 min-h-8 rounded-md mx-auto"
           title={t('delete')}
-          aria-label={`${t('delete')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+          aria-label={`${t('delete')} - ${t('batchRowLineAriaLabel', index + 1)}`}
         >
           ×
         </Button>
@@ -203,7 +242,7 @@ function BatchRowTable(props: Record<string, any>) {
   );
 }
 
-function BatchRowStack(props: Record<string, any>) {
+function BatchRowStack(props: BatchRowSharedProps) {
   const {
     row, index, suppliers, categories, bookmarkedIds, onUpdate, onRemove, onBookmark,
     maxInvoiceDate, vatRateDecimal,
@@ -216,8 +255,24 @@ function BatchRowStack(props: Record<string, any>) {
   });
 
   const dateTitle = useMemo(
-    () => (maxInvoiceDate ? `${t('date')} — ≤ ${maxInvoiceDate}` : undefined),
+    () => (maxInvoiceDate ? `${t('date')} - <= ${maxInvoiceDate}` : undefined),
     [maxInvoiceDate, t],
+  );
+  const kindOptions = useMemo(
+    () => [
+      { value: 'purchase', label: t('purchaseType') },
+      { value: 'expense', label: t('expenseType') },
+      { value: 'fixed_expense', label: t('fixedExpenseType') },
+    ],
+    [t],
+  );
+  const categoryPickerOptions = useMemo(
+    () =>
+      categoryOptions.map((c) => ({
+        value: c.id || '',
+        label: purchaseBatchCategoryLabel(c, lang),
+      })).filter((option) => option.value),
+    [categoryOptions, lang],
   );
 
   return (
@@ -275,7 +330,7 @@ function BatchRowStack(props: Record<string, any>) {
             label={t('supplierInvoiceNumber')}
             size="sm"
             value={row.invoiceNumber}
-            onChange={(e: any) => onUpdate(index, 'invoiceNumber', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'invoiceNumber', e.target.value)}
             placeholder={t('invoiceNumberPlaceholder')}
             className="w-full"
           />
@@ -287,7 +342,7 @@ function BatchRowStack(props: Record<string, any>) {
             step="0.1"
             size="sm"
             value={row.totalInclusive}
-            onChange={(e: any) => onUpdate(index, 'totalInclusive', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'totalInclusive', e.target.value)}
             placeholder={t('amountPlaceholderZero')}
             className="font-bold w-full nx-font-numbers"
           />
@@ -295,7 +350,7 @@ function BatchRowStack(props: Record<string, any>) {
 
         <BatchNetTaxReadonly net={net} tax={tax} variant="stack" t={t} />
 
-        <DateField
+        <TransactionDatePicker
           id={ids.invoiceDate}
           label={t('date')}
           size="sm"
@@ -312,14 +367,13 @@ function BatchRowStack(props: Record<string, any>) {
           title={dateTitle}
         />
 
-        <Input
+        <SearchableOptionsPicker
           id={ids.kind}
           label={t('type')}
-          type="select"
-          size="sm"
+          mode="single"
           value={row.kind}
-          onChange={(e: any) => {
-            const kind = e.target.value;
+          onChange={(value: string) => {
+            const kind = toPurchaseBatchKind(value);
             onUpdate(index, {
               kind,
               categoryId: '',
@@ -327,9 +381,9 @@ function BatchRowStack(props: Record<string, any>) {
               warrantyFollowUp: isWarrantyFollowUpKind(kind) ? !!row.warrantyFollowUp : false,
             });
           }}
-        >
-          <BatchKindOptions t={t} />
-        </Input>
+          options={kindOptions}
+          size="sm"
+        />
 
         {isWarrantyFollowUpKind(row.kind) ? (
           <Checkbox
@@ -341,24 +395,21 @@ function BatchRowStack(props: Record<string, any>) {
           />
         ) : null}
 
-        <Input
+        <SearchableOptionsPicker
           id={ids.category}
           label={t('category')}
-          type="select"
-          size="sm"
+          mode="single"
           value={row.categoryId || ''}
-          onChange={(e: any) => {
-            const cat = categoryOptions.find((c: any) => c.id === e.target.value);
+          onChange={(value: string) => {
+            const cat = categoryOptions.find((c) => c.id === value);
             handleCategoryChange(cat || null);
           }}
-        >
-          <option value="">{t('categoryPlaceholder')}</option>
-          {categoryOptions.map((c: any) => (
-            <option key={c.id} value={c.id}>
-              {(c.icon || '')} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}
-            </option>
-          ))}
-        </Input>
+          options={categoryPickerOptions}
+          allowEmpty
+          emptyValue=""
+          emptyLabel={t('categoryPlaceholder')}
+          size="sm"
+        />
 
         <BatchTaxToggleButton row={row} index={index} onUpdate={onUpdate} t={t} density="stack" />
 
@@ -367,7 +418,7 @@ function BatchRowStack(props: Record<string, any>) {
           label={t('notes')}
           size="sm"
           value={row.notes || ''}
-          onChange={(e: any) => onUpdate(index, 'notes', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'notes', e.target.value)}
           placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? t('batchNotesPlaceholderServiceName') : t('batchNotesPlaceholderEllipsis')}
           className="w-full"
           title={!row.supplierId ? (t('notesRequiredForNoSupplier') || '') : ''}
@@ -377,7 +428,7 @@ function BatchRowStack(props: Record<string, any>) {
           <div className="text-[11px] font-semibold text-noorix-muted mb-1">{t('invoiceReceiptAttachment')}</div>
           <FileTrigger
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-            onChange={(e: any) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
             label={row.attachmentFile ? row.attachmentFile.name : t('invoiceReceiptChooseFile')}
             buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-full truncate' }}
           />
@@ -392,7 +443,7 @@ function BatchRowStack(props: Record<string, any>) {
   );
 }
 
-export type BatchRowProps = { layout?: 'table' | 'stack' | string } & Record<string, any>;
+export type BatchRowProps = BatchRowSharedProps & { layout?: 'table' | 'stack' };
 
 export const BatchRow = memo(function BatchRow({ layout = 'table', ...rest }: BatchRowProps) {
   if (layout === 'stack') {

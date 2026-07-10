@@ -1,21 +1,8 @@
-import Decimal from 'decimal.js';
+import type Decimal from 'decimal.js';
 import { formatReportMoneyInteger, formatReportPercentNumber } from '../../common/utils/report-display-format.util';
 import { PERMISSIONS } from '../../auth/constants/permissions';
-import type { ChatHandler, ChatHandlerContext } from './types';
+import type { ChatHandler } from './types';
 import { matches, lastMonthPartialMatchingMtd, thisMonthThroughTodayRange } from './utils';
-
-async function sumRevenue(ctx: ChatHandlerContext, start: Date, end: Date): Promise<Decimal> {
-  const agg = await ctx.prisma.ledgerEntry.aggregate({
-    where: {
-      companyId: ctx.companyId,
-      status: 'active',
-      transactionDate: { gte: start, lte: end },
-      creditAccount: { type: 'revenue' },
-    },
-    _sum: { amount: true },
-  });
-  return new Decimal(agg._sum.amount ?? 0);
-}
 
 function fmtMoney(n: Decimal): string {
   return `${formatReportMoneyInteger(n)} SR`;
@@ -65,8 +52,8 @@ export const salesMonthCompareHandler: ChatHandler = {
     const thisP = thisMonthThroughTodayRange(now);
     const prevP = lastMonthPartialMatchingMtd(now);
 
-    const cur = await sumRevenue(ctx, thisP.start, thisP.end);
-    const prev = await sumRevenue(ctx, prevP.start, prevP.end);
+    const cur = await ctx.chatFinancialMetrics.sumRevenue(ctx.companyId, thisP.start, thisP.end);
+    const prev = await ctx.chatFinancialMetrics.sumRevenue(ctx.companyId, prevP.start, prevP.end);
     const diff = cur.minus(prev);
     const deltaPct = prev.gt(0) ? formatReportPercentNumber(diff.div(prev).mul(100)) : '—';
     const trendAr = prev.lte(0) ? '—' : diff.gt(0) ? 'أعلى' : diff.lt(0) ? 'أدنى' : 'مماثل';

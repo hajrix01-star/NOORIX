@@ -4,6 +4,7 @@
 import { validateJournalBalance } from './financial-core-helpers.util';
 import type { ChannelNetTaxRow, InflowChannelInput } from './financial-inflow-channels.util';
 import type { TxClient } from './financial-core-helpers.util';
+import type { LedgerEntry } from '@prisma/client';
 
 export async function createInflowSaleLedgerEntries(params: {
   tx: TxClient;
@@ -21,7 +22,7 @@ export async function createInflowSaleLedgerEntries(params: {
   vatEnabled: boolean;
   /** عند true يُعاد مصفوفة القيود المنشأة (processInflow) */
   collectResults?: boolean;
-}): Promise<any[]> {
+}): Promise<LedgerEntry[]> {
   const {
     tx,
     tenantId,
@@ -46,7 +47,7 @@ export async function createInflowSaleLedgerEntries(params: {
     ),
   );
 
-  const ledgerEntries: any[] = [];
+  const ledgerEntries: LedgerEntry[] = [];
   for (let idx = 0; idx < activeChannels.length; idx++) {
     const ch = activeChannels[idx];
     const { net, tax } = channelNetTax[idx];

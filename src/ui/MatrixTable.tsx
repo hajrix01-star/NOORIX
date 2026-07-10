@@ -2,13 +2,14 @@ import React from 'react';
 import { cn } from './cn';
 
 type TableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
+type MatrixTableRow = object;
 
 function cssLength(value: React.CSSProperties['width'] | undefined): string | number | undefined {
   if (value == null || value === '') return undefined;
   return typeof value === 'number' ? `${value}px` : value;
 }
 
-export type MatrixTableColumn<TRow = any> = {
+export type MatrixTableColumn<TRow extends MatrixTableRow = MatrixTableRow> = {
   key: string;
   label?: React.ReactNode;
   width?: React.CSSProperties['width'];
@@ -23,7 +24,7 @@ export type MatrixTableColumn<TRow = any> = {
 
 export type MatrixTableRowTone = 'default' | 'group' | 'summary' | 'total' | 'muted';
 
-export type MatrixTableProps<TRow = any> = {
+export type MatrixTableProps<TRow extends MatrixTableRow = MatrixTableRow> = {
   columns: MatrixTableColumn<TRow>[];
   data?: TRow[];
   caption?: React.ReactNode;
@@ -53,7 +54,32 @@ const MATRIX_ROW_TONE_CLASSES: Record<MatrixTableRowTone, string> = {
   muted: 'text-noorix-muted',
 };
 
-export default function MatrixTable<TRow extends Record<string, any> = any>({
+function readRowValue(row: object, key: string): unknown {
+  return (row as Record<string, unknown>)[key];
+}
+
+function renderRawCellValue(value: unknown): React.ReactNode {
+  if (value == null) return null;
+  if (
+    typeof value === 'string'
+    || typeof value === 'number'
+    || typeof value === 'boolean'
+    || React.isValidElement(value)
+  ) {
+    return value;
+  }
+  return String(value);
+}
+
+function rowFallbackKey(row: object, rowIndex: number): React.Key {
+  const id = readRowValue(row, 'id');
+  const key = readRowValue(row, 'key');
+  return typeof id === 'string' || typeof id === 'number'
+    ? id
+    : (typeof key === 'string' || typeof key === 'number' ? key : rowIndex);
+}
+
+export default function MatrixTable<TRow extends MatrixTableRow = MatrixTableRow>({
   columns,
   data = [],
   caption,
@@ -144,7 +170,7 @@ export default function MatrixTable<TRow extends Record<string, any> = any>({
                 const rowTone = getRowTone?.(row, rowIndex) ?? 'default';
                 return (
                   <tr
-                    key={getRowKey?.(row, rowIndex) ?? row.id ?? row.key ?? rowIndex}
+                    key={getRowKey?.(row, rowIndex) ?? rowFallbackKey(row, rowIndex)}
                     className={cn(
                       'transition-colors',
                       MATRIX_ROW_TONE_CLASSES[rowTone],
@@ -182,11 +208,11 @@ export default function MatrixTable<TRow extends Record<string, any> = any>({
                                 style={accentStyle(accentColor)}
                               />
                               <span className="min-w-0">
-                                {col.render ? col.render(row[col.key], row, rowIndex) : row[col.key]}
+                                {col.render ? col.render(readRowValue(row, col.key), row, rowIndex) : renderRawCellValue(readRowValue(row, col.key))}
                               </span>
                             </span>
                           ) : (
-                            col.render ? col.render(row[col.key], row, rowIndex) : row[col.key]
+                            col.render ? col.render(readRowValue(row, col.key), row, rowIndex) : renderRawCellValue(readRowValue(row, col.key))
                           )}
                         </CellTag>
                       );

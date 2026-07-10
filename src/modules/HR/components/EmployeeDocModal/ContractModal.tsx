@@ -25,7 +25,7 @@ export function ContractModal({
   const [contractEnd, setContractEnd] = useState(toYmd(employee?.contractEndDate as string | Date | undefined) || '');
   const { rows, total } = useMemo(() => buildSalaryRows(compensationSnapshot), [compensationSnapshot]);
 
-  const { printRef, saving, handlePrint, handleSaveToDocuments } = useEmployeeDocPrintSave({
+  const { printRef, saving, handlePrint, handleSaveToDocuments, printPreviewModal } = useEmployeeDocPrintSave({
     t,
     showToast,
     printTitle: t('documentContract') || 'Employment Contract',
@@ -33,6 +33,8 @@ export function ContractModal({
     employee,
     documentType: 'contract',
     filePrefix: 'employment-contract',
+    companyName,
+    companyLogo,
     onSaved,
     onClose,
     saveFailedMessage: t('saveFailed'),
@@ -47,6 +49,7 @@ export function ContractModal({
       saving={saving}
       t={t}
     >
+      {printPreviewModal}
       <ContractDocForm contractEnd={contractEnd} setContractEnd={setContractEnd} />
       <EmployeeDocPrintFrame printRef={printRef}>
         <EmployeeDocDocumentFrame companyName={companyName} companyLogo={companyLogo} arabicTitle="عقد عمل" englishTitle="Employment Contract">

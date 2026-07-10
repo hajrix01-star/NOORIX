@@ -1,33 +1,54 @@
-﻿/**
- * PaymentHistoryTab — سجل المدفوعات (ثابت + متغير)
- * محاذاة جداول/أشرطة HR: شريط mb-3 min-h-11، SmartTable compact + innerPadding 8 + عنوان + شارة
- */
 import React, { useMemo, useState } from 'react';
 import { useApiQuery } from '../../../hooks/useApiQuery';
 import { getInvoices, downloadInvoiceAttachment } from '../../../services/api';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { useToast } from '../../../context/ToastContext';
 import { DateFilterBar, useDateFilter } from '../../../ui/date';
-import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
-import { fmt, sumAmounts } from '../../../utils/format';
-import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, Checkbox, FmtNum, SmartTable } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { Button, Badge, Checkbox, FilterToolbar, FmtNum, SmartTable, SearchableOptionsPicker, usePrintPreview } from '../../../ui';
+import type { SmartTableColumn } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
+import type { InvoiceListItem, InvoiceListResponse } from '../../../services/domains/apiEndpoints/invoice-list-response';
+import type { ExpenseLineKind } from '../../../types/api';
+import {
+  buildExpensePaymentExportRows,
+  summarizeInvoiceListPayments,
+} from '../expenseModels';
 
-export default function PaymentHistoryTab({ companyId, dateFilter: externalDateFilter }: any) {
+type PaymentHistoryTabProps = {
+  companyId: string;
+  dateFilter?: {
+    startDate?: string | null;
+    endDate?: string | null;
+  };
+};
+
+export default function PaymentHistoryTab({ companyId, dateFilter: externalDateFilter }: PaymentHistoryTabProps) {
   const { lang, t } = useTranslation();
   const { showToast } = useToast();
   const { activeCompanyId, companies = [] } = useApp();
   const effectiveCompanyId = companyId || activeCompanyId || '';
-  const activeCompany = companies.find((c: any) => c.id === (companyId || activeCompanyId));
+  const activeCompany = companies.find((company) => company.id === effectiveCompanyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
+  const companyLogoUrl = String(activeCompany?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('paymentHistoryTab'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
+  const internalDateFilter = useDateFilter();
+  const dateFilter = externalDateFilter ?? internalDateFilter;
+  const [filterKind, setFilterKind] = useState<ExpenseLineKind | ''>('');
+  const [showAllDates, setShowAllDates] = useState(false);
+
+  const startDate = showAllDates ? undefined : (dateFilter.startDate ? toYmd(dateFilter.startDate) : undefined);
+  const endDate = showAllDates ? undefined : (dateFilter.endDate ? toYmd(dateFilter.endDate) : undefined);
+  const kindParam = filterKind || 'expense,fixed_expense';
 
   const kindFilterOptions = useMemo(
     () => [
@@ -36,16 +57,8 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     ],
     [t],
   );
-  const internalDateFilter = useDateFilter();
-  const dateFilter = externalDateFilter ?? internalDateFilter;
-  const [filterKind, setFilterKind] = useState('');
-  const [showAllDates, setShowAllDates] = useState(false);
 
-  const startDate = showAllDates ? undefined : (dateFilter.startDate ? toYmd(dateFilter.startDate) : undefined);
-  const endDate = showAllDates ? undefined : (dateFilter.endDate ? toYmd(dateFilter.endDate) : undefined);
-  const kindParam = filterKind ? filterKind : 'expense,fixed_expense';
-
-  const { data, isLoading, isError, error } = useApiQuery<any>({
+  const { data, isLoading, isError, error } = useApiQuery<InvoiceListResponse>({
     queryKey: invoiceKeys.paymentHistoryExpense(companyId, startDate, endDate, kindParam),
     queryFn: () => getInvoices(
       companyId,
@@ -70,63 +83,70 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       true,
     ),
     enabled: !!companyId,
-    fallbackMessage: 'فشل تحميل المدفوعات',
+    fallbackMessage: t('loadDataFailed'),
   });
 
   const items = data?.items ?? [];
-  const activeItems = items.filter((inv: any) => inv.status !== 'cancelled');
-  const totalAmount = useMemo(() => sumAmounts(activeItems, 'totalAmount'), [activeItems]);
-  const totalNet = useMemo(() => sumAmounts(activeItems, 'netAmount'), [activeItems]);
-  const totalTax = useMemo(() => sumAmounts(activeItems, 'taxAmount'), [activeItems]);
+  const activeItems = items.filter((invoice) => invoice.status !== 'cancelled');
+  const officialSummary = data?.sums?.outflow
+    ? {
+        totalNet: Number(data.sums.outflow.net || 0),
+        totalTax: Number(data.sums.outflow.tax || 0),
+        totalAmount: Number(data.sums.outflow.total || 0),
+        count: data.sums.outflow.count,
+      }
+    : summarizeInvoiceListPayments(activeItems);
 
-  const exportData = useMemo(() =>
-    activeItems.map((inv: any) => ({
-      'رقم السند': inv.invoiceNumber || '—',
-      'رقم فاتورة المورد': inv.supplierInvoiceNumber || '—',
-      'المورد': (lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—',
-      'بند المصروف': inv.expenseLine?.nameAr || inv.expenseLine?.nameEn || '—',
-      'النوع': (kindBadgeMap as Record<string, { label?: string }>)[String(inv.kind)]?.label || inv.kind,
-      [t('invoiceReceiptCol')]: inv.hasInvoiceAttachment ? (inv.attachmentOriginalName || '—') : '—',
-      'التاريخ': formatSaudiDate(inv.transactionDate),
-      'الصافي': Number(inv.netAmount || 0),
-      'الضريبة': Number(inv.taxAmount || 0),
-      'الإجمالي': Number(inv.totalAmount || 0),
-    })),
-  [activeItems, kindBadgeMap, lang, t]);
+  const exportData = useMemo(
+    () =>
+      buildExpensePaymentExportRows(activeItems, lang, {
+        documentNumber: t('documentNumber'),
+        supplierInvoiceNumber: t('supplierInvoiceNumber'),
+        supplier: t('supplier'),
+        expenseLine: t('expenseLineNameCol'),
+        kind: t('expenseLineKindCol'),
+        date: t('date'),
+        coverage: t('expenseCoverageColumn'),
+        net: t('expenseTaxBreakdownNet'),
+        tax: t('expenseTaxBreakdownVat'),
+        total: t('total'),
+        vault: t('invoiceVaultColumn'),
+        notes: t('notes'),
+        attachment: t('invoiceReceiptCol'),
+      }),
+    [activeItems, lang, t],
+  );
 
   function handlePrint() {
-    openPrintWindow({
-      title: 'سجل المدفوعات',
+    openPrintDocumentPreview({
+      title: t('paymentHistoryTab'),
       companyName,
-      subtitle: `سجل المدفوعات (ثابت + متغير) | الإجمالي: ${fmt(totalAmount)} SR`,
+      logoUrl: companyLogoUrl,
+      subtitle: `${t('paymentHistoryTab')} | ${t('total')}: ${officialSummary.totalAmount} SR`,
       body: buildPrintRecordsTableHtml({
         records: exportData,
-        emptyMessage: 'لا توجد مدفوعات',
-        numericKeys: ['الصافي', 'الضريبة', 'الإجمالي'],
+        emptyMessage: t('paymentHistoryEmptyExpenseModule'),
+        numericKeys: [t('expenseTaxBreakdownNet'), t('expenseTaxBreakdownVat'), t('total')],
       }),
     });
   }
 
-  const columns = useMemo(() => [
-    { key: 'invoiceNumber', label: 'رقم السند', minWidth: 110,
-      render: (_: any, row: any) => <span className="nx-cell-num nx-cell-bold text-[13px]">{row.invoiceNumber || '—'}</span> },
-    { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد', minWidth: 120,
-      render: (_: any, row: any) => <span className="nx-cell-num nx-cell-muted text-[13px]">{row.supplierInvoiceNumber || '—'}</span> },
-    { key: 'supplierName', label: 'المورد', minWidth: 130,
-      render: (_: any, row: any) => <span className="text-[13px]">{(lang === 'en' ? row.supplier?.nameEn || row.supplier?.nameAr : row.supplier?.nameAr || row.supplier?.nameEn) || '—'}</span> },
-    { key: 'expenseLineName', label: 'بند المصروف', minWidth: 140,
-      render: (_: any, row: any) => <span className="text-[13px]">{row.expenseLine?.nameAr || row.expenseLine?.nameEn || '—'}</span> },
-    { key: 'kind', label: 'النوع', width: 110, minWidth: 100,
-      render: (v: any) => <Badge {...Badge.fromStatus(v, kindBadgeMap)} size="sm" /> },
+  const columns = useMemo<SmartTableColumn<InvoiceListItem>[]>(() => [
+    { key: 'invoiceNumber', size: 'document', label: t('documentNumber'), minWidth: 110, render: (_value, row) => <span className="nx-cell-num nx-cell-bold text-[13px]">{row.invoiceNumber || '-'}</span> },
+    { key: 'supplierInvoiceNumber', size: 'document', label: t('supplierInvoiceNumber'), minWidth: 120, render: (_value, row) => <span className="nx-cell-num nx-cell-muted text-[13px]">{row.supplierInvoiceNumber || '-'}</span> },
+    { key: 'supplierName', size: 'supplier', label: t('supplier'), minWidth: 130, render: (_value, row) => <span className="text-[13px]">{lang === 'en' ? row.supplier?.nameEn || row.supplier?.nameAr || '-' : row.supplier?.nameAr || row.supplier?.nameEn || '-'}</span> },
+    { key: 'expenseLineName', size: 'name', label: t('expenseLineNameCol'), minWidth: 140, render: (_value, row) => <span className="text-[13px]">{readExpenseLineName(row, lang)}</span> },
+    { key: 'kind', size: 'document', label: t('expenseLineKindCol'), width: 110, minWidth: 100, render: (value) => <Badge {...Badge.fromStatus(value, kindBadgeMap)} size="sm" /> },
     {
       key: 'attachment',
+      size: 'name',
       label: t('invoiceReceiptCol'),
       minWidth: 140,
-      render: (_: any, row: any) =>
-        row.hasInvoiceAttachment && effectiveCompanyId ? (
+      render: (_value, row) =>
+        row.hasInvoiceAttachment && effectiveCompanyId && row.id ? (
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <span className="max-w-[10rem] truncate text-[12px] text-noorix-text" title={row.attachmentOriginalName || ''}>
-              {row.attachmentOriginalName || '—'}
+              {row.attachmentOriginalName || '-'}
             </span>
             <Button
               type="button"
@@ -135,9 +155,9 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
               className="h-7 shrink-0 px-2 text-[11px]"
               onClick={async () => {
                 try {
-                  await downloadInvoiceAttachment(row.id, effectiveCompanyId);
-                } catch (e: any) {
-                  showToast?.(e?.message || t('saveFailed'), 'error');
+                  await downloadInvoiceAttachment(row.id || '', effectiveCompanyId);
+                } catch (downloadError: unknown) {
+                  showToast(downloadError instanceof Error ? downloadError.message : t('saveFailed'), 'error');
                 }
               }}
             >
@@ -145,96 +165,91 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
             </Button>
           </div>
         ) : (
-          <span className="nx-cell-muted-sm text-[13px]">—</span>
+          <span className="nx-cell-muted-sm text-[13px]">-</span>
         ),
     },
-    { key: 'transactionDate', label: 'التاريخ', minWidth: 110,
-      render: (v: any) => <span className="nx-cell-muted-sm text-[13px]">{formatSaudiDate(v)}</span> },
-    { key: 'netAmount', label: 'الصافي', numeric: true, minWidth: 100,
-      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green text-[13px]" /> },
-    { key: 'taxAmount', label: 'الضريبة', numeric: true, minWidth: 100,
-      render: (v: any) => <FmtNum n={v} className="nx-cell-num text-noorix-amber text-[13px]" /> },
-    { key: 'totalAmount', label: 'الإجمالي', numeric: true, minWidth: 100,
-      render: (v: any) => <FmtNum n={v} className="nx-cell-num font-bold text-[13px]" /> },
+    { key: 'transactionDate', size: 'date', label: t('date'), minWidth: 110, render: (value) => <span className="nx-cell-muted-sm text-[13px]">{value ? formatSaudiDate(value) : '-'}</span> },
+    { key: 'netAmount', size: 'money-sm', label: t('expenseTaxBreakdownNet'), numeric: true, minWidth: 100, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num nx-cell-num--green text-[13px]" /> },
+    { key: 'taxAmount', size: 'tax', label: t('expenseTaxBreakdownVat'), numeric: true, minWidth: 100, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num text-noorix-amber text-[13px]" /> },
+    { key: 'totalAmount', size: 'money-md', label: t('total'), numeric: true, minWidth: 100, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num font-bold text-[13px]" /> },
   ], [lang, kindBadgeMap, t, effectiveCompanyId, showToast]);
 
   if (isError) {
     return (
       <div className="text-center text-[14px] p-8 text-noorix-red">
-        ⚠ {error?.message || 'فشل تحميل سجل المدفوعات'}
+        {error?.message || t('loadDataFailed')}
       </div>
     );
   }
 
   return (
     <div>
-      {!externalDateFilter && (
+      {printPreviewModal}
+      {!externalDateFilter ? (
         <FilterToolbar
           className="mb-3 border-b border-noorix-border pb-3"
           actions={(
             <Checkbox
-              label="عرض الكل (بدون فلتر تاريخ)"
+              label={t('showAll')}
               checked={showAllDates}
-              onChange={(e) => setShowAllDates(e.target.checked)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setShowAllDates(event.target.checked)}
               containerClassName="shrink-0"
             />
           )}
         >
-          <DateFilterBar filter={dateFilter} />
+          <DateFilterBar filter={internalDateFilter} />
         </FilterToolbar>
-      )}
+      ) : null}
 
-      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
-        <div className="nx-toolbar min-w-0 flex-1">
-          <div className="w-full min-w-0 sm:w-[min(100%,14rem)] shrink-0">
-            <SearchableOptionsPicker
-              size="sm"
-              className="w-full"
-              aria-label={t('paymentHistoryTab')}
-              allowEmpty
-              emptyValue=""
-              emptyLabel={lang === 'en' ? 'All (fixed + variable)' : 'الكل (ثابت + متغير)'}
-              value={filterKind}
-              onChange={(v) => setFilterKind(v)}
-              options={kindFilterOptions}
-            />
-          </div>
-          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!activeItems.length}>
-            {t('print')}
-          </Button>
-          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>
-            {t('exportExcel')}
-          </Button>
-          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', companyName, filename: 'payment-history.pdf' })} disabled={!activeItems.length}>
-            طباعة / PDF
-          </Button>
+      <FilterToolbar className="mb-3 min-h-11 border-b border-noorix-border pb-3" filtersClassName="nx-toolbar min-w-0 flex-1">
+        <div className="w-full min-w-0 sm:w-[min(100%,14rem)] shrink-0">
+          <SearchableOptionsPicker
+            size="sm"
+            className="w-full"
+            aria-label={t('paymentHistoryTab')}
+            allowEmpty
+            emptyValue=""
+            emptyLabel={lang === 'en' ? 'All (fixed + variable)' : 'الكل (ثابت + متغير)'}
+            value={filterKind}
+            onChange={(value) => setFilterKind(value === 'fixed_expense' || value === 'expense' ? value : '')}
+            options={kindFilterOptions}
+          />
         </div>
-      </div>
+        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>{t('exportExcel')}</Button>
+        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!activeItems.length}>{t('print')} / PDF</Button>
+      </FilterToolbar>
 
       <SmartTable
         compact
         showRowNumbers
-        rowNumberWidth="1%"
         innerPadding={8}
         columns={columns}
         data={activeItems}
         isLoading={isLoading}
         title={t('paymentHistoryTab')}
-        badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{activeItems.length}</span>}
+        badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{data?.total ?? activeItems.length}</span>}
         showSearchInHeader={false}
         emptyMessage={t('paymentHistoryEmptyExpenseModule')}
-        keyExtractor={(row: any) => row.id}
+        keyExtractor={(row) => row.id || String(row.invoiceNumber)}
         footer={
           activeItems.length > 0 ? (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-noorix-bg-muted p-4">
-              <span className="text-[13px] text-noorix-muted">عدد السجلات: <strong className="text-noorix-text">{activeItems.length}</strong></span>
-              <span className="text-[13px]">الصافي: <strong className="nx-cell-num nx-cell-num--green"><FmtNum n={totalNet.toNumber()} /></strong></span>
-              <span className="text-[13px]">الضريبة: <strong className="nx-cell-num text-noorix-amber"><FmtNum n={totalTax.toNumber()} /></strong></span>
-              <span className="nx-cell-num text-[14px] font-bold">الإجمالي: <FmtNum n={totalAmount.toNumber()} /> <span className="nx-sar">SR</span></span>
+              <span className="text-[13px] text-noorix-muted">{t('rows')}: <strong className="text-noorix-text">{officialSummary.count}</strong></span>
+              <span className="text-[13px]">{t('expenseTaxBreakdownNet')}: <strong className="nx-cell-num nx-cell-num--green"><FmtNum n={officialSummary.totalNet} /></strong></span>
+              <span className="text-[13px]">{t('expenseTaxBreakdownVat')}: <strong className="nx-cell-num text-noorix-amber"><FmtNum n={officialSummary.totalTax} /></strong></span>
+              <span className="nx-cell-num text-[14px] font-bold">{t('total')}: <FmtNum n={officialSummary.totalAmount} /> <span className="nx-sar">SR</span></span>
             </div>
           ) : null
         }
       />
     </div>
   );
+}
+
+function readExpenseLineName(row: InvoiceListItem, lang: string) {
+  const expenseLine = row.expenseLine;
+  if (!expenseLine) return '-';
+  return lang === 'en'
+    ? expenseLine.nameEn || expenseLine.nameAr || '-'
+    : expenseLine.nameAr || expenseLine.nameEn || '-';
 }

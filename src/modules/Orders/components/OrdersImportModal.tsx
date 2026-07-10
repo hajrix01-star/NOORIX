@@ -12,6 +12,8 @@ import {
   filterOrderCategoriesTemplateRows,
   groupOrderProductImportRows,
   orderProductImportGroupsToPayload,
+  type ImportRow,
+  type OrderProductImportGroup,
 } from '../../../utils/exportUtils';
 import {
   addCustomSize,
@@ -26,6 +28,17 @@ import {
   OrdersImportProgress,
   StepIndicator,
 } from './OrdersImportModalParts';
+import type {
+  OrderCategory,
+  OrderCategoryPayload,
+  OrderProduct,
+  OrderProductPayload,
+  OrderProductType,
+  OrderProductVariant,
+  OrderSection,
+  OrderCatalogBatchCreateResult,
+  ApiParsedResult,
+} from '../../../types/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,7 +54,7 @@ interface ParsedRow {
   category: string;
   sectionsSummary: string;
   variantsSummary: string;
-  payload: Record<string, unknown> | null;
+  payload: OrderProductPayload | OrderCategoryPayload | null;
 }
 
 interface ImportResult {
@@ -54,15 +67,68 @@ interface ImportResult {
 interface Props {
   type: 'products' | 'categories';
   /** أصناف الطلبات أو المبيعات — يُطبَّق على الاستيراد والتكرار */
-  productType?: 'order' | 'sale';
+  productType?: OrderProductType;
   /** أقسام الشركة (بار، شيشة، مطبخ…) — للاختيار عند استيراد المبيعات */
-  sections?: any[];
+  sections?: OrderSection[];
   companyId: string;
-  products: any[];
-  categories: any[];
-  createProductsBatch: any;
-  createCategoriesBatch: any;
+  products: OrderProduct[];
+  categories: OrderCategory[];
+  createProductsBatch: BatchMutation<OrderProductPayload>;
+  createCategoriesBatch: BatchMutation<OrderCategoryPayload>;
   onClose: () => void;
+}
+
+type BatchMutation<TPayload> = {
+  mutate: (
+    payload: TPayload[],
+    options: {
+      onSuccess: (data: ApiParsedResult<OrderCatalogBatchCreateResult>) => void;
+      onError: (error: Error) => void;
+    },
+  ) => void;
+  isPending?: boolean;
+};
+
+function mutationCreatedCount(value: ApiParsedResult<OrderCatalogBatchCreateResult>, fallback: number): number {
+  if (Array.isArray(value.data)) return value.data.length;
+  const created = Number(value.data?.created ?? value.data?.count);
+  return Number.isFinite(created) ? created : fallback;
+}
+
+function mutationCreatedItems(value: ApiParsedResult<OrderCatalogBatchCreateResult>): Array<OrderProduct | OrderCategory> {
+  if (Array.isArray(value.data)) return value.data;
+  return Array.isArray(value.data?.items) ? value.data.items : [];
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function productPayloadVariants(payload: OrderProductPayload | OrderCategoryPayload | null): OrderProductVariant[] {
+  if (!payload || !('variants' in payload) || !Array.isArray(payload.variants)) return [];
+  return payload.variants;
+}
+
+function productPayloadSections(payload: OrderProductPayload | OrderCategoryPayload | null): string[] {
+  if (!payload || !('sections' in payload) || !Array.isArray(payload.sections)) return [];
+  return payload.sections;
+}
+
+function groupNameAr(group: OrderProductImportGroup): string {
+  return group.type === 'flat' ? group.nameAr : String(group.row.nameAr ?? group.row.name_ar ?? '');
+}
+
+function groupNameEn(group: OrderProductImportGroup): string {
+  return group.type === 'flat' ? group.nameEn : String(group.row.nameEn ?? group.row.name_en ?? '');
+}
+
+function groupCategory(group: OrderProductImportGroup): string {
+  return group.type === 'flat' ? group.category : String(group.row.category ?? group.row.categoryName ?? '');
+}
+
+function requirePayload(payload: OrderProductPayload | OrderCategoryPayload | null): OrderProductPayload | OrderCategoryPayload {
+  if (!payload) throw new Error('Invalid empty import payload');
+  return payload;
 }
 
 // ─── Main component ────────────────────────────────────────────────────────────
@@ -82,11 +148,11 @@ export function OrdersImportModal({
   const isProducts = type === 'products';
   const needsImportSections = isProducts && productType === 'sale';
   const scopedProducts = useMemo(
-    () => (isProducts ? products.filter((p: any) => (p.productType || 'order') === productType) : products),
+    () => (isProducts ? products.filter((product) => (product.productType || 'order') === productType) : products),
     [isProducts, products, productType],
   );
   const knownSectionNames = useMemo(
-    () => (sections as any[]).map((s) => String(s.nameAr ?? '').trim()).filter(Boolean),
+    () => sections.map((section) => String(section.nameAr ?? '').trim()).filter(Boolean),
     [sections],
   );
 
@@ -170,9 +236,9 @@ export function OrdersImportModal({
         // ── Categories ─────────────────────────────────────────────────────
         const filtered = filterOrderCategoriesTemplateRows(rawRows);
         const existingNames = new Set(
-          categories.map((c: any) => String(c.nameAr ?? '').trim().toLowerCase()),
+          categories.map((category) => String(category.nameAr ?? '').trim().toLowerCase()),
         );
-        parsed = filtered.map((r: any): ParsedRow => {
+        parsed = filtered.map((r: ImportRow): ParsedRow => {
           const nameAr = String(r.nameAr ?? r.name_ar ?? '').trim();
           const nameEn = String(r.nameEn ?? r.name_en ?? '').trim();
           if (!nameAr) {
@@ -187,38 +253,38 @@ export function OrdersImportModal({
         // ── Products ────────────────────────────────────────────────────────
         const filtered = filterOrderProductsTemplateRows(rawRows, productType);
         const catByName = new Map(
-          categories.map((c: any) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]),
+          categories.map((category) => [String(category.nameAr ?? '').trim().toLowerCase(), category.id]),
         );
         catByNameRef.current = catByName;
 
         const existingNames = new Set(
-          scopedProducts.map((p: any) => String(p.nameAr ?? '').trim().toLowerCase()),
+          scopedProducts.map((product) => String(product.nameAr ?? '').trim().toLowerCase()),
         );
         const groups = groupOrderProductImportRows(filtered);
         const payloads = orderProductImportGroupsToPayload(groups, catByName, productType, {
           knownSectionNames,
           defaultSections: importSections,
         });
-        const payloadMap = new Map(payloads.map((p: any) => [String(p.nameAr).trim().toLowerCase(), p]));
+        const payloadMap = new Map(payloads.map((payload) => [String(payload.nameAr).trim().toLowerCase(), payload]));
 
         // Collect unique category names that need to be created
         const missingCatNames = new Map<string, string>(); // lower → original case
 
-        parsed = groups.map((g: any): ParsedRow => {
-          const nameAr = String(g.nameAr || (g.type === 'legacy' ? (g.row?.nameAr ?? '') : '')).trim();
-          const nameEn = String(g.nameEn || (g.type === 'legacy' ? (g.row?.nameEn ?? '') : '') || '').trim();
-          const category = String(g.category || (g.type === 'legacy' ? (g.row?.category ?? '') : '') || '').trim();
+        parsed = groups.map((g: OrderProductImportGroup): ParsedRow => {
+          const nameAr = groupNameAr(g).trim();
+          const nameEn = groupNameEn(g).trim();
+          const category = groupCategory(g).trim();
 
           if (!nameAr) {
             return { status: 'invalid', reason: t('importReasonMissingNameAr'), nameAr: '—', nameEn, category, sectionsSummary: '', variantsSummary: '', payload: null };
           }
 
           const payload = payloadMap.get(nameAr.toLowerCase()) ?? null;
-          const variants: any[] = (payload as any)?.variants ?? [];
+          const variants = productPayloadVariants(payload);
           const variantsSummary = variants.length > 0
             ? t('importVariants', String(variants.length))
             : '—';
-          const rowSections: string[] = (payload as any)?.sections ?? [];
+          const rowSections = productPayloadSections(payload);
           const sectionsSummary = rowSections.length > 0 ? rowSections.join(' · ') : '—';
 
           const catNameLower = category.trim().toLowerCase();
@@ -270,8 +336,8 @@ export function OrdersImportModal({
       setRows(parsed);
       setFilter('all');
       setPhase('preview');
-    } catch (e: any) {
-      setParseError(e?.message || t('importFailed'));
+    } catch (error) {
+      setParseError(errorMessage(error, t('importFailed')));
       setPhase('upload');
     }
   }, [isProducts, productType, needsImportSections, importSections, knownSectionNames, scopedProducts, categories, t]);
@@ -309,51 +375,58 @@ export function OrdersImportModal({
       // ── Step 1: auto-create missing categories (products only) ─────────────
       if (isProducts && newCategoriesToCreate.length > 0) {
         const newCatPayloads = newCategoriesToCreate.map(nameAr => ({ nameAr }));
-        const catRes: any = await new Promise((resolve, reject) => {
+        const catRes = await new Promise<ApiParsedResult<OrderCatalogBatchCreateResult>>((resolve, reject) => {
           createCategoriesBatch.mutate(newCatPayloads, { onSuccess: resolve, onError: reject });
         });
-        // Inject new IDs into catByNameRef so product payloads can reference them
-        const created: any[] = catRes?.data ?? catRes ?? [];
-        for (const cat of created) {
+        if (!catRes.success) {
+          throw new Error(catRes.error || t('importDoneError'));
+        }
+        for (const cat of mutationCreatedItems(catRes)) {
           const key = String(cat.nameAr ?? '').trim().toLowerCase();
           if (key && cat.id) catByNameRef.current.set(key, cat.id);
         }
       }
 
       // ── Step 2: build final product payloads (inject newly created categoryIds) ──
-      let payloads: any[];
+      let payloads: Array<OrderProductPayload | OrderCategoryPayload>;
       if (isProducts) {
-        payloads = toImport.map(r => {
+        payloads = toImport.map((r) => {
+          const payload = requirePayload(r.payload);
           const catKey = String(r.category ?? '').trim().toLowerCase();
           const resolvedCatId = catKey ? catByNameRef.current.get(catKey) : undefined;
-          const payloadSections = (r.payload as any)?.sections as string[] | undefined;
+          const payloadSections = productPayloadSections(payload);
           const sections =
             payloadSections && payloadSections.length > 0 ? payloadSections : importSections;
-          const base = { ...r.payload, productType, sections };
+          const base = { ...payload, productType, sections };
           return resolvedCatId ? { ...base, categoryId: resolvedCatId } : base;
         });
       } else {
-        payloads = toImport.map(r => r.payload);
+        payloads = toImport.map((r) => requirePayload(r.payload));
       }
 
       // ── Step 3: create items ────────────────────────────────────────────────
-      const mutation = isProducts ? createProductsBatch : createCategoriesBatch;
-      const itemRes: any = await new Promise((resolve, reject) => {
-        mutation.mutate(payloads, { onSuccess: resolve, onError: reject });
-      });
-      const importedData = itemRes?.data ?? itemRes;
-      const imported = Array.isArray(importedData) ? importedData.length : payloads.length;
+      const itemRes = isProducts
+        ? await new Promise<ApiParsedResult<OrderCatalogBatchCreateResult>>((resolve, reject) => {
+            createProductsBatch.mutate(payloads as OrderProductPayload[], { onSuccess: resolve, onError: reject });
+          })
+        : await new Promise<ApiParsedResult<OrderCatalogBatchCreateResult>>((resolve, reject) => {
+            createCategoriesBatch.mutate(payloads as OrderCategoryPayload[], { onSuccess: resolve, onError: reject });
+          });
+      if (!itemRes.success) {
+        throw new Error(itemRes.error || t('importDoneError'));
+      }
+      const imported = mutationCreatedCount(itemRes, payloads.length);
 
       // ── Step 4: persist new sizes & packaging into localStorage ────────────
       if (isProducts && companyId) {
         const existingSizes = new Set(
-          getSizesOptions(companyId).map((s: any) => String(s.ar ?? '').trim().toLowerCase()),
+          getSizesOptions(companyId).map((option) => String(option.ar ?? '').trim().toLowerCase()),
         );
         const existingPkg = new Set(
-          getPackagingOptions(companyId).map((s: any) => String(s.ar ?? '').trim().toLowerCase()),
+          getPackagingOptions(companyId).map((option) => String(option.ar ?? '').trim().toLowerCase()),
         );
-        for (const p of payloads) {
-          for (const v of (p as any)?.variants ?? []) {
+        for (const payload of payloads) {
+          for (const v of productPayloadVariants(payload)) {
             const size = String(v.size ?? '').trim();
             if (size && !existingSizes.has(size.toLowerCase())) {
               addCustomSize(companyId, size, '');
@@ -370,8 +443,8 @@ export function OrdersImportModal({
 
       setResult({ imported, skipped, invalid });
       setPhase('done');
-    } catch (err: any) {
-      setResult({ imported: 0, skipped, invalid, error: err?.message || t('importDoneError') });
+    } catch (error) {
+      setResult({ imported: 0, skipped, invalid, error: errorMessage(error, t('importDoneError')) });
       setPhase('done');
     }
   }

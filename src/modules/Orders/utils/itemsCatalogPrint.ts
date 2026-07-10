@@ -1,10 +1,11 @@
-import { openPrintWindow } from '../../../utils/printUtils';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../../utils/printTableHtml';
+import type { OrderCategory, OrderProduct, OrderProductType, OrderProductVariant, OrderSection } from '../../../types/api';
 
 export type ItemsCatalogPrintFilters = {
   section: string;
   categoryId: string;
-  productType: 'order' | 'sale';
+  productType: OrderProductType;
 };
 
 type PrintRow = {
@@ -14,11 +15,11 @@ type PrintRow = {
   spec: string;
 };
 
-export function buildProductSpec(p: any, unitLabel: (u: string) => string): string {
+export function buildProductSpec(p: OrderProduct, unitLabel: (u: string) => string): string {
   const variants = Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : null;
   if (variants) {
     return variants
-      .map((v: any) => {
+      .map((v: OrderProductVariant) => {
         const parts = [v.size, v.packaging, unitLabel(v.unit || 'piece')].filter((x) => x && x !== '—');
         return parts.join(' / ') || '—';
       })
@@ -50,14 +51,14 @@ function buildPrintRow(r: PrintRow): PrintHtmlTableRow {
 export type CategoryPrintGroup = {
   categoryId: string | null;
   categoryName: string;
-  products: any[];
+  products: OrderProduct[];
 };
 
 function esc(v: unknown) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-export function filterProductsForCatalogPrint(products: any[], filters: ItemsCatalogPrintFilters) {
+export function filterProductsForCatalogPrint(products: OrderProduct[], filters: ItemsCatalogPrintFilters) {
   let result = (products || []).filter((p) => (p.productType || 'order') === filters.productType);
 
   if (filters.categoryId) {
@@ -76,7 +77,7 @@ export function filterProductsForCatalogPrint(products: any[], filters: ItemsCat
   return sortProductsForCatalogPrint(result, []);
 }
 
-export function sortProductsForCatalogPrint(products: any[], categories: any[]) {
+export function sortProductsForCatalogPrint(products: OrderProduct[], categories: OrderCategory[]) {
   const catOrder = new Map(categories.map((c, i) => [c.id, c.sortOrder ?? i]));
   const catName = new Map(categories.map((c) => [c.id, c.nameAr || c.nameEn || '']));
 
@@ -94,8 +95,8 @@ export function sortProductsForCatalogPrint(products: any[], categories: any[]) 
 }
 
 export function groupProductsByCategory(
-  products: any[],
-  categories: any[],
+  products: OrderProduct[],
+  categories: OrderCategory[],
   noCategoryLabel: string,
 ): CategoryPrintGroup[] {
   const sorted = sortProductsForCatalogPrint(products, categories);
@@ -121,7 +122,7 @@ export function groupProductsByCategory(
   return groups;
 }
 
-export function expandProductsToPrintRows(products: any[], unitLabel: (u: string) => string): PrintRow[] {
+export function expandProductsToPrintRows(products: OrderProduct[], unitLabel: (u: string) => string): PrintRow[] {
   return products.map((p, idx) => ({
     num: idx + 1,
     nameAr: p.nameAr || '—',
@@ -132,8 +133,8 @@ export function expandProductsToPrintRows(products: any[], unitLabel: (u: string
 
 export function buildItemsCatalogPrintSubtitle(
   filters: ItemsCatalogPrintFilters,
-  categories: any[],
-  sections: any[],
+  categories: OrderCategory[],
+  sections: OrderSection[],
   t: (key: string) => string,
 ) {
   const parts: string[] = [];
@@ -244,11 +245,12 @@ thead { display: table-header-group; }
 `.trim();
 
 export type ItemsCatalogOutputOpts = {
-  products: any[];
+  products: OrderProduct[];
   filters: ItemsCatalogPrintFilters;
-  categories: any[];
-  sections: any[];
+  categories: OrderCategory[];
+  sections: OrderSection[];
   companyName: string;
+  logoUrl?: string;
   productTypeLabel: string;
   t: (key: string) => string;
   unitLabel: (u: string) => string;
@@ -267,8 +269,8 @@ function slugPart(value: string) {
 
 export function buildItemsCatalogPdfFilename(
   filters: ItemsCatalogPrintFilters,
-  categories: any[],
-  sections: any[],
+  categories: OrderCategory[],
+  sections: OrderSection[],
 ) {
   const parts = ['items-catalog', filters.productType];
 
@@ -316,16 +318,18 @@ function prepareItemsCatalogDocument(opts: ItemsCatalogOutputOpts) {
   };
 }
 
-function openItemsCatalogDocument(
+export function buildItemsCatalogDocumentHtml(
   opts: ItemsCatalogOutputOpts,
   mode: 'print' | 'pdf',
-): { empty: boolean } {
+): { empty: true } | { empty: false; title: string; html: string } {
   const doc = prepareItemsCatalogDocument(opts);
   if (doc.empty) return { empty: true };
 
-  openPrintWindow({
-    title: mode === 'pdf' ? doc.pdfFilename.replace(/\.pdf$/i, '') : opts.t('ordersPrintCatalogTitle'),
+  const title = mode === 'pdf' ? doc.pdfFilename.replace(/\.pdf$/i, '') : opts.t('ordersPrintCatalogTitle');
+  const html = buildPrintDocumentHtml({
+    title,
     companyName: opts.companyName,
+    logoUrl: opts.logoUrl || '',
     subtitle: doc.subtitle,
     body: doc.body,
     extraCss: CATALOG_PRINT_EXTRA_CSS,
@@ -336,13 +340,5 @@ function openItemsCatalogDocument(
     htmlDir: opts.lang === 'en' ? 'ltr' : 'rtl',
   });
 
-  return { empty: false };
-}
-
-export function printItemsCatalog(opts: ItemsCatalogOutputOpts): { empty: boolean } {
-  return openItemsCatalogDocument(opts, 'print');
-}
-
-export function exportItemsCatalogToPdf(opts: ItemsCatalogOutputOpts): { empty: boolean } {
-  return openItemsCatalogDocument(opts, 'pdf');
+  return { empty: false, title, html };
 }

@@ -21,7 +21,7 @@ export function ContractDocPreview({
       <div className="hr-doc-section">
         <EmployeeDocEmployeeInfoTable
           employee={employee}
-          workHoursValue={employee?.workHours ? `${employee.workHours} ساعة / ${employee.workHours} hr` : '8 ساعات / 8 hr'}
+          workHoursValue={String(employee?.workHours || 8)}
           contractEnd={contractEnd}
         />
       </div>

@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, DateField, Input, AdaptiveSheet , FmtNum } from '../../../ui';
+import { DateField, DialogActions, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { createMovement, updateEmployee, updateRaiseMovement, throwIfApiFailed } from '../../../services/api';
@@ -12,10 +12,32 @@ import { hrFmt } from '../utils/hrFmt';
 import {
   basicSalaryFromTargetTotalInclusiveOvertime,
 } from '../utils/employeeSalaryMath';
+import type { HrEmployee } from '../../../types/api';
 
-/**
- * @param {{ kind: 'promotion' | 'raise', employee: object, companyId: string, customAllowanceTotal?: number, onClose: () => void, onSuccess?: () => void }} props
- */
+type CareerMovementKind = 'promotion' | 'raise';
+type CareerMovementRecord = {
+  id?: string | null;
+  effectiveDate?: string | Date | null;
+  amount?: number | string | null;
+  previousValue?: number | string | null;
+  notes?: string | null;
+};
+type EmployeeCareerMovementModalProps = {
+  kind: CareerMovementKind | string | null;
+  employee: HrEmployee | null;
+  companyId: string;
+  customAllowanceTotal?: number;
+  currentTotalAllIn?: number;
+  editMovement?: CareerMovementRecord | null;
+  onClose: () => void;
+  onSuccess?: () => void;
+};
+type CareerInputChange = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function EmployeeCareerMovementModal({
   kind,
   employee,
@@ -25,7 +47,7 @@ export function EmployeeCareerMovementModal({
   editMovement = null,
   onClose,
   onSuccess,
-}: any) {
+}: EmployeeCareerMovementModalProps) {
   const { t } = useTranslation();
   const isEditRaise = !!editMovement && kind === 'raise';
   const [effectiveDate, setEffectiveDate] = useState(getSaudiToday());
@@ -90,7 +112,7 @@ export function EmployeeCareerMovementModal({
     };
   }, [kind, employee, customTotal, raiseIncrement, centralCurrentTotalAllIn, isEditRaise, editMovement]);
 
-  async function handleSubmit(e: any) {
+  async function handleSubmit(e: React.FormEvent) {
     e?.preventDefault?.();
     if (!employee?.id || !companyId || saving) return;
     setFormError('');
@@ -118,8 +140,8 @@ export function EmployeeCareerMovementModal({
         throwIfApiFailed(mov, t('saveFailed'));
         onSuccess?.();
         onClose?.();
-      } catch (err: any) {
-        setFormError(err?.message || t('saveFailed'));
+      } catch (err: unknown) {
+        setFormError(getErrorMessage(err, t('saveFailed')));
       } finally {
         setSaving(false);
       }
@@ -189,8 +211,8 @@ export function EmployeeCareerMovementModal({
       throwIfApiFailed(mov, t('saveFailed'));
       onSuccess?.();
       onClose?.();
-    } catch (err: any) {
-      setFormError(err?.message || t('saveFailed'));
+    } catch (err: unknown) {
+      setFormError(getErrorMessage(err, t('saveFailed')));
     } finally {
       setSaving(false);
     }
@@ -214,12 +236,18 @@ export function EmployeeCareerMovementModal({
       size="md"
       side="start"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose} disabled={saving}>{t('cancel')}</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={saving || raiseBlocked}>
-            {saving ? t('saving') : t('careerSaveMovement')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', disabled: saving, onClick: onClose },
+            {
+              key: 'save-movement',
+              label: saving ? t('saving') : t('careerSaveMovement'),
+              role: 'save',
+              disabled: saving || raiseBlocked,
+              onClick: () => void handleSubmit({ preventDefault: () => undefined } as React.FormEvent),
+            },
+          ]}
+        />
       }
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -247,14 +275,14 @@ export function EmployeeCareerMovementModal({
               type="text"
               label={t('careerPreviousJobTitle')}
               value={prevJobTitle}
-              onChange={(e: any) => setPrevJobTitle(e.target.value)}
+              onChange={(e: CareerInputChange) => setPrevJobTitle(e.target.value)}
               placeholder={t('jobTitlePlaceholder')}
             />
             <Input
               type="text"
               label={t('careerNewJobTitle')}
               value={newJobTitle}
-              onChange={(e: any) => setNewJobTitle(e.target.value)}
+              onChange={(e: CareerInputChange) => setNewJobTitle(e.target.value)}
               placeholder={t('jobTitlePlaceholder')}
               required
             />
@@ -274,7 +302,7 @@ export function EmployeeCareerMovementModal({
               step="0.01"
               label={t('careerRaiseIncrementOnTotal')}
               value={raiseIncrement}
-              onChange={(e: any) => setRaiseIncrement(e.target.value)}
+              onChange={(e: CareerInputChange) => setRaiseIncrement(e.target.value)}
               placeholder="0"
             />
             {raisePreview?.invalidTarget ? (
@@ -302,7 +330,7 @@ export function EmployeeCareerMovementModal({
           type="text"
           label={t('notes')}
           value={notes}
-          onChange={(e: any) => setNotes(e.target.value)}
+          onChange={(e: CareerInputChange) => setNotes(e.target.value)}
           placeholder={t('notes')}
         />
       </form>

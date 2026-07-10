@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { type ChangeEvent, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday } from '../../../utils/saudiDate';
-import { Button, DateField, Input, Modal } from '../../../ui';
+import { Button, TransactionDatePicker, Input, Modal } from '../../../ui';
 
 type StaffDigestSendModalProps = {
   open: boolean;
@@ -40,7 +40,7 @@ export function StaffDigestSendModal({
           <span className="text-[12px] text-noorix-muted">{t('staffDigestEstimatedTotal')}</span>
           <span className="text-[15px] font-bold nx-font-numbers ltr">{fmt(estimatedTotal)} <span className="nx-sar">SR</span></span>
         </div>
-        <DateField label={t('orderDate')} value={orderDate} onValueChange={setOrderDate} />
+        <TransactionDatePicker label={t('orderDate')} value={orderDate} onValueChange={setOrderDate} />
         <div className="flex flex-col gap-2">
           <span className="text-[12px] font-semibold text-noorix-text">{t('orderType')}</span>
           <div className="flex gap-2">
@@ -67,7 +67,7 @@ export function StaffDigestSendModal({
             type="number"
             label={t('ordersPettyCashGiven')}
             value={pettyCashAmount}
-            onChange={(e: any) => setPettyCashAmount(e.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setPettyCashAmount(event.target.value)}
             placeholder={t('optional')}
           />
         )}

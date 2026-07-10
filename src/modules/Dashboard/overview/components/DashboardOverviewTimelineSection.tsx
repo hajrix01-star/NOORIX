@@ -1,4 +1,4 @@
-import React, { type Dispatch, type SetStateAction } from 'react';
+import React, { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -10,10 +10,11 @@ import {
 } from 'recharts';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { Button, cn } from '../../../../ui';
-import { formatCompactNumber } from '../../../../utils/money';
+import { formatCompactNumber, formatNumber } from '../../../../utils/money';
 import { EmptyState } from '../../../../components/states';
 import { DashboardAreaTooltip } from './DashboardOverviewChartTooltips';
 import { DashboardOverviewBreakdownTable } from './DashboardOverviewBreakdownTable';
+import type { DashboardPerformanceRow } from '../utils/dashboardOverviewBuilders';
 
 type SeriesRow = {
   key: string;
@@ -25,7 +26,19 @@ type SeriesRow = {
 
 type ChannelRow = { name: string; value: number; pct: string };
 
-type PerfRow = Record<string, string | number>;
+const TIMELINE_CHART_MARGIN = { top: 4, right: 4, left: -10, bottom: 0 };
+const TIMELINE_GRID_DASH = '3 3';
+const TIMELINE_X_TICK = {
+  fontSize: 10,
+  fill: 'var(--noorix-text-muted)',
+  fontFamily: 'var(--noorix-font-primary)',
+};
+const TIMELINE_Y_TICK = {
+  fontSize: 10,
+  fill: 'var(--noorix-text-muted)',
+};
+const TIMELINE_BAR_RADIUS: [number, number, number, number] = [4, 4, 0, 0];
+type TimelineMetricMode = 'sales' | 'customer';
 
 type Props = {
   lang: string;
@@ -33,7 +46,7 @@ type Props = {
   setTimelineGrain: Dispatch<SetStateAction<string>>;
   timelineMonthName: string;
   year: number;
-  performanceData: PerfRow[];
+  performanceData: DashboardPerformanceRow[];
   perfTotal: number;
   channelData: ChannelRow[];
   channelPeriodLabel: string;
@@ -61,6 +74,20 @@ export function DashboardOverviewTimelineSection({
   uiDir,
 }: Props) {
   const { t } = useTranslation();
+  const [metricMode, setMetricMode] = useState<TimelineMetricMode>('sales');
+  const customersKey = t('dashboardTimelineCustomers');
+  const avgInvoiceKey = t('dashboardTimelineAvgInvoice');
+  const salesEmpty = performanceData.length === 0 || perfTotal === 0;
+  const customerMetricTotal = useMemo(
+    () =>
+      performanceData.reduce(
+        (sum, row) => sum + Number(row[customersKey] || 0) + Number(row[avgInvoiceKey] || 0),
+        0,
+      ),
+    [performanceData, customersKey, avgInvoiceKey],
+  );
+  const customerEmpty = performanceData.length === 0 || customerMetricTotal === 0;
+  const isChartEmpty = metricMode === 'sales' ? salesEmpty : customerEmpty;
 
   return (
     <div
@@ -78,6 +105,44 @@ export function DashboardOverviewTimelineSection({
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap max-lg:justify-center">
+            <div
+              role="tablist"
+              dir={uiDir}
+              className="inline-flex shrink-0 items-stretch rounded-lg border border-noorix-border bg-noorix-bg-muted p-0.5"
+            >
+              <Button
+                type="button"
+                role="tab"
+                aria-selected={metricMode === 'sales'}
+                variant="raw"
+                size="auto"
+                className={cn(
+                  'min-h-9 rounded-md px-3 py-1.5 text-[12px] font-semibold sm:min-h-8 sm:py-1',
+                  metricMode === 'sales'
+                    ? 'bg-noorix-surface text-noorix-text shadow-sm'
+                    : 'text-noorix-muted hover:bg-noorix-surface/60 hover:text-noorix-text',
+                )}
+                onClick={() => setMetricMode('sales')}
+              >
+                {t('dashboardTimelineSalesTab')}
+              </Button>
+              <Button
+                type="button"
+                role="tab"
+                aria-selected={metricMode === 'customer'}
+                variant="raw"
+                size="auto"
+                className={cn(
+                  'min-h-9 rounded-md px-3 py-1.5 text-[12px] font-semibold sm:min-h-8 sm:py-1',
+                  metricMode === 'customer'
+                    ? 'bg-noorix-surface text-noorix-text shadow-sm'
+                    : 'text-noorix-muted hover:bg-noorix-surface/60 hover:text-noorix-text',
+                )}
+                onClick={() => setMetricMode('customer')}
+              >
+                {t('dashboardTimelineCustomerTab')}
+              </Button>
+            </div>
             <div
               role="tablist"
               dir={uiDir}
@@ -118,7 +183,7 @@ export function DashboardOverviewTimelineSection({
                 {t('dashboardTimelineDaily')}
               </Button>
             </div>
-            {SERIES.map((s) => {
+            {metricMode === 'sales' && SERIES.map((s) => {
               const hidden = hiddenSeries.has(s.key);
               const disabled = s.disabled;
               const seriesStyle = {
@@ -151,7 +216,7 @@ export function DashboardOverviewTimelineSection({
           </div>
         </div>
 
-        {performanceData.length === 0 || perfTotal === 0 ? (
+        {isChartEmpty ? (
           <EmptyState
             className="h-[220px]"
             icon={
@@ -166,37 +231,95 @@ export function DashboardOverviewTimelineSection({
           <ResponsiveContainer width="100%" height={240}>
             <BarChart
               data={performanceData}
-              margin={{ top: 4, right: 4, left: -10, bottom: 0 }}
+              margin={TIMELINE_CHART_MARGIN}
               barCategoryGap={timelineGrain === 'monthly' ? '22%' : '12%'}
               barGap={3}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" opacity={0.6} vertical={false} />
+              <CartesianGrid strokeDasharray={TIMELINE_GRID_DASH} stroke="var(--noorix-border)" opacity={0.6} vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-primary)' }}
+                tick={TIMELINE_X_TICK}
                 axisLine={false}
                 tickLine={false}
               />
-              <YAxis
-                tickFormatter={(n: number) => formatCompactNumber(n, lang)}
-                tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
-                axisLine={false}
-                tickLine={false}
-                width={46}
-              />
-              <Tooltip content={(tp) => <DashboardAreaTooltip {...(tp as any)} lang={lang} />} />
-              {SERIES.map((s) =>
-                !hiddenSeries.has(s.key) && !s.disabled ? (
-                  <Bar
-                    key={s.key}
-                    dataKey={s.key}
-                    name={s.label}
-                    fill={s.color}
-                    fillOpacity={0.9}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={timelineGrain === 'monthly' ? 28 : 12}
+              {metricMode === 'sales' ? (
+                <YAxis
+                  tickFormatter={(n: number) => formatCompactNumber(n, lang)}
+                  tick={TIMELINE_Y_TICK}
+                  axisLine={false}
+                  tickLine={false}
+                  width={46}
+                />
+              ) : (
+                <>
+                  <YAxis
+                    yAxisId="customers"
+                    tickFormatter={(n: number) => formatCompactNumber(n, lang)}
+                    tick={TIMELINE_Y_TICK}
+                    axisLine={false}
+                    tickLine={false}
+                    width={40}
                   />
-                ) : null,
+                  <YAxis
+                    yAxisId="avg"
+                    orientation="right"
+                    tickFormatter={(n: number) => formatCompactNumber(n, lang)}
+                    tick={TIMELINE_Y_TICK}
+                    axisLine={false}
+                    tickLine={false}
+                    width={46}
+                  />
+                </>
+              )}
+              <Tooltip
+                content={(props) =>
+                  metricMode === 'sales' ? (
+                    <DashboardAreaTooltip {...props} lang={lang} />
+                  ) : (
+                    <DashboardCustomerTooltip
+                      {...props}
+                      lang={lang}
+                      customersKey={customersKey}
+                      avgInvoiceKey={avgInvoiceKey}
+                    />
+                  )
+                }
+              />
+              {metricMode === 'sales' ? (
+                SERIES.map((s) =>
+                  !hiddenSeries.has(s.key) && !s.disabled ? (
+                    <Bar
+                      key={s.key}
+                      dataKey={s.key}
+                      name={s.label}
+                      fill={s.color}
+                      fillOpacity={0.9}
+                      radius={TIMELINE_BAR_RADIUS}
+                      maxBarSize={timelineGrain === 'monthly' ? 28 : 12}
+                    />
+                  ) : null,
+                )
+              ) : (
+                <>
+                  <Bar
+                    yAxisId="customers"
+                    dataKey={customersKey}
+                    name={customersKey}
+                    fill="var(--color-nx-sales)"
+                    fillOpacity={0.9}
+                    radius={TIMELINE_BAR_RADIUS}
+                    maxBarSize={timelineGrain === 'monthly' ? 30 : 12}
+                  />
+                  <Bar
+                    yAxisId="avg"
+                    dataKey={avgInvoiceKey}
+                    name={avgInvoiceKey}
+                    fill="var(--color-nx-net-profit)"
+                    fillOpacity={0.82}
+                    radius={TIMELINE_BAR_RADIUS}
+                    maxBarSize={timelineGrain === 'monthly' ? 30 : 12}
+                  />
+                </>
               )}
             </BarChart>
           </ResponsiveContainer>
@@ -226,6 +349,47 @@ export function DashboardOverviewTimelineSection({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function DashboardCustomerTooltip({
+  active,
+  payload,
+  label,
+  lang,
+  customersKey,
+  avgInvoiceKey,
+}: {
+  active?: boolean;
+  payload?: ReadonlyArray<{ dataKey?: unknown; name?: string | number; value?: unknown; color?: string }>;
+  label?: string | number;
+  lang: string;
+  customersKey: string;
+  avgInvoiceKey: string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="min-w-[150px] rounded-md border border-noorix-border bg-noorix-surface px-3 py-2 text-[12px] shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
+      <div className="mb-[5px] text-[11px] font-bold text-noorix-text">
+        {label != null ? String(label) : ''}
+      </div>
+      {payload.map((p) => {
+        const key = String(p.dataKey ?? p.name ?? '');
+        const value = Number(p.value) || 0;
+        const rowStyle = { '--dashboard-tooltip-color': p.color } as React.CSSProperties;
+        const isAvg = key === avgInvoiceKey;
+        return (
+          <div key={key} className="dashboard-tooltip-row" style={rowStyle}>
+            <span>{p.name != null ? String(p.name) : key}</span>
+            <span className="nx-font-numbers">
+              {formatNumber(value, lang, { minFractionDigits: 0, maxFractionDigits: isAvg ? 0 : 0 })}
+              {isAvg ? <span className="nx-sar"> SR</span> : null}
+            </span>
+          </div>
+        );
+      })}
+      <div className="sr-only">{customersKey}</div>
     </div>
   );
 }

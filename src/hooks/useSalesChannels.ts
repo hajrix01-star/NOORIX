@@ -1,9 +1,10 @@
 import { getSalesChannels } from '../services/api';
 import { salesKeys } from '../services/queryKeys';
 import { useApiListQuery } from './useApiQuery';
+import type { SalesInputVaultRef } from '../types/api/domains/sales';
 
-export function useSalesChannels(companyId: any) {
-  const query = useApiListQuery<any>({
+export function useSalesChannels(companyId: string) {
+  const query = useApiListQuery<SalesInputVaultRef>({
     queryKey: salesKeys.channels(companyId),
     queryFn: () => getSalesChannels(companyId),
     fallbackMessage: 'Failed to load sales channels',

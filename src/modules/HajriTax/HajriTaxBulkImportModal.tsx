@@ -3,12 +3,18 @@
  */
 import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Modal, Button, FileTrigger } from '../../ui';
+import { Modal, Button, DialogActions, FileTrigger } from '../../ui';
 import { exportToExcel, importFromExcel } from '../../utils/exportUtils';
 import { disclosureFromBulkFlatRow, roundMoney2 } from '../../constants/taxDisclosure';
 import { upsertVatPlanning, throwIfApiFailed } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { vatKeys } from '../../services/queryKeys';
+import type {
+  HajriTaxCompanyRef,
+  HajriTaxLanguage,
+  HajriTaxQuarter,
+  HajriTaxTranslate,
+} from '../../types/api/domains/hajriTax';
 
 /** رؤوس القالب — المفتاح ثابت للقراءة من الملف المُصدَّر من نفس القالب */
 export const HAJRI_BULK_TEMPLATE_COLUMNS = [
@@ -26,42 +32,66 @@ export const HAJRI_BULK_TEMPLATE_COLUMNS = [
   { key: 'balance_carried', label: 'balance_carried' },
   { key: 'payment_target', label: 'payment_target' },
   { key: 'notes', label: 'notes' },
-];
+] as const;
 
-function parseQuarter(val: any) {
-  if (val === '' || val === null || val === undefined) return NaN;
+type BulkImportRow = Record<string, unknown>;
+
+type BulkFlatRowValues = {
+  sales_amount: number;
+  sales_vat: number;
+  purchases_amount: number;
+  purchases_vat: number;
+  sales_adj: number;
+  purchases_adj: number;
+  prior_adjustments: number;
+  balance_carried: number;
+};
+
+type HajriTaxBulkImportModalProps = {
+  open: boolean;
+  onClose: () => void;
+  companies: HajriTaxCompanyRef[];
+  lang: HajriTaxLanguage;
+  t: HajriTaxTranslate;
+  onImported: () => void;
+};
+
+function parseQuarter(val: unknown): HajriTaxQuarter | null {
+  if (val === '' || val === null || val === undefined) return null;
   const n = Number(val);
-  if ([1, 2, 3, 4].includes(n)) return n;
+  if (n === 1 || n === 2 || n === 3 || n === 4) return n;
   const s = String(val).trim().toUpperCase();
   const m = /^Q\s*([1-4])$/.exec(s);
-  return m ? Number(m[1]) : NaN;
+  if (!m) return null;
+  const parsed = Number(m[1]);
+  return parsed === 1 || parsed === 2 || parsed === 3 || parsed === 4 ? parsed : null;
 }
 
-function num(row: any, key: any) {
+function num(row: BulkImportRow, key: keyof BulkFlatRowValues) {
   const v = row[key];
   if (v === '' || v === null || v === undefined) return 0;
   const x = parseFloat(String(v).replace(/,/g, '').trim());
   return Number.isFinite(x) ? x : 0;
 }
 
-function resolveCompanyId(companies: any, row: any) {
+function resolveCompanyId(companies: HajriTaxCompanyRef[], row: BulkImportRow) {
   const cid = String(row.company_id ?? row.companyId ?? '').trim();
-  if (cid && companies.some((c: any) => c.id === cid)) return cid;
+  if (cid && companies.some((c) => c.id === cid)) return cid;
 
   const nameHint = String(row.company_name_ar ?? '').trim();
   if (!nameHint) return null;
+  const normalizedHint = nameHint.toLowerCase();
 
   return (
-    companies.find((c: any) => {
+    companies.find((c) => {
       const ar = (c.nameAr || '').trim();
       const en = (c.nameEn || '').trim().toLowerCase();
-      const h = nameHint.toLowerCase();
-      return ar === nameHint || ar.includes(nameHint) || en.includes(h);
+      return ar === nameHint || en === normalizedHint;
     })?.id ?? null
   );
 }
 
-function rowToVals(row: any) {
+function rowToVals(row: BulkImportRow): BulkFlatRowValues {
   return {
     sales_amount: num(row, 'sales_amount'),
     sales_vat: num(row, 'sales_vat'),
@@ -74,11 +104,11 @@ function rowToVals(row: any) {
   };
 }
 
-export default function HajriTaxBulkImportModal({ open, onClose, companies, lang, t, onImported }: any) {
+export default function HajriTaxBulkImportModal({ open, onClose, companies, lang, t, onImported }: HajriTaxBulkImportModalProps) {
   const qc = useQueryClient();
   const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
-  const fileRef = React.useRef<any>(null);
+  const fileRef = React.useRef<HTMLInputElement | null>(null);
 
   const downloadTemplate = useCallback(async () => {
     const y = new Date().getFullYear();
@@ -110,14 +140,14 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
   }, [lang, t]);
 
   const processFile = useCallback(
-    async (file: any) => {
+    async (file: File | undefined) => {
       if (!file) return;
       setBusy(true);
-      const errors = [];
+      const errors: string[] = [];
       let ok = 0;
 
       try {
-        const rows = await importFromExcel(file, { headerRow: 0 });
+        const rows = (await importFromExcel(file, { headerRow: 0 })) as BulkImportRow[];
         if (!rows?.length) {
           showToast(t('hajriTaxBulkImportEmpty'), 'error');
           return;
@@ -135,7 +165,7 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
             num(row, 'purchases_amount') ||
             num(row, 'purchases_vat');
 
-          if (!companyId || !Number.isFinite(year) || year < 2000 || !Number.isFinite(quarter)) {
+          if (!companyId || !Number.isFinite(year) || year < 2000 || quarter == null) {
             if (hasDigits || String(row.company_name_ar || '').trim()) {
               errors.push(`${t('hajriTaxBulkImportRow')} ${i + 2}: ${t('hajriTaxBulkImportSkipBadMeta')}`);
             }
@@ -163,8 +193,9 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
           try {
             throwIfApiFailed(res, 'upsert');
             ok += 1;
-          } catch (e: any) {
-            errors.push(`${t('hajriTaxBulkImportRow')} ${i + 2}: ${e?.message || 'error'}`);
+          } catch (e) {
+            const message = e instanceof Error ? e.message : 'error';
+            errors.push(`${t('hajriTaxBulkImportRow')} ${i + 2}: ${message}`);
           }
         }
 
@@ -173,7 +204,7 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
 
         if (ok > 0) {
           showToast(
-            t('hajriTaxBulkImportDone', { ok, errors: String(errors.length) }),
+            t('hajriTaxBulkImportDone', { ok: String(ok), errors: String(errors.length) }),
             'success',
           );
         }
@@ -201,14 +232,12 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
       size="lg"
       footer={
         <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            {t('cancel')}
-          </Button>
+          <DialogActions size="sm" actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose }]} />
           <FileTrigger
             ref={fileRef}
             label={t('hajriTaxBulkImportChooseFile')}
             accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            onChange={(e: any) => {
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const f = e.target.files?.[0];
               void processFile(f);
             }}

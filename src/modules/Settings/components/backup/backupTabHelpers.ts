@@ -1,10 +1,8 @@
-/**
- * دوال مساعدة لشاشة النسخ الاحتياطي — بدون React
- */
 import { formatSaudiDate, formatSaudiDateTime } from '../../../../utils/saudiDate';
+import type { BackupCounts, BackupJobLite, BackupJobScope, BackupJobStatus, TranslationFn } from '../../settingsTypes';
 
-export function formatBackupDate(iso: any) {
-  if (!iso) return '—';
+export function formatBackupDate(iso: string | Date | null | undefined) {
+  if (!iso) return '-';
   try {
     return formatSaudiDateTime(iso);
   } catch {
@@ -12,67 +10,66 @@ export function formatBackupDate(iso: any) {
   }
 }
 
-export function formatFileSize(bytes: any) {
-  const n = Number(bytes);
-  if (!Number.isFinite(n) || n < 0) return '';
-  if (n < 1024) return `${Math.round(n)} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB`;
-  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(n / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+export function formatFileSize(bytes: number | string | null | undefined) {
+  const value = Number(bytes);
+  if (!Number.isFinite(value) || value < 0) return '';
+  if (value < 1024) return `${Math.round(value)} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(value < 10240 ? 1 : 0)} KB`;
+  if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-/** اسم افتراضي للاستيراد: شركة — تاريخ النسخة — #رقم */
-export function defaultImportCompanyName(j: any, t: any, _lang: any) {
-  const co = j.company?.nameAr || t('backupImportDefaultCo');
-  const raw = j.completedAt || j.createdAt;
-  let dateStr = '—';
-  if (raw) {
+export function defaultImportCompanyName(job: BackupJobLite, t: TranslationFn, _lang?: string) {
+  const companyName = job.company?.nameAr || t('backupImportDefaultCo');
+  const rawDate = job.completedAt || job.createdAt;
+  let dateText = '-';
+  if (rawDate) {
     try {
-      dateStr = formatSaudiDate(raw);
+      dateText = formatSaudiDate(rawDate);
     } catch {
-      dateStr = String(raw);
+      dateText = String(rawDate);
     }
   }
-  const ord = j.ordinal != null ? ` — #${j.ordinal}` : '';
-  return `${co} — ${dateStr}${ord}`;
+  const ordinal = job.ordinal != null ? ` - #${job.ordinal}` : '';
+  return `${companyName} - ${dateText}${ordinal}`;
 }
 
-export function statLabel(t: any, key: any) {
-  const k = `backupStat_${key}`;
-  const txt = t(k);
-  return txt === k ? key : txt;
+export function statLabel(t: TranslationFn, key: string) {
+  const translationKey = `backupStat_${key}`;
+  const text = t(translationKey);
+  return text === translationKey ? key : text;
 }
 
-export function sortedCountEntries(counts: any) {
+export function sortedCountEntries(counts: BackupCounts | null | undefined) {
   if (!counts || typeof counts !== 'object') return [];
-  return Object.entries(counts).sort(([a]: any, [b]: any) => a.localeCompare(b));
+  return Object.entries(counts).sort(([left], [right]) => left.localeCompare(right));
 }
 
-export function scopeLabel(scope: any, t: any) {
+export function scopeLabel(scope: BackupJobScope | null | undefined, t: TranslationFn) {
   if (scope === 'company_logical') return t('backupScopeCompany');
   if (scope === 'database_full') return t('backupScopeFullDb');
   if (scope === 'system_full') return t('backupScopeSystemFull');
-  return scope;
+  return scope || '-';
 }
 
-export function statusLabel(s: any, t: any) {
-  const m = {
+export function statusLabel(status: BackupJobStatus | null | undefined, t: TranslationFn) {
+  const labels: Record<string, string> = {
     pending: t('backupStatusPending'),
     running: t('backupStatusRunning'),
     completed: t('backupStatusCompleted'),
     failed: t('backupStatusFailed'),
     skipped_duplicate: t('backupStatusSkippedDup'),
   };
-  return (m as Record<string, string>)[String(s)] || s;
+  return labels[String(status)] || status || '-';
 }
 
-export function statusBadgeColor(status: any) {
-  const m = {
+export function statusBadgeColor(status: BackupJobStatus | null | undefined) {
+  const colors: Record<string, string> = {
     completed: 'green',
     running: 'blue',
     pending: 'sky',
     failed: 'red',
     skipped_duplicate: 'gray',
   };
-  return (m as Record<string, string>)[String(status)] || 'gray';
+  return colors[String(status)] || 'gray';
 }

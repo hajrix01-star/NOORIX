@@ -11,6 +11,7 @@ import { HrQuickEntrySheet } from '../HR/components/HrQuickEntrySheet';
 import { StaffFormModal } from '../HR/components/StaffFormModal';
 import { useEmployees } from '../../hooks/useEmployees';
 import ExpenseLineFormModal from '../Expenses/components/ExpenseLineFormModal';
+import type { ExpenseLineRecord } from '../../types/api';
 import ExpenseFormModal from '../Expenses/components/ExpenseFormModal';
 import './SmartChatScreen.css';
 import { AdaptiveSheet, useAdaptiveSheetNarrow } from '../../ui';
@@ -29,7 +30,7 @@ import { SmartChatMobileToolsBody } from './components/SmartChatMobileTools';
 import { SmartChatFaqList } from './components/SmartChatFaqList';
 import { SmartChatMobileStickyHeader } from './components/SmartChatMobileStickyHeader';
 import { SmartChatCommandsPanel } from './components/SmartChatCommandsPanel';
-import { SmartChatExpenseLinePickSheet, type ExpenseLineRow } from './components/SmartChatExpenseLinePickSheet';
+import { SmartChatExpenseLinePickSheet } from './components/SmartChatExpenseLinePickSheet';
 import { SmartChatWelcome } from './components/SmartChatWelcome';
 import { SmartChatTypingIndicator } from './components/SmartChatTypingIndicator';
 import { SmartChatReplyChips } from './components/SmartChatReplyChips';
@@ -52,7 +53,7 @@ export default function SmartChatScreen() {
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
   const [expenseMode, setExpenseMode] = useState<ExpenseMode>(null);
-  const [expenseEditLine, setExpenseEditLine] = useState<unknown>(null);
+  const [expenseEditLine, setExpenseEditLine] = useState<ExpenseLineRecord | null | undefined>(null);
 
   const can = useMemo(
     () => (p: string) => hasPermission(u?.role, p, u?.permissions || []),
@@ -124,9 +125,9 @@ export default function SmartChatScreen() {
   // chips متابعة سياقية بعد الرد (تُحسب من آخر سؤال)
   const replyChips = useMemo(() => {
     if (!activeCompanyId) return [];
-    const lastUser = [...displayedMessages].reverse().find((m) => m.role === 'user') as any;
+    const lastUser = [...displayedMessages].reverse().find((message) => message.role === 'user');
     if (!lastUser) return [];
-    const q: string = (lastUser.text || '').toLowerCase();
+    const q = lastUser.text.toLowerCase();
     if (q.includes('مبيعات اليوم') || q.includes('today')) {
       return [
         { label: isAr ? 'أمس' : 'Yesterday', text: isAr ? 'كم مبيعات أمس؟' : 'What are yesterday\'s sales?' },
@@ -156,8 +157,6 @@ export default function SmartChatScreen() {
     setExpenseMode,
     setExpenseEditLine,
   });
-
-  const expenseLinesRows = expenseLines as ExpenseLineRow[];
 
   return (
     <div className="noorix-smart-chat-root">
@@ -293,7 +292,7 @@ export default function SmartChatScreen() {
           title={t('chatEditFixedExpense')}
           isAr={isAr}
           narrow={narrow}
-          expenseLines={expenseLinesRows}
+          expenseLines={expenseLines}
           onClose={() => setExpenseMode(null)}
           onPickLine={(line) => setExpenseEditLine(line)}
         />

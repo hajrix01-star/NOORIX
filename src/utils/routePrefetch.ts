@@ -26,26 +26,29 @@ const routeLoaders = {
   '/reports/bank-statement': () => import('../modules/Reports/BankStatementAnalysisScreen'),
   '/hajri-tax': () => import('../modules/HajriTax/HajriTaxLayout'),
   '/settings': () => import('../modules/Settings/SettingsScreen'),
-  '/theme-preview': () => import('../modules/ThemePreviewScreen'),
+  '/theme-preview': () => import('../modules/themePreview/ThemePreviewScreen'),
 };
 
 /** يمنع استدعاءات متكررة لنفس المسار أثناء التحميل */
-const inflight = new Map();
+type RoutePath = keyof typeof routeLoaders;
+
+const inflight = new Map<RoutePath, Promise<unknown>>();
 
 /**
  * @param {string} to - قيمة `to` في NavLink (مثل '/sales' أو '/')
  */
-export function prefetchRouteChunk(to: any) {
-  const loader = (routeLoaders as Record<string, () => Promise<unknown>>)[String(to)];
+export function prefetchRouteChunk(to: string) {
+  const routePath = String(to) as RoutePath;
+  const loader = routeLoaders[routePath];
   if (!loader || typeof window === 'undefined') return;
-  if (inflight.has(to)) return inflight.get(to);
+  if (inflight.has(routePath)) return inflight.get(routePath);
   const promise = loader()
     .catch(() => {
       /* فشل الشبكة — يُعاد المحاولة عند التنقل الفعلي */
     })
     .finally(() => {
-      inflight.delete(to);
+      inflight.delete(routePath);
     });
-  inflight.set(to, promise);
+  inflight.set(routePath, promise);
   return promise;
 }

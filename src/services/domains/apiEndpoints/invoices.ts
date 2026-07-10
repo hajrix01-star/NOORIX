@@ -11,8 +11,41 @@ import {
   throwIfApiFailed,
 } from '../../core/apiHttp';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
+import { buildInvoiceListApiQuery } from './invoice-list-query';
+import {
+  normalizeInvoiceListResponse,
+  type InvoiceListResponse,
+} from './invoice-list-response';
+import {
+  normalizeDayCloseReportData,
+  type DayCloseReportData,
+} from '../../../modules/Invoices/dayCloseReportModel';
 
 type JsonRecord = Record<string, unknown>;
+
+type InvoiceMutationResult = {
+  id?: string;
+  invoiceNumber?: string | null;
+  invoice?: {
+    id?: string;
+    invoiceNumber?: string | null;
+  };
+  [key: string]: unknown;
+};
+
+function readJsonRecord(value: unknown): JsonRecord {
+  return value && typeof value === 'object' ? (value as JsonRecord) : {};
+}
+
+function unwrapApiEnvelope(value: unknown) {
+  const record = readJsonRecord(value);
+  return 'data' in record ? record.data : value;
+}
+
+function readUnknownArrayField(value: unknown, key: string) {
+  const field = readJsonRecord(value)[key];
+  return Array.isArray(field) ? field : [];
+}
 
 export type CreateAdvanceParams = {
   employeeId: string;
@@ -23,7 +56,7 @@ export type CreateAdvanceParams = {
   notes?: string;
   employeeName?: string;
   installmentCount?: number;
-  installmentAmount?: number;
+  installmentAmount?: number | null;
 };
 
 export type FetchAllInvoicesForExportOpts = {
@@ -46,7 +79,7 @@ export type FetchAllInvoicesForExportOpts = {
 };
 
 // ——— الفواتير ———
-export async function createInvoice(body: unknown): Promise<ApiParsedResult> {
+export async function createInvoice(body: unknown): Promise<ApiParsedResult<InvoiceMutationResult>> {
   return apiPost('/api/v1/invoices', body);
 }
 export async function createInvoiceBatch(body: unknown): Promise<ApiParsedResult<CreateInvoiceBatchResult>> {
@@ -64,7 +97,7 @@ export async function createAdvance({
   employeeName,
   installmentCount,
   installmentAmount,
-}: CreateAdvanceParams): Promise<ApiParsedResult> {
+}: CreateAdvanceParams): Promise<ApiParsedResult<InvoiceMutationResult>> {
   const date = transactionDate || getSaudiToday();
   const autoNote = employeeName ? `سلفة — ${employeeName}` : 'سلفة';
   const payload: Record<string, unknown> = {
@@ -89,10 +122,10 @@ export async function updateInvoice(
   id: string,
   body: unknown,
   companyId: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<InvoiceMutationResult>> {
   return apiPatch(`/api/v1/invoices/${id}?companyId=${companyId}`, body);
 }
-export async function deleteInvoice(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function deleteInvoice(id: string, companyId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
   return apiDelete(`/api/v1/invoices/${id}?companyId=${companyId}`);
 }
 
@@ -101,7 +134,7 @@ export async function uploadInvoiceAttachment(
   invoiceId: string,
   companyId: string,
   file: File | null | undefined,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<InvoiceMutationResult>> {
   if (!file) return { success: false, error: 'لم يُختر ملف' };
   const url = new URL(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment`, getApiBaseUrl());
   url.searchParams.set('companyId', companyId);
@@ -123,7 +156,7 @@ export async function uploadInvoiceAttachment(
 export async function deleteInvoiceAttachment(
   invoiceId: string,
   companyId: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<{ success?: boolean }>> {
   const q = encodeURIComponent(companyId);
   return apiDelete(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment?companyId=${q}`);
 }
@@ -140,7 +173,7 @@ export async function downloadInvoiceAttachment(invoiceId: string, companyId: st
   try {
     const res = await safeFetch(url.toString(), { method: 'GET', headers: h });
     if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as JsonRecord;
+      const data = readJsonRecord(await res.json().catch(() => ({})));
       throw new Error(String(data?.message ?? res.statusText ?? 'فشل التحميل'));
     }
     const blob = await res.blob();
@@ -171,8 +204,8 @@ export async function getInvoices(
   companyId: string,
   startDate?: string,
   endDate?: string,
-  page: any = 1,
-  pageSize: any = 50,
+  page: number | string = 1,
+  pageSize: number | string = 50,
   batchId?: string | null,
   employeeId?: string | null,
   kind?: string,
@@ -183,86 +216,60 @@ export async function getInvoices(
   q?: string,
   categoryId?: string,
   expenseLineId?: string,
-  includeCancelled: any = true,
+  includeCancelled: boolean | string | number = true,
   hasNotes?: boolean,
   vaultId?: string,
   createdByUserId?: string,
   requireExpenseLine?: string | boolean,
-): Promise<ApiParsedResult> {
-  const params: Record<string, string> = {
-    companyId: String(companyId),
-    page: String(page),
-    pageSize: String(pageSize),
-  };
+): Promise<ApiParsedResult<InvoiceListResponse>> {
+  const params = buildInvoiceListApiQuery({
+    companyId,
+    startDate,
+    endDate,
+    page,
+    pageSize,
+    batchId,
+    employeeId,
+    kind,
+    sortBy,
+    sortDir,
+    supplierId,
+    supplierCategoryId,
+    q,
+    categoryId,
+    expenseLineId,
+    includeCancelled,
+    hasNotes,
+    vaultId,
+    createdByUserId,
+    requireExpenseLine,
+  });
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
-  if (startDate) params.startDate = toYmd(startDate);
-  if (endDate) params.endDate = toYmd(endDate);
-  if (batchId) params.batchId = batchId;
-  if (employeeId) params.employeeId = employeeId;
-  if (kind) params.kind = kind;
-  if (sortBy) params.sortBy = sortBy;
-  if (sortDir) params.sortDir = sortDir;
-  if (supplierId) params.supplierId = supplierId;
-  if (supplierCategoryId) params.supplierCategoryId = supplierCategoryId;
-  if (categoryId) params.categoryId = categoryId;
-  if (expenseLineId) params.expenseLineId = expenseLineId;
-  if (vaultId) params.vaultId = vaultId;
-  if (createdByUserId) params.createdByUserId = createdByUserId;
-  if (requireExpenseLine) params.requireExpenseLine = 'true';
-  params.includeCancelled = includeCancelled ? 'true' : 'false';
-  if (q && String(q).trim()) params.q = String(q).trim();
-  if (hasNotes === true) params.hasNotes = 'true';
-  const res = await apiGet('/api/v1/invoices', params);
-  if (!res.success) return res;
-  const data = (res.data as { data?: unknown } | undefined)?.data ?? res.data;
-  const d = data as {
-    items?: unknown;
-    total?: number;
-    page?: number;
-    pageSize?: number;
-    sums?: unknown;
-    sumsByKind?: unknown;
-    inflowByVault?: unknown;
-    outflowSummary?: unknown;
-  };
+  const res = await apiGet<InvoiceListResponse>('/api/v1/invoices', params);
+  if (!res.success) return { success: false, error: res.error };
   return {
     success: true,
-    data: {
-      items: d?.items ?? data ?? [],
-      total: d?.total ?? 0,
-      page: d?.page ?? page,
-      pageSize: d?.pageSize ?? pageSize,
-      sums: d?.sums,
-      sumsByKind: Array.isArray(d?.sumsByKind) ? d.sumsByKind : [],
-      inflowByVault: Array.isArray(d?.inflowByVault) ? d.inflowByVault : [],
-      outflowSummary: d?.outflowSummary ?? {
-        purchasesTotal: '0',
-        expensesTotal: '0',
-        taxTotal: '0',
-      },
-    },
+    data: normalizeInvoiceListResponse(res.data, { page, pageSize }),
   };
 }
 
-export async function getInvoiceDayCloseReport(companyId: string, date: unknown): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/invoices/day-close-report', {
+export async function getInvoiceDayCloseReport(companyId: string, date: unknown): Promise<ApiParsedResult<DayCloseReportData>> {
+  const res = await apiGet<DayCloseReportData | { data?: DayCloseReportData }>('/api/v1/invoices/day-close-report', {
     companyId,
     date: toYmd(date),
   });
-  if (!res.success) return res;
-  const data = (res.data as { data?: unknown } | undefined)?.data ?? res.data;
-  return { success: true, data };
+  if (!res.success) return { success: false, error: res.error };
+  return { success: true, data: normalizeDayCloseReportData(unwrapApiEnvelope(res.data)) };
 }
 
 /** مستخدمو النظام الذين لهم فواتير في الشركة — فلتر قائمة الفواتير */
 export async function getInvoiceCreatorFilterOptions(
   companyId: string,
 ): Promise<ApiParsedResult<{ users: unknown[] }>> {
-  const res = await apiGet('/api/v1/invoices/creator-filter-options', { companyId });
-  if (!res.success) return res;
-  const raw = (res.data as { data?: unknown; users?: unknown } | undefined)?.data ?? res.data;
-  const r = raw as { users?: unknown[] } | null;
-  return { success: true, data: { users: Array.isArray(r?.users) ? r.users : [] } };
+  const res = await apiGet<{ users?: unknown[] } | { data?: { users?: unknown[] } }>('/api/v1/invoices/creator-filter-options', { companyId });
+  if (!res.success) return { success: false, error: res.error };
+  const raw = unwrapApiEnvelope(res.data);
+  return { success: true, data: { users: readUnknownArrayField(raw, 'users') } };
 }
 
 /** جلب كل فواتير دفعة واحدة (ترقيم متتابع) — للطباعة/التعديل/الإلغاء */
@@ -292,9 +299,8 @@ export async function fetchAllInvoicesForBatch(
       'asc',
     );
     throwIfApiFailed(res, 'فشل تحميل فواتير الدفعة');
-    const pack = res.data as { items?: unknown[]; total?: number } | undefined;
-    const items = pack?.items ?? [];
-    total = Number(pack?.total) ?? all.length + items.length;
+    const items = res.data?.items ?? [];
+    total = Number(res.data?.total) || all.length + items.length;
     all.push(...items);
     if (!items.length || items.length < pageSize) break;
     page += 1;
@@ -348,8 +354,8 @@ export async function fetchAllInvoicesForExport({
       undefined,
     );
     throwIfApiFailed(res, 'فشل تحميل الفواتير للتصدير');
-    const pack = res.data as { items?: unknown[]; total?: number } | undefined;
-    const { items = [], total = 0 } = pack || {};
+    const items = res.data?.items ?? [];
+    const total = res.data?.total ?? 0;
     acc.push(...items);
     const t = Number(total) || 0;
     if (acc.length >= t || items.length < pageSize) break;

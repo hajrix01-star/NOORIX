@@ -4,6 +4,7 @@
  * Keeps "DB down" failures in Jest to a few seconds instead of ~80s+.
  */
 const path = require('path');
+require('reflect-metadata');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 function withShortConnectTimeoutForJest(databaseUrl) {

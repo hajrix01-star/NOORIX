@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import SmartTable from './SmartTable';
 import type { SmartTableColumn } from './types';
+import type { CSSProperties } from 'react';
 
 const mediaState = vi.hoisted(() => ({ isNarrow: false }));
 
@@ -22,6 +23,7 @@ vi.mock('../../hooks/useUiDir', () => ({
 }));
 
 type Row = { id: string; name: string; amount: number };
+type TestRowStyle = CSSProperties & { '--nx-test-row-tone'?: string };
 
 const columns: SmartTableColumn<Row>[] = [
   { key: 'name', label: 'Name', sortable: true },
@@ -246,16 +248,110 @@ describe('SmartTable', () => {
     expect(frame.style.getPropertyValue('--nx-smart-frame-padding')).toBe('8px');
   });
 
-  it('normalizes percentage row number widths to a readable fixed width', () => {
+  it('keeps row number widths on the unified fixed width', () => {
     const { container } = render(
-      <SmartTable columns={columns} data={rows} total={2} showRowNumbers rowNumberWidth="1%" />,
+      <SmartTable
+        columns={columns}
+        data={rows}
+        total={2}
+        showRowNumbers
+        footerRow={[{ keys: ['name', 'amount'], content: 'Total' }]}
+      />,
     );
 
     const rowNumberHeader = container.querySelector('thead th') as HTMLTableCellElement;
     const rowNumberCell = container.querySelector('tbody tr:first-child td') as HTMLTableCellElement;
+    const footerRowNumberCell = container.querySelector('tfoot td') as HTMLTableCellElement;
 
-    expect(rowNumberHeader.style.getPropertyValue('--nx-smart-row-number-width')).toBe('40px');
-    expect(rowNumberCell.style.getPropertyValue('--nx-smart-row-number-width')).toBe('40px');
+    expect(rowNumberHeader.style.getPropertyValue('--nx-smart-row-number-width')).toBe('34px');
+    expect(rowNumberCell.style.getPropertyValue('--nx-smart-row-number-width')).toBe('34px');
+    expect(footerRowNumberCell.style.getPropertyValue('--nx-smart-row-number-width')).toBe('34px');
+    expect(rowNumberHeader.style.getPropertyValue('--nx-smart-cell-height')).toBe('38px');
+    expect(rowNumberCell.style.getPropertyValue('--nx-smart-cell-height')).toBe('42px');
+    expect(footerRowNumberCell.style.getPropertyValue('--nx-smart-cell-height')).toBe('42px');
+    expect(rowNumberCell.style.getPropertyValue('--nx-smart-cell-padding')).toBe('4px 6px');
+  });
+
+  it('renders a colgroup with normalized compact column sizes', () => {
+    const { container } = render(
+      <SmartTable
+        columns={[
+          { key: 'invoiceNumber', label: 'Doc', kind: 'id' },
+          { key: 'serialNumber', label: 'Serial', kind: 'id' },
+          { key: 'serviceNumber', label: 'Code', kind: 'id' },
+          { key: 'daysToWarrantyEnd', label: 'Days', kind: 'number' },
+          { key: 'taxAmount', label: 'Tax', kind: 'money' },
+          { key: 'totalAmount', label: 'Total', kind: 'money' },
+          { key: 'actions', label: 'Actions', kind: 'actions' },
+        ]}
+        data={[{
+          id: '1',
+          invoiceNumber: 'PUR-20260708-001',
+          serialNumber: 'NO-AS-001',
+          serviceNumber: '12',
+          daysToWarrantyEnd: 30,
+          taxAmount: 15,
+          totalAmount: 115,
+        }]}
+        total={1}
+        showRowNumbers
+      />,
+    );
+
+    const cols = Array.from(container.querySelectorAll('col'));
+    expect(cols).toHaveLength(8);
+    expect(cols[1].getAttribute('data-column-size')).toBe('document');
+    expect(cols[2].getAttribute('data-column-size')).toBe('serial-code');
+    expect(cols[3].getAttribute('data-column-size')).toBe('code-sm');
+    expect(cols[4].getAttribute('data-column-size')).toBe('count');
+    expect(cols[5].getAttribute('data-column-size')).toBe('tax');
+    expect(cols[6].getAttribute('data-column-size')).toBe('money-md');
+    expect(cols[7].getAttribute('data-column-kind')).toBe('actions');
+    expect((cols[7] as HTMLElement).style.width).toBe('44px');
+    expect((container.querySelector('th[data-column-size="tax"]') as HTMLElement).style.getPropertyValue('--nx-smart-cell-width')).toBe('8ch');
+  });
+
+  it('keeps shrink fallback widths aligned across colgroup, header, and body cells', () => {
+    const { container } = render(
+      <SmartTable
+        columns={[{ key: 'notes', label: 'Notes', shrink: true }]}
+        data={[{ id: '1', notes: 'Short note' }]}
+        total={1}
+      />,
+    );
+
+    const col = container.querySelector('col[data-column-kind="text"]') as HTMLTableColElement;
+    const header = container.querySelector('th[data-column-kind="text"]') as HTMLElement;
+    const cell = container.querySelector('td[data-column-kind="text"]') as HTMLElement;
+
+    expect(col.style.width).toBe('1%');
+    expect(header.style.getPropertyValue('--nx-smart-cell-width')).toBe('1%');
+    expect(cell.style.getPropertyValue('--nx-smart-cell-width')).toBe('1%');
+  });
+
+  it('applies the central alignment policy from normalized column sizes', () => {
+    const { container } = render(
+      <SmartTable
+        columns={[
+          { key: 'nameAr', label: 'Name' },
+          { key: 'supplier', label: 'Supplier' },
+          { key: 'purchaseDate', label: 'Date' },
+          { key: 'acquisitionCost', label: 'Cost', numeric: true },
+        ]}
+        data={[{ id: '1', nameAr: 'Asset', supplier: 'Supplier', purchaseDate: '2026-07-08', acquisitionCost: 575 }]}
+        total={1}
+      />,
+    );
+
+    const cells = Array.from(container.querySelectorAll('tbody td')) as HTMLElement[];
+    expect(cells[0].getAttribute('data-column-size')).toBe('name');
+    expect(cells[0].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
+    expect(cells[1].getAttribute('data-column-size')).toBe('supplier');
+    expect(cells[1].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
+    expect(cells[2].getAttribute('data-column-size')).toBe('date');
+    expect(cells[2].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
+    expect(cells[3].getAttribute('data-column-size')).toBe('money-sm');
+    expect(cells[3].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
   });
 
   it('removes hidden columns from the rendered table layout', () => {
@@ -295,7 +391,7 @@ describe('SmartTable', () => {
         data={rows}
         total={2}
         getRowClassName={(row) => (row.id === '1' ? 'is-first-row' : undefined)}
-        getRowStyle={(row) => (row.id === '1' ? { '--nx-test-row-tone': 'gold' } as any : undefined)}
+        getRowStyle={(row): TestRowStyle | undefined => (row.id === '1' ? { '--nx-test-row-tone': 'gold' } : undefined)}
         isRowExpanded={(row) => row.id === '1'}
         renderExpandedRow={(row) => <div>Expanded {row.name}</div>}
       />,

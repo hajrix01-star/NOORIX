@@ -8,5 +8,7 @@ export const vatKeys = {
   registry: (year: string, quarter: string, companyId: string) =>
     ['vat-planning', 'registry', year, quarter, companyId] as const,
 
+  registryMetadata: () => ['vat-planning', 'registry', 'metadata'] as const,
+
   root: () => ['vat-planning'] as const,
 };

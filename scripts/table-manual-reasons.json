@@ -22,11 +22,6 @@
       "decision": "leave",
       "reason": "payroll run rows contain editable inputs and payroll calculations."
     },
-    "src/modules/HR/components/TerminationSettlementModal.tsx": {
-      "category": "payroll-protected",
-      "decision": "leave",
-      "reason": "termination settlement is financially sensitive and printable."
-    },
     "src/modules/HR/components/useAdvanceTableModel.tsx": {
       "category": "hr-financial",
       "decision": "leave",
@@ -36,16 +31,6 @@
       "category": "payroll-protected",
       "decision": "leave",
       "reason": "end-of-service calculation output; financial HR protected scope."
-    },
-    "src/modules/HR/tabs/PayrollTab.tsx": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "payroll print/export HTML string."
-    },
-    "src/modules/HR/tabs/SalaryCalcTab.tsx": {
-      "category": "payroll-protected",
-      "decision": "leave",
-      "reason": "salary calculation tables are HR financial outputs."
     },
     "src/modules/HR/tabs/hrPrintDocumentsTabPrintHtml.ts": {
       "category": "document-print",
@@ -61,11 +46,6 @@
       "category": "tax-protected",
       "decision": "leave",
       "reason": "tax registry wide table; protected tax scope."
-    },
-    "src/modules/HajriTax/useHajriTaxScreen.ts": {
-      "category": "tax-print",
-      "decision": "leave",
-      "reason": "VAT print/export HTML strings; protected tax scope."
     },
     "src/modules/Invoices/components/DayCloseReportBody.tsx": {
       "category": "print-financial",
@@ -102,11 +82,6 @@
       "decision": "leave",
       "reason": "purchase batch editing table; protected purchases scope."
     },
-    "src/modules/Purchases/components/BatchPrintSheet.tsx": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "purchase batch print sheet; protected financial print layout."
-    },
     "src/modules/Reports/BankStatementMappingModal.tsx": {
       "category": "bank-protected",
       "decision": "leave",
@@ -125,47 +100,17 @@
     "src/modules/Reports/GeneralReportV2Screen.tsx": {
       "category": "financial-report",
       "decision": "leave",
-      "reason": "general report v2 contains financial hierarchy and print/export HTML."
-    },
-    "src/modules/Reports/ReportsDetailModal.tsx": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "report detail print/financial table output."
-    },
-    "src/modules/Reports/ReportsScreen.tsx": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "report print/export HTML string."
+      "reason": "general report v2 contains the live financial hierarchy matrix; printable HTML moved to generalReportV2Model."
     },
     "src/modules/Reports/TaxReportTab.tsx": {
       "category": "tax-protected",
       "decision": "leave",
-      "reason": "tax report financial table and print HTML; protected tax scope."
-    },
-    "src/modules/Reports/bank/bankStatementExportPrint.ts": {
-      "category": "bank-print",
-      "decision": "leave",
-      "reason": "bank statement print/export HTML generator."
+      "reason": "tax report financial table; print HTML is extracted to taxReportTabModel."
     },
     "src/modules/Reports/costAccountingApps/CostAccountingAppsResultPanels.tsx": {
       "category": "financial-report",
       "decision": "leave",
       "reason": "cost accounting result table; protected financial analysis scope."
-    },
-    "src/modules/Reports/costAccountingApps/costAccountingAppsScreenActions.ts": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "cost accounting print/export HTML strings."
-    },
-    "src/modules/Reports/reportsPlMonthPrint.ts": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "P&L month print HTML generator."
-    },
-    "src/modules/Treasury/components/VaultTransactionsModal.tsx": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "vault transactions print/export HTML string."
     }
   }
 }

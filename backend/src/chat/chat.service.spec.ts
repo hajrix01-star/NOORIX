@@ -1,9 +1,16 @@
 import { ChatService } from './chat.service';
+import Decimal from 'decimal.js';
 import { INSIGHTS_SCHEMA_VERSION } from '../reporting/insights/insights.types';
 import type { DashboardInsightsPayload } from '../reporting/insights/insights.types';
 import { EXTENDED_REPORTING_INSIGHTS_SCHEMA_VERSION } from '../reporting/insights/reporting-insights-aggregator.types';
 import type { ExtendedReportingInsightsPayload } from '../reporting/insights/reporting-insights-aggregator.types';
 import { buildDashboardInsightsDateRangeForMonth } from './handlers/dashboard-insights.handler';
+
+type ChatServiceDeps = ConstructorParameters<typeof ChatService>;
+
+function mockDependency<T extends object>(value: object): T {
+  return value as T;
+}
 
 function mkRatios(overrides: Partial<DashboardInsightsPayload['ratios']> = {}): DashboardInsightsPayload['ratios'] {
   return {
@@ -137,15 +144,24 @@ describe('ChatService intent routing', () => {
       parseIntent: geminiOverrides.parseIntent ?? jest.fn().mockResolvedValue(null),
       explainDashboardInsights: jest.fn(),
     };
+    const chatFinancialMetrics = {
+      sumRevenue: jest.fn().mockResolvedValue(new Decimal(10_000)),
+      sumPurchases: jest.fn().mockResolvedValue(new Decimal(2_000)),
+      sumOperatingExpenses: jest.fn().mockResolvedValue(new Decimal(1_000)),
+      annualSales: jest.fn().mockResolvedValue(new Decimal(1)),
+      annualPurchases: jest.fn().mockResolvedValue(new Decimal(2)),
+      annualExpenses: jest.fn().mockResolvedValue(new Decimal(3)),
+    };
     const chat = new ChatService(
-      prisma as any,
-      reports as any,
-      vaults as any,
-      dashboard as any,
-      reportingInsightsAggregator as any,
-      gemini as any,
+      mockDependency<ChatServiceDeps[0]>(prisma),
+      mockDependency<ChatServiceDeps[1]>(reports),
+      mockDependency<ChatServiceDeps[2]>(vaults),
+      mockDependency<ChatServiceDeps[3]>(dashboard),
+      mockDependency<ChatServiceDeps[4]>(reportingInsightsAggregator),
+      mockDependency<ChatServiceDeps[5]>(gemini),
+      mockDependency<ChatServiceDeps[6]>(chatFinancialMetrics),
     );
-    return { chat, prisma, reports, dashboard, reportingInsightsAggregator, gemini };
+    return { chat, prisma, reports, dashboard, reportingInsightsAggregator, gemini, chatFinancialMetrics };
   }
 
   it('routes كيف وضع الشهر؟ to dashboard insights when Gemini returns dashboard_insights', async () => {
@@ -297,12 +313,20 @@ describe('ChatService intent routing', () => {
       explainDashboardInsights: jest.fn(),
     };
     const chat = new ChatService(
-      prisma as any,
-      reports as any,
-      {} as any,
-      dashboard as any,
-      reportingInsightsAggregator as any,
-      gemini as any,
+      mockDependency<ChatServiceDeps[0]>(prisma),
+      mockDependency<ChatServiceDeps[1]>(reports),
+      mockDependency<ChatServiceDeps[2]>({}),
+      mockDependency<ChatServiceDeps[3]>(dashboard),
+      mockDependency<ChatServiceDeps[4]>(reportingInsightsAggregator),
+      mockDependency<ChatServiceDeps[5]>(gemini),
+      mockDependency<ChatServiceDeps[6]>({
+        sumRevenue: jest.fn().mockResolvedValue(new Decimal(10_000)),
+        sumPurchases: jest.fn().mockResolvedValue(new Decimal(2_000)),
+        sumOperatingExpenses: jest.fn().mockResolvedValue(new Decimal(1_000)),
+        annualSales: jest.fn().mockResolvedValue(new Decimal(1)),
+        annualPurchases: jest.fn().mockResolvedValue(new Decimal(2)),
+        annualExpenses: jest.fn().mockResolvedValue(new Decimal(3)),
+      }),
     );
     const res = await chat.processQuery(companyId, 'حلل المشتريات', 'owner', undefined);
     expect(reportingInsightsAggregator.getExtendedInsights).toHaveBeenCalled();
@@ -345,12 +369,20 @@ describe('ChatService intent routing', () => {
       explainDashboardInsights: jest.fn(),
     };
     const chat = new ChatService(
-      prisma as any,
-      reports as any,
-      {} as any,
-      dashboard as any,
-      reportingInsightsAggregator as any,
-      gemini as any,
+      mockDependency<ChatServiceDeps[0]>(prisma),
+      mockDependency<ChatServiceDeps[1]>(reports),
+      mockDependency<ChatServiceDeps[2]>({}),
+      mockDependency<ChatServiceDeps[3]>(dashboard),
+      mockDependency<ChatServiceDeps[4]>(reportingInsightsAggregator),
+      mockDependency<ChatServiceDeps[5]>(gemini),
+      mockDependency<ChatServiceDeps[6]>({
+        sumRevenue: jest.fn().mockResolvedValue(new Decimal(10_000)),
+        sumPurchases: jest.fn().mockResolvedValue(new Decimal(2_000)),
+        sumOperatingExpenses: jest.fn().mockResolvedValue(new Decimal(1_000)),
+        annualSales: jest.fn().mockResolvedValue(new Decimal(1)),
+        annualPurchases: jest.fn().mockResolvedValue(new Decimal(2)),
+        annualExpenses: jest.fn().mockResolvedValue(new Decimal(3)),
+      }),
     );
     const res = await chat.processQuery(companyId, 'حلل المصاريف', 'owner', undefined);
     expect(res.meta?.intent).toBe('dashboard_insights');

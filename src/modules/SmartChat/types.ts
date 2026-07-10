@@ -3,6 +3,7 @@
  */
 
 import type { ReactNode } from 'react';
+import type { ChatResponseExtras } from '../../types/api';
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -16,14 +17,7 @@ export type ChatUserMessage = ChatMessageBase & {
 };
 
 /** حمولة اختيارية من الخادم (مخططات وغيرها) — نفس شكل `chatQuery` */
-export type ChatAnswerExtras = {
-  chart?: {
-    kind: 'monthCompare' | 'financeRatios' | string;
-    bars?: Array<{ key: string; labelAr?: string; labelEn?: string; value: unknown }>;
-    segments?: Array<{ key: string; pct: unknown }>;
-  };
-  [key: string]: unknown;
-};
+export type ChatAnswerExtras = ChatResponseExtras;
 
 export type ChatAssistantMessage = ChatMessageBase & {
   role: 'assistant';

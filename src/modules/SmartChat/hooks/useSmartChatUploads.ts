@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getEmployees, getExpenseLines, getVaults, unwrapApiList } from '../../../services/api';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys, expenseKeys, vaultKeys } from '../../../services/queryKeys';
+import type { ExpenseLineRecord } from '../../../types/api';
 import type { ExpenseMode } from '../types';
 
 /**
@@ -32,7 +33,7 @@ export function useSmartChatUploads(
     });
   }, [activeCompanyId, qc]);
 
-  const { data: expenseLines = [] } = useApiListQuery<any>({
+  const { data: expenseLines = [] } = useApiListQuery<ExpenseLineRecord>({
     queryKey: expenseKeys.lines(activeCompanyId || ''),
     queryFn: () => getExpenseLines(activeCompanyId || ''),
     fallbackMessage: 'فشل تحميل بنود المصاريف',

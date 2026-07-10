@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../../../../ui';
 import { BankCategoryCardRow } from '../BankCategoryCardRow';
+import type { BankClassificationRule, BankTreeCategory, BankTreeCategoryPatch } from '../bankCategoryTree.types';
 
 type MutFn<T> = { isPending: boolean; mutate: (variables: T) => void };
 
@@ -25,21 +26,21 @@ export function BankCategoryTreePanelContent({
 }: {
   t: (k: string, ...args: string[]) => string;
   isLoading: boolean;
-  sortedCategories: Array<Record<string, unknown>>;
-  inactiveCategories: Array<Record<string, unknown>>;
+  sortedCategories: BankTreeCategory[];
+  inactiveCategories: BankTreeCategory[];
   totalKeywords: number;
   totalClassifications: number;
   openNew: () => void;
   seedDefaultsMut: MutFn<undefined>;
-  activeFlat: unknown[];
-  categories: unknown[];
+  activeFlat: BankClassificationRule[];
+  categories: BankTreeCategory[];
   setShowMigrate: (v: boolean) => void;
   handleExportRules: () => void;
   exportBusy: boolean;
   openImportModal: () => void;
   deleteMut: MutFn<string>;
-  updateMut: MutFn<{ id: string; patch: Record<string, unknown> }>;
-  openEdit: (cat: Record<string, unknown>) => void;
+  updateMut: MutFn<{ id: string; patch: BankTreeCategoryPatch }>;
+  openEdit: (cat: BankTreeCategory) => void;
 }) {
   return (
     <>
@@ -101,7 +102,7 @@ export function BankCategoryTreePanelContent({
       ) : null}
 
       <div className="grid gap-2.5">
-        {sortedCategories.map((cat: Record<string, unknown>, idx: number) => (
+        {sortedCategories.map((cat, idx) => (
           <BankCategoryCardRow
             key={String(cat.id)}
             category={cat}
@@ -127,7 +128,7 @@ export function BankCategoryTreePanelContent({
             {t('bankTreeInactiveSection', String(inactiveCategories.length))}
           </h4>
           <div className="grid gap-2.5 mt-2.5">
-            {inactiveCategories.map((cat: Record<string, unknown>) => (
+            {inactiveCategories.map((cat) => (
               <BankCategoryCardRow
                 key={String(cat.id)}
                 category={cat}

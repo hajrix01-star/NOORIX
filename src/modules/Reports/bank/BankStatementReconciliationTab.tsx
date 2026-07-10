@@ -5,8 +5,15 @@ import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { FmtNum } from '../../../ui';
+import type { BankBalanceVerification, BankReconciliationStats } from './bankAnalysisTab.types';
 
-export default function BankStatementReconciliationTab({ balanceVerification, reconciliationStats, reconLoading }: any) {
+type BankStatementReconciliationTabProps = {
+  balanceVerification: BankBalanceVerification | null | undefined;
+  reconciliationStats: BankReconciliationStats | null | undefined;
+  reconLoading: boolean;
+};
+
+export default function BankStatementReconciliationTab({ balanceVerification, reconciliationStats, reconLoading }: BankStatementReconciliationTabProps) {
   const { t } = useTranslation();
   if (!balanceVerification) {
     return (
@@ -67,7 +74,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
         </p>
         {!okSeq && balanceVerification.balanceErrors?.length ? (
           <ul className="text-[12px] mt-2">
-            {balanceVerification.balanceErrors.map((e: any, i: any) => (
+            {balanceVerification.balanceErrors.map((e, i) => (
               <li key={i}>
                 {e.date}: {t('bankReconExpected')} <FmtNum n={e.expected} /> / {t('bankReconActual')} <FmtNum n={e.actual} />
               </li>

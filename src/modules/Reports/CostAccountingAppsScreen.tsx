@@ -1,9 +1,10 @@
 /**
  * حاسبة تكاليف / تطبيقات — معزولة عن دفتر الحسابات؛ استيراد مبيعات من الملخصات اليومية فقط.
  */
+import type { ChangeEvent } from 'react';
 import { fmt } from '../../utils/format';
 import { formatUiDateTime } from '../../utils/saudiDate';
-import { Button, Checkbox, FileTrigger, InlineSelect, Input, cn, Modal } from '../../ui';
+import { Button, Checkbox, DialogActions, FileTrigger, InlineSelect, Input, cn, Modal } from '../../ui';
 import Card from '../../ui/Card';
 import { type CostAppsCommissionBase } from './costAccountingAppsModel';
 import { Field, SectionHeading } from './costAccountingApps/CostAccountingAppsUiParts';
@@ -76,12 +77,15 @@ export default function CostAccountingAppsScreen() {
     handleApplyReverse,
     handleApplyAppShare,
     handlePrint,
+    printPreviewModal,
     handleExportExcel,
     clearDraft,
     handleSaveCalculatorSlot,
     handleImportSavedSlot,
     handleDeleteSavedSlot,
   } = useCostAccountingAppsScreen();
+
+  const inputValue = (setter: (value: string) => void) => (event: ChangeEvent<HTMLInputElement>) => setter(event.target.value);
 
   if (!activeCompanyId) {
     return (
@@ -93,6 +97,7 @@ export default function CostAccountingAppsScreen() {
 
   return (
     <div className="cost-apps-calc mx-auto flex w-full max-w-7xl flex-col gap-4 md:gap-5 print:max-w-none print:gap-2">
+      {printPreviewModal}
       <header className="noorix-print-hidden overflow-hidden rounded-2xl border border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-1)] to-[var(--noorix-surface-1)] p-4 shadow-sm sm:p-5 print:hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
@@ -151,7 +156,7 @@ export default function CostAccountingAppsScreen() {
               >
                 <Input
                   value={grossAppStr}
-                  onChange={(e: any) => setGrossAppStr(e.target.value)}
+                  onChange={inputValue(setGrossAppStr)}
                   inputMode="decimal"
                   dir="ltr"
                   className="min-h-10 w-full text-center text-sm font-medium tabular-nums"
@@ -160,7 +165,7 @@ export default function CostAccountingAppsScreen() {
               <Field labelAlign="center" label={t('reportCostAppsGrossCash')}>
                 <Input
                   value={grossCashStr}
-                  onChange={(e: any) => setGrossCashStr(e.target.value)}
+                  onChange={inputValue(setGrossCashStr)}
                   inputMode="decimal"
                   dir="ltr"
                   className="min-h-10 w-full text-center text-sm font-medium tabular-nums"
@@ -169,7 +174,7 @@ export default function CostAccountingAppsScreen() {
               <Field labelAlign="center" label={t('reportCostAppsGrossBank')}>
                 <Input
                   value={grossBankStr}
-                  onChange={(e: any) => setGrossBankStr(e.target.value)}
+                  onChange={inputValue(setGrossBankStr)}
                   inputMode="decimal"
                   dir="ltr"
                   className="min-h-10 w-full text-center text-sm font-medium tabular-nums"
@@ -237,16 +242,16 @@ export default function CostAccountingAppsScreen() {
             />
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <Field labelAlign="center" label={t('reportCostAppsVatRate')}>
-                <Input value={vatRatePctStr} onChange={(e: any) => setVatRatePctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
+                <Input value={vatRatePctStr} onChange={inputValue(setVatRatePctStr)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
               </Field>
               <Field labelAlign="center" label={t('reportCostAppsCommissionPct')}>
-                <Input value={commissionPctStr} onChange={(e: any) => setCommissionPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
+                <Input value={commissionPctStr} onChange={inputValue(setCommissionPctStr)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
               </Field>
               <Field labelAlign="center" label={t('reportCostAppsCogsLocalPct')} className="max-lg:col-span-2">
-                <Input value={cogsLocalPctStr} onChange={(e: any) => setCogsLocalPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
+                <Input value={cogsLocalPctStr} onChange={inputValue(setCogsLocalPctStr)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
               </Field>
               <Field labelAlign="center" label={t('reportCostAppsAppMarkupPct')} className="max-lg:col-span-2">
-                <Input value={appPriceMarkupPctStr} onChange={(e: any) => setAppPriceMarkupPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
+                <Input value={appPriceMarkupPctStr} onChange={inputValue(setAppPriceMarkupPctStr)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
               </Field>
             </div>
             <Field labelAlign="center" label={t('reportCostAppsCommissionBase')}>
@@ -272,7 +277,7 @@ export default function CostAccountingAppsScreen() {
               <Field labelAlign="center" label={t('reportCostAppsSharedAppSharePct')} className="min-w-[140px]">
                 <Input
                   value={reverseAppSharePctStr}
-                  onChange={(e: any) => setReverseAppSharePctStr(e.target.value)}
+                  onChange={inputValue(setReverseAppSharePctStr)}
                   inputMode="decimal"
                   dir="ltr"
                   className="min-h-10 w-[88px] text-center tabular-nums"
@@ -289,7 +294,7 @@ export default function CostAccountingAppsScreen() {
                   <Field labelAlign="center" label={t('reportCostAppsTargetProfit')}>
                     <Input
                       value={targetProfitStr}
-                      onChange={(e: any) => setTargetProfitStr(e.target.value)}
+                      onChange={inputValue(setTargetProfitStr)}
                       inputMode="decimal"
                       dir="ltr"
                       className="min-h-10 w-[128px] text-center tabular-nums"
@@ -322,7 +327,7 @@ export default function CostAccountingAppsScreen() {
                   <Field labelAlign="center" label={t('reportCostAppsProbeSalesInput')}>
                     <Input
                       value={probeSalesGrossStr}
-                      onChange={(e: any) => setProbeSalesGrossStr(e.target.value)}
+                      onChange={inputValue(setProbeSalesGrossStr)}
                       inputMode="decimal"
                       dir="ltr"
                       className="min-h-10 w-[128px] text-center tabular-nums"
@@ -366,7 +371,7 @@ export default function CostAccountingAppsScreen() {
               <Field labelAlign="center" label={t('reportCostAppsAppShare')} className="min-w-0 sm:min-w-[200px]">
                 <Input
                   value={appSharePctStr}
-                  onChange={(e: any) => setAppSharePctStr(e.target.value)}
+                  onChange={inputValue(setAppSharePctStr)}
                   placeholder={plWith.grossTotal.gt(0) ? fmt(plWith.appShareOfGrossPct.toNumber(), 2) : ''}
                   inputMode="decimal"
                   dir="ltr"
@@ -429,7 +434,7 @@ export default function CostAccountingAppsScreen() {
                 <td className="border border-noorix-border p-1">
                   <Input
                     value={salaryStr}
-                    onChange={(e: any) => setSalaryStr(e.target.value)}
+                    onChange={inputValue(setSalaryStr)}
                     dir="ltr"
                     className="border-0 text-center tabular-nums"
                     inputMode="decimal"
@@ -449,14 +454,14 @@ export default function CostAccountingAppsScreen() {
                     <td className="border border-noorix-border p-1">
                       <Input
                         value={line.label}
-                        onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, label: e.target.value } : r)))}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, label: event.target.value } : r)))}
                         className="border-0 text-center"
                       />
                     </td>
                     <td className="border border-noorix-border p-1">
                       <Input
                         value={line.amount}
-                        onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, amount: e.target.value } : r)))}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, amount: event.target.value } : r)))}
                         dir="ltr"
                         className="border-0 text-center tabular-nums"
                         inputMode="decimal"
@@ -593,14 +598,16 @@ export default function CostAccountingAppsScreen() {
         size="xl"
         footer={
           previewSlot ? (
-            <>
-              <Button type="button" variant="ghost" onClick={() => setPreviewSlot(null)}>
-                {t('close')}
-              </Button>
-              <Button type="button" variant="primary" onClick={() => handleImportSavedSlot(previewSlot)}>
-                {t('reportCostAppsSavedImport')}
-              </Button>
-            </>
+            <DialogActions
+              actions={[
+                {
+                  key: 'import-saved-slot',
+                  label: t('reportCostAppsSavedImport'),
+                  role: 'primary',
+                  onClick: () => handleImportSavedSlot(previewSlot),
+                },
+              ]}
+            />
           ) : undefined
         }
       >

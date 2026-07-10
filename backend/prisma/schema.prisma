@@ -484,6 +484,9 @@ model Employee {
   joinDate           DateTime @map("join_date")        // ط£ط³ط§ط³ ط­ط³ط§ط¨ ظ†ظ‡ط§ظٹط© ط§ظ„ط®ط¯ظ…ط©
   status             String   @default("active")       // active | terminated | on_leave
   notes              String?
+  photoPath          String?  @map("photo_path") @db.Text
+  photoMime          String?  @map("photo_mime")
+  photoOriginalName  String?  @map("photo_original_name")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt      @map("updated_at")
 
@@ -1023,6 +1026,9 @@ model CompanyAsset {
   warrantyMonths      Int?      @map("warranty_months")
   warrantyStartDate   DateTime? @map("warranty_start_date") @db.Date
   warrantyEndDate     DateTime? @map("warranty_end_date") @db.Date
+  warrantyAttachmentPath         String? @map("warranty_attachment_path") @db.Text
+  warrantyAttachmentOriginalName String? @map("warranty_attachment_original_name") @db.VarChar(240)
+  warrantyAttachmentMime         String? @map("warranty_attachment_mime") @db.VarChar(80)
   notes               String?   @db.Text
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")

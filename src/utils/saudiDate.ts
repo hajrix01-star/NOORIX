@@ -13,6 +13,27 @@ const uiRiyadhLatin: Pick<Intl.DateTimeFormatOptions, 'timeZone' | 'numberingSys
   numberingSystem: 'latn',
 };
 
+type DateInputValue = unknown;
+type DatePartType = Intl.DateTimeFormatPart['type'];
+
+function partMap(parts: Intl.DateTimeFormatPart[]): Partial<Record<DatePartType, string>> {
+  return parts.reduce<Partial<Record<DatePartType, string>>>((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+}
+
+function getPart(parts: Intl.DateTimeFormatPart[], type: DatePartType): string | undefined {
+  return parts.find((part) => part.type === type)?.value;
+}
+
+function toValidDate(value: DateInputValue): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  const d = new Date(value as string | number);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 /**
  * تاريخ اليوم بتوقيت الرياض بصيغة YYYY-MM-DD.
  * ملاحظة: لا نستخدم toLocaleString() + toISOString() لأن الأخيرة
@@ -29,14 +50,11 @@ export function getSaudiDateParts() {
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(new Date());
-  const m = parts.reduce<Record<string, string>>(
-    (a: any, p: any) => (p.type !== 'literal' ? { ...a, [p.type]: p.value } : a),
-    {},
-  );
+  const m = partMap(parts);
   return {
-    year: parseInt(m.year, 10),
-    month: parseInt(m.month, 10),
-    day: parseInt(m.day, 10),
+    year: parseInt(m.year ?? '', 10),
+    month: parseInt(m.month ?? '', 10),
+    day: parseInt(m.day ?? '', 10),
   };
 }
 
@@ -66,25 +84,24 @@ export function getSaudiToday() {
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(new Date());
-  const year = parts.find((p: any) => p.type === 'year')?.value;
-  const month = parts.find((p: any) => p.type === 'month')?.value;
-  const day = parts.find((p: any) => p.type === 'day')?.value;
+  const year = getPart(parts, 'year');
+  const month = getPart(parts, 'month');
+  const day = getPart(parts, 'day');
   return `${year}-${month}-${day}`;
 }
 
-export function formatSaudiDate(value: any) {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return '—';
+export function formatSaudiDate(value: DateInputValue) {
+  const d = toValidDate(value);
+  if (!d) return '—';
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: RIYADH_TZ,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(d);
-  const year  = parts.find((p: any) => p.type === 'year')?.value;
-  const month = parts.find((p: any) => p.type === 'month')?.value;
-  const day   = parts.find((p: any) => p.type === 'day')?.value;
+  const year = getPart(parts, 'year');
+  const month = getPart(parts, 'month');
+  const day = getPart(parts, 'day');
   if (!year || !month || !day) return '—';
   return `${day}-${month}-${year}`;
 }
@@ -92,10 +109,9 @@ export function formatSaudiDate(value: any) {
 /**
  * اسم يوم الأسبوع (طويل) بتوقيت الرياض — للعربية أو الإنجليزية.
  */
-export function formatSaudiWeekdayName(value: any, lang: any = 'ar') {
-  if (!value) return '';
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return '';
+export function formatSaudiWeekdayName(value: DateInputValue, lang: string = 'ar') {
+  const d = toValidDate(value);
+  if (!d) return '';
   const locale = lang === 'en' ? 'en-US' : 'ar-SA';
   return new Intl.DateTimeFormat(locale, {
     timeZone: RIYADH_TZ,
@@ -103,19 +119,18 @@ export function formatSaudiWeekdayName(value: any, lang: any = 'ar') {
   }).format(d);
 }
 
-export function formatSaudiDateISO(value: any) {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return '—';
+export function formatSaudiDateISO(value: DateInputValue) {
+  const d = toValidDate(value);
+  if (!d) return '—';
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Riyadh',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(d);
-  const year = parts.find((p: any) => p.type === 'year')?.value;
-  const month = parts.find((p: any) => p.type === 'month')?.value;
-  const day = parts.find((p: any) => p.type === 'day')?.value;
+  const year = getPart(parts, 'year');
+  const month = getPart(parts, 'month');
+  const day = getPart(parts, 'day');
   if (!year || !month || !day) return '—';
   return `${year}-${month}-${day}`;
 }
@@ -123,7 +138,7 @@ export function formatSaudiDateISO(value: any) {
 /**
  * لـ `input type="date"`: YYYY-MM-DD بتوقيت الرياض، أو '' عند عدم التوفر/الصحة.
  */
-export function toDateInputYmd(value: any) {
+export function toDateInputYmd(value: DateInputValue) {
   if (value == null || value === '') return '';
   const s = formatSaudiDateISO(value);
   return s === '—' ? '' : s;
@@ -147,10 +162,9 @@ export function toYmd(value: unknown): string {
 }
 
 /** تاريخ + وقت بتوقيت الرياض — عرض موحّد (يتفادى اختلاف Samsung/default locale) */
-export function formatSaudiDateTime(value: any) {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return '—';
+export function formatSaudiDateTime(value: DateInputValue) {
+  const d = toValidDate(value);
+  if (!d) return '—';
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: RIYADH_TZ,
     year: 'numeric',
@@ -160,11 +174,11 @@ export function formatSaudiDateTime(value: any) {
     minute: '2-digit',
     hour12: false,
   }).formatToParts(d);
-  const year   = parts.find((p: any) => p.type === 'year')?.value;
-  const month  = parts.find((p: any) => p.type === 'month')?.value;
-  const day    = parts.find((p: any) => p.type === 'day')?.value;
-  const hour   = parts.find((p: any) => p.type === 'hour')?.value;
-  const minute = parts.find((p: any) => p.type === 'minute')?.value;
+  const year = getPart(parts, 'year');
+  const month = getPart(parts, 'month');
+  const day = getPart(parts, 'day');
+  const hour = getPart(parts, 'hour');
+  const minute = getPart(parts, 'minute');
   if (!year || !month || !day) return '—';
   return `${day}-${month}-${year} ${hour}:${minute}`;
 }

@@ -1,8 +1,9 @@
-﻿/**
- * LeaveTab — الإجازات (احترافي كامل)
+/**
+ * LeaveTab — الإجازات (تصفية سنة)
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
@@ -16,13 +17,12 @@ import { formatSaudiDate, getSaudiToday, toDateInputYmd } from '../../../utils/s
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { LeaveFormModal } from '../components/LeaveFormModal';
-import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, DateField, DateMonthScopePicker, Input, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, DateField, DialogActions, Input, Modal, Spinner, SmartTable, YearDateFilter } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
@@ -38,8 +38,47 @@ const TYPE_MAP = {
   other: 'leaveOther',
 };
 
-/** اليوم (سعودي) ضمن فترة إجازة معتمدة — لعرض زر العودة */
-function canShowLeaveReturnRow(row: any) {
+type HrLeaveRow = {
+  id: string;
+  employeeId?: string;
+  employee?: unknown;
+  employeeName?: string;
+  leaveType?: keyof typeof TYPE_MAP | string;
+  startDate?: string;
+  endDate?: string;
+  daysCount?: number | string | null;
+  status?: string;
+  salarySettlement?: unknown;
+};
+
+type LeaveReturnMutationPayload = {
+  id: string;
+  actualReturnDate: string;
+};
+
+type DeleteLeavePayload = string | {
+  id: string;
+  voidSettlement?: boolean;
+};
+
+type LeaveSettlementPreview = {
+  suggestedAmount?: number;
+  calendarDaysPaid?: number;
+  daysInMonth?: number;
+};
+
+type IssueSettlementPayload = {
+  id: string;
+  grossAmount: string;
+  manualOverrideReason?: string;
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+/** العودة من الإجازة تظهر داخل فترة الإجازة فقط */
+function canShowLeaveReturnRow(row: HrLeaveRow) {
   if (row.status !== 'approved') return false;
   const today = getSaudiToday();
   const s = toDateInputYmd(row.startDate);
@@ -48,12 +87,12 @@ function canShowLeaveReturnRow(row: any) {
 }
 
 
-function canShowSalarySettlement(row: any) {
+function canShowSalarySettlement(row: HrLeaveRow) {
   return row.status === 'approved' && row.leaveType === 'annual' && !row.salarySettlement;
 }
 
-/** بعد حفظ إجازة من الـ modal: قوائم الإجازات/التسويات/الموظفين + إبطال الطبقة المالية */
-function invalidateAfterLeaveFormModalSuccess(queryClient: any, companyId: any, year: any) {
+/** تحديث البيانات بعد نجاح نموذج الإجازة: الإجازات/التسويات/الموظفين + الأثر المالي */
+function invalidateAfterLeaveFormModalSuccess(queryClient: QueryClient, companyId: string, year: number) {
   if (!queryClient || !companyId) return;
   queryClient.invalidateQueries({ queryKey: hrKeys.leaves(companyId) });
   queryClient.invalidateQueries({ queryKey: hrKeys.leavesForYear(companyId, year) });
@@ -71,16 +110,16 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   const companyId = activeCompanyId ?? '';
   const [year, setYear] = useState(new Date().getFullYear());
   const [showAdd, setShowAdd] = useState(false);
-  const [editLeave, setEditLeave] = useState<any>(null);
-  const [returnRow, setReturnRow] = useState<any>(null);
+  const [editLeave, setEditLeave] = useState<HrLeaveRow | null>(null);
+  const [returnRow, setReturnRow] = useState<HrLeaveRow | null>(null);
   const [returnDate, setReturnDate] = useState('');
-  const [settlementRow, setSettlementRow] = useState<any>(null);
+  const [settlementRow, setSettlementRow] = useState<HrLeaveRow | null>(null);
   const [settlementAmount, setSettlementAmount] = useState('');
   const [settlementOverrideReason, setSettlementOverrideReason] = useState('');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useApiListQuery<any>({
+  const { data, isLoading, isError } = useApiListQuery<HrLeaveRow>({
     queryKey: hrKeys.leavesForYear(companyId, year),
     queryFn: () => getLeaves(companyId, undefined, year),
     fallbackMessage: 'فشل تحميل الإجازات',
@@ -88,7 +127,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   });
 
   const returnMutation = useApiMutation({
-    mutationFn: async ({ id, actualReturnDate }: any) => {
+    mutationFn: async ({ id, actualReturnDate }: LeaveReturnMutationPayload) => {
       const res = await returnFromLeave(id, companyId, actualReturnDate);
       throwIfApiFailed(res, t('saveFailed'));
       return res;
@@ -102,7 +141,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
       employeeKeys.byCompany(companyId),
     ],
     successToast: () => t('leaveReturnedOk'),
-    errorToast: (e: any) => e?.message || t('saveFailed'),
+    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
   });
 
   useEffect(() => {
@@ -119,9 +158,12 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     isLoading: settlementPreviewLoading,
     isError: settlementPreviewError,
     error: settlementPreviewErr,
-  } = useApiQuery<any>({
+  } = useApiQuery<LeaveSettlementPreview>({
     queryKey: hrKeys.leaveSettlementPreview(companyId, settlementRow?.id),
-    queryFn: () => getLeaveSalarySettlementPreview(settlementRow.id, companyId),
+    queryFn: () => {
+      if (!settlementRow?.id) throw new Error('Leave id is required.');
+      return getLeaveSalarySettlementPreview(settlementRow.id, companyId);
+    },
     fallbackMessage: t('saveFailed'),
     enabled: !!companyId && !!settlementRow?.id,
     retry: false,
@@ -135,7 +177,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   }, [settlementPreview]);
 
   const deleteLeaveMutation = useApiMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async (payload: DeleteLeavePayload) => {
       const id = typeof payload === 'string' ? payload : payload.id;
       const voidSettlement = typeof payload === 'object' && payload.voidSettlement;
       const res = await deleteLeave(id, companyId, voidSettlement);
@@ -151,11 +193,11 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     ],
     onSuccess: () => invalidateOnFinancialMutation(queryClient),
     successToast: () => t('leaveDeleted'),
-    errorToast: (e: any) => e?.message || t('saveFailed'),
+    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
   });
 
   const issueSettlementMutation = useApiMutation({
-    mutationFn: async ({ id, grossAmount, manualOverrideReason }: any) => {
+    mutationFn: async ({ id, grossAmount, manualOverrideReason }: IssueSettlementPayload) => {
       const raw = String(grossAmount ?? '').replace(/,/g, '').trim();
       const n = parseFloat(raw);
       if (!Number.isFinite(n) || n < 0.01) {
@@ -182,13 +224,20 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     ],
     onSuccess: () => invalidateOnFinancialMutation(queryClient),
     successToast: () => t('leaveSalarySettlementSaved'),
-    errorToast: (e: any) => e?.message || t('saveFailed'),
+    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
   });
 
-  const items = useMemo(() => (data ?? []).map((l: any) => ({
+  const items = useMemo(() => (data ?? []).map((l) => ({
     ...l,
     employeeName: employeeDisplayName(l.employee || { name: l.employeeName }, lang),
   })), [data, lang]);
+
+  const handleDeleteLeave = useCallback((row: HrLeaveRow) => {
+    if (!window.confirm(t('deleteLeaveConfirm'))) return;
+    if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
+    deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
+  }, [deleteLeaveMutation, t]);
+
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
     useTableFilter(items, {
       searchKeys: ['employeeName', 'leaveType'],
@@ -199,21 +248,30 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     });
 
   const columns = useMemo(() => [
-    { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
-      render: (v: any) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
+    {
+      key: 'employeeName',
+      label: t('employeeName'),
+      sortable: true,
+      minWidth: 180,
+      render: (v: unknown, row: HrLeaveRow) => (
+        <Button variant="raw" size="auto" className="font-semibold text-[13px] text-noorix-blue hover:underline" onClick={() => setEditLeave(row)}>
+          {String(v || '-')}
+        </Button>
+      ),
+    },
     { key: 'leaveType', label: t('leaveType'), sortable: true, width: 130, minWidth: 120,
-      render: (v: any) => (
+      render: (v: unknown) => (
         <span className="text-[13px]">{t(TYPE_MAP[v as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
       ),
     },
     { key: 'startDate', label: t('startDate'), sortable: true, width: 120, minWidth: 115,
-      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+      render: (v: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(v || ''))}</span> },
     { key: 'endDate', label: t('endDate'), sortable: true, width: 120, minWidth: 115,
-      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+      render: (v: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(v || ''))}</span> },
     { key: 'daysCount', label: t('daysCount'), numeric: true, sortable: true, width: 90, minWidth: 85,
-      render: (v: any) => <span className="nx-cell-num">{v ?? '—'}</span> },
+      render: (v: unknown) => <span className="nx-cell-num">{String(v ?? '—')}</span> },
     { key: 'salarySettlement', label: t('leaveSalarySettlement'), width: 120, minWidth: 100,
-      render: (_: any, row: any) => (
+      render: (_: unknown, row: HrLeaveRow) => (
         row.salarySettlement ? (
           <span className="text-[11px] font-semibold text-noorix-green whitespace-nowrap">
             {t('leaveSalarySettledBadge')}
@@ -222,24 +280,9 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           <span className="text-noorix-muted text-[12px]">—</span>
         )
       ) },
-    { key: 'actions', label: t('actions'), width: '5%', align: 'center',
-      render: (_: any, row: any) => (
-        <HRActionsCell
-          row={row}
-          type="leave"
-          onEdit={() => setEditLeave(row)}
-          onReturnFromLeave={canShowLeaveReturnRow(row) ? () => setReturnRow(row) : undefined}
-          onLeaveSalarySettlement={canShowSalarySettlement(row) ? () => setSettlementRow(row) : undefined}
-          onDelete={() => {
-            if (!window.confirm(t('deleteLeaveConfirm'))) return;
-            if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
-            deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
-          }}
-        />
-      ) },
-  ], [t, deleteLeaveMutation]);
+  ], [t]);
 
-  const exportData = allFilteredData.map((r: any) => ({
+  const exportData = allFilteredData.map((r: HrLeaveRow & { employeeName?: string }) => ({
     employeeName: r.employeeName || '—',
     leaveType: t(TYPE_MAP[r.leaveType as keyof typeof TYPE_MAP] || 'leaveOther'),
     startDate: formatSaudiDate(r.startDate),
@@ -248,16 +291,22 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     salarySettlement: r.salarySettlement ? t('leaveSalarySettledBadge') : '—',
   }));
 
-  const renderMobileCard = useCallback((row: any) => {
+  const renderMobileCard = useCallback((row: HrLeaveRow & { employeeName?: string }) => {
     return (
-      <div>
+      <div
+        className="cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onClick={() => setEditLeave(row)}
+        onKeyDown={(event) => { if (event.key === 'Enter') setEditLeave(row); }}
+      >
         <div className="flex items-center justify-between flex flex-wrap mb-1">
-          <span className="font-bold text-[14px]">{row.employeeName}</span>
+          <span className="font-bold text-[14px]">{String(row.employeeName || '—')}</span>
         </div>
         <div className="text-[13px] text-noorix-muted mb-2 text-end">
           {t(TYPE_MAP[row.leaveType as keyof typeof TYPE_MAP] || 'leaveOther')}
         </div>
-        {row.salarySettlement && (
+        {Boolean(row.salarySettlement) && (
           <div className="text-[11px] font-semibold text-noorix-green text-end mb-1">{t('leaveSalarySettledBadge')}</div>
         )}
         <div className="nx-mc__grid nx-mc__grid--3 mb-2.5">
@@ -274,80 +323,35 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
             <div className="nx-mc__stat-value text-[14px] font-bold">{row.daysCount ?? '—'}</div>
           </div>
         </div>
-        {canShowLeaveReturnRow(row) && (
-          <Button variant="primary" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setReturnRow(row)}>
-            {t('leaveReturnFromLeave')}
-          </Button>
-        )}
-        {canShowSalarySettlement(row) && (
-          <Button variant="success" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setSettlementRow(row)}>
-            {t('leaveSalarySettlement')}
-          </Button>
-        )}
-        <Button variant="ghost" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setEditLeave(row)}>
-          {t('edit')}
-        </Button>
-        <Button
-          variant="danger"
-          size="sm"
-          className="w-full mt-2 min-h-[44px]"
-          onClick={() => {
-            if (!window.confirm(t('deleteLeaveConfirm'))) return;
-            if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
-            deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
-          }}
-        >
-          {t('delete')}
-        </Button>
       </div>
     );
-  }, [t, deleteLeaveMutation]);
+  }, [t, setEditLeave]);
 
-  const renderCompactRow = useCallback((row: any) => (
-    <div>
+  const renderCompactRow = useCallback((row: HrLeaveRow & { employeeName?: string }) => (
+    <div
+      className="cursor-pointer"
+      role="button"
+      tabIndex={0}
+      onClick={() => setEditLeave(row)}
+      onKeyDown={(event) => { if (event.key === 'Enter') setEditLeave(row); }}
+    >
       <div className="nx-cr__line1">
-        <span className="nx-cr__name">{row.employeeName}</span>
+        <span className="nx-cr__name">{String(row.employeeName || '—')}</span>
         <span className="nx-cr__sub">{t(TYPE_MAP[row.leaveType as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
-        {row.salarySettlement && <Badge color="green" size="sm">{t('leaveSalarySettledBadge')}</Badge>}
+        {Boolean(row.salarySettlement) && <Badge color="green" size="sm">{t('leaveSalarySettledBadge')}</Badge>}
       </div>
       <div className="nx-cr__line2">
         <div className="nx-cr__line2-start">
-          <span className="nx-cr__meta ltr">{formatSaudiDate(row.startDate)} → {formatSaudiDate(row.endDate)}</span>
+          <span className="nx-cr__meta ltr">{formatSaudiDate(row.startDate)} ? {formatSaudiDate(row.endDate)}</span>
         </div>
         <div className="nx-cr__line2-end">
           <span className="nx-cr__amount">{row.daysCount ?? '—'} {t('daysCount')}</span>
-          <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-            <KebabMenu
-              ariaLabel={t('actions')}
-              items={[
-                ...(canShowLeaveReturnRow(row) ? [{ key: 'return', label: t('leaveReturnFromLeave'), style: { color: 'var(--noorix-accent-blue)' }, onClick: () => setReturnRow(row) }] : []),
-                ...(canShowSalarySettlement(row) ? [{ key: 'settle', label: t('leaveSalarySettlement'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setSettlementRow(row) }] : []),
-                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditLeave(row) },
-                { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => {
-                  if (!window.confirm(t('deleteLeaveConfirm'))) return;
-                  if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
-                  deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
-                }},
-              ]}
-            />
-          </div>
         </div>
       </div>
     </div>
-  ), [t, deleteLeaveMutation, setReturnRow, setSettlementRow, setEditLeave, canShowLeaveReturnRow, canShowSalarySettlement]);
+  ), [t, setEditLeave]);
 
-  const yearLeading = (
-    <DateMonthScopePicker
-      year={year}
-      years={[new Date().getFullYear(), new Date().getFullYear() - 1]}
-      mode="year"
-      allowAll={false}
-      allowYear
-      allowMonth={false}
-      onYearChange={setYear}
-      onMonthChange={() => {}}
-    />
-  );
+  const yearLeading = <YearDateFilter year={year} onYearChange={setYear} />;
 
   return (
     <HrFlatListTabShell
@@ -377,7 +381,6 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth="1%"
           {...hrFlatSmartTableShellProps(embedded)}
           columns={columns}
           data={filteredData}
@@ -408,6 +411,9 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           companyId={companyId}
           employeeId={editLeave?.employeeId}
           editLeave={editLeave}
+          onReturnFromLeave={editLeave && canShowLeaveReturnRow(editLeave) ? () => setReturnRow(editLeave) : undefined}
+          onSalarySettlement={editLeave && canShowSalarySettlement(editLeave) ? () => setSettlementRow(editLeave) : undefined}
+          onDelete={editLeave ? () => handleDeleteLeave(editLeave) : undefined}
           onSuccess={() => {
             invalidateAfterLeaveFormModalSuccess(queryClient, companyId, year);
             showToast(editLeave ? t('leaveUpdated') : t('leaveAdded'), 'success');
@@ -429,50 +435,51 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
         title={t('leaveSalarySettlementTitle')}
         size="sm"
         footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSettlementRow(null);
-                setSettlementAmount('');
-                setSettlementOverrideReason('');
-              }}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              variant="primary"
-              disabled={
-                issueSettlementMutation.isPending
-                || settlementPreviewLoading
-                || !settlementPreview
-                || !settlementAmount
-                || (
-                  Math.abs(Number(settlementAmount || 0) - Number(settlementPreview?.suggestedAmount ?? (settlementAmount || 0))) > 0.005
-                  && !settlementOverrideReason.trim()
-                )
-              }
-              onClick={() => {
-                if (!settlementRow) return;
-                issueSettlementMutation.mutate(
-                  {
-                    id: settlementRow.id,
-                    grossAmount: settlementAmount,
-                    manualOverrideReason: settlementOverrideReason,
-                  },
-                  {
-                    onSuccess: () => {
-                      setSettlementRow(null);
-                      setSettlementAmount('');
-                      setSettlementOverrideReason('');
+          <DialogActions
+            actions={[
+              {
+                key: 'cancel',
+                label: t('cancel'),
+                role: 'cancel',
+                onClick: () => {
+                  setSettlementRow(null);
+                  setSettlementAmount('');
+                  setSettlementOverrideReason('');
+                },
+              },
+              {
+                key: 'save',
+                label: issueSettlementMutation.isPending ? t('saving') : t('save'),
+                role: 'save',
+                disabled:
+                  issueSettlementMutation.isPending
+                  || settlementPreviewLoading
+                  || !settlementPreview
+                  || !settlementAmount
+                  || (
+                    Math.abs(Number(settlementAmount || 0) - Number(settlementPreview?.suggestedAmount ?? (settlementAmount || 0))) > 0.005
+                    && !settlementOverrideReason.trim()
+                  ),
+                onClick: () => {
+                  if (!settlementRow) return;
+                  issueSettlementMutation.mutate(
+                    {
+                      id: settlementRow.id,
+                      grossAmount: settlementAmount,
+                      manualOverrideReason: settlementOverrideReason,
                     },
-                  },
-                );
-              }}
-            >
-              {issueSettlementMutation.isPending ? t('saving') : t('save')}
-            </Button>
-          </>
+                    {
+                      onSuccess: () => {
+                        setSettlementRow(null);
+                        setSettlementAmount('');
+                        setSettlementOverrideReason('');
+                      },
+                    },
+                  );
+                },
+              },
+            ]}
+          />
         }
       >
         {settlementPreviewLoading && (
@@ -500,7 +507,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
               min="0.01"
               label={t('leaveSalarySettlementAmountLabel')}
               value={settlementAmount}
-              onChange={(e: any) => setSettlementAmount(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettlementAmount(e.target.value)}
               className="ltr"
             />
             {Math.abs(Number(settlementAmount || 0) - Number(settlementPreview.suggestedAmount ?? (settlementAmount || 0))) > 0.005 && (
@@ -509,7 +516,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
                 rows={3}
                 label={t('leaveSalarySettlementOverrideReasonLabel')}
                 value={settlementOverrideReason}
-                onChange={(e: any) => setSettlementOverrideReason(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSettlementOverrideReason(e.target.value)}
                 placeholder={t('leaveSalarySettlementOverrideReasonPlaceholder')}
               />
             )}
@@ -523,24 +530,26 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
         title={t('leaveReturnFromLeave')}
         size="sm"
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setReturnRow(null)}>{t('cancel')}</Button>
-            <Button
-              variant="primary"
-              disabled={returnMutation.isPending || !returnDate}
-              onClick={() => {
-                if (!returnRow) return;
-                returnMutation.mutate(
-                  { id: returnRow.id, actualReturnDate: returnDate },
-                  {
-                    onSuccess: () => setReturnRow(null),
-                  },
-                );
-              }}
-            >
-              {returnMutation.isPending ? t('saving') : t('save')}
-            </Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setReturnRow(null) },
+              {
+                key: 'save',
+                label: returnMutation.isPending ? t('saving') : t('save'),
+                role: 'save',
+                disabled: returnMutation.isPending || !returnDate,
+                onClick: () => {
+                  if (!returnRow) return;
+                  returnMutation.mutate(
+                    { id: returnRow.id, actualReturnDate: returnDate },
+                    {
+                      onSuccess: () => setReturnRow(null),
+                    },
+                  );
+                },
+              },
+            ]}
+          />
         }
       >
         <p className="text-[13px] text-noorix-muted mb-3">{t('leaveReturnEarlyHint')}</p>

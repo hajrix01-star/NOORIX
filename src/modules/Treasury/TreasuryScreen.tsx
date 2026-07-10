@@ -1,46 +1,70 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { updateVault } from '../../services/api';
-import { useApp }         from '../../context/AppContext';
-import { useToast }       from '../../context/ToastContext';
+import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useVaults } from '../../hooks/useVaults';
+import { FilterToolbar } from '../../ui';
 import { DateFilterBar, useDateFilter } from '../../ui/date';
-import FilterToolbar from '../../shared/components/FilterToolbar';
-import { sumAmounts } from '../../utils/format';
-import VaultCard          from './components/VaultCard';
-import VaultFormModal     from './components/VaultFormModal';
+import VaultCard from './components/VaultCard';
+import VaultFormModal from './components/VaultFormModal';
 import VaultTransactionsModal from './components/VaultTransactionsModal';
 import VaultTransferModal from './components/VaultTransferModal';
 import { VaultReorderModal } from './components/VaultReorderModal';
-import { Button, Checkbox, ScreenShell, FmtNum } from '../../ui';
+import { Button, Checkbox, ScreenShell, SummaryBar } from '../../ui';
 import { vaultKeys } from '../../services/queryKeys';
+import type { VaultCreatePayload, VaultRecord, VaultUpdatePayload } from '../../types/api';
+import { buildTreasurySummary, splitVaultGroups } from './treasuryModels';
+
+type ToastType = 'success' | 'error' | 'info' | 'warning';
+type SectionLabelProps = { label: string };
+type SummaryTile = {
+  label: string;
+  value: number;
+  tone: 'default' | 'green' | 'red';
+  sign: string;
+};
+
+function SectionLabel({ label }: SectionLabelProps) {
+  return (
+    <div className="text-[11px] font-bold text-noorix-muted uppercase tracking-[0.06em] mb-2.5">
+      {label}
+    </div>
+  );
+}
+
+function mutationMessage(error: Error, fallback: string) {
+  return error.message || fallback;
+}
 
 export default function TreasuryScreen() {
   const { activeCompanyId } = useApp();
   const { t } = useTranslation();
-  const companyId   = activeCompanyId ?? '';
+  const companyId = activeCompanyId ?? '';
 
   const { showToast } = useToast();
   const [includeArchived, setIncludeArchived] = useState(false);
-  const [selectedVault,   setSelectedVault]  = useState<any>(null);
-  const [editVault,       setEditVault]      = useState<any>(null);
-  const [showAddForm,     setShowAddForm]    = useState(false);
-  const [showTransfer,    setShowTransfer]   = useState(false);
-  const [showReorder,     setShowReorder]    = useState(false);
-  const [saveError,       setSaveError]      = useState('');
+  const [selectedVault, setSelectedVault] = useState<VaultRecord | null>(null);
+  const [editVault, setEditVault] = useState<VaultRecord | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [showReorder, setShowReorder] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const dateFilter = useDateFilter();
   const startDate = dateFilter?.startDate || null;
   const endDate = dateFilter?.endDate || null;
 
-  const notify = (message: any, type: any = 'success') => showToast(message, type);
+  const notify = useCallback(
+    (message: string, type: ToastType = 'success') => showToast(message, type),
+    [showToast],
+  );
 
   const {
     vaultsList = [],
     isLoading,
     isFetching,
-    isError: vaultsError,
     create: createMut,
     update: updateMut,
     archive: archiveMut,
@@ -56,87 +80,88 @@ export default function TreasuryScreen() {
     setSaveError('');
   }, [companyId]);
 
+  const invalidateVaultLists = [vaultKeys.byCompany(companyId), vaultKeys.paymentOptions(companyId)];
+
   const toggleSalesMutation = useApiMutation({
-    mutationFn: (v: any) => updateVault(v.id, { isSalesChannel: !v.isSalesChannel }),
-    invalidateQueries: [vaultKeys.byCompany(companyId)],
+    mutationFn: (vault: VaultRecord) => updateVault(vault.id, { isSalesChannel: !vault.isSalesChannel }),
+    invalidateQueries: invalidateVaultLists,
     successToast: () => t('salesChannelUpdated'),
-    errorToast: (e: any) => e?.message || t('updateFailed'),
+    errorToast: (error: Error) => mutationMessage(error, t('updateFailed')),
   });
 
   const togglePaymentMethodMutation = useApiMutation({
-    mutationFn: (v: any) => updateVault(v.id, { showAsPaymentMethod: !(v.showAsPaymentMethod !== false) }),
-    invalidateQueries: [vaultKeys.byCompany(companyId)],
+    mutationFn: (vault: VaultRecord) =>
+      updateVault(vault.id, { showAsPaymentMethod: !(vault.showAsPaymentMethod !== false) }),
+    invalidateQueries: invalidateVaultLists,
     successToast: () => t('paymentMethodVisibilityUpdated'),
-    errorToast: (e: any) => e?.message || t('updateFailed'),
+    errorToast: (error: Error) => mutationMessage(error, t('updateFailed')),
   });
 
-  const handleDelete = (v: any) => {
-    if (!window.confirm(t('deleteVaultConfirm', v.nameAr))) return;
-    removeMut.mutate(v.id, {
+  const handleDelete = (vault: VaultRecord) => {
+    if (!window.confirm(t('deleteVaultConfirm', vault.nameAr))) return;
+    removeMut.mutate(vault.id, {
       onSuccess: () => notify(t('vaultDeleted')),
-      onError: (e: any) => notify(e?.message || t('cannotDeleteVaultWithMovements'), 'error'),
+      onError: (error: Error) => notify(mutationMessage(error, t('cannotDeleteVaultWithMovements')), 'error'),
     });
   };
 
-  const cmpVaultOrder = (a: any, b: any) =>
-    (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || String(a.nameAr).localeCompare(String(b.nameAr), 'ar');
-  const salesChannels  = useMemo(
-    () => vaultsList.filter((v: any) => v.isActive !== false && v.isSalesChannel && !v.isArchived).sort(cmpVaultOrder),
-    [vaultsList],
-  );
-  const otherVaults    = useMemo(
-    () => vaultsList.filter((v: any) => v.isActive !== false && !v.isSalesChannel && !v.isArchived).sort(cmpVaultOrder),
-    [vaultsList],
-  );
-  const archivedVaults = useMemo(
-    () => includeArchived ? vaultsList.filter((v: any) => v.isActive !== false && v.isArchived) : [],
+  const { salesChannels, otherVaults, archivedVaults } = useMemo(
+    () => splitVaultGroups(vaultsList, includeArchived),
     [vaultsList, includeArchived],
   );
-  const totalBalance   = useMemo(
-    () => sumAmounts(vaultsList.filter((v: any) => v.isActive !== false && !v.isArchived), 'balance').toNumber(),
-    [vaultsList],
+  const summary = useMemo(() => buildTreasurySummary(vaultsList), [vaultsList]);
+
+  const openEdit = useCallback((vault: VaultRecord) => {
+    setEditVault(vault);
+    setSaveError('');
+  }, []);
+
+  const archiveVaultHandler = useCallback(
+    (vault: VaultRecord) => {
+      archiveMut.mutate(vault.id, {
+        onSuccess: () => notify(vault.isArchived ? t('vaultRestored') : t('vaultArchived')),
+        onError: (error: Error) => notify(mutationMessage(error, t('operationFailed')), 'error'),
+      });
+    },
+    [archiveMut, notify, t],
   );
 
-  const cardHandlers = (vault: any) => ({
-    onEdit:               (x: any) => { setEditVault(x); setSaveError(''); },
-    onToggleSalesChannel: (x: any) => toggleSalesMutation.mutate(x),
-    onTogglePaymentMethod: (x: any) => togglePaymentMethodMutation.mutate(x),
-    onArchive:            (x: any) => archiveMut.mutate(x.id, {
-      onSuccess: () => notify(x?.isArchived ? t('vaultRestored') : t('vaultArchived')),
-      onError: (e: any) => notify(e?.message || t('operationFailed'), 'error'),
-    }),
-    onDelete:             handleDelete,
-    onClick:              (x: any) => setSelectedVault(x),
-  });
+  const cardHandlers = {
+    onEdit: openEdit,
+    onToggleSalesChannel: (vault: VaultRecord) => toggleSalesMutation.mutate(vault),
+    onTogglePaymentMethod: (vault: VaultRecord) => togglePaymentMethodMutation.mutate(vault),
+    onArchive: archiveVaultHandler,
+    onDelete: handleDelete,
+    onClick: (vault: VaultRecord) => setSelectedVault(vault),
+  };
 
   const hasCompany = !!companyId;
-
-  /* الإجمالي الكلي وارد/صادر */
-  const totalIn  = useMemo(() => sumAmounts(vaultsList.filter((v: any) => v.isActive !== false && !v.isArchived), 'totalIn').toNumber(),  [vaultsList]);
-  const totalOut = useMemo(() => sumAmounts(vaultsList.filter((v: any) => v.isActive !== false && !v.isArchived), 'totalOut').toNumber(), [vaultsList]);
-
-  const SectionLabel = ({ label }: any) => (
-    <div className="text-[11px] font-bold text-noorix-muted uppercase tracking-[0.06em] mb-2.5">
-      {label}
-    </div>
-  );
+  const summaryTiles: SummaryTile[] = [
+    {
+      label: t('totalBalance'),
+      value: summary.totalBalance,
+      tone: summary.totalBalance < 0 ? 'red' : 'default',
+      sign: summary.totalBalance < 0 ? '−' : '',
+    },
+    { label: t('inbound'), value: summary.totalIn, tone: 'green', sign: '' },
+    { label: t('outbound'), value: summary.totalOut, tone: 'default', sign: '' },
+  ];
 
   return (
     <ScreenShell>
-      {/* هيدر */}
       <div className="nx-page-header">
-          <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0">
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('vaults')}</h1>
-          {hasCompany && isFetching && !isLoading && (
+          {hasCompany && isFetching && !isLoading ? (
             <p className="text-[12px] font-semibold mt-2 m-0 text-noorix-blue">
               {t('vaultsSyncing')}
             </p>
-          )}
+          ) : null}
         </div>
-        <div className="nx-toolbar">
+        <FilterToolbar variant="bare" className="nx-toolbar">
           <Checkbox
             checked={includeArchived}
-            onChange={(e: any) => setIncludeArchived(e.target.checked)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIncludeArchived(event.target.checked)}
             label={t('showArchived')}
             containerClassName="nx-checkbox text-noorix-muted"
           />
@@ -149,113 +174,92 @@ export default function TreasuryScreen() {
           <Button variant="primary" size="sm" onClick={() => { setShowAddForm(true); setSaveError(''); }}>
             {t('addVaultBtn')}
           </Button>
-        </div>
+        </FilterToolbar>
       </div>
 
       <FilterToolbar>
         <DateFilterBar filter={dateFilter} />
       </FilterToolbar>
 
-      {!hasCompany && (
+      {!hasCompany ? (
         <div className="noorix-surface-card p-5 text-center text-noorix-muted">
           {t('pleaseSelectCompanyVaults')}
         </div>
-      )}
+      ) : null}
 
-      {hasCompany && isLoading && (
+      {hasCompany && isLoading ? (
         <div className="text-noorix-muted text-[13px] text-center p-10">
           {t('loading')}
         </div>
-      )}
+      ) : null}
 
-      {hasCompany && !isLoading && (
+      {hasCompany && !isLoading ? (
         <>
-          {/* ── بطاقة الملخص الإجمالي (للشهر/الفترة المحددة) ── */}
-          {vaultsList.length > 0 && (
-            <div className="noorix-surface-card grid gap-0 overflow-hidden p-0 [grid-template-columns:repeat(auto-fit,minmax(120px,1fr))]">
-              <div className="text-[11px] text-noorix-muted border-b border-noorix-border py-2 px-5 col-span-full">
-                {dateFilter?.label || t('allMonths')}
-              </div>
-              {[
-                { label: t('totalBalance'), value: totalBalance, tone: totalBalance < 0 ? 'negative' : 'default', sign: totalBalance < 0 ? '−' : '' },
-                { label: t('inbound'),      value: totalIn,      tone: 'positive', sign: '' },
-                { label: t('outbound'),     value: totalOut,     tone: 'default', sign: '' },
-              ].map(({ label, value, tone, sign }: any, i: any) => (
-                <div key={label} className={`text-center p-4 ${i < 2 ? 'border-r border-noorix-border' : ''}`}>
-                  <div className="text-[11px] text-noorix-muted mb-1.5 tracking-[0.03em]">{label}</div>
-                  <div
-                    dir="ltr"
-                    className={`font-extrabold text-[20px] nx-font-numbers ${
-                      tone === 'negative'
-                        ? 'text-noorix-red'
-                        : tone === 'positive'
-                          ? 'text-noorix-green'
-                          : 'text-noorix-text'
-                    }`}
-                  >
-                    {sign}<FmtNum n={Math.abs(value)} />
-                    <span className="nx-sar me-[3px]">SR</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {vaultsList.length > 0 ? (
+            <SummaryBar
+              caption={dateFilter?.label || t('allMonths')}
+              items={summaryTiles.map(({ label, value, tone, sign }) => ({
+                key: label,
+                label,
+                value: Math.abs(value),
+                tone,
+                prefix: sign,
+                currency: 'SR',
+              }))}
+            />
+          ) : null}
 
-          {/* ── قنوات المبيعات ── */}
-          {salesChannels.length > 0 && (
+          {salesChannels.length > 0 ? (
             <section>
               <SectionLabel label={t('salesChannelsEnabled', salesChannels.length)} />
               <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-                {salesChannels.map((v: any) => (
-                  <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
+                {salesChannels.map((vault) => (
+                  <VaultCard key={vault.id} vault={vault} {...cardHandlers} />
                 ))}
               </div>
             </section>
-          )}
+          ) : null}
 
-          {/* ── خزائن أخرى ── */}
-          {otherVaults.length > 0 && (
+          {otherVaults.length > 0 ? (
             <section>
               <SectionLabel label={t('otherVaults', otherVaults.length)} />
               <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-                {otherVaults.map((v: any) => (
-                  <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
+                {otherVaults.map((vault) => (
+                  <VaultCard key={vault.id} vault={vault} {...cardHandlers} />
                 ))}
               </div>
             </section>
-          )}
+          ) : null}
 
-          {/* ── مؤرشَف ── */}
-          {includeArchived && archivedVaults.length > 0 && (
+          {includeArchived && archivedVaults.length > 0 ? (
             <section>
               <SectionLabel label={t('archivedVaults', archivedVaults.length)} />
               <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-                {archivedVaults.map((v: any) => (
-                  <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
+                {archivedVaults.map((vault) => (
+                  <VaultCard key={vault.id} vault={vault} {...cardHandlers} />
                 ))}
               </div>
             </section>
-          )}
+          ) : null}
 
-          {/* ── فارغة ── */}
-          {vaultsList.length === 0 && (
+          {vaultsList.length === 0 ? (
             <div className="noorix-surface-card text-center p-6 border-2 border-dashed border-noorix-border">
               <div className="flex items-center justify-center bg-noorix-bg-muted w-14 h-14 rounded-[16px] mx-auto mb-[14px]">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--noorix-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
-                  <rect x="2" y="6" width="20" height="12" rx="2"/>
-                  <circle cx="12" cy="12" r="2.5"/>
-                  <path d="M6 12h.01M18 12h.01"/>
+                  <rect x="2" y="6" width="20" height="12" rx="2" />
+                  <circle cx="12" cy="12" r="2.5" />
+                  <path d="M6 12h.01M18 12h.01" />
                 </svg>
               </div>
               <h3 className="text-[15px] mb-1.5 m-0">{t('noVaults')}</h3>
               <p className="text-noorix-muted text-[13px] mb-4 m-0">{t('addFirstVault')}</p>
               <Button variant="primary" size="sm" onClick={() => setShowAddForm(true)}>{t('addVault')}</Button>
             </div>
-          )}
+          ) : null}
         </>
-      )}
+      ) : null}
 
-      {selectedVault && (
+      {selectedVault ? (
         <VaultTransactionsModal
           key={selectedVault.id}
           vault={selectedVault}
@@ -263,60 +267,64 @@ export default function TreasuryScreen() {
           onClose={() => setSelectedVault(null)}
           dateFilter={dateFilter}
         />
-      )}
+      ) : null}
 
-      {showTransfer && hasCompany && (
+      {showTransfer && hasCompany ? (
         <VaultTransferModal
           companyId={companyId}
-          startDate={startDate}
-          endDate={endDate}
           onClose={() => setShowTransfer(false)}
         />
-      )}
+      ) : null}
 
-      {showReorder && hasCompany && (
+      {showReorder && hasCompany ? (
         <VaultReorderModal
           open={showReorder}
           onClose={() => setShowReorder(false)}
           vaultsList={vaultsList}
           isSaving={reorderMut.isPending}
-          onApply={(vaultIds: any) => {
+          onApply={(vaultIds) => {
             reorderMut.mutate(vaultIds, {
               onSuccess: () => {
                 setShowReorder(false);
                 notify(t('vaultReorderSuccess'));
               },
-              onError: (e: any) => notify(e?.message || t('updateFailed'), 'error'),
+              onError: (error: Error) => notify(mutationMessage(error, t('updateFailed')), 'error'),
             });
           }}
         />
-      )}
+      ) : null}
 
-      {showAddForm && (
-        <VaultFormModal initial={null}
+      {showAddForm ? (
+        <VaultFormModal
+          initial={null}
           onClose={() => { setShowAddForm(false); setSaveError(''); }}
-          onSave={(form: any) => createMut.mutate(
+          onSave={(form: VaultCreatePayload) => createMut.mutate(
             form,
             {
               onSuccess: () => { setShowAddForm(false); setSaveError(''); notify(t('vaultAdded')); },
-              onError: (e: any) => setSaveError(e?.message || t('addFailed')),
+              onError: (error: Error) => setSaveError(mutationMessage(error, t('addFailed'))),
             },
           )}
-          isSaving={createMut.isPending} saveError={saveError} />
-      )}
+          isSaving={createMut.isPending}
+          saveError={saveError}
+        />
+      ) : null}
 
-      {editVault && (
-        <VaultFormModal initial={editVault}
+      {editVault ? (
+        <VaultFormModal
+          initial={editVault}
           onClose={() => { setEditVault(null); setSaveError(''); }}
-          onSave={(form: any) => updateMut.mutate(
+          onSave={(form: VaultUpdatePayload) => updateMut.mutate(
             { id: editVault.id, body: form },
             {
               onSuccess: () => { setEditVault(null); setSaveError(''); notify(t('editSuccess')); },
-              onError: (e: any) => setSaveError(e?.message || t('updateFailed')),
+              onError: (error: Error) => setSaveError(mutationMessage(error, t('updateFailed'))),
             },
           )}
-          isSaving={updateMut.isPending} saveError={saveError} />
-      )}
+          isSaving={updateMut.isPending}
+          saveError={saveError}
+        />
+      ) : null}
     </ScreenShell>
   );
 }

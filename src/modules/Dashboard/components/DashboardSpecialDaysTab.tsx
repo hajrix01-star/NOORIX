@@ -3,21 +3,22 @@
  */
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { useToast } from '../../../context/ToastContext';
 import { useDashboardYearSpecialDays } from '../../../hooks/useDashboardYearSpecialDays';
-import { Button, ColorSwatch, DateRangeField, Input } from '../../../ui';
+import { Button, ColorSwatch, DateRangeField, DialogActions, Input, Modal } from '../../../ui';
 import { toYmd } from '../../../utils/saudiDate';
 import { getSaudiNow } from '../../../utils/saudiDate';
 import { DashboardSaudiOccasionsImportModal } from './DashboardSaudiOccasionsImportModal';
+import type { DashboardSpecialDay } from '../../../types/api/domains/dashboard';
+import { createDashboardSpecialDayId } from '../utils/dashboardSpecialDayId';
+import {
+  dashboardLastDayOfMonth,
+  dashboardMonthFromYmd,
+  dashboardYmd,
+  splitDashboardSpecialDayByMonth,
+} from '../utils/dashboardSpecialDaysModel';
 
 const DEFAULT_COLORS = ['var(--color-noorix-amber)', '#eab308', '#84cc16', 'var(--noorix-accent-green)', '#8b5cf6'];
-
-function lastDayOfMonth(year: number, month: number) {
-  return new Date(year, month, 0).getDate();
-}
-
-function ymd(y: number, m: number, d: number) {
-  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-}
 
 export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth }: {
   companyId: string;
@@ -25,11 +26,12 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   selectedMonth: number | null;
 }) {
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const saudiNow = getSaudiNow();
   const month = selectedMonth ?? saudiNow.month;
-  const lastDay = lastDayOfMonth(year, month);
-  const startDate = ymd(year, month, 1);
-  const endDate = ymd(year, month, lastDay);
+  const lastDay = dashboardLastDayOfMonth(year, month);
+  const startDate = dashboardYmd(year, month, 1);
+  const endDate = dashboardYmd(year, month, lastDay);
 
   const {
     specialDays: specialDaysList,
@@ -52,6 +54,16 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<DashboardSpecialDay | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const showSaveError = useCallback(
+    (error: unknown) => {
+      const message = error instanceof Error ? error.message : t('saveFailedGeneric');
+      showToast(message, 'error');
+    },
+    [showToast, t],
+  );
 
   const handleAdd = useCallback(async () => {
     let from = toYmd(newFrom);
@@ -63,44 +75,74 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
       from = to;
       to = tmp;
     }
-    const id = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const id = createDashboardSpecialDayId();
     const color = DEFAULT_COLORS[specialDaysList.length % DEFAULT_COLORS.length];
-    const targetMonth = parseInt(from.slice(5, 7), 10) || month;
-    const newList = [...getMonthSpecialDays(targetMonth), { id, name, fromDate: from, toDate: to, color }];
+    const segments = splitDashboardSpecialDayByMonth(id, name, color, from, to);
     try {
-      await saveMonthSpecialDays(targetMonth, newList);
+      setSaving(true);
+      await Promise.all(
+        segments.map((segment) => {
+          const targetMonth = dashboardMonthFromYmd(segment.fromDate) ?? month;
+          return saveMonthSpecialDays(targetMonth, [...getMonthSpecialDays(targetMonth), segment]);
+        }),
+      );
       await invalidateYear();
       setNewFrom(startDate);
       setNewTo(endDate);
       setNewName('');
       setShowForm(false);
-    } catch {
-      // no-op
+      showToast(t('savedSuccessfully'), 'success');
+    } catch (error) {
+      showSaveError(error);
+    } finally {
+      setSaving(false);
     }
-  }, [newFrom, newTo, newName, startDate, endDate, t, specialDaysList, getMonthSpecialDays, saveMonthSpecialDays, month, invalidateYear]);
+  }, [
+    newFrom,
+    newTo,
+    newName,
+    startDate,
+    endDate,
+    t,
+    specialDaysList,
+    getMonthSpecialDays,
+    saveMonthSpecialDays,
+    month,
+    invalidateYear,
+    showToast,
+    showSaveError,
+  ]);
 
   const handleUpdate = useCallback(
-    async (id: string, updates: Record<string, unknown>) => {
+    async (id: string, updates: Partial<DashboardSpecialDay>) => {
       try {
-        await updateSpecialDayById(id, updates as { name?: string });
+        setSaving(true);
+        await updateSpecialDayById(id, updates);
         setEditingId(null);
-      } catch {
-        // no-op
+        showToast(t('savedSuccessfully'), 'success');
+      } catch (error) {
+        showSaveError(error);
+      } finally {
+        setSaving(false);
       }
     },
-    [updateSpecialDayById],
+    [updateSpecialDayById, showToast, showSaveError, t],
   );
 
   const handleRemove = useCallback(
     async (id: string) => {
-      if (!window.confirm(t('confirmDelete'))) return;
       try {
+        setSaving(true);
         await removeSpecialDayById(id);
-      } catch {
-        // no-op
+        setPendingDelete(null);
+        showToast(t('deletedSuccessfully'), 'success');
+      } catch (error) {
+        showSaveError(error);
+      } finally {
+        setSaving(false);
       }
     },
-    [removeSpecialDayById, t],
+    [removeSpecialDayById, showToast, showSaveError, t],
   );
 
   const monthLabel = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1];
@@ -167,8 +209,9 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
               placeholder={t('dashboardSpecialDayName')}
             />
             <div className="flex gap-2">
-              <Button variant="primary" onClick={() => void handleAdd()}>{t('save')}</Button>
+              <Button variant="primary" onClick={() => void handleAdd()} disabled={saving}>{t('save')}</Button>
               <Button
+                disabled={saving}
                 onClick={() => {
                   setShowForm(false);
                   setNewFrom(startDate);
@@ -206,6 +249,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
                 <Button
                   variant="primary"
                   size="sm"
+                  disabled={saving}
                   onClick={() => {
                     void handleUpdate(sp.id, { name: editingName.trim() || sp.name });
                     setEditingId(null);
@@ -229,7 +273,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
                 <span className="text-[12px] text-noorix-muted shrink-0 ltr" dir="ltr">
                   {sp.fromDate} — {sp.toDate}
                 </span>
-                <Button variant="danger" size="sm" onClick={() => void handleRemove(sp.id)}>
+                <Button variant="danger" size="sm" onClick={() => setPendingDelete(sp)}>
                   ✕
                 </Button>
               </>
@@ -242,6 +286,34 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
           </div>
         )}
       </div>
+
+      <Modal
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        title={t('confirmDelete')}
+        size="sm"
+        footer={(
+          <DialogActions
+            size="sm"
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setPendingDelete(null) },
+              {
+                key: 'delete',
+                label: t('delete'),
+                role: 'delete',
+                disabled: saving,
+                onClick: () => {
+                  if (pendingDelete) void handleRemove(pendingDelete.id);
+                },
+              },
+            ]}
+          />
+        )}
+      >
+        <p className="m-0 text-[13px] text-noorix-muted">
+          {pendingDelete?.name || t('dashboardSpecialDay')}
+        </p>
+      </Modal>
     </div>
   );
 }

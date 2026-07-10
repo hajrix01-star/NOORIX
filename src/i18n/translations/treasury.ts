@@ -105,4 +105,9 @@ export default {
   vaultLedgerTypeTransfer: { ar: 'تحويل بين خزائن', en: 'Inter-vault transfer' },
   /** عمود حركات الخزينة — يُذكر فيه وجهة التحويل */
   vaultTransactionTransferDestination: { ar: 'إلى الخزينة: {0}', en: 'To vault: {0}' },
+  selectDateRange: { ar: 'اختر فترة زمنية لعرض الحركات.', en: 'Select a date range to view transactions.' },
+  vaultTransactionsPeriodTotalsNote: {
+    ar: 'الإجماليات في أسفل الجدول تخص كامل الفترة المحددة ({0} حركة)، وليست الصفحة الحالية فقط.',
+    en: 'The footer totals cover the full selected period ({0} transactions), not only the current page.',
+  },
 };

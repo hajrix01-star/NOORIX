@@ -15,15 +15,15 @@ export function EmployeeDocSalaryBreakdownTable({ rows, total }: { rows: DocSala
         <tbody>
           {rows.map((row, idx) => (
             <tr key={`en-${row.en}-${idx}`}>
-              <td className="hr-doc-td text-left">{row.en}</td>
-              <td className="hr-doc-td text-right tabular-nums" dir="ltr">
+              <td className="hr-doc-td hr-doc-cell-start">{row.en}</td>
+              <td className="hr-doc-td hr-doc-cell-num" dir="ltr">
                 {hrFmt(row.amount)}
               </td>
             </tr>
           ))}
           <tr>
-            <td className="hr-doc-td text-left font-extrabold">Total Compensation</td>
-            <td className="hr-doc-td text-right font-extrabold tabular-nums" dir="ltr">
+            <td className="hr-doc-td hr-doc-cell-start font-extrabold">Total Compensation</td>
+            <td className="hr-doc-td hr-doc-cell-num font-extrabold" dir="ltr">
               {hrFmt(total)}
             </td>
           </tr>
@@ -40,15 +40,15 @@ export function EmployeeDocSalaryBreakdownTable({ rows, total }: { rows: DocSala
         <tbody>
           {rows.map((row, idx) => (
             <tr key={`ar-${row.ar}-${idx}`}>
-              <td className="hr-doc-td text-right">{row.ar}</td>
-              <td className="hr-doc-td text-center tabular-nums" dir="ltr">
+              <td className="hr-doc-td hr-doc-cell-start">{row.ar}</td>
+              <td className="hr-doc-td hr-doc-cell-num" dir="ltr">
                 {hrFmt(row.amount)}
               </td>
             </tr>
           ))}
           <tr>
-            <td className="hr-doc-td text-right font-extrabold">إجمالي الراتب</td>
-            <td className="hr-doc-td text-center font-extrabold tabular-nums" dir="ltr">
+            <td className="hr-doc-td hr-doc-cell-start font-extrabold">إجمالي الراتب</td>
+            <td className="hr-doc-td hr-doc-cell-num font-extrabold" dir="ltr">
               {hrFmt(total)}
             </td>
           </tr>

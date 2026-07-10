@@ -1,4 +1,16 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+
+const COLUMN_WIDTH_STORAGE_VERSION = 'v2';
+
+type ResizeState = {
+  colKey: string;
+  startX: number;
+  startW: number;
+};
+
+function columnWidthStorageKey(tableId: string) {
+  return `nx-col-widths:${COLUMN_WIDTH_STORAGE_VERSION}:${tableId}`;
+}
 
 export function useSmartTableColumnResize({
   dir,
@@ -7,18 +19,18 @@ export function useSmartTableColumnResize({
   dir: 'rtl' | 'ltr' | string;
   tableId?: string;
 }) {
-  const resizingRef = useRef<any>(null);
+  const resizingRef = useRef<ResizeState | null>(null);
   const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
     if (!tableId) return {};
     try {
-      const saved = localStorage.getItem(`nx-col-widths:${tableId}`);
+      const saved = localStorage.getItem(columnWidthStorageKey(tableId));
       return saved ? (JSON.parse(saved) as Record<string, number>) : {};
     } catch {
       return {};
     }
   });
 
-  const handleResizeStart = useCallback((e: any, colKey: any, startW: any) => {
+  const handleResizeStart = useCallback((e: ReactPointerEvent, colKey: string, startW: number) => {
     e.preventDefault();
     e.stopPropagation();
     const dirMult = dir === 'rtl' ? -1 : 1;
@@ -30,15 +42,15 @@ export function useSmartTableColumnResize({
       if (!resizingRef.current) return;
       const delta = (ev.clientX - resizingRef.current.startX) * dirMult;
       const newW = Math.max(40, resizingRef.current.startW + delta);
-      setColWidths((prev: any) => ({ ...prev, [colKey]: Math.round(newW) }));
+      setColWidths((prev) => ({ ...prev, [colKey]: Math.round(newW) }));
     };
 
     const onUp = () => {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       if (tableId) {
-        setColWidths((prev: any) => {
-          try { localStorage.setItem(`nx-col-widths:${tableId}`, JSON.stringify(prev)); } catch { /* noop */ }
+        setColWidths((prev) => {
+          try { localStorage.setItem(columnWidthStorageKey(tableId), JSON.stringify(prev)); } catch { /* noop */ }
           return prev;
         });
       }

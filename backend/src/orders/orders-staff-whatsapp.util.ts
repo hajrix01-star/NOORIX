@@ -8,6 +8,26 @@ import {
   staffSaleAvgPerOrder,
 } from './orders-staff-amount.util';
 
+type StaffWhatsAppItem = {
+  productId?: string | null;
+  quantity?: Prisma.Decimal | number | string | null;
+  unit?: string | null;
+  size?: string | null;
+  packaging?: string | null;
+  unitPrice?: Prisma.Decimal | number | string | null;
+  product?: Parameters<typeof resolveStaffItemVariant>[0] & {
+    nameAr?: string | null;
+    nameEn?: string | null;
+  };
+};
+
+type StaffWhatsAppOrder = {
+  sectionName?: string | null;
+  notes?: string | null;
+  user?: { nameAr?: string | null; nameEn?: string | null } | null;
+  items?: StaffWhatsAppItem[];
+};
+
 export function fmtStaffWaMoney(d: Prisma.Decimal | number): string {
   const n = Number(d);
   if (!Number.isFinite(n)) return '0';
@@ -16,7 +36,7 @@ export function fmtStaffWaMoney(d: Prisma.Decimal | number): string {
 
 /** نص واتساب للتسجيل الداخلي — قسم واحد أو عدة أقسام في رسالة واحدة */
 export function buildSalesWhatsAppTextCombined(
-  orders: any[],
+  orders: StaffWhatsAppOrder[],
   saleDate: Date,
   lang: 'ar' | 'en' = 'ar',
   logRef?: string | null,
@@ -46,7 +66,7 @@ export function buildSalesWhatsAppTextCombined(
       const unitPrice = resolveStaffItemUnitPrice(it);
       if (unitPrice.gt(0)) {
         const amount = staffItemLineAmount(it);
-        const variant = formatVariantLabel(it.size, it.packaging, it.unit);
+        const variant = formatVariantLabel(it.size ?? null, it.packaging ?? null, it.unit ?? null);
         const variantPart = variant ? ` (${variant})` : '';
         lines.push(
           `${prefix}• ${name}${variantPart}: ${fmtStaffWaMoney(q)} × ${fmtStaffWaMoney(unitPrice.toNumber())} = ${fmtStaffWaMoney(amount)} SR`,
@@ -81,7 +101,7 @@ export function buildSalesWhatsAppTextCombined(
 
 /** بناء نص واتساب من الطلبات المعلّقة (للمندوب — مع أسعار ومجموع) */
 export function buildStaffPurchaseWhatsAppText(
-  sections: { sectionName: string; orders: any[] }[],
+  sections: { sectionName: string; orders: StaffWhatsAppOrder[] }[],
   date: string,
   lang: 'ar' | 'en' = 'ar',
   grandTotal?: Prisma.Decimal,
@@ -103,6 +123,7 @@ export function buildStaffPurchaseWhatsAppText(
 
     for (const order of sec.orders) {
       for (const it of order.items || []) {
+        if (!it.productId) continue;
         const v = resolveStaffItemVariant(it.product, {
           size: it.size,
           packaging: it.packaging,

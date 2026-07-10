@@ -8,9 +8,14 @@ import { CatalogInfoBanner } from './CatalogInfoBanner';
 import { CatalogTypeSegment } from './CatalogTypeSegment';
 import { CatalogToolbar } from './CatalogToolbar';
 import { CatalogProductTable } from './CatalogProductTable';
-import { CatalogProductFormSheet } from './CatalogProductFormSheet';
+import { CatalogProductFormSheet, type CatalogProductFormState } from './CatalogProductFormSheet';
+import { OrderConfirmModal } from '../OrderConfirmModal';
+import type { ItemsManageTabController } from '../../hooks/useItemsManageTab';
+import type { OrderProduct } from '../../../../types/api';
 
-export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
+type DeactivateTarget = 'selected' | { id: string };
+
+export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController }) {
   const {
     t,
     companyId,
@@ -69,11 +74,12 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetMode, setSheetMode] = useState<'create' | 'edit'>('create');
+  const [deactivateTarget, setDeactivateTarget] = useState<DeactivateTarget | null>(null);
 
-  const totalOfType = (products as any[]).filter((p: any) => (p.productType || 'order') === catalogProductType).length;
+  const totalOfType = products.filter((p) => (p.productType || 'order') === catalogProductType).length;
 
   useEffect(() => {
-    setNewProduct((p: any) => ({ ...p, productType: catalogProductType }));
+    setNewProduct((p) => ({ ...p, productType: catalogProductType }));
   }, [catalogProductType, setNewProduct]);
 
   function openCreateSheet() {
@@ -83,7 +89,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
     setSheetOpen(true);
   }
 
-  function openEditSheet(row: any) {
+  function openEditSheet(row: OrderProduct) {
     openEditProduct(row);
     setSheetMode('edit');
     setSheetOpen(true);
@@ -94,8 +100,62 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
     setEditingProduct(null);
   }
 
-  const activeForm = sheetMode === 'edit' ? editingProduct : newProduct;
-  const setActiveForm = sheetMode === 'edit' ? setEditingProduct : setNewProduct;
+  const activeForm: CatalogProductFormState | null = sheetMode === 'edit'
+    ? editingProduct
+      ? {
+          ...editingProduct,
+          nameAr: editingProduct.nameAr || '',
+          nameEn: editingProduct.nameEn || '',
+          categoryId: editingProduct.categoryId || '',
+          sectionIds: editingProduct.sectionIds || [],
+          productType: editingProduct.productType || catalogProductType,
+          simpleLastPrice: editingProduct.simpleLastPrice || '',
+          variants: editingProduct.variants || [],
+        }
+      : null
+    : newProduct;
+
+  function setActiveForm(
+    action: React.SetStateAction<CatalogProductFormState | null>,
+  ) {
+    const normalizeVariants = (variants: CatalogProductFormState['variants']) =>
+      variants.map((variant) => ({
+        size: variant.size || '',
+        packaging: variant.packaging || '',
+        unit: variant.unit || 'piece',
+        lastPrice: String(variant.lastPrice ?? ''),
+      }));
+    const resolve = (current: CatalogProductFormState | null) =>
+      typeof action === 'function' ? action(current) : action;
+
+    if (sheetMode === 'edit') {
+      setEditingProduct((current) => resolve(current ? {
+        ...current,
+        nameAr: current.nameAr || '',
+        nameEn: current.nameEn || '',
+        categoryId: current.categoryId || '',
+        sectionIds: current.sectionIds || [],
+        productType: current.productType || catalogProductType,
+        simpleLastPrice: current.simpleLastPrice || '',
+        variants: normalizeVariants(current.variants || []),
+      } : null));
+      return;
+    }
+
+    setNewProduct((current) => {
+      const next = resolve(current);
+      if (!next) return current;
+      return {
+        nameAr: next.nameAr,
+        nameEn: next.nameEn,
+        categoryId: next.categoryId,
+        sectionIds: next.sectionIds,
+        productType: next.productType,
+        simpleLastPrice: next.simpleLastPrice,
+        variants: normalizeVariants(next.variants),
+      };
+    });
+  }
 
   function handleSave() {
     if (sheetMode === 'edit') {
@@ -120,17 +180,12 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
     }
   }
 
-  function handleDeactivateOne(row: any) {
-    if (!window.confirm(t('ordersProductDeactivateConfirm'))) return;
-    deleteProductsMutation.mutate([row.id]);
-  }
-
   const variantHandlers = sheetMode === 'edit'
     ? {
-        addVariant: () => setEditingProduct((p: any) => ({
+        addVariant: () => setEditingProduct((p) => p ? ({
           ...p,
           variants: [...(p.variants || []), { size: '', packaging: '', unit: 'piece', lastPrice: '' }],
-        })),
+        }) : p),
         updateVariant: updateEditingVariant,
         removeVariant: removeEditingVariant,
       }
@@ -177,6 +232,23 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
           onClose={() => setShowImportModal(false)}
         />
       )}
+      <OrderConfirmModal
+        open={!!deactivateTarget}
+        title={t('confirmDelete')}
+        message={t('ordersProductDeactivateConfirm')}
+        confirmLabel={t('delete')}
+        cancelLabel={t('cancel')}
+        busy={deleteProductsMutation.isPending}
+        onClose={() => setDeactivateTarget(null)}
+        onConfirm={() => {
+          if (deactivateTarget === 'selected') {
+            handleDeleteSelectedProducts();
+          } else if (deactivateTarget) {
+            deleteProductsMutation.mutate([deactivateTarget.id]);
+          }
+          setDeactivateTarget(null);
+        }}
+      />
 
       <Modal
         open={bulkSectionModal}
@@ -185,12 +257,12 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
         size="sm"
       >
         <div className="flex flex-col gap-4">
-          {(sections as any[]).length === 0 ? (
+          {sections.length === 0 ? (
             <p className="text-noorix-muted text-[13px]">{t('sectionsEmpty')}</p>
           ) : (
             <div className="flex flex-col gap-2">
               <div className="text-[12px] text-noorix-muted mb-1">{t('bulkSelectSections')}</div>
-              {(sections as any[]).map((s: any) => (
+              {sections.map((s) => (
                 <Checkbox
                   key={s.id}
                   checked={bulkSelectedSections.includes(s.id)}
@@ -241,6 +313,9 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
         saving={sheetMode === 'edit' ? updateProduct.isPending : createProduct.isPending}
         onClose={closeSheet}
         onSave={handleSave}
+        onDelete={sheetMode === 'edit' && editingProduct?.id ? () => {
+          if (editingProduct.id) setDeactivateTarget({ id: editingProduct.id });
+        } : undefined}
         onAddSize={() => setAddSizeModal(true)}
         onAddPackaging={() => setAddPackagingModal(true)}
         addVariant={variantHandlers.addVariant}
@@ -253,8 +328,8 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
         <CatalogInfoBanner productType={catalogProductType} />
         <CatalogSetupGuide
           t={t}
-          sectionsCount={(sections as any[]).length}
-          categoriesCount={(categories as any[]).length}
+          sectionsCount={sections.length}
+          categoriesCount={categories.length}
           productsCount={totalOfType}
           onGoSections={() => setActiveSubTab('sections')}
           onGoCategories={() => setActiveSubTab('categories')}
@@ -278,7 +353,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
             selectedCount={selectedProductIds.size}
             onAddProduct={openCreateSheet}
             onBulkSections={() => { setBulkSelectedSections([]); setBulkSectionModal(true); }}
-            onDeactivateSelected={handleDeleteSelectedProducts}
+            onDeactivateSelected={() => setDeactivateTarget('selected')}
             deactivatePending={deleteProductsMutation.isPending}
             onDownloadTemplate={() => handleDownloadProductsImportTemplate(catalogProductType)}
             onImport={() => setShowImportModal(true)}
@@ -298,7 +373,6 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
             onToggleSelect={toggleProductSelection}
             onToggleAll={toggleAllProducts}
             onEdit={openEditSheet}
-            onDeactivate={handleDeactivateOne}
           />
         </div>
       </div>

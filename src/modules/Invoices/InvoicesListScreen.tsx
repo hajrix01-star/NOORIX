@@ -11,6 +11,7 @@ import { InvoiceViewModal } from './components/InvoiceViewModal';
 import { InvoicesListExecutiveCards } from './components/InvoicesListExecutiveCards';
 import { InvoicesListFiltersToolbar } from './components/InvoicesListFiltersToolbar';
 import { InvoicesListPageHeader } from './components/InvoicesListPageHeader';
+import type { InvoiceTableRow } from './invoiceTableRowModel';
 import { useInvoicesListScreen } from './useInvoicesListScreen';
 
 export default function InvoicesListScreen() {
@@ -18,6 +19,7 @@ export default function InvoicesListScreen() {
 
   return (
     <ScreenShell>
+      {s.printPreviewModal}
       <InvoicesListPageHeader
         t={s.t}
         dateFilter={s.dateFilter}
@@ -129,6 +131,11 @@ export default function InvoicesListScreen() {
               t={s.t}
               lang={s.lang}
               fmt={s.fmt}
+              userRole={s.userRole}
+              userPermissions={s.userPermissions}
+              onPrint={s.handlePrintSingleInvoice}
+              onEdit={s.setEditingInvoice}
+              onDelete={s.confirmAndDeleteInvoice}
             />
           )}
           <SmartTable
@@ -138,7 +145,7 @@ export default function InvoicesListScreen() {
             innerPadding={8}
             tableId="invoices-list"
             frameClassName="noorix-invoices-table-frame"
-            getRowClassName={(row: any) => (row.status === 'cancelled' ? 'noorix-row-cancelled' : '')}
+            getRowClassName={(row: InvoiceTableRow) => (row.status === 'cancelled' ? 'noorix-row-cancelled' : '')}
             columns={s.columns}
             data={s.tableData}
             total={s.displayedTotal}

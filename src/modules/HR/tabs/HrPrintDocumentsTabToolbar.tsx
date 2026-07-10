@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input } from '../../../ui';
+import { Button, FilterToolbar, SearchableOptionsPicker } from '../../../ui';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import type { HrPrintDocKind } from './hrPrintDocumentsTabDrafts';
 
@@ -67,24 +67,24 @@ export function HrPrintDocumentsTabToolbar({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-        <Input
-          type="select"
+      <FilterToolbar
+        actions={(
+          <Button type="button" size="sm" variant="primary" disabled={!hasEmployee} onClick={onImportFromHr}>
+            {t('hrPrintImportFromHr')}
+          </Button>
+        )}
+      >
+        <SearchableOptionsPicker
           label={t('selectEmployee')}
+          allowEmpty
+          emptyValue=""
+          emptyLabel="—"
           value={employeeId}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onEmployeeId(e.target.value)}
-        >
-          <option value="">—</option>
-          {employees.map((e) => (
-            <option key={e.id} value={e.id}>
-              {employeeDisplayName(e, lang, e.id)}
-            </option>
-          ))}
-        </Input>
-        <Button type="button" size="sm" variant="primary" disabled={!hasEmployee} onClick={onImportFromHr}>
-          {t('hrPrintImportFromHr')}
-        </Button>
-      </div>
+          onChange={onEmployeeId}
+          options={employees.map((e) => ({ value: e.id, label: employeeDisplayName(e, lang, e.id) }))}
+          aria-label={t('selectEmployee')}
+        />
+      </FilterToolbar>
     </>
   );
 }

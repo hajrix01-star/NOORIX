@@ -1,19 +1,40 @@
 import { getOwnerOverview } from '../services/api';
 import { ownerKeys } from '../services/queryKeys/owner';
+import type { OwnerOverviewData } from '../types/api';
 import { useApiQuery } from './useApiQuery';
 
-export interface OwnerOverviewData {
-  reportsByCompany: Record<string, unknown>;
-  dailySalesByCompany: Record<string, unknown[]>;
-}
+const EMPTY_COMPARISON = { rows: [], grandMonthlyTotals: [], grandTotal: 0 };
 
-const EMPTY: OwnerOverviewData = { reportsByCompany: {}, dailySalesByCompany: {} };
+const EMPTY: OwnerOverviewData = {
+  schemaVersion: 1,
+  period: { year: 0, month: null },
+  companies: [],
+  kpis: [],
+  companyRows: [],
+  monthlyBuckets: [],
+  comparison: {
+    sales: EMPTY_COMPARISON,
+    purchases: EMPTY_COMPARISON,
+    expenses: EMPTY_COMPARISON,
+    netProfit: EMPTY_COMPARISON,
+  },
+  monthlyPerformance: { sales: [], purchases: [], expenses: [], netProfit: [] },
+  dailyPerformance: [],
+  exportRows: [],
+};
 
-function normalizeOwnerOverview(rawResult: any): OwnerOverviewData {
-  const raw = rawResult?.data ?? rawResult;
+function normalizeOwnerOverview(raw: OwnerOverviewData): OwnerOverviewData {
+  if (!raw || raw.schemaVersion !== 1) return EMPTY;
   return {
-    reportsByCompany: (raw?.reportsByCompany ?? {}) as Record<string, unknown>,
-    dailySalesByCompany: (raw?.dailySalesByCompany ?? {}) as Record<string, unknown[]>,
+    ...raw,
+    comparison: {
+      ...EMPTY.comparison,
+      ...raw.comparison,
+    },
+    monthlyPerformance: {
+      ...EMPTY.monthlyPerformance,
+      ...raw.monthlyPerformance,
+    },
   };
 }
 
@@ -25,7 +46,7 @@ export function useOwnerOverview(p: {
 }) {
   const { companyIds, year, month, enabled = true } = p;
 
-  const { data, isLoading, isError, error } = useApiQuery<any, OwnerOverviewData>({
+  const { data, isLoading, isError, error } = useApiQuery<OwnerOverviewData, OwnerOverviewData>({
     queryKey: ownerKeys.overview(companyIds, year, month),
     queryFn: () => getOwnerOverview({ companyIds, year, month }),
     fallbackMessage: 'Failed to load owner overview',

@@ -11,12 +11,19 @@ import {
   Controller, Post, Param, Req, ForbiddenException, UseGuards,
 } from '@nestjs/common';
 import { AuthGuard }            from '@nestjs/passport';
+import type { Request }         from 'express';
 import { CompanyAccessGuard }   from '../auth/guards/company-access.guard';
 import { RolesGuard }           from '../auth/guards/roles.guard';
 import { SkipCompanyCheck }     from '../auth/decorators/skip-company-check.decorator';
 import { AccountingInitService } from './accounting-init.service';
 import { isSuperAdmin }         from '../auth/constants/permissions';
 import { TenantContext }        from '../common/tenant-context';
+
+type AuthenticatedRequest = Request & {
+  user?: {
+    role?: string | null;
+  };
+};
 
 @Controller('accounting-init')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -26,7 +33,7 @@ export class AccountingInitController {
   /** إعادة تهيئة شركة واحدة بالكود التحليلي الجديد */
   @Post('reset-categories/:companyId')
   @SkipCompanyCheck()
-  async resetOne(@Param('companyId') companyId: string, @Req() req: any) {
+  async resetOne(@Param('companyId') companyId: string, @Req() req: AuthenticatedRequest) {
     if (!isSuperAdmin(req.user?.role ?? '')) {
       throw new ForbiddenException('هذا الإجراء للمسؤول العام فقط');
     }
@@ -42,7 +49,7 @@ export class AccountingInitController {
   /** إعادة تهيئة جميع الشركات دفعةً واحدة */
   @Post('reset-all-categories')
   @SkipCompanyCheck()
-  async resetAll(@Req() req: any) {
+  async resetAll(@Req() req: AuthenticatedRequest) {
     if (!isSuperAdmin(req.user?.role ?? '')) {
       throw new ForbiddenException('هذا الإجراء للمسؤول العام فقط');
     }
@@ -58,7 +65,7 @@ export class AccountingInitController {
   /** إضافة الفئات الناقصة فقط لشركة واحدة — بدون حذف */
   @Post('patch-categories/:companyId')
   @SkipCompanyCheck()
-  async patchOne(@Param('companyId') companyId: string, @Req() req: any) {
+  async patchOne(@Param('companyId') companyId: string, @Req() req: AuthenticatedRequest) {
     if (!isSuperAdmin(req.user?.role ?? '')) {
       throw new ForbiddenException('هذا الإجراء للمسؤول العام فقط');
     }
@@ -74,7 +81,7 @@ export class AccountingInitController {
   /** إضافة الفئات الناقصة لجميع الشركات — بدون حذف */
   @Post('patch-all-categories')
   @SkipCompanyCheck()
-  async patchAll(@Req() req: any) {
+  async patchAll(@Req() req: AuthenticatedRequest) {
     if (!isSuperAdmin(req.user?.role ?? '')) {
       throw new ForbiddenException('هذا الإجراء للمسؤول العام فقط');
     }

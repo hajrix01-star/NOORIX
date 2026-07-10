@@ -1,9 +1,10 @@
 import React from 'react';
-import { Button, DateMonthScopePicker, Input, MetricCard, cn } from '../../ui';
+import { Button, FilterToolbar, Input, MetricCard, cn } from '../../ui';
 import GeneralPlTable from './GeneralPlTable';
 import type { PlDisplayLevel } from './reportHelpers';
-import type { GeneralProfitLossReport, ReportPeriodMode } from './reportTypes';
+import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState, ReportPeriodMode } from './reportTypes';
 import { buildProfitLossKpiCards, getProfitLossMonthNames } from './profitLossPresentationModel';
+import ReportDateFilter from './ReportDateFilter';
 
 type ProfitLossReportWorkspaceProps = {
   activeCompanyId: string | number | null | undefined;
@@ -18,7 +19,7 @@ type ProfitLossReportWorkspaceProps = {
   periodMode: ReportPeriodMode;
   selectedMonth: string;
   selectedMonthNumber: number | null;
-  visibleRows: any[];
+  visibleRows: PlDisplayRow[];
   flatRowsCount: number;
   collapsedGroups: Record<string, boolean>;
   plDisplayLevel: PlDisplayLevel;
@@ -32,10 +33,9 @@ type ProfitLossReportWorkspaceProps = {
   onDisplayLevelChange: (level: PlDisplayLevel) => void;
   onRowSearchChange: (value: string) => void;
   onToggleGroup: (key: string) => void;
-  onOpenDetail: (payload: { month: number | null; groupKey: string; itemKey: string | null; showTrend?: boolean }) => void;
+  onOpenDetail: (payload: ReportDetailState) => void;
   onExportExcel: () => void;
-  onExportPdf: () => void;
-  onPrint: () => void;
+  onPrintPdf: () => void;
 };
 
 export default function ProfitLossReportWorkspace({
@@ -67,8 +67,7 @@ export default function ProfitLossReportWorkspace({
   onToggleGroup,
   onOpenDetail,
   onExportExcel,
-  onExportPdf,
-  onPrint,
+  onPrintPdf,
 }: ProfitLossReportWorkspaceProps) {
   const monthNames = getProfitLossMonthNames(lang);
   const activeMonthLabel = selectedMonthNumber ? monthNames[selectedMonthNumber - 1] : '';
@@ -95,31 +94,21 @@ export default function ProfitLossReportWorkspace({
             </div>
           </div>
 
-          <div className="nx-pl-command-center__controls">
-            <DateMonthScopePicker
-              year={year}
-              years={yearOptions}
-              month={selectedMonth}
-              mode={periodMode}
-              allowAll={false}
-              allowYear
-              fallbackMonth={selectedMonthNumber || 1}
+          <FilterToolbar variant="bare" className="nx-pl-command-center__controls">
+            <ReportDateFilter
               onYearChange={onYearChange}
               onMonthChange={onSelectedMonthChange}
-              onModeChange={(value) => onPeriodModeChange(value as ReportPeriodMode)}
+              onModeChange={onPeriodModeChange}
             />
             <div className="nx-pl-actions">
               <Button size="sm" onClick={onExportExcel} disabled={!report}>
                 {t('exportExcel')}
               </Button>
-              <Button size="sm" onClick={onExportPdf} disabled={!report}>
+              <Button size="sm" onClick={onPrintPdf} disabled={!report}>
                 طباعة / PDF
               </Button>
-              <Button size="sm" onClick={onPrint} disabled={!report}>
-                {t('print')}
-              </Button>
             </div>
-          </div>
+          </FilterToolbar>
         </div>
       </section>
 
@@ -181,7 +170,7 @@ export default function ProfitLossReportWorkspace({
                   <div className="nx-pl-eyebrow">{t('reportPlToolbarPeriod')}</div>
                   <h3 className="nx-pl-statement-title">{periodLabel}</h3>
                 </div>
-                <div className="nx-pl-statement-tools">
+                <FilterToolbar variant="bare" className="nx-pl-statement-tools">
                   <div className="nx-pl-level-group">
                     {([1, 2, 3] as const).map((level) => (
                       <Button
@@ -201,9 +190,9 @@ export default function ProfitLossReportWorkspace({
                     className="nx-pl-row-search"
                     label={t('reportPlRowFilterPlaceholder')}
                     value={rowSearch}
-                    onChange={(event: any) => onRowSearchChange(event.target.value)}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => onRowSearchChange(event.target.value)}
                   />
-                </div>
+                </FilterToolbar>
               </div>
 
               <GeneralPlTable

@@ -1,7 +1,7 @@
 ﻿/**
  * CompaniesTab — تبويب إدارة الشركات
  */
-import React, { useState, useCallback } from 'react';
+import React, { type ChangeEvent, type FormEvent, type MouseEvent, type KeyboardEvent, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
@@ -12,14 +12,26 @@ import {
   deleteCompany,
   resetCompanyCategories,
 } from '../../../services/api';
-import {
-  labelStyle,
-  fileToDataUrl,
-} from '../constants/settingsConstants';
-import { Button, Checkbox, FileInput, Input, AdaptiveSheet } from '../../../ui';
+import { fileToDataUrl } from '../constants/settingsConstants';
+import { Button, Checkbox, DialogActions, FileInput, Input, AdaptiveSheet, FilterToolbar } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 import CompanyFinancialInsightThresholdsSection from './CompanyFinancialInsightThresholdsSection';
 import { buildCompanyUpdateBody, mergeCompanySavePatch } from '../utils/companyUpdateBody';
+import type { SettingsCompany } from '../settingsTypes';
+import { CompanyAddForm } from './CompanyAddForm';
+import { CompanyCardsGrid } from './CompanyCardsGrid';
+import {
+  buildCompanyEditModal,
+  EMPTY_COMPANY_ADD_FORM,
+  resetCompanyCategoriesSuccessMessage,
+  type CompanyAddFormState,
+  type CompanyCreateBody,
+  type CompanyEditModal,
+  type CompanyMutationResult,
+  type CompanyUpdateResult,
+  type CompanyUpdateVariables,
+  type ResetCompanyCategoriesResult,
+} from '../companyTabModel';
 
 export default function CompaniesTab({
   onCompanyCreated,
@@ -33,19 +45,12 @@ export default function CompaniesTab({
   const queryClient = useQueryClient();
   const [includeArchived,    setIncludeArchived]    = useState(false);
   const [showAddForm,        setShowAddForm]        = useState(false);
-  const [editModal,          setEditModal]          = useState<any>(null);
+  const [editModal,          setEditModal]          = useState<CompanyEditModal | null>(null);
   const [deleteConfirmCode,  setDeleteConfirmCode]  = useState('');
 
-  // نموذج الإضافة
-  const [nameAr,   setNameAr]   = useState('');
-  const [nameEn,   setNameEn]   = useState('');
-  const [taxNumber,setTaxNumber]= useState('');
-  const [phone,    setPhone]    = useState('');
-  const [address,  setAddress]  = useState('');
-  const [email,    setEmail]    = useState('');
-  const [logoUrl,  setLogoUrl]  = useState('');
+  const [addForm, setAddForm] = useState<CompanyAddFormState>(EMPTY_COMPANY_ADD_FORM);
 
-  const { data: companiesList = [], isLoading, isError, refetch } = useApiListQuery<any>({
+  const { data: companiesList = [], isLoading, isError, refetch } = useApiListQuery<SettingsCompany>({
     queryKey:        appKeys.companies(includeArchived),
     queryFn:         () => getCompanies(includeArchived),
     fallbackMessage: 'فشل تحميل الشركات',
@@ -53,23 +58,22 @@ export default function CompaniesTab({
     retry:           false,
   });
 
-  const archivedCompanies = companiesList.filter((c: any) => c.isArchived);
+  const archivedCompanies = companiesList.filter((company) => company.isArchived);
   const showTrulyEmptyState =
     !isLoading && !showAddForm && companiesList.length === 0 && includeArchived;
   const showNoActiveCompaniesHint =
     !isLoading && !showAddForm && companiesList.length === 0 && !includeArchived;
 
   const resetAddForm = useCallback(() => {
-    setNameAr(''); setNameEn(''); setTaxNumber('');
-    setPhone(''); setAddress(''); setEmail(''); setLogoUrl('');
+    setAddForm(EMPTY_COMPANY_ADD_FORM);
     setShowAddForm(false);
   }, []);
 
   const addMutation = useApiMutation({
-    mutationFn: (body: any) => createCompany(body),
+    mutationFn: (body: CompanyCreateBody) => createCompany(body),
     invalidateQueries: [appKeys.companiesRoot()],
     showErrorToast: false,
-    onSuccess: (res: any) => {
+    onSuccess: (res: CompanyMutationResult) => {
       const created = res?.data ?? res;
       if (created?.id && onCompanyCreated) onCompanyCreated(created.id);
       resetAddForm();
@@ -77,25 +81,28 @@ export default function CompaniesTab({
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }: any) => updateCompany(id, body),
+    mutationFn: ({ id, body }: CompanyUpdateVariables) => updateCompany(id, body),
     invalidateQueries: [appKeys.companiesRoot(), companyKeys.root()],
     showErrorToast: false,
-      successToast: (data: any, variables: any) => {
+      successToast: (_data: unknown, variables: CompanyUpdateVariables) => {
       if (variables?.body?.isArchived === true) return 'تم أرشفة الشركة.';
       if (variables?.body?.isArchived === false) {
         return 'تم إعادة تفعيل الشركة. ستظهر في قائمة الشركات النشطة والقائمة أعلى النظام.';
       }
       return 'تم حفظ تعديلات الشركة.';
     },
-    onSuccess: (res: any, variables: any) => {
+    onSuccess: (res: CompanyUpdateResult, variables: CompanyUpdateVariables) => {
       const merged = mergeCompanySavePatch(res, variables);
       if (merged) {
         const { id, patch } = merged;
-        queryClient.setQueriesData({ queryKey: appKeys.companiesRoot() }, (prev: any) => {
+        queryClient.setQueriesData({ queryKey: appKeys.companiesRoot() }, (prev: unknown) => {
           if (!Array.isArray(prev)) return prev;
-          return prev.map((c: any) => (c?.id === id ? { ...c, ...patch } : c));
+          return prev.map((company) => {
+            if (!company || typeof company !== 'object' || !('id' in company)) return company;
+            return company.id === id ? { ...company, ...patch } : company;
+          });
         });
-        queryClient.setQueryData(companyKeys.single(id), (prev: any) => {
+        queryClient.setQueryData(companyKeys.single(id), (prev: unknown) => {
           if (!prev || typeof prev !== 'object') return prev;
           return { ...prev, ...patch };
         });
@@ -105,7 +112,7 @@ export default function CompaniesTab({
   });
 
   const deleteMutation = useApiMutation({
-    mutationFn: (id: any) => deleteCompany(id),
+    mutationFn: (id: string) => deleteCompany(id),
     invalidateQueries: [appKeys.companiesRoot()],
     showErrorToast: false,
     onSuccess: () => { setEditModal(null); },
@@ -117,55 +124,42 @@ export default function CompaniesTab({
     error: string | null;
   }>({ loading: false, msg: null, error: null });
 
-  const handleResetOneCompany = async (companyId: any) => {
+  const handleResetOneCompany = async (companyId: string) => {
     if (!window.confirm('سيتم مسح جميع الفئات وإعادة بنائها للشركة وفق الهيكل الجديد.\n\nالموردون يفقدون ربط الفئة.\nبنود المصروفات تُحذف.\n\nمتأكد؟')) return;
     setResetState({ loading: true, msg: null, error: null });
     try {
-      const res = await resetCompanyCategories(companyId);
+      const res = await resetCompanyCategories(companyId) as ResetCompanyCategoriesResult;
       if (res?.success) {
         const d = res.data;
-        setResetState({ loading: false, msg: `✅ تم — حُذفت ${d.deleted.categories} فئة و${d.deleted.oldAccounts} حساب قديم. أُنشئت ${d.created.categories} فئة جديدة.`, error: null });
+        setResetState({ loading: false, msg: resetCompanyCategoriesSuccessMessage(res), error: null });
       } else {
         setResetState({ loading: false, msg: null, error: res?.error || 'فشل' });
       }
-    } catch (e: any) {
-      setResetState({ loading: false, msg: null, error: e?.message || 'خطأ غير متوقع' });
+    } catch (error: unknown) {
+      setResetState({ loading: false, msg: null, error: error instanceof Error ? error.message : 'خطأ غير متوقع' });
     }
   };
 
-  const openEdit = (company: any, e: any) => {
-    if (e?.target?.closest?.('button')) return;
-    setEditModal({
-      id: company.id,
-      nameAr: company.nameAr || '',
-      nameEn: company.nameEn || '',
-      taxNumber: company.taxNumber || '',
-      phone: company.phone || '',
-      address: company.address || '',
-      email: company.email || '',
-      logoUrl: company.logoUrl || '',
-      isArchived: !!company.isArchived,
-      _initial: {
-        nameEn: company.nameEn || '',
-        taxNumber: company.taxNumber || '',
-        phone: company.phone || '',
-        address: company.address || '',
-        email: company.email || '',
-        logoUrl: company.logoUrl || '',
-      },
-    });
+  const openEdit = (company: SettingsCompany, event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest('button')) return;
+    setEditModal(buildCompanyEditModal(company));
     setDeleteConfirmCode('');
   };
 
-  const handleLogoFile = async (e: any, isEdit: any = false) => {
-    const file = e.target.files?.[0];
+  const handleLogoFile = async (event: ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = event.target.files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
     try {
       const url = await fileToDataUrl(file);
       const dataUrl = String(url);
-      isEdit ? setEditModal((p: any) => ({ ...p, logoUrl: dataUrl })) : setLogoUrl(dataUrl);
+      if (isEdit) {
+        setEditModal((previous) => (previous ? { ...previous, logoUrl: dataUrl } : previous));
+      } else {
+        setAddForm((previous) => ({ ...previous, logoUrl: dataUrl }));
+      }
+    } catch {
     }
-    catch (_: any) {}
   };
 
   const handleDelete = () => {
@@ -206,14 +200,14 @@ export default function CompaniesTab({
         </div>
       )}
 
-      <div className="nx-toolbar flex-wrap">
-        <Button size="sm" variant={showAddForm ? undefined : 'primary'} onClick={() => setShowAddForm((v: any) => !v)}>
+      <FilterToolbar variant="bare" className="nx-toolbar flex-wrap">
+        <Button size="sm" variant={showAddForm ? undefined : 'primary'} onClick={() => setShowAddForm((value) => !value)}>
           {showAddForm ? 'إلغاء الإضافة' : 'إضافة شركة'}
         </Button>
         <div className="nx-checkbox text-noorix-muted items-center gap-2 cursor-pointer select-none">
           <Checkbox
             checked={includeArchived}
-            onChange={(e: any) => setIncludeArchived(e.target.checked)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setIncludeArchived(event.target.checked)}
             label="عرض المؤرشفة"
           />
           {includeArchived && archivedCompanies.length > 0 && (
@@ -222,7 +216,7 @@ export default function CompaniesTab({
             </span>
           )}
         </div>
-      </div>
+      </FilterToolbar>
       {resetState.msg && (
         <div className="rounded-lg p-3 text-[13px] bg-green-50 border border-green-200 text-green-800">{resetState.msg}</div>
       )}
@@ -231,98 +225,17 @@ export default function CompaniesTab({
       )}
 
       {showAddForm && (
-        <div className="noorix-surface-card p-5">
-          <h3 className="m-0 mb-4 text-[16px]">إضافة شركة جديدة</h3>
-          <form onSubmit={(e: any) => { e.preventDefault(); if (!nameAr.trim()) return; addMutation.mutate({ nameAr: nameAr.trim(), nameEn: nameEn.trim() || undefined, taxNumber: taxNumber.trim() || undefined, phone: phone.trim() || undefined, address: address.trim() || undefined, email: email.trim() || undefined, logoUrl: logoUrl.trim() || undefined }); }}
-            className="grid w-full min-w-0 max-w-[480px] gap-3">
-            <Input type="text" label="الاسم بالعربي *" value={nameAr} onChange={(e: any) => setNameAr(e.target.value)} placeholder="مطعم المعلم الشامي" required />
-            <Input type="text" label="الاسم بالإنجليزي" value={nameEn} onChange={(e: any) => setNameEn(e.target.value)} placeholder="Al-Moalem Al-Shami" />
-            <Input type="text" label="الرقم الضريبي" value={taxNumber} onChange={(e: any) => setTaxNumber(e.target.value)} placeholder="300000000000003" />
-            <Input type="text" label="رقم الهاتف" value={phone} onChange={(e: any) => setPhone(e.target.value)} placeholder="05xxxxxxxx" />
-            <Input type="text" label="العنوان" value={address} onChange={(e: any) => setAddress(e.target.value)} placeholder="الرياض، حي..." />
-            <Input type="email" label="البريد الإلكتروني" value={email} onChange={(e: any) => setEmail(e.target.value)} placeholder="info@example.com" />
-            <div>
-              <label style={labelStyle}>شعار الشركة</label>
-              <Input type="url" value={logoUrl} onChange={(e: any) => setLogoUrl(e.target.value)} placeholder="https://..." />
-              <label className="nx-file-label mt-1.5">
-                رفع صورة من الجهاز
-                <FileInput accept="image/*" onChange={handleLogoFile} className="hidden" />
-              </label>
-            </div>
-            <div className="nx-toolbar">
-              <Button type="submit" variant="primary" disabled={addMutation.isPending || !nameAr.trim()}>
-                {addMutation.isPending ? 'جاري الإضافة...' : 'حفظ الشركة'}
-              </Button>
-              <Button type="button" onClick={() => setShowAddForm(false)}>إلغاء</Button>
-            </div>
-            {addMutation.isError && <p className="m-0 text-[13px] text-noorix-red">{addMutation.error?.message}</p>}
-          </form>
-        </div>
+        <CompanyAddForm
+          form={addForm}
+          setForm={setAddForm}
+          addMutation={addMutation}
+          onCancel={() => setShowAddForm(false)}
+          onLogoFile={handleLogoFile}
+        />
       )}
 
       {!isLoading && companiesList.length > 0 && (
-        <div className="noorix-exec-card-grid">
-          {companiesList.map((c: any) => (
-            <div
-              key={c.id}
-              role="button"
-              tabIndex={0}
-              onClick={(e: any) => openEdit(c, e)}
-              onKeyDown={(e: any) => { if (e.key === 'Enter' || e.key === ' ') openEdit(c, e); }}
-              className={`noorix-exec-card noorix-exec-card--inbound cursor-pointer ${c.isArchived ? 'opacity-75' : ''}`}
-            >
-              <div className="noorix-exec-card__stripe" />
-              <div className="noorix-exec-card__header">
-                <div className="noorix-exec-card__icon">
-                  {c.logoUrl ? (
-                    <img src={c.logoUrl} alt="" className="w-9 h-9 rounded-[9px] object-cover" />
-                  ) : (
-                    <span className="text-noorix-muted text-[18px]">—</span>
-                  )}
-                </div>
-                <span className="noorix-exec-card__title">{c.nameAr}</span>
-              </div>
-              <div className="noorix-exec-card__total">
-                  <span className="noorix-exec-card__amount text-[18px]">{c.nameEn || c.nameAr}</span>
-                <span className="noorix-exec-card__currency text-[12px]">{c.taxNumber ? `الرقم الضريبي: ${c.taxNumber}` : ''}</span>
-              </div>
-              <div className="noorix-exec-card__divider" />
-              <div className="noorix-exec-card__footer">
-                <div className="noorix-exec-card__stat">
-                  <span className="noorix-exec-card__stat-label">الهاتف</span>
-                  <span className="noorix-exec-card__stat-value">{c.phone || '—'}</span>
-                </div>
-                <div className="noorix-exec-card__stat">
-                  <span className="noorix-exec-card__stat-label">البريد</span>
-                  <span className="noorix-exec-card__stat-value nx-cell-ellipsis text-[11px]">{c.email || '—'}</span>
-                </div>
-                <div className="noorix-exec-card__stat">
-                  <span className="noorix-exec-card__stat-label">الحالة</span>
-                  <span className="noorix-exec-card__stat-value">{c.isArchived ? 'مؤرشفة' : 'نشطة'}</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-2 pt-2 px-[18px] pb-[14px]">
-                <span className="text-[12px] text-noorix-muted">اضغط للتعديل</span>
-                {c.isArchived ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="primary"
-                    className="text-[12px] shrink-0"
-                    disabled={updateMutation.isPending}
-                    aria-label={`إعادة تفعيل الشركة ${c.nameAr || ''}`}
-                    onClick={(e: any) => {
-                      e.stopPropagation();
-                      updateMutation.mutate({ id: c.id, body: { isArchived: false } });
-                    }}
-                  >
-                    إعادة التفعيل
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ))}
-        </div>
+        <CompanyCardsGrid companies={companiesList} updateMutation={updateMutation} onOpenEdit={openEdit} />
       )}
 
       <AdaptiveSheet
@@ -333,34 +246,48 @@ export default function CompaniesTab({
         side="start"
         className="companies-edit-drawer"
         footer={
-          <div className="flex items-center justify-end flex flex-wrap gap-2.5">
-            {editModal && editModal.isArchived && (
-              <Button
-                variant="primary"
-                onClick={() => updateMutation.mutate({ id: editModal.id, body: { isArchived: false } })}
-                disabled={updateMutation.isPending}
-                aria-label={`إعادة تفعيل الشركة ${editModal.nameAr || ''}`}
-              >
-                إعادة التفعيل
-              </Button>
-            )}
-            {editModal && !editModal.isArchived && (
-              <Button
-                variant="warning"
-                onClick={() => {
+          <DialogActions
+            actions={[
+              {
+                key: 'cancel',
+                label: 'إلغاء',
+                role: 'cancel',
+                onClick: () => setEditModal(null),
+              },
+              {
+                key: 'archive',
+                label: 'أرشفة',
+                role: 'secondary',
+                hidden: !editModal || editModal.isArchived,
+                disabled: updateMutation.isPending,
+                onClick: () => {
+                  if (!editModal) return;
                   if (!window.confirm('أرشفة هذه الشركة؟ لن تظهر في القوائم حتى تعيد تفعيلها من «عرض المؤرشفة».')) return;
                   updateMutation.mutate({ id: editModal.id, body: { isArchived: true } });
-                }}
-                disabled={updateMutation.isPending}
-              >
-                أرشفة
-              </Button>
-            )}
-            <Button onClick={() => setEditModal(null)}>إلغاء</Button>
-            <Button type="submit" form="edit-company-form" variant="primary" disabled={updateMutation.isPending || !editModal?.nameAr?.trim()} className="min-w-[120px]">
-              {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
-            </Button>
-          </div>
+                },
+              },
+              {
+                key: 'reactivate',
+                label: 'إعادة التفعيل',
+                role: 'primary',
+                hidden: !editModal?.isArchived,
+                disabled: updateMutation.isPending,
+                onClick: () => {
+                  if (!editModal) return;
+                  updateMutation.mutate({ id: editModal.id, body: { isArchived: false } });
+                },
+              },
+              {
+                key: 'save-company',
+                label: updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات',
+                role: 'save',
+                type: 'submit',
+                form: 'edit-company-form',
+                className: 'min-w-[120px]',
+                disabled: updateMutation.isPending || !editModal?.nameAr?.trim(),
+              },
+            ]}
+          />
         }
       >
         {editModal && (
@@ -372,8 +299,8 @@ export default function CompaniesTab({
             ) : null}
             <form
               id="edit-company-form"
-              onSubmit={(e: any) => {
-                e.preventDefault();
+              onSubmit={(event: FormEvent<HTMLFormElement>) => {
+                event.preventDefault();
                 const body = buildCompanyUpdateBody(editModal);
                 updateMutation.mutate({
                   id: editModal.id,
@@ -383,15 +310,15 @@ export default function CompaniesTab({
               className="grid gap-3.5"
             >
               <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))]">
-                <Input type="text" label="الاسم بالعربي *" value={editModal.nameAr} onChange={(e: any) => setEditModal((p: any) => ({ ...p, nameAr: e.target.value }))} required />
-                <Input type="text" label="الاسم بالإنجليزي" value={editModal.nameEn} onChange={(e: any) => setEditModal((p: any) => ({ ...p, nameEn: e.target.value }))} />
+                <Input type="text" label="الاسم بالعربي *" value={editModal.nameAr} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, nameAr: event.target.value } : previous))} required />
+                <Input type="text" label="الاسم بالإنجليزي" value={editModal.nameEn} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, nameEn: event.target.value } : previous))} />
               </div>
               <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))]">
-                <Input type="text" label="الرقم الضريبي" value={editModal.taxNumber} onChange={(e: any) => setEditModal((p: any) => ({ ...p, taxNumber: e.target.value }))} placeholder="300000000000003" />
-                <Input type="text" label="رقم الهاتف" value={editModal.phone} onChange={(e: any) => setEditModal((p: any) => ({ ...p, phone: e.target.value }))} placeholder="05xxxxxxxx" />
+                <Input type="text" label="الرقم الضريبي" value={editModal.taxNumber} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, taxNumber: event.target.value } : previous))} placeholder="300000000000003" />
+                <Input type="text" label="رقم الهاتف" value={editModal.phone} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, phone: event.target.value } : previous))} placeholder="05xxxxxxxx" />
               </div>
-              <Input type="text" label="العنوان" value={editModal.address} onChange={(e: any) => setEditModal((p: any) => ({ ...p, address: e.target.value }))} placeholder="الرياض، حي..." />
-              <Input type="email" label="البريد الإلكتروني" value={editModal.email} onChange={(e: any) => setEditModal((p: any) => ({ ...p, email: e.target.value }))} placeholder="info@example.com" />
+              <Input type="text" label="العنوان" value={editModal.address} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, address: event.target.value } : previous))} placeholder="الرياض، حي..." />
+              <Input type="email" label="البريد الإلكتروني" value={editModal.email} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, email: event.target.value } : previous))} placeholder="info@example.com" />
 
               {/* شعار الشركة */}
               <div className="rounded-xl bg-noorix-bg-muted p-3.5 border border-noorix-border">
@@ -405,10 +332,10 @@ export default function CompaniesTab({
                     )}
                   </div>
                   <div className="flex-1 min-w-0 grid gap-2">
-                    <Input type="url" value={editModal.logoUrl} onChange={(e: any) => setEditModal((p: any) => ({ ...p, logoUrl: e.target.value }))} placeholder="https://رابط-الصورة.com/logo.png" />
+                    <Input type="url" value={editModal.logoUrl} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, logoUrl: event.target.value } : previous))} placeholder="https://رابط-الصورة.com/logo.png" />
                     <label className="nx-file-label">
                       رفع صورة من الجهاز
-                      <FileInput accept="image/*" onChange={(e: any) => handleLogoFile(e, true)} className="hidden" />
+                      <FileInput accept="image/*" onChange={(event: ChangeEvent<HTMLInputElement>) => handleLogoFile(event, true)} className="hidden" />
                     </label>
                   </div>
                 </div>
@@ -446,7 +373,7 @@ export default function CompaniesTab({
                 <div>
                   <label className="block mb-1 text-[11px]">اكتب اسم الشركة لتأكيد الحذف</label>
                   <div className="flex gap-2 flex flex-wrap">
-                    <Input value={deleteConfirmCode} onChange={(e: any) => setDeleteConfirmCode(e.target.value)} placeholder={editModal?.nameAr || editModal?.nameEn || 'اسم الشركة'} />
+                    <Input value={deleteConfirmCode} onChange={(event: ChangeEvent<HTMLInputElement>) => setDeleteConfirmCode(event.target.value)} placeholder={editModal?.nameAr || editModal?.nameEn || 'اسم الشركة'} />
                     <Button variant="danger" onClick={handleDelete} disabled={deleteMutation.isPending}>
                       {deleteMutation.isPending ? 'جاري...' : 'حذف الشركة'}
                     </Button>

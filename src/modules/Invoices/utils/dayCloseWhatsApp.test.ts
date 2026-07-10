@@ -71,4 +71,28 @@ describe('buildDayCloseWhatsAppText', () => {
     });
     expect(text).toContain('400');
   });
+
+  it('falls back to generic vault channel names', () => {
+    const text = buildDayCloseWhatsAppText({
+      companyName: '',
+      dateLabel: '2026-05-29',
+      data: {
+        sums: { inflow: { total: 25 }, outflow: { total: 0 } },
+        cash: { dayTotalIn: 25, dayTotalOut: 0 },
+        byKind: [],
+        salesSummaries: [
+          {
+            totalAmount: 25,
+            customerCount: 1,
+            channels: [{ vaultName: 'Generic vault', amount: 25 }],
+          },
+        ],
+      },
+      kindLabel,
+      lang: 'en',
+      t,
+    });
+
+    expect(text).toContain('Generic vault');
+  });
 });

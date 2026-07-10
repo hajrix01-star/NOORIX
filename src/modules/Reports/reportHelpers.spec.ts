@@ -5,6 +5,7 @@ import {
   buildFlatRows,
   buildVisibleRows,
 } from './reportHelpers';
+import type { GeneralProfitLossReport, PlDisplayRow } from './reportTypes';
 
 const t = (key: string) =>
   ({
@@ -18,7 +19,7 @@ const t = (key: string) =>
     reportSalesShareMonth: 'Month share',
   })[key] ?? key;
 
-const report = {
+const report: GeneralProfitLossReport = {
   amountBasis: 'gross_including_vat',
   months: [{ index: 1, label: 'Jan' }],
   groups: [
@@ -63,7 +64,7 @@ describe('reportHelpers P&L presentation contract', () => {
     const visible = buildVisibleRows(buildFlatRows(report, collapsed), collapsed);
     const exported = buildExportRowsFromVisibleRows(visible, 'en', t, null);
 
-    expect(visible.map((row: any) => row.rowType)).toEqual(['group', 'group']);
+    expect(visible.map((row: PlDisplayRow) => row.rowType)).toEqual(['group', 'group']);
     expect(exported).toHaveLength(visible.length);
     expect(exported[0]).toMatchObject({ Item: 'Sales', 'Annual total': '115' });
   });

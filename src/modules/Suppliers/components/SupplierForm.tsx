@@ -1,71 +1,54 @@
-﻿/**
- * SupplierForm — نموذج إضافة مورد جديد.
- * Props: companyId, categories (flat), onSave(body), isSaving, onCancel
- */
-import React, { useState, memo, useMemo } from 'react';
+import React, { memo, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Checkbox, Input, Card, FormRow } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
-
-const EMPTY = { nameAr: '', nameEn: '', taxNumber: '', phone: '', supplierCategoryId: '', supplierType: 'purchases', isTaxRegistered: true };
+import { Button, Checkbox, Input, Card, FormRow, SearchableOptionsPicker } from '../../../ui';
+import type {
+  SupplierCategoryRecord,
+  SupplierCreatePayload,
+  SupplierFormState,
+} from '../supplierTypes';
+import {
+  buildSupplierCategoryOptions,
+  buildSupplierCreatePayload,
+  buildSupplierTypeOptions,
+  EMPTY_SUPPLIER_FORM,
+  isSupplierFormSubmittable,
+  type SupplierFormField,
+  type SupplierFormValue,
+} from '../supplierFormModel';
 
 export type SupplierFormProps = {
-  companyId: any;
-  flatCategories?: any[];
-  onSave: (body: any) => void;
+  companyId: string;
+  flatCategories?: SupplierCategoryRecord[];
+  onSave: (body: SupplierCreatePayload) => void;
   isSaving: boolean;
   onCancel: () => void;
 };
 
-export const SupplierForm = memo(function SupplierForm({ companyId, flatCategories = [], onSave, isSaving, onCancel }: SupplierFormProps) {
+export const SupplierForm = memo(function SupplierForm({
+  companyId,
+  flatCategories = [],
+  onSave,
+  isSaving,
+  onCancel,
+}: SupplierFormProps) {
   const { t, lang } = useTranslation();
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState<SupplierFormState>(EMPTY_SUPPLIER_FORM);
 
-  const set = (k: any, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
-
-  // فلترة الفئات حسب نوع المورد: مشتريات → purchase، مصروفات → expense
-  const filteredCategories = flatCategories.filter((c: any) => {
-    if (form.supplierType === 'purchases') return c.type === 'purchase';
-    if (form.supplierType === 'expenses') return c.type === 'expense';
-    return true;
-  });
+  function setField<TField extends SupplierFormField>(field: TField, value: SupplierFormValue<TField>) {
+    setForm((previous) => ({ ...previous, [field]: value }));
+  }
 
   const categoryPickerOptions = useMemo(
-    () =>
-      filteredCategories.map((c: any) => {
-        const icon = c.icon || c.account?.icon || '';
-        const displayCode = c.code || c.account?.code || '';
-        const code = displayCode ? ` [${displayCode}]` : '';
-        const name = lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn;
-        return {
-          value: c.id,
-          label: `${icon} ${c.parentId ? `↳ ${name}` : name}${code}`.trim(),
-        };
-      }),
-    [filteredCategories, lang],
+    () => buildSupplierCategoryOptions(flatCategories, form.supplierType, lang),
+    [flatCategories, form.supplierType, lang],
   );
 
-  const supplierTypeOptions = useMemo(
-    () => [
-      { value: 'purchases', label: t('supplierTypePurchases') },
-      { value: 'expenses', label: t('supplierTypeExpenses') },
-    ],
-    [t],
-  );
+  const supplierTypeOptions = useMemo(() => buildSupplierTypeOptions(t), [t]);
 
-  function handleSubmit(e: any) {
-    e.preventDefault();
-    if (!form.nameAr.trim()) return;
-    onSave({
-      companyId,
-      nameAr:             form.nameAr.trim(),
-      nameEn:             form.nameEn.trim() || undefined,
-      taxNumber:          form.taxNumber.trim() || undefined,
-      phone:              form.phone.trim() || undefined,
-      supplierType:       form.supplierType,
-      supplierCategoryId: form.supplierCategoryId || undefined,
-      isTaxRegistered:    form.isTaxRegistered,
-    });
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!isSupplierFormSubmittable(form)) return;
+    onSave(buildSupplierCreatePayload(companyId, form));
   }
 
   return (
@@ -76,32 +59,32 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
           <Input
             label={t('nameAr')}
             value={form.nameAr}
-            onChange={(e: any) => set('nameAr', e.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setField('nameAr', event.target.value)}
             placeholder={t('nameArPlaceholder')}
             required
           />
           <Input
             label={t('nameEn')}
             value={form.nameEn}
-            onChange={(e: any) => set('nameEn', e.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setField('nameEn', event.target.value)}
             placeholder={t('nameEnPlaceholder')}
           />
           <Input
             label={t('taxNumber')}
             value={form.taxNumber}
-            onChange={(e: any) => set('taxNumber', e.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setField('taxNumber', event.target.value)}
             placeholder="300000000000003"
           />
           <Input
             label={t('phone')}
             value={form.phone}
-            onChange={(e: any) => set('phone', e.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setField('phone', event.target.value)}
             placeholder="05xxxxxxxx"
           />
           <SearchableOptionsPicker
             label={t('supplierType')}
             value={form.supplierType}
-            onChange={(v) => set('supplierType', v)}
+            onChange={(value) => setField('supplierType', value === 'expenses' ? 'expenses' : 'purchases')}
             options={supplierTypeOptions}
             aria-label={t('supplierType')}
           />
@@ -111,7 +94,7 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
             emptyValue=""
             emptyLabel={t('noCategory')}
             value={form.supplierCategoryId}
-            onChange={(v) => set('supplierCategoryId', v)}
+            onChange={(value) => setField('supplierCategoryId', value)}
             options={categoryPickerOptions}
             aria-label={t('categoryLinked')}
           />
@@ -119,26 +102,24 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
 
         <Checkbox
           checked={form.isTaxRegistered}
-          onChange={(e: any) => set('isTaxRegistered', e.target.checked)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setField('isTaxRegistered', event.target.checked)}
           className="w-[18px] h-[18px]"
           containerClassName="nx-checkbox flex items-center gap-2 mt-3 cursor-pointer select-none text-[13px] text-noorix-text"
           label={(
             <span>
-            {t('isTaxRegistered')}
-            <span className="ms-1 text-[11px] text-noorix-muted">
-              — {form.isTaxRegistered ? t('taxRegisteredHint') : t('taxNotRegisteredHint')}
-            </span>
+              {t('isTaxRegistered')}
+              <span className="ms-1 text-[11px] text-noorix-muted">
+                - {form.isTaxRegistered ? t('taxRegisteredHint') : t('taxNotRegisteredHint')}
+              </span>
             </span>
           )}
         />
 
         <div className="nx-toolbar mt-[14px]">
-          <Button type="submit" size="sm" variant="primary" disabled={isSaving || !form.nameAr.trim()}>
+          <Button type="submit" size="sm" variant="primary" disabled={isSaving || !isSupplierFormSubmittable(form)}>
             {isSaving ? t('saving') : t('saveSupplier')}
           </Button>
-          {onCancel && (
-            <Button type="button" size="sm" onClick={onCancel}>{t('cancel')}</Button>
-          )}
+          <Button type="button" size="sm" onClick={onCancel}>{t('cancel')}</Button>
         </div>
       </form>
     </Card>

@@ -1,17 +1,18 @@
 import React from 'react';
 import { ColorSwatch, RuntimeStyleBox } from '../../../../../ui';
 import { fmt } from '../../../../../utils/format';
+import type { DashboardCalendarDay } from '../../../../../types/api/domains/dashboard';
 import { ACHIEVEMENT_BG, achievementBandFromRatio } from '../utils/calendarAchievementUtils';
 
 export interface DashboardCalendarDayCellProps {
-  item: any;
+  item: DashboardCalendarDay;
   isSelectionMode: boolean;
   selectedDates: Set<string>;
-  selectedDay: any;
+  selectedDay: DashboardCalendarDay | null;
   dayNotes: Record<string, string>;
   maxAmount: number;
   t: (key: string, ...args: unknown[]) => string;
-  onDayClick: (item: any, isShift: boolean) => void;
+  onDayClick: (item: DashboardCalendarDay, isShift: boolean) => void;
 }
 
 export default function DashboardCalendarDayCell({

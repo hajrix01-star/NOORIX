@@ -42,7 +42,7 @@ function deltaToneClass(delta: number | null): string {
 
 function rowHighlightClass(row: YearMonthlyDailyAvgRow, isSelected: boolean): string {
   return cn(
-    row.isCurrentMonth && 'bg-[color-mix(in_srgb,var(--color-nx-sales)_6%,transparent)]',
+    row.isCurrentMonth && 'bg-[color-mix(in_srgb,var(--color-nx-sales)_10%,transparent)] shadow-[inset_-3px_0_0_var(--color-nx-sales)]',
     isSelected && !row.isCurrentMonth && 'bg-noorix-bg-muted/40',
   );
 }
@@ -91,7 +91,6 @@ function MoneyValue({
   return (
     <span dir="ltr" className="inline-flex max-w-full items-baseline justify-center gap-0.5 whitespace-nowrap nx-font-numbers">
       <FmtNum n={value} className={cn('font-bold', className)} />
-      <span className="nx-sar text-[8px] text-noorix-muted">SR</span>
     </span>
   );
 }
@@ -187,6 +186,9 @@ export function DashboardOverviewYearlyDailyAvgPanel({ year, rows, selectedMonth
         <h2 className="m-0 min-w-0 flex-1 text-[12px] font-bold leading-snug text-noorix-text sm:text-[13px]">
           {t('dashboardYearlyDailyAvgTitle')} - {year}
         </h2>
+        <span className="shrink-0 rounded bg-noorix-bg-muted px-2 py-1 text-[10px] font-bold text-noorix-muted">
+          {t('reportAmountBasisGrossShort')}
+        </span>
       </div>
 
       <div className="p-3 sm:p-4">

@@ -2,6 +2,7 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -9,14 +10,39 @@ import React, {
 } from 'react';
 import Toast from '../components/Toast';
 
-export type ToastType = 'success' | 'error' | string;
+export type ToastType = 'success' | 'error' | 'warning' | 'info' | string;
 
 export type ToastContextValue = {
   showToast: (message: unknown, type?: ToastType) => void;
   dismiss: () => void;
 };
 
+type ToastState = {
+  visible: boolean;
+  message: string;
+  type: ToastType;
+};
+
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
+
+let warnedMissingToastProvider = false;
+
+const fallbackToastContext: ToastContextValue = {
+  showToast: (message: unknown, type: ToastType = 'info') => {
+    if (typeof console !== 'undefined' && !warnedMissingToastProvider) {
+      warnedMissingToastProvider = true;
+      console.warn('ToastProvider is not available; dispatching a fallback toast event.', { type });
+    }
+    if (typeof window !== 'undefined' && message != null && message !== '') {
+      window.dispatchEvent(
+        new CustomEvent('noorix:toast', {
+          detail: { message: String(message), type },
+        }),
+      );
+    }
+  },
+  dismiss: () => {},
+};
 
 /** تجاهل تكرار نفس الرسالة ونفس النوع خلال هذه المدة (يقلّل الوميض المزدوج). */
 const DEDUPE_MS = 2200;
@@ -25,7 +51,7 @@ const DEDUPE_MS = 2200;
  * إشعارات عائمة موحّدة عبر التطبيق (بدلاً من useState + Toast في كل شاشة).
  */
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState({ visible: false, message: '', type: 'success' });
+  const [state, setState] = useState<ToastState>({ visible: false, message: '', type: 'success' });
   const lastRef = useRef({ key: '', at: 0 });
 
   const showToast = useCallback((message: unknown, type: ToastType = 'success') => {
@@ -40,10 +66,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const dismiss = useCallback(() => {
-    setState((s: any) => ({ ...s, visible: false }));
+    setState((s) => ({ ...s, visible: false }));
   }, []);
 
   const value = useMemo<ToastContextValue>(() => ({ showToast, dismiss }), [showToast, dismiss]);
+
+  useEffect(() => {
+    const handleFallbackToast = (event: Event) => {
+      const detail = (event as CustomEvent<{ message?: unknown; type?: ToastType }>).detail;
+      if (!detail?.message) return;
+      showToast(detail.message, detail.type);
+    };
+    window.addEventListener('noorix:toast', handleFallbackToast);
+    return () => window.removeEventListener('noorix:toast', handleFallbackToast);
+  }, [showToast]);
 
   return (
     <ToastContext.Provider value={value}>
@@ -56,7 +92,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (ctx === undefined) {
-    throw new Error('useToast must be used within ToastProvider');
+    return fallbackToastContext;
   }
   return ctx;
 }

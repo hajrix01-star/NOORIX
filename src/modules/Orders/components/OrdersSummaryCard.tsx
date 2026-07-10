@@ -2,12 +2,14 @@
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { FmtNum, SimpleTable } from '../../../ui';
+import type { MoneyLike } from '../../../types/api';
 
 export type OrdersSummaryMetrics = {
-  pettyCashTotal?: number;
-  delegatePurchasesTotal?: number;
-  localPurchasesTotal?: number;
-  delegateBalance?: number;
+  pettyCashTotal?: MoneyLike;
+  delegatePurchasesTotal?: MoneyLike;
+  localPurchasesTotal?: MoneyLike;
+  delegateBalance?: MoneyLike;
+  cashRemaining?: MoneyLike;
 };
 
 function SummaryPane({
@@ -64,7 +66,7 @@ function SummaryPane({
         tableClassName="nx-orders-summary-table"
         columns={[
           { key: 'item', label: colItem },
-          { key: 'amount', label: colAmount, render: (value: any) => value },
+          { key: 'amount', label: colAmount, render: (_value: unknown, row: { amount: React.ReactNode }) => row.amount },
         ]}
         footer={(
           <tr>
@@ -92,7 +94,7 @@ export function OrdersSummaryCard({
   isLoading,
 }: {
   summary?: OrdersSummaryMetrics;
-  cashSalesTotal?: number;
+  cashSalesTotal?: MoneyLike;
   isLoading?: boolean;
 }) {
   const { t } = useTranslation();
@@ -101,7 +103,7 @@ export function OrdersSummaryCard({
   const localPurchases = Number(summary.localPurchasesTotal ?? 0);
   const delegateBalance = Number(summary.delegateBalance ?? 0);
   const cashSales = Number(cashSalesTotal);
-  const cashRemaining = cashSales - localPurchases;
+  const cashRemaining = Number(summary.cashRemaining ?? 0);
 
   const colItem = t('ordersSummaryColItem');
   const colAmount = t('ordersSummaryColAmount');

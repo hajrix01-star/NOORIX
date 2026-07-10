@@ -21,21 +21,40 @@ import { hrKeys } from '../../../services/queryKeys';
 import { hrFmt } from '../utils/hrFmt';
 import { parseWorkHours } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, DateField, Input , FmtNum } from '../../../ui';
-import { openPrintWindow } from '../../../utils/printUtils';
+import { Button, DateField, Input , FmtNum, usePrintPreview } from '../../../ui';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
 import {
   computeEos,
   getEosServiceComponents,
 } from '../utils/hrCalculations/eos';
+import type { HrCompensationSnapshot, HrEmployee } from '../../../types/api';
+
+type HrCompanyRef = {
+  id?: string | null;
+  name?: string | null;
+  nameAr?: string | null;
+  logoUrl?: string | null;
+};
+type AllowanceRow = {
+  ar: string;
+  en: string;
+  amount: number;
+};
+type EosInputChange = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
 
 export default function EOSCalcTab() {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies } = useApp();
   const companyId = activeCompanyId ?? '';
-  const company = companies?.find((c: any) => c.id === companyId);
+  const company = (companies as HrCompanyRef[] | undefined)?.find((c) => c.id === companyId);
   const companyName = company?.nameAr || company?.name || 'الشركة';
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('hrTabEOSCalc'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
   const { employees } = useEmployees(companyId);
 
   const [selectedEmployee, setSelectedEmployee] = useState('');
@@ -44,12 +63,12 @@ export default function EOSCalcTab() {
   const [lastSalary, setLastSalary] = useState('');
   const [terminationReason, setTerminationReason] = useState('employer');
 
-  const emp = employees.find((e: any) => e.id === selectedEmployee);
+  const emp = employees.find((e) => e.id === selectedEmployee);
   const {
     data: compensationSnapshot,
     isLoading: compensationSnapshotLoading,
     error: compensationSnapshotError,
-  } = useApiQuery<any>({
+  } = useApiQuery<HrCompensationSnapshot>({
     queryKey: hrKeys.compensationSnapshot(companyId, selectedEmployee),
     queryFn: () => getEmployeeCompensationSnapshot(companyId, selectedEmployee),
     enabled: !!companyId && !!selectedEmployee,
@@ -71,7 +90,7 @@ export default function EOSCalcTab() {
 
   useEffect(() => {
     if (!selectedEmployee) return;
-    const em = employees.find((row: any) => row.id === selectedEmployee);
+    const em = employees.find((row) => row.id === selectedEmployee);
     if (!em || !compensationSnapshot?.salaryPackage) return;
     const fixedTotal = centralSalaryNumber(compensationSnapshot.salaryPackage.fixedTotal);
     setJoinDate(toYmd(em.joinDate));
@@ -90,7 +109,7 @@ export default function EOSCalcTab() {
 
   const allowanceRows = useMemo(() => {
     if (!emp || !compensationSnapshot?.salaryPackage) return [];
-    const rows = [];
+    const rows: AllowanceRow[] = [];
     const housing = centralSalaryNumber(compensationSnapshot.salaryPackage.housingAllowance);
     const transport = centralSalaryNumber(compensationSnapshot.salaryPackage.transportAllowance);
     const other = centralSalaryNumber(compensationSnapshot.salaryPackage.otherAllowance);
@@ -106,17 +125,16 @@ export default function EOSCalcTab() {
   function handlePrint() {
     const reportDate = getSaudiToday();
     const allowanceRowsAr = allowanceRows.length
-      ? allowanceRows.map((r: any) => `<tr><td class="td-ar">${r.ar}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
+      ? allowanceRows.map((r) => `<tr><td class="td-ar">${r.ar}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
       : '<tr><td class="td-ar" style="color:#94a3b8">لا توجد بدلات</td><td class="td-num" style="color:#94a3b8">—</td></tr>';
     const allowanceRowsEn = allowanceRows.length
-      ? allowanceRows.map((r: any) => `<tr><td class="td-en">${r.en}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
+      ? allowanceRows.map((r) => `<tr><td class="td-en">${r.en}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
       : '<tr><td class="td-en" style="color:#94a3b8">No allowances</td><td class="td-num" style="color:#94a3b8">—</td></tr>';
     const extraCss = `
           *{box-sizing:border-box;margin:0;padding:0}
           .doc{background:#fff;border:1px solid #dbe1e8;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);max-width:900px;margin:0 auto}
           /* ── رأس المستند ── */
           .head{padding:20px 24px;border-bottom:2px solid #dbe1e8;background:#f8fafc;text-align:center}
-          .head-title{font-size:20px;font-weight:800;color:#0a1f44}
           .head-sub{font-size:13px;font-weight:700;color:#374151;margin-top:6px}
           .head-date{font-size:11px;color:#64748b;margin-top:4px}
           /* ── التخطيط الثنائي ── */
@@ -151,7 +169,6 @@ export default function EOSCalcTab() {
     const bodyHtml = `<div class="doc">
           <!-- رأس المستند -->
           <div class="head">
-            <div class="head-title">${companyName}</div>
             <div class="head-sub">وثيقة تسوية نهاية الخدمة &nbsp;/&nbsp; End of Service Settlement</div>
             <div class="head-date">تاريخ الإصدار / Issue Date: ${reportDate}</div>
           </div>
@@ -206,8 +223,8 @@ export default function EOSCalcTab() {
                 <div class="row"><span class="row-label">Service days</span><span class="row-val">${serviceDays} days</span></div>
                 <div class="row"><span class="row-label">Service duration</span><span class="row-val">${serviceComp.years}y ${serviceComp.months}m ${serviceComp.days}d</span></div>
                 <div class="row"><span class="row-label">Service years (total)</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} yr</span></div>
-                <div class="row"><span class="row-label">Half-month × ${firstFiveYears.toDecimalPlaces(2)} yr</span><span class="row-val">SAR ${hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())}</span></div>
-                ${remainingYears.gt(0) ? `<div class="row"><span class="row-label">Full month × ${remainingYears.toDecimalPlaces(2)} yr</span><span class="row-val">SAR ${hrFmt(sal.times(remainingYears).toNumber())}</span></div>` : ''}
+                <div class="row"><span class="row-label">Half-month Ã— ${firstFiveYears.toDecimalPlaces(2)} yr</span><span class="row-val">SAR ${hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())}</span></div>
+                ${remainingYears.gt(0) ? `<div class="row"><span class="row-label">Full month Ã— ${remainingYears.toDecimalPlaces(2)} yr</span><span class="row-val">SAR ${hrFmt(sal.times(remainingYears).toNumber())}</span></div>` : ''}
                 <div class="row"><span class="row-label">Full award</span><span class="row-val">SAR ${hrFmt(fullAward.toNumber())}</span></div>
                 <div class="row"><span class="row-label">Eligibility factor</span><span class="row-val">${eligibilityFactor.times(100).toDecimalPlaces(0)}%</span></div>
                 <div class="row row-highlight"><span class="row-label">EOS Amount</span><span class="row-val">SAR ${hrFmt(eosAmount.toNumber())}</span></div>
@@ -238,21 +255,29 @@ export default function EOSCalcTab() {
 
           <!-- تذييل -->
           <div class="foot">
-            ${companyName} &nbsp;·&nbsp; ${reportDate} &nbsp;·&nbsp; وثيقة آلية / Auto-generated Document
+            ${reportDate} &nbsp;·&nbsp; وثيقة آلية / Auto-generated Document
           </div>
         </div>`;
-    openPrintWindow({ title: 'EOS Calculator', extraCss, body: bodyHtml });
+    openPrintDocumentPreview({
+      title: 'EOS Calculator',
+      companyName,
+      logoUrl: companyLogoUrl,
+      subtitle: t('hrTabEOSCalc'),
+      extraCss,
+      body: bodyHtml,
+    });
   }
 
   return (
     <div className={HR_TOOLS_ROOT_CLASS}>
+      {printPreviewModal}
       <div className="noorix-surface-card w-full min-w-0 max-w-xl p-6">
       <h3 className="text-[18px] m-0 mb-5">{t('hrTabEOSCalc')}</h3>
 
       <div className="mb-4">
-        <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e: any) => setSelectedEmployee(e.target.value)}>
+        <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e: EosInputChange) => setSelectedEmployee(e.target.value)}>
           <option value="">—</option>
-          {employees.map((e: any) => (
+          {employees.map((e: HrEmployee) => (
             <option key={e.id} value={e.id}>{employeeDisplayName(e, lang, e.id)}</option>
           ))}
         </Input>
@@ -273,7 +298,7 @@ export default function EOSCalcTab() {
           min="0"
           step="0.01"
           value={lastSalary}
-          onChange={(e: any) => setLastSalary(e.target.value)}
+          onChange={(e: EosInputChange) => setLastSalary(e.target.value)}
           readOnly={!!selectedEmployee}
           className={selectedEmployee ? 'bg-noorix-bg-muted' : undefined}
         />
@@ -288,7 +313,7 @@ export default function EOSCalcTab() {
       </div>
 
       <div className="mb-5">
-        <Input type="select" label={t('eosCalcReason')} value={terminationReason} onChange={(e: any) => setTerminationReason(e.target.value)}>
+        <Input type="select" label={t('eosCalcReason')} value={terminationReason} onChange={(e: EosInputChange) => setTerminationReason(e.target.value)}>
           <optgroup label="— إنهاء من صاحب العمل (مكافأة كاملة)">
             <option value="employer">{t('eosCalcReasonEmployer')}</option>
             <option value="article81">{t('eosCalcReasonArticle81')}</option>

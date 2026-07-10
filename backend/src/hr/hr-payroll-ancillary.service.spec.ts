@@ -1,6 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { AuditLogService } from '../audit/audit-log.service';
 import { TenantContext } from '../common/tenant-context';
+import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 import { HrPayrollAncillaryService } from './hr-payroll-ancillary.service';
 
 describe('HrPayrollAncillaryService', () => {
@@ -28,7 +31,7 @@ describe('HrPayrollAncillaryService', () => {
         }),
       },
     };
-    const prisma = {
+    const prisma: TenantPrismaService = Object.assign(Object.create(TenantPrismaService.prototype), {
       employee: {
         findFirst: jest.fn().mockResolvedValue({
           id: 'emp-1',
@@ -41,9 +44,11 @@ describe('HrPayrollAncillaryService', () => {
         }),
       },
       withTenant: jest.fn(async (fn: (arg: typeof tx) => Promise<unknown>) => fn(tx)),
-    };
-    const audit = { log: jest.fn().mockResolvedValue(undefined) };
-    const compensationSnapshot = {
+    });
+    const audit: AuditLogService = Object.assign(Object.create(AuditLogService.prototype), {
+      log: jest.fn().mockResolvedValue(undefined),
+    });
+    const compensationSnapshot: HrCompensationSnapshotService = Object.assign(Object.create(HrCompensationSnapshotService.prototype), {
       getCompanySnapshots: jest.fn().mockResolvedValue({
         items: [
           {
@@ -55,10 +60,10 @@ describe('HrPayrollAncillaryService', () => {
           },
         ],
       }),
-    };
+    });
 
     return {
-      service: new HrPayrollAncillaryService(prisma as any, audit as any, compensationSnapshot as any),
+      service: new HrPayrollAncillaryService(prisma, audit, compensationSnapshot),
       prisma,
       tx,
       compensationSnapshot,

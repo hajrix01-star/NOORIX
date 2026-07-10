@@ -1,16 +1,32 @@
 import { ReportingController } from './reporting.controller';
+import type { Request } from 'express';
 import type { AuditLogService } from '../audit/audit-log.service';
 import type { CompanyInsightThresholdSettingsService } from './insights/company-insight-threshold-settings.service';
 import type { DashboardInsightsService } from './insights/dashboard-insights.service';
+import type { GetDashboardInsightsQueryDto } from './dto/dashboard-insights-query.dto';
+import type { PatchInsightThresholdsDto } from './dto/patch-insight-thresholds.dto';
+import type { ResetInsightThresholdsDto } from './dto/reset-insight-thresholds.dto';
+
+type ReportingRequest = Request & { user: { userId: string } };
+type ReportingInsightsReader = Pick<DashboardInsightsService, 'buildDashboardInsights'>;
+type ReportingThresholdSettings = Pick<
+  CompanyInsightThresholdSettingsService,
+  'getResolvedThresholds' | 'updateStoredThresholds' | 'resetStoredThresholds'
+>;
+type ReportingAuditLog = Pick<AuditLogService, 'log' | 'logUpdate'>;
 
 describe('ReportingController', () => {
-  const mkThresholdSettings = (): Partial<CompanyInsightThresholdSettingsService> => ({
+  const mkInsights = (buildDashboardInsights = jest.fn()): ReportingInsightsReader => ({
+    buildDashboardInsights,
+  });
+
+  const mkThresholdSettings = (): ReportingThresholdSettings => ({
     getResolvedThresholds: jest.fn(),
     updateStoredThresholds: jest.fn(),
     resetStoredThresholds: jest.fn(),
   });
 
-  const mkAudit = (): Partial<AuditLogService> => ({
+  const mkAudit = (): ReportingAuditLog => ({
     log: jest.fn().mockResolvedValue(undefined),
     logUpdate: jest.fn().mockResolvedValue(undefined),
   });
@@ -30,14 +46,12 @@ describe('ReportingController', () => {
   it('delegates to DashboardInsightsService with mapped date range and returns service result unchanged', async () => {
     const buildDashboardInsights = jest.fn().mockResolvedValue(payload);
     const controller = new ReportingController(
-      {
-        buildDashboardInsights,
-      } as unknown as DashboardInsightsService,
-      mkThresholdSettings() as CompanyInsightThresholdSettingsService,
-      mkAudit() as AuditLogService,
+      mkInsights(buildDashboardInsights),
+      mkThresholdSettings(),
+      mkAudit(),
     );
 
-    const query = {
+    const query: GetDashboardInsightsQueryDto = {
       companyId: 'c1',
       year: 2024,
       yearStart: '2024-01-01',
@@ -52,7 +66,7 @@ describe('ReportingController', () => {
       includeCancelledSales: true,
     };
 
-    const out = await controller.getDashboardInsights(query as any);
+    const out = await controller.getDashboardInsights(query);
 
     expect(buildDashboardInsights).toHaveBeenCalledTimes(1);
     expect(buildDashboardInsights).toHaveBeenCalledWith(
@@ -77,14 +91,12 @@ describe('ReportingController', () => {
   it('maps omitted optional dates to null and includeCancelledSales false', async () => {
     const buildDashboardInsights = jest.fn().mockResolvedValue(payload);
     const controller = new ReportingController(
-      {
-        buildDashboardInsights,
-      } as unknown as DashboardInsightsService,
-      mkThresholdSettings() as CompanyInsightThresholdSettingsService,
-      mkAudit() as AuditLogService,
+      mkInsights(buildDashboardInsights),
+      mkThresholdSettings(),
+      mkAudit(),
     );
 
-    const query = {
+    const query: GetDashboardInsightsQueryDto = {
       companyId: 'c2',
       year: 2025,
       yearStart: '2025-01-01',
@@ -93,7 +105,7 @@ describe('ReportingController', () => {
       periodEnd: '2025-12-31',
     };
 
-    await controller.getDashboardInsights(query as any);
+    await controller.getDashboardInsights(query);
 
     expect(buildDashboardInsights).toHaveBeenCalledWith(
       'c2',
@@ -121,9 +133,9 @@ describe('ReportingController', () => {
       netProfitMargin: { warningBelow: 0.05, criticalBelow: 0 },
     });
     const controller = new ReportingController(
-      { buildDashboardInsights } as unknown as DashboardInsightsService,
-      { getResolvedThresholds } as unknown as CompanyInsightThresholdSettingsService,
-      mkAudit() as AuditLogService,
+      mkInsights(buildDashboardInsights),
+      { ...mkThresholdSettings(), getResolvedThresholds },
+      mkAudit(),
     );
 
     const out = await controller.getInsightThresholds({ companyId: 'c1' });
@@ -152,17 +164,18 @@ describe('ReportingController', () => {
     });
     const audit = mkAudit();
     const controller = new ReportingController(
-      {} as unknown as DashboardInsightsService,
-      { getResolvedThresholds, updateStoredThresholds } as unknown as CompanyInsightThresholdSettingsService,
-      audit as AuditLogService,
+      mkInsights(),
+      { ...mkThresholdSettings(), getResolvedThresholds, updateStoredThresholds },
+      audit,
     );
 
+    const body: PatchInsightThresholdsDto = {
+      companyId: 'c1',
+      purchaseToSales: { warning: 0.66, critical: 0.78 },
+    };
     const out = await controller.patchInsightThresholds(
-      {
-        companyId: 'c1',
-        purchaseToSales: { warning: 0.66, critical: 0.78 },
-      },
-      { user: { userId: 'u1' } } as any,
+      body,
+      { user: { userId: 'u1' } } as ReportingRequest,
     );
     expect(getResolvedThresholds).toHaveBeenCalledWith('c1');
     expect(updateStoredThresholds).toHaveBeenCalledWith('c1', {
@@ -185,12 +198,13 @@ describe('ReportingController', () => {
     const resetStoredThresholds = jest.fn().mockResolvedValue(defaults);
     const audit = mkAudit();
     const controller = new ReportingController(
-      {} as unknown as DashboardInsightsService,
-      { getResolvedThresholds, resetStoredThresholds } as unknown as CompanyInsightThresholdSettingsService,
-      audit as AuditLogService,
+      mkInsights(),
+      { ...mkThresholdSettings(), getResolvedThresholds, resetStoredThresholds },
+      audit,
     );
 
-    const out = await controller.resetInsightThresholds({ companyId: 'c9' }, { user: { userId: 'u2' } } as any);
+    const body: ResetInsightThresholdsDto = { companyId: 'c9' };
+    const out = await controller.resetInsightThresholds(body, { user: { userId: 'u2' } } as ReportingRequest);
     expect(getResolvedThresholds).toHaveBeenCalledWith('c9');
     expect(resetStoredThresholds).toHaveBeenCalledWith('c9');
     expect(audit.log).toHaveBeenCalled();

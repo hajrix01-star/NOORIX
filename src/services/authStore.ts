@@ -132,7 +132,9 @@ export function getStoredUser(): AuthSessionUser | null {
       const raw = storage.getItem(USER_KEY);
       if (raw) return JSON.parse(raw) as AuthSessionUser;
     }
-  } catch (_: any) {}
+  } catch {
+    // تجاهل بيانات تخزين تالفة أو غير قابلة للقراءة.
+  }
   return null;
 }
 

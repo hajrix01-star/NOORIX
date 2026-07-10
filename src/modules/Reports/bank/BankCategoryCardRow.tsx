@@ -2,15 +2,21 @@ import React from 'react';
 import { Button, EditableCheckboxCell } from '../../../ui';
 import { getTransactionTypeInfo, getTransactionSideInfo } from './bankRuleConstants';
 import { normParentKeywords, normClassifications } from './utils/bankCategoryTreeNormalize';
+import type { BankTransactionSide } from './bankAnalysisTab.types';
+import type { BankTreeCategory } from './bankCategoryTree.types';
 
 export type BankCategoryCardRowProps = {
-  category: Record<string, unknown>;
+  category: BankTreeCategory;
   index?: number;
   t: (k: string, ...args: string[]) => string;
   onEdit: () => void;
   onDelete: () => void;
   onToggle: () => void;
 };
+
+function toTransactionSide(value: unknown): BankTransactionSide | undefined {
+  return value === 'any' || value === 'debit' || value === 'credit' ? value : undefined;
+}
 
 export function BankCategoryCardRow({
   category,
@@ -21,13 +27,11 @@ export function BankCategoryCardRow({
   onToggle,
 }: BankCategoryCardRowProps) {
   const typeInfo = getTransactionTypeInfo(
-    category.transactionType as string | undefined,
+    category.transactionType ?? undefined,
     t,
   );
-  const sideInfo = getTransactionSideInfo(
-    category.transactionSide as string | undefined,
-    t,
-  );
+  const transactionSide = toTransactionSide(category.transactionSide);
+  const sideInfo = getTransactionSideInfo(transactionSide, t);
   const classifications = normClassifications(category.classifications);
   const parentKeywords = normParentKeywords(category.parentKeywords);
   const totalKw = classifications.reduce((s, c) => s + (c.keywords?.length || 0), 0);
@@ -52,10 +56,10 @@ export function BankCategoryCardRow({
             >
               {typeInfo.icon} {typeInfo.label}
             </span>
-            {category.transactionSide && category.transactionSide !== 'any' ? (
+            {transactionSide && transactionSide !== 'any' ? (
               <span
                 className={`text-[10px] py-[2px] px-2 rounded-md border border-noorix-border ${
-                  category.transactionSide === 'debit' ? 'bg-[var(--noorix-red-8)]' : 'bg-[var(--noorix-green-8)]'
+                  transactionSide === 'debit' ? 'bg-[var(--noorix-red-8)]' : 'bg-[var(--noorix-green-8)]'
                 }`}
               >
                 {sideInfo.icon} {t(sideInfo.labelKey)}

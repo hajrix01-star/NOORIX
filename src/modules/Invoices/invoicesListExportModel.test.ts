@@ -1,44 +1,51 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { buildInvoiceExportColumnDefs, invoiceToExportRow } from './invoicesListExportModel';
+import type { InvoiceListRawInvoice } from './invoicesListScreenModel';
 
-const t = (k: any, ...args: any[]) => {
-  if (k === 'invoicesExportVaultSlotName') return `vaultName${args[0]}`;
-  if (k === 'invoicesExportVaultSlotType') return `vaultType${args[0]}`;
-  if (k === 'invoicesExportVaultSlotAmount') return `vaultAmt${args[0]}`;
-  return k;
+const t = (key: string, ...args: unknown[]) => {
+  if (key === 'invoicesExportVaultSlotName') return `vaultName${args[0]}`;
+  if (key === 'invoicesExportVaultSlotType') return `vaultType${args[0]}`;
+  if (key === 'invoicesExportVaultSlotAmount') return `vaultAmt${args[0]}`;
+  if (key === 'vaultTypeCash') return 'Cash';
+  return key;
 };
 
-const kindMap = { purchase: { label: 'شراء' } };
-const statusMap = { posted: { label: 'مرحّل' } };
+const kindMap = { purchase: { label: 'Purchase' } };
+const statusMap = { posted: { label: 'Posted' } };
 
 describe('invoicesListExportModel', () => {
-  it('buildInvoiceExportColumnDefs includes vault slot keys', () => {
-    const cols = buildInvoiceExportColumnDefs(t);
-    expect(cols.some((c: any) => c.key === 'vault1Name')).toBe(true);
-    expect(cols.some((c: any) => c.key === 'vault5Amount')).toBe(true);
-    expect(cols.find((c: any) => c.key === 'invoiceNumber')?.label).toBe('documentNumber');
+  it('builds export columns with all vault slots', () => {
+    const columns = buildInvoiceExportColumnDefs(t);
+    expect(columns.some((column) => column.key === 'vault1Name')).toBe(true);
+    expect(columns.some((column) => column.key === 'vault5Amount')).toBe(true);
+    expect(columns.find((column) => column.key === 'invoiceNumber')?.label).toBe('documentNumber');
   });
 
-  it('invoiceToExportRow maps amounts and vault slots', () => {
-    const inv = {
+  it('maps invoice rows to export rows with shared list naming rules', () => {
+    const invoice: InvoiceListRawInvoice = {
       kind: 'purchase',
       status: 'posted',
       invoiceNumber: '1',
       supplierInvoiceNumber: 'S1',
-      supplier: { nameAr: 'مورد', nameEn: 'Sup' },
+      supplier: { nameAr: 'Supplier AR', nameEn: 'Supplier EN' },
+      createdByUser: { nameEn: 'Creator EN', email: 'creator@example.com' },
       netAmount: 10,
       taxAmount: 1.5,
       totalAmount: 11.5,
       transactionDate: '2024-01-15',
-      notes: 'n',
+      notes: 'note',
       vaultAllocations: [
-        { id: 'a1', amount: 11.5, vault: { nameAr: 'خزنة', type: 'cash' } },
+        { id: 'a1', amount: 11.5, vault: { nameAr: 'Vault AR', nameEn: 'Vault EN', type: 'cash' } },
       ],
     };
-    const row = invoiceToExportRow(inv as any, { t, lang: 'ar', kindMap, statusMap }) as Record<string, unknown>;
-    expect(row.kind).toBe('شراء');
-    expect(row.status).toBe('مرحّل');
-    expect((row as { vault1Name?: string }).vault1Name).toBeTruthy();
+
+    const row = invoiceToExportRow(invoice, { t, lang: 'en', kindMap, statusMap });
+    expect(row.kind).toBe('Purchase');
+    expect(row.status).toBe('Posted');
+    expect(row.supplierName).toBe('Supplier EN');
+    expect(row.createdByUserName).toBe('Creator EN');
+    expect(row.vault1Name).toBe('Vault EN');
+    expect(row.vault1Type).toBe('Cash');
     expect(row.netAmount).toBe(10);
   });
 });

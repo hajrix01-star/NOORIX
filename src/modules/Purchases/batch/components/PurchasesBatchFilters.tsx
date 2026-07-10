@@ -1,13 +1,15 @@
 import React from 'react';
 import { Button } from '../../../../ui';
 import { DateFilterBar } from '../../../../ui/date';
-import FilterToolbar from '../../../../shared/components/FilterToolbar';
+import { FilterToolbar } from '../../../../ui';
+import type { DatePeriodDraftFilter } from '../../../../ui/date/datePeriodDraft';
+import type { BatchTranslateFn } from '../purchaseBatchTypes';
 
 export interface PurchasesBatchFiltersProps {
-  dateFilter: any;
+  dateFilter: DatePeriodDraftFilter;
   showCancelledBatches: boolean;
   onToggleCancelled: () => void;
-  t: (key: string, ...args: any[]) => string;
+  t: BatchTranslateFn;
 }
 
 export default function PurchasesBatchFilters(props: PurchasesBatchFiltersProps) {

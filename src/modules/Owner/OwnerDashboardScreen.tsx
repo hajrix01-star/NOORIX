@@ -14,7 +14,7 @@ import { OwnerFilterBar } from './components/OwnerFilterBar';
 import { OwnerKpiCards } from './components/OwnerKpiCards';
 import { OwnerPerformanceChart } from './components/OwnerPerformanceChart';
 import { OwnerMonthlyComparisonTable } from './components/OwnerMonthlyComparisonTable';
-import { MONTH_NAMES_AR } from './utils/ownerDashboardCalculations';
+import { MONTH_NAMES_AR } from './utils/ownerDashboardDisplay';
 import { ErrorState, LoadingState } from '../../components/states';
 
 export default function OwnerDashboardScreen() {
@@ -22,17 +22,13 @@ export default function OwnerDashboardScreen() {
   const { companies } = useApp();
   const filters = useOwnerDashboardFilters(companies);
   const {
-    currentYear,
+    dateFilter,
     year,
-    setYear,
-    selectedMonth,
-    setSelectedMonth,
     selectedMonthNum,
     chartGrain,
     setChartGrain,
-    metricFilter,
-    setMetricFilter,
-    toggleMetric,
+    chartMetric,
+    setChartMetric,
     comparisonMetric,
     setComparisonMetric,
     companyList,
@@ -47,17 +43,12 @@ export default function OwnerDashboardScreen() {
   const data = useOwnerDashboardData({
     idsToFetch,
     year,
-    selectedMonthNum,
-    chartGrain,
     chartMonthForDaily,
-    metricFilter,
-    comparisonMetric,
-    companyList,
     lang,
   });
 
-  const { handleExportExcel, handleExportPdf } = useOwnerDashboardExports(
-    data.aggregated,
+  const { handleExportExcel, handlePrintPdf, printPreviewModal } = useOwnerDashboardExports(
+    data.overview.exportRows,
     lang,
     year,
     selectedMonthNum,
@@ -81,14 +72,11 @@ export default function OwnerDashboardScreen() {
 
   return (
     <ScreenShell>
+      {printPreviewModal}
       <OwnerFilterBar
-        year={year}
-        setYear={setYear}
-        currentYear={currentYear}
-        selectedMonth={selectedMonth}
-        setSelectedMonth={setSelectedMonth}
+        dateFilter={dateFilter}
         onExportExcel={handleExportExcel}
-        onExportPdf={handleExportPdf}
+        onPrintPdf={handlePrintPdf}
         companyList={companyList}
         allSelected={allSelected}
         selectedCompanyIds={filters.selectedCompanyIds}
@@ -112,30 +100,25 @@ export default function OwnerDashboardScreen() {
       {!data.isLoading && !data.isError && idsToFetch.length > 0 && (
         <>
           <OwnerKpiCards
-            aggregated={data.aggregated}
-            aggregatedMonthly={data.aggregatedMonthly}
+            kpis={data.overview.kpis}
             year={year}
             selectedMonthNum={selectedMonthNum}
           />
           <OwnerPerformanceChart
             chartGrain={chartGrain}
             setChartGrain={setChartGrain}
-            metricFilter={metricFilter}
-            setMetricFilter={setMetricFilter}
-            toggleMetric={toggleMetric}
-            performanceData={data.performanceData}
+            chartMetric={chartMetric}
+            setChartMetric={setChartMetric}
+            monthlyPerformance={data.overview.monthlyPerformance}
+            dailyPerformance={data.overview.dailyPerformance}
             companySeries={data.companySeries}
-            companyList={companyList}
-            dailySalesQuery={data.dailySalesQuery}
             chartSubtitle={chartSubtitle}
           />
           <OwnerMonthlyComparisonTable
             year={year}
             comparisonMetric={comparisonMetric}
             setComparisonMetric={setComparisonMetric}
-            companyMonthlyData={data.companyMonthlyData}
-            grandMonthlyTotals={data.grandMonthlyTotals}
-            grandTotal={data.grandTotal}
+            comparison={data.overview.comparison[comparisonMetric]}
           />
         </>
       )}

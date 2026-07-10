@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useToast } from '../../../context/ToastContext';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, DialogActions, Input, AdaptiveSheet } from '../../../ui';
 import {
   bankStatementTreeCategoryCreate,
   bankStatementTreeCategoryUpdate,
@@ -12,14 +12,13 @@ import {
 import { TRANSACTION_TYPES, TRANSACTION_SIDES } from './bankRuleConstants';
 import { bankKeys } from '../../../services/queryKeys';
 import { normParentKeywords, normClassifications } from './utils/bankCategoryTreeNormalize';
-
-type ClassificationDraft = { name: string; keywords: string[] };
+import type { BankTreeCategory, BankTreeCategoryPayload, BankTreeCategoryPatch } from './bankCategoryTree.types';
 
 export type BankCategoryFormModalProps = {
   open: boolean;
   onClose: () => void;
-  category: Record<string, unknown> | null;
-  existingCategories: unknown[];
+  category: BankTreeCategory | null;
+  existingCategories: BankTreeCategory[];
   companyId: string;
   t: (k: string, ...args: string[]) => string;
 };
@@ -33,14 +32,14 @@ export function BankCategoryFormModal({
   t,
 }: BankCategoryFormModalProps) {
   const { showToast } = useToast();
-  const EMPTY: ClassificationDraft = { name: '', keywords: [] };
+  const EMPTY = { name: '', keywords: [] };
   const [name, setName] = useState('');
   const [parentKeywords, setParentKeywords] = useState<string[]>([]);
   const [newParentKeyword, setNewParentKeyword] = useState('');
   const [transactionType, setTransactionType] = useState('expense');
   const [transactionSide, setTransactionSide] = useState('any');
   const [sortOrder, setSortOrder] = useState<number | string>(100);
-  const [classifications, setClassifications] = useState<ClassificationDraft[]>([{ ...EMPTY }]);
+  const [classifications, setClassifications] = useState<BankTreeCategoryPayload['classifications']>([{ ...EMPTY }]);
   const [newKeyword, setNewKeyword] = useState('');
   const [activeClassIdx, setActiveClassIdx] = useState(0);
 
@@ -56,8 +55,7 @@ export function BankCategoryFormModal({
       setClassifications(cls.length ? cls : [{ ...EMPTY }]);
     } else {
       const maxOrder = (existingCategories || []).reduce(
-        (m: number, c: unknown) =>
-          Math.max(m, Number((c as { sortOrder?: number }).sortOrder ?? 0)),
+        (m, c) => Math.max(m, Number(c.sortOrder ?? 0)),
         0,
       );
       setName('');
@@ -73,7 +71,7 @@ export function BankCategoryFormModal({
   }, [open, category, existingCategories]);
 
   const createMut = useApiMutation({
-    mutationFn: (body: unknown) => bankStatementTreeCategoryCreate(body as Parameters<typeof bankStatementTreeCategoryCreate>[0]),
+    mutationFn: (body: BankTreeCategoryPayload) => bankStatementTreeCategoryCreate(body),
     invalidateQueries: [bankKeys.treeCategories(companyId)],
     successToast: () => t('savedSuccessfully'),
     errorToast: (e: Error) => e?.message || t('apiRequestFailed'),
@@ -81,8 +79,8 @@ export function BankCategoryFormModal({
   });
 
   const updateMut = useApiMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: unknown }) =>
-      bankStatementTreeCategoryUpdate(companyId, id, patch as never),
+    mutationFn: ({ id, patch }: { id: string; patch: BankTreeCategoryPatch }) =>
+      bankStatementTreeCategoryUpdate(companyId, id, patch),
     invalidateQueries: [bankKeys.treeCategories(companyId)],
     successToast: () => t('savedSuccessfully'),
     errorToast: (e: Error) => e?.message || t('apiRequestFailed'),
@@ -104,7 +102,7 @@ export function BankCategoryFormModal({
       showToast(t('bankTreeClassificationKeywordsRequired'), 'error');
       return;
     }
-    const payload = {
+    const payload: BankTreeCategoryPayload = {
       companyId,
       name: name.trim(),
       sortOrder: parseInt(String(sortOrder), 10) || 100,
@@ -113,7 +111,7 @@ export function BankCategoryFormModal({
       parentKeywords: parentKeywords.filter(Boolean),
       classifications: cleanClassifications,
     };
-    const cid = category?.id as string | undefined;
+    const cid = category?.id;
     if (cid) {
       updateMut.mutate({ id: cid, patch: payload });
     } else {
@@ -153,14 +151,12 @@ export function BankCategoryFormModal({
       title={category ? t('bankTreeEditCategory') : t('bankTreeAddCategory')}
       className="bank-category-form-drawer"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            {t('cancel')}
-          </Button>
-          <Button variant="primary" onClick={handleSave} disabled={pending}>
-            {pending ? t('loading') : t('save')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            { key: 'save', label: pending ? t('loading') : t('save'), role: 'save', disabled: pending, onClick: handleSave },
+          ]}
+        />
       }
     >
       <div className="grid gap-3.5">

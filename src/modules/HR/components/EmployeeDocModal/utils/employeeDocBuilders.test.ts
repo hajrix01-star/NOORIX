@@ -44,6 +44,6 @@ describe('employee document salary rows', () => {
   });
 
   it('does not fall back to local document salary math when the snapshot is missing', () => {
-    expect(() => buildSalaryRows(null as any)).toThrow('HR compensation snapshot is required');
+    expect(() => buildSalaryRows(undefined)).toThrow('HR compensation snapshot is required');
   });
 });

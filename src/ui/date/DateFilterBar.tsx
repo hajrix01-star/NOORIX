@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getSaudiNow } from '../../utils/saudiDate';
 import {
@@ -6,7 +7,7 @@ import {
   type DatePeriodMode,
 } from './datePeriod';
 import DateRangeField from './DateRangeField';
-import { DayRangeCalendar, MonthRangeCalendar, YearRangeCalendar } from './PeriodCalendars';
+import { DayRangeCalendar, MonthRangeCalendar, QuarterCalendar, YearRangeCalendar } from './PeriodCalendars';
 import { DatePeriodActions, DatePeriodBadge, DatePeriodModeGroup, type DatePeriodModeOption } from './DatePeriodControls';
 import { cn } from '../cn';
 import {
@@ -27,7 +28,7 @@ export type DateFilterBarProps = {
   className?: string;
 };
 
-const DEFAULT_MODES: DatePeriodMode[] = ['all', 'month', 'year', 'day', 'range'];
+const DEFAULT_MODES: DatePeriodMode[] = ['all', 'day', 'month', 'quarter', 'year', 'range'];
 
 export default function DateFilterBar({
   filter,
@@ -43,6 +44,10 @@ export default function DateFilterBar({
   const weekdayNames = useMemo(() => getGregorianWeekdayNames(lang), [lang]);
   const { draft, updateDraft } = useDatePeriodDraft(filter);
   const [openPanel, setOpenPanel] = useState<DatePeriodMode | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const anchorRef = useRef<HTMLElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null);
   const mode = toDatePeriodUiMode(draft.mode);
   const draftLabel = buildDatePeriodLabel(draft, now);
   const isDirty = !areDatePeriodStatesEqual(filter.state, draft);
@@ -56,18 +61,28 @@ export default function DateFilterBar({
   const modeOptions = useMemo<DatePeriodModeOption[]>(() => {
     const options: DatePeriodModeOption[] = [
       { id: 'all', label: t('dateFilterAll') },
-      { id: 'month', label: t('dateFilterMonth') },
-      { id: 'year', label: t('dateFilterYear') },
       { id: 'day', label: t('dateFilterDay') },
+      { id: 'month', label: t('dateFilterMonth') },
+      { id: 'quarter', label: t('dateFilterQuarter') },
+      { id: 'year', label: t('dateFilterYear') },
       { id: 'range', label: t('dateFilterRange') },
     ];
     return options.filter((item) => availableModes.has(item.id));
   }, [availableModes, t]);
 
-  const setMode = (nextMode: DatePeriodMode) => {
+  const setMode = (nextMode: DatePeriodMode, trigger?: HTMLElement) => {
     if (!availableModes.has(toDatePeriodUiMode(nextMode))) return;
+    if (trigger) anchorRef.current = trigger;
+    if (nextMode === 'all') {
+      filter.setMode('all');
+      updateDraft({ mode: 'all' });
+      setPopoverStyle(null);
+      setOpenPanel(null);
+      return;
+    }
     const change = getDatePeriodModeChange(draft, nextMode, now);
     updateDraft(change.patch);
+    setPopoverStyle(null);
     setOpenPanel(change.openPanel);
   };
 
@@ -78,26 +93,71 @@ export default function DateFilterBar({
     setOpenPanel(null);
   }, [availableModes, draft, fallbackMode, mode, now, updateDraft]);
 
+  useLayoutEffect(() => {
+    if (!openPanel) return undefined;
+    const updatePopoverPosition = () => {
+      const anchor = anchorRef.current ?? rootRef.current;
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const margin = 16;
+      const width = Math.min(380, window.innerWidth - margin * 2);
+      const preferredLeft = rect.left + rect.width / 2 - width / 2;
+      const left = Math.min(Math.max(preferredLeft, margin), window.innerWidth - width - margin);
+      const estimatedHeight = Math.min(popoverRef.current?.offsetHeight || 360, window.innerHeight - margin * 2);
+      const belowTop = rect.bottom + 8;
+      const aboveTop = rect.top - estimatedHeight - 8;
+      const hasBelowRoom = belowTop + estimatedHeight <= window.innerHeight - margin;
+      const top = hasBelowRoom ? belowTop : Math.max(margin, aboveTop);
+      setPopoverStyle({
+        position: 'fixed',
+        top,
+        left,
+        width,
+      });
+    };
+    const closeOnOutsidePointer = (event: MouseEvent | TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (rootRef.current?.contains(target)) return;
+      if (popoverRef.current?.contains(target)) return;
+      setPopoverStyle(null);
+      setOpenPanel(null);
+    };
+    updatePopoverPosition();
+    window.addEventListener('resize', updatePopoverPosition);
+    window.addEventListener('scroll', updatePopoverPosition, true);
+    document.addEventListener('mousedown', closeOnOutsidePointer);
+    document.addEventListener('touchstart', closeOnOutsidePointer);
+    return () => {
+      window.removeEventListener('resize', updatePopoverPosition);
+      window.removeEventListener('scroll', updatePopoverPosition, true);
+      document.removeEventListener('mousedown', closeOnOutsidePointer);
+      document.removeEventListener('touchstart', closeOnOutsidePointer);
+    };
+  }, [lang, openPanel]);
+
   const apply = () => {
     applyDatePeriodDraft(filter, draft);
+    setPopoverStyle(null);
     setOpenPanel(null);
   };
 
   const reset = () => {
     filter.reset();
+    setPopoverStyle(null);
     setOpenPanel(null);
   };
 
-  return (
-    <div className={cn('noorix-date-filter-bar', className)} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <DatePeriodModeGroup
-        mode={mode}
-        options={modeOptions}
-        ariaLabel={t('dateFilterPeriod')}
-        onModeChange={setMode}
-      />
-
-      {mode === 'month' && openPanel === 'month' && (
+  const popover = openPanel && mode !== 'all' ? (
+    <div
+      ref={popoverRef}
+      className="ndfb-popover ndfb-popover--floating"
+      role="dialog"
+      aria-label={t('dateFilterPeriod')}
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      style={popoverStyle ?? { position: 'fixed', top: 0, left: 0, width: 380, visibility: 'hidden' }}
+    >
+      {mode === 'month' && (
         <MonthRangeCalendar
           draft={draft}
           monthNames={monthNames}
@@ -107,7 +167,7 @@ export default function DateFilterBar({
         />
       )}
 
-      {mode === 'year' && openPanel === 'year' && (
+      {mode === 'year' && (
         <YearRangeCalendar
           draft={draft}
           years={years}
@@ -116,7 +176,17 @@ export default function DateFilterBar({
         />
       )}
 
-      {mode === 'day' && openPanel === 'day' && (
+      {mode === 'quarter' && (
+        <QuarterCalendar
+          draft={draft}
+          years={years}
+          updateDraft={updateDraft}
+          quarterLabel={t('dateFilterQuarter')}
+          yearLabel={t('dateFilterYear')}
+        />
+      )}
+
+      {mode === 'day' && (
         <DayRangeCalendar
           draft={draft}
           monthNames={monthNames}
@@ -144,17 +214,29 @@ export default function DateFilterBar({
         />
       )}
 
-      {showBadge && mode !== 'all' && <DatePeriodBadge label={draftLabel} pending={isDirty} />}
-
       {showActions && (
         <DatePeriodActions
           applyLabel={t('dateFilterApply')}
-          resetLabel={t('dateFilterReset')}
+          resetLabel={lang === 'ar' ? 'إعادة' : 'Reset'}
           canApply={isDirty}
           onApply={apply}
           onReset={reset}
         />
       )}
+    </div>
+  ) : null;
+
+  return (
+    <div ref={rootRef} className={cn('noorix-date-filter-bar', className)} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <DatePeriodModeGroup
+        mode={mode}
+        options={modeOptions}
+        ariaLabel={t('dateFilterPeriod')}
+        onModeChange={setMode}
+      />
+
+      {showBadge && mode !== 'all' && <DatePeriodBadge label={draftLabel} pending={isDirty} />}
+      {popover ? createPortal(popover, document.body) : null}
     </div>
   );
 }

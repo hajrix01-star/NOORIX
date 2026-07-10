@@ -20,19 +20,37 @@ import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import { getSaudiNow, toYmd } from '../../utils/saudiDate';
 import { bankKeys } from '../../services/queryKeys';
-import { Button, Badge, DateMonthScopePicker, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, cn } from '../../ui';
+import { Button, Badge, DialogActions, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, FilterToolbar, SearchableOptionsPicker, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
 import BankStatementDetailView from './bank/BankStatementDetailView';
 import BankStatementTemplatesPanel from './bank/BankStatementTemplatesPanel';
 import BankCategoryTreePanel from './bank/BankCategoryTreePanel';
+import ReportDateFilter from './ReportDateFilter';
+import type { BankCategoryLite, BankCreateCategoryBody, BankStatementLite } from './bank/bankAnalysisTab.types';
+import type { BankSheetData } from './bank/bankMappingAutoDetect';
 
 const TABS = [
   { id: 'statements', labelKey: 'bankStatementTabStatements' },
   { id: 'rules', labelKey: 'bankStatementTabRules' },
   { id: 'templates', labelKey: 'bankStatementTabTemplates' },
-];
-const BANK_STATEMENT_TAB_IDS = TABS.map((tab: any) => tab.id);
+] as const;
+const BANK_STATEMENT_TAB_IDS = TABS.map((tab) => tab.id);
+
+type AppCompany = { id?: string; nameAr?: string | null; nameEn?: string | null; name?: string | null; logoUrl?: string | null };
+type BankSummaryData = {
+  statementCount?: number | string | null;
+  totalDeposits?: number | string | null;
+  totalWithdrawals?: number | string | null;
+  netFlow?: number | string | null;
+};
+type MappingStatement = BankStatementLite & { _fullRaw?: BankSheetData };
+type MetricItem = { label: string; value: string; color: string };
+type SummaryMetricItem = { key: string; labelKey: string; value: number | string | null | undefined; format: (value: number | string | null | undefined) => string };
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function BankStatementAnalysisScreen() {
   const { activeCompanyId, companies } = useApp();
@@ -41,30 +59,34 @@ export default function BankStatementAnalysisScreen() {
   const companyId = activeCompanyId ?? '';
 
   const activeCompanyName = useMemo(() => {
-    const c = (companies || []).find((x: any) => x.id === companyId);
+    const c = (companies || []).find((x: AppCompany) => x.id === companyId);
     return c?.nameAr || c?.nameEn || c?.name || '';
   }, [companies, companyId]);
+  const activeCompanyLogoUrl = useMemo(() => {
+    const c = (companies || []).find((x: AppCompany) => x.id === companyId);
+    return String(c?.logoUrl || '').trim();
+  }, [companies, companyId]);
 
-  const [selectedStatementId, setSelectedStatementId] = useState<any>(null);
+  const [selectedStatementId, setSelectedStatementId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useTabSearchParam(BANK_STATEMENT_TAB_IDS, 'statements');
   const [showUpload, setShowUpload] = useState(false);
-  const [mappingStatement, setMappingStatement] = useState<any>(null);
+  const [mappingStatement, setMappingStatement] = useState<MappingStatement | null>(null);
   const now = getSaudiNow();
   const [filterYear, setFilterYear] = useState(now.year);
   const [filterMonth, setFilterMonth] = useState('');
   const [filterBank, setFilterBank] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<any>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const { showToast } = useToast();
 
-  const { data: summary, isLoading: summaryLoading } = useApiQuery<any>({
+  const { data: summary, isLoading: summaryLoading } = useApiQuery<BankSummaryData>({
     queryKey: bankKeys.statementsSummaryByCompany(companyId),
     queryFn: () => bankStatementSummary(companyId),
     enabled: !!companyId,
     fallbackMessage: t('apiRequestFailed'),
   });
 
-  const { data: statements = [], isLoading: listLoading } = useApiListQuery<any>({
+  const { data: statements = [], isLoading: listLoading } = useApiListQuery<BankStatementLite>({
     queryKey: bankKeys.statementsListFiltered(companyId, filterMonth, filterBank),
     queryFn: () =>
       bankStatementsList(companyId, {
@@ -75,7 +97,7 @@ export default function BankStatementAnalysisScreen() {
     fallbackMessage: t('apiRequestFailed'),
   });
 
-  const { data: categories = [] } = useApiListQuery<any>({
+  const { data: categories = [] } = useApiListQuery<BankCategoryLite>({
     queryKey: bankKeys.statementCategories(companyId),
     queryFn: () => bankStatementCategories(companyId),
     enabled: !!companyId,
@@ -89,12 +111,12 @@ export default function BankStatementAnalysisScreen() {
     queryClient.invalidateQueries({ queryKey: bankKeys.statementDetailRoot() });
   }, [queryClient]);
 
-  const handleUploadComplete = (stmt: any, fullRaw: any) => {
+  const handleUploadComplete = (stmt: BankStatementLite, fullRaw: BankSheetData) => {
     setShowUpload(false);
     invalidate();
     if (stmt?.status === 'mapping') setMappingStatement({ ...stmt, _fullRaw: fullRaw });
     else {
-      setSelectedStatementId(stmt.id);
+      setSelectedStatementId(stmt.id || null);
     }
   };
 
@@ -104,18 +126,18 @@ export default function BankStatementAnalysisScreen() {
     showToast(t('bankStatementParsedCount', '0'));
   };
 
-  const handleSelectStatement = (stmt: any) => {
+  const handleSelectStatement = (stmt: BankStatementLite) => {
     if (stmt.status === 'mapping') {
       setMappingStatement(stmt);
       return;
     }
-    setSelectedStatementId(stmt.id);
+      setSelectedStatementId(stmt.id || null);
   };
 
   const deleteMutation = useApiMutation({
-    mutationFn: (id: any) => bankStatementDelete(companyId, id),
+    mutationFn: (id: string) => bankStatementDelete(companyId, id),
     successToast: () => t('deletedSuccessfully'),
-    errorToast: (err: any) => err?.message || t('saveFailedGeneric'),
+    errorToast: (error: unknown) => errorMessage(error, t('saveFailedGeneric')),
     onSuccess: () => {
       invalidate();
       setDeleteConfirmId(null);
@@ -124,19 +146,18 @@ export default function BankStatementAnalysisScreen() {
   });
 
   const completedStatements = useMemo(
-    () => statements.filter((s: any) => s.status === 'completed'),
+    () => statements.filter((statement) => statement.status === 'completed'),
     [statements],
   );
 
   const quickStats = useMemo(() => {
-    const dep = completedStatements.reduce((s: any, x: any) => s + (Number(x.totalDeposits) || 0), 0);
-    const wdr = completedStatements.reduce((s: any, x: any) => s + (Number(x.totalWithdrawals) || 0), 0);
+    const dep = completedStatements.reduce((sum, statement) => sum + (Number(statement.totalDeposits) || 0), 0);
+    const wdr = completedStatements.reduce((sum, statement) => sum + (Number(statement.totalWithdrawals) || 0), 0);
     return { totalDeposits: dep, totalWithdrawals: wdr, netFlow: dep - wdr };
   }, [completedStatements]);
 
-  const banks = [...new Set(statements.map((s: any) => s.bankName).filter(Boolean))].sort() as string[];
+  const banks = [...new Set(statements.map((statement) => statement.bankName).filter((bankName): bankName is string => !!bankName))].sort();
   const filterMonthNumber = filterMonth ? Number(filterMonth.slice(5, 7)) : null;
-  const filterYears = [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3];
   const setBankFilterYear = (nextYear: number) => {
     setFilterYear(nextYear);
     if (filterMonthNumber) {
@@ -158,10 +179,11 @@ export default function BankStatementAnalysisScreen() {
           statementId={selectedStatementId}
           companyId={companyId}
           companyName={activeCompanyName}
+          companyLogoUrl={activeCompanyLogoUrl}
           categories={categories}
           onBack={() => setSelectedStatementId(null)}
           onDelete={() => setDeleteConfirmId(selectedStatementId)}
-          createCategory={(body: any) => bankStatementCreateCategory({ ...body, companyId })}
+          createCategory={(body: BankCreateCategoryBody) => bankStatementCreateCategory({ ...body, companyId })}
           showToast={showToast}
           onRefresh={invalidate}
         />
@@ -173,12 +195,21 @@ export default function BankStatementAnalysisScreen() {
           size="sm"
           variant="danger"
           footer={
-            <>
-              <Button variant="ghost" size="sm" onClick={() => setDeleteConfirmId(null)}>{t('cancel')}</Button>
-              <Button variant="danger" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteConfirmId)}>
-                {deleteMutation.isPending ? t('loading') : t('delete')}
-              </Button>
-            </>
+            <DialogActions
+              size="sm"
+              actions={[
+                { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setDeleteConfirmId(null) },
+                {
+                  key: 'delete',
+                  label: deleteMutation.isPending ? t('loading') : t('delete'),
+                  role: 'delete',
+                  disabled: deleteMutation.isPending || !deleteConfirmId,
+                  onClick: () => {
+                    if (deleteConfirmId) deleteMutation.mutate(deleteConfirmId);
+                  },
+                },
+              ]}
+            />
           }
         >
           <p className="text-noorix-muted text-[14px]">{t('bankDeleteStatementConfirm')}</p>
@@ -200,12 +231,12 @@ export default function BankStatementAnalysisScreen() {
 
       {completedStatements.length > 0 && (
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
-          {[
+          {([
             { label: t('bankStatementCardCount'),       value: String(completedStatements.length),    color: 'var(--color-nx-sales)'      },
             { label: t('bankStatementCardDeposits'),    value: fmt(quickStats.totalDeposits),   color: 'var(--color-nx-profit)'   },
             { label: t('bankStatementCardWithdrawals'), value: fmt(quickStats.totalWithdrawals), color: 'var(--color-nx-expenses)' },
             { label: t('bankStatementCardNetFlow'),     value: fmt(quickStats.netFlow),          color: quickStats.netFlow >= 0 ? 'var(--color-nx-profit)' : 'var(--color-nx-expenses)' },
-          ].map((c: any, i: any) => (
+          ] satisfies MetricItem[]).map((c, i) => (
             <MetricCard key={i} color={c.color}>
               <MetricCard.Header label={c.label} />
               <MetricCard.Value value={c.value} />
@@ -220,8 +251,8 @@ export default function BankStatementAnalysisScreen() {
           fadeWrap={false}
           variant="underline"
           barClassName="noorix-bank-tab-row"
-          getTabClassName={(_: any, active: any) => cn('noorix-bank-tab', active && 'noorix-bank-tab--active')}
-          items={TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) }))}
+          getTabClassName={(_id, active) => cn('noorix-bank-tab', active && 'noorix-bank-tab--active')}
+          items={TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) }))}
           value={activeTab}
           onChange={setActiveTab}
           buttonSize="auto"
@@ -234,18 +265,18 @@ export default function BankStatementAnalysisScreen() {
                 <div
                   className="grid gap-3 mb-5 [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]"
                 >
-                  {[
-                    { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.data?.statementCount ?? 0, f: (v: any) => String(v) },
-                    { key: 'dep', labelKey: 'bankStatementCardDeposits', value: summary?.data?.totalDeposits ?? 0, f: (v: any) => fmt(Number(v)) },
-                    { key: 'wdr', labelKey: 'bankStatementCardWithdrawals', value: summary?.data?.totalWithdrawals ?? 0, f: (v: any) => fmt(Number(v)) },
-                    { key: 'net', labelKey: 'bankStatementCardNetFlow', value: summary?.data?.netFlow ?? 0, f: (v: any) => fmt(Number(v)) },
-                  ].map((c: any) => (
+                  {([
+                    { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.statementCount ?? 0, format: (value) => String(value ?? 0) },
+                    { key: 'dep', labelKey: 'bankStatementCardDeposits', value: summary?.totalDeposits ?? 0, format: (value) => fmt(Number(value)) },
+                    { key: 'wdr', labelKey: 'bankStatementCardWithdrawals', value: summary?.totalWithdrawals ?? 0, format: (value) => fmt(Number(value)) },
+                    { key: 'net', labelKey: 'bankStatementCardNetFlow', value: summary?.netFlow ?? 0, format: (value) => fmt(Number(value)) },
+                  ] satisfies SummaryMetricItem[]).map((c) => (
                     <div
                       key={c.key}
                       className="p-[14px] rounded-[10px] bg-noorix-bg-muted border border-noorix-border"
                     >
                       <div className="text-[11px] text-noorix-muted mb-1">{t(c.labelKey)}</div>
-                      <div className="text-[18px] font-bold">{c.f(c.value)}</div>
+                      <div className="text-[18px] font-bold">{c.format(c.value)}</div>
                     </div>
                   ))}
                 </div>
@@ -267,33 +298,26 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length > 0 && (
                 <>
-                  <div className="flex flex-wrap gap-3 mb-4 items-center">
-                    <DateMonthScopePicker
-                      year={filterYear}
-                      years={filterYears}
-                      month={filterMonthNumber ? String(filterMonthNumber) : ''}
-                      allowAll
-                      allowYear={false}
-                      fallbackMonth={now.month}
+                  <FilterToolbar className="mb-4">
+                    <ReportDateFilter
                       onYearChange={setBankFilterYear}
                       onMonthChange={setBankFilterMonth}
                     />
-                    <Input
-                      type="select"
-                      value={filterBank}
-                      onChange={(e: any) => setFilterBank(e.target.value)}
-                    >
-                      <option value="">{t('bankStatementAllBanks')}</option>
-                      {banks.map((b: any) => (
-                        <option key={b} value={b}>
-                          {b}
-                        </option>
-                      ))}
-                    </Input>
-                  </div>
+                    <div className="w-full min-w-0 sm:w-[min(100%,14rem)]">
+                      <SearchableOptionsPicker
+                        allowEmpty
+                        emptyValue=""
+                        emptyLabel={t('bankStatementAllBanks')}
+                        value={filterBank}
+                        onChange={setFilterBank}
+                        options={banks.map((bank) => ({ value: bank, label: bank }))}
+                        aria-label={t('bankStatementAllBanks')}
+                      />
+                    </div>
+                  </FilterToolbar>
 
                   <div className="grid gap-2.5">
-                    {statements.map((stmt: any) => {
+                    {statements.map((stmt) => {
                       const start = toYmd(stmt.startDate);
                       const end = toYmd(stmt.endDate);
                       const statusColor = stmt.status === 'mapping' ? 'amber' : stmt.status === 'completed' ? 'green' : 'gray';
@@ -303,7 +327,7 @@ export default function BankStatementAnalysisScreen() {
                           role="button"
                           tabIndex={0}
                           onClick={() => handleSelectStatement(stmt)}
-                          onKeyDown={(e: any) => e.key === 'Enter' && handleSelectStatement(stmt)}
+                          onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => event.key === 'Enter' && handleSelectStatement(stmt)}
                           className="flex gap-4 p-3.5 border border-noorix-border rounded-lg cursor-pointer items-center bg-noorix-bg"
                         >
                           <div className="flex-1 min-w-0">

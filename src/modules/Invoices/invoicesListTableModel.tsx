@@ -1,13 +1,159 @@
 import React from 'react';
-import { formatSaudiDateISO } from '../../utils/saudiDate';
-import { Badge, FmtNum, KebabMenu, cn } from '../../ui';
+import { Badge, FmtNum, cn } from '../../ui';
 import type { SmartTableColumn } from '../../ui';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
 import { PAGE_SIZE } from './invoicesListScreenHelpers';
+import {
+  asInvoiceTableNumber,
+  asInvoiceTableText,
+  compactInvoiceDocumentNumber,
+  formatInvoiceTableDate,
+  getInvoiceTableAmountToneClass,
+  getInvoiceTableDocumentToneClass,
+  getInvoiceTableEmptyValue,
+  getInvoiceTableVaultName,
+  hasInvoiceTableVaultChips,
+  mapInvoiceTableVaultChips,
+  type InvoiceTableLang,
+  type InvoiceTableRow,
+} from './invoiceTableRowModel';
 
-/**
- * تعريف أعمدة SmartTable + تذييل المجاميع + بطاقة الجوال — مستخرج من InvoicesListScreen
- */
+type Translate = (key: string, ...args: unknown[]) => string;
+type StatusMap = Record<string, unknown>;
+type UserRole = string | undefined;
+type InvoiceRowSetter = (row: InvoiceTableRow | null) => void;
+type InvoiceRowAction = (row: InvoiceTableRow) => void;
+
+type InvoiceListColumnsParams = {
+  t: Translate;
+  lang: InvoiceTableLang;
+  fmt: (value: number) => string;
+  STATUS_MAP: StatusMap;
+  KIND_MAP: StatusMap;
+  userRole: UserRole;
+  companyId?: string;
+  setViewingInvoice: InvoiceRowSetter;
+  setEditingInvoice: InvoiceRowSetter;
+  printInvoice: InvoiceRowAction;
+  confirmAndDeleteInvoice: InvoiceRowAction;
+};
+
+type InvoiceFooterTotals = {
+  count: number;
+  net: number | string;
+  tax: number | string;
+  total: number | string;
+};
+
+type InvoiceFooterParams = {
+  t: Translate;
+  serverAll: InvoiceFooterTotals;
+  total: number;
+};
+
+type InvoiceRowRendererParams = {
+  t: Translate;
+  lang?: InvoiceTableLang;
+  STATUS_MAP: StatusMap;
+  KIND_MAP: StatusMap;
+  userRole: UserRole;
+  companyId?: string;
+  setViewingInvoice?: InvoiceRowSetter;
+  setEditingInvoice: InvoiceRowSetter;
+  printInvoice: InvoiceRowAction;
+  confirmAndDeleteInvoice: InvoiceRowAction;
+};
+
+function renderTextCell(value: unknown, className = 'nx-cell-ellipsis') {
+  const text = asInvoiceTableText(value);
+  return (
+    <span className={className} title={text}>
+      {text}
+    </span>
+  );
+}
+
+function renderDocumentCell(row: InvoiceTableRow, onView: InvoiceRowSetter) {
+  const fullNumber = asInvoiceTableText(row.invoiceNumber);
+  const compactNumber = compactInvoiceDocumentNumber(row.invoiceNumber);
+  const date = formatInvoiceTableDate(row.transactionDate);
+  const title = date === getInvoiceTableEmptyValue() ? fullNumber : `${fullNumber} - ${date}`;
+
+  return (
+    <button
+      type="button"
+      className="mx-auto flex min-w-0 flex-col items-center justify-center gap-0.5 leading-tight rounded-md px-2 py-1 text-center transition hover:bg-noorix-blue/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-noorix-blue"
+      title={title}
+      onClick={() => onView(row)}
+    >
+      <span className={cn('nx-cell-num max-w-full truncate font-bold', getInvoiceTableDocumentToneClass(row))}>
+        {compactNumber}
+      </span>
+      <span className="nx-cell-muted-sm whitespace-nowrap">{date}</span>
+    </button>
+  );
+}
+
+function renderVaultChips(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (value: number) => string) {
+  const chips = mapInvoiceTableVaultChips({ row, lang, fmt });
+  return (
+    <div className="flex flex-nowrap gap-1.5 justify-center overflow-hidden">
+      {chips.map((chip) => (
+        <div
+          key={chip.key}
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-noorix-border',
+            'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
+          )}
+          title={chip.title}
+        >
+          <span className="truncate text-[11px] font-semibold text-noorix-text max-w-[60px]">
+            {chip.label}
+          </span>
+          <span dir="ltr" className="shrink-0 whitespace-nowrap text-[12px] font-bold tabular-nums text-nx-sales">
+            <FmtNum n={chip.amount} /> <span className="nx-sar">SR</span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function renderVaultCell(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (value: number) => string) {
+  if (hasInvoiceTableVaultChips(row)) return renderVaultChips(row, lang, fmt);
+  const vaultName = getInvoiceTableVaultName(row, lang);
+  return (
+    <span className="nx-cell-ellipsis text-[12px] text-center" title={vaultName}>
+      {vaultName}
+    </span>
+  );
+}
+
+function renderMobileVaults(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (value: number) => string) {
+  if (hasInvoiceTableVaultChips(row)) {
+    const chips = mapInvoiceTableVaultChips({ row, lang, fmt });
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {chips.map((chip) => (
+          <div
+            key={chip.key}
+            className={cn(
+              'inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-noorix-border',
+              'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
+            )}
+          >
+            <span className="min-w-0 truncate text-[11px] font-semibold text-noorix-text">{chip.label}</span>
+            <span dir="ltr" className="shrink-0 text-[12px] font-bold tabular-nums text-nx-sales">
+              <FmtNum n={chip.amount} /> <span className="nx-sar">SR</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return <div className="text-[12px] text-noorix-muted">{getInvoiceTableVaultName(row, lang)}</div>;
+}
 
 export function buildInvoiceListColumns({
   t,
@@ -15,35 +161,19 @@ export function buildInvoiceListColumns({
   fmt,
   STATUS_MAP,
   KIND_MAP,
-  userRole,
-  companyId,
   setViewingInvoice,
-  setEditingInvoice,
-  confirmAndDeleteInvoice,
-}: any): SmartTableColumn<any>[] {
+}: InvoiceListColumnsParams): SmartTableColumn<InvoiceTableRow>[] {
   return [
     {
       key: 'invoiceNumber',
       kind: 'id',
+      size: 'document',
       label: t('documentNumber'),
       align: 'center',
       shrink: true,
-      width: '14ch',
+      width: '10ch',
       sortable: true,
-      render: (v: any, row: any) => {
-        const isInbound = row.kind === 'sale';
-        return (
-          <span
-            className={cn(
-              'nx-cell-num nx-cell-ellipsis font-bold',
-              isInbound ? 'text-nx-sales' : 'text-nx-expenses',
-            )}
-            title={v || ''}
-          >
-            {v || '—'}
-          </span>
-        );
-      },
+      render: (_value: unknown, row: InvoiceTableRow) => renderDocumentCell(row, setViewingInvoice),
     },
     {
       key: 'supplierInvoiceNumber',
@@ -52,11 +182,7 @@ export function buildInvoiceListColumns({
       align: 'center',
       shrink: true,
       width: '11ch',
-      render: (v: any) => (
-        <span className="nx-cell-num nx-cell-muted nx-cell-ellipsis" title={v || ''}>
-          {v || '—'}
-        </span>
-      ),
+      render: (value: unknown) => renderTextCell(value, 'nx-cell-num nx-cell-muted nx-cell-ellipsis'),
     },
     {
       key: 'supplierName',
@@ -64,11 +190,7 @@ export function buildInvoiceListColumns({
       label: t('supplier'),
       align: 'center',
       width: '15ch',
-      render: (v: any) => (
-        <span className="nx-cell-ellipsis" title={v || ''}>
-          {v || '—'}
-        </span>
-      ),
+      render: (value: unknown) => renderTextCell(value),
     },
     {
       key: 'createdByDisplayName',
@@ -76,23 +198,15 @@ export function buildInvoiceListColumns({
       label: t('invoiceUserColumn'),
       align: 'center',
       width: '14ch',
-      render: (v: any) => (
-        <span className="nx-cell-ellipsis" title={v || ''}>
-          {v || '—'}
-        </span>
-      ),
+      render: (value: unknown) => renderTextCell(value),
     },
     {
       key: 'notesOrEmployee',
       kind: 'text',
-      label: t('invoiceNotesColumn') || 'ملاحظة',
+      label: t('invoiceNotesColumn') || 'Notes',
       align: 'center',
       width: '18ch',
-      render: (_: any, row: any) => (
-        <span className="nx-cell-ellipsis" title={row.notes || ''}>
-          {row.notes || '—'}
-        </span>
-      ),
+      render: (_: unknown, row: InvoiceTableRow) => renderTextCell(row.notes),
     },
     {
       key: 'kind',
@@ -101,7 +215,7 @@ export function buildInvoiceListColumns({
       align: 'center',
       shrink: true,
       width: '9ch',
-      render: (v: any) => <Badge {...Badge.fromStatus(v, KIND_MAP)} size="sm" />,
+      render: (value: unknown) => <Badge {...Badge.fromStatus(value, KIND_MAP)} size="sm" />,
     },
     {
       key: 'vaultLabel',
@@ -109,85 +223,42 @@ export function buildInvoiceListColumns({
       label: t('invoiceVaultColumn'),
       align: 'center',
       width: '18ch',
-      render: (_: any, row: any) => {
-        const a = row.vaultAllocations;
-        if (a?.length > 0) {
-          return (
-            <div className="flex flex-nowrap gap-1.5 justify-center overflow-hidden">
-              {a.map((al: any) => {
-                const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
-                return (
-                  <div
-                    key={al.id}
-                    className={cn(
-                      'inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-noorix-border',
-                      'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
-                    )}
-                    title={vn ? `${vn} — ${fmt(al.amount)} SR` : ''}
-                  >
-                    <span className="truncate text-[11px] font-semibold text-noorix-text max-w-[60px]">{vn || '—'}</span>
-                    <span dir="ltr" className="shrink-0 whitespace-nowrap text-[12px] font-bold tabular-nums text-nx-sales">
-                      <FmtNum n={al.amount} /> <span className="nx-sar">SR</span>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        }
-        const vn = row.vault
-          ? lang === 'en'
-            ? row.vault.nameEn || row.vault.nameAr
-            : row.vault.nameAr || row.vault.nameEn
-          : '';
-        return (
-          <span className="nx-cell-ellipsis text-[12px] text-center" title={vn || ''}>
-            {vn || '—'}
-          </span>
-        );
-      },
+      render: (_: unknown, row: InvoiceTableRow) => renderVaultCell(row, lang, fmt),
     },
     {
       key: 'netAmount',
       kind: 'money',
+      size: 'money-sm',
       label: t('net'),
       align: 'center',
       numeric: true,
       shrink: true,
       width: '11ch',
       sortable: true,
-      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" />,
+      render: (value: unknown) => <FmtNum n={asInvoiceTableNumber(value)} className="nx-cell-num nx-cell-num--green" />,
     },
     {
       key: 'taxAmount',
       kind: 'money',
+      size: 'tax',
       label: t('tax'),
       align: 'center',
       numeric: true,
       shrink: true,
       width: '10ch',
-      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--amber" />,
+      render: (value: unknown) => <FmtNum n={asInvoiceTableNumber(value)} className="nx-cell-num nx-cell-num--amber" />,
     },
     {
       key: 'totalAmount',
       kind: 'money',
+      size: 'money-md',
       label: t('total'),
       align: 'center',
       numeric: true,
       shrink: true,
       width: '11ch',
       sortable: true,
-      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" />,
-    },
-    {
-      key: 'transactionDate',
-      kind: 'date',
-      label: t('date'),
-      align: 'center',
-      sortable: true,
-      shrink: true,
-      width: '11ch',
-      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span>,
+      render: (value: unknown) => <FmtNum n={asInvoiceTableNumber(value)} className="nx-cell-num nx-cell-bold" />,
     },
     {
       key: 'status',
@@ -196,31 +267,12 @@ export function buildInvoiceListColumns({
       align: 'center',
       shrink: true,
       width: '9ch',
-      render: (v: any) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" />,
-    },
-    {
-      key: 'actions',
-      kind: 'actions',
-      label: t('actions'),
-      align: 'center',
-      width: '48px',
-      shrink: true,
-      render: (_: any, row: any) => (
-        <InvoiceActionsCell
-          row={row}
-          userRole={userRole}
-          companyId={companyId}
-          onView={(r: any) => setViewingInvoice(r)}
-          onPrint={() => window.print()}
-          onEdit={(r: any) => setEditingInvoice(r)}
-          onDelete={confirmAndDeleteInvoice}
-        />
-      ),
+      render: (value: unknown) => <Badge {...Badge.fromStatus(value, STATUS_MAP)} size="sm" />,
     },
   ];
 }
 
-export function buildInvoiceListFooterRow({ t, serverAll, total }: any) {
+export function buildInvoiceListFooterRow({ t, serverAll, total }: InvoiceFooterParams) {
   return [
     {
       keys: ['invoiceNumber', 'supplierInvoiceNumber', 'supplierName', 'createdByDisplayName', 'notesOrEmployee', 'kind', 'vaultLabel'],
@@ -240,27 +292,21 @@ export function buildInvoiceListFooterRow({ t, serverAll, total }: any) {
     {
       keys: ['netAmount'],
       className: 'nx-tfoot-num nx-cell-num--green text-center',
-      content: <FmtNum n={Number(serverAll.net)} />,
+      content: <FmtNum n={asInvoiceTableNumber(serverAll.net)} />,
     },
     {
       keys: ['taxAmount'],
       className: 'nx-tfoot-num nx-cell-num--amber text-center',
-      content: <FmtNum n={Number(serverAll.tax)} />,
+      content: <FmtNum n={asInvoiceTableNumber(serverAll.tax)} />,
     },
     {
       keys: ['totalAmount'],
       className: 'nx-tfoot-num nx-cell-num--violet text-center',
-      content: <FmtNum n={Number(serverAll.total)} />,
+      content: <FmtNum n={asInvoiceTableNumber(serverAll.total)} />,
     },
   ];
 }
 
-/**
- * renderCompactRow — نمط السطر المضغوط (2 سطور) للجوال.
- * السطر الأول: رقم الفاتورة + نوعها + اسم المورد + الحالة.
- * السطر الثاني: التاريخ + المبلغ الإجمالي + كباب الإجراءات.
- * الضغط على الصف يفتح تفاصيل الفاتورة (setViewingInvoice).
- */
 export function createInvoiceCompactRowRenderer({
   t,
   STATUS_MAP,
@@ -269,58 +315,29 @@ export function createInvoiceCompactRowRenderer({
   companyId,
   setViewingInvoice,
   setEditingInvoice,
+  printInvoice,
   confirmAndDeleteInvoice,
-}: any) {
-  return (row: any) => {
-    const isInbound = row.kind === 'sale';
-    const amountToneClass = isInbound ? 'text-[var(--color-nx-sales)]' : 'text-[var(--color-nx-expenses)]';
+}: InvoiceRowRendererParams) {
+  return (row: InvoiceTableRow) => {
+    const amountToneClass = getInvoiceTableAmountToneClass(row);
     return (
       <div className="cursor-pointer" onClick={() => setViewingInvoice?.(row)}>
-        {/* السطر الأول */}
         <div className="nx-cr__line1">
-          <span className={`nx-cr__id ${amountToneClass}`}>
-            {row.invoiceNumber || '—'}
+          <span className={`nx-cr__id ${amountToneClass}`} title={asInvoiceTableText(row.invoiceNumber)}>
+            {compactInvoiceDocumentNumber(row.invoiceNumber)}
           </span>
           <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
-          <span className="nx-cr__sub flex-1">{row.supplierName || '—'}</span>
+          <span className="nx-cr__sub flex-1">{asInvoiceTableText(row.supplierName)}</span>
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
-        {/* السطر الثاني */}
         <div className="nx-cr__line2">
           <div className="nx-cr__line2-start">
-            <span className="nx-cr__meta">{formatSaudiDateISO(row.transactionDate)}</span>
+            <span className="nx-cr__meta">{formatInvoiceTableDate(row.transactionDate)}</span>
           </div>
           <div className="nx-cr__line2-end">
             <span className={`nx-cr__amount ${amountToneClass}`}>
-              <FmtNum n={row.totalAmount} /> <span className="nx-sar">SR</span>
+              <FmtNum n={asInvoiceTableNumber(row.totalAmount)} /> <span className="nx-sar">SR</span>
             </span>
-            <div
-              className="nx-cr__kebab"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <KebabMenu
-                ariaLabel={t('actions')}
-                items={[
-                  {
-                    key: 'view',
-                    label: t('view'),
-                    onClick: () => setViewingInvoice?.(row),
-                  },
-                  ...(userRole !== 'viewer' ? [{
-                    key: 'edit',
-                    label: t('edit'),
-                    style: { color: 'var(--noorix-accent-green)' },
-                    onClick: () => setEditingInvoice?.(row),
-                  }] : []),
-                  {
-                    key: 'delete',
-                    label: t('delete'),
-                    style: { color: 'var(--noorix-accent-red)' },
-                    onClick: () => confirmAndDeleteInvoice?.(row),
-                  },
-                ]}
-              />
-            </div>
           </div>
         </div>
       </div>
@@ -330,20 +347,23 @@ export function createInvoiceCompactRowRenderer({
 
 export function createInvoiceListMobileCardRenderer({
   t,
-  lang,
+  lang = 'ar',
   STATUS_MAP,
   KIND_MAP,
   userRole,
   companyId,
   setEditingInvoice,
+  printInvoice,
   confirmAndDeleteInvoice,
-}: any) {
-  return (row: any) => (
+}: InvoiceRowRendererParams) {
+  return (row: InvoiceTableRow) => (
     <div>
       <div className="nx-mc__header">
-        <span className="nx-cell-num nx-cell-accent text-[14px]">{row.invoiceNumber || '—'}</span>
+        <span className="nx-cell-num nx-cell-accent text-[14px]" title={asInvoiceTableText(row.invoiceNumber)}>
+          {compactInvoiceDocumentNumber(row.invoiceNumber)}
+        </span>
         <div className="nx-mc__meta">
-          <span className="nx-cell-muted-sm">{formatSaudiDateISO(row.transactionDate)}</span>
+          <span className="nx-cell-muted-sm">{formatInvoiceTableDate(row.transactionDate)}</span>
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
       </div>
@@ -363,49 +383,25 @@ export function createInvoiceListMobileCardRenderer({
       </div>
       <div className="mb-2">
         <div className="text-[10px] font-bold text-noorix-muted mb-1 text-end">{t('invoiceVaultColumn')}</div>
-        {row.vaultAllocations?.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {row.vaultAllocations.map((al: any) => {
-              const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
-              return (
-                <div
-                  key={al.id}
-                  className={cn(
-                    'inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-noorix-border',
-                    'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
-                  )}
-                >
-                  <span className="min-w-0 truncate text-[11px] font-semibold text-noorix-text">{vn || '—'}</span>
-                  <span dir="ltr" className="shrink-0 text-[12px] font-bold tabular-nums text-nx-sales">
-                    <FmtNum n={al.amount} /> <span className="nx-sar">SR</span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-[12px] text-noorix-muted">
-            {row.vault ? (lang === 'en' ? row.vault.nameEn || row.vault.nameAr : row.vault.nameAr || row.vault.nameEn) : '—'}
-          </div>
-        )}
+        {renderMobileVaults(row, lang, (value) => String(value))}
       </div>
       <div className="nx-mc__grid nx-mc__grid--3">
         <div>
           <div className="nx-mc__stat-label">{t('total')}</div>
           <div className="nx-mc__stat-value">
-            <FmtNum n={row.totalAmount} />
+            <FmtNum n={asInvoiceTableNumber(row.totalAmount)} />
           </div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('net')}</div>
           <div className="nx-mc__stat-value nx-cell-num--green text-[13px]">
-            <FmtNum n={row.netAmount} />
+            <FmtNum n={asInvoiceTableNumber(row.netAmount)} />
           </div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('tax')}</div>
           <div className="nx-mc__stat-value nx-cell-num--amber text-[13px]">
-            <FmtNum n={row.taxAmount} />
+            <FmtNum n={asInvoiceTableNumber(row.taxAmount)} />
           </div>
         </div>
       </div>
@@ -414,8 +410,8 @@ export function createInvoiceListMobileCardRenderer({
           row={row}
           userRole={userRole}
           companyId={companyId}
-          onPrint={() => window.print()}
-          onEdit={(r: any) => setEditingInvoice(r)}
+          onPrint={printInvoice}
+          onEdit={(invoiceRow: InvoiceTableRow) => setEditingInvoice(invoiceRow)}
           onDelete={confirmAndDeleteInvoice}
         />
       </div>

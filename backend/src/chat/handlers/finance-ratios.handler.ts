@@ -11,46 +11,19 @@ function canPurchases(can: (p: string) => boolean) {
   return can(PERMISSIONS.VIEW_INVOICES);
 }
 function canExpenses(can: (p: string) => boolean) {
-  return can(PERMISSIONS.VIEW_VAULTS);
+  return can(PERMISSIONS.VIEW_EXPENSES) || can(PERMISSIONS.EXPENSES_READ);
 }
 
 async function sumRevenue(ctx: ChatHandlerContext, start: Date, end: Date): Promise<Decimal> {
-  const agg = await ctx.prisma.ledgerEntry.aggregate({
-    where: {
-      companyId: ctx.companyId,
-      status: 'active',
-      transactionDate: { gte: start, lte: end },
-      creditAccount: { type: 'revenue' },
-    },
-    _sum: { amount: true },
-  });
-  return new Decimal(agg._sum.amount ?? 0);
+  return ctx.chatFinancialMetrics.sumRevenue(ctx.companyId, start, end);
 }
 
 async function sumPurchases(ctx: ChatHandlerContext, start: Date, end: Date): Promise<Decimal> {
-  const agg = await ctx.prisma.ledgerEntry.aggregate({
-    where: {
-      companyId: ctx.companyId,
-      status: 'active',
-      transactionDate: { gte: start, lte: end },
-      debitAccount: { code: { startsWith: 'PUR' } },
-    },
-    _sum: { amount: true },
-  });
-  return new Decimal(agg._sum.amount ?? 0);
+  return ctx.chatFinancialMetrics.sumPurchases(ctx.companyId, start, end);
 }
 
 async function sumOperatingExpenses(ctx: ChatHandlerContext, start: Date, end: Date): Promise<Decimal> {
-  const agg = await ctx.prisma.ledgerEntry.aggregate({
-    where: {
-      companyId: ctx.companyId,
-      status: 'active',
-      transactionDate: { gte: start, lte: end },
-      debitAccount: { type: 'expense', code: { not: { startsWith: 'PUR' } } },
-    },
-    _sum: { amount: true },
-  });
-  return new Decimal(agg._sum.amount ?? 0);
+  return ctx.chatFinancialMetrics.sumOperatingExpenses(ctx.companyId, start, end);
 }
 
 function pctOf(numer: Decimal, denom: Decimal): string {

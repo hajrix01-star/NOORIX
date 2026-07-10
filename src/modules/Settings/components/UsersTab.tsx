@@ -1,5 +1,5 @@
-﻿/**
- * UsersTab — إدارة المستخدمين
+/**
+ * UsersTab — ????? ??????????
  */
 import React, { useMemo, useState } from 'react';
 import { useApiMutation } from '../../../hooks/useApiMutation';
@@ -7,33 +7,38 @@ import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser, hardDeleteUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, Checkbox, Input, AdaptiveSheet, ScreenShell, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, ScreenShell, SmartTable, type SmartTableColumn } from '../../../ui';
 import { settingsKeys } from '../../../services/queryKeys';
+import { UsersTabForms } from './UsersTabForms';
+import {
+  buildUserEditState,
+  EMPTY_USER_FORM,
+  toLoginName,
+  type CreateUserResult,
+  type SettingsRole,
+  type SettingsUser,
+  type UserEditState,
+  type UserUpdateVariables,
+  type UsersTabProps,
+} from '../usersTabModel';
 
-/** الجزء المحلي من البريد الداخلي → اسم الدخول المعروض للمستخدم. */
-function toLoginName(email: string): string {
-  if (!email) return '—';
-  const at = email.indexOf('@');
-  return at > 0 ? email.slice(0, at) : email;
-}
-
-export default function UsersTab({ userRole, activeCompanies = [] }: any) {
+export default function UsersTab({ userRole: _userRole, activeCompanies = [] }: UsersTabProps) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   /** Archived users (isActive === false) are hidden until this is toggled on */
   const [showArchived, setShowArchived] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState<{ loginName: string; password: string; roleName: string; preferredLang: string; companyIds: string[] }>({ loginName: '', password: '', roleName: '', preferredLang: 'ar', companyIds: [] });
+  const [editing, setEditing] = useState<UserEditState | null>(null);
+  const [form, setForm] = useState(EMPTY_USER_FORM);
   const [loginNameEdit, setLoginNameEdit] = useState('');
   const [confirmHardDelete, setConfirmHardDelete] = useState(false);
 
-  const { data: users = [], isLoading, isError } = useApiListQuery<any>({
+  const { data: users = [], isLoading, isError } = useApiListQuery<SettingsUser>({
     queryKey: settingsKeys.users(),
     queryFn: getUsers,
     fallbackMessage: t('loadingError'),
   });
 
-  const { data: roles = [] } = useApiListQuery<any>({
+  const { data: roles = [] } = useApiListQuery<SettingsRole>({
     queryKey: settingsKeys.roles(),
     queryFn: getRoles,
     fallbackMessage: t('loadingError'),
@@ -42,19 +47,19 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   const createMutation = useApiMutation({
     mutationFn: createUser,
     invalidateQueries: [settingsKeys.users()],
-    successToast: (res: any) => {
-      const loginName = toLoginName(res?.data?.email);
+    successToast: (res: CreateUserResult) => {
+      const loginName = toLoginName(res?.data?.email || '');
       return loginName && loginName !== '—' ? t('userAddedWithEmail', loginName) : t('userAdded');
     },
-    errorToast: (e: any) => e?.message || t('addFailed'),
+    errorToast: (error: Error) => error.message || t('addFailed'),
     onSuccess: () => { setShowForm(false); },
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }: any) => updateUser(id, body),
+    mutationFn: ({ id, body }: UserUpdateVariables) => updateUser(id, body),
     invalidateQueries: [settingsKeys.users()],
     successToast: () => t('updateSuccess'),
-    errorToast: (e: any) => e?.message || t('updateFailed'),
+    errorToast: (error: Error) => error.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
   });
 
@@ -62,7 +67,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
     mutationFn: archiveUser,
     invalidateQueries: [settingsKeys.users()],
     successToast: () => t('userArchived'),
-    errorToast: (e: any) => e?.message || t('updateFailed'),
+    errorToast: (error: Error) => error.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
   });
 
@@ -70,7 +75,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
     mutationFn: restoreUser,
     invalidateQueries: [settingsKeys.users()],
     successToast: () => t('userRestored'),
-    errorToast: (e: any) => e?.message || t('updateFailed'),
+    errorToast: (error: Error) => error.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
   });
 
@@ -78,44 +83,62 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
     mutationFn: hardDeleteUser,
     invalidateQueries: [settingsKeys.users()],
     successToast: () => t('userHardDeleted'),
-    errorToast: (e: any) => e?.message || t('updateFailed'),
+    errorToast: (error: Error) => error.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); setConfirmHardDelete(false); },
   });
 
   const visibleUsers = useMemo(
-    () => (showArchived ? users : users.filter((u: any) => u.isActive !== false)),
+    () => (showArchived ? users : users.filter((user) => user.isActive !== false)),
     [users, showArchived],
   );
 
-  function openEdit(u: any) {
+  function openEdit(u: SettingsUser) {
     const ln = toLoginName(u.email);
     setLoginNameEdit(ln);
     setConfirmHardDelete(false);
-    setEditing({
-      id: u.id,
-      email: u.email,
-      nameAr: u.nameAr || '',
-      nameEn: u.nameEn || '',
-      preferredLang: u.preferredLang || 'ar',
-      roleName: u.role?.name || '',
-      companyIds: (u.userCompanies || []).map((uc: any) => uc.companyId),
-      isActive: u.isActive !== false,
-    });
+    setEditing(buildUserEditState(u));
   }
 
-  /** هل اسم الدخول مُولَّد تلقائياً (user-xxxxxxxx)؟ */
-  function isAutoGenLoginName(ln: string): boolean {
-    return /^user-[0-9a-f]{8}$/.test(ln);
-  }
-
-  const columns = [
-    { key: 'email', label: t('loginName'), render: (v: any) => <span className="font-semibold ltr">{toLoginName(v)}</span> },
-    { key: 'nameAr', label: t('nameAr'), render: (v: any, row: any) => <span className={!v && !row.nameEn ? 'nx-cell-muted ltr' : ''}>{v || row.nameEn || toLoginName(row.email)}</span> },
-    { key: 'preferredLang', label: t('preferredLang'), render: (v: any) => <Badge color={v === 'en' ? 'blue' : 'violet'} size="sm">{v === 'en' ? t('langEn') : t('langAr')}</Badge> },
-    { key: 'role', label: t('role'), render: (_: any, row: any) => <span>{row.role?.nameAr || row.role?.name || '—'}</span> },
-    { key: 'companies', label: t('companies'), render: (_: any, row: any) => <span className="nx-cell-muted">{(row.userCompanies || []).map((uc: any) => uc.company?.nameAr).filter(Boolean).join(', ') || '—'}</span> },
-    { key: 'status', label: t('status'), render: (_: any, row: any) => <Badge color={row.isActive ? 'green' : 'red'} size="sm">{row.isActive ? t('active') : t('archived')}</Badge> },
-    { key: 'actions', label: t('actions'), render: (_: any, row: any) => <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button> },
+  const columns: SmartTableColumn<SettingsUser>[] = [
+    {
+      key: 'email',
+      label: t('loginName'),
+      render: (value, row) => (
+        <Button
+          variant="raw"
+          size="auto"
+          className="font-semibold ltr text-noorix-blue hover:underline"
+          onClick={() => openEdit(row)}
+        >
+          {toLoginName(String(value ?? ''))}
+        </Button>
+      ),
+    },
+    {
+      key: 'nameAr',
+      label: t('nameAr'),
+      render: (value, row) => (
+        <span className={!value && !row.nameEn ? 'nx-cell-muted ltr' : ''}>
+          {String(value || row.nameEn || toLoginName(row.email))}
+        </span>
+      ),
+    },
+    {
+      key: 'preferredLang',
+      label: t('preferredLang'),
+      render: (value) => <Badge color={value === 'en' ? 'blue' : 'violet'} size="sm">{value === 'en' ? t('langEn') : t('langAr')}</Badge>,
+    },
+    { key: 'role', label: t('role'), render: (_value, row) => <span>{row.role?.nameAr || row.role?.name || '-'}</span> },
+    {
+      key: 'companies',
+      label: t('companies'),
+      render: (_value, row) => (
+        <span className="nx-cell-muted">
+          {(row.userCompanies || []).map((link) => link.company?.nameAr).filter(Boolean).join(', ') || '-'}
+        </span>
+      ),
+    },
+    { key: 'status', label: t('status'), render: (_value, row) => <Badge color={row.isActive ? 'green' : 'red'} size="sm">{row.isActive ? t('active') : t('archived')}</Badge> },
   ];
 
   return (
@@ -133,147 +156,32 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
         <Button
           variant="primary"
           className="w-full min-h-[44px] min-[420px]:w-auto min-[420px]:min-h-0"
-          onClick={() => { setForm({ loginName: '', password: '', roleName: roles[0]?.name || '', preferredLang: 'ar', companyIds: [] }); setShowForm(true); }}
+          onClick={() => { setForm({ ...EMPTY_USER_FORM, roleName: roles[0]?.name || '' }); setShowForm(true); }}
         >
           {t('addUser')}
         </Button>
       </div>
 
-      {showForm && (
-        <div className="noorix-surface-card p-5">
-          <h4 className="text-[14px] m-0 mb-4">{t('newUser')}</h4>
-          <form onSubmit={(e: any) => {
-            e.preventDefault();
-            const ln = form.loginName.trim().toLowerCase();
-            if (!ln || !form.password?.trim()) return;
-            createMutation.mutate({
-              loginName: ln,
-              password: form.password,
-              preferredLang: form.preferredLang,
-              roleName: form.roleName || roles[0]?.name,
-              companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c: any) => c.id),
-            });
-          }}>
-            <div className="grid w-full min-w-0 max-w-[400px] gap-3 mb-[14px]">
-              <div>
-                <Input
-                  type="text"
-                  label={`${t('loginName')} *`}
-                  value={form.loginName}
-                  onChange={(e: any) => setForm((p: any) => ({ ...p, loginName: e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, '') }))}
-                  dir="ltr"
-                  placeholder={t('loginNamePlaceholder')}
-                  required
-                />
-                <p className="text-[11px] text-noorix-muted mt-1 mb-0">{t('loginNameValidation')}</p>
-              </div>
-              <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e: any) => setForm((p: any) => ({ ...p, password: e.target.value }))} required />
-              <Input type="select" label={t('preferredLang')} value={form.preferredLang} onChange={(e: any) => setForm((p: any) => ({ ...p, preferredLang: e.target.value }))}>
-                <option value="ar">{t('langAr')}</option>
-                <option value="en">{t('langEn')}</option>
-              </Input>
-              <Input type="select" label={t('role')} value={form.roleName} onChange={(e: any) => setForm((p: any) => ({ ...p, roleName: e.target.value }))}>
-                {roles.map((r: any) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
-              </Input>
-              <div><label className="text-[12px] font-semibold mb-1 block">{t('companies')}</label>
-                <div className="flex flex-col gap-1.5">
-                  {activeCompanies.map((c: any) => (
-                    <Checkbox
-                      key={c.id}
-                      checked={form.companyIds.includes(c.id)}
-                      onChange={(e: any) => setForm((p: any) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id: any) => id !== c.id) }))}
-                      label={c.nameAr}
-                      containerClassName="nx-checkbox"
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col-reverse gap-2 min-[400px]:flex-row min-[400px]:flex-wrap">
-              <Button type="button" className="w-full min-h-[44px] min-[400px]:w-auto min-[400px]:min-h-0" onClick={() => setShowForm(false)}>{t('cancel')}</Button>
-              <Button type="submit" variant="primary" className="w-full min-h-[44px] min-[400px]:w-auto min-[400px]:min-h-0" disabled={createMutation.isPending}>{createMutation.isPending ? t('saving') : t('save')}</Button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <AdaptiveSheet
-        open={!!editing}
-        onClose={() => !updateMutation.isPending && setEditing(null)}
-        title={editing ? t('editUser', toLoginName(editing.email)) : ''}
-        size="md"
-        side="start"
-        className="users-edit-drawer"
-      >
-        {editing && (
-          <form onSubmit={(e: any) => {
-            e.preventDefault();
-            const ln = loginNameEdit.trim().toLowerCase();
-            const body: any = { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), preferredLang: editing.preferredLang, roleName: editing.roleName, companyIds: editing.companyIds };
-            if (ln && ln !== toLoginName(editing.email)) body.loginName = ln;
-            updateMutation.mutate({ id: editing.id, body });
-          }}>
-            <div className="grid gap-3 mb-[14px]">
-              {isAutoGenLoginName(toLoginName(editing.email)) && (
-                <div className="text-[12px] text-noorix-amber bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
-                  {t('loginNameAutoWarning')}
-                </div>
-              )}
-              <div>
-                <Input
-                  type="text"
-                  label={t('loginNameEdit')}
-                  value={loginNameEdit}
-                  onChange={(e: any) => setLoginNameEdit(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
-                  dir="ltr"
-                  placeholder={t('loginNamePlaceholder')}
-                />
-                <p className="text-[11px] text-noorix-muted mt-1 mb-0">{t('loginNameValidation')}</p>
-              </div>
-              <Input type="text" label={t('nameAr')} value={editing.nameAr} onChange={(e: any) => setEditing((p: any) => ({ ...p, nameAr: e.target.value }))} />
-              <Input type="select" label={t('preferredLang')} value={editing.preferredLang} onChange={(e: any) => setEditing((p: any) => ({ ...p, preferredLang: e.target.value }))}>
-                <option value="ar">{t('langAr')}</option>
-                <option value="en">{t('langEn')}</option>
-              </Input>
-              <Input type="select" label={t('role')} value={editing.roleName} onChange={(e: any) => setEditing((p: any) => ({ ...p, roleName: e.target.value }))}>
-                {roles.map((r: any) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
-              </Input>
-              <div><label className="text-[12px] font-semibold mb-1 block">{t('companies')}</label>
-                {activeCompanies.map((c: any) => (
-                  <Checkbox
-                    key={c.id}
-                    checked={editing.companyIds.includes(c.id)}
-                    onChange={(e: any) => setEditing((p: any) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id: any) => id !== c.id) }))}
-                    label={c.nameAr}
-                    containerClassName="nx-checkbox mb-1"
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 min-[440px]:flex-row min-[440px]:flex-wrap">
-              <Button type="submit" variant="primary" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" disabled={updateMutation.isPending}>{updateMutation.isPending ? t('saving') : t('save')}</Button>
-              <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => setEditing(null)}>{t('close')}</Button>
-              {editing.isActive ? (
-                <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => archiveMutation.mutate(editing.id)} disabled={archiveMutation.isPending}>{t('archive')}</Button>
-              ) : (<>
-                <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => restoreMutation.mutate(editing.id)} disabled={restoreMutation.isPending}>{t('restore')}</Button>
-                {!confirmHardDelete ? (
-                  <Button type="button" variant="danger" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => setConfirmHardDelete(true)}>{t('hardDelete')}</Button>
-                ) : (
-                  <div className="flex flex-col gap-1.5 w-full min-[440px]:w-auto">
-                    <p className="text-[12px] text-noorix-red font-semibold m-0">{t('hardDeleteConfirm')}</p>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button type="button" variant="danger" className="flex-1 min-[440px]:flex-none" onClick={() => hardDeleteMutation.mutate(editing.id)} disabled={hardDeleteMutation.isPending}>{hardDeleteMutation.isPending ? t('deleting') : t('hardDeleteConfirmYes')}</Button>
-                      <Button type="button" className="flex-1 min-[440px]:flex-none" onClick={() => setConfirmHardDelete(false)}>{t('cancel')}</Button>
-                    </div>
-                  </div>
-                )}
-              </>)}
-              
-            </div>
-          </form>
-        )}
-      </AdaptiveSheet>
+      <UsersTabForms
+        t={t}
+        roles={roles}
+        activeCompanies={activeCompanies}
+        showForm={showForm}
+        setShowForm={setShowForm}
+        form={form}
+        setForm={setForm}
+        createMutation={createMutation}
+        editing={editing}
+        setEditing={setEditing}
+        loginNameEdit={loginNameEdit}
+        setLoginNameEdit={setLoginNameEdit}
+        updateMutation={updateMutation}
+        archiveMutation={archiveMutation}
+        restoreMutation={restoreMutation}
+        hardDeleteMutation={hardDeleteMutation}
+        confirmHardDelete={confirmHardDelete}
+        setConfirmHardDelete={setConfirmHardDelete}
+      />
 
       <div className="min-w-0 w-full overflow-x-auto">
         <SmartTable
@@ -283,7 +191,6 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
           page={1}
           pageSize={50}
           showRowNumbers
-          rowNumberWidth="1%"
           isLoading={isLoading}
           isError={isError}
           title={t('usersTab')}
@@ -292,7 +199,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
               ? t('usersArchivedHiddenEmpty')
               : t('noUsers')
           }
-          renderCompactRow={(row: any) => (
+          renderCompactRow={(row: SettingsUser) => (
             <div>
               <div className="nx-cr__line1">
                 <span className="nx-cr__name">{row.nameAr || row.nameEn || row.email || '—'}</span>
@@ -306,17 +213,12 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
                   <span className="nx-cr__meta">{row.role?.nameAr || row.role?.name || '—'}</span>
                 </div>
                 <div className="nx-cr__line2-end">
-                  <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-                    <KebabMenu
-                      ariaLabel={t('actions')}
-                      items={[{ key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => openEdit(row) }]}
-                    />
-                  </div>
+                  <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button>
                 </div>
               </div>
             </div>
           )}
-          renderMobileCard={(row: any) => (
+          renderMobileCard={(row: SettingsUser) => (
             <div className="grid gap-2 min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">
                 <span className="font-bold text-[14px] text-noorix-text min-w-0 break-words">{row.nameAr || row.nameEn || row.email || '—'}</span>

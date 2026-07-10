@@ -1,15 +1,13 @@
-﻿/**
+/**
  * DailySalesScreen — ملخص المبيعات اليومي
  * يعتمد على: useDailySalesScreen + SmartTable + utils/saudiDate, utils/format
  * يدعم: تصدير Excel، PDF، طباعة احترافية (اسم الشركة + شعار)
  */
 import React, { useMemo, useCallback } from 'react';
 import { formatSaudiDate } from '../../utils/saudiDate';
-import { Badge, Button, ScreenShell, FmtNum, KebabMenu, SmartTable } from '../../ui';
+import { Badge, Button, FilterToolbar, ScreenShell, FmtNum, SmartTable } from '../../ui';
 import type { SmartTableColumn } from '../../ui/SmartTable/types';
 import { DateFilterBar } from '../../ui/date';
-import FilterToolbar from '../../shared/components/FilterToolbar';
-import { SalesActionsCell } from '../../components/common/SalesActionsCell';
 import { SalesDayEditModal } from './components/SalesDayEditModal';
 import { SalesEntryModal } from './components/SalesEntryModal';
 import { DailySalesChannelsChips } from './components/DailySalesChannelsChips';
@@ -19,8 +17,7 @@ import ImportExportModal from '../../components/ImportExportModal';
 import { useDailySalesScreen } from './hooks/useDailySalesScreen';
 import type { DailySalesTableRow } from './hooks/useDailySalesScreen';
 import { getSalesShiftLabel } from './constants/salesShift';
-
-type SalesEntrySuccessPayload = { summaryNumber?: string | number } | Array<{ summaryNumber?: string | number }>;
+import { compactIdentifierList } from '../../utils/compactDisplay';
 
 export default function DailySalesScreen() {
   const {
@@ -68,36 +65,56 @@ export default function DailySalesScreen() {
     handleDeleteSummary,
     STATUS_MAP,
     tableData,
-    activeOnly,
+    activeRowCount,
     displayedTotal,
     totalAmountSum,
     totalCustomers,
+    avgPerCustomer,
     handleExportExcel,
-    handleExportPdf,
     handlePrint,
+    printPreviewModal,
     importExportFetcher,
     handleImportSuccess,
     showToast,
   } = useDailySalesScreen();
 
+  const summaryNumberText = useCallback(
+    (row: DailySalesTableRow) => {
+      const numbers = row.summaries
+        .map((summary) => summary.summaryNumber)
+        .filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
+        .map((value) => String(value).trim());
+      return numbers.length > 0 ? numbers.join(' / ') : String(row.summaryNumber || '');
+    },
+    [],
+  );
+
+  const compactSummaryNumberText = useCallback(
+    (row: DailySalesTableRow) => compactIdentifierList(summaryNumberText(row)),
+    [summaryNumberText],
+  );
+
   const columns = useMemo(() => [
-    { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '12ch',
+    { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '16ch',
       render: (_: unknown, row: DailySalesTableRow) => (
-        <div className="flex flex-col items-start gap-0.5">
-          <span className="nx-cell-num nx-cell-accent">{row.summaryNumbersText || row.summaryNumber}</span>
-          {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
-        </div>
-      ) },
-    { key: 'transactionDate', kind: 'date', label: t('transactionDate'), sortable: true, width: '13ch',
-      render: (v: unknown, row: DailySalesTableRow) => (
-        <div className="flex flex-col items-start gap-0.5">
-          <span className="nx-cell-muted-sm">{formatSaudiDate(v as string)}</span>
+        <div className="flex flex-col items-start gap-1">
+          <Button
+            variant="raw"
+            size="auto"
+            className="!h-auto rounded-md px-2 py-1 text-start nx-cell-num nx-cell-accent hover:bg-noorix-blue/10 hover:underline focus-visible:ring-2 focus-visible:ring-noorix-blue"
+            title={summaryNumberText(row)}
+            onClick={() => setEditingSummary(row)}
+          >
+            {compactSummaryNumberText(row)}
+          </Button>
+          <span className="nx-cell-muted-sm nx-font-numbers">{formatSaudiDate(row.transactionDate)}</span>
           <span className="inline-flex items-center rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
             {row.shiftsText || getSalesShiftLabel(row.shift, t)}
           </span>
+          {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
         </div>
       ) },
-    { key: 'channelsText', kind: 'text', label: t('salesChannels'), sortable: false, width: '38%',
+    { key: 'channelsText', kind: 'text', size: 'name', label: t('salesChannels'), sortable: false,
       render: (_: unknown, row: DailySalesTableRow) => <DailySalesChannelsChips channels={row.channels} lang={lang} /> },
     { key: 'customerCount', kind: 'number', label: t('customers'), numeric: true, sortable: true, width: '8ch',
       render: (v: unknown) => <span className="nx-cell-num nx-cell-num--blue">{(v as number) ?? 0}</span> },
@@ -107,39 +124,28 @@ export default function DailySalesScreen() {
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', kind: 'status', label: t('statusLabel'), width: '9ch',
       render: (v: unknown) => <Badge {...Badge.fromStatus(v as string, STATUS_MAP)} size="sm" /> },
-    { key: 'actions', kind: 'actions', label: t('actions'), align: 'center', width: '48px',
-      render: (_: unknown, row: DailySalesTableRow) => (
-        <SalesActionsCell
-          summary={row}
-          userRole={userRole}
-          onPrint={openWhatsApp}
-          onEdit={setEditingSummary}
-          onDelete={handleDeleteSummary}
-        />
-      ),
-    },
-  ] as SmartTableColumn[], [userRole, t, STATUS_MAP, handleDeleteSummary, lang, openWhatsApp, setEditingSummary]);
+  ] as SmartTableColumn[], [t, STATUS_MAP, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText]);
 
   const footerCells = (
     <>
       <td />
-      <td colSpan={3} className="nx-tfoot-label">
-        {t('totalSummaries', activeOnly.length)}
+      <td colSpan={2} className="nx-tfoot-label">
+        {t('totalSummaries', activeRowCount)}
         {displayedTotal > PAGE_SIZE ? (
           <span className="nx-cell-muted-sm me-1.5"> (إجمالي الصفحة الحالية)</span>
         ) : null}
       </td>
       <td className="nx-tfoot-num nx-cell-num--blue">{totalCustomers.toLocaleString('en')}</td>
-      <td className="nx-tfoot-num nx-cell-num--green"><FmtNum n={totalAmountSum.toNumber()} /></td>
-      <td className="nx-tfoot-num nx-cell-num--violet">{totalCustomers > 0 ? <FmtNum n={totalAmountSum.toNumber() / totalCustomers} /> : '0.00'}</td>
-      <td colSpan={2} />
+      <td className="nx-tfoot-num nx-cell-num--green"><FmtNum n={totalAmountSum} /></td>
+      <td className="nx-tfoot-num nx-cell-num--violet"><FmtNum n={avgPerCustomer} /></td>
+      <td />
     </>
   );
 
   const renderMobileCard = useCallback((row: DailySalesTableRow) => (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-noorix-blue ltr">#{row.summaryNumbersText || row.summaryNumber}</span>
+        <span className="text-[14px] font-bold text-noorix-blue ltr" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
           <span className="rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
@@ -166,16 +172,13 @@ export default function DailySalesScreen() {
           <div className="nx-mc__stat-value text-[13px] font-bold text-noorix-violet"><FmtNum n={row.avgPerCustomer} /></div>
         </div>
       </div>
-      <div className="flex justify-end mt-1">
-        <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
-      </div>
     </div>
-  ), [STATUS_MAP, userRole, t, handleDeleteSummary, lang, openWhatsApp, setEditingSummary]);
+  ), [STATUS_MAP, t, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText]);
 
   const renderCompactRow = useCallback((row: DailySalesTableRow) => (
     <div className="cursor-pointer" onClick={() => setEditingSummary(row)}>
       <div className="nx-cr__line1">
-        <span className="nx-cr__id">#{row.summaryNumbersText || row.summaryNumber}</span>
+        <span className="nx-cr__id" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
         <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
         <span className="nx-cr__meta">{row.shiftsText || getSalesShiftLabel(row.shift, t)}</span>
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
@@ -186,25 +189,17 @@ export default function DailySalesScreen() {
         </div>
         <div className="nx-cr__line2-end">
           <span className="nx-cr__amount text-noorix-green"><FmtNum n={Number(row.totalAmount)} /> <span className="nx-sar">SR</span></span>
-          <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-            <KebabMenu
-              ariaLabel={t('actions')}
-              items={[
-                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingSummary(row) },
-                ...(row.status !== 'cancelled' ? [{ key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDeleteSummary(row) }] : []),
-              ]}
-            />
-          </div>
         </div>
       </div>
     </div>
-  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary]);
+  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary, compactSummaryNumberText, summaryNumberText]);
 
   return (
     <ScreenShell>
+      {printPreviewModal}
       {editingSummary && (
         <SalesDayEditModal
-          day={editingSummary as DailySalesTableRow}
+          day={editingSummary}
           salesChannels={salesChannels}
           salesChannelsLoading={salesChannelsLoading}
           salesChannelsError={salesChannelsErrorMessage}
@@ -212,6 +207,9 @@ export default function DailySalesScreen() {
           vatRate={vatRate}
           onSaved={handleEditSave}
           onClose={() => setEditingSummary(null)}
+          onWhatsApp={openWhatsApp}
+          onDelete={handleDeleteSummary}
+          canDelete={(userRole || '').toLowerCase() === 'owner'}
         />
       )}
 
@@ -226,7 +224,7 @@ export default function DailySalesScreen() {
           vatRate={vatRate}
           createSummary={createSummary}
           createSummaryBatch={createSummaryBatch}
-          onSuccess={(payload: SalesEntrySuccessPayload) => {
+          onSuccess={(payload) => {
             const summary = Array.isArray(payload) ? payload[0] : payload;
             showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success');
           }}
@@ -326,7 +324,6 @@ export default function DailySalesScreen() {
           footerCells={footerCells}
           title={t('previousSummaries')}
           showRowNumbers
-          rowNumberWidth="1%"
           badge={
             <>
               <span className="text-[12px] text-noorix-muted">— {dateFilter.label}</span>
@@ -336,8 +333,7 @@ export default function DailySalesScreen() {
               {salesFullHistory && (
                 <span className="flex flex-wrap gap-1.5 print:hidden">
                   <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportExcel')}</Button>
-                  <Button size="sm" onClick={handleExportPdf} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : 'طباعة / PDF'}</Button>
-                  <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('print')}</Button>
+                  <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : `${t('print')} / PDF`}</Button>
                 </span>
               )}
             </>

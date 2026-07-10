@@ -19,6 +19,7 @@ import {
   salesShiftSharePercent,
   type SalesShiftPeriodTotals,
 } from '../utils/dashboardSalesShiftTotals';
+import { DashboardOverviewRevenueDailyAvgPanel } from './DashboardOverviewRevenueDailyAvgPanel';
 
 type CardDef = {
   key: string;
@@ -27,6 +28,15 @@ type CardDef = {
   pctLabelKey: string;
 };
 
+function kpiSparklineColor(key: string): string {
+  if (key === 'sales') return KPI_CARD_SPARKLINE_COLORS.sales;
+  if (key === 'grossProfit') return KPI_CARD_SPARKLINE_COLORS.grossProfit;
+  if (key === 'netProfit') return KPI_CARD_SPARKLINE_COLORS.netProfit;
+  if (key === 'purchases') return KPI_CARD_SPARKLINE_COLORS.purchases;
+  if (key === 'expenses') return KPI_CARD_SPARKLINE_COLORS.expenses;
+  return KPI_CARD_SPARKLINE_COLORS.sales;
+}
+
 type Props = {
   report: PlReportLike | null | undefined;
   selectedMonth: number | null;
@@ -34,6 +44,10 @@ type Props = {
   filter: DashboardOverviewFilter | undefined;
   year: number;
   salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
+  revenueDailyAvgCalendar: number | null;
+  revenueDailyAvgPrevMonthCalendar: number | null;
+  customerDailyAvgCalendar: number | null;
+  customerDailyAvgPrevMonthCalendar: number | null;
   kpiInsightFooters: KpiInsightFooterMap;
 };
 
@@ -90,6 +104,10 @@ export function DashboardOverviewKpis({
   filter,
   year,
   salesShiftPeriodTotals,
+  revenueDailyAvgCalendar,
+  revenueDailyAvgPrevMonthCalendar,
+  customerDailyAvgCalendar,
+  customerDailyAvgPrevMonthCalendar,
   kpiInsightFooters,
 }: Props) {
   const { t } = useTranslation();
@@ -99,13 +117,12 @@ export function DashboardOverviewKpis({
       <div className="nx-kpi-grid nx-kpi-grid--dashboard">
         {cards.map((card) => {
           const rawVal = getCardValue(report, card.key, selectedMonth);
-          const isProfit = card.key === 'netProfit';
+          const isProfit = card.key === 'grossProfit' || card.key === 'netProfit';
           const isSales = card.key === 'sales';
           const pct = getPctStringForCard(report, card.key, selectedMonth);
           const pctNum = pct != null ? Number(pct) : null;
 
-          const sparkColors = KPI_CARD_SPARKLINE_COLORS as Record<string, string>;
-          const accentColor = sparkColors[card.key] || sparkColors.sales;
+          const accentColor = kpiSparklineColor(card.key);
 
           let badgeTone = 'neutral';
           let arrow = '';
@@ -135,8 +152,9 @@ export function DashboardOverviewKpis({
           const insightBundle =
             card.key === 'purchases' ||
             card.key === 'expenses' ||
+            card.key === 'grossProfit' ||
             card.key === 'netProfit'
-              ? kpiInsightFooters[card.key as 'purchases' | 'expenses' | 'netProfit']
+              ? kpiInsightFooters[card.key as 'purchases' | 'expenses' | 'grossProfit' | 'netProfit']
               : undefined;
 
           const footerRows = insightBundle?.rows;
@@ -170,12 +188,21 @@ export function DashboardOverviewKpis({
             >
               <MetricCard.Header
                 label={card.label}
-                subLabel={isSales ? undefined : t(card.formulaKey)}
+                subLabel={isSales ? t('reportAmountBasisGrossShort') : `${t(card.formulaKey)} - ${t('reportAmountBasisGrossShort')}`}
               />
               <MetricCard.Value value={amountText(rawVal)} currency="SR" className="pb-1" />
 
               {isSales ? (
-                <RevenueShiftSummary totals={salesShiftPeriodTotals} t={t} />
+                <>
+                  <DashboardOverviewRevenueDailyAvgPanel
+                    revenueCurrent={revenueDailyAvgCalendar}
+                    revenuePrev={revenueDailyAvgPrevMonthCalendar}
+                    customerCurrent={customerDailyAvgCalendar}
+                    customerPrev={customerDailyAvgPrevMonthCalendar}
+                    t={t}
+                  />
+                  <RevenueShiftSummary totals={salesShiftPeriodTotals} t={t} />
+                </>
               ) : null}
 
               <DashboardOverviewKpiCardFooter

@@ -4,7 +4,14 @@
  */
 
 /** تحويل نص الوحدة إلى وحدة الطلبات في الـ API */
-export function inferPresetOrderUnitEnum(unitLabel: any) {
+export type BroastedPresetCatalogRow = {
+  nameAr: string;
+  categoryAr: string;
+  unitLabel: string;
+  avgPrice: number;
+};
+
+export function inferPresetOrderUnitEnum(unitLabel: string) {
   const s = String(unitLabel ?? '').trim();
   if (!s || s === '-' || s === '—') return 'piece';
   const t = s.replace(/\s+/g, ' ');
@@ -18,7 +25,7 @@ export function inferPresetOrderUnitEnum(unitLabel: any) {
 }
 
 /** حقول variants + lastPrice لإنشاء/تحديث الصنف */
-export function presetRowToProductPayload(row: any) {
+export function presetRowToProductPayload(row: BroastedPresetCatalogRow) {
   const price = Number(row.avgPrice);
   const priceStr = Number.isFinite(price) ? price.toFixed(2) : '0';
   let size = String(row.unitLabel ?? '').trim();
@@ -28,7 +35,7 @@ export function presetRowToProductPayload(row: any) {
   return { variants, lastPrice: priceStr, unit };
 }
 
-export const BROASTED_PRESET_ORDER_PRODUCTS = [
+export const BROASTED_PRESET_ORDER_PRODUCTS: BroastedPresetCatalogRow[] = [
   { nameAr: 'لحم خروف', categoryAr: 'لحوم ودواجن', unitLabel: 'خروف كامل', avgPrice: 1157.45 },
   { nameAr: 'لحم اوصال خام', categoryAr: 'لحوم ودواجن', unitLabel: 'كجم', avgPrice: 46.57 },
   { nameAr: 'صدور مجمده', categoryAr: 'لحوم ودواجن', unitLabel: 'حبة', avgPrice: 10.17 },

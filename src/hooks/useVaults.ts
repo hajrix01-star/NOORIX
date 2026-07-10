@@ -15,14 +15,22 @@ import {
   deleteVault,
 } from '../services/api';
 import { salesKeys, vaultKeys } from '../services/queryKeys';
+import type { UseVaultsParams, VaultCreatePayload, VaultRecord, VaultUpdatePayload } from '../types/api';
 
-/**
- * @param {{ companyId: string, includeArchived?: boolean, startDate?: string|null, endDate?: string|null }} params
- */
-export function useVaults({ companyId, includeArchived = false, startDate = null, endDate = null }: any) {
+type UpdateVaultVariables = {
+  id: string;
+  body: VaultUpdatePayload;
+};
+
+export function useVaults({
+  companyId,
+  includeArchived = false,
+  startDate = null,
+  endDate = null,
+}: UseVaultsParams) {
   const queryClient = useQueryClient();
 
-  const { data: vaultsList = [], isLoading, isFetching, isError } = useApiListQuery<any>({
+  const { data: vaultsList = [], isLoading, isFetching, isError } = useApiListQuery<VaultRecord>({
     queryKey: vaultKeys.list(companyId, includeArchived, startDate ?? '', endDate ?? ''),
     queryFn: () =>
       getVaults(
@@ -35,7 +43,7 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
     enabled: !!companyId,
   });
 
-  const { data: paymentVaults = [], isLoading: paymentVaultsLoading } = useApiListQuery<any>({
+  const { data: paymentVaults = [], isLoading: paymentVaultsLoading } = useApiListQuery<VaultRecord>({
     queryKey: vaultKeys.paymentOptions(companyId),
     queryFn: () => getPaymentVaults(companyId),
     fallbackMessage: 'فشل تحميل خيارات الدفع',
@@ -46,35 +54,36 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
     Promise.all([
       queryClient.invalidateQueries({ queryKey: vaultKeys.byCompany(companyId) }),
       queryClient.invalidateQueries({ queryKey: vaultKeys.paymentOptions(companyId) }),
+      queryClient.invalidateQueries({ queryKey: vaultKeys.paymentVaultsRoot() }),
       queryClient.invalidateQueries({ queryKey: salesKeys.channels(companyId) }),
     ]);
 
   const createMutation = useApiMutation({
-    mutationFn: (body: any) => createVault({ ...body, companyId }),
+    mutationFn: (body: VaultCreatePayload) => createVault({ ...body, companyId }),
     onSuccess: invalidate,
     showErrorToast: false,
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }: any) => updateVault(id, body),
+    mutationFn: ({ id, body }: UpdateVaultVariables) => updateVault(id, body),
     onSuccess: invalidate,
     showErrorToast: false,
   });
 
   const archiveMutation = useApiMutation({
-    mutationFn: (id: any) => archiveVault(id),
+    mutationFn: (id: string) => archiveVault(id),
     onSuccess: invalidate,
     showErrorToast: false,
   });
 
   const deleteMutation = useApiMutation({
-    mutationFn: (id: any) => deleteVault(id),
+    mutationFn: (id: string) => deleteVault(id),
     onSuccess: invalidate,
     showErrorToast: false,
   });
 
   const reorderMutation = useApiMutation({
-    mutationFn: (vaultIds: any) => reorderVaults(vaultIds),
+    mutationFn: (vaultIds: string[]) => reorderVaults(vaultIds),
     onSuccess: invalidate,
     showErrorToast: false,
   });

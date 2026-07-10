@@ -1,30 +1,55 @@
-﻿/**
- * عرض كشف كامل (صفحة) — بديل النافذة المنبثقة البسيطة؛ مستوحى من المشروع السابق.
+/**
+ * تفاصيل كشف البنك — عرض التحليل والتصنيف والمطابقة والطباعة من التقرير البنكي.
  */
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import useBankStatementView from '../../../hooks/useBankStatementView';
-import { Button, Modal, ScreenTabs, cn } from '../../../ui';
+import { Button, DialogActions, Modal, ScreenTabs, cn, usePrintPreview } from '../../../ui';
 import BankStatementSummaryCards from './BankStatementSummaryCards';
 import BankStatementAnalysisCardsTab from './BankStatementAnalysisCardsTab';
 import BankStatementTransactionsFullTab from './BankStatementTransactionsFullTab';
 import BankStatementReconciliationTab from './BankStatementReconciliationTab';
 import BankStatementSalesCompareTab from './BankStatementSalesCompareTab';
-import { exportBankStatementExcel, printBankStatement } from './bankStatementExportPrint';
+import { buildBankStatementPrintHtml, exportBankStatementExcel } from './bankStatementExportPrint';
 import { throwIfApiFailed } from '../../../services/api';
+import type { ApiParsedResult } from '../../../services/api';
+import type { BankCategoryLite, BankCreateCategoryBody } from './bankAnalysisTab.types';
+
+type BankStatementDetailViewProps = {
+  statementId: string;
+  companyId: string;
+  companyName?: string;
+  companyLogoUrl?: string;
+  categories?: BankCategoryLite[];
+  onBack: () => void;
+  onDelete?: () => void;
+  createCategory: (body: BankCreateCategoryBody) => Promise<ApiParsedResult<BankCategoryLite>>;
+  showToast: (message: string, type?: string) => void;
+  onRefresh?: () => void;
+};
+
+function errorMessage(error: unknown, fallback = 'Error'): string {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function BankStatementDetailView({
   statementId,
   companyId,
   companyName,
+  companyLogoUrl,
   categories,
   onBack,
   onDelete,
   createCategory,
   showToast,
   onRefresh,
-}: any) {
+}: BankStatementDetailViewProps) {
   const { t } = useTranslation();
+  const { openPrintPreview, printPreviewModal } = usePrintPreview({
+    title: t('bankPrint'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
   const vm = useBankStatementView(statementId, companyId, t);
   const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -74,7 +99,7 @@ export default function BankStatementDetailView({
   if (vm.statement.status === 'mapping') {
     return (
       <div className="p-6">
-        <Button variant="ghost" onClick={onBack}>← {t('bankBackToList')}</Button>
+        <Button variant="ghost" onClick={onBack}>? {t('bankBackToList')}</Button>
         <p className="mt-4">{t('bankStatementMappingRequired')}</p>
       </div>
     );
@@ -90,28 +115,29 @@ export default function BankStatementDetailView({
       setNewCategoryName('');
       onRefresh?.();
       showToast(t('savedSuccessfully') || 'OK');
-    } catch (e: any) {
-      showToast(e?.message || 'Error', 'error');
+    } catch (error: unknown) {
+      showToast(errorMessage(error), 'error');
     }
   };
 
   return (
     <div className="grid gap-5">
-      {/* ── رأس الصفحة: زر الرجوع + أدوات ── */}
+      {printPreviewModal}
+      {/* رأس الصفحة: زر الرجوع + الأدوات */}
       <div className="nx-page-header noorix-surface-card py-[14px] px-[18px]">
-        <Button size="sm" onClick={onBack}>← {t('bankBackToList')}</Button>
+          <Button size="sm" onClick={onBack}>← {t('bankBackToList')}</Button>
         <div className="nx-toolbar">
           <Button
             size="sm"
             disabled={vm.reclassifyMutation.isPending}
             onClick={() => {
               vm.reclassifyMutation.mutate(undefined, {
-                onSuccess: () => showToast?.(t('bankReclassifyDone') || 'تم إعادة التصنيف'),
-                onError: (e: any) => showToast?.(e?.message || 'Error', 'error'),
+                onSuccess: () => showToast?.(t('bankReclassifyDone') || 'تمت إعادة التصنيف'),
+                onError: (error: unknown) => showToast?.(errorMessage(error), 'error'),
               });
             }}
           >
-            {vm.reclassifyMutation.isPending ? '⟳ ' + t('loading') : t('bankReclassify')}
+            {vm.reclassifyMutation.isPending ? '… ' + t('loading') : t('bankReclassify')}
           </Button>
           <Button
             size="sm"
@@ -124,8 +150,8 @@ export default function BankStatementDetailView({
                   columnTotals: vm.columnTotals,
                   summaryByCategory: vm.summaryByCategory,
                 });
-              } catch (e: any) {
-                showToast?.(e?.message || 'Error', 'error');
+              } catch (error: unknown) {
+                showToast?.(errorMessage(error), 'error');
               }
             }}
           >
@@ -133,14 +159,16 @@ export default function BankStatementDetailView({
           </Button>
           <Button
             size="sm"
-            onClick={() =>
-              printBankStatement({
+            onClick={() => {
+              const html = buildBankStatementPrintHtml({
                 statement: stmt,
                 companyName,
+                logoUrl: companyLogoUrl,
                 filteredTransactions: vm.filteredTransactions,
                 columnTotals: vm.columnTotals,
-              })
-            }
+              });
+              if (html) openPrintPreview({ title: t('bankPrint'), html });
+            }}
           >
             {t('bankPrint')}
           </Button>
@@ -148,10 +176,10 @@ export default function BankStatementDetailView({
         </div>
       </div>
 
-      {/* ── بطاقات الملخص ── */}
+      {/* -- ?????? ?????? -- */}
       <BankStatementSummaryCards statement={stmt} t={t} />
 
-      {/* ── التبويبات ── */}
+      {/* -- ????????? -- */}
       <div
         className="noorix-surface-card overflow-hidden p-0"
       >
@@ -181,7 +209,7 @@ export default function BankStatementDetailView({
               setActiveTab={vm.setActiveTab}
               categories={categories}
               showToast={showToast}
-              onSaveTxCategory={async (txId: any, categoryId: any) => {
+              onSaveTxCategory={async (txId: string, categoryId: string | null) => {
                 await vm.updateCategoryMutation.mutateAsync({ txId, categoryId });
                 await vm.refetch();
               }}
@@ -245,10 +273,12 @@ export default function BankStatementDetailView({
         size="sm"
         variant="danger"
         footer={
-          <>
-            <Button variant="ghost" onClick={() => vm.setCardToDelete(null)}>{t('cancel')}</Button>
-            <Button variant="danger" onClick={() => vm.removeCard(vm.cardToDelete)}>{t('delete')}</Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => vm.setCardToDelete(null) },
+              { key: 'delete', label: t('delete'), role: 'delete', onClick: () => vm.removeCard(vm.cardToDelete) },
+            ]}
+          />
         }
       >
         <p className="mt-0">{t('bankConfirmRemoveCard')}</p>

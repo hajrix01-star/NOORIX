@@ -14,13 +14,13 @@ export const expenseKeys = {
   linesWithKind: (companyId: string, filterKind: string) =>
     ['expense-lines', companyId, filterKind] as const,
 
-  line: (lineId: unknown, companyId: string) => ['expense-line', lineId, companyId] as const,
+  line: (lineId: string, companyId: string) => ['expense-line', lineId, companyId] as const,
 
   linePayments: (
-    lineId: unknown,
+    lineId: string,
     companyId: string,
-    startDate: unknown,
-    endDate: unknown,
+    startDate: string | undefined,
+    endDate: string | undefined,
     page: number,
   ) => ['expense-line-payments', lineId, companyId, startDate, endDate, page] as const,
 };

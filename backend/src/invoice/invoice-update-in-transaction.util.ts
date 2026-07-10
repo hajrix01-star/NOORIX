@@ -15,6 +15,7 @@ import {
   buildInvoiceOutflowTaxUpdate,
   shouldRecomputeInvoiceOutflowTax,
 } from './invoice-update-tax.util';
+import { parseInvoiceDate } from './invoice-date.util';
 
 /**
  * تحديث فاتورة داخل $transaction (قيود + audit).
@@ -44,20 +45,20 @@ export async function updateInvoiceInTransaction(
         buildInvoiceOutflowTaxUpdate(oldInvoice, dto, company?.vatRatePercent?.toString() ?? null) ?? {},
       );
     }
-    patchSupplierInvoiceDedupKeyOnUpdateInput(updateData, oldInvoice, dto);
+    const supplierInvoiceDedupKey = patchSupplierInvoiceDedupKeyOnUpdateInput(updateData, oldInvoice, dto);
     const mergedSupplierId =
       dto.supplierId !== undefined ? dto.supplierId : oldInvoice.supplierId;
     await assertNoActiveDuplicateSupplierInvoiceDedupKey(tx, {
       companyId,
       supplierId: mergedSupplierId,
-      dedupKey: (updateData.supplierInvoiceDedupKey as string | null | undefined) ?? null,
+      dedupKey: supplierInvoiceDedupKey,
       excludeInvoiceId: id,
     });
 
     const newInvoice = await tx.invoice.update({ where: { id }, data: updateData });
 
     if (dto.transactionDate !== undefined) {
-      const newDate = new Date(dto.transactionDate);
+      const newDate = parseInvoiceDate(dto.transactionDate);
       const period = await tx.fiscalPeriod.findFirst({
         where: {
           companyId,
@@ -121,6 +122,9 @@ export async function updateInvoiceInTransaction(
       );
     }
 
+    const oldValue = AuditLogService.invoiceToSnapshot(oldInvoice) as Prisma.InputJsonValue;
+    const newValue = AuditLogService.invoiceToSnapshot(newInvoice) as Prisma.InputJsonValue;
+
     await tx.auditLog.create({
       data: {
         tenantId,
@@ -129,12 +133,8 @@ export async function updateInvoiceInTransaction(
         action: 'update',
         entity: 'invoice',
         entityId: id,
-        oldValue: AuditLogService.invoiceToSnapshot(
-          oldInvoice as Parameters<typeof AuditLogService.invoiceToSnapshot>[0],
-        ) as object,
-        newValue: AuditLogService.invoiceToSnapshot(
-          newInvoice as Parameters<typeof AuditLogService.invoiceToSnapshot>[0],
-        ) as object,
+        oldValue,
+        newValue,
         createdAt: nowSaudi(),
       },
     });

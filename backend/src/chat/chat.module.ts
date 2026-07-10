@@ -7,11 +7,12 @@ import { ReportingModule } from '../reporting/reporting.module';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { GeminiService } from './gemini.service';
+import { ChatFinancialMetricsService } from './chat-financial-metrics.service';
 
 @Module({
   imports: [PrismaModule, AuthModule, ReportsModule, VaultsModule, ReportingModule],
   controllers: [ChatController],
-  providers: [ChatService, GeminiService],
+  providers: [ChatService, GeminiService, ChatFinancialMetricsService],
   exports: [GeminiService],
 })
 export class ChatModule {}

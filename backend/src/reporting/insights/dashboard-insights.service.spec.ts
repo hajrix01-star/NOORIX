@@ -1,6 +1,6 @@
 import { mergeInsightThresholds } from './company-insight-thresholds';
 import type { GeneralProfitLossModel } from '../../reports/reports-general-profit-loss-model.util';
-import type { ReportingFacade } from '../reporting.facade';
+import { GENERAL_PNL_AMOUNT_BASIS } from '../../reports/reports-pl-contract.util';
 import { CompanyInsightThresholdSettingsService } from './company-insight-threshold-settings.service';
 import { DashboardInsightsService } from './dashboard-insights.service';
 import { INSIGHTS_SCHEMA_VERSION } from './insights.types';
@@ -31,6 +31,7 @@ function mockMonthlyPL(params: {
   const { monthIndex } = params;
   const z = zeros12();
   return {
+    amountBasis: GENERAL_PNL_AMOUNT_BASIS,
     months: [],
     groups: [
       {
@@ -107,6 +108,7 @@ function mockMonthlyPLWithPurchasesSeries(params: {
   const mi = params.monthIndex;
   const purSeries = [...params.purchasesMonths12];
   return {
+    amountBasis: GENERAL_PNL_AMOUNT_BASIS,
     months: [],
     groups: [
       {
@@ -211,8 +213,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      th as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      th,
     );
     await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(th.getResolvedThresholds).toHaveBeenCalledWith(companyId);
@@ -237,8 +239,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(out.schemaVersion).toBe(INSIGHTS_SCHEMA_VERSION);
@@ -262,8 +264,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(out.ratios.purchaseToSales).toBeCloseTo(0.2, 5);
@@ -289,8 +291,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     const ids = out.warnings.map((w) => w.id);
@@ -322,8 +324,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     const pur = out.warnings.find((w) => w.id === 'purchase_ratio_to_sales');
@@ -350,8 +352,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     const expRule = out.warnings.find((w) => w.id === 'expense_ratio_to_sales');
@@ -381,8 +383,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     const unusual = out.warnings.find((w) => w.id === 'unusually_high_purchases_warning');
@@ -415,8 +417,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(out.metrics.operational.activeSalesDaysInMonth).toBe(0);
@@ -439,8 +441,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(out.warnings.every((w) => w.id !== 'missing_sales_data_warning')).toBe(true);
@@ -462,8 +464,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(out.ratios.purchaseToSales).toBeNull();
@@ -481,8 +483,8 @@ describe('DashboardInsightsService', () => {
     });
 
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      mkThresholdSettings(),
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(out.metrics.accounting.sales).toBeNull();
@@ -510,8 +512,8 @@ describe('DashboardInsightsService', () => {
         .mockResolvedValue(mergeInsightThresholds({ purchaseToSales: { warning: 0.75, critical: 0.85 } })),
     };
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      th as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      th,
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(out.ratios.purchaseToSales).toBeCloseTo(0.7, 5);
@@ -535,8 +537,8 @@ describe('DashboardInsightsService', () => {
 
     const th = mkThresholdSettings();
     const svc = new DashboardInsightsService(
-      facade as unknown as ReportingFacade,
-      th as unknown as CompanyInsightThresholdSettingsService,
+      facade,
+      th,
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(th.getResolvedThresholds).toHaveBeenCalledWith(companyId);

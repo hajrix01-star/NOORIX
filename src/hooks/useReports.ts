@@ -8,7 +8,13 @@ import {
 } from '../services/api';
 import { reportKeys } from '../services/queryKeys/reports';
 import { useApiQuery } from './useApiQuery';
-import type { GeneralProfitLossReport } from '../modules/Reports/reportTypes';
+import type {
+  GeneralProfitLossReport,
+  PeriodAnalyticsData,
+  ReportDetailsData,
+  ReportTrendData,
+  TaxDisclosureData,
+} from '../modules/Reports/reportTypes';
 
 export function useReportsGeneralProfitLoss({
   companyId,
@@ -43,7 +49,7 @@ export function useReportDetails({
   itemKey?: string;
   enabled?: boolean;
 }) {
-  return useApiQuery<any>({
+  return useApiQuery<ReportDetailsData>({
     queryKey: reportKeys.generalProfitLossDetails(companyId, year, month, groupKey, itemKey),
     queryFn: () => getGeneralProfitLossDetails(companyId, year, month, groupKey, itemKey),
     fallbackMessage: 'Failed to load report details',
@@ -64,7 +70,7 @@ export function useReportTrend({
   itemKey?: string;
   enabled?: boolean;
 }) {
-  return useApiQuery<any>({
+  return useApiQuery<ReportTrendData>({
     queryKey: reportKeys.generalProfitLossTrend(companyId, year, groupKey, itemKey),
     queryFn: () => getGeneralProfitLossTrend(companyId, year, groupKey, itemKey),
     fallbackMessage: 'Failed to load report trend',
@@ -83,7 +89,7 @@ export function usePeriodAnalytics({
   endDate: string;
   enabled?: boolean;
 }) {
-  return useApiQuery<any>({
+  return useApiQuery<PeriodAnalyticsData>({
     queryKey: reportKeys.periodAnalytics(companyId, startDate, endDate),
     queryFn: () => getPeriodAnalytics(companyId, startDate, endDate),
     fallbackMessage: 'Failed to load period analytics',
@@ -105,7 +111,7 @@ export function useTaxReport({
   salesAmountIncludesVat?: boolean;
   enabled?: boolean;
 }) {
-  return useApiQuery<any>({
+  return useApiQuery<TaxDisclosureData>({
     queryKey: reportKeys.taxVat(companyId, year, period, salesAmountIncludesVat),
     queryFn: () => getTaxVatReport(companyId, year, String(period), {
       salesAmountIncludesVat,

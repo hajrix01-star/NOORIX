@@ -9,6 +9,25 @@ import {
   getEosEligibilityFactor,
 } from '../../../utils/hrCalculations/eos';
 
+type EmployeeDocumentCompensationSnapshot = {
+  salaryPackage?: {
+    basicSalary: number;
+    housingAllowance: number;
+    transportAllowance: number;
+    otherAllowance: number;
+    overtimeHoursPerDay: number;
+    overtimePay: number;
+    total: number;
+  };
+  customAllowances?: {
+    items?: Array<{
+      nameAr?: string | null;
+      nameEn?: string | null;
+      amount?: number | string | null;
+    }>;
+  };
+};
+
 export function calculateServiceDays(joinDate: unknown, endDate: unknown) {
   return calculateEosServiceDays(
     joinDate as string | Date | null | undefined,
@@ -34,7 +53,7 @@ export function mapReasonByMeta(reasonText: string | undefined | null = '', clau
 }
 
 export function buildSalaryRows(
-  compensationSnapshot: Record<string, any>,
+  compensationSnapshot: EmployeeDocumentCompensationSnapshot | null | undefined,
 ): { rows: DocSalaryRow[]; total: number } {
   const rows: DocSalaryRow[] = [];
   const breakdown = compensationSnapshot?.salaryPackage;

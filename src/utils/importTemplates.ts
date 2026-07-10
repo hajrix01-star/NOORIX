@@ -26,9 +26,20 @@ function toRiyadhYmdOrNull(d: Date) {
 // ─── Low-level helpers ───────────────────────────────────────────────────────
 
 const AR_NUMS = '٠١٢٣٤٥٦٧٨٩';
+type ImportRow = Record<string, unknown>;
+type LookupItem = Record<string, unknown>;
+type ValidationResult = {
+  rowNum: number;
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  payload: Record<string, unknown> | null;
+};
+type EmployeeExportSalaryRow = Record<string, unknown>;
+
 function toWesternNum(str: unknown) {
   if (str == null) return '';
-  return String(str).replace(/[٠-٩]/g, (c: any) => AR_NUMS.indexOf(c).toString());
+  return String(str).replace(/[٠-٩]/g, (c) => AR_NUMS.indexOf(c).toString());
 }
 
 /** Parse an Excel date cell (serial number, string DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY) → 'YYYY-MM-DD' | null */
@@ -71,18 +82,18 @@ function parseNumber(val: unknown) {
 function matchByName(
   list: unknown[],
   name: unknown,
-  nameArKey: any = 'nameAr',
-  nameEnKey: any = 'nameEn',
-): Record<string, unknown> | null {
+  nameArKey: string = 'nameAr',
+  nameEnKey: string = 'nameEn',
+): LookupItem | null {
   if (!name) return null;
   const needle = String(name).trim().toLowerCase();
-  const hit = list.find((item: any) => {
-    const row = item as Record<string, unknown>;
+  const hit = list.find((item) => {
+    const row = item as LookupItem;
     return (
       String(row[nameArKey] ?? '').trim().toLowerCase() === needle ||
       String(row[nameEnKey] ?? '').trim().toLowerCase() === needle
     );
-  }) as Record<string, unknown> | undefined;
+  }) as LookupItem | undefined;
   return hit ?? null;
 }
 
@@ -98,7 +109,7 @@ export const INVOICE_KIND_LABELS = {
 };
 
 const INVOICE_KIND_BY_LABEL = Object.fromEntries(
-  Object.entries(INVOICE_KIND_LABELS).map(([k, v]: any) => [v, k]),
+  Object.entries(INVOICE_KIND_LABELS).map(([k, v]) => [v, k]),
 );
 
 export async function downloadInvoiceTemplate() {
@@ -176,8 +187,8 @@ export async function downloadEmployeeTemplate() {
 export async function downloadSalesTemplate(vaults: unknown[] = []) {
   const vaultColumns =
     vaults.length > 0
-      ? vaults.reduce<Record<string, number>>((acc: any, v: any) => {
-          const row = v as Record<string, unknown>;
+      ? vaults.reduce<Record<string, number>>((acc, v) => {
+          const row = v as LookupItem;
           acc[`قناة: ${String(row.nameAr ?? row.nameEn ?? row.id ?? '')}`] = 0;
           return acc;
         }, {})
@@ -205,7 +216,7 @@ export async function downloadSalesTemplate(vaults: unknown[] = []) {
  * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
  */
 export function validateInvoiceRows(
-  rows: Record<string, unknown>[],
+  rows: ImportRow[],
   {
     suppliers = [],
     vaults = [],
@@ -220,7 +231,7 @@ export function validateInvoiceRows(
 ) {
   const validKinds = new Set(Object.keys(INVOICE_KIND_LABELS));
 
-  return rows.map((row: any, i: any) => {
+  return rows.map((row, i): ValidationResult => {
     const errors: string[] = [];
     const warnings: string[] = [];
     const rowNum = i + 2; // 1-indexed + header row
@@ -311,7 +322,7 @@ export function validateInvoiceRows(
 export function validateEmployeeRows(rows: Record<string, unknown>[]) {
   const today = getSaudiToday();
 
-  return rows.map((row: any, i: any) => {
+  return rows.map((row, i): ValidationResult => {
     const errors: string[] = [];
     const warnings: string[] = [];
     const rowNum = i + 2;
@@ -401,12 +412,12 @@ export function validateEmployeeRows(rows: Record<string, unknown>[]) {
  * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
  */
 export function validateSalesRows(
-  rows: Record<string, unknown>[],
+  rows: ImportRow[],
   { vaults = [] }: { vaults?: unknown[] } = {},
 ) {
-  const seenDates = new Set();
+  const seenDates = new Set<string>();
 
-  return rows.map((row: any, i: any) => {
+  return rows.map((row, i): ValidationResult => {
     const errors: string[] = [];
     const warnings: string[] = [];
     const rowNum = i + 2;
@@ -476,8 +487,6 @@ export function buildEmployeeAllowanceTotalsMap(
 
 // ─── Export formatters (convert API response rows to Excel-friendly objects) ──
 
-type EmployeeExportSalaryRow = Record<string, any>;
-
 export function formatInvoiceForExport(inv: Record<string, unknown>) {
   const kindKey = String(inv.kind ?? '');
   const labels = INVOICE_KIND_LABELS as Record<string, string>;
@@ -518,9 +527,10 @@ export function formatEmployeeForExport(
   emp: EmployeeExportSalaryRow,
   allowanceTotalsByEmployeeId: Map<string, number> | null | undefined,
 ) {
+  const employeeId = typeof emp.id === 'string' ? emp.id : '';
   const customExtra =
     allowanceTotalsByEmployeeId instanceof Map
-      ? (allowanceTotalsByEmployeeId.get(emp.id) || 0)
+      ? (allowanceTotalsByEmployeeId.get(employeeId) || 0)
       : 0;
   const ts = totalSalary(emp, customExtra);
   const totalRounded = Number.isFinite(ts) ? roundMoney2(ts) : 0;
@@ -558,8 +568,8 @@ export function formatSalesForExport(summary: Record<string, unknown>) {
     'ملاحظات': summary.notes ?? '',
   };
   const chList = (summary.channels ?? []) as unknown[];
-  chList.forEach((ch: any) => {
-    const c = ch as Record<string, unknown>;
+  chList.forEach((ch) => {
+    const c = ch as LookupItem;
     const v = c.vault as Record<string, unknown> | undefined;
     const label = String(v?.nameAr ?? v?.nameEn ?? c.vaultId ?? '');
     base[`قناة: ${label}`] = c.amount;

@@ -1,11 +1,11 @@
-/** ثوابت مشتركة لشاشة الإعدادات */
+import type { CSSProperties } from 'react';
 
-export const labelStyle = { display: 'block', marginBottom: 4, fontSize: 14 };
+export const labelStyle: CSSProperties = { display: 'block', marginBottom: 4, fontSize: 14 };
 
-export function fileToDataUrl(file: any) {
-  return new Promise((resolve: any, reject: any) => {
+export function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload  = () => resolve(reader.result);
+    reader.onload = () => resolve(String(reader.result || ''));
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });

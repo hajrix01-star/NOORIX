@@ -1,8 +1,23 @@
-import type { ApiParsedResult } from '../../../types/api';
-import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
+import type { ApiParsedResult, HrEmployee, HrEmployeeTab } from '../../../types/api';
+import {
+  apiGet,
+  apiPost,
+  apiPatch,
+  apiDelete,
+  getApiBaseUrl,
+  getAuthHeaders,
+  parseResponse,
+  safeFetch,
+} from '../../core/apiHttp';
+import {
+  buildEmployeesPagedApiQuery,
+  buildHrApiQuery,
+  companyQuery,
+  withHrApiQuery,
+} from './hr-query';
 
 type EmployeesPagedOpts = {
-  tab?: string;
+  tab?: HrEmployeeTab;
   page?: number;
   pageSize?: number;
   q?: string;
@@ -10,15 +25,20 @@ type EmployeesPagedOpts = {
   sortDir?: string;
 };
 
+function isHrEmployeeTab(value: unknown): value is HrEmployeeTab {
+  return value === 'active' || value === 'terminated' || value === 'archived';
+}
+
 // ——— الموظفون ———
 /** قائمة كاملة (حدّ السيرفر) — للتوافق مع الشاشات التي لا ترسل page */
-export async function getEmployees(companyId: string, includeTerminated: any = false): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/employees', {
+export async function getEmployees(companyId: string, includeTerminated: boolean = false): Promise<ApiParsedResult<HrEmployee[]>> {
+  const res = await apiGet('/api/v1/employees', buildHrApiQuery({
     companyId: companyId || '',
-    ...(includeTerminated ? { includeTerminated: 'true' } : {}),
-  });
+    includeTerminated: includeTerminated ? true : undefined,
+  }));
   if (!res.success) return { success: false, error: res.error, data: [] };
-  return { success: true, data: Array.isArray(res.data) ? res.data : [] };
+  if (!Array.isArray(res.data)) return { success: false, error: 'استجابة الموظفين غير مطابقة للعقد الرسمي', data: [] };
+  return { success: true, data: res.data as HrEmployee[] };
 }
 
 /** ترقيم من السيرفر — tab: active | terminated | archived */
@@ -32,21 +52,13 @@ export async function getEmployeesPaged(
     sortBy,
     sortDir,
   }: EmployeesPagedOpts = {},
-): Promise<ApiParsedResult> {
-  const params: Record<string, string> = {
-    companyId: companyId || '',
-    page: String(page),
-    pageSize: String(pageSize),
-    tab,
-  };
-  if (q) params.q = q;
-  if (sortBy) params.sortBy = sortBy;
-  if (sortDir) params.sortDir = sortDir;
+): Promise<ApiParsedResult<{ items: HrEmployee[]; total: number; page: number; pageSize: number }, HrEmployee[]>> {
+  const params = buildEmployeesPagedApiQuery({ companyId, tab, page, pageSize, q, sortBy, sortDir });
   const res = await apiGet('/api/v1/employees', params);
   if (!res.success) {
     return { success: false, error: res.error, items: [], total: 0, page: 1, pageSize };
   }
-  const d = res.data as { items?: unknown[]; total?: number; page?: number; pageSize?: number } | undefined;
+  const d = res.data as { items?: HrEmployee[]; total?: number; page?: number; pageSize?: number } | undefined;
   if (d && typeof d === 'object' && Array.isArray(d.items)) {
     return {
       success: true,
@@ -56,47 +68,107 @@ export async function getEmployeesPaged(
       pageSize: Number(d.pageSize) || pageSize,
     };
   }
-  return { success: true, items: [], total: 0, page: 1, pageSize };
+  return { success: false, error: 'استجابة قائمة الموظفين المرقمة غير مطابقة للعقد الرسمي', items: [], total: 0, page: 1, pageSize };
 }
 
 /** تحميل مجمّع للتصدير (حد أقصى من السيرفر) */
-export async function getEmployeesBulk(companyId: string, tab: any = 'active'): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/employees', {
+export async function getEmployeesBulk(companyId: string, tab: HrEmployeeTab = 'active'): Promise<ApiParsedResult<HrEmployee[]>> {
+  const res = await apiGet('/api/v1/employees', buildHrApiQuery({
     companyId: companyId || '',
-    bulk: '1',
-    tab,
-  });
+    bulk: 1,
+    tab: isHrEmployeeTab(tab) ? tab : 'active',
+  }));
   if (!res.success) return { success: false, error: res.error, data: [] };
-  return { success: true, data: Array.isArray(res.data) ? res.data : [] };
+  if (!Array.isArray(res.data)) return { success: false, error: 'استجابة تصدير الموظفين غير مطابقة للعقد الرسمي', data: [] };
+  return { success: true, data: res.data as HrEmployee[] };
 }
 
 /** مجموع الراتب الشهري من حقول الموظفين النشطين (أساسي + بدلات) — للتقديرات وحاسبة التكاليف */
-export async function getEmployeesMonthlySalaryContractTotal(companyId: string): Promise<ApiParsedResult> {
+export async function getEmployeesMonthlySalaryContractTotal(
+  companyId: string,
+): Promise<ApiParsedResult<{ total?: number | string }>> {
   if (!companyId) return { success: false, error: 'معرف الشركة مطلوب' };
-  return apiGet('/api/v1/employees/monthly-salary-contract-total', { companyId });
+  return apiGet('/api/v1/employees/monthly-salary-contract-total', companyQuery(companyId));
 }
 
-export async function getEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function getEmployee(id: string, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
-  return apiGet(`/api/v1/employees/${id}`, { companyId });
+  return apiGet(`/api/v1/employees/${encodeURIComponent(id)}`, companyQuery(companyId));
 }
-export async function createEmployee(body: unknown): Promise<ApiParsedResult> {
+export async function createEmployee(body: unknown): Promise<ApiParsedResult<HrEmployee>> {
   return apiPost('/api/v1/employees', body);
 }
-export async function createEmployeesBatch(body: unknown): Promise<ApiParsedResult> {
+export async function createEmployeesBatch(body: unknown): Promise<ApiParsedResult<{ items?: HrEmployee[]; created?: number }>> {
   return apiPost('/api/v1/employees/batch', body);
 }
-export async function updateEmployee(id: string, body: unknown, companyId: string): Promise<ApiParsedResult> {
+export async function updateEmployee(id: string, body: unknown, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
-  return apiPatch(`/api/v1/employees/${id}?companyId=${companyId}`, body);
+  return apiPatch(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}`, companyQuery(companyId)), body);
 }
-export async function terminateEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function uploadEmployeePhoto(
+  id: string,
+  companyId: string,
+  file: File,
+): Promise<ApiParsedResult<HrEmployee>> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
-  return apiPatch(`/api/v1/employees/${id}/terminate?companyId=${companyId}`, {});
+  const url = new URL(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/photo`, companyQuery(companyId)), getApiBaseUrl());
+  const headers = getAuthHeaders();
+  delete headers['Content-Type'];
+  const buildBody = () => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return formData;
+  };
+  const doFetch = async () => {
+    const retryHeaders = getAuthHeaders();
+    delete retryHeaders['Content-Type'];
+    const retryRes = await safeFetch(url.toString(), {
+      method: 'POST',
+      headers: retryHeaders,
+      body: buildBody(),
+    }, 30000);
+    return parseResponse<HrEmployee>(retryRes);
+  };
+  try {
+    const res = await safeFetch(url.toString(), {
+      method: 'POST',
+      headers,
+      body: buildBody(),
+    }, 30000);
+    return parseResponse<HrEmployee>(res, doFetch);
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : 'Upload failed' };
+  }
+}
+
+export async function deleteEmployeePhoto(id: string, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
+  if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
+  return apiDelete(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/photo`, companyQuery(companyId)));
+}
+
+export async function getEmployeePhotoObjectUrl(id: string, companyId: string): Promise<string> {
+  const url = new URL(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/photo`, companyQuery(companyId)), getApiBaseUrl());
+  const res = await safeFetch(url.toString(), {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  }, 30000);
+  if (!res.ok) {
+    const raw = await res.json().catch(() => ({}));
+    const message = Array.isArray(raw?.message)
+      ? raw.message.join(', ')
+      : raw?.message || raw?.error || 'Employee photo unavailable';
+    throw new Error(String(message));
+  }
+  return URL.createObjectURL(await res.blob());
+}
+
+export async function terminateEmployee(id: string, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
+  if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
+  return apiPatch(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/terminate`, companyQuery(companyId)), {});
 }
 
 /** حذف الموظف نهائياً من قاعدة البيانات — يتطلب صلاحية EMPLOYEES_DELETE */
-export async function deleteEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function deleteEmployee(id: string, companyId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
-  return apiDelete(`/api/v1/employees/${encodeURIComponent(id)}?companyId=${encodeURIComponent(companyId)}`);
+  return apiDelete(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}`, companyQuery(companyId)));
 }

@@ -20,6 +20,11 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { BankStatementsService } from './bank-statements.service';
+import type { ConfirmMappingDto } from './bank-statements-confirm-mapping-persist.util';
+
+type ConfirmMappingRequestBody = ConfirmMappingDto & {
+  companyId: string;
+};
 
 @Controller('bank-statements')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -58,21 +63,10 @@ export class BankStatementsController {
   async confirmMapping(
     @Param('id') id: string,
     @Body()
-    body: {
-      companyId: string;
-      companyName: string;
-      bankName: string;
-      startDate?: string;
-      endDate?: string;
-      headerRow: number;
-      dataStartRow: number;
-      dataEndRow: number;
-      columnMapping: Record<string, number>;
-      raw: string[][];
-    },
+    body: ConfirmMappingRequestBody,
   ) {
     if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
-    return this.service.confirmMapping(body.companyId, id, body as any);
+    return this.service.confirmMapping(body.companyId, id, body);
   }
 
   @Get('summary')

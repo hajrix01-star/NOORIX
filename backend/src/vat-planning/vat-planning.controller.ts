@@ -13,6 +13,13 @@ import type { JwtUser } from '../auth/decorators/current-user.decorator';
 export class VatPlanningController {
   constructor(private readonly service: VatPlanningService) {}
 
+  @Get('registry/metadata')
+  @SkipCompanyCheck()
+  @RequireAnyPermission('HAJRI_TAX_READ', 'REPORTS_READ')
+  async registryMetadata(@Req() req: { user: JwtUser }) {
+    return this.service.registryMetadata(req.user);
+  }
+
   /** سجل الإقرارات المحفوظة مع فلاتر اختيارية */
   @Get('registry')
   @SkipCompanyCheck()

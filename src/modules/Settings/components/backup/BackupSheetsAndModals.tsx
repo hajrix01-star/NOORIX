@@ -1,11 +1,52 @@
-import React from 'react';
+import React, { type ChangeEvent } from 'react';
 import { Button, Checkbox, Input, AdaptiveSheet, Modal } from '../../../../ui';
+import type {
+  BackupImportModal,
+  BackupImportReport,
+  BackupImportVariables,
+  BackupReportModal,
+  BackupRestoreModal,
+  BackupRestorePcModal,
+  BackupRestorePcVariables,
+  BackupRestoreVariables,
+  SettingsMutationLike,
+  TranslationFn,
+} from '../../settingsTypes';
 import { formatBackupDate, scopeLabel } from './backupTabHelpers';
 import { BackupCountsGrid } from './BackupCountsGrid';
 
 /**
  * أدراج ونوافذ تأكيد النسخ الاحتياطي
  */
+type BackupSheetsAndModalsProps = {
+  t: TranslationFn;
+  lang: string;
+  isAr: boolean;
+  importModal: BackupImportModal | null;
+  setImportModal: (value: BackupImportModal | null) => void;
+  importMut: SettingsMutationLike<BackupImportVariables>;
+  importNameAr: string;
+  setImportNameAr: (value: string) => void;
+  importConfirmed: boolean;
+  setImportConfirmed: (value: boolean) => void;
+  importStrictAlloc: boolean;
+  setImportStrictAlloc: (value: boolean) => void;
+  reportModal: BackupReportModal | null;
+  setReportModal: (value: BackupReportModal | null) => void;
+  importReportModal: BackupImportReport | null;
+  setImportReportModal: (value: BackupImportReport | null) => void;
+  restorePcModal: BackupRestorePcModal | null;
+  setRestorePcModal: (value: BackupRestorePcModal | null) => void;
+  restorePcPhrase: string;
+  setRestorePcPhrase: (value: string) => void;
+  restorePcMut: SettingsMutationLike<BackupRestorePcVariables>;
+  restoreModal: BackupRestoreModal | null;
+  setRestoreModal: (value: BackupRestoreModal | null) => void;
+  restorePhrase: string;
+  setRestorePhrase: (value: string) => void;
+  restoreMut: SettingsMutationLike<BackupRestoreVariables>;
+};
+
 export function BackupSheetsAndModals({
   t,
   lang,
@@ -33,7 +74,7 @@ export function BackupSheetsAndModals({
   restorePhrase,
   setRestorePhrase,
   restoreMut,
-}: any) {
+}: BackupSheetsAndModalsProps) {
   return (
     <>
       <AdaptiveSheet
@@ -64,12 +105,12 @@ export function BackupSheetsAndModals({
           type="text"
           label={t('backupImportNameLabel')}
           value={importNameAr}
-          onChange={(e: any) => setImportNameAr(e.target.value)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setImportNameAr(event.target.value)}
         />
 
         <Checkbox
           checked={importConfirmed}
-          onChange={(e: any) => setImportConfirmed(e.target.checked)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setImportConfirmed(event.target.checked)}
           label={(
           <span>
             {isAr
@@ -82,7 +123,7 @@ export function BackupSheetsAndModals({
 
         <Checkbox
           checked={importStrictAlloc}
-          onChange={(e: any) => setImportStrictAlloc(e.target.checked)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setImportStrictAlloc(event.target.checked)}
           label={t('backupImportStrictAllocations')}
           containerClassName="nx-checkbox text-[13px] text-noorix-text mb-1 leading-[1.5]"
         />
@@ -109,6 +150,7 @@ export function BackupSheetsAndModals({
             className="w-full min-h-[44px] sm:w-auto"
             disabled={importMut.isPending || !importNameAr.trim() || !importConfirmed}
             onClick={() =>
+              importModal &&
               importMut.mutate({
                 jobId: importModal.jobId,
                 nameAr: importNameAr.trim(),
@@ -266,9 +308,7 @@ export function BackupSheetsAndModals({
               </div>
 
               {importReportModal.summary?.sourceMeta &&
-                Object.keys(importReportModal.summary.sourceMeta).some(
-                  (k: any) => importReportModal.summary.sourceMeta[k] != null,
-                ) && (
+                Object.values(importReportModal.summary.sourceMeta).some((value) => value != null) && (
                   <div>
                     <div className="text-[12px] font-extrabold mb-2 text-noorix-muted">
                       {t('backupReportMeta')}
@@ -307,9 +347,9 @@ export function BackupSheetsAndModals({
                       {t('backupReportImportWarnings')}
                     </div>
                     <ul className="text-[12px] text-noorix-text m-0 pl-4 list-disc space-y-1 leading-relaxed">
-                      {importReportModal.summary.importWarnings.map((w: any, i: any) => (
-                        <li key={i} className="break-words">
-                          {w}
+                      {importReportModal.summary.importWarnings.map((warning, index) => (
+                        <li key={`${index}-${warning}`} className="break-words">
+                          {warning}
                         </li>
                       ))}
                     </ul>
@@ -366,7 +406,7 @@ export function BackupSheetsAndModals({
           type="text"
           label={t('backupSystemRestorePhraseLabel')}
           value={restorePcPhrase}
-          onChange={(e: any) => setRestorePcPhrase(e.target.value)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setRestorePcPhrase(event.target.value)}
           className="nx-ltr"
           dir="ltr"
           autoComplete="off"
@@ -420,7 +460,7 @@ export function BackupSheetsAndModals({
           type="text"
           label={t('backupSystemRestorePhraseLabel')}
           value={restorePhrase}
-          onChange={(e: any) => setRestorePhrase(e.target.value)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setRestorePhrase(event.target.value)}
           className="nx-ltr"
           dir="ltr"
           autoComplete="off"

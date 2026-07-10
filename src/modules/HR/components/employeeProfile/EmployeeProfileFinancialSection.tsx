@@ -1,30 +1,40 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { hrFmt } from '../../utils/hrFmt';
-import { Button, cn, SmartTable } from '../../../../ui';
+import { Button, SmartTable, cn } from '../../../../ui';
+import type { FinancialRecordRow, ProfileRecord } from './employeeProfileModel';
 
-export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenResidency }: any) {
-  const openRow = (row: any) => {
-    if (row.residencyId && onOpenResidency) {
-      onOpenResidency(row.residencyId);
-    }
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+
+type EmployeeProfileFinancialSectionProps = {
+  t: TranslationFn;
+  financialRecords: FinancialRecordRow[];
+  onOpenResidency?: (rowOrId: string | ProfileRecord) => void;
+};
+
+export function EmployeeProfileFinancialSection({
+  t,
+  financialRecords,
+  onOpenResidency,
+}: EmployeeProfileFinancialSectionProps) {
+  const openRow = (row: FinancialRecordRow) => {
+    if (row.residencyId && onOpenResidency) onOpenResidency(row.residencyId);
   };
 
   return (
     <div className="noorix-surface-card overflow-hidden employee-profile-layout__wide">
       <div className="nx-section-header">
-        <span className="nx-section-header__title">{t('financialRecord') || 'السجل المالي'}</span>
+        <span className="nx-section-header__title">{t('financialRecord') || 'Financial record'}</span>
       </div>
       <SmartTable
         compact
         showRowNumbers
-        rowNumberWidth="1%"
         innerPadding={8}
         columns={[
           {
             key: 'date',
             label: t('transactionDate'),
-            width: '12%',
-            render: (v: any, row: any) => (
+            size: 'date',
+            render: (value: unknown, row: FinancialRecordRow) => (
               <Button
                 variant="raw"
                 type="button"
@@ -35,43 +45,40 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
                 disabled={!row.residencyId}
                 onClick={() => openRow(row)}
               >
-                {formatSaudiDate(v)}
+                {formatSaudiDate(String(value || ''))}
               </Button>
             ),
           },
           {
             key: 'typeLabel',
             label: t('operationType'),
-            width: '18%',
-            render: (v: any, row: any) => (
+            size: 'supplier',
+            render: (value: unknown, row: FinancialRecordRow) => (
               <Button
                 variant="raw"
                 type="button"
-                className={cn(
-                  'bg-transparent border-0 p-0 text-start',
-                  row.residencyId && 'text-noorix-blue hover:underline cursor-pointer',
-                )}
+                className={cn('bg-transparent border-0 p-0 text-start', row.residencyId && 'text-noorix-blue hover:underline cursor-pointer')}
                 disabled={!row.residencyId}
                 onClick={() => openRow(row)}
               >
-                {v}
+                {String(value || '-')}
               </Button>
             ),
           },
           {
             key: 'amount',
-            label: t('advanceAmount') || 'المبلغ',
+            label: t('advanceAmount') || 'Amount',
             numeric: true,
-            width: '15%',
-            render: (v: any) => (
-              <span className={`nx-cell-num${v < 0 ? ' nx-cell-num--red' : ''}`}>{hrFmt(v)}</span>
+            size: 'money-md',
+            render: (value: unknown) => (
+              <span className={`nx-cell-num${Number(value) < 0 ? ' nx-cell-num--red' : ''}`}>{hrFmt(Number(value ?? 0))}</span>
             ),
           },
           {
             key: 'notes',
             label: t('invoiceNotesColumn'),
-            width: '54%',
-            render: (v: any, row: any) => (
+            size: 'name',
+            render: (value: unknown, row: FinancialRecordRow) => (
               <Button
                 variant="raw"
                 type="button"
@@ -79,11 +86,11 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
                   'nx-cell-ellipsis bg-transparent border-0 p-0 text-start w-full',
                   row.residencyId && 'text-noorix-blue hover:underline cursor-pointer',
                 )}
-                title={v || ''}
+                title={String(value || '')}
                 disabled={!row.residencyId}
                 onClick={() => openRow(row)}
               >
-                {v || '—'}
+                {String(value || '-')}
               </Button>
             ),
           },
@@ -93,7 +100,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={(row: any) => (
+        renderCompactRow={(row: FinancialRecordRow) => (
           <div
             className={cn(row.residencyId && 'cursor-pointer')}
             onClick={row.residencyId ? () => openRow(row) : undefined}
@@ -105,16 +112,16 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
               <span className="nx-cr__meta">{formatSaudiDate(row.date)}</span>
             </div>
             <div className="nx-cr__line2">
-              <div className="nx-cr__line2-start">
-                {row.notes && <span className="nx-cr__sub">{row.notes}</span>}
-              </div>
+              <div className="nx-cr__line2-start">{row.notes ? <span className="nx-cr__sub">{row.notes}</span> : null}</div>
               <div className="nx-cr__line2-end">
-                <span className={`nx-cr__amount ${row.amount < 0 ? 'text-noorix-red' : ''}`}>{hrFmt(row.amount)} <span className="nx-sar">SR</span></span>
+                <span className={`nx-cr__amount ${row.amount < 0 ? 'text-noorix-red' : ''}`}>
+                  {hrFmt(row.amount)} <span className="nx-sar">SR</span>
+                </span>
               </div>
             </div>
           </div>
         )}
-        renderMobileCard={(row: any) => (
+        renderMobileCard={(row: FinancialRecordRow) => (
           <div
             className={cn('flex flex-col gap-2', row.residencyId && 'cursor-pointer')}
             onClick={row.residencyId ? () => openRow(row) : undefined}
@@ -128,16 +135,12 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
             <div className="nx-mc__grid nx-mc__grid--2">
               <div>
                 <div className="nx-mc__stat-label">{t('advanceAmount')}</div>
-                <div
-                  className={cn('text-[15px] font-bold ltr', row.amount < 0 && 'text-noorix-red')}
-                >
-                  {hrFmt(row.amount)}
-                </div>
+                <div className={cn('text-[15px] font-bold ltr', row.amount < 0 && 'text-noorix-red')}>{hrFmt(row.amount)}</div>
               </div>
             </div>
             <div>
               <div className="nx-mc__stat-label">{t('invoiceNotesColumn')}</div>
-              <div className="text-[12px] text-noorix-text break-words">{row.notes || '—'}</div>
+              <div className="text-[12px] text-noorix-text break-words">{row.notes || '-'}</div>
             </div>
           </div>
         )}

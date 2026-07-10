@@ -1,14 +1,11 @@
+import type { PurchaseBatchSummariesQueryInput } from '../domains/apiEndpoints/purchase-batch-query';
+
 /**
  * مفاتيح React Query — المشتريات / دفعات
  */
 export const purchaseKeys = {
-  batchSummaries: (
-    companyId: string,
-    startDate: unknown,
-    endDate: unknown,
-    batchQ: string,
-    lang: string,
-  ) => ['purchase-batch-summaries', companyId, startDate, endDate, batchQ, lang] as const,
+  batchSummaries: (query: PurchaseBatchSummariesQueryInput) =>
+    ['purchase-batch-summaries', query.companyId, query.startDate, query.endDate, query.q, query.lang] as const,
 
   batchSummariesRoot: () => ['purchase-batch-summaries'] as const,
 };

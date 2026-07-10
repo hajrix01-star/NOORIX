@@ -148,7 +148,7 @@ export class AuditLogService {
   static invoiceToSnapshot(invoice: {
     id: string;
     companyId: string;
-    supplierId: string;
+    supplierId: string | null;
     invoiceNumber: string;
     kind: string;
     totalAmount: unknown;

@@ -6,20 +6,33 @@ import { hasPermission } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
 import { KebabMenu } from '../../ui';
 
-export type InvoiceActionsCellProps = Record<string, any>;
+export type InvoiceActionRow = {
+  status?: string | null;
+  kind?: string | null;
+};
+
+export type InvoiceActionsCellProps<TRow extends InvoiceActionRow = InvoiceActionRow> = {
+  row: TRow;
+  userRole?: string | null;
+  userPermissions?: readonly string[] | null;
+  companyId?: string;
+  onView?: (row: TRow) => void;
+  onPrint?: (row: TRow) => void;
+  onEdit?: (row: TRow) => void;
+  onDelete?: (row: TRow) => void;
+};
 
 export const InvoiceActionsCell = memo(function InvoiceActionsCell(props: InvoiceActionsCellProps) {
   const { row, userRole, userPermissions, onView, onPrint, onEdit, onDelete } = props;
   const { t } = useTranslation();
 
   const canPrint = hasPermission(userRole, 'INVOICES_READ', userPermissions);
-  const canEdit  = hasPermission(userRole, 'INVOICES_WRITE', userPermissions);
   const isOwner    = (userRole || '').toLowerCase() === 'owner';
   const canDel   = isOwner;
   const canView  = !!onView && canPrint;
   const showEdit = isOwner && row.status === 'active' && row.kind !== 'sale';
   const showDel  = canDel && !!onDelete;
-  const showAny  = canPrint || canEdit || canDel || canView;
+  const showAny  = canView || canPrint || showEdit || showDel;
 
   const items = useMemo(() => [
     {

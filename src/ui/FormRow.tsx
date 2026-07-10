@@ -18,7 +18,12 @@ const GAP_CLASS = {
   lg: 'gap-4',
 };
 
-export default function FormRow({ cols = 2, gap = 'md', className = '', children, ...rest }: any) {
+export type FormRowProps = React.ComponentPropsWithoutRef<'div'> & {
+  cols?: keyof typeof COLS_CLASS;
+  gap?: keyof typeof GAP_CLASS;
+};
+
+export default function FormRow({ cols = 2, gap = 'md', className = '', children, ...rest }: FormRowProps) {
   return (
     <div
       className={cn(

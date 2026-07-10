@@ -20,12 +20,21 @@ const TYPE_STYLES = {
   },
 };
 
+type ToastType = keyof typeof TYPE_STYLES | string;
+
+type ToastProps = {
+  message?: string | null;
+  type?: ToastType;
+  visible: boolean;
+  onDismiss?: () => void;
+};
+
 /**
  * Toast — إشعار طافٍ يدعم: نجاح / خطأ / تحذير / معلومة.
  * يختفي تلقائياً بعد 4 ثوانٍ، وقابل للإغلاق يدوياً.
  * يظهر في الزاوية الصحيحة حسب اتجاه المستند (RTL/LTR).
  */
-export default function Toast({ message, type = 'success', visible, onDismiss }: any) {
+export default function Toast({ message, type = 'success', visible, onDismiss }: ToastProps) {
   useEffect(() => {
     if (!visible || !message) return;
     const timer = setTimeout(() => onDismiss?.(), 4000);

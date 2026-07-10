@@ -1,16 +1,31 @@
-import type { PurchasesBatchSummaryRow } from '../types';
+import { PURCHASE_BATCH_EMPTY_VALUE } from '../purchaseBatchDisplayModel';
+import { toPurchaseBatchFiniteNumber } from '../purchaseBatchNumberModel';
+import type { PurchaseBatchInvoice, PurchaseBatchStatus, PurchaseBatchSummaryRow } from '../purchaseBatchTypes';
 
-export function mapApiBatchSummaryToTableRow(b: any): PurchasesBatchSummaryRow {
+export type PurchaseBatchSummaryApiRow = {
+  batchId: string;
+  invoices?: PurchaseBatchInvoice[] | null;
+  transactionDate: string;
+  invoiceCount: number;
+  supplierNames?: string | null;
+  vaultName?: string | null;
+  netAmount?: number | string | null;
+  taxAmount?: number | string | null;
+  totalAmount?: number | string | null;
+  status: PurchaseBatchStatus;
+};
+
+export function mapApiBatchSummaryToTableRow(row: PurchaseBatchSummaryApiRow): PurchaseBatchSummaryRow {
   return {
-    batchId: b.batchId,
-    invoices: [],
-    transactionDate: b.transactionDate,
-    invoiceCount: b.invoiceCount,
-    supplierNames: b.supplierNames || '—',
-    vaultName: b.vaultName || '—',
-    netAmount: Number(b.netAmount) || 0,
-    taxAmount: Number(b.taxAmount) || 0,
-    totalAmount: Number(b.totalAmount) || 0,
-    status: b.status,
+    batchId: row.batchId,
+    invoices: row.invoices ?? [],
+    transactionDate: row.transactionDate,
+    invoiceCount: row.invoiceCount,
+    supplierNames: row.supplierNames || PURCHASE_BATCH_EMPTY_VALUE,
+    vaultName: row.vaultName || PURCHASE_BATCH_EMPTY_VALUE,
+    netAmount: toPurchaseBatchFiniteNumber(row.netAmount),
+    taxAmount: toPurchaseBatchFiniteNumber(row.taxAmount),
+    totalAmount: toPurchaseBatchFiniteNumber(row.totalAmount),
+    status: row.status,
   };
 }

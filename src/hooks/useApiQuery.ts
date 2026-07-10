@@ -49,6 +49,11 @@ type ApiListQueryOptions<TItem, TData = TItem[]> =
     fallbackMessage?: string;
   };
 
+type ApiListEnvelope<TItem> = {
+  items?: TItem[];
+  data?: TItem[] | { items?: TItem[] } | null;
+} | TItem[] | null | undefined;
+
 export function useApiListQuery<TItem, TData = TItem[]>({
   queryFn,
   fallbackMessage = 'طلب فشل',
@@ -56,7 +61,10 @@ export function useApiListQuery<TItem, TData = TItem[]>({
 }: ApiListQueryOptions<TItem, TData>) {
   return useQuery<TItem[], Error, TData, QueryKey>({
     ...options,
-    queryFn: async () => unwrapApiList<TItem>((await queryFn()) as any, fallbackMessage),
+    queryFn: async () => unwrapApiList<TItem>(
+      (await queryFn()) as ApiParsedResult<ApiListEnvelope<TItem>>,
+      fallbackMessage,
+    ),
   });
 }
 

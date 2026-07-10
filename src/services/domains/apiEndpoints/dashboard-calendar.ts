@@ -1,21 +1,11 @@
 import type { ApiParsedResult } from '../../../types/api';
+import type {
+  DashboardCalendarDataResult,
+  DashboardCalendarTargets,
+  DashboardSpecialDay,
+} from '../../../types/api/domains/dashboard';
 import { apiGet, apiPost, apiPut, apiDelete } from '../../core/apiHttp';
 
-export interface DashboardCalendarDataResult {
-  targets: { overall: number | null; byDow: Record<string, number> };
-  specialDays: Array<{ id: string; name: string; fromDate: string; toDate: string; color: string }>;
-  dayNotes: Record<string, string>;
-  /** true إذا كان الهدف المعروض هو الهدف الافتراضي (month=0) لا تخصيص خاص بالشهر */
-  isDefaultTargets: boolean;
-  /** true إذا كان هناك تخصيص خاص بهذا الشهر */
-  hasMonthOverride: boolean;
-  /** الهدف الافتراضي المحفوظ لكل الشهور */
-  defaultTargets: { overall: number | null; byDow: Record<string, number> };
-}
-
-/**
- * GET /api/v1/dashboard/calendar?companyId=&year=&month=
- */
 export async function getDashboardCalendarData(
   companyId: string,
   year: number,
@@ -28,16 +18,11 @@ export async function getDashboardCalendarData(
   });
 }
 
-/**
- * PUT /api/v1/dashboard/calendar/targets?applyToAll=true|false
- * applyToAll=true  → يحفظ كهدف افتراضي لكل الشهور (month=0)
- * applyToAll=false → يحفظ تخصيصاً لهذا الشهر فقط
- */
 export async function putDashboardCalendarTargets(
   companyId: string,
   year: number,
   month: number,
-  targets: { overall: number | null; byDow: Record<string, number> },
+  targets: DashboardCalendarTargets,
   applyToAll = true,
 ): Promise<ApiParsedResult<DashboardCalendarDataResult>> {
   return apiPut(
@@ -46,9 +31,6 @@ export async function putDashboardCalendarTargets(
   );
 }
 
-/**
- * DELETE /api/v1/dashboard/calendar/targets — إعادة الشهر للهدف الافتراضي
- */
 export async function deleteDashboardCalendarTargets(
   companyId: string,
   year: number,
@@ -59,14 +41,11 @@ export async function deleteDashboardCalendarTargets(
   );
 }
 
-/**
- * PUT /api/v1/dashboard/calendar/special-days
- */
 export async function putDashboardCalendarSpecialDays(
   companyId: string,
   year: number,
   month: number,
-  specialDays: unknown[],
+  specialDays: DashboardSpecialDay[],
 ): Promise<ApiParsedResult<DashboardCalendarDataResult>> {
   return apiPut(
     `/api/v1/dashboard/calendar/special-days?companyId=${encodeURIComponent(companyId)}&year=${year}&month=${month}`,
@@ -74,9 +53,6 @@ export async function putDashboardCalendarSpecialDays(
   );
 }
 
-/**
- * PUT /api/v1/dashboard/calendar/day-notes
- */
 export type SaudiOccasionDto = {
   id: string;
   kind: string;
@@ -85,7 +61,6 @@ export type SaudiOccasionDto = {
   fromDate: string;
   toDate: string;
   color: string;
-  /** أم القرى — قد يختلف يوماً عن الإعلان الرسمي للعيدين */
   estimated: boolean;
 };
 

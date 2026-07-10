@@ -5,14 +5,15 @@ import React, { memo, useMemo } from 'react';
 import { hasPermission } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
 import { KebabMenu } from '../../ui';
+import type { SalesSummaryDayRow } from '../../types/api/domains/sales';
 
 export type SalesActionsCellProps = {
-  summary: any;
+  summary: SalesSummaryDayRow;
   userRole?: string;
   userPermissions?: unknown;
-  onPrint?: (s: any) => void;
-  onEdit?: (s: any) => void;
-  onDelete?: (s: any) => void;
+  onPrint?: (summary: SalesSummaryDayRow) => void;
+  onEdit?: (summary: SalesSummaryDayRow) => void;
+  onDelete?: (summary: SalesSummaryDayRow) => void;
 };
 
 export const SalesActionsCell = memo(function SalesActionsCell({

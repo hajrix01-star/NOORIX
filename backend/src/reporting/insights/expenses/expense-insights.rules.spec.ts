@@ -1,4 +1,5 @@
 import type { GeneralProfitLossModel } from '../../../reports/reports-general-profit-loss-model.util';
+import { GENERAL_PNL_AMOUNT_BASIS } from '../../../reports/reports-pl-contract.util';
 import {
   ruleFixedExpensePressure,
   ruleMissingExpenseCategory,
@@ -30,6 +31,7 @@ function plExpense(
   extraGroups: GeneralProfitLossModel['groups'][0][] = [],
 ): GeneralProfitLossModel {
   return {
+    amountBasis: GENERAL_PNL_AMOUNT_BASIS,
     months: [],
     groups: [baseGroup('sales', salesMonths, []), baseGroup('expenses', expenseMonths, items), ...extraGroups],
     summaryRows: [],

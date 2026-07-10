@@ -47,6 +47,8 @@ const catalogPrintTableDocPath = 'docs/CATALOG_PRINT_TABLE_CONVERSION.md';
 const catalogPrintTableText = read(catalogPrintTableDocPath);
 const dashboardCalendarPrintTableDocPath = 'docs/DASHBOARD_CALENDAR_PRINT_TABLE_CONVERSION.md';
 const dashboardCalendarPrintTableText = read(dashboardCalendarPrintTableDocPath);
+const legacyNxTablePattern = /(?<!--)\bnx-table(?:-(?!collapse\b|min-\d+\b)[a-zA-Z0-9_]+|__|$)/;
+const rawPercentColumnWidthPattern = /\bwidth\s*:\s*['"]\d+%['"]/;
 const allowedManualTableCategories = new Set([
   'bank-print',
   'bank-protected',
@@ -97,6 +99,9 @@ for (const file of cssFiles) {
     if (line.includes('--nx-table-col-line:') && !line.includes('var(--noorix-table-header-border)')) {
       fail(file, lineNo, '--nx-table-col-line must alias --noorix-table-header-border');
     }
+    if (legacyNxTablePattern.test(line)) {
+      fail(file, lineNo, 'legacy nx-table visual selectors are removed; use noorix-table selectors only');
+    }
   });
 
   if (file !== 'src/index.css' && /\.noorix-table(?!-)/.test(text)) {
@@ -109,10 +114,21 @@ const weakHeaderTextPattern =
   /bg-\[var\(--noorix-table-header-bg\)\].*(text-noorix-muted|text-noorix-text)|(text-noorix-muted|text-noorix-text).*bg-\[var\(--noorix-table-header-bg\)\]/;
 
 for (const file of sourceFiles) {
-  const lines = read(file).split(/\r?\n/);
+  const sourceText = read(file);
+  const governsRuntimeSmartTable = sourceText.includes('<SmartTable') || sourceText.includes('SmartTableColumn');
+  const lines = sourceText.split(/\r?\n/);
   lines.forEach((line, index) => {
     if (weakHeaderTextPattern.test(line)) {
       fail(file, index + 1, 'table header background must not use muted/default text color');
+    }
+    if (file !== 'src/ui/SmartTable/SmartTable.test.tsx' && /\browNumberWidth\s*=/.test(line)) {
+      fail(file, index + 1, 'SmartTable row number width is system-wide; do not override rowNumberWidth in screens');
+    }
+    if (governsRuntimeSmartTable && rawPercentColumnWidthPattern.test(line)) {
+      fail(file, index + 1, 'SmartTable columns must use governed kind/size presets instead of raw percentage widths');
+    }
+    if (legacyNxTablePattern.test(line)) {
+      fail(file, index + 1, 'legacy nx-table visual classes are removed; use SmartTable/SimpleTable with noorix-table classes');
     }
   });
 }
@@ -124,11 +140,22 @@ const centralTableBuilderFiles = new Set([
   'src/utils/printTableHtml.ts',
   'src/utils/printTableHtml.test.ts',
 ]);
+const manualTableFactoryPattern = /(?:document\.)?createElement\(\s*['"`]table['"`]\s*\)/;
 
 const currentManualTableCounts = {};
 for (const file of sourceFiles) {
   if (centralTableBuilderFiles.has(file)) continue;
-  const count = read(file).split(/\r?\n/).filter((line) => line.includes('<table')).length;
+  const lines = read(file).split(/\r?\n/);
+  lines.forEach((line, index) => {
+    if (manualTableFactoryPattern.test(line)) {
+      fail(
+        file,
+        index + 1,
+        'manual table creation is blocked outside central table builders; use SmartTable/SimpleTable/MatrixTable or printTableHtml',
+      );
+    }
+  });
+  const count = lines.filter((line) => line.includes('<table')).length;
   if (count > 0) currentManualTableCounts[file] = count;
 }
 
@@ -192,7 +219,7 @@ for (const required of [
 for (const required of [
   'Status: foundation implemented; broad table conversion is not started.',
   '`src/utils/printTableHtml.ts`',
-  '`src/utils/pdfTableExport.ts`',
+  '`src/ui/PrintPreviewModal.tsx`',
   'Tax/VAT print documents',
   'This phase closes the foundation only. It does not claim that all remaining manual tables are converted.',
 ]) {

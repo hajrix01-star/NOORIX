@@ -9,8 +9,9 @@ import { getEmployees, createLeave, updateLeave, throwIfApiFailed } from '../../
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys } from '../../../services/queryKeys';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, DateField, Input, AdaptiveSheet, Modal } from '../../../ui';
+import { DateField, DialogActions, Input, AdaptiveSheet, Modal } from '../../../ui';
 import { toDateInputYmd, getSaudiToday } from '../../../utils/saudiDate';
+import type { HrEmployee } from '../../../types/api';
 
 const TYPE_MAP = {
   annual: 'leaveAnnual',
@@ -26,9 +27,46 @@ const STATUS_OPTIONS = [
 ];
 
 const LEAVE_FORM_ID = 'leave-form-modal';
+type LeaveType = keyof typeof TYPE_MAP;
+type LeaveStatus = (typeof STATUS_OPTIONS)[number]['value'];
+type LeaveFormState = {
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  daysCount: string;
+  status: string;
+  employeeId: string;
+};
+type LeaveRecord = {
+  id?: string | null;
+  employeeId?: string | null;
+  leaveType?: LeaveType | string | null;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
+  daysCount?: number | string | null;
+  status?: LeaveStatus | string | null;
+  notes?: string | null;
+  salarySettlement?: unknown;
+};
+type LeaveFormModalProps = {
+  companyId?: string;
+  employeeId?: string;
+  editLeave?: LeaveRecord | null;
+  lockEmployeeSelector?: boolean;
+  onReturnFromLeave?: () => void;
+  onSalarySettlement?: () => void;
+  onDelete?: (leave: LeaveRecord) => void;
+  onSuccess?: () => void;
+  onClose?: () => void;
+};
+type LeaveInputChange = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
 
 /** تغيير يتطلب إلغاء تسوية الراتب (المسار الخلفي يفرّق عن تعديل الملاحظات فقط) */
-function leaveHasStructuralChange(editLeave: any, state: any) {
+function leaveHasStructuralChange(editLeave: LeaveRecord | null | undefined, state: LeaveFormState) {
   if (!editLeave) return false;
   return (
     state.leaveType !== (editLeave.leaveType || 'annual') ||
@@ -45,9 +83,12 @@ export function LeaveFormModal({
   employeeId: initialEmployeeId,
   editLeave = null,
   lockEmployeeSelector = false,
+  onReturnFromLeave,
+  onSalarySettlement,
+  onDelete,
   onSuccess,
   onClose,
-}: any) {
+}: LeaveFormModalProps) {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
@@ -88,16 +129,16 @@ export function LeaveFormModal({
     setError('');
   }, [isEdit, editLeave?.id, initialEmployeeId]);
 
-  const { data: employees = [] } = useApiListQuery<any>({
+  const { data: employees = [] } = useApiListQuery<HrEmployee>({
     queryKey: employeeKeys.list(cid, false),
     queryFn: () => getEmployees(cid, false),
     fallbackMessage: t('employeesLoadFailed'),
     enabled: !!cid,
   });
 
-  const activeEmployees = (employees || []).filter((e: any) => e.status !== 'terminated' && e.status !== 'archived');
+  const activeEmployees = (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
 
-  const handleStartEndChange = (field: any, value: any) => {
+  const handleStartEndChange = (field: 'startDate' | 'endDate', value: string) => {
     if (field === 'startDate') {
       setStartDate(value);
       if (endDate && value > endDate) setEndDate(value);
@@ -160,6 +201,10 @@ export function LeaveFormModal({
         notes: notes || undefined,
       };
       if (isEdit) {
+        if (!editLeave?.id) {
+          setError(t('saveFailed'));
+          return;
+        }
         const body = { ...base, ...(structural ? { voidSalarySettlement: true } : {}) };
         const res = await updateLeave(editLeave.id, cid, body);
         throwIfApiFailed(res, t('saveFailed'));
@@ -170,14 +215,14 @@ export function LeaveFormModal({
       }
       onSuccess?.();
       onClose?.();
-    } catch (err: any) {
-      setError(err?.message || t('saveFailed'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('saveFailed')));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e?.preventDefault?.();
     void runSave();
   };
@@ -198,12 +243,43 @@ export function LeaveFormModal({
         side="start"
         className="leave-form-drawer"
         footer={
-          <>
-            <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-            <Button type="submit" form={LEAVE_FORM_ID} variant="primary" disabled={submitting}>
-              {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}
-            </Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+              {
+                key: 'delete',
+                label: t('delete'),
+                role: 'delete',
+                hidden: !isEdit || !onDelete,
+                className: 'me-auto',
+                onClick: () => {
+                  if (editLeave) onDelete?.(editLeave);
+                },
+              },
+              {
+                key: 'return-from-leave',
+                label: t('leaveReturnFromLeave'),
+                role: 'primary',
+                hidden: !isEdit || !onReturnFromLeave,
+                onClick: onReturnFromLeave,
+              },
+              {
+                key: 'salary-settlement',
+                label: t('leaveSalarySettlement'),
+                role: 'success',
+                hidden: !isEdit || !onSalarySettlement,
+                onClick: onSalarySettlement,
+              },
+              {
+                key: 'save',
+                label: submitting ? t('saving') : (isEdit ? t('save') : t('add')),
+                role: 'save',
+                type: 'submit',
+                form: LEAVE_FORM_ID,
+                disabled: submitting,
+              },
+            ]}
+          />
         }
       >
         <form id={LEAVE_FORM_ID} onSubmit={handleSubmit}>
@@ -216,12 +292,12 @@ export function LeaveFormModal({
             type="select"
             label={t('selectEmployee')}
             value={employeeId}
-            onChange={(e: any) => setEmployeeId(e.target.value)}
+            onChange={(e: LeaveInputChange) => setEmployeeId(e.target.value)}
             required
             disabled={lockEmployeeSelector}
           >
             <option value="">—</option>
-            {activeEmployees.map((emp: any) => (
+            {activeEmployees.map((emp) => (
               <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
             ))}
           </Input>
@@ -230,9 +306,9 @@ export function LeaveFormModal({
             type="select"
             label={t('leaveType')}
             value={leaveType}
-            onChange={(e: any) => setLeaveType(e.target.value)}
+            onChange={(e: LeaveInputChange) => setLeaveType(e.target.value)}
           >
-            {Object.keys(TYPE_MAP).map((k: any) => (
+            {Object.keys(TYPE_MAP).map((k) => (
               <option key={k} value={k}>{t((TYPE_MAP as Record<string, string>)[String(k)])}</option>
             ))}
           </Input>
@@ -259,7 +335,7 @@ export function LeaveFormModal({
             min="1"
             label={t('daysCount')}
             value={daysCount}
-            onChange={(e: any) => setDaysCount(e.target.value)}
+            onChange={(e: LeaveInputChange) => setDaysCount(e.target.value)}
             placeholder="0"
           />
 
@@ -267,9 +343,9 @@ export function LeaveFormModal({
             type="select"
             label={t('status')}
             value={status}
-            onChange={(e: any) => setStatus(e.target.value)}
+            onChange={(e: LeaveInputChange) => setStatus(e.target.value)}
           >
-            {STATUS_OPTIONS.map((opt: any) => (
+            {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
             ))}
           </Input>
@@ -277,7 +353,7 @@ export function LeaveFormModal({
           <Input
             label={t('notes')}
             value={notes}
-            onChange={(e: any) => setNotes(e.target.value)}
+            onChange={(e: LeaveInputChange) => setNotes(e.target.value)}
             placeholder={t('notes')}
           />
 
@@ -290,12 +366,18 @@ export function LeaveFormModal({
         title={t('leaveEditVoidSettlementTitle')}
         size="md"
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setVoidModalOpen(false)}>{t('cancel')}</Button>
-            <Button variant="primary" onClick={confirmVoidAndSave} disabled={submitting}>
-              {t('leaveVoidConfirmProceed')}
-            </Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setVoidModalOpen(false) },
+              {
+                key: 'confirm',
+                label: t('leaveVoidConfirmProceed'),
+                role: 'primary',
+                disabled: submitting,
+                onClick: confirmVoidAndSave,
+              },
+            ]}
+          />
         }
       >
         <p className="text-[13px] text-noorix-text leading-relaxed m-0">

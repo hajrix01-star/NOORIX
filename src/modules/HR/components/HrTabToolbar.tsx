@@ -4,7 +4,7 @@
 import React, { useState, type ReactNode } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useIsMobile640 } from '../../../ui';
-import { Button, KebabMenu, cn } from '../../../ui';
+import { Button, FilterToolbar, KebabMenu, cn } from '../../../ui';
 
 export type HrTabToolbarMenuItem = {
   key: string;
@@ -75,7 +75,12 @@ export function HrTabToolbar({
             ) : null}
 
             {hasFilters && !isMobile ? (
-              <div className="nx-toolbar min-w-0 flex-1 flex-wrap">{filters}</div>
+              <FilterToolbar
+                className="min-w-0 flex-1"
+                filtersClassName="nx-toolbar min-w-0 flex-1 flex-wrap"
+              >
+                {filters}
+              </FilterToolbar>
             ) : null}
 
             {!isMobile && desktopActions}

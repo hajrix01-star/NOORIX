@@ -1,5 +1,21 @@
 # تطوير محلي: Redis لطابور Bull (استخراج OCR وغيره لاحقاً)
 services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: noorix
+      POSTGRES_USER: noorix_user
+      POSTGRES_PASSWORD: noorix_local_password
+    volumes:
+      - noorix-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U noorix_user -d noorix"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   redis:
     image: redis:7-alpine
     ports:
@@ -9,4 +25,5 @@ services:
       - noorix-redis-data:/data
 
 volumes:
+  noorix-postgres-data:
   noorix-redis-data:

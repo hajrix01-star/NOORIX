@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { TenantPrismaService } from '../../prisma/tenant-prisma.service';
 import {
   mergeInsightThresholds,
   validateInsightThresholds,
@@ -8,12 +8,30 @@ import {
   type CompanyInsightThresholdsPayload,
 } from './company-insight-thresholds';
 
+type CompanyInsightSettingsStore = {
+  companyInsightSettings: {
+    findUnique: (args: {
+      where: { companyId: string };
+      select: { thresholds: true };
+    }) => Promise<{ thresholds: unknown } | null>;
+    upsert: (args: {
+      where: { companyId: string };
+      create: { companyId: string; thresholds: Prisma.InputJsonValue };
+      update: { thresholds: Prisma.InputJsonValue };
+    }) => Promise<unknown>;
+    deleteMany: (args: { where: { companyId: string } }) => Promise<unknown>;
+  };
+};
+
 /**
  * Reads and updates per-company insight threshold overrides (JSON partials merged with generic defaults).
  */
 @Injectable()
 export class CompanyInsightThresholdSettingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(TenantPrismaService)
+    private readonly prisma: CompanyInsightSettingsStore,
+  ) {}
 
   /**
    * Resolved thresholds = generic defaults merged with stored JSON overrides.
@@ -43,7 +61,7 @@ export class CompanyInsightThresholdSettingsService {
     const resolved = mergeInsightThresholds(mergedPatch);
     validateInsightThresholds(resolved);
 
-    const json = mergedPatch as unknown as Prisma.InputJsonValue;
+    const json = this.toJsonOverrides(mergedPatch);
     await this.prisma.companyInsightSettings.upsert({
       where: { companyId },
       create: { companyId, thresholds: json },
@@ -83,5 +101,13 @@ export class CompanyInsightThresholdSettingsService {
       out.netProfitMargin = { ...out.netProfitMargin, ...patch.netProfitMargin };
     }
     return out;
+  }
+
+  private toJsonOverrides(overrides: CompanyInsightThresholdsPartialOverride): Prisma.InputJsonObject {
+    return {
+      ...(overrides.purchaseToSales ? { purchaseToSales: { ...overrides.purchaseToSales } } : {}),
+      ...(overrides.expenseToSales ? { expenseToSales: { ...overrides.expenseToSales } } : {}),
+      ...(overrides.netProfitMargin ? { netProfitMargin: { ...overrides.netProfitMargin } } : {}),
+    };
   }
 }

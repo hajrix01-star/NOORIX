@@ -1,10 +1,15 @@
-/**
- * منطق تبديل فرز قائمة الفواتير — قابل للاختبار بدون React
- * @param {string} sortKey المفتاح الحالي
- * @param {'asc'|'desc'} sortDir
- * @param {string} clickedKey عمود تم النقر عليه
- */
-export function nextInvoiceSortState(sortKey: any, sortDir: any, clickedKey: any) {
+import type { InvoiceListSortDir } from './invoicesListQueryModel';
+
+export type InvoiceListSortState = {
+  sortKey: string;
+  sortDir: InvoiceListSortDir;
+};
+
+export function nextInvoiceSortState(
+  sortKey: string,
+  sortDir: InvoiceListSortDir,
+  clickedKey: string,
+): InvoiceListSortState {
   if (sortKey === clickedKey) {
     return { sortKey, sortDir: sortDir === 'desc' ? 'asc' : 'desc' };
   }

@@ -6,13 +6,17 @@ import {
   putDashboardCalendarSpecialDays,
   putDashboardCalendarDayNotes,
   deleteDashboardCalendarTargets,
-  type DashboardCalendarDataResult,
 } from '../services/domains/apiEndpoints/dashboard-calendar';
 import type { ApiParsedResult } from '../types/api';
+import type {
+  DashboardCalendarDataResult,
+  DashboardCalendarTargets,
+  DashboardSpecialDay,
+} from '../types/api/domains/dashboard';
 import { useApiQueryOr } from './useApiQuery';
 import { useApiMutation } from './useApiMutation';
 
-const DEFAULT_TARGETS = { overall: null as number | null, byDow: {} as Record<string, number> };
+const DEFAULT_TARGETS: DashboardCalendarTargets = { overall: null, byDow: {} };
 
 const DEFAULT_CALENDAR_DATA: DashboardCalendarDataResult = {
   targets: DEFAULT_TARGETS,
@@ -68,7 +72,7 @@ export function useDashboardCalendarData({ companyId, year, month, enabled = tru
       targets,
       applyToAll = true,
     }: {
-      targets: { overall: number | null; byDow: Record<string, number> };
+      targets: DashboardCalendarTargets;
       applyToAll?: boolean;
     }) => putDashboardCalendarTargets(companyId!, year, month, targets, applyToAll),
     onSuccess: resetCacheFromResult,
@@ -82,7 +86,7 @@ export function useDashboardCalendarData({ companyId, year, month, enabled = tru
   });
 
   const specialDaysMutation = useApiMutation({
-    mutationFn: (specialDays: unknown[]) =>
+    mutationFn: (specialDays: DashboardSpecialDay[]) =>
       putDashboardCalendarSpecialDays(companyId!, year, month, specialDays),
     onSuccess: resetCacheFromResult,
     showErrorToast: false,
@@ -105,7 +109,7 @@ export function useDashboardCalendarData({ companyId, year, month, enabled = tru
     isDefaultTargets: calendarData.isDefaultTargets ?? true,
     hasMonthOverride: calendarData.hasMonthOverride ?? false,
     defaultTargets: calendarData.defaultTargets ?? DEFAULT_TARGETS,
-    saveTargets: (targets: { overall: number | null; byDow: Record<string, number> }, applyToAll?: boolean) =>
+    saveTargets: (targets: DashboardCalendarTargets, applyToAll?: boolean) =>
       targetsMutation.mutateAsync({ targets, applyToAll: applyToAll ?? true }),
     resetMonthTargets: () => resetTargetsMutation.mutateAsync(undefined),
     saveSpecialDays: specialDaysMutation.mutateAsync,

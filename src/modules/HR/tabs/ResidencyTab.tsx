@@ -1,5 +1,5 @@
-﻿/**
- * ResidencyTab — الإقامات وخدمات الموظف (تأشيرات، تذاكر، تأمين، …)
+/**
+ * ResidencyTab — ???????? ?????? ?????? (???????? ?????? ?????? …)
  */
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,11 +15,10 @@ import { useTableFilter } from '../../../hooks/useTableFilter';
 import { ResidencyFormModal } from '../components/ResidencyFormModal';
 import { IssueResidencyInvoiceModal } from '../components/IssueResidencyInvoiceModal';
 import { HrServiceQuickAddBar } from '../components/HrServiceQuickAddBar';
-import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, SmartTable, KebabMenu, cn } from '../../../ui';
+import { Button, Badge, Input, SmartTable, cn } from '../../../ui';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
@@ -33,19 +32,55 @@ import {
   formatHrServiceSecondaryDate,
   requiresExpiryDate,
 } from '../constants/employeeHrServiceCategories';
+import type { HrEmployee } from '../../../types/api';
 
 const PAGE_SIZE = 50;
 const EXPIRY_DAYS = 90;
 
-function isExpiringSoon(expiryDate: any) {
+type ResidencyInvoiceRef = {
+  id?: string | null;
+  invoiceNumber?: string | null;
+  totalAmount?: number | string | null;
+};
+
+type HrResidencyRow = Record<string, unknown> & {
+  id?: string | null;
+  employee?: HrEmployee | null;
+  employeeName?: string | null;
+  serviceCategory?: string | null;
+  serviceLabel?: string | null;
+  iqamaNumber?: string | null;
+  referenceLabel?: string | null;
+  serviceDetail?: string | null;
+  issueDate?: string | null;
+  expiryDate?: string | null;
+  transactionDate?: string | null;
+  invoiceId?: string | null;
+  invoiceNumber?: string | null;
+  invoice?: ResidencyInvoiceRef | null;
+  residencyInvoiceAmount?: number | string | null;
+  invoiceAmount?: number | string | null;
+  status?: string | null;
+};
+type ResidencyDeleteTarget = {
+  id?: string | null;
+  invoiceId?: string | null;
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function isExpiringSoon(expiryDate: unknown) {
   if (!expiryDate) return false;
+  if (typeof expiryDate !== 'string' && typeof expiryDate !== 'number' && !(expiryDate instanceof Date)) return false;
   const exp = new Date(expiryDate);
   const now = new Date();
   const diff = (exp.getTime() - now.getTime()) / (24 * 60 * 60 * 1000);
   return diff >= 0 && diff <= EXPIRY_DAYS;
 }
 
-function residencyStatusKey(v: any) {
+function residencyStatusKey(v: unknown) {
   return v === 'expired' || v === 'renewed' ? v : 'active';
 }
 
@@ -57,13 +92,13 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
   const companyId = activeCompanyId ?? '';
   const [showAdd, setShowAdd] = useState(false);
   const [addDefaultCategory, setAddDefaultCategory] = useState('iqama_renewal');
-  const [editingResidency, setEditingResidency] = useState<any>(null);
-  const [issueInvoiceRow, setIssueInvoiceRow] = useState<any>(null);
+  const [editingResidency, setEditingResidency] = useState<HrResidencyRow | null>(null);
+  const [issueInvoiceRow, setIssueInvoiceRow] = useState<HrResidencyRow | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useApiListQuery<any>({
+  const { data, isLoading, isError } = useApiListQuery<HrResidencyRow>({
     queryKey: hrKeys.residencies(companyId),
     queryFn: () => getResidencies(companyId),
     enabled: !!companyId,
@@ -75,18 +110,22 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
       deleteResidency(id, companyId, !!voidInvoice),
     invalidateQueries: [hrKeys.residencies(companyId)],
     successToast: () => t('hrServiceDeleted'),
-    errorToast: (e: any) => e?.message || t('saveFailed'),
+    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
     onSuccess: () => {
       setEditingResidency(null);
       invalidateOnFinancialMutation(queryClient);
     },
   });
 
-  const openServiceRow = useCallback((row: any) => {
+  const openServiceRow = useCallback((row: HrResidencyRow) => {
     setEditingResidency(row);
   }, []);
 
-  const handleDelete = useCallback((row: any) => {
+  const handleDelete = useCallback((row: ResidencyDeleteTarget) => {
+    if (!row.id) {
+      showToast(t('saveFailed'), 'error');
+      return;
+    }
     const msg = row.invoiceId
       ? t('deleteHrServiceWithInvoice')
       : t('deleteHrServiceConfirm');
@@ -94,33 +133,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
     deleteMutation.mutate({ id: row.id, voidInvoice: !!row.invoiceId });
   }, [t, deleteMutation]);
 
-  const serviceKebabItems = useCallback((row: any) => [
-    {
-      key: 'view',
-      label: t('view'),
-      onClick: () => openServiceRow(row),
-    },
-    {
-      key: 'edit',
-      label: t('edit'),
-      style: { color: 'var(--noorix-accent-green)' },
-      onClick: () => openServiceRow(row),
-    },
-    ...(row.invoiceId ? [] : [{
-      key: 'issue',
-      label: t('hrServiceIssueInvoice'),
-      style: { color: 'var(--noorix-accent-blue)' },
-      onClick: () => setIssueInvoiceRow(row),
-    }]),
-    {
-      key: 'delete',
-      label: t('delete'),
-      style: { color: 'var(--noorix-accent-red)' },
-      onClick: () => handleDelete(row),
-    },
-  ], [t, openServiceRow, handleDelete]);
-
-  const items = useMemo(() => (data ?? []).map((r: any) => ({
+  const items = useMemo<HrResidencyRow[]>(() => (data ?? []).map((r) => ({
     ...r,
     serviceCategory: r.serviceCategory || 'iqama_renewal',
     employeeName: employeeDisplayName(r.employee || { name: r.employeeName }, lang),
@@ -131,11 +144,11 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
 
   const filteredByCategory = useMemo(() => {
     if (!categoryFilter) return items;
-    return items.filter((r: any) => r.serviceCategory === categoryFilter);
+    return items.filter((r) => r.serviceCategory === categoryFilter);
   }, [items, categoryFilter]);
 
   const expiringCount = filteredByCategory.filter(
-    (r: any) => requiresExpiryDate(r.serviceCategory) && isExpiringSoon(r.expiryDate),
+    (r) => requiresExpiryDate(String(r.serviceCategory || '')) && isExpiringSoon(r.expiryDate),
   ).length;
   const residencyStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
 
@@ -155,7 +168,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 150,
-      render: (v: any, row: any) => (
+      render: (v: unknown, row: HrResidencyRow) => (
         <Button
           type="button"
           variant="raw"
@@ -163,18 +176,18 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
           className="font-semibold text-[13px] text-start text-noorix-blue hover:underline cursor-pointer bg-transparent border-0 p-0"
           onClick={() => openServiceRow(row)}
         >
-          {v || '—'}
+          {String(v || '—')}
         </Button>
       ) },
     { key: 'serviceLabel', label: t('hrServiceCategory'), sortable: true, width: 140, minWidth: 130,
-      render: (v: any) => <Badge color="blue" label={v} size="sm" /> },
+      render: (v: unknown) => <Badge color="blue" label={String(v || '—')} size="sm" /> },
     { key: 'serviceDetail', label: t('hrServiceDetailColumn'), sortable: false, width: 140, minWidth: 120,
-      render: (_v: any, row: any) => (
+      render: (_v: unknown, row: HrResidencyRow) => (
         <span className="text-[12px] text-noorix-text">{formatHrServiceDetail(row, t)}</span>
       ) },
     { key: 'expiryDate', label: t('hrServiceSecondaryColumn'), sortable: true, width: 130, minWidth: 120,
-      render: (_v: any, row: any) => {
-        const soon = requiresExpiryDate(row.serviceCategory) && isExpiringSoon(row.expiryDate);
+      render: (_v: unknown, row: HrResidencyRow) => {
+        const soon = requiresExpiryDate(String(row.serviceCategory || '')) && isExpiringSoon(row.expiryDate);
         const display = formatHrServiceSecondaryDate(row, t, formatSaudiDate);
         return (
           <span
@@ -190,7 +203,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
         );
       } },
     { key: 'invoiceNumber', label: t('invoiceNumber'), sortable: true, width: 120, minWidth: 110,
-      render: (v: any, row: any) => (
+      render: (v: unknown, row: HrResidencyRow) => (
         v ? (
           <Button
             type="button"
@@ -199,14 +212,14 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
             className="nx-cell-num text-noorix-blue font-semibold hover:underline cursor-pointer bg-transparent border-0 p-0"
             onClick={() => openServiceRow(row)}
           >
-            {v}
+            {String(v)}
           </Button>
         ) : (
           <span className="text-[12px] text-noorix-muted">{t('hrServiceNoInvoice')}</span>
         )
       ) },
     { key: 'invoiceAmount', label: t('amount'), width: 100, minWidth: 90, numeric: true,
-      render: (v: any) => (
+      render: (v: unknown) => (
         v != null && Number(v) > 0 ? (
           <span className="nx-cell-num">{fmt(Number(v))} <span className="nx-sar">SR</span></span>
         ) : (
@@ -214,23 +227,12 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
         )
       ) },
     { key: 'status', label: t('status'), width: 100, minWidth: 90,
-      render: (v: any) => (
+      render: (v: unknown) => (
         <Badge {...Badge.fromStatus(residencyStatusKey(v), residencyStatusMap)} size="sm" />
       ) },
-    { key: 'actions', label: t('actions'), width: '5%', align: 'center',
-      render: (_: any, row: any) => (
-        <HRActionsCell
-          row={row}
-          type="residency"
-          onView={() => openServiceRow(row)}
-          onEdit={() => openServiceRow(row)}
-          onIssueInvoice={!row.invoiceId ? () => setIssueInvoiceRow(row) : undefined}
-          onDelete={() => handleDelete(row)}
-        />
-      ) },
-  ], [t, residencyStatusMap, handleDelete, openServiceRow]);
+  ], [t, residencyStatusMap, openServiceRow]);
 
-  const exportData = allFilteredData.map((r: any) => ({
+  const exportData = allFilteredData.map((r: HrResidencyRow) => ({
     employeeName: r.employeeName || '—',
     service: r.serviceLabel,
     iqamaOrRef: r.iqamaNumber || r.referenceLabel || '—',
@@ -240,7 +242,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
     status: (residencyStatusMap as Record<string, { label?: string }>)[String(residencyStatusKey(r.status))]?.label || r.status,
   }));
 
-  const renderMobileCard = useCallback((row: any) => {
+  const renderMobileCard = useCallback((row: HrResidencyRow) => {
     const soon = isExpiringSoon(row.expiryDate);
     return (
       <div
@@ -271,14 +273,11 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
             <div className="nx-mc__stat-value text-[13px] ltr text-noorix-blue">{row.invoiceNumber || '—'}</div>
           </div>
         </div>
-        <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
-          <KebabMenu ariaLabel={t('actions')} items={serviceKebabItems(row)} />
-        </div>
       </div>
     );
-  }, [t, openServiceRow, serviceKebabItems]);
+  }, [t, openServiceRow]);
 
-  const renderCompactRow = useCallback((row: any) => {
+  const renderCompactRow = useCallback((row: HrResidencyRow) => {
     const soon = isExpiringSoon(row.expiryDate);
     return (
       <div
@@ -301,14 +300,11 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
           </div>
           <div className="nx-cr__line2-end flex items-center gap-2">
             <span className="text-[12px] ltr text-noorix-blue">{row.invoiceNumber || ''}</span>
-            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-              <KebabMenu ariaLabel={t('actions')} items={serviceKebabItems(row)} />
-            </div>
           </div>
         </div>
       </div>
     );
-  }, [t, openServiceRow, serviceKebabItems]);
+  }, [openServiceRow]);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: hrKeys.residencies(companyId) });
@@ -374,7 +370,6 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth="1%"
           {...hrFlatSmartTableShellProps(embedded)}
           columns={columns}
           data={filteredData}
@@ -427,12 +422,13 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
           }}
           onClose={() => setEditingResidency(null)}
           onDelete={handleDelete}
+          onIssueInvoice={(row) => setIssueInvoiceRow(row as HrResidencyRow)}
         />
       )}
 
-      {issueInvoiceRow && (
+      {issueInvoiceRow?.id && (
         <IssueResidencyInvoiceModal
-          row={issueInvoiceRow}
+          row={{ ...issueInvoiceRow, id: issueInvoiceRow.id }}
           companyId={companyId}
           onSuccess={() => {
             invalidateAll();

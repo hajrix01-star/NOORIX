@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useDebouncedValue } from '../../../ui';
+﻿import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useDebouncedValue, usePrintPreview } from '../../../ui';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '../../../hooks/useApiQuery';
@@ -12,67 +12,42 @@ import { useSalesChannels } from '../../../hooks/useSalesChannels';
 import { useDateFilter } from '../../../ui/date';
 import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } from '../../../services/api';
 import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toYmd } from '../../../utils/saudiDate';
-import { fmt, sumAmounts } from '../../../utils/format';
+import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { exportToExcel, exportToPdf } from '../../../utils/exportUtils';
-import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
+import { exportToExcel } from '../../../utils/exportUtils';
+import { buildPrintRecordsTableHtml, buildPrintTableHtml } from '../../../utils/printTableHtml';
 import { formatSalesForExport } from '../../../utils/importTemplates';
 import { hasPermission, PERMISSIONS } from '../../../constants/permissions';
 import { buildActiveCancelledStatusMap } from '../../../constants/badgeMaps';
 import { salesKeys, companyKeys } from '../../../services/queryKeys';
 import { addCalendarDaysYmd } from '../dailySalesScreenUtils';
-import type { DailySalesChannelEntry } from '../components/DailySalesChannelsChips';
-import type { SalesListShiftFilter, SalesShiftValue } from '../constants/salesShift';
+import type {
+  SalesListShiftFilter,
+  SalesSummariesPage,
+  SalesSummaryDayRow,
+  SalesSummaryItem,
+  UpdateSalesSummaryBody,
+} from '../../../types/api/domains/sales';
 import { getSalesShiftLabel, resolveSalesSummaryShift } from '../constants/salesShift';
 import {
-  buildSummaryChannelWhatsAppLines,
   buildVaultLookup,
 } from '../utils/salesWhatsAppChannels';
-import { computeAppShare, type AppShareResult } from '../utils/salesAppShare';
-import { appendAppShareWaLines } from '../utils/salesWhatsAppAppShare';
 import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
 import {
-  waCashLine,
-  waCustomersLine,
-  waMetaLine,
-  waMetricLine,
-  waAvgSaleMetricLine,
-  waReportHeader,
-  waShiftSectionTitle,
-  waSubheading,
-} from '../utils/salesWhatsAppFormat';
+  aggregateSalesDayByShift,
+  buildDailyShiftWhatsAppText,
+  openWhatsAppWithText,
+} from '../utils/salesDayShiftReport';
 
 const PAGE_SIZE = 50;
 
-export type DailySalesSummary = {
-  id: string;
-  summaryNumber?: string | number | null;
-  transactionDate?: string | null;
-  customerCount?: number | null;
-  totalAmount?: number | string | null;
-  cashOnHand?: number | string | null;
-  notes?: string | null;
-  status?: string | null;
-  shift?: SalesShiftValue | string | null;
-  channels?: DailySalesChannelEntry[] | null;
-};
+export type DailySalesSummary = SalesSummaryItem;
+export type DailySalesTableRow = SalesSummaryDayRow;
+export type DailySalesEditBody = UpdateSalesSummaryBody;
 
-export type DailySalesTableRow = DailySalesSummary & {
-  shift: SalesShiftValue;
-  channelsText: string;
-  avgPerCustomer: number;
-  summaries: DailySalesSummary[];
-  summaryNumbersText: string;
-  shiftsText: string;
-} & Record<string, unknown>;
-
-export type DailySalesEditBody = {
-  transactionDate?: string;
-  customerCount?: number;
-  cashOnHand?: string;
-  channels?: Array<{ vaultId: string; amount: string }>;
-  notes?: string;
+type CompanySalesSettings = {
+  vatEnabledForSales?: boolean | null;
+  vatRatePercent?: number | string | null;
 };
 
 const ALLOWED_SORT = new Set(['summaryNumber', 'transactionDate', 'totalAmount', 'customerCount']);
@@ -88,12 +63,17 @@ export function useDailySalesScreen() {
   const activeCo = companies?.find((c) => c.id === activeCompanyId);
   const companyName = (lang === 'en' ? (activeCo?.nameEn || activeCo?.nameAr) : (activeCo?.nameAr || activeCo?.nameEn)) || '';
   const logoUrl = activeCo?.logoUrl || '';
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('salesDailySummary'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const { showToast } = useToast();
   const [showEntryModal, setShowEntryModal] = useState(false);
-  const [editingSummary, setEditingSummary] = useState<DailySalesSummary | null>(null);
+  const [editingSummary, setEditingSummary] = useState<DailySalesTableRow | null>(null);
   const [listPage, setListPage] = useState(1);
-  const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
+  const qInit = searchParams.get('q') || '';
   const [searchInput, setSearchInput] = useState(qInit);
   const debouncedQRaw = useDebouncedValue(searchInput.trim(), 300);
   const [sortKey, setSortKey] = useState('transactionDate');
@@ -167,14 +147,13 @@ export function useDailySalesScreen() {
     if (q) {
       setSearchInput(q);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, salesFullHistory, dateFilter]);
 
   const {
     data: salesPage,
     isLoading: summariesLoading,
     error: summariesError,
-  } = useApiQuery<{ total?: number; items?: DailySalesSummary[] }>({
+  } = useApiQuery<SalesSummariesPage>({
     queryKey: salesKeys.summariesPaged(
       companyId,
       dateFilter.startDate,
@@ -205,11 +184,12 @@ export function useDailySalesScreen() {
     enabled: !!companyId && salesViewSummariesList,
   });
 
-  const salesPageData = salesPage as { total?: number; items?: DailySalesSummary[] } | undefined;
-  const listTotal = salesPageData?.total ?? 0;
-  const pagedSummaries = salesPageData?.items ?? [];
+  const salesPageData = salesPage;
+  const listTotal = salesPageData ? salesPageData.total : 0;
+  const pagedDayRows = salesPageData ? salesPageData.dayRows : [];
+  const pageSummary = salesPageData ? salesPageData.pageSummary : null;
 
-  const { data: companyData } = useApiQuery<any>({
+  const { data: companyData } = useApiQuery<CompanySalesSettings>({
     queryKey: companyKeys.single(companyId),
     queryFn: () => getCompany(companyId),
     fallbackMessage: t('loadingError'),
@@ -220,73 +200,37 @@ export function useDailySalesScreen() {
 
   const vaultById = useMemo(() => buildVaultLookup(salesChannels), [salesChannels]);
 
-  const buildWhatsAppText = useCallback((s: DailySalesSummary, monthAppShare?: AppShareResult) => {
-    const cc = s.customerCount || 0;
-    const total = Number(s.totalAmount || 0);
-    const name = (companyName || '').trim();
-    const dateRaw = formatSaudiDate(s.transactionDate);
-    let dateWithWeekday = dateRaw;
+  const buildWhatsAppText = useCallback((
+    summaries: DailySalesSummary[],
+    targetDate: string,
+    monthAppShare?: Awaited<ReturnType<typeof fetchMonthAppShare>>,
+  ) => {
+    const report = aggregateSalesDayByShift(summaries, targetDate);
+    const dateRaw = formatSaudiDate(targetDate);
+    let dateLabel = dateRaw;
     if (dateRaw !== '—') {
-      const wd = formatSaudiWeekdayName(s.transactionDate, lang);
-      if (wd) dateWithWeekday = `${dateRaw} ${wd}`;
+      const wd = formatSaudiWeekdayName(targetDate, lang);
+      if (wd) dateLabel = `${dateRaw} ${wd}`;
     }
-
-    const shift = resolveSalesSummaryShift(s);
-    const shiftKind = shift === 'morning' ? 'morning' as const : shift === 'evening' ? 'evening' as const : 'fullDay' as const;
-
-    const lines = [
-      waReportHeader(t('salesWhatsAppReportTitle'), name),
-      waMetaLine(t('salesWhatsAppDateLine'), dateWithWeekday),
-      waMetaLine(t('salesWhatsAppSummaryRef'), String(s.summaryNumber ?? '—')),
-      waShiftSectionTitle(shiftKind, `${t('salesWhatsAppShiftLine')} ${getSalesShiftLabel(shift, t)}`),
-    ];
-
-    const channelLines = buildSummaryChannelWhatsAppLines(s.channels, lang, vaultById);
-    if (channelLines.length > 0) {
-      lines.push(waSubheading(t('salesWhatsAppChannelsHeader')));
-      lines.push(...channelLines);
-    } else {
-      lines.push(`  ${t('salesWhatsAppNoChannels')}`);
-    }
-
-    lines.push(
-      '',
-      waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(total)} SR`),
-      waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(cc, 0)),
-      waAvgSaleMetricLine(t('salesWhatsAppAvgInvoiceLine'), total, cc),
-    );
-
-    const summaryShare = computeAppShare(s.channels, total, vaultById);
-    appendAppShareWaLines(lines, summaryShare, t('salesWhatsAppAppShareLine'));
-    if (monthAppShare) {
-      appendAppShareWaLines(lines, monthAppShare, t('salesWhatsAppAppShareMonthLine'), { percentOnly: true });
-    }
-
-    if (Number(s.cashOnHand) > 0) {
-      lines.push(waCashLine(t('salesWhatsAppCashLine'), `${fmt(s.cashOnHand)} SR`));
-    }
-    if (s.notes?.trim()) {
-      lines.push('', `${t('salesShareNotes')}: ${s.notes.trim()}`);
-    }
-    return lines.join('\n');
+    return buildDailyShiftWhatsAppText({
+      companyName,
+      dateLabel,
+      report,
+      t,
+      daySummaries: summaries,
+      dayYmd: targetDate,
+      lang,
+      vaultById,
+      monthAppShare,
+    });
   }, [companyName, lang, t, vaultById]);
-
-  const openWhatsApp = useCallback(async (s: DailySalesSummary) => {
-    const group = (s as DailySalesTableRow).summaries;
-    if (Array.isArray(group) && group.length > 1) {
-      const parts = await Promise.all(group.map(async (item) => {
-        const monthAppShare = companyId
-          ? await fetchMonthAppShare(companyId, item.transactionDate, vaultById)
-          : undefined;
-        return buildWhatsAppText(item, monthAppShare);
-      }));
-      window.open(`https://wa.me/?text=${encodeURIComponent(parts.join('\n\n'))}`, '_blank');
-      return;
-    }
+  const openWhatsApp = useCallback(async (s: DailySalesSummary | DailySalesTableRow) => {
+    const summaries = 'summaries' in s && s.summaries.length > 0 ? s.summaries : [s];
+    const targetDate = toYmd(s.transactionDate) || getSaudiToday();
     const monthAppShare = companyId
-      ? await fetchMonthAppShare(companyId, s.transactionDate, vaultById)
+      ? await fetchMonthAppShare(companyId, targetDate, vaultById)
       : undefined;
-    window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(s, monthAppShare))}`, '_blank');
+    openWhatsAppWithText(buildWhatsAppText(summaries, targetDate, monthAppShare));
   }, [buildWhatsAppText, companyId, vaultById]);
 
   async function handleEditSave(body: DailySalesEditBody | Array<{ id: string; body: DailySalesEditBody }>) {
@@ -303,8 +247,7 @@ export function useDailySalesScreen() {
         }
       }
     } else {
-      const editingRow = editingSummary as DailySalesTableRow;
-      const targetId = editingRow.summaries?.length === 1 ? editingRow.summaries[0].id : editingSummary.id;
+      const targetId = editingSummary.summaries.length === 1 ? editingSummary.summaries[0].id : editingSummary.id;
       const res = await updateSummary.mutateAsync({
         id: targetId,
         body,
@@ -318,9 +261,9 @@ export function useDailySalesScreen() {
     setEditingSummary(null);
   }
 
-  const handleDeleteSummary = useCallback((s: DailySalesSummary) => {
+  const handleDeleteSummary = useCallback((s: DailySalesSummary | DailySalesTableRow) => {
     if (!companyId) return;
-    const summaries = (s as DailySalesTableRow).summaries?.length ? (s as DailySalesTableRow).summaries : [s];
+    const summaries = 'summaries' in s && s.summaries.length ? s.summaries : [s];
     const label = summaries.length > 1
       ? `${formatSaudiDate(s.transactionDate)} (${summaries.map((x) => x.summaryNumber).filter(Boolean).join(', ')})`
       : s.summaryNumber;
@@ -334,60 +277,7 @@ export function useDailySalesScreen() {
 
   const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
 
-  const tableData = useMemo((): DailySalesTableRow[] => {
-    const groups = new Map<string, DailySalesSummary[]>();
-    for (const s of pagedSummaries) {
-      const key = toYmd(s.transactionDate || '');
-      const list = groups.get(key) || [];
-      list.push(s);
-      groups.set(key, list);
-    }
-    const shiftOrder: Record<SalesShiftValue, number> = { morning: 1, evening: 2, all: 3 };
-    return Array.from(groups.entries()).map(([dateKey, summaries]) => {
-      const ordered = [...summaries].sort((a, b) => shiftOrder[resolveSalesSummaryShift(a)] - shiftOrder[resolveSalesSummaryShift(b)]);
-      const primary = ordered[0] as DailySalesSummary;
-      const total = ordered.reduce((sum, s) => sum + Number(s.totalAmount || 0), 0);
-      const cc = ordered.reduce((sum, s) => sum + (Number(s.customerCount) || 0), 0);
-      const cashOnHand = ordered.reduce((sum, s) => sum + Number(s.cashOnHand || 0), 0);
-      const channelsByVault = new Map<string, DailySalesChannelEntry>();
-      for (const s of ordered) {
-        for (const ch of s.channels || []) {
-          const vault = ch.vault ?? (ch.vaultId ? vaultById.get(ch.vaultId) ?? null : null);
-          const vaultKey = ch.vaultId ?? ch.vault?.id ?? `n:${vaultDisplayName(vault, lang)}`;
-          const current = channelsByVault.get(vaultKey);
-          channelsByVault.set(vaultKey, {
-            ...ch,
-            ...(ch.vaultId || ch.vault?.id ? { vaultId: vaultKey } : {}),
-            amount: Number(current?.amount || 0) + Number(ch.amount || 0),
-            vault: vault || current?.vault,
-          });
-        }
-      }
-      const channels = Array.from(channelsByVault.values());
-      const channelsText = channels.map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
-      const shiftsText = ordered.map((s) => getSalesShiftLabel(resolveSalesSummaryShift(s), t)).join(' / ');
-      const summaryNumbersText = ordered.map((s) => s.summaryNumber).filter(Boolean).join(' / ');
-      const hasCancelled = ordered.some((s) => s.status === 'cancelled');
-      const allCancelled = ordered.every((s) => s.status === 'cancelled');
-      return {
-        ...primary,
-        id: `day-${dateKey}`,
-        summaryNumber: summaryNumbersText || primary.summaryNumber,
-        summaryNumbersText,
-        transactionDate: dateKey,
-        shift: ordered.length === 1 ? resolveSalesSummaryShift(primary) : 'all',
-        shiftsText,
-        channels,
-        channelsText,
-        customerCount: cc,
-        cashOnHand,
-        totalAmount: total,
-        avgPerCustomer: cc > 0 ? total / cc : 0,
-        status: allCancelled ? 'cancelled' : hasCancelled ? 'active' : primary.status,
-        summaries: ordered,
-      };
-    });
-  }, [pagedSummaries, lang, t]);
+  const tableData = pagedDayRows;
 
   const toggleSort = useCallback((key: string) => {
     if (!ALLOWED_SORT.has(key)) return;
@@ -402,10 +292,11 @@ export function useDailySalesScreen() {
     setListPage(1);
   }, []);
 
-  const activeOnly = tableData.filter((s) => s.status !== 'cancelled');
   const displayedTotal = listTotal;
-  const totalAmountSum = sumAmounts(activeOnly, 'totalAmount');
-  const totalCustomers = activeOnly.reduce((sum, s) => sum + (s.customerCount || 0), 0);
+  const activeRowCount = pageSummary ? pageSummary.rowCount : 0;
+  const totalAmountSum = pageSummary ? pageSummary.totalAmount : 0;
+  const totalCustomers = pageSummary ? pageSummary.customerCount : 0;
+  const avgPerCustomer = pageSummary ? pageSummary.avgPerCustomer : 0;
 
   const exportColumns = useMemo(() => [
     { key: 'summaryNumber', label: t('summaryNumber') },
@@ -420,17 +311,15 @@ export function useDailySalesScreen() {
 
   function mapSummariesToExportRows(rows: DailySalesSummary[]) {
     return rows.map((s) => {
-      const total = Number(s.totalAmount || 0);
-      const cc = s.customerCount || 0;
       const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
       return {
         summaryNumber: s.summaryNumber,
         transactionDate: formatSaudiDate(s.transactionDate),
         shiftLabel: getSalesShiftLabel(resolveSalesSummaryShift(s), t),
         channelsText,
-        customerCount: cc,
-        totalAmount: fmt(total),
-        avgPerCustomer: cc > 0 ? fmt(total / cc) : '0.00',
+        customerCount: s.customerCount,
+        totalAmount: fmt(s.totalAmount),
+        avgPerCustomer: fmt(s.avgPerCustomer),
         status: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
       };
     });
@@ -450,41 +339,11 @@ export function useDailySalesScreen() {
         showCancelledSales,
         selectedShift,
       );
-      const exportData = mapSummariesToExportRows(all as DailySalesSummary[]);
+      const exportData = mapSummariesToExportRows(all);
       exportToExcel({
         columns: exportColumns,
         data: exportData,
         filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}.xlsx`,
-        companyName,
-        title: `${t('salesDailySummary')} — ${dateFilter.label}`,
-        logoUrl,
-      });
-    } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : t('saveFailed'), 'error');
-    } finally {
-      setExportBusy(false);
-    }
-  }
-
-  async function handleExportPdf() {
-    if (!companyId) return;
-    setExportBusy(true);
-    try {
-      const all = await fetchAllSalesSummariesForExport(
-        companyId,
-        dateFilter.startDate,
-        dateFilter.endDate,
-        debouncedQEffective,
-        sortKey,
-        sortDir,
-        showCancelledSales,
-        selectedShift,
-      );
-      const exportData = mapSummariesToExportRows(all as DailySalesSummary[]);
-      exportToPdf({
-        columns: exportColumns,
-        data: exportData,
-        filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}`,
         companyName,
         title: `${t('salesDailySummary')} — ${dateFilter.label}`,
         logoUrl,
@@ -510,7 +369,7 @@ export function useDailySalesScreen() {
         sortDir,
         showCancelledSales,
         selectedShift,
-      ) as DailySalesSummary[];
+      );
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : t('saveFailed'), 'error');
       setExportBusy(false);
@@ -520,20 +379,18 @@ export function useDailySalesScreen() {
     }
     const printRows = allFilteredData.map((s) => {
       const ch = (s.channels || []).map((c) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount)}`).join(' | ');
-      const total = Number(s.totalAmount || 0);
-      const cc = s.customerCount || 0;
       return {
         [t('summaryNumber')]: String(s.summaryNumber ?? ''),
         [t('transactionDate')]: formatSaudiDate(s.transactionDate),
         [t('salesShiftLabel')]: getSalesShiftLabel(resolveSalesSummaryShift(s), t),
         [t('salesChannels')]: ch || '—',
-        [t('customers')]: cc,
-        [t('total')]: fmt(total),
-        [t('avgPerOrder')]: cc > 0 ? fmt(total / cc) : '0.00',
+        [t('customers')]: s.customerCount,
+        [t('total')]: fmt(s.totalAmount),
+        [t('avgPerOrder')]: fmt(s.avgPerCustomer),
         [t('statusLabel')]: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
       };
     });
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('salesDailySummary'),
       companyName: companyName || 'الشركة',
       subtitle: `${t('salesDailySummary')} — ${dateFilter.label || ''}`,
@@ -557,7 +414,7 @@ export function useDailySalesScreen() {
       showCancelledSales,
       selectedShift,
     );
-    return (list as Record<string, unknown>[]).map(formatSalesForExport);
+    return list.map(formatSalesForExport);
   }, [companyId, dateFilter.startDate, dateFilter.endDate, debouncedQEffective, sortKey, sortDir, showCancelledSales, selectedShift]);
 
   const handleImportSuccess = useCallback(() => {
@@ -617,13 +474,14 @@ export function useDailySalesScreen() {
     handleDeleteSummary,
     STATUS_MAP,
     tableData,
-    activeOnly,
+    activeRowCount,
     displayedTotal,
     totalAmountSum,
     totalCustomers,
+    avgPerCustomer,
     handleExportExcel,
-    handleExportPdf,
     handlePrint,
+    printPreviewModal,
     importExportFetcher,
     handleImportSuccess,
     showToast,

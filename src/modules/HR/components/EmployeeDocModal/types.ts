@@ -1,16 +1,9 @@
 import type { CSSProperties } from 'react';
-
-/** كائن يشبه نافذة الطباعة — الحقول قابلة للتعيين بعد `openPrintWindow` الداخلي */
-export type PrintWindowStub = {
-  onload: (() => void) | null;
-  onafterprint: (() => void) | null;
-  print: () => void;
-  close: () => void;
-};
+import type { HrCompensationSnapshot } from '../../../../types/api';
 
 export type EmployeeDocModalBaseProps = {
   employee: Record<string, unknown>;
-  compensationSnapshot: Record<string, any>;
+  compensationSnapshot: HrCompensationSnapshot;
   companyId?: string;
   companyName?: string;
   companyLogo?: string;

@@ -1,19 +1,51 @@
-import React, { useMemo } from 'react';
-import { Button } from '../../../ui';
-import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
-
-function csvToValues(s: string) {
-  return (s || '').split(',').map((x) => x.trim()).filter(Boolean);
-}
-
-function valuesToCsv(values: string[]) {
-  return [...new Set(values)].join(',');
-}
+import React, { useMemo, type Dispatch, type SetStateAction } from 'react';
+import { Button, FilterToolbar, SearchableOptionsPicker, csvToFilterValues, filterValuesToCsv } from '../../../ui';
+import {
+  buildInvoiceCreatorFilterOptions,
+  buildInvoiceKindFilterOptions,
+  buildInvoiceSupplierCategoryFilterOptions,
+  buildInvoiceSupplierFilterOptions,
+  buildInvoiceVaultFilterOptions,
+  type InvoiceFilterLang,
+  type InvoiceFilterTranslate,
+  type InvoiceNamedEntity,
+  type InvoiceVaultFilterEntity,
+} from '../invoicesListFilterModel';
+import type { InvoiceListUrlExtra } from '../invoicesListUrlModel';
 
 /**
  * لافتة الحفر + شريط الفلاتر التنفيذي — مستخرج من InvoicesListScreen
  */
+export type InvoicesListFiltersToolbarProps = {
+  t: InvoiceFilterTranslate;
+  lang: InvoiceFilterLang;
+  urlExtra: InvoiceListUrlExtra;
+  setUrlExtra: Dispatch<SetStateAction<InvoiceListUrlExtra>>;
+  setPage: (page: number) => void;
+  setDayCloseOpen: (open: boolean) => void;
+  setShowImportExport: (open: boolean) => void;
+  filterHasNotesOnly: boolean;
+  setFilterHasNotesOnly: Dispatch<SetStateAction<boolean>>;
+  showCancelled: boolean;
+  setShowCancelled: Dispatch<SetStateAction<boolean>>;
+  filterKind: string;
+  setFilterKind: (value: string) => void;
+  filterSupplierId: string;
+  setFilterSupplierId: (value: string) => void;
+  filterSupplierCategoryId: string;
+  setFilterSupplierCategoryId: (value: string) => void;
+  filterCreatedByUserId: string;
+  setFilterCreatedByUserId: (value: string) => void;
+  filterVaultId: string;
+  setFilterVaultId: (value: string) => void;
+  suppliers?: InvoiceNamedEntity[] | null;
+  supplierCategories?: InvoiceNamedEntity[] | null;
+  creatorUsersForFilter?: InvoiceNamedEntity[] | null;
+  vaultsList?: InvoiceVaultFilterEntity[] | null;
+  showDayClose?: boolean;
+  showSaleKindFilter?: boolean;
+};
+
 export function InvoicesListFiltersToolbar({
   t,
   lang,
@@ -42,54 +74,29 @@ export function InvoicesListFiltersToolbar({
   vaultsList,
   showDayClose = true,
   showSaleKindFilter = true,
-}: any) {
-  const kindOptions = useMemo(() => {
-    const opts = [
-      { value: 'purchase', label: t('categoryTypes') },
-      { value: 'expense', label: t('categoryTypeExpense') },
-      { value: 'fixed_expense', label: t('fixedExpenseType') },
-      { value: 'hr_expense', label: t('invoiceKindHrExpense') },
-      { value: 'salary', label: t('totalSalary') },
-      { value: 'advance', label: t('quickAdvance') },
-    ];
-    if (showSaleKindFilter) {
-      opts.push({ value: 'sale', label: t('categoryTypeSale') });
-    }
-    return opts;
-  }, [t, showSaleKindFilter]);
+}: InvoicesListFiltersToolbarProps) {
+  const kindOptions = useMemo(
+    () => buildInvoiceKindFilterOptions(t, showSaleKindFilter),
+    [t, showSaleKindFilter],
+  );
 
   const supplierOptions = useMemo(
-    () =>
-      (suppliers || []).map((s: any) => ({
-        value: s.id,
-        label: (lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id,
-      })),
+    () => buildInvoiceSupplierFilterOptions(suppliers, lang),
     [suppliers, lang],
   );
 
   const supplierCategoryOptions = useMemo(
-    () =>
-      (supplierCategories || []).map((c: any) => ({
-        value: c.id,
-        label: (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || c.id,
-      })),
+    () => buildInvoiceSupplierCategoryFilterOptions(supplierCategories, lang),
     [supplierCategories, lang],
   );
 
-  const creatorOptions = useMemo(() => {
-    const users = (creatorUsersForFilter || []).map((u: any) => ({
-      value: u.id,
-      label: lang === 'en' ? u.nameEn || u.nameAr || u.email : u.nameAr || u.nameEn || u.email,
-    }));
-    return [{ value: '__none__', label: t('invoicesFilterCreatorUnrecorded') }, ...users];
-  }, [creatorUsersForFilter, lang, t]);
+  const creatorOptions = useMemo(
+    () => buildInvoiceCreatorFilterOptions(creatorUsersForFilter, lang, t),
+    [creatorUsersForFilter, lang, t],
+  );
 
   const vaultOptions = useMemo(
-    () =>
-      (vaultsList || []).map((v: any) => ({
-        value: v.id,
-        label: vaultDisplayName(v, lang) || v.id,
-      })),
+    () => buildInvoiceVaultFilterOptions(vaultsList, lang),
     [vaultsList, lang],
   );
 
@@ -109,7 +116,7 @@ export function InvoicesListFiltersToolbar({
           </Button>
         </div>
       )}
-      <div className="noorix-exec-filters noorix-exec-filters--scroll">
+      <FilterToolbar variant="execution" scroll>
         {showDayClose && (
           <Button
             size="sm"
@@ -146,7 +153,7 @@ export function InvoicesListFiltersToolbar({
           variant={filterHasNotesOnly ? 'primary' : 'ghost'}
           aria-pressed={filterHasNotesOnly}
           onClick={() => {
-            setFilterHasNotesOnly((v: any) => !v);
+            setFilterHasNotesOnly((value) => !value);
             setPage(1);
           }}
         >
@@ -154,7 +161,10 @@ export function InvoicesListFiltersToolbar({
         </Button>
         <Button
           size="sm"
-          onClick={() => setShowCancelled((v: any) => !v)}
+          onClick={() => {
+            setShowCancelled((value) => !value);
+            setPage(1);
+          }}
           style={
             showCancelled
               ? {
@@ -177,10 +187,10 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('filterByType')}
-          values={csvToValues(filterKind)}
+          values={csvToFilterValues(filterKind)}
           onChange={(vals) => {
-            setFilterKind(valuesToCsv(vals));
-            setUrlExtra((p: any) => ({ ...p, kind: '' }));
+            setFilterKind(filterValuesToCsv(vals));
+            setUrlExtra((previous) => ({ ...previous, kind: '' }));
             setPage(1);
           }}
           options={kindOptions}
@@ -192,9 +202,9 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('allSuppliers')}
-          values={csvToValues(filterSupplierId)}
+          values={csvToFilterValues(filterSupplierId)}
           onChange={(vals) => {
-            setFilterSupplierId(valuesToCsv(vals));
+            setFilterSupplierId(filterValuesToCsv(vals));
             setPage(1);
           }}
           options={supplierOptions}
@@ -206,9 +216,9 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('filterBySupplierCategory')}
-          values={csvToValues(filterSupplierCategoryId)}
+          values={csvToFilterValues(filterSupplierCategoryId)}
           onChange={(vals) => {
-            setFilterSupplierCategoryId(valuesToCsv(vals));
+            setFilterSupplierCategoryId(filterValuesToCsv(vals));
             setPage(1);
           }}
           options={supplierCategoryOptions}
@@ -226,9 +236,9 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('invoiceUserColumn')}
-          values={csvToValues(filterCreatedByUserId)}
+          values={csvToFilterValues(filterCreatedByUserId)}
           onChange={(vals) => {
-            setFilterCreatedByUserId(valuesToCsv(vals));
+            setFilterCreatedByUserId(filterValuesToCsv(vals));
             setPage(1);
           }}
           options={creatorOptions}
@@ -246,16 +256,16 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('invoiceVaultColumn')}
-          values={csvToValues(filterVaultId)}
+          values={csvToFilterValues(filterVaultId)}
           onChange={(vals) => {
-            setFilterVaultId(valuesToCsv(vals));
+            setFilterVaultId(filterValuesToCsv(vals));
             setPage(1);
           }}
           options={vaultOptions}
           emptyLabel={t('invoicesFilterVaultAll')}
           showClearAll
         />
-      </div>
+      </FilterToolbar>
     </>
   );
 }

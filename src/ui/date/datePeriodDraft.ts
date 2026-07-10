@@ -10,6 +10,7 @@ export type DatePeriodDraftFilter = {
   setMode: (mode: DatePeriodMode) => void;
   setSelYear: (year: number) => void;
   setSelMonth: (month: number) => void;
+  setSelQuarter: (quarter: number) => void;
   setSelDay: (day: string) => void;
   setRangeStart: (date: string) => void;
   setRangeEnd: (date: string) => void;
@@ -34,6 +35,7 @@ export function cloneDatePeriodState(state: DatePeriodState): DatePeriodState {
   return {
     ...state,
     mode: normalizeDatePeriodMode(state.mode),
+    selQuarter: state.selQuarter || Math.ceil((state.selMonth || 1) / 3),
     yearRangeStart: state.yearRangeStart || state.selYear,
     yearRangeEnd: state.yearRangeEnd || state.selYear,
   };
@@ -61,6 +63,7 @@ export function applyDatePeriodDraft(filter: DatePeriodDraftFilter, draft: DateP
   filter.setMode(normalizeDatePeriodMode(draft.mode));
   filter.setSelYear(draft.selYear);
   filter.setSelMonth(draft.selMonth);
+  filter.setSelQuarter(draft.selQuarter);
   filter.setSelDay(draft.selDay);
   filter.setRangeStart(draft.rangeStart);
   filter.setRangeEnd(draft.rangeEnd);
@@ -103,6 +106,18 @@ export function getDatePeriodModeChange(
         yearRangeEnd: draft.yearRangeEnd || year,
       },
       openPanel: 'year',
+    };
+  }
+
+  if (normalized === 'quarter') {
+    const quarter = draft.selQuarter || Math.ceil((draft.selMonth || now.month) / 3);
+    return {
+      patch: {
+        mode: normalized,
+        selYear: draft.selYear || now.year,
+        selQuarter: quarter,
+      },
+      openPanel: 'quarter',
     };
   }
 

@@ -10,7 +10,12 @@ import {
   nextOrdinalSystemFull,
   pruneSystemFullArchiveJobs,
 } from './backup-job-helpers.util';
+import {
+  buildSourceDatabaseFingerprint,
+  verifySystemFullArchiveDataParity,
+} from './backup-system-full-parity-verify.util';
 import { packSystemFullArchiveToDisk } from './backup-system-full-tar-pack.util';
+import { verifySystemFullTarGz } from './backup-system-full-restore.util';
 
 export type SystemFullArchiveRunContext = {
   prisma: PrismaService;
@@ -50,9 +55,15 @@ export async function runSystemFullArchiveJob(
   const baseName = `fullsys_${ts}_${job.id}`;
 
   try {
+    const sourceFingerprint = await buildSourceDatabaseFingerprint();
     const { finalAbs, finalRel, hasUploads } = await packSystemFullArchiveToDisk({ root, baseName });
 
     const hash = await sha256File(finalAbs);
+    const verifyResult = await verifySystemFullTarGz(finalAbs);
+    if (!verifyResult.ok) {
+      throw new Error(verifyResult.error || 'System full archive verification failed');
+    }
+
     const dup = await findDuplicateBackupJob(prisma, null, null, 'system_full', hash);
     if (dup && dup.id !== job.id) {
       await fs.unlink(finalAbs).catch(() => undefined);
@@ -68,6 +79,11 @@ export async function runSystemFullArchiveJob(
         },
       });
       return { jobId: job.id };
+    }
+
+    const parityReport = await verifySystemFullArchiveDataParity(finalAbs, sourceFingerprint);
+    if (!parityReport.ok) {
+      throw new Error(`System full archive data parity failed: ${parityReport.mismatches.slice(0, 5).join('; ')}`);
     }
 
     const st = await fs.stat(finalAbs);
@@ -94,9 +110,13 @@ export async function runSystemFullArchiveJob(
         externalUploaded,
         externalError,
         ordinal,
+        verifyOk: true,
+        verifyError: null,
+        verifiedAt: new Date(),
         report: {
           messageAr: 'أرشيف: قاعدة (pg_dump custom) + uploads إن وُجد',
           includesUploads: hasUploads,
+          dataParity: parityReport,
         },
       },
     });

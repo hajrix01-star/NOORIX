@@ -1,56 +1,40 @@
-﻿/**
- * ExpenseLineList — قائمة بنود المصاريف (جدول موحّد على كل العروض)
- */
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
-import { openPrintWindow } from '../../../utils/printUtils';
 import { fmt } from '../../../utils/format';
-import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, KebabMenu } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, FilterToolbar, SearchableOptionsPicker, usePrintPreview } from '../../../ui';
+import type { SmartTableColumn } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 import { monthlyAmountFromExpenseLine } from '../../Reports/costAccountingAppsFixedExpenseImport';
-import { expenseLineDisplayName, expenseLineKindShortLabel } from './expenseLineTableUtils';
+import type { ExpenseLineKind, ExpenseLineRecord } from '../../../types/api';
+import {
+  expenseCategoryDisplayName,
+  expenseLineDisplayName,
+  expenseLineKindLabel,
+  expenseSupplierDisplayName,
+} from '../expenseModels';
 
-/** عرض شهري/سنوي تقديري لبند ثابت */
-function monthlyAnnualForExpenseLineRow(line: { kind?: string; annualTotalAmount?: unknown } & Record<string, unknown>) {
-  if (!line || line.kind !== 'fixed_expense') return { monthly: null as number | null, annual: null as number | null };
-  const m = monthlyAmountFromExpenseLine(line);
-  if (m == null || m.lte(0)) return { monthly: null, annual: null };
-  const annDbRaw = line.annualTotalAmount;
-  const annDb = annDbRaw != null && annDbRaw !== '' ? Number(annDbRaw) : Number.NaN;
-  const annual = Number.isFinite(annDb) && annDb > 0 ? annDb : m.mul(12).toNumber();
-  return { monthly: m.toNumber(), annual };
-}
+type ExpenseLineListProps = {
+  embedded?: boolean;
+  expenseLines: ExpenseLineRecord[];
+  isLoading: boolean;
+  isError: boolean;
+  filterKind: ExpenseLineKind | '';
+  onFilterKindChange: (kind: ExpenseLineKind | '') => void;
+  onCreateLine: () => void;
+  onRefresh: () => void;
+  onLineClick: (line: ExpenseLineRecord) => void;
+};
 
-function ExpenseLineMoneyCell({ amount }: { amount: number | null }) {
-  if (amount == null) {
-    return <span className="nx-expense-line-cell nx-expense-line-cell--muted">—</span>;
-  }
-  return (
-    <span dir="ltr" className="nx-expense-line-money inline-flex max-w-full items-baseline justify-end gap-0.5">
-      <FmtNum n={amount} className="nx-cell-num nx-expense-line-cell font-semibold tabular-nums" />
-      <span className="nx-sar nx-expense-line-cell-sar">SR</span>
-    </span>
-  );
-}
-
-function ExpenseLineTextCell({ value, muted }: { value: string; muted?: boolean }) {
-  const text = value && value !== '—' ? value : '—';
-  return (
-    <span
-      className={cn(
-        'nx-expense-line-cell block min-w-0 truncate',
-        muted || text === '—' ? 'nx-expense-line-cell--muted' : 'text-noorix-text',
-      )}
-      title={text !== '—' ? text : undefined}
-    >
-      {text}
-    </span>
-  );
-}
+type ExpenseLineTableRow = ExpenseLineRecord & {
+  displayName: string;
+  categoryName: string;
+  supplierName: string;
+  monthlyAmount: number | null;
+  annualAmount: number | null;
+};
 
 const REFRESH_ICON = (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
@@ -61,22 +45,61 @@ const REFRESH_ICON = (
   </svg>
 );
 
+function monthlyAnnualForExpenseLineRow(line: ExpenseLineRecord) {
+  if (line.kind !== 'fixed_expense') return { monthly: null, annual: null };
+  const monthly = monthlyAmountFromExpenseLine(line);
+  if (monthly == null || monthly.lte(0)) return { monthly: null, annual: null };
+  const annualFromRecord = line.annualTotalAmount != null && line.annualTotalAmount !== '' ? Number(line.annualTotalAmount) : Number.NaN;
+  const annual = Number.isFinite(annualFromRecord) && annualFromRecord > 0 ? annualFromRecord : monthly.mul(12).toNumber();
+  return { monthly: monthly.toNumber(), annual };
+}
+
+function ExpenseLineMoneyCell({ amount }: { amount: number | null }) {
+  if (amount == null) return <span className="nx-expense-line-cell nx-expense-line-cell--muted">-</span>;
+  return (
+    <span dir="ltr" className="nx-expense-line-money inline-flex max-w-full items-baseline justify-end gap-0.5">
+      <FmtNum n={amount} className="nx-cell-num nx-expense-line-cell font-semibold tabular-nums" />
+      <span className="nx-sar nx-expense-line-cell-sar">SR</span>
+    </span>
+  );
+}
+
+function ExpenseLineTextCell({ value, muted }: { value: string; muted?: boolean }) {
+  const text = value && value !== '-' ? value : '-';
+  return (
+    <span
+      className={cn(
+        'nx-expense-line-cell block min-w-0 truncate',
+        muted || text === '-' ? 'nx-expense-line-cell--muted' : 'text-noorix-text',
+      )}
+      title={text !== '-' ? text : undefined}
+    >
+      {text}
+    </span>
+  );
+}
+
 export default function ExpenseLineList({
   embedded,
   expenseLines,
   isLoading,
+  isError,
   filterKind,
   onFilterKindChange,
   onCreateLine,
   onRefresh,
   onLineClick,
-  onEditLine,
-  onDeleteLine,
-}: any) {
+}: ExpenseLineListProps) {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies = [] } = useApp();
-  const activeCompany = companies.find((c: any) => c.id === activeCompanyId);
+  const activeCompany = companies.find((company) => company.id === activeCompanyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
+  const companyLogoUrl = String(activeCompany?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('expenseLinesPrintTitle'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
 
   const kindFilterOptions = useMemo(
@@ -87,16 +110,29 @@ export default function ExpenseLineList({
     [t],
   );
 
-  const columns = useMemo(() => [
+  const tableData = useMemo<ExpenseLineTableRow[]>(
+    () =>
+      expenseLines.map((line) => {
+        const { monthly, annual } = monthlyAnnualForExpenseLineRow(line);
+        return {
+          ...line,
+          displayName: expenseLineDisplayName(line, lang),
+          categoryName: expenseCategoryDisplayName(line.category, lang),
+          supplierName: expenseSupplierDisplayName(line.supplier, lang),
+          monthlyAmount: monthly,
+          annualAmount: annual,
+        };
+      }),
+    [expenseLines, lang],
+  );
+
+  const columns = useMemo<SmartTableColumn<ExpenseLineTableRow>[]>(() => [
     {
       key: 'displayName',
+      size: 'name',
       label: t('expenseLineNameCol'),
       sortable: true,
-      width: '22%',
-      minWidth: '11em',
-      cellClassName: 'nx-col-expense-name',
-      align: 'start',
-      render: (_v: any, row: any) => (
+      render: (_value, row) => (
         <Button
           variant="raw"
           size="auto"
@@ -111,18 +147,16 @@ export default function ExpenseLineList({
     },
     {
       key: 'kind',
+      size: 'document',
       label: t('expenseLineKindCol'),
       sortable: true,
-      minWidth: '7.5em',
       shrink: true,
-      cellClassName: 'nx-col-expense-kind',
-      align: 'center',
-      render: (v: any) => {
-        const { color } = Badge.fromStatus(v, kindBadgeMap);
+      render: (value) => {
+        const { color } = Badge.fromStatus(value, kindBadgeMap);
         return (
           <div className="flex justify-center">
             <Badge color={color} size="sm" className="whitespace-nowrap">
-              {expenseLineKindShortLabel(v, t)}
+              {expenseLineKindLabel(String(value), lang)}
             </Badge>
           </div>
         );
@@ -130,141 +164,67 @@ export default function ExpenseLineList({
     },
     {
       key: 'categoryName',
+      size: 'name',
       label: t('category'),
       sortable: true,
-      width: '14%',
-      minWidth: '8.5em',
-      cellClassName: 'nx-col-expense-text',
-      align: 'start',
-      render: (v: any) => <ExpenseLineTextCell value={v} />,
+      render: (value) => <ExpenseLineTextCell value={String(value || '-')} />,
     },
     {
       key: 'supplierName',
+      size: 'supplier',
       label: t('supplier'),
       sortable: true,
-      width: '14%',
-      minWidth: '8.5em',
-      cellClassName: 'nx-col-expense-text',
-      align: 'start',
-      render: (v: any) => <ExpenseLineTextCell value={v} />,
+      render: (value) => <ExpenseLineTextCell value={String(value || '-')} />,
     },
     {
       key: 'serviceNumber',
+      size: 'code-sm',
       label: t('expenseLineServiceNumberCol'),
-      width: '1%',
-      minWidth: '4.75em',
-      maxWidth: '13ch',
       shrink: true,
-      cellClassName: 'nx-col-expense-service',
-      align: 'center',
-      render: (v: any) => (
+      render: (value) => (
         <span
           dir="ltr"
           className="nx-cell-num nx-expense-line-cell mx-auto block max-w-full min-w-0 truncate text-center tabular-nums text-noorix-text"
-          title={v ? String(v) : undefined}
+          title={value ? String(value) : undefined}
         >
-          {v || '—'}
+          {String(value || '-')}
         </span>
       ),
     },
     {
       key: 'monthlyAmount',
-      label: (
-        <span className="nx-expense-line-th-money" title={t('expenseLineListMonthlyAmount')}>
-          {t('expenseLineMonthlyColShort')}
-        </span>
-      ),
+      size: 'money-sm',
+      label: <span className="nx-expense-line-th-money" title={t('expenseLineListMonthlyAmount')}>{t('expenseLineMonthlyColShort')}</span>,
       shrink: true,
-      cellClassName: 'nx-col-expense-money',
       numeric: true,
-      render: (_: unknown, row: any) => (
-        <ExpenseLineMoneyCell amount={monthlyAnnualForExpenseLineRow(row).monthly} />
-      ),
+      render: (_value, row) => <ExpenseLineMoneyCell amount={row.monthlyAmount} />,
     },
     {
       key: 'annualAmount',
-      label: (
-        <span className="nx-expense-line-th-money" title={t('expenseLineListAnnualAmount')}>
-          {t('expenseLineAnnualColShort')}
-        </span>
-      ),
+      size: 'money-md',
+      label: <span className="nx-expense-line-th-money" title={t('expenseLineListAnnualAmount')}>{t('expenseLineAnnualColShort')}</span>,
       shrink: true,
-      cellClassName: 'nx-col-expense-money',
       numeric: true,
-      render: (_: unknown, row: any) => (
-        <ExpenseLineMoneyCell amount={monthlyAnnualForExpenseLineRow(row).annual} />
-      ),
+      render: (_value, row) => <ExpenseLineMoneyCell amount={row.annualAmount} />,
     },
-    {
-      key: 'actions',
-      label: t('actions'),
-      minWidth: '3.25em',
-      shrink: true,
-      cellClassName: 'nx-col-expense-actions',
-      align: 'center',
-      render: (_: any, row: any) => (
-        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-          <KebabMenu
-            ariaLabel={t('actions')}
-            items={[
-              {
-                key: 'open',
-                label: t('view'),
-                onClick: () => onLineClick(row),
-              },
-              {
-                key: 'edit',
-                label: t('edit'),
-                style: { color: 'var(--noorix-accent-green)' },
-                onClick: () => onEditLine?.(row),
-              },
-              {
-                key: 'delete',
-                label: t('delete'),
-                style: { color: 'var(--noorix-accent-red)' },
-                onClick: () => onDeleteLine?.(row),
-              },
-            ]}
-          />
-        </div>
-      ),
-    },
-  ], [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, lang]);
-
-  const tableData = useMemo(
-    () =>
-      expenseLines.map((line: any) => ({
-        ...line,
-        displayName: expenseLineDisplayName(line, lang),
-        categoryName:
-          (lang === 'en'
-            ? line.category?.nameEn || line.category?.nameAr
-            : line.category?.nameAr || line.category?.nameEn) || '—',
-        supplierName:
-          (lang === 'en'
-            ? line.supplier?.nameEn || line.supplier?.nameAr
-            : line.supplier?.nameAr || line.supplier?.nameEn) || '—',
-      })),
-    [expenseLines, lang],
-  );
+  ], [onLineClick, kindBadgeMap, t, lang]);
 
   const exportData = useMemo(
     () =>
-      tableData.map((r: any) => {
-        const { monthly, annual } = monthlyAnnualForExpenseLineRow(r);
-        const kindLabel = expenseLineKindShortLabel(r.kind, t);
-        const cat = r.categoryName && r.categoryName !== '—' ? r.categoryName : '';
+      tableData.map((row) => {
+        const kindLabel = expenseLineKindLabel(row.kind, lang);
+        const category = row.categoryName && row.categoryName !== '-' ? row.categoryName : '';
         return {
-          [t('expenseLineNameCol')]: r.displayName,
-          [t('expenseLineKindCol')]: cat ? `${kindLabel} / ${cat}` : kindLabel,
-          [t('category')]: r.categoryName,
-          [t('supplier')]: r.supplierName,
-          [t('expenseLineServiceNumberCol')]: r.serviceNumber || '—',
-          [t('expenseLineListMonthlyAmount')]: monthly != null ? fmt(monthly) : '—',
-          [t('expenseLineListAnnualAmount')]: annual != null ? fmt(annual) : '—',
+          [t('expenseLineNameCol')]: row.displayName,
+          [t('expenseLineKindCol')]: category ? `${kindLabel} / ${category}` : kindLabel,
+          [t('category')]: row.categoryName,
+          [t('supplier')]: row.supplierName,
+          [t('expenseLineServiceNumberCol')]: row.serviceNumber || '-',
+          [t('expenseLineListMonthlyAmount')]: row.monthlyAmount != null ? fmt(row.monthlyAmount) : '-',
+          [t('expenseLineListAnnualAmount')]: row.annualAmount != null ? fmt(row.annualAmount) : '-',
         };
       }),
-    [tableData, t],
+    [tableData, t, lang],
   );
 
   const getRowClassName = useCallback(() => 'nx-expense-line-tr', []);
@@ -272,59 +232,62 @@ export default function ExpenseLineList({
   function handlePrint() {
     const thMonthly = t('expenseLineListMonthlyAmount');
     const thAnnual = t('expenseLineListAnnualAmount');
-    const printTitle = t('expenseLinesPrintTitle') || 'بنود المصاريف';
-    openPrintWindow({
+    const printTitle = t('expenseLinesPrintTitle');
+    openPrintDocumentPreview({
       title: printTitle,
       companyName,
+      logoUrl: companyLogoUrl,
       subtitle: printTitle,
       body: buildPrintRecordsTableHtml({
         records: exportData,
-        emptyMessage: 'لا توجد بيانات',
+        emptyMessage: t('noData'),
         numericKeys: [thMonthly, thAnnual],
       }),
     });
   }
 
+  if (isError) {
+    return (
+      <ScreenShell embedded={!!embedded} className={cn(embedded && 'pt-4')}>
+        <div className="noorix-surface-card nx-empty-state text-noorix-red">{t('loadingError')}</div>
+      </ScreenShell>
+    );
+  }
+
   return (
     <ScreenShell embedded={!!embedded} className={cn(embedded && 'pt-4')}>
-      <div className="mb-3 flex min-h-11 min-w-0 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
-        <div className="nx-toolbar min-w-0 max-w-full flex-1 overflow-x-auto pb-0.5">
-          <div className="w-full min-w-0 sm:w-[min(100%,11rem)] shrink-0">
-            <SearchableOptionsPicker
-              size="sm"
-              className="w-full"
-              aria-label={t('allTypes')}
-              allowEmpty
-              emptyValue=""
-              emptyLabel={t('allTypes')}
-              value={filterKind}
-              onChange={(v) => onFilterKindChange(v)}
-              options={kindFilterOptions}
-            />
-          </div>
-          <Button size="sm" className="shrink-0 whitespace-nowrap" icon={REFRESH_ICON} onClick={onRefresh}>
-            {t('refresh')}
+      {printPreviewModal}
+      <FilterToolbar
+        className="mb-3 min-h-11 min-w-0 border-b border-noorix-border pb-3"
+        filtersClassName="nx-toolbar min-w-0 max-w-full flex-1 overflow-x-auto pb-0.5"
+        actions={(
+          <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={onCreateLine}>
+            {t('addExpenseLine')}
           </Button>
-          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!tableData.length}>
-            {t('print')}
-          </Button>
-          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>
-            {t('exportExcel')}
-          </Button>
-          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: t('expenseLinesPrintTitle'), filename: 'expense-lines.pdf' })} disabled={!tableData.length}>
-            {t('exportPdf')}
-          </Button>
+        )}
+      >
+        <div className="w-full min-w-0 sm:w-[min(100%,11rem)] shrink-0">
+          <SearchableOptionsPicker
+            size="sm"
+            className="w-full"
+            aria-label={t('allTypes')}
+            allowEmpty
+            emptyValue=""
+            emptyLabel={t('allTypes')}
+            value={filterKind}
+            onChange={(value) => onFilterKindChange(value === 'fixed_expense' || value === 'expense' ? value : '')}
+            options={kindFilterOptions}
+          />
         </div>
-        <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={onCreateLine}>
-          {t('addExpenseLine')}
-        </Button>
-      </div>
+        <Button size="sm" className="shrink-0 whitespace-nowrap" icon={REFRESH_ICON} onClick={onRefresh}>{t('refresh')}</Button>
+        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>{t('exportExcel')}</Button>
+        <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!tableData.length}>{t('print')} / PDF</Button>
+      </FilterToolbar>
 
       <div className="nx-expense-line-table-wrap min-w-0">
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth="2.25em"
           innerPadding={8}
           columns={columns}
           data={tableData}
@@ -333,10 +296,9 @@ export default function ExpenseLineList({
           badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{tableData.length}</span>}
           showSearchInHeader={false}
           emptyMessage={t('expenseLinesEmptyState')}
-          keyExtractor={(row: any) => row.id}
+          keyExtractor={(row) => row.id}
           getRowClassName={getRowClassName}
           tableId="expense-lines"
-          tableLayout="auto"
           tableMinWidth="62em"
           stickyActionColumn
         />

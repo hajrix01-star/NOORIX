@@ -6,6 +6,7 @@ import {
 } from '../../../../services/api';
 import { bankKeys } from '../../../../services/queryKeys';
 import { normClassifications } from '../utils/bankCategoryTreeNormalize';
+import type { BankClassificationRule, BankTreeCategory } from '../bankCategoryTree.types';
 
 export type CompanyOption = {
   id?: string;
@@ -35,14 +36,14 @@ export function useBankCategoryTreeData(
   );
 
   const treeKey = bankKeys.treeCategories(companyId ?? '');
-  const { data: categories = [], isLoading } = useApiListQuery<any>({
+  const { data: categories = [], isLoading } = useApiListQuery<BankTreeCategory>({
     queryKey: treeKey,
     queryFn: () => bankStatementTreeCategoriesList(companyId || ''),
     enabled: !!companyId,
     fallbackMessage: 'فشل التحميل',
   });
 
-  const { data: flatRules = [] } = useApiListQuery<any>({
+  const { data: flatRules = [] } = useApiListQuery<BankClassificationRule>({
     queryKey: bankKeys.classificationRules(companyId ?? ''),
     queryFn: () => bankStatementClassificationRulesList(companyId || ''),
     enabled: !!companyId,
@@ -50,47 +51,37 @@ export function useBankCategoryTreeData(
   });
 
   const activeFlat = useMemo(
-    () => (flatRules as Array<{ isActive?: boolean }>).filter((r) => r.isActive !== false),
+    () => flatRules.filter((r) => r.isActive !== false),
     [flatRules],
   );
 
   const sortedCategories = useMemo(
     () =>
-      [...categories].filter((c: { isActive?: boolean }) => c.isActive !== false).sort(
-        (a: { sortOrder?: number }, b: { sortOrder?: number }) =>
-          (a.sortOrder ?? 100) - (b.sortOrder ?? 100),
-      ),
+      [...categories]
+        .filter((c) => c.isActive !== false)
+        .sort((a, b) => (a.sortOrder ?? 100) - (b.sortOrder ?? 100)),
     [categories],
   );
 
   const inactiveCategories = useMemo(
-    () => (categories as Array<{ isActive?: boolean }>).filter((c) => c.isActive === false),
+    () => categories.filter((c) => c.isActive === false),
     [categories],
   );
 
   const totalKeywords = useMemo(() => {
-    return (categories as unknown[]).reduce((sum: number, c: unknown) => {
-      const cls = normClassifications((c as { classifications?: unknown }).classifications);
+    return categories.reduce((sum, c) => {
+      const cls = normClassifications(c.classifications);
       return sum + cls.reduce((s, cl) => s + (cl.keywords?.length || 0), 0);
     }, 0);
   }, [categories]);
 
   const totalClassifications = useMemo(() => {
-    return (categories as unknown[]).reduce(
-      (sum: number, c: unknown) =>
-        sum + normClassifications((c as { classifications?: unknown }).classifications).length,
-      0,
-    );
+    return categories.reduce((sum, c) => sum + normClassifications(c.classifications).length, 0);
   }, [categories]);
 
   const groupedForMigrate = useMemo(() => {
     const groups: Record<string, MigrateGroup> = {};
-    for (const rule of activeFlat as Array<{
-      categoryName?: string;
-      transactionType?: string | null;
-      transactionSide?: string;
-      keyword?: string;
-    }>) {
+    for (const rule of activeFlat) {
       const cat = rule.categoryName || t('bankTreeUncategorized');
       if (!groups[cat]) {
         groups[cat] = {

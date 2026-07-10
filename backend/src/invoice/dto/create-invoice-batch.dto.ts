@@ -25,12 +25,10 @@ const INVOICE_KINDS = [
 ] as const;
 
 export class BatchInvoiceItemDto {
-  /** اختياري للفواتير الحكومية/الخدمية (fixed_expense) — عند عدم وجود مورد تُستخدم notes */
   @IsOptional()
   @IsString()
   supplierId?: string;
 
-  /** بند مصروف — عند التحديد يُستمد منه supplierId و categoryId و kind */
   @IsOptional()
   @IsString()
   expenseLineId?: string;
@@ -39,12 +37,10 @@ export class BatchInvoiceItemDto {
   @IsString()
   categoryId?: string;
 
-  /** سيريال — يُولَّد تلقائياً. إن أُرسل يُستخدم كـ supplierInvoiceNumber للتوافق */
   @IsOptional()
   @IsString()
   invoiceNumber?: string;
 
-  /** رقم فاتورة المورد — مطلوب للمشتريات والمصروفات */
   @IsOptional()
   @IsString()
   supplierInvoiceNumber?: string;
@@ -67,19 +63,16 @@ export class BatchInvoiceItemDto {
   @IsDateString()
   invoiceDate?: string;
 
-  /** حساب المدين — من الفئة المختارة (للربط بـ P&L) */
   @IsOptional()
   @IsString()
   debitAccountId?: string;
 
-  /** ملاحظة / تفاصيل — مطلوب للفواتير الحكومية/الخدمية بدون مورد */
   @Allow()
   @IsOptional()
   @IsString()
   @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
-  /** متابعة ضمان (مشتريات فقط) — بدون مدة؛ تُكمَّل في قسم الضمان */
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
@@ -102,13 +95,11 @@ export class CreateInvoiceBatchDto {
   @Type(() => BatchInvoiceItemDto)
   items: BatchInvoiceItemDto[];
 
-  /** ملاحظة الدفعة — تُضاف لكل فاتورة بعد ملاحظة السطر (إن وُجدت)، مفصولاً بـ « + » */
   @IsOptional()
   @IsString()
   @MaxLength(4000)
   batchNotes?: string;
 
-  /** مفتاح عدم التكرار — يُرسَل من الـ Frontend لمنع الحفظ المزدوج */
   @IsOptional()
   @IsString()
   idempotencyKey?: string;

@@ -1,4 +1,4 @@
-import type { ApiParsedResult } from '../../../types/api';
+import type { ApiParsedResult, OwnerOverviewData } from '../../../types/api';
 import { apiGet } from '../../core/apiHttp';
 
 export interface OwnerOverviewParams {
@@ -11,7 +11,7 @@ export interface OwnerOverviewParams {
  * GET /api/v1/owner/overview
  * P&L + مبيعات يومية لعدة شركات في طلب واحد.
  */
-export async function getOwnerOverview(p: OwnerOverviewParams): Promise<ApiParsedResult> {
+export async function getOwnerOverview(p: OwnerOverviewParams): Promise<ApiParsedResult<OwnerOverviewData>> {
   const searchParams = new URLSearchParams();
   for (const id of p.companyIds) searchParams.append('companyIds', id);
   searchParams.set('year', String(p.year));

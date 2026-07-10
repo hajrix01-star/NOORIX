@@ -57,11 +57,11 @@ export async function findOneWithTransactions(
     prisma.ledgerEntry.count({ where }),
     prisma.ledgerEntry.aggregate({
       _sum: { amount: true },
-      where: { companyId, debitAccountId: vault.accountId, status: 'active' },
+      where: { companyId, debitAccountId: vault.accountId, status: 'active', ...dateFilter },
     }),
     prisma.ledgerEntry.aggregate({
       _sum: { amount: true },
-      where: { companyId, creditAccountId: vault.accountId, status: 'active' },
+      where: { companyId, creditAccountId: vault.accountId, status: 'active', ...dateFilter },
     }),
   ]);
 
@@ -215,6 +215,14 @@ export async function findOneWithTransactions(
       totalOut: totalOut.toNumber(),
       balance: balance.toNumber(),
     },
-    transactions: { items: enrichedItems, total, page, pageSize },
+    transactions: {
+      items: enrichedItems,
+      total,
+      page,
+      pageSize,
+      periodTotalIn: totalIn.toNumber(),
+      periodTotalOut: totalOut.toNumber(),
+      periodBalance: balance.toNumber(),
+    },
   };
 }

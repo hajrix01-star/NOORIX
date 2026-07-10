@@ -63,14 +63,14 @@ function getBalanceSource(advance: AdvanceLike): AdvanceLike {
   };
 }
 
-export function normalizeAdvance<T extends Record<string, any>>(advance: T): T & AdvanceBalanceParts {
+export function normalizeAdvance<T extends Record<string, unknown>>(advance: T): T & AdvanceBalanceParts {
   return {
     ...advance,
     ...getAdvanceBalanceParts(getBalanceSource(advance)),
   };
 }
 
-export function normalizeAdvances<T extends Record<string, any>>(advances: T[] | null | undefined): Array<T & AdvanceBalanceParts> {
+export function normalizeAdvances<T extends Record<string, unknown>>(advances: T[] | null | undefined): Array<T & AdvanceBalanceParts> {
   return (advances ?? []).map((advance) => normalizeAdvance(advance));
 }
 

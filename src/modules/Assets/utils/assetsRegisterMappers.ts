@@ -1,55 +1,38 @@
 import { toYmd } from '../../../utils/saudiDate';
-import type { AssetRegisterListItem, PendingWarrantyInvoiceRow } from '../types';
+import {
+  assetExpenseLineLabel,
+  assetInvoiceKindLabel,
+  assetSupplierDisplayName,
+} from '../assetsRegisterModel';
 
-export function formatAssetDate(iso: unknown): string {
-  if (!iso) return '—';
-  const s = toYmd(iso);
-  return s || '—';
+export function formatAssetDate(iso: string | Date | null | undefined): string {
+  if (!iso) return '-';
+  const value = toYmd(iso);
+  return value || '-';
 }
 
-export function getSupplierDisplayName(
-  supplier: { nameAr?: string; nameEn?: string } | null | undefined,
-  lang: string,
-): string {
-  if (!supplier) return '—';
-  return lang === 'en'
-    ? supplier.nameEn || supplier.nameAr || '—'
-    : supplier.nameAr || supplier.nameEn || '—';
+export function formatWarrantyDuration(months: number | null | undefined, lang: string): string {
+  if (months == null || !Number.isFinite(months) || months <= 0) return '-';
+  if (lang === 'en') {
+    if (months % 12 === 0) {
+      const years = months / 12;
+      return years === 1 ? '1 year' : `${years} years`;
+    }
+    return months === 1 ? '1 month' : `${months} months`;
+  }
+  if (months % 12 === 0) {
+    const years = months / 12;
+    if (years === 1) return 'سنة';
+    if (years === 2) return 'سنتان';
+    return `${years} سنوات`;
+  }
+  if (months === 1) return 'شهر';
+  if (months === 2) return 'شهران';
+  return `${months} شهر`;
 }
 
-export function getInvoiceKindLabel(
-  kind: string | undefined,
-  t: (k: string) => string,
-): string {
-  if (kind === 'purchase') return t('purchaseType');
-  if (kind === 'fixed_expense') return t('fixedExpenseType');
-  if (kind === 'expense') return t('expenseType');
-  return String(kind ?? '');
-}
-
-export function getExpenseLineLabel(
-  line: { nameAr?: string; nameEn?: string } | undefined,
-  lang: string,
-): string {
-  if (!line) return '';
-  return lang === 'en' ? line.nameEn || line.nameAr || '' : line.nameAr || line.nameEn || '';
-}
-
-export type RegisterListResponse = {
-  items?: AssetRegisterListItem[];
-  total?: number;
-  sumAcquisitionCostAll?: string;
+export {
+  assetExpenseLineLabel as getExpenseLineLabel,
+  assetInvoiceKindLabel as getInvoiceKindLabel,
+  assetSupplierDisplayName as getSupplierDisplayName,
 };
-
-export function mapRegisterListResponse(data: RegisterListResponse | undefined) {
-  return {
-    items: data?.items ?? [],
-    total: data?.total ?? 0,
-    sumAll: data?.sumAcquisitionCostAll ?? '0',
-  };
-}
-
-export function mapPendingList(data: unknown): PendingWarrantyInvoiceRow[] {
-  if (!Array.isArray(data)) return [];
-  return data as PendingWarrantyInvoiceRow[];
-}

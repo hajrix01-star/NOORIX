@@ -1,13 +1,16 @@
-﻿/**
+/**
  * Batch entry for supplier invoices: table layout, bookmarks, compact summary.
  */
 import React, { useMemo } from 'react';
 import { ScreenTabs, ScreenShell } from '../../ui';
+import { usePrintPreview } from '../../ui';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../ui/date';
 import { useIsNarrow700 } from '../../ui';
+import { buildPrintTableHtml } from '../../utils/printTableHtml';
 import { getPurchaseBatchTabs } from './batch/constants';
+import { purchaseBatchDisplayName } from './batch/purchaseBatchDisplayModel';
 import { usePurchasesBatchState } from './batch/hooks/usePurchasesBatchState';
 import { usePurchasesBatchData } from './batch/hooks/usePurchasesBatchData';
 import { usePurchasesBatchActions } from './batch/hooks/usePurchasesBatchActions';
@@ -19,10 +22,19 @@ import PurchasesBatchTable from './batch/components/PurchasesBatchTable';
 import PurchasesBatchModals from './batch/components/PurchasesBatchModals';
 
 export default function PurchasesBatchScreen() {
-  const { activeCompanyId, language } = useApp();
+  const { activeCompanyId, language, companies } = useApp();
   const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
+  const activeCompany = companies?.find((company) => company.id === activeCompanyId);
+  const companyName = lang === 'en'
+    ? (activeCompany?.nameEn || activeCompany?.nameAr || '')
+    : (activeCompany?.nameAr || activeCompany?.nameEn || '');
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('print'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const state = usePurchasesBatchState();
   const data = usePurchasesBatchData({
@@ -58,14 +70,64 @@ export default function PurchasesBatchScreen() {
   const batchEntryNarrow = useIsNarrow700();
 
   const purchaseBatchTabItems = useMemo(
-    () => getPurchaseBatchTabs(t).map((tab: any) => ({ id: tab.id, label: tab.icon ? <>{tab.icon} {tab.label}</> : tab.label })),
+    () =>
+      getPurchaseBatchTabs(t).map((tab) => ({
+        id: tab.id,
+        label: tab.icon ? (
+          <>
+            {tab.icon} {tab.label}
+          </>
+        ) : (
+          tab.label
+        ),
+      })),
     [t],
   );
 
   const hasCompany = !!companyId;
+  const handlePrintCurrentDraftBatch = () => {
+    if (data.summary.count === 0) return;
+    const supplierById = new Map(data.suppliers.map((supplier) => [supplier.id, supplier]));
+    openPrintDocumentPreview({
+      title: t('print'),
+      companyName,
+      logoUrl: String(activeCompany?.logoUrl || '').trim(),
+      subtitle: dateFilter.label,
+      landscape: true,
+      body: buildPrintTableHtml({
+        columns: [
+          { key: 'index', header: '#' },
+          { key: 'invoiceNumber', header: t('documentNumber') },
+          { key: 'supplier', header: t('supplier') },
+          { key: 'kind', header: t('kind') },
+          { key: 'total', header: t('total') },
+          { key: 'date', header: t('date') },
+          { key: 'notes', header: t('notes') },
+        ],
+        rows: state.rows
+          .filter((row) => row.invoiceNumber || row.supplierId || row.totalInclusive)
+          .map((row, index) => ({
+            index: index + 1,
+            invoiceNumber: row.invoiceNumber || '-',
+            supplier: purchaseBatchDisplayName(supplierById.get(row.supplierId) || null, lang),
+            kind: row.kind === 'purchase' ? t('purchaseType') : t('expenseType'),
+            total: row.totalInclusive || '0',
+            date: row.invoiceDate || state.batchDate,
+            notes: row.notes || '',
+          })),
+        footerRows: [[
+          { value: t('totalSum', data.summary.count), colSpan: 4 },
+          { value: `${data.summary.total.toNumber().toLocaleString('en', { maximumFractionDigits: 2 })} SR` },
+          { value: '' },
+          { value: '' },
+        ]],
+      }),
+    });
+  };
 
   return (
     <ScreenShell className="w-full">
+      {printPreviewModal}
       <PurchasesBatchHeader />
 
       {!hasCompany && (
@@ -119,6 +181,7 @@ export default function PurchasesBatchScreen() {
                     || data.activeVaults.length === 0
                   }
                   onSave={() => actions.saveMutation.mutate(undefined)}
+                  onPrint={handlePrintCurrentDraftBatch}
                   t={t}
                 />
               </PurchasesBatchToolbar>
@@ -151,9 +214,7 @@ export default function PurchasesBatchScreen() {
                 statusBadgeMap={data.statusBadgeMap}
                 batchActionLoading={state.batchActionLoading}
                 openBatchWithInvoices={actions.openBatchWithInvoices}
-                handleCancelBatch={actions.handleCancelBatch}
                 setPrintingBatch={state.setPrintingBatch}
-                setEditingBatch={state.setEditingBatch}
                 activeOnlyLength={data.activeOnly.length}
                 totalNet={data.totalNet}
                 totalTax={data.totalTax}
@@ -167,12 +228,27 @@ export default function PurchasesBatchScreen() {
       <PurchasesBatchModals
         printingBatch={state.printingBatch}
         editingBatch={state.editingBatch}
+        cancellingBatch={state.cancellingBatch}
         suppliers={data.suppliers}
         companyId={companyId}
         vatRateDecimal={data.vatRateDecimal}
         onClosePrint={() => state.setPrintingBatch(null)}
         onCloseEdit={() => state.setEditingBatch(null)}
+        onCloseCancel={() => state.setCancellingBatch(null)}
+        onEditPrintedBatch={(batch) => {
+          state.setPrintingBatch(null);
+          state.setEditingBatch(batch);
+        }}
+        onCancelPrintedBatch={(batch) => {
+          state.setPrintingBatch(null);
+          state.setCancellingBatch(batch);
+        }}
         onSaveInvoice={actions.saveInvoiceEdit}
+        onConfirmCancel={() => {
+          if (!state.cancellingBatch) return Promise.resolve();
+          return actions.handleCancelBatch(state.cancellingBatch, state.setEditingBatch)
+            .then(() => state.setCancellingBatch(null));
+        }}
       />
     </ScreenShell>
   );

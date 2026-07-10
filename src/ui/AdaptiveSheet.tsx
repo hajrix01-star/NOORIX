@@ -5,7 +5,7 @@ import { NOORIX_BREAKPOINTS, useAdaptiveSheetNarrow } from './responsive';
 
 export const ADAPTIVE_SHEET_BREAKPOINT_PX = NOORIX_BREAKPOINTS.adaptiveSheet;
 
-function drawerSizeFromProp(size: any) {
+function drawerSizeFromProp(size: AdaptiveSheetProps['size']) {
   if (size === '2xl') return 'xl';
   return size;
 }

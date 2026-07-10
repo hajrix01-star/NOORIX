@@ -1,106 +1,119 @@
-﻿/**
- * BatchPrintSheet — طباعة احترافية لدفعة الفواتير
- * عند الطباعة: يعرض الجدول والملخص فقط — بدون أزرار أو عناصر خارجية
- */
-import React, { useEffect } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Modal, FmtNum } from '../../../ui';
+import { Button, PrintPreviewModal } from '../../../ui';
+import { useApp } from '../../../context/AppContext';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
+import { buildPrintTableHtml } from '../../../utils/printTableHtml';
+import { purchaseBatchDisplayName } from '../batch/purchaseBatchDisplayModel';
+import { toPurchaseBatchFiniteNumber } from '../batch/purchaseBatchNumberModel';
+import type { PurchaseBatchInvoice, PurchaseBatchSummaryRow } from '../batch/purchaseBatchTypes';
 
-export function BatchPrintSheet({ batch, onClose }: any) {
-  const { t, lang } = useTranslation();
-  useEffect(() => {
-    const timer = setTimeout(() => window.print(), 300);
-    return () => clearTimeout(timer);
-  }, []);
+export type BatchPrintSheetProps = {
+  batch: PurchaseBatchSummaryRow;
+  onClose: () => void;
+  onEdit: () => void;
+  onCancel: () => void;
+  canCancel: boolean;
+};
 
-  const invList = batch?.invoices || [];
-  const activeInvoices = invList.filter((i: any) => i.status !== 'cancelled');
+function invoiceKindLabel(invoice: PurchaseBatchInvoice, t: (key: string, ...args: unknown[]) => string) {
+  return invoice.kind === 'purchase' ? t('purchaseType') : t('expenseType');
+}
+
+export function buildPurchaseBatchPrintHtml(input: {
+  batch: PurchaseBatchSummaryRow;
+  companyName: string;
+  logoUrl?: string;
+  lang: string;
+  t: (key: string, ...args: unknown[]) => string;
+}) {
+  const { batch, companyName, logoUrl = '', lang, t } = input;
+  const invoices = batch.invoices;
+  const activeInvoices = invoices.filter((invoice) => invoice.status !== 'cancelled');
   const net = sumAmounts(activeInvoices, 'netAmount');
   const tax = sumAmounts(activeInvoices, 'taxAmount');
   const total = sumAmounts(activeInvoices, 'totalAmount');
-  const dateStr = invList[0]?.transactionDate
-    ? formatSaudiDate(invList[0].transactionDate)
-    : '—';
+  const dateStr = invoices[0]?.transactionDate ? formatSaudiDate(invoices[0].transactionDate) : '-';
+
+  return buildPrintDocumentHtml({
+    title: t('batchLabel', batch.batchId),
+    companyName,
+    logoUrl,
+    subtitle: t('batchPrintSubtitle', dateStr, activeInvoices.length),
+    landscape: true,
+    showPageCounter: true,
+    htmlDir: lang === 'ar' ? 'rtl' : 'ltr',
+    htmlLang: lang === 'ar' ? 'ar' : 'en',
+    body: buildPrintTableHtml({
+      columns: [
+        { key: 'index', header: '#' },
+        { key: 'invoiceNumber', header: t('documentNumber') },
+        { key: 'supplierInvoiceNumber', header: t('supplierInvoiceNumber') },
+        { key: 'supplier', header: t('supplier') },
+        { key: 'kind', header: t('kind') },
+        { key: 'net', header: t('net') },
+        { key: 'tax', header: t('tax') },
+        { key: 'total', header: t('total') },
+        { key: 'date', header: t('date') },
+      ],
+      rows: activeInvoices.map((invoice, index) => ({
+        index: index + 1,
+        invoiceNumber: invoice.invoiceNumber ?? '-',
+        supplierInvoiceNumber: invoice.supplierInvoiceNumber ?? '-',
+        supplier: purchaseBatchDisplayName(invoice.supplier, lang),
+        kind: invoiceKindLabel(invoice, t),
+        net: `${fmt(toPurchaseBatchFiniteNumber(invoice.netAmount), 2)} SR`,
+        tax: `${fmt(toPurchaseBatchFiniteNumber(invoice.taxAmount), 2)} SR`,
+        total: `${fmt(toPurchaseBatchFiniteNumber(invoice.totalAmount), 2)} SR`,
+        date: formatSaudiDate(invoice.transactionDate),
+      })),
+      footerRows: [[
+        { value: t('totalSum', activeInvoices.length), colSpan: 5 },
+        { value: `${fmt(net, 2)} SR` },
+        { value: `${fmt(tax, 2)} SR` },
+        { value: `${fmt(total, 2)} SR` },
+        { value: '' },
+      ]],
+    }),
+  });
+}
+
+export function BatchPrintSheet({ batch, onClose, onEdit, onCancel, canCancel }: BatchPrintSheetProps) {
+  const { t, lang } = useTranslation();
+  const { companies, activeCompanyId } = useApp();
+  const company = companies?.find((item) => item.id === activeCompanyId);
+  const companyName = lang === 'en'
+    ? (company?.nameEn || company?.nameAr || '')
+    : (company?.nameAr || company?.nameEn || '');
+  const html = buildPurchaseBatchPrintHtml({
+    batch,
+    companyName,
+    logoUrl: String(company?.logoUrl || '').trim(),
+    lang,
+    t,
+  });
 
   return (
-    <Modal open={true} onClose={onClose} size="xl" closeOnBackdrop={false} hideClose>
-      <style>{`
-        @media print {
-          body > *:not(.nx-modal-backdrop) { display: none !important; }
-          .nx-modal-backdrop {
-            position: fixed !important;
-            inset: 0 !important;
-            background: #fff !important;
-            padding: 16px !important;
-            overflow: visible !important;
-            display: block !important;
-          }
-          .nx-modal {
-            max-width: 100% !important;
-            box-shadow: none !important;
-            background: #fff !important;
-          }
-          .no-print { display: none !important; }
-        }
-      `}</style>
-
-      <div className="batch-print-actions no-print">
-        <span className="batch-print-title">{t('batchLabel', batch?.batchId)}</span>
-        <Button onClick={onClose}>إغلاق</Button>
-      </div>
-
-      <div id="batch-print-content" className="batch-print-content">
-        <div className="batch-print-header">
-          <h2>{t('batchLabel', batch?.batchId)}</h2>
-          <p className="batch-print-subtitle">
-            {t('batchPrintSubtitle', dateStr, activeInvoices.length)}
-          </p>
-        </div>
-
-        <div className="noorix-table-frame batch-print-table-frame">
-          <table className="noorix-table batch-print-table">
-            <thead>
-              <tr className="batch-print-table-head-row">
-                <th className="batch-print-row-number">#</th>
-                <th className="batch-print-min-100">رقم السند</th>
-                <th className="batch-print-min-100">رقم فاتورة المورد</th>
-                <th className="batch-print-min-140">المورد</th>
-                <th className="batch-print-w-90">النوع</th>
-                <th className="batch-print-w-100 text-center">الصافي</th>
-                <th className="batch-print-w-80 text-center">ضريبة</th>
-                <th className="batch-print-w-110 text-center">الإجمالي</th>
-                <th className="batch-print-w-90">التاريخ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeInvoices.map((inv: any, i: any) => (
-                <tr key={inv.id}>
-                  <td className="text-center">{i + 1}</td>
-                  <td className="font-semibold">{inv.invoiceNumber}</td>
-                  <td className="batch-print-muted">{inv.supplierInvoiceNumber || '—'}</td>
-                  <td>{(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}</td>
-                  <td>{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</td>
-                  <td className="batch-print-num"><FmtNum n={inv.netAmount} /></td>
-                  <td className="batch-print-num"><FmtNum n={inv.taxAmount} /></td>
-                  <td className="batch-print-num font-bold"><FmtNum n={inv.totalAmount} /></td>
-                  <td className="batch-print-date-cell">{formatSaudiDate(inv.transactionDate)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={5} className="font-bold">{t('totalSum', activeInvoices.length)}</td>
-                <td className="batch-print-num"><FmtNum n={net.toNumber()} /></td>
-                <td className="batch-print-num"><FmtNum n={tax.toNumber()} /></td>
-                <td className="batch-print-num font-extrabold"><FmtNum n={total.toNumber()} /></td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-    </Modal>
+    <PrintPreviewModal
+      open
+      onClose={onClose}
+      title={t('batchLabel', batch.batchId)}
+      html={html}
+      closeLabel={t('close') || 'Close'}
+      printLabel={`${t('print')} / PDF`}
+      footerExtra={(
+        <>
+          <Button type="button" onClick={onEdit}>
+            {t('edit')}
+          </Button>
+          {canCancel ? (
+            <Button type="button" variant="danger" onClick={onCancel}>
+              {t('cancel')}
+            </Button>
+          ) : null}
+        </>
+      )}
+    />
   );
 }

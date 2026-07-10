@@ -1,13 +1,14 @@
 // Labels resolved via useTranslation in components (vaultTypeCash, vaultTypeBank, vaultTypeApp, paymentCash, etc.)
 import { VAULT_TYPE_COLORS, VAULT_TYPE_BG } from '../../../constants/kpiCardTheme';
+import type { PaymentMethodOption, VaultTypeOption } from '../treasuryModels';
 
-export const VAULT_TYPES = [
+export const VAULT_TYPES: VaultTypeOption[] = [
   { value: 'cash', labelKey: 'vaultTypeCash' },
   { value: 'bank', labelKey: 'vaultTypeBank' },
   { value: 'app',  labelKey: 'vaultTypeApp' },
 ];
 
-export const PAYMENT_METHODS = [
+export const PAYMENT_METHODS: PaymentMethodOption[] = [
   { value: 'cash',      labelKey: 'paymentCash'     },
   { value: 'card',      labelKey: 'paymentCard'     },
   { value: 'transfer',  labelKey: 'paymentTransfer' },

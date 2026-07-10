@@ -1,61 +1,110 @@
-import { useApiMutation } from './useApiMutation';
 import { useMemo } from 'react';
+import { useApiMutation } from './useApiMutation';
 import { useApiListQuery, useApiQueries, useApiQuery, useApiQueryOr } from './useApiQuery';
 import {
-  getOrders,
-  createOrder,
-  updateOrder,
-  cancelOrder,
-  getOrdersSummary,
-  getOrdersItemsReport,
-  getProductPurchaseHistory,
-  getCategoryPurchaseHistory,
-  getOrderProducts,
-  createOrderProduct,
-  updateOrderProduct,
-  createOrderProductsBatch,
-  getOrderCategories,
-  createOrderCategory,
-  updateOrderCategory,
-  createOrderCategoriesBatch,
-  deactivateOrderProductsBulk,
-  deactivateOrderCategoriesBulk,
-  getMyStaffOrders,
-  getStaffSaleNextLogRef,
-  createStaffOrder,
-  updateStaffOrder,
-  deleteStaffOrder,
-  resendStaffSale,
-  getStaffDigest,
-  getDigestHistory,
-  getSalesReport,
-  sendStaffDigest,
-  getOrderSections,
-  createOrderSection,
-  deleteOrderSection,
   bulkSetProductSections,
+  cancelOrder,
+  createOrder,
+  createOrderCategoriesBatch,
+  createOrderCategory,
+  createOrderProduct,
+  createOrderProductsBatch,
+  createOrderSection,
+  createStaffOrder,
+  deleteOrderSection,
+  deleteStaffOrder,
+  deactivateOrderCategoriesBulk,
+  deactivateOrderProductsBulk,
+  getCategoryPurchaseHistory,
+  getDigestHistory,
+  getMyStaffOrders,
+  getOrderCategories,
+  getOrderProducts,
+  getOrders,
+  getOrdersItemsReport,
+  getOrdersRangeSummary,
+  getOrdersSummary,
+  getOrderSections,
+  getProductPurchaseHistory,
+  getSalesReport,
+  getStaffDigest,
+  getStaffSaleNextLogRef,
+  resendStaffSale,
+  sendStaffDigest,
+  updateOrder,
+  updateOrderCategory,
+  updateOrderProduct,
+  updateStaffOrder,
 } from '../services/api';
 import { orderKeys } from '../services/queryKeys';
 import { listYearMonthsInRange } from '../utils/datePeriod';
+import type {
+  CreateOrderPayload,
+  DigestHistoryDay,
+  OrderCategory,
+  OrderCategoryPayload,
+  OrderItemsReportRow,
+  OrderProduct,
+  OrderProductPayload,
+  OrderPurchaseHistoryRow,
+  OrderRangeSummary,
+  OrderRecord,
+  OrderSection,
+  OrderSectionPayload,
+  OrderSummary,
+  StaffDigestData,
+  StaffDigestSendResult,
+  StaffOrder,
+  StaffOrderPayload,
+  StaffSaleNextLogRef,
+  StaffSaleReport,
+  UpdateOrderPayload,
+} from '../types/api';
 
-export function useOrders(companyId: any, year: any, month: any) {
-  return useApiListQuery<any>({
-    queryKey: orderKeys.list(companyId, year, month),
-    queryFn: () => getOrders(companyId, year, month),
-    fallbackMessage: 'Failed to load orders',
-    enabled: !!companyId && !!year && !!month,
-  });
+type MutationArgs<TBody> = { id: string; body: TBody };
+
+const emptyOrderSummary: OrderSummary = {
+  pettyCashTotal: 0,
+  delegatePurchasesTotal: 0,
+  localPurchasesTotal: 0,
+  delegateBalance: 0,
+};
+
+const emptyStaffDigest: StaffDigestData = {
+  sections: [],
+  totalOrders: 0,
+  pendingCount: 0,
+};
+
+const emptyStaffSaleReport: StaffSaleReport = {
+  summary: {
+    totalOrders: 0,
+    totalQty: 0,
+    totalAmount: 0,
+    avgPerOrder: 0,
+    uniqueProducts: 0,
+    uniqueSections: 0,
+  },
+  byProduct: [],
+  bySection: [],
+  byUser: [],
+  byDay: [],
+  byLog: [],
+};
+
+function reportKey(row: OrderItemsReportRow): string {
+  return [
+    row.productId,
+    row.categoryId ?? row.categoryNameAr ?? row.categoryNameEn ?? '',
+    row.unit ?? '',
+  ].join('|');
 }
 
-function mergeOrderItemsReports(reports: any[][]) {
-  const byKey = new Map<string, any>();
+function mergeOrderItemsReports(reports: OrderItemsReportRow[][]): OrderItemsReportRow[] {
+  const byKey = new Map<string, OrderItemsReportRow>();
   for (const report of reports) {
-    for (const row of report ?? []) {
-      const key = [
-        row.productId ?? row.id ?? row.productNameAr ?? row.productNameEn ?? '',
-        row.categoryId ?? row.categoryNameAr ?? row.categoryNameEn ?? '',
-        row.unit ?? '',
-      ].join('|');
+    for (const row of report) {
+      const key = reportKey(row);
       const current = byKey.get(key);
       if (!current) {
         byKey.set(key, { ...row });
@@ -69,7 +118,16 @@ function mergeOrderItemsReports(reports: any[][]) {
   return Array.from(byKey.values());
 }
 
-export function useOrdersRange(companyId: any, startDate: string, endDate: string) {
+export function useOrders(companyId: string, year: string | number, month: string | number) {
+  return useApiListQuery<OrderRecord>({
+    queryKey: orderKeys.list(companyId, year, month),
+    queryFn: () => getOrders(companyId, year, month),
+    fallbackMessage: 'Failed to load orders',
+    enabled: !!companyId && !!year && !!month,
+  });
+}
+
+export function useOrdersRange(companyId: string, startDate: string, endDate: string) {
   const months = useMemo(() => listYearMonthsInRange(startDate, endDate), [startDate, endDate]);
   const results = useApiQueries({
     queries: months.map(({ year, month }) => ({
@@ -81,7 +139,7 @@ export function useOrdersRange(companyId: any, startDate: string, endDate: strin
   });
 
   const data = useMemo(
-    () => results.flatMap((result) => (Array.isArray(result.data) ? result.data : [])),
+    () => results.flatMap((result) => (Array.isArray(result.data) ? result.data as OrderRecord[] : [])),
     [results],
   );
 
@@ -105,9 +163,9 @@ export function useCreateOrderMutation(companyId?: string) {
   });
 }
 
-export function useUpdateOrderMutation(companyId: any) {
+export function useUpdateOrderMutation(companyId: string) {
   return useApiMutation({
-    mutationFn: ({ id, body }: any) => updateOrder(id, body, companyId),
+    mutationFn: ({ id, body }: MutationArgs<UpdateOrderPayload>) => updateOrder(id, body, companyId),
     invalidateQueries: [
       orderKeys.listRoot(),
       orderKeys.summaryRoot(),
@@ -117,26 +175,35 @@ export function useUpdateOrderMutation(companyId: any) {
   });
 }
 
-export function useCancelOrderMutation(companyId: any) {
+export function useCancelOrderMutation(companyId: string) {
   return useApiMutation({
-    mutationFn: (id: any) => cancelOrder(id, companyId),
+    mutationFn: (id: string) => cancelOrder(id, companyId),
     invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot()],
     showErrorToast: false,
   });
 }
 
-export function useOrdersSummary(companyId: any, year: any, month: any) {
-  return useApiQueryOr<Record<string, unknown>>({
+export function useOrdersSummary(companyId: string, year: string | number, month: string | number) {
+  return useApiQueryOr<OrderSummary>({
     queryKey: orderKeys.summary(companyId, year, month),
     queryFn: () => getOrdersSummary(companyId, year, month),
-    fallback: {},
+    fallback: emptyOrderSummary,
     fallbackMessage: 'Failed to load orders summary',
     enabled: !!companyId && !!year && !!month,
   });
 }
 
-export function useOrderProducts(companyId: any, type?: string) {
-  return useApiListQuery<any>({
+export function useOrdersRangeSummary(companyId: string, startDate: string, endDate: string) {
+  return useApiQuery<OrderRangeSummary>({
+    queryKey: orderKeys.rangeSummary(companyId, startDate, endDate),
+    queryFn: () => getOrdersRangeSummary(companyId, startDate, endDate),
+    fallbackMessage: 'Failed to load orders range summary',
+    enabled: !!companyId && !!startDate && !!endDate,
+  });
+}
+
+export function useOrderProducts(companyId: string, type?: string) {
+  return useApiListQuery<OrderProduct>({
     queryKey: [...orderKeys.products(companyId), type],
     queryFn: () => getOrderProducts(companyId, undefined, type),
     fallbackMessage: 'Failed to load order products',
@@ -144,8 +211,8 @@ export function useOrderProducts(companyId: any, type?: string) {
   });
 }
 
-export function useOrderCategories(companyId: any) {
-  return useApiListQuery<any>({
+export function useOrderCategories(companyId: string) {
+  return useApiListQuery<OrderCategory>({
     queryKey: orderKeys.categories(companyId),
     queryFn: () => getOrderCategories(companyId),
     fallbackMessage: 'Failed to load order categories',
@@ -153,8 +220,14 @@ export function useOrderCategories(companyId: any) {
   });
 }
 
-export function useProductPurchaseHistory(companyId: any, productId: any, year: any, month: any, enabled: any = true) {
-  return useApiListQuery<any>({
+export function useProductPurchaseHistory(
+  companyId: string,
+  productId: string,
+  year: string | number,
+  month: string | number,
+  enabled = true,
+) {
+  return useApiListQuery<OrderPurchaseHistoryRow>({
     queryKey: orderKeys.productPurchaseHistory(companyId, productId, year, month),
     queryFn: () => getProductPurchaseHistory(companyId, productId, year, month),
     fallbackMessage: 'Failed to load product purchase history',
@@ -162,8 +235,14 @@ export function useProductPurchaseHistory(companyId: any, productId: any, year: 
   });
 }
 
-export function useCategoryPurchaseHistory(companyId: any, categoryId: any, year: any, month: any, enabled: any = true) {
-  return useApiListQuery<any>({
+export function useCategoryPurchaseHistory(
+  companyId: string,
+  categoryId: string,
+  year: string | number,
+  month: string | number,
+  enabled = true,
+) {
+  return useApiListQuery<OrderPurchaseHistoryRow>({
     queryKey: orderKeys.categoryPurchaseHistory(companyId, categoryId, year, month),
     queryFn: () => getCategoryPurchaseHistory(companyId, categoryId, year, month),
     fallbackMessage: 'Failed to load category purchase history',
@@ -171,8 +250,8 @@ export function useCategoryPurchaseHistory(companyId: any, categoryId: any, year
   });
 }
 
-export function useOrdersItemsReport(companyId: any, year: any, month: any) {
-  return useApiListQuery<any>({
+export function useOrdersItemsReport(companyId: string, year: string | number, month: string | number) {
+  return useApiListQuery<OrderItemsReportRow>({
     queryKey: orderKeys.itemsReport(companyId, year, month),
     queryFn: () => getOrdersItemsReport(companyId, year, month),
     fallbackMessage: 'Failed to load orders items report',
@@ -180,7 +259,7 @@ export function useOrdersItemsReport(companyId: any, year: any, month: any) {
   });
 }
 
-export function useOrdersItemsReportRange(companyId: any, startDate: string, endDate: string) {
+export function useOrdersItemsReportRange(companyId: string, startDate: string, endDate: string) {
   const months = useMemo(() => listYearMonthsInRange(startDate, endDate), [startDate, endDate]);
   const results = useApiQueries({
     queries: months.map(({ year, month }) => ({
@@ -192,7 +271,7 @@ export function useOrdersItemsReportRange(companyId: any, startDate: string, end
   });
 
   const data = useMemo(
-    () => mergeOrderItemsReports(results.map((result) => (Array.isArray(result.data) ? result.data : []))),
+    () => mergeOrderItemsReports(results.map((result) => (Array.isArray(result.data) ? result.data as OrderItemsReportRow[] : []))),
     [results],
   );
 
@@ -203,7 +282,7 @@ export function useOrdersItemsReportRange(companyId: any, startDate: string, end
   };
 }
 
-export function useCreateOrderProductMutation(companyId: any) {
+export function useCreateOrderProductMutation(companyId: string) {
   return useApiMutation({
     mutationFn: createOrderProduct,
     invalidateQueries: [orderKeys.products(companyId)],
@@ -211,31 +290,31 @@ export function useCreateOrderProductMutation(companyId: any) {
   });
 }
 
-export function useCreateOrderProductsBatchMutation(companyId: any) {
+export function useCreateOrderProductsBatchMutation(companyId: string) {
   return useApiMutation({
-    mutationFn: (products: any) => createOrderProductsBatch(companyId, products),
+    mutationFn: (products: OrderProductPayload[]) => createOrderProductsBatch(companyId, products),
     invalidateQueries: [orderKeys.products(companyId)],
     showErrorToast: false,
   });
 }
 
-export function useCreateOrderCategoriesBatchMutation(companyId: any) {
+export function useCreateOrderCategoriesBatchMutation(companyId: string) {
   return useApiMutation({
-    mutationFn: (categories: any) => createOrderCategoriesBatch(companyId, categories),
+    mutationFn: (categories: OrderCategoryPayload[]) => createOrderCategoriesBatch(companyId, categories),
     invalidateQueries: [orderKeys.categories(companyId)],
     showErrorToast: false,
   });
 }
 
-export function useUpdateOrderProductMutation(companyId: any) {
+export function useUpdateOrderProductMutation(companyId: string) {
   return useApiMutation({
-    mutationFn: ({ id, body }: any) => updateOrderProduct(id, body, companyId),
+    mutationFn: ({ id, body }: MutationArgs<Partial<OrderProductPayload>>) => updateOrderProduct(id, body, companyId),
     invalidateQueries: [orderKeys.products(companyId)],
     showErrorToast: false,
   });
 }
 
-export function useCreateOrderCategoryMutation(companyId: any) {
+export function useCreateOrderCategoryMutation(companyId: string) {
   return useApiMutation({
     mutationFn: createOrderCategory,
     invalidateQueries: [orderKeys.categories(companyId)],
@@ -243,15 +322,15 @@ export function useCreateOrderCategoryMutation(companyId: any) {
   });
 }
 
-export function useUpdateOrderCategoryMutation(companyId: any) {
+export function useUpdateOrderCategoryMutation(companyId: string) {
   return useApiMutation({
-    mutationFn: ({ id, body }: any) => updateOrderCategory(id, body, companyId),
+    mutationFn: ({ id, body }: MutationArgs<Partial<OrderCategoryPayload>>) => updateOrderCategory(id, body, companyId),
     invalidateQueries: [orderKeys.categories(companyId)],
     showErrorToast: false,
   });
 }
 
-export function useDeleteOrderProductsMutation(companyId: any) {
+export function useDeleteOrderProductsMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (ids: string[]) => deactivateOrderProductsBulk(companyId, ids),
     invalidateQueries: [orderKeys.products(companyId)],
@@ -259,7 +338,7 @@ export function useDeleteOrderProductsMutation(companyId: any) {
   });
 }
 
-export function useDeleteOrderCategoriesMutation(companyId: any) {
+export function useDeleteOrderCategoriesMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (ids: string[]) => deactivateOrderCategoriesBulk(companyId, ids),
     invalidateQueries: [orderKeys.categories(companyId)],
@@ -267,8 +346,8 @@ export function useDeleteOrderCategoriesMutation(companyId: any) {
   });
 }
 
-export function useMyStaffOrders(companyId: any) {
-  return useApiListQuery<any>({
+export function useMyStaffOrders(companyId: string) {
+  return useApiListQuery<StaffOrder>({
     queryKey: orderKeys.staffMy(companyId),
     queryFn: () => getMyStaffOrders(companyId),
     fallbackMessage: 'Failed to load staff orders',
@@ -276,8 +355,8 @@ export function useMyStaffOrders(companyId: any) {
   });
 }
 
-export function useStaffSaleNextLogRef(companyId: any, saleDate: string, enabled = true) {
-  return useApiQuery<{ logRef?: string }, string>({
+export function useStaffSaleNextLogRef(companyId: string, saleDate: string, enabled = true) {
+  return useApiQuery<StaffSaleNextLogRef, string>({
     queryKey: ['staffSaleNextLogRef', companyId, saleDate],
     queryFn: () => getStaffSaleNextLogRef(companyId, saleDate),
     fallbackMessage: 'Failed to load next staff sale reference',
@@ -287,7 +366,7 @@ export function useStaffSaleNextLogRef(companyId: any, saleDate: string, enabled
   });
 }
 
-export function useCreateStaffOrderMutation(companyId: any) {
+export function useCreateStaffOrderMutation(companyId: string) {
   return useApiMutation({
     mutationFn: createStaffOrder,
     invalidateQueries: [
@@ -300,9 +379,9 @@ export function useCreateStaffOrderMutation(companyId: any) {
   });
 }
 
-export function useUpdateStaffOrderMutation(companyId: any) {
+export function useUpdateStaffOrderMutation(companyId: string) {
   return useApiMutation({
-    mutationFn: ({ id, body }: any) => updateStaffOrder(id, companyId, body),
+    mutationFn: ({ id, body }: MutationArgs<Partial<StaffOrderPayload>>) => updateStaffOrder(id, companyId, body),
     invalidateQueries: [
       orderKeys.staffMy(companyId),
       orderKeys.staffDigest(companyId),
@@ -312,7 +391,7 @@ export function useUpdateStaffOrderMutation(companyId: any) {
   });
 }
 
-export function useDeleteStaffOrderMutation(companyId: any) {
+export function useDeleteStaffOrderMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (id: string) => deleteStaffOrder(id, companyId),
     invalidateQueries: [
@@ -324,7 +403,7 @@ export function useDeleteStaffOrderMutation(companyId: any) {
   });
 }
 
-export function useResendStaffSaleMutation(companyId: any) {
+export function useResendStaffSaleMutation(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, lang }: { id: string; lang?: 'ar' | 'en' }) =>
       resendStaffSale(id, companyId, lang),
@@ -333,29 +412,29 @@ export function useResendStaffSaleMutation(companyId: any) {
   });
 }
 
-export function useStaffDigest(companyId: any) {
-  return useApiQueryOr<any>({
+export function useStaffDigest(companyId: string) {
+  return useApiQueryOr<StaffDigestData>({
     queryKey: orderKeys.staffDigest(companyId),
     queryFn: () => getStaffDigest(companyId),
-    fallback: { sections: [], totalOrders: 0, pendingCount: 0 },
+    fallback: emptyStaffDigest,
     fallbackMessage: 'Failed to load staff digest',
     enabled: !!companyId,
   });
 }
 
-export function useSalesReport(companyId: any, days = 30) {
-  return useApiQueryOr<Record<string, unknown>>({
+export function useSalesReport(companyId: string, days = 30) {
+  return useApiQueryOr<StaffSaleReport>({
     queryKey: ['salesReport', companyId, days],
     queryFn: () => getSalesReport(companyId, days),
-    fallback: {},
+    fallback: emptyStaffSaleReport,
     fallbackMessage: 'Failed to load sales report',
     enabled: !!companyId,
     staleTime: 60_000,
   });
 }
 
-export function useDigestHistory(companyId: any, days = 30) {
-  return useApiListQuery<any>({
+export function useDigestHistory(companyId: string, days = 30) {
+  return useApiListQuery<DigestHistoryDay>({
     queryKey: ['digestHistory', companyId, days],
     queryFn: () => getDigestHistory(companyId, days),
     fallbackMessage: 'Failed to load digest history',
@@ -364,7 +443,7 @@ export function useDigestHistory(companyId: any, days = 30) {
   });
 }
 
-export function useSendStaffDigestMutation(companyId: any) {
+export function useSendStaffDigestMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (body: {
       orderIds?: string[];
@@ -384,8 +463,8 @@ export function useSendStaffDigestMutation(companyId: any) {
   });
 }
 
-export function useOrderSections(companyId: any) {
-  return useApiListQuery<any>({
+export function useOrderSections(companyId: string) {
+  return useApiListQuery<OrderSection>({
     queryKey: ['orderSections', companyId],
     queryFn: () => getOrderSections(companyId),
     fallbackMessage: 'Failed to load order sections',
@@ -393,15 +472,15 @@ export function useOrderSections(companyId: any) {
   });
 }
 
-export function useCreateOrderSectionMutation(companyId: any) {
+export function useCreateOrderSectionMutation(companyId: string) {
   return useApiMutation({
-    mutationFn: (body: unknown) => createOrderSection(body),
+    mutationFn: (body: OrderSectionPayload & { companyId: string }) => createOrderSection(body),
     invalidateQueries: [['orderSections', companyId]],
     showErrorToast: false,
   });
 }
 
-export function useDeleteOrderSectionMutation(companyId: any) {
+export function useDeleteOrderSectionMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (id: string) => deleteOrderSection(id, companyId),
     invalidateQueries: [['orderSections', companyId]],
@@ -409,7 +488,7 @@ export function useDeleteOrderSectionMutation(companyId: any) {
   });
 }
 
-export function useBulkSetProductSectionsMutation(companyId: any) {
+export function useBulkSetProductSectionsMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (body: { productIds: string[]; sectionNames?: string[]; sectionIds?: string[]; mode?: 'replace' | 'add' }) =>
       bulkSetProductSections(companyId, body.productIds, {

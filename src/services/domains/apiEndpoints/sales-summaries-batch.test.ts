@@ -1,26 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createDailySalesSummariesSequential } from './sales-summaries-batch';
+import { postDailySalesSummaryBatch } from './sales-summaries-batch';
 
 vi.mock('../../core/apiHttp', () => ({
   apiPost: vi.fn(),
-  apiPatch: vi.fn(),
 }));
 
-import { apiPost, apiPatch } from '../../core/apiHttp';
+import { apiPost } from '../../core/apiHttp';
 
-describe('createDailySalesSummariesSequential', () => {
+describe('postDailySalesSummaryBatch', () => {
   beforeEach(() => {
     vi.mocked(apiPost).mockReset();
-    vi.mocked(apiPatch).mockReset();
-    vi.mocked(apiPatch).mockResolvedValue({ success: true, data: {} });
   });
 
-  it('returns summaries in order', async () => {
-    vi.mocked(apiPost)
-      .mockResolvedValueOnce({ success: true, data: { summary: { id: 'a', shift: 'morning' } } })
-      .mockResolvedValueOnce({ success: true, data: { summary: { id: 'b', shift: 'evening' } } });
+  it('posts the whole batch to the official summary-batch endpoint', async () => {
+    vi.mocked(apiPost).mockResolvedValueOnce({
+      success: true,
+      data: { summaries: [{ id: 'a', shift: 'morning' }, { id: 'b', shift: 'evening' }] },
+    });
 
-    const res = await createDailySalesSummariesSequential({
+    const res = await postDailySalesSummaryBatch({
       companyId: 'c1',
       transactionDate: '2026-05-10',
       items: [
@@ -32,18 +30,22 @@ describe('createDailySalesSummariesSequential', () => {
 
     expect(res.success).toBe(true);
     expect(res.data?.summaries).toHaveLength(2);
-    expect(apiPost).toHaveBeenCalledTimes(2);
-    const firstBody = vi.mocked(apiPost).mock.calls[0][1] as Record<string, unknown>;
-    expect(firstBody).not.toHaveProperty('idempotencyKey');
-    expect(firstBody.shift).toBe('morning');
+    expect(apiPost).toHaveBeenCalledTimes(1);
+    expect(apiPost).toHaveBeenCalledWith('/api/v1/sales/summary-batch', expect.objectContaining({
+      companyId: 'c1',
+      transactionDate: '2026-05-10',
+      batchIdempotencyKey: 'batch-1',
+      items: [
+        expect.objectContaining({ shift: 'morning', customerCount: 10 }),
+        expect.objectContaining({ shift: 'evening', customerCount: 8 }),
+      ],
+    }));
   });
 
-  it('stops on first failure', async () => {
-    vi.mocked(apiPost)
-      .mockResolvedValueOnce({ success: true, data: { summary: { id: 'a' } } })
-      .mockResolvedValueOnce({ success: false, error: 'فشل', code: 400 });
+  it('returns backend failure without falling back to sequential summary posts', async () => {
+    vi.mocked(apiPost).mockResolvedValueOnce({ success: false, error: 'فشل', code: 400 });
 
-    const res = await createDailySalesSummariesSequential({
+    const res = await postDailySalesSummaryBatch({
       companyId: 'c1',
       transactionDate: '2026-05-10',
       items: [
@@ -53,6 +55,6 @@ describe('createDailySalesSummariesSequential', () => {
     });
 
     expect(res.success).toBe(false);
-    expect(apiPost).toHaveBeenCalledTimes(2);
+    expect(apiPost).toHaveBeenCalledTimes(1);
   });
 });

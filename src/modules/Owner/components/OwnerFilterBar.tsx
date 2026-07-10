@@ -1,20 +1,18 @@
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, DateMonthScopePicker, cn, ScreenTitle } from '../../../ui';
+import { Button, ColorSwatch, DateFilterBar, FilterToolbar, ScreenTitle, cn } from '../../../ui';
 import { useIsNarrow700 } from '../../../ui';
 import { SERIES_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import type { CompanyListItem } from '../../../context/appTypes';
+import { ownerCompanyName } from '../utils/ownerDashboardDisplay';
+import type { DateFilterController } from '../../../ui/date';
 
 const COLORS = SERIES_RECHARTS_COLORS;
 
 type OwnerFilterBarProps = {
-  year: number;
-  setYear: (y: number) => void;
-  currentYear: number;
-  selectedMonth: string;
-  setSelectedMonth: (v: string) => void;
+  dateFilter: DateFilterController;
   onExportExcel: () => void;
-  onExportPdf: () => void;
+  onPrintPdf: () => void;
   companyList: CompanyListItem[];
   allSelected: boolean;
   selectedCompanyIds: Set<string>;
@@ -24,13 +22,9 @@ type OwnerFilterBarProps = {
 };
 
 export function OwnerFilterBar({
-  year,
-  setYear,
-  currentYear,
-  selectedMonth,
-  setSelectedMonth,
+  dateFilter,
   onExportExcel,
-  onExportPdf,
+  onPrintPdf,
   companyList,
   allSelected,
   selectedCompanyIds,
@@ -40,7 +34,6 @@ export function OwnerFilterBar({
 }: OwnerFilterBarProps) {
   const { t, lang } = useTranslation();
   const isMobile = useIsNarrow700();
-  const years = [currentYear, currentYear - 1, currentYear - 2];
 
   return (
     <>
@@ -49,43 +42,41 @@ export function OwnerFilterBar({
           <ScreenTitle>{t('ownerDashboard')}</ScreenTitle>
           <p className="text-[13px] text-noorix-muted m-0">{t('ownerDashboardDesc')}</p>
         </div>
-        <div className="nx-toolbar">
-          <DateMonthScopePicker
-            year={year}
-            years={years}
-            month={selectedMonth}
-            allowAll
-            allowYear={false}
-            onYearChange={setYear}
-            onMonthChange={setSelectedMonth}
-          />
-          <Button variant="primary" onClick={onExportExcel} size="sm">
-            Excel
-          </Button>
-          <Button onClick={onExportPdf} size="sm">
-            طباعة / PDF
-          </Button>
-        </div>
+        <FilterToolbar
+          className="max-w-full"
+          actions={(
+            <>
+              <Button variant="primary" onClick={onExportExcel} size="sm">
+                Excel
+              </Button>
+              <Button onClick={onPrintPdf} size="sm">
+                {lang === 'ar' ? 'طباعة / PDF' : 'Print / PDF'}
+              </Button>
+            </>
+          )}
+        >
+          <DateFilterBar filter={dateFilter} />
+        </FilterToolbar>
       </div>
 
       <div className={cn('noorix-surface-card', isMobile ? 'p-3' : 'p-4')}>
         <div className="font-bold mb-3">{t('ownerSelectCompanies')}</div>
-        <div className="flex items-center flex flex-wrap gap-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button onClick={onSelectAll} size="sm">
             {t('ownerAllCompanies')}
           </Button>
           <Button onClick={onSelectNone} size="sm">
             {lang === 'ar' ? 'إخفاء الكل' : 'Hide all'}
           </Button>
-          {companyList.map((c, i) => {
-            const isVisible = allSelected ? true : selectedCompanyIds.has(c.id);
-            const companyColor = COLORS[i % COLORS.length];
+          {companyList.map((company, index) => {
+            const isVisible = allSelected || selectedCompanyIds.has(company.id);
+            const companyColor = COLORS[index % COLORS.length];
             return (
               <Button
-                key={c.id}
+                key={company.id}
                 variant="raw"
                 className="owner-company-card flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-lg"
-                onClick={() => onToggleCompany(c.id)}
+                onClick={() => onToggleCompany(company.id)}
                 title={isVisible ? (lang === 'ar' ? 'إخفاء' : 'Hide') : (lang === 'ar' ? 'عرض' : 'Show')}
                 runtimeStyle={{
                   border: `1px solid ${isVisible ? companyColor : 'var(--noorix-border)'}`,
@@ -93,11 +84,11 @@ export function OwnerFilterBar({
                   color: isVisible ? companyColor : 'var(--noorix-text-muted)',
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" fill={isVisible ? 'currentColor' : 'none'} />
-                </svg>
-                <span>{lang === 'ar' ? c.nameAr || c.nameEn : c.nameEn || c.nameAr}</span>
+                <ColorSwatch
+                  className="h-3 w-3 shrink-0 rounded-sm"
+                  color={isVisible ? companyColor : 'var(--noorix-border)'}
+                />
+                <span>{ownerCompanyName(company, lang, company.id)}</span>
               </Button>
             );
           })}

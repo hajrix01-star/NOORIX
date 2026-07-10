@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "description": "Governed non-table display grids. These are layouts that visually behave like table, calendar, or key-value grids but intentionally do not use SmartTable/SimpleTable/MatrixTable.",
+  "grids": {
+    "src/modules/Dashboard/components/DashboardCalendarTab/components/DashboardCalendarGrid.tsx": {
+      "category": "calendar-grid",
+      "decision": "leave-central-component",
+      "marker": "noorix-calendar-grid-scroll",
+      "reason": "month calendar cells are interactive date boxes, not records; keep behind the dedicated DashboardCalendarGrid component."
+    },
+    "src/modules/HajriTax/HajriTaxDetailEditor.tsx": {
+      "category": "editable-tax-grid",
+      "decision": "leave-protected",
+      "marker": "grid-cols-[minmax(0,2fr)_1fr_1fr_88px]",
+      "reason": "Hajri tax disclosure header aligns editable VAT cells and is protected tax scope."
+    },
+    "src/modules/HajriTax/HajriTaxDisclosureRows.tsx": {
+      "category": "editable-tax-grid",
+      "decision": "leave-protected",
+      "marker": "grid-cols-[minmax(0,2fr)_1fr_1fr_88px]",
+      "reason": "Hajri tax disclosure rows contain editable tax inputs and responsive card collapse behavior."
+    },
+    "src/modules/Assets/components/AssetsWarrantyQueueTable.tsx": {
+      "category": "warranty-queue-grid",
+      "decision": "leave-central-component",
+      "marker": "nx-assets-warranty-queue__grid",
+      "reason": "pending warranty invoices use a dedicated responsive queue grid with table roles and a completion action."
+    },
+    "src/modules/Settings/components/backup/BackupCountsGrid.tsx": {
+      "category": "key-value-grid",
+      "decision": "leave-central-component",
+      "marker": "function BackupCountsGrid",
+      "reason": "backup import/export count summary is a key-value detail list, not sortable tabular data."
+    }
+  }
+}

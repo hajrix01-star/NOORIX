@@ -6,23 +6,24 @@ import {
 } from './invoicesListTableModel';
 
 const noop = () => {};
-const t = (k: any, ...args: any[]) => (args.length ? `${k}:${args.join(',')}` : k);
+const t = (key: string, ...args: unknown[]) => (args.length ? `${key}:${args.join(',')}` : key);
 
 describe('invoicesListTableModel', () => {
   it('buildInvoiceListColumns returns stable column keys', () => {
     const cols = buildInvoiceListColumns({
       t,
       lang: 'ar',
-      fmt: (n: any) => String(n),
+      fmt: (value: number) => String(value),
       STATUS_MAP: {},
       KIND_MAP: {},
       userRole: 'admin',
       companyId: 'c1',
       setViewingInvoice: noop,
       setEditingInvoice: noop,
+      printInvoice: noop,
       confirmAndDeleteInvoice: noop,
     });
-    expect(cols.map((c: any) => c.key)).toEqual([
+    expect(cols.map((column) => column.key)).toEqual([
       'invoiceNumber',
       'supplierInvoiceNumber',
       'supplierName',
@@ -33,10 +34,12 @@ describe('invoicesListTableModel', () => {
       'netAmount',
       'taxAmount',
       'totalAmount',
-      'transactionDate',
       'status',
-      'actions',
     ]);
+    expect(cols.find((column) => column.key === 'invoiceNumber')?.size).toBe('document');
+    expect(cols.find((column) => column.key === 'taxAmount')?.size).toBe('tax');
+    expect(cols.find((column) => column.key === 'netAmount')?.size).toBe('money-sm');
+    expect(cols.find((column) => column.key === 'totalAmount')?.size).toBe('money-md');
   });
 
   it('buildInvoiceListFooterRow returns four row segments', () => {
@@ -58,6 +61,7 @@ describe('invoicesListTableModel', () => {
       userRole: 'admin',
       companyId: 'c1',
       setEditingInvoice: noop,
+      printInvoice: noop,
       confirmAndDeleteInvoice: noop,
     });
     expect(typeof fn).toBe('function');

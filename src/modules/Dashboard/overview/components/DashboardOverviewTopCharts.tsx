@@ -1,9 +1,8 @@
 import React from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, Cell } from 'recharts';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { RuntimeStyleBox } from '../../../../ui';
+import { ChartState, RuntimeStyleBox } from '../../../../ui';
 import { formatCompactNumber, formatNumber } from '../../../../utils/money';
-import { LoadingState, EmptyState } from '../../../../components/states';
 import { DashboardOverviewBreakdownTable } from './DashboardOverviewBreakdownTable';
 
 const TOP_SUPPLIER_LABEL_STYLE: React.CSSProperties = {
@@ -59,12 +58,13 @@ export function DashboardOverviewTopCharts({
           {supplierFrom} — {supplierTo}
         </div>
         {isPeriodLoading ? (
-          <div className="h-[220px] flex items-center justify-center">
-            <LoadingState />
-          </div>
+          <ChartState kind="loading" className="h-[220px] min-h-[220px] border-0 bg-transparent">
+            {t('loading')}
+          </ChartState>
         ) : topSuppliersChartData.length === 0 ? (
-          <EmptyState
-            className="h-[220px]"
+          <ChartState
+            kind="empty"
+            className="h-[220px] min-h-[220px]"
             icon={
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -75,7 +75,7 @@ export function DashboardOverviewTopCharts({
             }
           >
             {t('noDataInPeriod')}
-          </EmptyState>
+          </ChartState>
         ) : (
           <div dir="ltr">
             <ResponsiveContainer width="100%" height={Math.max(220, topSuppliersChartData.length * 40)}>
@@ -164,13 +164,13 @@ export function DashboardOverviewTopCharts({
           )}
         </div>
         {isPeriodLoading ? (
-          <div className="h-[170px] flex items-center justify-center">
-            <LoadingState />
-          </div>
+          <ChartState kind="loading" className="h-[170px] min-h-[170px] border-0 bg-transparent">
+            {t('loading')}
+          </ChartState>
         ) : purchaseCategoriesPieData.length === 0 ? (
-          <EmptyState className="h-[170px] text-[12px] px-1">
+          <ChartState kind="empty" className="h-[170px] min-h-[170px] text-[12px] px-1">
             {t('dashboardNoPurchasesByCategory')}
-          </EmptyState>
+          </ChartState>
         ) : (
           <DashboardOverviewBreakdownTable
             className="w-full"

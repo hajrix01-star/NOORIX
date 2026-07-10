@@ -56,6 +56,7 @@ export default {
   noSuppliersYet: { ar: 'لا توجد موردون بعد', en: 'No suppliers yet' },
   suppliersTotal: { ar: 'إجمالي الموردين', en: 'Total suppliers' },
   name: { ar: 'الاسم', en: 'Name' },
+  supplierName: { ar: 'اسم المورد', en: 'Supplier name' },
   nameEnCol: { ar: 'الاسم بالإنجليزي', en: 'Name (English)' },
   actions: { ar: 'الإجراءات', en: 'Actions' },
   editSupplier: { ar: 'تعديل المورد', en: 'Edit supplier' },

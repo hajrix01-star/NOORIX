@@ -4,7 +4,7 @@
  * يستخدم Portal للقائمة المنسدلة لتجنب القص (overflow)
  * يدعم debounce 300ms، loading state، RTL، وجوال (font-size ≥ 16px)
  */
-import React, { useState, useRef, useEffect, useMemo, type ChangeEvent, type CSSProperties } from 'react';
+import React, { useState, useRef, useEffect, useMemo, type ChangeEvent, type CSSProperties, type MouseEvent } from 'react';
 import { useDebouncedValue } from '../../ui';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -91,7 +91,7 @@ export function ProductSearchInput({
   const filtered = useMemo(() => {
     const q = normalizeForSearch(debouncedQuery);
     if (!q) return products;
-    return products.filter((p: any) => matchesSearch(p, q));
+    return products.filter((p) => matchesSearch(p, q));
   }, [products, debouncedQuery]);
 
   function updateDropdownPosition() {
@@ -164,10 +164,10 @@ export function ProductSearchInput({
       return;
     }
     if (e.key === 'ArrowDown') {
-      setHighlightIdx((i: any) => Math.min(i + 1, filtered.length - 1));
+      setHighlightIdx((i) => Math.min(i + 1, filtered.length - 1));
       e.preventDefault();
     } else if (e.key === 'ArrowUp') {
-      setHighlightIdx((i: any) => Math.max(i - 1, 0));
+      setHighlightIdx((i) => Math.max(i - 1, 0));
       e.preventDefault();
     } else if (e.key === 'Enter' && filtered[highlightIdx]) {
       selectProduct(filtered[highlightIdx]);
@@ -220,7 +220,7 @@ export function ProductSearchInput({
                 {t('ordersNoSearchResults') || 'لا توجد نتائج'}
               </div>
             ) : (
-              filtered.map((p: any, i: any) => {
+              filtered.map((p, i) => {
                 const variants = Array.isArray(p?.variants) ? p.variants : [];
                 const first = variants[0];
                 const lastPrice = first?.lastPrice ?? p?.lastPrice ?? 0;
@@ -232,7 +232,7 @@ export function ProductSearchInput({
                     role="option"
                     aria-selected={isHighlight}
                     onMouseEnter={() => setHighlightIdx(i)}
-                    onMouseDown={(ev: any) => {
+                    onMouseDown={(ev: MouseEvent<HTMLDivElement>) => {
                       ev.preventDefault();
                       selectProduct(p);
                     }}

@@ -24,6 +24,11 @@ export type YearRangeCalendarProps = DatePeriodCalendarProps & {
   yearLabel: string;
 };
 
+export type QuarterCalendarProps = DatePeriodCalendarProps & {
+  quarterLabel: string;
+  yearLabel: string;
+};
+
 export type DayRangeCalendarProps = DatePeriodCalendarProps & {
   monthNames: string[];
   weekdayNames: string[];
@@ -181,9 +186,62 @@ export function YearRangeCalendar({ draft, years, updateDraft, yearLabel }: Year
   );
 }
 
-function isDayInDraftRange(draft: DatePeriodState, date: string) {
+export function QuarterCalendar({
+  draft,
+  years,
+  updateDraft,
+  quarterLabel,
+  yearLabel,
+}: QuarterCalendarProps) {
+  const quarters = [1, 2, 3, 4];
+  const selectedQuarter = draft.selQuarter || Math.ceil((draft.selMonth || 1) / 3);
+
+  return (
+    <div className="ndfb-calendar ndfb-calendar--quarters">
+      <div className="ndfb-calendar-panel">
+        <div className="ndfb-calendar-panel__head">
+          <span>{quarterLabel}</span>
+        </div>
+        <div className="ndfb-compact-choice-grid ndfb-compact-choice-grid--years">
+          <span className="ndfb-compact-choice-label">{yearLabel}</span>
+          {years.map((year) => (
+            <Button
+              variant="raw"
+              key={year}
+              type="button"
+              className={`ndfb-year-cell${draft.selYear === year ? ' ndfb-year-cell--active' : ''}`}
+              aria-label={String(year)}
+              onClick={() => updateDraft({ selYear: year })}
+            >
+              {year}
+            </Button>
+          ))}
+        </div>
+        <div className="ndfb-compact-choice-grid ndfb-compact-choice-grid--quarters">
+          <span className="ndfb-compact-choice-label">{quarterLabel}</span>
+          {quarters.map((quarter) => (
+            <Button
+              variant="raw"
+              key={quarter}
+              type="button"
+              className={`ndfb-year-cell${selectedQuarter === quarter ? ' ndfb-year-cell--active' : ''}`}
+              aria-label={`Q${quarter}`}
+              onClick={() => updateDraft({ selQuarter: quarter })}
+            >
+              {`Q${quarter}`}
+            </Button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getDayRangeState(draft: DatePeriodState, date: string) {
   const span = normalizeDateSpan(draft.rangeStart || draft.selDay, draft.rangeEnd || draft.selDay);
-  return !!span.startDate && !!span.endDate && date >= span.startDate && date <= span.endDate;
+  if (!span.startDate || !span.endDate || date < span.startDate || date > span.endDate) return 'none';
+  if (date === span.startDate || date === span.endDate) return 'edge';
+  return 'middle';
 }
 
 export function DayRangeCalendar({
@@ -259,13 +317,17 @@ export function DayRangeCalendar({
           {Array.from({ length: daysCount }).map((_, index) => {
             const day = index + 1;
             const date = ymd(calendarYear, calendarMonth, day);
-            const active = isDayInDraftRange(draft, date);
+            const rangeState = getDayRangeState(draft, date);
             return (
               <Button
                 variant="raw"
                 key={date}
                 type="button"
-                className={`ndfb-day-cell${active ? ' ndfb-day-cell--active' : ''}`}
+                className={[
+                  'ndfb-day-cell',
+                  rangeState === 'edge' ? 'ndfb-day-cell--active ndfb-day-cell--range-edge' : '',
+                  rangeState === 'middle' ? 'ndfb-day-cell--range-middle' : '',
+                ].filter(Boolean).join(' ')}
                 aria-label={date}
                 onClick={() => selectDay(day)}
               >

@@ -13,11 +13,30 @@ import { plDec } from './reports-pl-math.util';
 import { resolvePlItemMeta } from './reports-pl-item-meta.util';
 import { formatReportMoneyInteger, formatReportTaxAmount } from '../common/utils/report-display-format.util';
 
+type PlInvoiceDetailPrisma = {
+  ledgerEntry: Pick<TenantPrismaService['ledgerEntry'], 'findMany'>;
+  invoice: Pick<TenantPrismaService['invoice'], 'findMany'>;
+  dailySalesChannel: Pick<TenantPrismaService['dailySalesChannel'], 'findMany'>;
+};
+
+function salesChannelVaultId(itemKey: string | undefined): string | null {
+  return itemKey?.startsWith('sales-channel:') ? itemKey.replace('sales-channel:', '') : null;
+}
+
+function allocateInvoicePart(
+  amount: Decimal,
+  invoiceTotal: Decimal,
+  invoicePart: Decimal,
+): Decimal {
+  if (invoiceTotal.lte(0) || amount.lte(0) || invoicePart.lte(0)) return new Decimal(0);
+  return invoicePart.mul(amount).div(invoiceTotal);
+}
+
 /**
  * تفاصيل التقرير من Ledger — عند النقر على حساب (account:xxx)
  */
 export async function loadPlDetailFromLedger(
-  prisma: TenantPrismaService,
+  prisma: PlInvoiceDetailPrisma,
   companyId: string,
   year: number,
   month: number | undefined,
@@ -224,13 +243,39 @@ export function buildPlInvoiceWhere(
 
 /** مجموع إجمالي الفاتورة (شامل الضريبة) لكل شهر من السنة للبند */
 export async function sumInvoiceTotalAmountByMonth(
-  prisma: TenantPrismaService,
+  prisma: PlInvoiceDetailPrisma,
   companyId: string,
   year: number,
   groupKey: GroupKey,
   itemKey: string | undefined,
   categories: Map<string, CategoryNode>,
 ): Promise<Decimal[]> {
+  const channelVaultId = salesChannelVaultId(itemKey);
+  if (groupKey === 'sales' && channelVaultId) {
+    const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+    const rows = await prisma.dailySalesChannel.findMany({
+      where: {
+        vaultId: channelVaultId,
+        summary: {
+          companyId,
+          status: 'active',
+          transactionDate: { gte: startDate, lte: endDate },
+        },
+      },
+      select: {
+        amount: true,
+        summary: { select: { transactionDate: true } },
+      },
+    });
+    const months = Array.from({ length: 12 }, () => new Decimal(0));
+    for (const r of rows) {
+      const m = r.summary.transactionDate.getUTCMonth();
+      months[m] = months[m].plus(plDec(r.amount));
+    }
+    return months;
+  }
+
   const where = buildPlInvoiceWhere(companyId, year, undefined, groupKey, itemKey, categories);
   const rows = await prisma.invoice.findMany({
     where,
@@ -249,7 +294,7 @@ export async function sumInvoiceTotalAmountByMonth(
  * الحد الأقصى 500 فاتورة لكل طلب تفاصيل.
  */
 export async function loadPlDetailInvoices(
-  prisma: TenantPrismaService,
+  prisma: PlInvoiceDetailPrisma,
   companyId: string,
   year: number,
   month: number | undefined,
@@ -258,6 +303,7 @@ export async function loadPlDetailInvoices(
   categories: Map<string, CategoryNode>,
 ) {
   const where = buildPlInvoiceWhere(companyId, year, month, groupKey, itemKey, categories);
+  const channelVaultId = groupKey === 'sales' ? salesChannelVaultId(itemKey) : null;
 
   const invoices = await prisma.invoice.findMany({
     where,
@@ -288,7 +334,37 @@ export async function loadPlDetailInvoices(
   });
 
   return invoices.map((invoice) => {
-    const itemMeta = resolvePlItemMeta(invoice as unknown as ReportInvoice, groupKey, categories);
+    const selectedChannel =
+      channelVaultId != null
+        ? invoice.dailySalesSummary?.channels.find((ch) => ch.vault.id === channelVaultId) ?? null
+        : null;
+    const itemMeta = selectedChannel
+      ? {
+          key: `sales-channel:${selectedChannel.vault.id}`,
+          labelAr: selectedChannel.vault.nameAr,
+          labelEn: selectedChannel.vault.nameEn || selectedChannel.vault.nameAr,
+        }
+      : resolvePlItemMeta(invoice, groupKey, categories);
+    const channelGross =
+      selectedChannel != null ? selectedChannel.amount : null;
+    const displayTotal = channelGross != null ? plDec(channelGross) : plDec(invoice.totalAmount);
+    const invoiceTotal = plDec(invoice.totalAmount);
+    const displayNet =
+      channelGross != null
+        ? allocateInvoicePart(displayTotal, invoiceTotal, plDec(invoice.netAmount))
+        : plDec(invoice.netAmount);
+    const displayTax =
+      channelGross != null
+        ? allocateInvoicePart(displayTotal, invoiceTotal, plDec(invoice.taxAmount))
+        : plDec(invoice.taxAmount);
+    const channelNames = (invoice.dailySalesSummary?.channels || [])
+      .filter((ch) => channelVaultId == null || ch.vault.id === channelVaultId)
+      .map((ch) => ({
+        nameAr: ch.vault.nameAr,
+        nameEn: ch.vault.nameEn,
+        amount: formatReportMoneyInteger(plDec(ch.amount)),
+      }));
+
     return {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
@@ -306,14 +382,10 @@ export async function loadPlDetailInvoices(
       expenseLineNameAr: invoice.expenseLine?.nameAr || null,
       expenseLineNameEn: invoice.expenseLine?.nameEn || null,
       summaryNumber: invoice.dailySalesSummary?.summaryNumber || null,
-      channelNames: (invoice.dailySalesSummary?.channels || []).map((ch) => ({
-        nameAr: ch.vault.nameAr,
-        nameEn: ch.vault.nameEn,
-        amount: formatReportMoneyInteger(plDec(ch.amount)),
-      })),
-      totalAmount: formatReportMoneyInteger(plDec(invoice.totalAmount)),
-      netAmount: formatReportMoneyInteger(plDec(invoice.netAmount)),
-      taxAmount: formatReportTaxAmount(plDec(invoice.taxAmount)),
+      channelNames,
+      totalAmount: formatReportMoneyInteger(displayTotal),
+      netAmount: formatReportMoneyInteger(displayNet),
+      taxAmount: formatReportTaxAmount(displayTax),
       notes: invoice.notes || null,
     };
   });

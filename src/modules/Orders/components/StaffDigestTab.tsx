@@ -160,8 +160,8 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
       setSendModalOpen(false);
       setPendingOrderIds(undefined);
       refetch();
-    } catch (e: any) {
-      showToast(e?.message || t('saveFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('saveFailed'), 'error');
     } finally {
       setSending(false);
     }

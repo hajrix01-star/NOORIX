@@ -17,6 +17,12 @@ import { resolveProductSection } from './orders-staff-sections.util';
 import { buildStaffSalesReportModel } from './orders-staff-sales-report-builder.util';
 import { CreateStaffOrderDto, SendStaffDigestOptions, StaffOrderItemInput } from './orders-staff.types';
 
+type StaffOrderWithItems = Prisma.StaffOrderGetPayload<{
+  include: {
+    items: { include: { product: true } };
+  };
+}>;
+
 @Injectable()
 export class OrdersStaffService {
   constructor(
@@ -223,7 +229,7 @@ export class OrdersStaffService {
     }
 
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
-    const data: any = {};
+    const data: Prisma.StaffOrderUpdateInput = {};
     if (dto.notes !== undefined) data.notes = dto.notes?.trim() || null;
 
     if (isSale && dto.saleDate) {
@@ -314,7 +320,8 @@ export class OrdersStaffService {
     });
 
     // تجميع بتاريخ اليوم (YYYY-MM-DD بناءً على sentAt)
-    const byDate: Record<string, { date: string; sentAt: Date; sections: Record<string, any[]> }> = {};
+    type DigestHistoryOrder = (typeof orders)[number];
+    const byDate: Record<string, { date: string; sentAt: Date; sections: Record<string, DigestHistoryOrder[]> }> = {};
     for (const o of orders) {
       const d = o.sentAt ?? o.updatedAt;
       const key = d.toISOString().slice(0, 10);
@@ -330,7 +337,7 @@ export class OrdersStaffService {
       sections: Object.entries(day.sections).map(([sectionName, sOrders]) => {
         // دمج الأصناف المتشابهة لكل قسم
         const itemMap: Record<string, { nameAr: string; nameEn: string | null; qty: number; unit: string }> = {};
-        for (const o of sOrders as any[]) {
+        for (const o of sOrders) {
           for (const it of o.items) {
             const key = `${it.productId}|${it.unit || ''}`;
             if (!itemMap[key]) {
@@ -346,7 +353,7 @@ export class OrdersStaffService {
         }
         return {
           sectionName,
-          ordersCount: (sOrders as any[]).length,
+          ordersCount: sOrders.length,
           items: Object.values(itemMap),
         };
       }),
@@ -384,7 +391,7 @@ export class OrdersStaffService {
   }
 
   /** تجميع بنود الطلبات المعلّقة لطلب مشتريات واحد */
-  private aggregateStaffOrdersToPurchaseLines(orders: any[]) {
+  private aggregateStaffOrdersToPurchaseLines(orders: readonly StaffOrderWithItems[]) {
     type Agg = {
       productId: string;
       name: string;
@@ -431,7 +438,7 @@ export class OrdersStaffService {
     const createPurchaseOrder = opts.createPurchaseOrder !== false;
     const orderType = opts.orderType === 'internal' ? 'internal' : 'external';
 
-    const where: any = { companyId, orderType: 'order', status: 'pending' };
+    const where: Prisma.StaffOrderWhereInput = { companyId, orderType: 'order', status: 'pending' };
     if (orderIds?.length) where.id = { in: orderIds };
 
     const orders = await this.prisma.staffOrder.findMany({

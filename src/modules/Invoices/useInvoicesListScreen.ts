@@ -15,13 +15,10 @@ import { useCategories } from '../../hooks/useCategories';
 import { useVaults } from '../../hooks/useVaults';
 import { fmt } from '../../utils/format';
 import {
-  getInvoices,
   deleteInvoice,
   getInvoiceCreatorFilterOptions,
-  unwrapApiList,
 } from '../../services/api';
 import { useDateFilter } from '../../ui/date';
-import { formatInvoiceForExport } from '../../utils/importTemplates';
 import { buildActiveCancelledStatusMap, buildInvoiceKindBadgeMap } from '../../constants/badgeMaps';
 import { PAGE_SIZE } from './invoicesListScreenHelpers';
 import { invoiceKeys, ledgerKeys, vaultKeys } from '../../services/queryKeys';
@@ -35,6 +32,36 @@ import {
 import { nextInvoiceSortState } from './invoicesListSort';
 import { toYmd } from '../../utils/saudiDate';
 import { useInvoicesListActions } from './useInvoicesListActions';
+import { buildInvoiceListFetchParams } from './invoicesListQueryModel';
+import {
+  EMPTY_INVOICE_LIST_URL_EXTRA,
+  type InvoiceListUrlExtra,
+  applyInvoiceListKindDrill,
+  parseInvoiceListUrlState,
+  resolveInvoiceListDateRange,
+  resolveInvoiceListKindForApi,
+} from './invoicesListUrlModel';
+import { fetchInvoicesForImportExportExport } from './invoicesListImportExportModel';
+import type { InvoiceViewSource } from './invoiceViewModel';
+import type { InvoiceTableRow } from './invoiceTableRowModel';
+import type { InvoiceListSortDir } from './invoicesListQueryModel';
+import type { InvoiceExecutiveVaultFlowRow } from './invoiceExecutiveCardsModel';
+import { buildInvoiceDeleteConfirmationMessage, canDeleteInvoiceRow } from './invoiceDeleteModel';
+import {
+  buildInvoiceImportSuccessMessage,
+  filterInvoiceSupplierCategories,
+  filterVisibleInvoiceListItems,
+  getInvoiceListErrorMessage,
+  isInvoiceListRawInvoice,
+  mapInvoicesToListTableRows,
+  normalizeInvoiceCreatorFilterOptions,
+  resolveInvoiceListCompanyDisplay,
+  resolveInvoiceListVaultRowLabel,
+  toInvoiceListViewSource,
+  type InvoiceListCreatorFilterOptions,
+  type InvoiceListCreatorFilterOptionsResponse,
+  type InvoiceListRawInvoice,
+} from './invoicesListScreenModel';
 
 /**
  * منطق شاشة قائمة الفواتير — عرض فقط يبقى في InvoicesListScreen.jsx
@@ -49,21 +76,27 @@ export function useInvoicesListScreen() {
   const canFilterSaleInvoices = hasPermission(userRole, PERMISSIONS.VIEW_INVOICES, userPermissions);
   const { t, lang } = useTranslation();
   const [searchParams] = useSearchParams();
-  const fromUrl = toYmd(searchParams.get('from'));
-  const toUrl = toYmd(searchParams.get('to'));
-  const invoiceBatchIdFromUrl = searchParams.get('batchId')?.trim() || '';
+  const urlState = useMemo(() => parseInvoiceListUrlState(searchParams), [searchParams]);
+  const fromUrl = urlState.from;
+  const toUrl = urlState.to;
+  const invoiceBatchIdFromUrl = urlState.batchId;
   const urlDrillKeyRef = useRef('');
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
+  const {
+    setMode: setDateFilterMode,
+    setRangeStart: setDateFilterRangeStart,
+    setRangeEnd: setDateFilterRangeEnd,
+  } = dateFilter;
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [exportBusy, setExportBusy] = useState(false);
-  const activeCo = companies?.find((c: any) => c.id === activeCompanyId);
-  const companyName =
-    (lang === 'en' ? activeCo?.nameEn || activeCo?.nameAr : activeCo?.nameAr || activeCo?.nameEn) || '';
-  const logoUrl = activeCo?.logoUrl || '';
-  const [editingInvoice, setEditingInvoice] = useState<any>(null);
-  const [viewingInvoice, setViewingInvoice] = useState<any>(null);
+  const { companyName, logoUrl } = useMemo(
+    () => resolveInvoiceListCompanyDisplay({ companies, activeCompanyId, lang }),
+    [companies, activeCompanyId, lang],
+  );
+  const [editingInvoice, setEditingInvoice] = useState<InvoiceViewSource | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<InvoiceViewSource | null>(null);
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
   const [filterSupplierCategoryId, setFilterSupplierCategoryId] = useState('');
@@ -71,25 +104,28 @@ export function useInvoicesListScreen() {
   const [filterVaultId, setFilterVaultId] = useState('');
   const [showCancelled, setShowCancelled] = useState(false);
   const [filterHasNotesOnly, setFilterHasNotesOnly] = useState(false);
-  const [urlExtra, setUrlExtra] = useState({ kind: '', categoryId: '', expenseLineId: '' });
+  const [urlExtra, setUrlExtra] = useState<InvoiceListUrlExtra>(EMPTY_INVOICE_LIST_URL_EXTRA);
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('transactionDate');
-  const [sortDir, setSortDir] = useState('desc');
+  const [sortDir, setSortDir] = useState<InvoiceListSortDir>('desc');
   const [showImportExport, setShowImportExport] = useState(false);
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
   const [cashReportOpen, setCashReportOpen] = useState(false);
-  const qInit = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') || '' : '';
-  const [searchText, setSearchText] = useState(qInit);
+  const [searchText, setSearchText] = useState(urlState.q);
   const debouncedQ = useDebouncedValue((searchText || '').trim(), 300);
 
-  const invoiceQueryStartDate = useMemo(
-    () => (fromUrl && toUrl ? fromUrl : dateFilter.startDate),
-    [fromUrl, toUrl, dateFilter.startDate],
+  const invoiceQueryDateRange = useMemo(
+    () =>
+      resolveInvoiceListDateRange({
+        fromUrl,
+        toUrl,
+        fallbackStartDate: dateFilter.startDate,
+        fallbackEndDate: dateFilter.endDate,
+      }),
+    [fromUrl, toUrl, dateFilter.startDate, dateFilter.endDate],
   );
-  const invoiceQueryEndDate = useMemo(
-    () => (fromUrl && toUrl ? toUrl : dateFilter.endDate),
-    [fromUrl, toUrl, dateFilter.endDate],
-  );
+  const invoiceQueryStartDate = invoiceQueryDateRange.startDate;
+  const invoiceQueryEndDate = invoiceQueryDateRange.endDate;
 
   useEffect(() => {
     setPage(1);
@@ -113,96 +149,64 @@ export function useInvoicesListScreen() {
   ]);
 
   useEffect(() => {
-    const keys = ['from', 'to', 'kind', 'supplierId', 'supplierCategoryId', 'categoryId', 'expenseLineId', 'q', 'batchId'];
-    const parts = keys.map((k: any) => searchParams.get(k) || '');
-    const drillKey = parts.join('\u001f');
-    if (!parts.some(Boolean)) {
+    if (!urlState.hasDrillValues) {
       urlDrillKeyRef.current = '';
       return;
     }
-    if (urlDrillKeyRef.current === drillKey) return;
-    urlDrillKeyRef.current = drillKey;
+    if (urlDrillKeyRef.current === urlState.drillKey) return;
+    urlDrillKeyRef.current = urlState.drillKey;
 
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const kind = searchParams.get('kind') || '';
-    const supplierId = searchParams.get('supplierId') || '';
-    const supplierCategoryId = searchParams.get('supplierCategoryId') || '';
-    const categoryId = searchParams.get('categoryId') || '';
-    const expenseLineId = searchParams.get('expenseLineId') || '';
-    const q = searchParams.get('q') || '';
-    if (from && to) {
-      dateFilter.setMode('range');
-      dateFilter.setRangeStart(toYmd(from));
-      dateFilter.setRangeEnd(toYmd(to));
+    if (urlState.from && urlState.to) {
+      setDateFilterMode('range');
+      setDateFilterRangeStart(urlState.from);
+      setDateFilterRangeEnd(urlState.to);
     }
-    if (kind) {
-      if (kind.includes(',')) {
-        setFilterKind('');
-        setUrlExtra((p: any) => ({ ...p, kind }));
-      } else {
-        setFilterKind(kind);
-        setUrlExtra((p: any) => ({ ...p, kind: '' }));
-      }
+    if (urlState.kind) {
+      const kindDrill = applyInvoiceListKindDrill(urlState.kind);
+      setFilterKind(kindDrill.filterKind);
+      setUrlExtra((prev) => ({ ...prev, kind: kindDrill.kind }));
     }
-    if (supplierId) setFilterSupplierId(supplierId);
-    if (supplierCategoryId) setFilterSupplierCategoryId(supplierCategoryId);
-    if (categoryId) setUrlExtra((p: any) => ({ ...p, categoryId }));
-    if (expenseLineId) setUrlExtra((p: any) => ({ ...p, expenseLineId }));
-    if (q) {
-      setSearchText(q);
+    if (urlState.supplierId) setFilterSupplierId(urlState.supplierId);
+    if (urlState.supplierCategoryId) setFilterSupplierCategoryId(urlState.supplierCategoryId);
+    if (urlState.categoryId) setUrlExtra((prev) => ({ ...prev, categoryId: urlState.categoryId }));
+    if (urlState.expenseLineId) setUrlExtra((prev) => ({ ...prev, expenseLineId: urlState.expenseLineId }));
+    if (urlState.q) {
+      setSearchText(urlState.q);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- نقرأ فقط دوال فلتر التاريخ المستقرة
-  }, [searchParams]);
+  }, [setDateFilterMode, setDateFilterRangeEnd, setDateFilterRangeStart, urlState]);
 
   const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
   const KIND_MAP = useMemo(() => buildInvoiceKindBadgeMap(t), [t]);
 
   const deleteInvoiceMut = useApiMutation({
-    mutationFn: ({ id }: any) => deleteInvoice(id, companyId),
+    mutationFn: ({ id }: { id: string }) => deleteInvoice(id, companyId),
     invalidateQueries: [invoiceKeys.root(), vaultKeys.root(), ledgerKeys.root()],
     successToast: () => t('invoiceDeleted'),
-    errorToast: (e: any) => e?.message || t('deleteFailed'),
+    errorToast: (error: unknown) => getInvoiceListErrorMessage(error, t('deleteFailed')),
   });
 
   const confirmAndDeleteInvoice = useCallback(
-    (r: any) => {
-      if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
+    (r: InvoiceTableRow | InvoiceViewSource) => {
+      if (!canDeleteInvoiceRow(r)) return;
+      if (!confirm(buildInvoiceDeleteConfirmationMessage(t, r))) return;
       deleteInvoiceMut.mutate({ id: r.id });
     },
     [t, deleteInvoiceMut],
   );
 
-  const columns = useMemo(
-    () =>
-      buildInvoiceListColumns({
-        t,
-        lang,
-        fmt,
-        STATUS_MAP,
-        KIND_MAP,
-        userRole,
-        companyId,
-        setViewingInvoice,
-        setEditingInvoice,
-        confirmAndDeleteInvoice,
-      }),
-    [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice, fmt],
-  );
-
   const { suppliers } = useSuppliers(companyId);
   const { flatCategories } = useCategories(companyId);
   const supplierCategories = useMemo(
-    () =>
-      (flatCategories || []).filter((c: any) => {
-        const type = String(c?.type || '').toLowerCase();
-        return type === 'purchase' || type === 'expense';
-      }),
+    () => filterInvoiceSupplierCategories(flatCategories),
     [flatCategories],
   );
-  const { data: creatorFilterOptions = { users: [] } } = useApiQuery<{ users: any[] }>({
+  const { data: creatorFilterOptions = { users: [] } } = useApiQuery<
+    InvoiceListCreatorFilterOptionsResponse,
+    InvoiceListCreatorFilterOptions
+  >({
     queryKey: invoiceKeys.creatorFilterOptions(companyId),
     queryFn: () => getInvoiceCreatorFilterOptions(companyId),
+    select: normalizeInvoiceCreatorFilterOptions,
     enabled: !!companyId,
     fallbackMessage: t('loadingError'),
   });
@@ -214,59 +218,66 @@ export function useInvoicesListScreen() {
     [dateFilter.endDate, dateFilter.startDate],
   );
 
-  const kindForApi = filterKind || urlExtra.kind || undefined;
+  const kindForApi = resolveInvoiceListKindForApi(filterKind, urlExtra.kind);
+
+  const invoiceListFetchParams = useMemo(
+    () =>
+      buildInvoiceListFetchParams({
+        companyId,
+        startDate: invoiceQueryStartDate,
+        endDate: invoiceQueryEndDate,
+        kind: kindForApi,
+        sortBy: sortKey,
+        sortDir,
+        supplierId: filterSupplierId,
+        supplierCategoryId: filterSupplierCategoryId,
+        q: debouncedQ,
+        categoryId: urlExtra.categoryId,
+        expenseLineId: urlExtra.expenseLineId,
+        includeCancelled: showCancelled,
+        hasNotes: filterHasNotesOnly,
+        vaultId: filterVaultId,
+        batchId: invoiceBatchIdFromUrl,
+        createdByUserId: filterCreatedByUserId,
+      }),
+    [
+      companyId,
+      invoiceQueryStartDate,
+      invoiceQueryEndDate,
+      kindForApi,
+      sortKey,
+      sortDir,
+      filterSupplierId,
+      filterSupplierCategoryId,
+      debouncedQ,
+      urlExtra.categoryId,
+      urlExtra.expenseLineId,
+      showCancelled,
+      filterHasNotesOnly,
+      filterVaultId,
+      invoiceBatchIdFromUrl,
+      filterCreatedByUserId,
+    ],
+  );
 
   const { items, total, sums, inflowByVault, outflowSummary, isLoading, isFetching, isPlaceholderData, isError, error } = useInvoices({
-    companyId,
-    startDate: invoiceQueryStartDate,
-    endDate: invoiceQueryEndDate,
+    ...invoiceListFetchParams,
     page,
     pageSize: PAGE_SIZE,
-    kind: kindForApi,
-    supplierId: filterSupplierId || undefined,
-    supplierCategoryId: filterSupplierCategoryId || undefined,
-    sortBy: sortKey,
-    sortDir,
-    q: debouncedQ || undefined,
-    categoryId: urlExtra.categoryId || undefined,
-    expenseLineId: urlExtra.expenseLineId || undefined,
-    includeCancelled: showCancelled,
-    hasNotes: filterHasNotesOnly || undefined,
-    vaultId: filterVaultId || undefined,
-    batchId: invoiceBatchIdFromUrl || undefined,
-    createdByUserId: filterCreatedByUserId || undefined,
   });
 
-  const tableData = useMemo(
-    () =>
-      (items || []).map((inv: any) => ({
-        ...inv,
-        supplierName:
-          inv.kind === 'sale'
-            ? t('categoryTypeSale') || 'مبيعات'
-            : lang === 'en'
-              ? inv.supplier?.nameEn || inv.supplier?.nameAr || ''
-              : inv.supplier?.nameAr || inv.supplier?.nameEn || '',
-        createdByDisplayName: inv.createdByUser
-          ? lang === 'en'
-            ? inv.createdByUser.nameEn ||
-              inv.createdByUser.nameAr ||
-              inv.createdByUser.email ||
-              ''
-            : inv.createdByUser.nameAr ||
-              inv.createdByUser.nameEn ||
-              inv.createdByUser.email ||
-              ''
-          : '',
-        notesOrEmployee: inv.notes || '',
-      })),
-    [items, t, lang],
-  );
+  const tableData = useMemo(() => {
+    const visibleItems = filterVisibleInvoiceListItems({
+      invoices: items.filter(isInvoiceListRawInvoice),
+      showCancelled,
+    });
+    return mapInvoicesToListTableRows({ invoices: visibleItems, t, lang });
+  }, [items, showCancelled, t, lang]);
 
   const displayedTotal = total || 0;
 
   const toggleSort = useCallback(
-    (key: any) => {
+    (key: string) => {
       setPage(1);
       const next = nextInvoiceSortState(sortKey, sortDir, key);
       setSortKey(next.sortKey);
@@ -276,7 +287,7 @@ export function useInvoicesListScreen() {
   );
 
   const mapInvoiceToExportRow = useCallback(
-    (inv: any) => invoiceToExportRow(inv, { t, lang, kindMap: KIND_MAP, statusMap: STATUS_MAP }),
+    (inv: InvoiceListRawInvoice) => invoiceToExportRow(inv, { t, lang, kindMap: KIND_MAP, statusMap: STATUS_MAP }),
     [KIND_MAP, STATUS_MAP, t, lang],
   );
 
@@ -286,7 +297,7 @@ export function useInvoicesListScreen() {
   const serverInflow = sums.inflow;
   const serverOutflow = sums.outflow;
 
-  const { handleExportExcel, handlePrintInvoices } = useInvoicesListActions({
+  const { handleExportExcel, handlePrintInvoices, handlePrintSingleInvoice, printPreviewModal } = useInvoicesListActions({
     companyId,
     displayedTotal,
     invoiceQueryStartDate,
@@ -315,20 +326,38 @@ export function useInvoicesListScreen() {
     fmt,
     showToast,
     setExportBusy,
-    vaultsList,
     serverAll,
   });
+
+  const columns = useMemo(
+    () =>
+      buildInvoiceListColumns({
+        t,
+        lang,
+        fmt,
+        STATUS_MAP,
+        KIND_MAP,
+        userRole,
+        companyId,
+        setViewingInvoice: (row) => setViewingInvoice(toInvoiceListViewSource(row)),
+        setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
+        printInvoice: handlePrintSingleInvoice,
+        confirmAndDeleteInvoice,
+      }),
+    [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice, fmt, handlePrintSingleInvoice],
+  );
 
   const handlePrintCashReport = useCallback(() => {
     setCashReportOpen(true);
   }, []);
 
   const vaultRowLabel = useCallback(
-    (row: any) => {
-      if (row.unassigned) return t('invoicesSalesUnassignedVault');
-      const n = lang === 'en' ? row.nameEn || row.nameAr : row.nameAr || row.nameEn;
-      return n || '—';
-    },
+    (row: InvoiceExecutiveVaultFlowRow) =>
+      resolveInvoiceListVaultRowLabel({
+        row,
+        lang,
+        unassignedLabel: t('invoicesSalesUnassignedVault'),
+      }),
     [t, lang],
   );
 
@@ -346,10 +375,11 @@ export function useInvoicesListScreen() {
         KIND_MAP,
         userRole,
         companyId,
-        setEditingInvoice,
+        setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
+        printInvoice: handlePrintSingleInvoice,
         confirmAndDeleteInvoice,
       }),
-    [KIND_MAP, STATUS_MAP, userRole, companyId, t, lang, confirmAndDeleteInvoice],
+    [KIND_MAP, STATUS_MAP, userRole, companyId, t, lang, confirmAndDeleteInvoice, handlePrintSingleInvoice],
   );
 
   const renderCompactRow = useMemo(
@@ -360,41 +390,39 @@ export function useInvoicesListScreen() {
         KIND_MAP,
         userRole,
         companyId,
-        setViewingInvoice,
-        setEditingInvoice,
+        setViewingInvoice: (row) => setViewingInvoice(toInvoiceListViewSource(row)),
+        setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
+        printInvoice: handlePrintSingleInvoice,
         confirmAndDeleteInvoice,
       }),
-    [KIND_MAP, STATUS_MAP, userRole, companyId, t, confirmAndDeleteInvoice],
+    [KIND_MAP, STATUS_MAP, userRole, companyId, t, confirmAndDeleteInvoice, handlePrintSingleInvoice],
   );
 
   const importExportExportFetcher = useCallback(async () => {
-    const kindForExport = filterKind || (urlExtra.kind ? urlExtra.kind.split(',')[0] : '');
-    const res = await getInvoices(
+    return fetchInvoicesForImportExportExport({
       companyId,
-      dateFilter.startDate,
-      dateFilter.endDate,
-      1,
-      2000,
-      undefined,
-      undefined,
-      kindForExport || undefined,
-      undefined,
-      undefined,
-      filterSupplierId || undefined,
-      filterSupplierCategoryId || undefined,
-      debouncedQ || undefined,
-      urlExtra.categoryId || undefined,
-      urlExtra.expenseLineId || undefined,
-      true,
-      filterHasNotesOnly || undefined,
-      filterVaultId || undefined,
-      filterCreatedByUserId || undefined,
-    );
-    return unwrapApiList<any>(res, t('exportFailed')).map(formatInvoiceForExport);
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
+      filterKind,
+      urlExtra,
+      sortBy: sortKey,
+      sortDir,
+      supplierId: filterSupplierId,
+      supplierCategoryId: filterSupplierCategoryId,
+      q: debouncedQ,
+      includeCancelled: showCancelled,
+      hasNotes: filterHasNotesOnly,
+      vaultId: filterVaultId,
+      batchId: invoiceBatchIdFromUrl,
+      createdByUserId: filterCreatedByUserId,
+      exportFailedMessage: t('exportFailed'),
+    });
   }, [
     companyId,
     dateFilter.startDate,
     dateFilter.endDate,
+    sortKey,
+    sortDir,
     filterKind,
     urlExtra.kind,
     urlExtra.categoryId,
@@ -402,16 +430,18 @@ export function useInvoicesListScreen() {
     filterSupplierId,
     filterSupplierCategoryId,
     debouncedQ,
+    showCancelled,
     filterHasNotesOnly,
     filterVaultId,
+    invoiceBatchIdFromUrl,
     filterCreatedByUserId,
     t,
   ]);
 
   const onImportInvoicesSuccess = useCallback(
-    (count: any) => {
+    (count: number) => {
       invalidateOnFinancialMutation(queryClient);
-      showToast(`تم استيراد ${count} فاتورة بنجاح`, 'success');
+      showToast(buildInvoiceImportSuccessMessage(count), 'success');
     },
     [queryClient, showToast],
   );
@@ -431,9 +461,14 @@ export function useInvoicesListScreen() {
     displayedTotal,
     handleExportExcel,
     handlePrintInvoices,
+    handlePrintSingleInvoice,
+    printPreviewModal,
     handlePrintCashReport,
     editingInvoice,
     setEditingInvoice,
+    confirmAndDeleteInvoice,
+    userRole,
+    userPermissions,
     viewingInvoice,
     setViewingInvoice,
     queryClient,

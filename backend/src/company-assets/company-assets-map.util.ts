@@ -36,6 +36,9 @@ export function mapCompanyAssetRow(
     warrantyMonths: number | null;
     warrantyStartDate: Date | null;
     warrantyEndDate: Date | null;
+    warrantyAttachmentPath?: string | null;
+    warrantyAttachmentOriginalName?: string | null;
+    warrantyAttachmentMime?: string | null;
     notes: string | null;
     supplier: { id: string; nameAr: string; nameEn: string | null } | null;
     invoice: { id: string; invoiceNumber: string; supplierInvoiceNumber: string | null } | null;
@@ -64,7 +67,11 @@ export function mapCompanyAssetRow(
   const { _count, warrantyLines, ...rest } = row;
   return {
     ...rest,
+    warrantyAttachmentPath: undefined,
     acquisitionCost: row.acquisitionCost != null ? row.acquisitionCost.toString() : null,
+    hasWarrantyAttachment: Boolean(row.warrantyAttachmentPath?.trim()),
+    warrantyAttachmentOriginalName: row.warrantyAttachmentOriginalName ?? null,
+    warrantyAttachmentMime: row.warrantyAttachmentMime ?? null,
     warrantyStatus,
     daysToWarrantyEnd,
     warrantyLinesCount: _count?.warrantyLines ?? warrantyLines?.length ?? 0,

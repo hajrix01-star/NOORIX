@@ -867,61 +867,6 @@
 }
 
 
-/* ???????????????????????????????????????????????????????????
-   9. Table — الجداول (legacy nx-table compatibility only)
-   The canonical Noorix table system lives in src/index.css under
-   "Noorix Data Grid v2" and uses the noorix table/table-frame classes.
-   ??????????????????????????????????????????????????????????? */
-
-/* — الإطار الخارجي ? */
-.nx-table-frame {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* — رأس الجدول (العنوان + البحث) ? */
-.nx-table-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--noorix-border);
-  flex-shrink: 0;
-}
-
-.nx-table-header__title {
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--noorix-text);
-  flex-shrink: 0;
-}
-
-.nx-table-header__badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
-
-/* — حقل البحث داخل الجدول ? */
-.nx-table-search { margin-inline-start: auto; min-width: 120px; width: 100%; max-width: 220px; flex: 0 1 auto; }
-
-/* — رسالة الخطأ ? */
-.nx-table-error { margin: 12px; padding: 12px 16px; background: rgba(239, 68, 68, 0.08); border-radius: 10px; color: var(--noorix-accent-red, #dc2626); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-
-/* — Skeleton Loading ? */
-.nx-table-skeleton { padding: 20px 16px; display: flex; flex-direction: column; gap: 8px; }
-
-.nx-table-skeleton__bar {
-  height: 40px;
-  border-radius: 8px;
-  background: linear-gradient(
-    90deg,
-    var(--noorix-bg-muted) 25%,
-    var(--noorix-border-muted, var(--noorix-border)) 50%,
-    var(--noorix-bg-muted) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
 .nx-smart-table-loading-spinner { animation: noorix-spin 0.8s linear infinite; }
 
 .nx-smart-table-skeleton-line {
@@ -934,145 +879,6 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
-
-/* — Wrapper تمرير أفقي ? */
-.nx-table-scroll { overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; flex: 1; min-width: 0; }
-
-/* — الجدول الفعلي ? */
-.nx-table { width: 100%; border-collapse: collapse; font-family: var(--noorix-font-primary); }
-
-/* — رأس الجدول ? */
-.nx-table thead tr {
-  background: var(--noorix-table-header-bg, #0f2f57);
-}
-
-.nx-table thead th {
-  padding: 10px 16px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--noorix-table-header-fg, #ffffff);
-  background: var(--noorix-table-header-bg, #0f2f57);
-  border-bottom: 2px solid var(--noorix-table-header-border, rgba(255, 255, 255, 0.28));
-  border-inline-start: 1px solid var(--noorix-table-header-border, rgba(255, 255, 255, 0.18));
-  text-align: center;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.nx-table thead th:first-child { border-inline-start: none; }
-.nx-table thead th:last-child  { border-inline-end: none; }
-
-/* — عمود قابل للترتيب ? */
-.nx-table th.nx-table__th--sortable { cursor: pointer; }
-.nx-table th.nx-table__th--sortable:hover { background: var(--noorix-table-header-hover-bg, #16426f); }
-
-.nx-table__sort-icon {
-  margin-inline-start: 4px;
-  font-size: 11px;
-  opacity: 0.5;
-  transition: opacity 120ms;
-}
-.nx-table th.nx-table__th--sorted .nx-table__sort-icon { opacity: 1; }
-
-/* — خلايا الجسم ? */
-.nx-table tbody tr { border-bottom: 1px solid var(--noorix-border); transition: background 80ms; }
-.nx-table tbody tr:nth-child(even) { background: var(--noorix-table-row-even, var(--noorix-bg-page)); }
-.nx-table tbody tr:hover { background: var(--noorix-bg-muted); }
-
-.nx-table tbody td {
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--noorix-text);
-  border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border));
-  vertical-align: middle;
-  text-align: start;
-}
-
-.nx-table tbody td:first-child { border-inline-start: none; }
-.nx-table tbody td:last-child  { border-inline-end: none; }
-
-.nx-table .nx-row-number-th,
-.nx-table .nx-row-number-td {
-  background: var(--noorix-table-row-number-bg, var(--noorix-table-header-bg, #0f2f57)) !important;
-  color: var(--noorix-table-header-fg, #ffffff) !important;
-  border-color: var(--noorix-table-header-border, rgba(255, 255, 255, 0.18)) !important;
-  font-family: var(--noorix-font-numbers);
-}
-
-.nx-table tbody tr:hover .nx-row-number-td,
-.nx-table tbody tr:nth-child(even) .nx-row-number-td {
-  background: var(--noorix-table-row-number-bg, var(--noorix-table-header-bg, #0f2f57)) !important;
-  color: var(--noorix-table-header-fg, #ffffff) !important;
-}
-
-/* — الصف الملغي ? */
-.nx-table tr.nx-table__row--cancelled td { text-decoration: line-through; color: var(--noorix-text-muted); opacity: 0.7; }
-
-/* — حالة فارغة ? */
-.nx-table tbody .nx-table__empty td { padding: 36px 16px; text-align: center; color: var(--noorix-text-muted); font-size: 14px; border: none; }
-
-/* — تذييل الجدول (الإجماليات) ? */
-.nx-table tfoot td { padding: 8px 12px; font-size: 14px; font-weight: 700; color: var(--noorix-text); background: var(--noorix-bg-muted); border-top: 2px solid var(--noorix-border); border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border)); }
-.nx-table tfoot td:first-child { border-inline-start: none; }
-
-/* — أعمدة خاصة ? */
-/* مالية: محاذاة يمين دائماً */
-.nx-table .nx-col--numeric { text-align: end !important; font-family: var(--noorix-font-numbers); direction: ltr; unicode-bidi: isolate; }
-
-/* نصية: تقطع مع ellipsis */
-.nx-table .nx-col--truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
-
-/* انكماش تلقائي */
-.nx-table .nx-col--shrink { white-space: nowrap; width: 1%; }
-
-/* — عمود الإجراءات: sticky ? */
-.nx-table .nx-col--actions { white-space: nowrap; width: 1%; padding-inline: 6px; text-align: center; }
-
-.nx-table .nx-col--actions.nx-col--sticky { position: sticky; inset-inline-end: 0; z-index: 2; background: var(--noorix-bg-surface); box-shadow: -3px 0 8px rgba(0, 0, 0, 0.06); }
-
-.nx-table tbody tr:nth-child(even) .nx-col--actions.nx-col--sticky { background: var(--noorix-table-row-even, var(--noorix-bg-page)); }
-.nx-table tbody tr:hover .nx-col--actions.nx-col--sticky { background: var(--noorix-bg-muted); }
-
-/* أزرار الإجراءات في صف أفقي */
-.nx-table .nx-col--actions > div,
-.nx-actions-row { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 5px; align-items: center; justify-content: center; }
-
-/* — ترقيم الصفحات ? */
-.nx-table-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 10px 16px; border-top: 1px solid var(--noorix-border); flex-shrink: 0; }
-.nx-table-pagination__label { font-size: 12px; color: var(--noorix-text-muted); padding: 0 6px; white-space: nowrap; }
-
-/* — رقم الصف ? */
-.nx-table .nx-col--rownum { text-align: center; color: var(--noorix-text-muted); font-size: 12px; width: 36px; min-width: 36px; }
-
-/* — بطاقات الجوال ? */
-.nx-table-mobile-cards { display: flex; flex-direction: column; }
-.nx-table-mobile-card { padding: 12px 16px; border-bottom: 1px solid var(--noorix-border); }
-.nx-table-mobile-card:last-child { border-bottom: none; }
-
-/* — استجابة للجوال ? */
-@media (max-width: 640px) {
-  .nx-table-search {
-    max-width: 100%;
-    margin-inline-start: 0;
-  }
-
-  .nx-table-header {
-    gap: 8px;
-  }
-
-  .nx-table thead th,
-  .nx-table tbody td {
-    padding: 6px 8px;
-    font-size: 13px;
-  }
-
-  .nx-table-pagination {
-    padding: 8px 12px;
-    gap: 4px;
-  }
-}
-
 
 /* ???????????????????????????????????????????????????????????
    10. Layout Utilities — تخطيط الشاشات والهيدرات
@@ -1108,8 +914,8 @@
 .nx-cell-muted-sm { color: var(--noorix-text-muted); font-size: 12px; white-space: nowrap; }
 
 /* تذييل الجدول */
-.nx-tfoot-label { font-size: 13px !important; font-weight: 700; color: var(--noorix-text); text-align: end; }
-.nx-tfoot-num { font-family: var(--noorix-font-numbers); font-size: 14px !important; font-weight: 800 !important; text-align: end; }
+.nx-tfoot-label { font-size: 13px !important; font-weight: 700; color: var(--noorix-text); text-align: center; }
+.nx-tfoot-num { font-family: var(--noorix-font-numbers); font-size: 14px !important; font-weight: 800 !important; text-align: center; }
 
 
 /* ???????????????????????????????????????????????????????????
@@ -1196,7 +1002,6 @@
 .nx-dg-var-cell { width: var(--nx-dg-cell-width, auto); min-width: var(--nx-dg-cell-min-width, 0); padding: var(--nx-dg-cell-padding, inherit); text-align: var(--nx-dg-cell-align, inherit); }
 .nx-dg-var-th--sticky { position: sticky; top: 0; z-index: var(--nx-dg-sticky-z, 2); }
 .nx-dg-accent-dot { background: var(--nx-dg-accent-color, currentColor); }
-.nx-smart-footer-rn-cell { width: var(--nx-smart-footer-rn-width, 36px); padding: var(--nx-smart-footer-rn-padding, 8px 12px); }
 .metric-card-value { color: var(--metric-card-value-color, var(--noorix-text)); font-family: var(--noorix-font-numbers); }
 
 /* ???????????????????????????????????????????????????????????
@@ -1290,15 +1095,18 @@
 /* ???????????????????????????????????????????????????????????
    18. Actions Cell Kebab — زر ? في عمود الإجراءات
    ??????????????????????????????????????????????????????????? */
-.nx-actions-kebab { width: 30px; height: 28px; min-width: 30px; min-height: 28px; border-radius: 4px; border: 1px solid transparent; background: transparent; color: var(--noorix-text-muted); display: inline-flex; align-items: center; justify-content: center; transition: background 120ms, color 120ms, border-color 120ms; padding: 0; }
+.nx-actions-kebab { width: 32px; height: 30px; min-width: 32px; min-height: 30px; border-radius: 8px; border: 1px solid var(--noorix-border); background: var(--noorix-bg-surface); color: var(--noorix-text-muted); display: inline-flex; align-items: center; justify-content: center; transition: background 120ms, color 120ms, border-color 120ms, box-shadow 120ms, transform 120ms; padding: 0; }
 
-.nx-actions-kebab:hover:not(:disabled) { background: var(--noorix-bg-muted); border-color: var(--noorix-border); color: var(--noorix-text); }
+.nx-actions-kebab:hover:not(:disabled) { background: var(--noorix-blue-6); border-color: var(--noorix-blue-20); color: var(--noorix-blue); box-shadow: 0 3px 10px rgba(37, 99, 235, 0.12); transform: translateY(-1px); }
 
 .nx-actions-kebab--open {
-  background: var(--noorix-bg-muted) !important;
-  border-color: var(--noorix-border) !important;
-  color: var(--noorix-text) !important;
+  background: var(--noorix-blue) !important;
+  border-color: var(--noorix-blue) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.22);
 }
+
+.nx-actions-icon { display: block; }
 
 .nx-actions-menu { position: fixed; z-index: var(--nx-z-menu); min-width: 150px; width: 176px; max-height: 220px; overflow-y: auto; padding: 6px; border-radius: 6px; background: var(--noorix-bg-surface); color: var(--noorix-text); border: 1px solid var(--noorix-border); box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18); }
 
@@ -1308,9 +1116,20 @@
 .nx-col-vis-panel--viewport { top: var(--nx-col-vis-panel-top, auto); left: var(--nx-col-vis-panel-left, auto); }
 .nx-smart-table-vars { table-layout: var(--nx-smart-table-layout, auto); min-width: var(--nx-smart-table-min-width, 0); max-width: var(--nx-smart-table-max-width, none); }
 .nx-smart-row-vars { background: var(--nx-smart-row-bg, inherit); }
-.nx-smart-row-number-cell { padding: var(--nx-smart-cell-padding, inherit); font-size: var(--nx-smart-cell-font-size, inherit); width: var(--nx-smart-row-number-width, 40px); min-width: var(--nx-smart-row-number-width, 40px); }
-.nx-smart-header-cell-vars { padding: var(--nx-smart-cell-padding, inherit); font-weight: 700; font-size: var(--nx-smart-cell-font-size, inherit); text-align: center; position: var(--nx-smart-cell-position, static); width: var(--nx-smart-cell-width, auto); min-width: var(--nx-smart-cell-min-width, 0); max-width: var(--nx-smart-cell-max-width, none); cursor: var(--nx-smart-cell-cursor, default); user-select: var(--nx-smart-cell-user-select, auto); white-space: var(--nx-smart-cell-white-space, normal); overflow: var(--nx-smart-cell-overflow, visible); }
-.nx-smart-body-cell-vars { padding: var(--nx-smart-cell-padding, inherit); font-size: var(--nx-smart-cell-font-size, inherit); text-align: var(--nx-smart-cell-align, inherit); font-family: var(--nx-smart-cell-font-family, inherit); width: var(--nx-smart-cell-width, auto); min-width: var(--nx-smart-cell-min-width, 0); max-width: var(--nx-smart-cell-max-width, none); white-space: var(--nx-smart-cell-white-space, normal); }
+.nx-smart-row-number-cell {
+  box-sizing: border-box;
+  padding: var(--nx-smart-cell-padding, 4px 6px);
+  font-size: var(--nx-smart-cell-font-size, inherit);
+  width: var(--nx-smart-row-number-width, 34px);
+  min-width: var(--nx-smart-row-number-width, 34px);
+  max-width: var(--nx-smart-row-number-width, 34px);
+  text-align: center;
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+}
+.nx-smart-header-cell-vars { height: var(--nx-smart-cell-height, 38px); padding: var(--nx-smart-cell-padding, inherit); font-weight: 700; font-size: var(--nx-smart-cell-font-size, inherit); text-align: center; position: var(--nx-smart-cell-position, static); width: var(--nx-smart-cell-width, auto); min-width: var(--nx-smart-cell-min-width, 0); max-width: var(--nx-smart-cell-max-width, none); cursor: var(--nx-smart-cell-cursor, default); user-select: var(--nx-smart-cell-user-select, auto); white-space: var(--nx-smart-cell-white-space, normal); overflow: var(--nx-smart-cell-overflow, visible); }
+.nx-smart-body-cell-vars { height: var(--nx-smart-cell-height, 42px); padding: var(--nx-smart-cell-padding, inherit); font-size: var(--nx-smart-cell-font-size, inherit); text-align: var(--nx-smart-cell-align, inherit); font-family: var(--nx-smart-cell-font-family, inherit); width: var(--nx-smart-cell-width, auto); min-width: var(--nx-smart-cell-min-width, 0); max-width: var(--nx-smart-cell-max-width, none); white-space: var(--nx-smart-cell-white-space, normal); }
+.nx-smart-footer-cell-vars { height: var(--nx-smart-cell-height, 42px); padding: var(--nx-smart-cell-padding, 8px 12px); font-size: var(--nx-smart-cell-font-size, 14px); text-align: var(--nx-smart-cell-align, center); font-weight: 800; }
 
 /* ???????????????????????????????????????????????????????????
    19. Supplier Dropdown — قائمة بحث الموردين
@@ -1384,10 +1203,10 @@
   height: 100%;
 }
 
-/* ? 1100px من عرض الحاوية: 5 أعمدة (تقارير وغيرها) — لوحة التحكم: 4 كروت */
+/* ? 1100px من عرض الحاوية: 5 أعمدة (تقارير وغيرها) — لوحة التحكم: 5 كروت */
 @container kpi-section (min-width: 1100px) {
   .nx-kpi-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; }
-  .nx-kpi-grid--dashboard { grid-template-columns: repeat(4, 1fr); }
+  .nx-kpi-grid--dashboard { grid-template-columns: repeat(5, 1fr); }
 }
 
 /* 700px – 1099px: 3 أعمدة — أوسع وأجمل على معظم الشاشات */
@@ -1700,6 +1519,90 @@
 }
 .metric-card-bar {
   background: var(--metric-card-bar, var(--noorix-accent-blue));
+}
+
+.nx-asset-warranty-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.nx-asset-warranty-trigger:focus-visible {
+  outline: 2px solid var(--noorix-primary);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+.nx-asset-warranty-trigger__dot {
+  position: absolute;
+  top: -3px;
+  inset-inline-end: -3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--noorix-primary);
+  box-shadow: 0 0 0 2px var(--noorix-surface);
+}
+
+.nx-asset-name-trigger {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: inherit;
+}
+
+[dir="rtl"] .nx-asset-name-trigger {
+  align-items: flex-end;
+}
+
+.nx-asset-name-trigger--table,
+[dir="rtl"] .nx-asset-name-trigger--table {
+  align-items: center;
+  text-align: center;
+}
+
+.nx-cr__line1 > .nx-asset-name-trigger--table {
+  flex: 1 1 0;
+  max-width: none;
+  min-width: 0;
+}
+
+.nx-cr__line1 > .nx-asset-name-trigger--table .nx-cr__name {
+  width: 100%;
+  text-align: center;
+}
+
+.nx-asset-name-trigger:hover .font-semibold,
+.nx-asset-name-trigger:hover .font-bold,
+.nx-asset-name-trigger:focus-visible .font-semibold,
+.nx-asset-name-trigger:focus-visible .font-bold {
+  color: var(--noorix-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.nx-asset-name-trigger:focus-visible {
+  outline: 2px solid var(--noorix-primary);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+.nx-asset-name-trigger--compact,
+.nx-asset-name-trigger--mobile {
+  display: inline-flex;
 }
 
 } /* end @layer components */

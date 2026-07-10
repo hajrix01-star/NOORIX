@@ -1,5 +1,6 @@
 import { mergeInsightThresholds } from './company-insight-thresholds';
 import type { GeneralProfitLossModel } from '../../reports/reports-general-profit-loss-model.util';
+import { GENERAL_PNL_AMOUNT_BASIS } from '../../reports/reports-pl-contract.util';
 import {
   formatInsightPercentFraction,
   ruleExpenseRatioToSales,
@@ -82,6 +83,8 @@ describe('insight rule copy (ratio / margin / negative profit)', () => {
 
 function purchaseOnlyPL(purchases12: string[]): GeneralProfitLossModel {
   return {
+    amountBasis: GENERAL_PNL_AMOUNT_BASIS,
+    months: [],
     groups: [
       {
         key: 'purchases',
@@ -94,7 +97,9 @@ function purchaseOnlyPL(purchases12: string[]): GeneralProfitLossModel {
         items: [],
       },
     ],
-  } as unknown as GeneralProfitLossModel;
+    summaryRows: [],
+    cards: { sales: '0', purchases: '0', expenses: '0', grossProfit: '0', netProfit: '0' },
+  };
 }
 
 describe('ruleUnusuallyHighPurchases', () => {

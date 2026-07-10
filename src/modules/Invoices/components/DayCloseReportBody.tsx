@@ -1,71 +1,81 @@
 import React from 'react';
 import { fmt } from '../../../utils/format';
-import { formatSaudiDateISO } from '../../../utils/saudiDate';
-function SectionTitle({ children }: any) {
+import {
+  type DayCloseKindLabels,
+  type DayCloseReportData,
+  type DayCloseSalesChannel,
+  getEmptyDayCloseValue,
+  pickDayCloseBilingualName,
+  resolveDayCloseCounterpartyLabel,
+} from '../dayCloseReportModel';
+import { toInvoiceFiniteNumber } from '../invoiceNumberModel';
+
+const SEPARATOR = '\u2014';
+const CHANNEL_SEPARATOR = ' \u00b7 ';
+
+type Translate = (key: string, ...args: unknown[]) => string;
+
+type DayCloseReportBodyProps = {
+  data: DayCloseReportData;
+  kindLabel: DayCloseKindLabels;
+  t: Translate;
+  reportDateLabel: string;
+  lang: string;
+  compact?: boolean;
+};
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <div className="dc-section-title">{children}</div>;
+}
+
+function money(value: unknown) {
+  return fmt(toInvoiceFiniteNumber(value));
+}
+
+function count(value: unknown): string | number {
+  if (typeof value === 'number' || typeof value === 'string') return value;
+  return 0;
+}
+
+function EmptyRow({ colSpan }: { colSpan: number }) {
   return (
-    <div className="dc-section-title">
-      {children}
-    </div>
+    <tr>
+      <td colSpan={colSpan} className="dc-empty">
+        {getEmptyDayCloseValue()}
+      </td>
+    </tr>
   );
 }
 
-export const MAX_DAY_CLOSE_RANGE_DAYS = 31;
-
-function pad2(n: any) {
-  return String(n).padStart(2, '0');
+function formatSalesChannels(channels: DayCloseSalesChannel[] | undefined, lang: string) {
+  return (
+    channels
+      ?.map(
+        (channel) =>
+          `${pickDayCloseBilingualName(
+            lang,
+            channel.vaultNameAr ?? channel.vaultName,
+            channel.vaultNameEn,
+          )}: ${money(channel.amount)}`,
+      )
+      .join(CHANNEL_SEPARATOR) || getEmptyDayCloseValue()
+  );
 }
 
-/** عرض اسم مزدوج حسب لغة الواجهة */
-function pickBilingual(lang: any, nameAr: any, nameEn: any) {
-  const ar = nameAr != null && String(nameAr).trim() !== '' ? String(nameAr).trim() : '';
-  const en = nameEn != null && String(nameEn).trim() !== '' ? String(nameEn).trim() : '';
-  if (lang === 'en') return en || ar || '—';
-  return ar || en || '—';
-}
-
-/** تواريخ YYYY-MM-DD من البداية إلى النهاية (شاملة)، UTC تقويمية */
-export function enumerateYmdDates(startStr: any, endStr: any) {
-  const [sy, sm, sd] = startStr.split('-').map(Number);
-  const [ey, em, ed] = endStr.split('-').map(Number);
-  const start = new Date(Date.UTC(sy, sm - 1, sd));
-  const end = new Date(Date.UTC(ey, em - 1, ed));
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return [];
-  const out = [];
-  for (let cur = new Date(start); cur <= end; cur.setUTCDate(cur.getUTCDate() + 1)) {
-    out.push(`${cur.getUTCFullYear()}-${pad2(cur.getUTCMonth() + 1)}-${pad2(cur.getUTCDate())}`);
-  }
-  return out;
-}
-
-function counterpartyLabel(op: any, lang: any) {
-  const sup = pickBilingual(lang, op.supplierNameAr ?? op.supplierName, op.supplierNameEn);
-  if (sup !== '—') return sup;
-  if (op.employeeName) return op.employeeName;
-  const el = pickBilingual(lang, op.expenseLineNameAr ?? op.expenseLineName, op.expenseLineNameEn);
-  if (el !== '—') return el;
-  return op.notes || '—';
-}
-
-/** قيم عرض كرت الكاش: صافي الشهر إن وُجد من الـ API، وإلا الرصيد التراكمي (توافق خلفي). */
-function getDayCloseCashKpis(cash: any) {
-  const lifetime = Number(cash?.balanceLifetimeCashVaultsEod ?? cash?.balanceEndOfDayCashVaults ?? 0);
-  const raw = cash?.availableCashMonthScoped;
-  const hasMonthScoped = raw != null && raw !== '';
-  const monthScoped = hasMonthScoped ? Number(raw) : lifetime;
-  return { monthScoped, lifetime };
-}
-
-export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact = false }: any) {
-  const monthStartYmd = data.meta?.cashMonthScopeStart;
-  const monthStartLabel =
-    monthStartYmd && /^\d{4}-\d{2}-\d{2}$/.test(String(monthStartYmd))
-      ? formatSaudiDateISO(`${monthStartYmd}T12:00:00.000Z`)
-      : '—';
-  const { monthScoped, lifetime } = getDayCloseCashKpis(data.cash);
-  const showLifetimeFootnote =
-    Number.isFinite(monthScoped) &&
-    Number.isFinite(lifetime) &&
-    Math.abs(monthScoped - lifetime) > 1e-6;
+export function DayCloseReportBody({
+  data,
+  kindLabel,
+  t,
+  reportDateLabel,
+  lang,
+  compact = false,
+}: DayCloseReportBodyProps) {
+  const cashAvailable = data.cash?.availableCashMonthScoped ?? data.cash?.balanceEndOfDayCashVaults;
+  const byKind = data.byKind ?? [];
+  const paymentRows = data.outflowByPaymentMethod ?? [];
+  const salesSummaries = data.salesSummaries ?? [];
+  const vaultMovements = data.vaults?.movementOnDayByVault ?? [];
+  const operations = data.operations ?? [];
 
   return (
     <div className="grid gap-3.5">
@@ -73,9 +83,6 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
         <div>
           <div className="text-[11px] text-noorix-muted">{t('dayCloseReportDate')}</div>
           <div className="text-[15px] font-extrabold">{reportDateLabel}</div>
-        </div>
-        <div className="text-[10px] text-[var(--noorix-text-muted-2)] max-w-[340px] text-right leading-[1.45]">
-          {t(compact ? 'dayCloseVaultBalanceNoteCompact' : 'dayCloseVaultBalanceNote')}
         </div>
       </div>
 
@@ -87,31 +94,32 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
 
       <div className="day-close-screen-only dc-kpi-grid">
         <div className="dc-kpi-card dc-kpi-card--in">
-          <div className="dc-kpi-card__label">{t('inbound')} — {t('categoryTypeSale')}</div>
-          <div className="dc-kpi-card__val">{fmt(Number(data.sums?.inflow?.total || 0))} SR</div>
-          <div className="dc-kpi-card__sub">{data.sums?.inflow?.count ?? 0} {t('dayCloseOperations')}</div>
+          <div className="dc-kpi-card__label">
+            {t('inbound')} {SEPARATOR} {t('categoryTypeSale')}
+          </div>
+          <div className="dc-kpi-card__val">{money(data.sums?.inflow?.total)} SR</div>
+          <div className="dc-kpi-card__sub">
+            {count(data.sums?.inflow?.count)} {t('dayCloseOperations')}
+          </div>
         </div>
         <div className="dc-kpi-card dc-kpi-card--out">
           <div className="dc-kpi-card__label">{t('outbound')}</div>
-          <div className="dc-kpi-card__val">{fmt(Number(data.sums?.outflow?.total || 0))} SR</div>
-          <div className="dc-kpi-card__sub">{data.sums?.outflow?.count ?? 0} {t('dayCloseOperations')}</div>
+          <div className="dc-kpi-card__val">{money(data.sums?.outflow?.total)} SR</div>
+          <div className="dc-kpi-card__sub">
+            {count(data.sums?.outflow?.count)} {t('dayCloseOperations')}
+          </div>
         </div>
         <div className="dc-kpi-card dc-kpi-card--cash">
           <div className="dc-kpi-card__label">{t('dayCloseNetDayCash')}</div>
-          <div className="dc-kpi-card__val">{fmt(Number(data.cash?.netDay ?? 0))} SR</div>
+          <div className="dc-kpi-card__val">{money(data.cash?.netDay)} SR</div>
           <div className="dc-kpi-card__sub">{t('dayCloseCashVaultsOnly')}</div>
         </div>
         <div className="dc-kpi-card dc-kpi-card--bal">
           <div className="dc-kpi-card__label">{t('dayCloseCashRemainingEod')}</div>
           <div className="dc-kpi-card__val">
-            {fmt(monthScoped)} <span className="nx-sar">SR</span>
+            {money(cashAvailable)} <span className="nx-sar">SR</span>
           </div>
           <div className="dc-kpi-card__sub">{t('dayCloseEodDefinition')}</div>
-          {showLifetimeFootnote && (
-            <div className="dc-kpi-card__footnote text-[10px] text-noorix-muted mt-1 leading-snug">
-              {t('dayCloseLifetimeCashFootnote', fmt(lifetime))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -119,16 +127,9 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
         <div className="dc-print-cash-line__row">
           <span className="dc-print-cash-line__label">{t('dayCloseCashRemainingEod')}:</span>
           <span className="dc-print-cash-line__amount">
-            {fmt(monthScoped)} <span className="nx-sar">SR</span>
-          </span>
-          <span className="dc-print-cash-line__meta">
-            {' — '}
-            {t('dayCloseAvailableCashPrintScope', monthStartLabel, reportDateLabel)}
+            {money(cashAvailable)} <span className="nx-sar">SR</span>
           </span>
         </div>
-        {showLifetimeFootnote && (
-          <div className="dc-print-cash-line__sub">{t('dayCloseLifetimeCashFootnote', fmt(lifetime))}</div>
-        )}
       </div>
 
       <table className="dc-table day-close-print-only" aria-label={t('dayCloseKpiPrintCaption')}>
@@ -142,35 +143,38 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
         </thead>
         <tbody>
           <tr>
-            <td>{t('inbound')} ({t('categoryTypeSale')})</td>
-            <td className="dc-num">{fmt(Number(data.sums?.inflow?.total || 0))}</td>
-            <td className="dc-num">{data.sums?.inflow?.count ?? 0}</td>
+            <td>
+              {t('inbound')} ({t('categoryTypeSale')})
+            </td>
+            <td className="dc-num">{money(data.sums?.inflow?.total)}</td>
+            <td className="dc-num">{count(data.sums?.inflow?.count)}</td>
           </tr>
           <tr>
             <td>{t('outbound')}</td>
-            <td className="dc-num">{fmt(Number(data.sums?.outflow?.total || 0))}</td>
-            <td className="dc-num">{data.sums?.outflow?.count ?? 0}</td>
+            <td className="dc-num">{money(data.sums?.outflow?.total)}</td>
+            <td className="dc-num">{count(data.sums?.outflow?.count)}</td>
           </tr>
           <tr>
             <td>{t('dayCloseNetDayCash')}</td>
-            <td className="dc-num">{fmt(Number(data.cash?.netDay ?? 0))}</td>
-            <td className="dc-empty">—</td>
+            <td className="dc-num">{money(data.cash?.netDay)}</td>
+            <td className="dc-empty">{getEmptyDayCloseValue()}</td>
           </tr>
           <tr>
             <td>{t('dayCloseCashRemainingEod')}</td>
-            <td className="dc-num">{fmt(monthScoped)}</td>
-            <td className="dc-empty">—</td>
+            <td className="dc-num">{money(cashAvailable)}</td>
+            <td className="dc-empty">{getEmptyDayCloseValue()}</td>
           </tr>
           <tr>
             <td>{t('dayCloseCashMovement')}</td>
             <td className="dc-num" colSpan={2}>
-              {t('dayCloseCashIn')} {fmt(Number(data.cash?.dayTotalIn ?? 0))} &nbsp;|&nbsp; {t('dayCloseCashOut')} {fmt(Number(data.cash?.dayTotalOut ?? 0))}
+              {t('dayCloseCashIn')} {money(data.cash?.dayTotalIn)} &nbsp;|&nbsp; {t('dayCloseCashOut')}{' '}
+              {money(data.cash?.dayTotalOut)}
             </td>
           </tr>
           <tr>
             <td>{t('dayCloseTransfers')}</td>
-            <td className="dc-num">{fmt(Number(data.transfers?.volume || 0))}</td>
-            <td className="dc-num">{data.transfers?.count ?? 0}</td>
+            <td className="dc-num">{money(data.transfers?.volume)}</td>
+            <td className="dc-num">{count(data.transfers?.count)}</td>
           </tr>
         </tbody>
       </table>
@@ -179,13 +183,15 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
         <div className="day-close-screen-only dc-inline-stats">
           <div>
             <strong>{t('dayCloseCashMovement')}</strong>
-            {' — '}
-            {t('dayCloseCashIn')} {fmt(Number(data.cash?.dayTotalIn ?? 0))} · {t('dayCloseCashOut')} {fmt(Number(data.cash?.dayTotalOut ?? 0))}
+            {' '}
+            {SEPARATOR}{' '}
+            {t('dayCloseCashIn')} {money(data.cash?.dayTotalIn)} {CHANNEL_SEPARATOR} {t('dayCloseCashOut')}{' '}
+            {money(data.cash?.dayTotalOut)}
           </div>
           <div>
             <strong>{t('dayCloseTransfers')}</strong>
-            {' — '}
-            {data.transfers?.count ?? 0} / {fmt(Number(data.transfers?.volume || 0))} SR
+            {' '}
+            {SEPARATOR} {count(data.transfers?.count)} / {money(data.transfers?.volume)} SR
           </div>
         </div>
       )}
@@ -202,14 +208,14 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
               </tr>
             </thead>
             <tbody>
-              {(data.byKind || []).length === 0 ? (
-                <tr><td colSpan={3} className="dc-empty">—</td></tr>
+              {byKind.length === 0 ? (
+                <EmptyRow colSpan={3} />
               ) : (
-                (data.byKind || []).map((row: any) => (
-                  <tr key={row.kind}>
-                    <td>{kindLabel[row.kind] || row.kind}</td>
-                    <td className="dc-num">{row.count}</td>
-                    <td className="dc-num">{fmt(Number(row.total))}</td>
+                byKind.map((row, index) => (
+                  <tr key={row.kind ?? `kind-${index}`}>
+                    <td>{row.kind ? kindLabel[row.kind] || row.kind : getEmptyDayCloseValue()}</td>
+                    <td className="dc-num">{count(row.count)}</td>
+                    <td className="dc-num">{money(row.total)}</td>
                   </tr>
                 ))
               )}
@@ -227,13 +233,13 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
               </tr>
             </thead>
             <tbody>
-              {(data.outflowByPaymentMethod || []).length === 0 ? (
-                <tr><td colSpan={2} className="dc-empty">—</td></tr>
+              {paymentRows.length === 0 ? (
+                <EmptyRow colSpan={2} />
               ) : (
-                (data.outflowByPaymentMethod || []).map((row: any, i: any) => (
-                  <tr key={row.vaultId ?? `${row.nameAr ?? row.label}-${i}`}>
-                    <td>{pickBilingual(lang, row.nameAr ?? row.label, row.nameEn)}</td>
-                    <td className="dc-num">{fmt(Number(row.total))}</td>
+                paymentRows.map((row, index) => (
+                  <tr key={row.vaultId ?? `${row.nameAr ?? row.label}-${index}`}>
+                    <td>{pickDayCloseBilingualName(lang, row.nameAr ?? row.label, row.nameEn)}</td>
+                    <td className="dc-num">{money(row.total)}</td>
                   </tr>
                 ))
               )}
@@ -242,7 +248,7 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
         </div>
       </div>
 
-      {(data.salesSummaries || []).length > 0 && (
+      {salesSummaries.length > 0 && (
         <div>
           <SectionTitle>{t('dayCloseSalesSummaries')}</SectionTitle>
           <table className="dc-table">
@@ -256,15 +262,15 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
               </tr>
             </thead>
             <tbody>
-              {(data.salesSummaries || []).map((s: any) => (
-                <tr key={s.id}>
-                  <td className="font-bold">{s.summaryNumber}</td>
-                  <td className="dc-num">{s.customerCount}</td>
-                  <td className="dc-num">{fmt(Number(s.cashOnHand))}</td>
-                  <td className="dc-num">{fmt(Number(s.totalAmount))}</td>
+              {salesSummaries.map((summary) => (
+                <tr key={summary.id}>
+                  <td className="font-bold">{summary.summaryNumber}</td>
+                  <td className="dc-num">{count(summary.customerCount)}</td>
+                  <td className="dc-num">{money(summary.cashOnHand)}</td>
+                  <td className="dc-num">{money(summary.totalAmount)}</td>
                   {!compact && (
                     <td className="dc-muted text-[10px]">
-                      {(s.channels || []).map((c: any) => `${pickBilingual(lang, c.vaultNameAr ?? c.vaultName, c.vaultNameEn)}: ${fmt(Number(c.amount))}`).join(' · ') || '—'}
+                      {formatSalesChannels(summary.channels, lang)}
                     </td>
                   )}
                 </tr>
@@ -286,15 +292,18 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
             </tr>
           </thead>
           <tbody>
-            {(data.vaults?.movementOnDayByVault || []).length === 0 ? (
-              <tr><td colSpan={4} className="dc-empty">—</td></tr>
+            {vaultMovements.length === 0 ? (
+              <EmptyRow colSpan={4} />
             ) : (
-              (data.vaults?.movementOnDayByVault || []).map((v: any) => (
-                <tr key={v.id}>
-                  <td>{pickBilingual(lang, v.nameAr, v.nameEn)} <span className="dc-muted">({v.type})</span></td>
-                  <td className="dc-num">{fmt(Number(v.totalIn))}</td>
-                  <td className="dc-num">{fmt(Number(v.totalOut))}</td>
-                  <td className="dc-num">{fmt(Number(v.netDay))}</td>
+              vaultMovements.map((vault) => (
+                <tr key={vault.id}>
+                  <td>
+                    {pickDayCloseBilingualName(lang, vault.nameAr, vault.nameEn)}{' '}
+                    <span className="dc-muted">({vault.type})</span>
+                  </td>
+                  <td className="dc-num">{money(vault.totalIn)}</td>
+                  <td className="dc-num">{money(vault.totalOut)}</td>
+                  <td className="dc-num">{money(vault.netDay)}</td>
                 </tr>
               ))
             )}
@@ -303,7 +312,9 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
       </div>
 
       <div>
-        <SectionTitle>{t('dayCloseOperationsTable')} — {data.meta?.invoiceCountAll ?? 0}</SectionTitle>
+        <SectionTitle>
+          {t('dayCloseOperationsTable')} {SEPARATOR} {data.meta?.invoiceCountAll ?? 0}
+        </SectionTitle>
         <div className="day-close-ops-wrap">
           <table className="dc-table m-0 border-0">
             <thead>
@@ -317,19 +328,26 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
               </tr>
             </thead>
             <tbody>
-              {(data.operations || []).length === 0 && (
-                <tr><td colSpan={6} className="dc-empty">—</td></tr>
-              )}
-              {(data.operations || []).map((op: any) => (
-                <tr key={op.id} className={op.status === 'cancelled' ? 'opacity-[0.55]' : undefined}>
-                  <td className="font-bold">{op.invoiceNumber}</td>
-                  <td>{kindLabel[op.kind] || op.kind}</td>
-                  <td className="dc-num">{fmt(Number(op.totalAmount))}</td>
+              {operations.length === 0 && <EmptyRow colSpan={6} />}
+              {operations.map((operation) => (
+                <tr
+                  key={operation.id}
+                  className={operation.status === 'cancelled' ? 'opacity-[0.55]' : undefined}
+                >
+                  <td className="font-bold">{operation.invoiceNumber}</td>
+                  <td>{kindLabel[operation.kind ?? ''] || operation.kind}</td>
+                  <td className="dc-num">{money(operation.totalAmount)}</td>
                   <td className="dc-muted max-w-[200px]">
-                    {counterpartyLabel(op, lang)}
+                    {resolveDayCloseCounterpartyLabel(operation, lang)}
                   </td>
-                  <td>{pickBilingual(lang, op.vaultNameAr ?? op.vaultName, op.vaultNameEn)}</td>
-                  <td>{op.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td>
+                  <td>
+                    {pickDayCloseBilingualName(
+                      lang,
+                      operation.vaultNameAr ?? operation.vaultName,
+                      operation.vaultNameEn,
+                    )}
+                  </td>
+                  <td>{operation.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td>
                 </tr>
               ))}
             </tbody>
@@ -339,4 +357,3 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
     </div>
   );
 }
-

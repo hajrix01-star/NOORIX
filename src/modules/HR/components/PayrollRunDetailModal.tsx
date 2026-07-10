@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PayrollRunDetailModal — عرض تفاصيل مسيرة الراتب (جدول احترافي)
  */
 import React, { useState, useCallback } from 'react';
@@ -10,9 +10,10 @@ import { getPayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Badge, Button, AdaptiveSheet, Checkbox, SmartTable, Modal } from '../../../ui';
-import { openPrintWindow } from '../../../utils/printUtils';
-import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSlipsPrint';
+import { Badge, Button, AdaptiveSheet, Checkbox, DialogActions, SmartTable, Modal, PrintPreviewModal } from '../../../ui';
+import type { SmartTableColumn } from '../../../ui';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
+import { buildPayrollRunEmployeeSlipsPrintHtml } from '../utils/payrollRunSignatureSlipsPrint';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
 import { hrKeys } from '../../../services/queryKeys';
 import { computePayrollLineSummary, computePayrollRunTotals } from '../utils/hrCalculations/payroll';
@@ -21,21 +22,67 @@ const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
 };
 
-export function PayrollRunDetailModal({ runId, companyId, companyName, companyNameEn, companyLogo, onClose }: any) {
+type PayrollRunLine = Record<string, unknown> & {
+  id?: string | null;
+  employee?: Record<string, unknown> | null;
+  employeeName?: string | null;
+  notes?: string | null;
+  grossSalary?: number | string | null;
+  allowancesAdd?: number | string | null;
+  deductions?: number | string | null;
+  advancesDeduct?: number | string | null;
+  netSalary?: number | string | null;
+};
+type PayrollRunDetail = Record<string, unknown> & {
+  id: string;
+  runNumber?: string | null;
+  status?: string | null;
+  payrollMonth?: string | null;
+  totalAmount?: number | string | null;
+  issuedSalaryInvoiceNumber?: string | number | null;
+  notes?: string | null;
+  items?: PayrollRunLine[];
+};
+type PayrollRunDetailModalProps = {
+  runId: string;
+  companyId: string;
+  companyName?: string;
+  companyNameEn?: string;
+  companyLogo?: string;
+  onClose: () => void;
+  onEdit?: (run: PayrollRunDetail) => void;
+  onApprove?: (run: PayrollRunDetail) => void;
+  onPay?: (run: PayrollRunDetail) => void;
+  onDelete?: (run: PayrollRunDetail) => void;
+};
+
+export function PayrollRunDetailModal({
+  runId,
+  companyId,
+  companyName,
+  companyNameEn,
+  companyLogo,
+  onClose,
+  onEdit,
+  onApprove,
+  onPay,
+  onDelete,
+}: PayrollRunDetailModalProps) {
   const { t, lang } = useTranslation();
   const [slipModalOpen, setSlipModalOpen] = useState(false);
   const [slipNetOnly, setSlipNetOnly] = useState(false);
+  const [printPreview, setPrintPreview] = useState<{ title: string; html: string } | null>(null);
 
-  const { data: run, isLoading } = useApiQuery<any>({
+  const { data: run, isLoading } = useApiQuery<PayrollRunDetail>({
     queryKey: hrKeys.payrollRun(runId, companyId),
     queryFn: () => getPayrollRun(runId, companyId),
     enabled: !!runId && !!companyId,
     fallbackMessage: t('loadingError'),
   });
 
-  /** يجب أن يبقى فوق أي return مبكر — قواعد الـ Hooks */
+  /** لا نخرج قبل هذا الموضع حتى لا يتغير ترتيب Hooks */
   const buildSlipLabels = useCallback(
-    (runForPrint: any) => ({
+    (runForPrint: PayrollRunDetail) => ({
       windowTitle: `${t('payrollSlipBatchPrint')} — ${runForPrint.runNumber || ''}`,
       legalRefAr: getText('payrollSlipLegalRefAr', 'ar'),
       legalRefEn: getText('payrollSlipLegalRefEn', 'en'),
@@ -88,6 +135,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
 
   const items = run.items || [];
   const st = String(run.status || '').toLowerCase();
+  const isDraft = st === 'draft';
+  const canPay = st === 'completed' && !run.issuedSalaryInvoiceNumber;
   const statusInfo =
     st === 'completed' && run.issuedSalaryInvoiceNumber
       ? { labelKey: 'payrollPaid', badgeColor: 'green' }
@@ -99,7 +148,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
 
   const handlePrint = () => {
     const monthLabel = formatSaudiDate(run.payrollMonth);
-    const rowsHtml = items.map((row: any, idx: any) => {
+    const rowsHtml = items.map((row, idx) => {
       const employeeName = employeeDisplayName(row.employee || { name: row.employeeName }, lang);
       const advanceDates = String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—';
       const summary = computePayrollLineSummary(row);
@@ -111,15 +160,14 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       </tr>`;
     }).join('');
 
-    const logoHtml = companyLogo
-      ? `<img src="${companyLogo}" alt="logo" style="height:52px;width:auto;object-fit:contain" />`
-      : '';
 
-    openPrintWindow({
-      title: run.runNumber,
+    const html = buildPrintDocumentHtml({
+      title: run.runNumber || undefined,
+      companyName: companyName || undefined,
+      logoUrl: companyLogo || '',
+      subtitle: `${t('payrollRuns')} - ${monthLabel}`,
       extraCss: `
         .run-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid #0f172a; padding-bottom:12px; }
-        .run-title { font-size:20px; font-weight:700; margin:0; }
         .run-meta { font-size:13px; color:#334155; margin:2px 0; }
         table th { background:#f1f5f9; color:#0f172a; }
         .sig-cell { min-height:44px; min-width:110px; vertical-align:middle; }
@@ -131,11 +179,9 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       body: `
         <div class="run-header">
           <div>
-            <h1 class="run-title">${companyName || 'NOORIX'}</h1>
-            <p class="run-meta">مسير الرواتب: ${run.runNumber}</p>
-            <p class="run-meta">الشهر: ${monthLabel}</p>
+            <p class="run-meta">رقم المسيرة: ${run.runNumber}</p>
+            <p class="run-meta">الفترة: ${monthLabel}</p>
           </div>
-          <div>${logoHtml}</div>
         </div>
         <table>
           <thead><tr>
@@ -152,7 +198,9 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
           <div class="s-card"><div class="s-label">${t('payrollTotalAfterDeductions')}</div><div class="s-value">${hrFmt(totalNet)}</div></div>
         </div>
       `,
+      autoPrint: false,
     });
+    setPrintPreview({ title: run.runNumber || t('printPayroll'), html });
   };
 
   const handlePrintEmployeeSlips = () => {
@@ -161,8 +209,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
   };
 
   const confirmPrintEmployeeSlips = () => {
-    setSlipModalOpen(false);
-    openPayrollRunEmployeeSlipsPrint({
+    const html = buildPayrollRunEmployeeSlipsPrintHtml({
       run,
       companyName,
       companyNameEn,
@@ -171,22 +218,25 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       labels: buildSlipLabels(run),
       netOnly: slipNetOnly,
     });
+    if (!html) return;
+    setSlipModalOpen(false);
+    setPrintPreview({ title: `${t('payrollSlipBatchPrint')} - ${run.runNumber || ''}`, html });
   };
 
-  const columns = [
-    { key: 'employeeName', label: t('employeeName'), width: '18%', minWidth: 150, render: (_: any, row: any) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
-    { key: 'advanceDates', label: t('payrollAdvanceDates'), width: '16%', minWidth: 120, render: (_: any, row: any) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
-    { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: '9%', minWidth: 84, render: (v: any) => hrFmt(v) },
-    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: '11%', minWidth: 96, render: (_: any, row: any) => hrFmt(computePayrollLineSummary(row).beforeDeductions) },
-    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, width: '8%', minWidth: 76, render: (v: any) => hrFmt(v ?? 0) },
-    { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: '8%', minWidth: 76, render: (v: any) => hrFmt(v ?? 0) },
-    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: '8%', minWidth: 76, render: (v: any) => hrFmt(v ?? 0) },
-    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: '11%', minWidth: 96, render: (_: any, row: any) => hrFmt(computePayrollLineSummary(row).totalDeductions) },
-    { key: 'netSalary', label: t('netSalary'), numeric: true, width: '11%', minWidth: 90, render: (_: any, row: any) => hrFmt(computePayrollLineSummary(row).netSalary) },
+  const columns: SmartTableColumn<PayrollRunLine>[] = [
+    { key: 'employeeName', label: t('employeeName'), size: 'name', minWidth: 150, render: (_: unknown, row: PayrollRunLine) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
+    { key: 'advanceDates', label: t('payrollAdvanceDates'), size: 'date', minWidth: 120, render: (_: unknown, row: PayrollRunLine) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
+    { key: 'grossSalary', label: t('grossSalary'), numeric: true, size: 'money-sm', minWidth: 84, render: (v: unknown) => hrFmt(v) },
+    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, size: 'money-md', minWidth: 96, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).beforeDeductions) },
+    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, size: 'money-sm', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
+    { key: 'deductions', label: t('payrollDeductions'), numeric: true, size: 'money-sm', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
+    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, size: 'money-sm', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
+    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, size: 'money-md', minWidth: 96, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).totalDeductions) },
+    { key: 'netSalary', label: t('netSalary'), numeric: true, size: 'money-md', minWidth: 90, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).netSalary) },
     {
       key: 'employeeSignature',
       label: t('payrollEmployeeSignature'),
-      width: '12%',
+      size: 'document',
       minWidth: 110,
       render: () => (
         <span
@@ -215,11 +265,50 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       side="start"
       className="payroll-run-detail-drawer"
       footer={
-        <>
-          <Button onClick={handlePrint}>{t('printPayroll')}</Button>
-          <Button variant="default" onClick={handlePrintEmployeeSlips}>{t('payrollSlipBatchPrint')}</Button>
-          <Button variant="ghost" onClick={onClose}>{t('close') || 'إغلاق'}</Button>
-        </>
+        <DialogActions
+          actions={[
+            {
+              key: 'print-slips',
+              label: t('payrollSlipBatchPrint'),
+              role: 'secondary',
+              onClick: handlePrintEmployeeSlips,
+            },
+            {
+              key: 'delete',
+              label: t('delete'),
+              role: 'delete',
+              hidden: !onDelete,
+              onClick: () => onDelete?.(run),
+            },
+            {
+              key: 'edit',
+              label: t('edit'),
+              role: 'edit',
+              hidden: !isDraft || !onEdit,
+              onClick: () => onEdit?.(run),
+            },
+            {
+              key: 'print-payroll',
+              label: t('printPayroll'),
+              role: 'print',
+              onClick: handlePrint,
+            },
+            {
+              key: 'pay',
+              label: t('payrollPay'),
+              role: 'success',
+              hidden: !canPay || !onPay,
+              onClick: () => onPay?.(run),
+            },
+            {
+              key: 'approve',
+              label: t('payrollApprove'),
+              role: 'primary',
+              hidden: !isDraft || !onApprove,
+              onClick: () => onApprove?.(run),
+            },
+          ]}
+        />
       }
     >
       <div className="mb-4">
@@ -244,7 +333,6 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       <SmartTable
         compact
         showRowNumbers
-        rowNumberWidth="1%"
         innerPadding={8}
         columns={columns}
         data={items}
@@ -259,15 +347,31 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
         <p className="mt-4 mb-0 text-[13px] text-noorix-muted">{run.notes}</p>
       )}
 
+      <PrintPreviewModal
+        open={!!printPreview}
+        onClose={() => setPrintPreview(null)}
+        title={t('hrPrintPreview')}
+        html={printPreview?.html || ''}
+        closeLabel={t('close') || 'إغلاق'}
+        printLabel={`${t('print')} / PDF`}
+        iframeTitle={printPreview?.title || t('hrPrintPreview')}
+      />
+
       <Modal
         open={slipModalOpen}
         onClose={() => setSlipModalOpen(false)}
         title={t('payrollSlipBatchModalTitle')}
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setSlipModalOpen(false)}>{t('close')}</Button>
-            <Button onClick={confirmPrintEmployeeSlips}>{t('payrollSlipConfirmPrint')}</Button>
-          </>
+          <DialogActions
+            actions={[
+              {
+                key: 'confirm-print',
+                label: t('payrollSlipConfirmPrint'),
+                role: 'print',
+                onClick: confirmPrintEmployeeSlips,
+              },
+            ]}
+          />
         }
       >
         <label className="flex cursor-pointer items-start gap-3 text-[13px] leading-snug text-noorix-text">

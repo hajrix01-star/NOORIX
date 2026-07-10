@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type React from 'react';
 
 export type FloatingPopoverOptions = {
@@ -17,7 +17,7 @@ export function useFloatingPopover({
   const [open, setOpen] = useState(false);
   const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
 
     const updatePopoverPosition = () => {

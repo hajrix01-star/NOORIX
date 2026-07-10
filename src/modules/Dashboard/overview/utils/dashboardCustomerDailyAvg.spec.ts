@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  computeCustomerMonthDailyAvg,
   computeCustomerDailyAvgActiveDays,
   computeDailyAvgForCalendarPeriod,
+  computeRevenueMonthDailyAvg,
   computeRevenueDailyAvgActiveDays,
   countRevenueActiveSalesDays,
   lastRevenueSalesDayInMonth,
   revenueMtdEndDay,
   sumRevenueThroughDay,
 } from './dashboardDailyAvg';
+import { buildYearMonthlyDailyAvgRows } from './dashboardOverviewBuilders';
 import { mtdCalendarDaysInMonth } from './dashboardOverviewDateUtils';
 
 describe('revenue MTD totals and active day count', () => {
@@ -66,6 +69,57 @@ describe('revenue MTD totals and active day count', () => {
         totalAmount: juneTotal / 15,
       })),
     )).toBeCloseTo(6189.87, 0);
+  });
+  it('computes revenue and customer averages through the selected MTD end day', () => {
+    const july = [
+      { transactionDate: '2026-07-01', totalAmount: 1000, customerCount: 10 },
+      { transactionDate: '2026-07-10', totalAmount: 9000, customerCount: 90 },
+      { transactionDate: '2026-07-20', totalAmount: 5000, customerCount: 50 },
+    ];
+    const revenueAvg = computeRevenueMonthDailyAvg({
+      monthSales: july,
+      year: 2026,
+      month: 7,
+      todayYear: 2026,
+      todayMonth: 7,
+      todayDay: 10,
+      endDayInclusive: 10,
+    });
+    const customerAvg = computeCustomerMonthDailyAvg({
+      monthSales: july,
+      year: 2026,
+      month: 7,
+      todayYear: 2026,
+      todayMonth: 7,
+      todayDay: 10,
+      endDayInclusive: 10,
+    });
+    expect(revenueAvg.total).toBe(10000);
+    expect(revenueAvg.avgDaily).toBe(1000);
+    expect(customerAvg.total).toBe(100);
+    expect(customerAvg.avgDaily).toBe(10);
+  });
+
+  it('aligns previous month daily-average row to the current MTD day when requested', () => {
+    const rows = buildYearMonthlyDailyAvgRows({
+      year: 2026,
+      yearSummaries: [
+        { transactionDate: '2026-06-01', totalAmount: 3000 },
+        { transactionDate: '2026-06-20', totalAmount: 6000 },
+        { transactionDate: '2026-07-01', totalAmount: 1000 },
+        { transactionDate: '2026-07-10', totalAmount: 9000 },
+      ],
+      monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+      capMonth: 7,
+      currentYear: 2026,
+      currentMonth: 7,
+      currentDay: 10,
+      prevMonthAlignEndDay: 10,
+    });
+    expect(rows[5].totalSales).toBe(3000);
+    expect(rows[5].avgDaily).toBe(300);
+    expect(rows[6].totalSales).toBe(10000);
+    expect(rows[6].avgDaily).toBe(1000);
   });
 });
 

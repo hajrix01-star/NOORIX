@@ -1,16 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Modal } from '../../../ui';
+import { Button, Modal, Toolbar, usePrintPreview } from '../../../ui';
 import {
   fetchAllSalesSummariesForExport,
   getInvoices,
   throwIfApiFailed,
 } from '../../../services/api';
-import { toYmd } from '../../../utils/saudiDate';
 import {
-  buildInvoicesCashReportBody,
   INVOICES_CASH_REPORT_PRINT_EXTRA_CSS,
 } from '../utils/buildInvoicesCashReportPrint';
 import { DAY_CLOSE_REPORT_STYLES } from './dayCloseReportStyles';
+import {
+  buildInvoicesCashReportHtml,
+  filterCashVaultRows,
+  resolveInvoicesCashReportPeriodLine,
+} from '../invoicesCashReportModel';
 
 type Props = {
   companyId: string;
@@ -24,7 +27,7 @@ type Props = {
   vaultsList: Array<{ id?: string; type?: string }>;
   companyName: string;
   lang: string;
-  t: (key: string, ...args: any[]) => string;
+  t: (key: string, ...args: unknown[]) => string;
   fmt: (value: number) => string;
 };
 
@@ -32,6 +35,12 @@ type CashReportState =
   | { status: 'idle' | 'loading'; body: string; error: string }
   | { status: 'success'; body: string; error: string }
   | { status: 'error'; body: string; error: string };
+
+type CashOnHandSummary = { cashOnHand?: unknown };
+
+function isCashOnHandSummary(value: unknown): value is CashOnHandSummary {
+  return Boolean(value && typeof value === 'object');
+}
 
 export function InvoicesCashReportModal({
   companyId,
@@ -49,12 +58,20 @@ export function InvoicesCashReportModal({
   fmt,
 }: Props) {
   const [state, setState] = useState<CashReportState>({ status: 'idle', body: '', error: '' });
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('invoicesCashReportTitle'),
+    closeLabel: t('close') || 'Close',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const periodLine = useMemo(
     () =>
-      fromUrl && toUrl
-        ? `${fromUrl} — ${toUrl}`
-        : `${toYmd(invoiceQueryStartDate) || '—'} — ${toYmd(invoiceQueryEndDate) || '—'}`,
+      resolveInvoicesCashReportPeriodLine({
+        fromUrl,
+        toUrl,
+        invoiceQueryStartDate,
+        invoiceQueryEndDate,
+      }),
     [fromUrl, toUrl, invoiceQueryStartDate, invoiceQueryEndDate],
   );
 
@@ -89,22 +106,7 @@ export function InvoicesCashReportModal({
         );
         throwIfApiFailed(invRes, t('invoicesCashReportLoadFailed'));
 
-        const pack = invRes.data as {
-          inflowByVault?: {
-            vaultId: string;
-            nameAr?: string;
-            nameEn?: string;
-            total: string;
-            outflow: string;
-            remainder: string;
-          }[];
-        };
-        const cashVaultIds = new Set(
-          vaultsList
-            .filter((v) => String(v.type || '').toLowerCase() === 'cash')
-            .map((v) => String(v.id)),
-        );
-        const cashRows = (pack?.inflowByVault ?? []).filter((r) => r.vaultId && cashVaultIds.has(r.vaultId));
+        const cashRows = filterCashVaultRows(invRes.data?.inflowByVault, vaultsList);
         const summaries = await fetchAllSalesSummariesForExport(
           companyId,
           invoiceQueryStartDate,
@@ -115,34 +117,11 @@ export function InvoicesCashReportModal({
           false,
         );
 
-        const cashOnHandSum = (summaries as { cashOnHand?: unknown }[]).reduce(
-          (acc, s) => acc + Number(s.cashOnHand ?? 0),
-          0,
-        );
-        const vaultRows = cashRows.map((r) => {
-          const n = lang === 'en' ? r.nameEn || r.nameAr : r.nameAr || r.nameEn;
-          return {
-            vaultName: n || '—',
-            inflow: fmt(Number(r.total ?? 0)),
-            outflow: fmt(Number(r.outflow ?? 0)),
-            remainder: fmt(Number(r.remainder ?? 0)),
-          };
-        });
-
-        const totals = cashRows.reduce(
-          (acc, row) => ({
-            inflow: acc.inflow + Number(row.total ?? 0),
-            outflow: acc.outflow + Number(row.outflow ?? 0),
-            remainder: acc.remainder + Number(row.remainder ?? 0),
-          }),
-          { inflow: 0, outflow: 0, remainder: 0 },
-        );
-
-        const body = buildInvoicesCashReportBody(
-          {
+        const body = buildInvoicesCashReportHtml({
+          periodLine,
+          labels: {
             reportTitle: t('invoicesCashReportTitle'),
             subtitle: t('invoicesCashReportSubtitle'),
-            periodLine,
             scopeNote: t('invoicesCashReportScope'),
             vaultSectionTitle: t('invoicesCashReportVaultSection'),
             colVault: t('invoicesCashReportColVault'),
@@ -155,15 +134,11 @@ export function InvoicesCashReportModal({
             summariesCountLabel: t('invoicesCashReportSummariesCount'),
             noCashVaults: t('invoicesCashReportNoCashVaults'),
           },
-          vaultRows,
-          {
-            inflow: fmt(totals.inflow),
-            outflow: fmt(totals.outflow),
-            remainder: fmt(totals.remainder),
-          },
-          fmt(cashOnHandSum),
-          summaries.length,
-        );
+          cashRows,
+          summaries: summaries.filter(isCashOnHandSummary),
+          lang,
+          fmt,
+        });
 
         if (!cancelled) setState({ status: 'success', body, error: '' });
       } catch (e) {
@@ -195,27 +170,42 @@ export function InvoicesCashReportModal({
 
   if (!isOpen) return null;
 
+  const handlePrintCashReport = () => {
+    if (state.status !== 'success') return;
+    openPrintDocumentPreview({
+      title: t('invoicesCashReportTitle'),
+      companyName,
+      subtitle: (fromUrl && toUrl ? periodLine : dateFilterLabel) || periodLine,
+      body: `<div class="day-close-report">${state.body}</div>`,
+      extraCss: `${DAY_CLOSE_REPORT_STYLES}\n${INVOICES_CASH_REPORT_PRINT_EXTRA_CSS}`,
+      htmlDir: lang === 'ar' ? 'rtl' : 'ltr',
+      htmlLang: lang === 'ar' ? 'ar' : 'en',
+      showPageCounter: true,
+    });
+  };
+
   return (
     <Modal open={isOpen} onClose={onClose} size="xl" closeOnBackdrop={false} hideClose className="day-close-modal">
+      {printPreviewModal}
       <style>{DAY_CLOSE_REPORT_STYLES}</style>
       <style>{INVOICES_CASH_REPORT_PRINT_EXTRA_CSS}</style>
       <div className="day-close-print-root w-full" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <div className="day-close-no-print mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Toolbar className="day-close-no-print mb-4 gap-3" justify="between">
           <div>
             <h2 className="m-0 text-[17px] font-extrabold text-noorix-text">{t('invoicesCashReportTitle')}</h2>
             <p className="m-0 mt-1 text-[12px] text-noorix-muted">
               {companyName || '—'} · {(fromUrl && toUrl ? periodLine : dateFilterLabel) || periodLine}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => window.print()} disabled={state.status !== 'success'}>
+          <Toolbar className="gap-2" printHidden={false}>
+            <Button size="sm" onClick={handlePrintCashReport} disabled={state.status !== 'success'}>
               {t('print')}
             </Button>
             <Button size="sm" onClick={onClose}>
               {t('dayCloseClose')}
             </Button>
-          </div>
-        </div>
+          </Toolbar>
+        </Toolbar>
 
         {state.status === 'loading' && (
           <p className="m-0 text-[13px] text-noorix-muted">{t('dayCloseLoading')}</p>

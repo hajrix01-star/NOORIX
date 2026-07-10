@@ -58,7 +58,7 @@ export default function Drawer({
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId  = useId();
 
-  const handleEscape = useCallback((e: any) => {
+  const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose?.();
   }, [onClose]);
 
@@ -126,8 +126,8 @@ export default function Drawer({
           'nx-drawer-panel',
           className,
         )}
-        onClick={(e: any) => e.stopPropagation()}
-        onKeyDown={(e: any) => { if (e.key === 'Tab') trapFocusIn(panelRef.current as HTMLElement | null, e); }}
+        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+        onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => { if (e.key === 'Tab') trapFocusIn(panelRef.current as HTMLElement | null, e); }}
       >
         {/* رأس اللوح */}
         {(title || !hideClose) && (

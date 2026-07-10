@@ -17,12 +17,16 @@ const EMPTY: HrDashboardSummaryData = {
 };
 
 export function useHrDashboardSummary(companyId: string) {
-  const { data, isLoading, isError, error } = useApiQuery<any, HrDashboardSummaryData>({
+  const { data, isLoading, isError, error } = useApiQuery<unknown, HrDashboardSummaryData>({
     queryKey: hrKeys.dashboardSummary(companyId),
     queryFn: () => getHrDashboardSummary(companyId),
     fallbackMessage: 'فشل تحميل ملخص الموارد البشرية',
     select: (payload): HrDashboardSummaryData => {
-      const raw = payload?.data ?? payload;
+      const raw = (
+        payload && typeof payload === 'object' && 'data' in payload
+          ? (payload as { data?: unknown }).data
+          : payload
+      ) as Partial<HrDashboardSummaryData> | null | undefined;
       return {
         leavesCount:               Number(raw?.leavesCount               ?? 0),
         expiringResidenciesCount:  Number(raw?.expiringResidenciesCount  ?? 0),

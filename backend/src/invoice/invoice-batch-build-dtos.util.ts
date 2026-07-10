@@ -1,8 +1,15 @@
+import Decimal from 'decimal.js';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type { OutflowDto } from '../financial-core/dto/financial-operation.dto';
 import type { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
-import Decimal from 'decimal.js';
+
+const OUTFLOW_KINDS = ['expense', 'salary', 'purchase', 'sale', 'fixed_expense', 'hr_expense', 'advance'] as const;
+type OutflowKind = (typeof OUTFLOW_KINDS)[number];
+
+function resolveOutflowKind(value: string): OutflowKind {
+  return OUTFLOW_KINDS.includes(value as OutflowKind) ? (value as OutflowKind) : 'expense';
+}
 
 function combineLineAndBatchNotes(lineNotes: string | undefined, batchNotesPart: string): string | undefined {
   const line = lineNotes?.trim() ?? '';
@@ -11,7 +18,6 @@ function combineLineAndBatchNotes(lineNotes: string | undefined, batchNotesPart:
   return `${line} + ${batchNotesPart}`;
 }
 
-/** يبني مصفوفة `OutflowDto` لدفعة فواتير (استعلام expense line لكل بند عند الحاجة). */
 export async function buildOutflowDtosForInvoiceBatch(
   prisma: TenantPrismaService,
   companyId: string,
@@ -26,8 +32,8 @@ export async function buildOutflowDtosForInvoiceBatch(
   for (const item of validItems) {
     let supplierId = item.supplierId || undefined;
     let categoryId = item.categoryId || undefined;
-    let kind = item.kind as 'purchase' | 'expense' | 'hr_expense' | 'fixed_expense';
-    let debitAccountId = (item.debitAccountId && item.debitAccountId.trim()) ? item.debitAccountId : undefined;
+    let kind = resolveOutflowKind(item.kind);
+    let debitAccountId = item.debitAccountId?.trim() || undefined;
 
     if (item.expenseLineId) {
       const line = await prisma.expenseLine.findFirst({
@@ -37,7 +43,7 @@ export async function buildOutflowDtosForInvoiceBatch(
       if (line) {
         supplierId = line.supplierId;
         categoryId = line.categoryId;
-        kind = line.kind as 'fixed_expense' | 'expense';
+        kind = resolveOutflowKind(line.kind);
         debitAccountId = debitAccountId || line.category?.accountId || undefined;
       }
     }

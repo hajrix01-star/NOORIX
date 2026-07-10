@@ -1,7 +1,21 @@
 import React from 'react';
-import { Button, DateField, Input } from '../../../../ui';
+import { Button, Input, SearchableOptionsPicker, TransactionDatePicker } from '../../../../ui';
 import { vaultDisplayName } from '../../../../utils/vaultDisplay';
 import { BatchRow } from '../../components/BatchRow';
+import type {
+  BatchTranslateFn,
+  PurchaseBatchEntryRow,
+  PurchaseBatchSupplier,
+  PurchaseBatchSupplierCategory,
+  PurchaseBatchUpdateRow,
+  PurchaseBatchVault,
+} from '../purchaseBatchTypes';
+
+type PurchasesBatchHeaderCell = {
+  label: string;
+  align: React.CSSProperties['textAlign'];
+  title?: string;
+};
 
 export interface PurchasesBatchToolbarProps {
   language: string;
@@ -11,18 +25,18 @@ export interface PurchasesBatchToolbarProps {
   onBatchVaultChange: (v: string) => void;
   batchNotes: string;
   onBatchNotesChange: (v: string) => void;
-  activeVaults: any[];
+  activeVaults: PurchaseBatchVault[];
   vaultsLoading: boolean;
   batchEntryNarrow: boolean;
-  rows: any[];
-  suppliers: any[];
-  flatCategories: any[];
+  rows: PurchaseBatchEntryRow[];
+  suppliers: PurchaseBatchSupplier[];
+  flatCategories: PurchaseBatchSupplierCategory[];
   bookmarks: string[];
-  onUpdateRow: (i: number, f: any, v?: any) => void;
+  onUpdateRow: PurchaseBatchUpdateRow;
   onRemoveRow: (i: number) => void;
-  onBookmark: (id: any) => void;
+  onBookmark: (id: string) => void;
   onAddRow: () => void;
-  t: (key: string, ...args: any[]) => string;
+  t: BatchTranslateFn;
   vatRateDecimal?: number;
   children?: React.ReactNode;
 }
@@ -51,6 +65,25 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
     vatRateDecimal,
     children,
   } = props;
+  const vaultOptions = activeVaults.map((vault) => ({
+    value: vault.id,
+    label: vaultDisplayName(vault, language),
+  }));
+  const tableHeaderCells: PurchasesBatchHeaderCell[] = [
+    { label: '#', align: 'center' },
+    { label: t('supplier'), align: 'right' },
+    { label: t('supplierInvoiceNumber'), align: 'center' },
+    { label: t('total'), align: 'center' },
+    { label: `${t('net')} / ${t('tax')}`, align: 'center' },
+    { label: t('date'), align: 'center' },
+    { label: t('type'), align: 'center' },
+    { label: t('warrantyFollowUpCol'), align: 'center', title: t('warrantyFollowUpColHint') },
+    { label: t('category'), align: 'center' },
+    { label: t('taxPct'), align: 'center', title: t('taxPctTitle') },
+    { label: t('notes'), align: 'right' },
+    { label: t('invoiceReceiptCol'), align: 'center', title: t('invoiceReceiptAttachment') },
+    { label: '', align: 'center' },
+  ];
 
   return (
     <div>
@@ -59,7 +92,7 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
           <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-date">
             {t('transactionDateLabel')}
           </label>
-          <DateField
+          <TransactionDatePicker
             id="batch-purchase-date"
             value={batchDate}
             onValueChange={onBatchDateChange}
@@ -70,19 +103,18 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
           <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-vault">
             {t('batchPurchasesPayVault')}
           </label>
-          <Input
+          <SearchableOptionsPicker
             id="batch-purchase-vault"
-            type="select"
+            mode="single"
             value={batchVaultId}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onBatchVaultChange(e.target.value)}
-          >
-            <option value="">{t('batchPurchasesVaultPlaceholder')}</option>
-            {activeVaults.map((v: any) => (
-              <option key={v.id} value={v.id}>
-                {vaultDisplayName(v, language)}
-              </option>
-            ))}
-          </Input>
+            onChange={onBatchVaultChange}
+            options={vaultOptions}
+            allowEmpty
+            emptyValue=""
+            emptyLabel={t('batchPurchasesVaultPlaceholder')}
+            disabled={vaultsLoading}
+            size="md"
+          />
         </div>
         <div className="batch-purchases-entry-toolbar__control batch-purchases-entry-toolbar__control--grow min-w-0 flex-1 basis-[min(100%,280px)]">
           <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-batch-notes">
@@ -109,12 +141,12 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
       <div className="px-3 pb-4">
         {batchEntryNarrow ? (
           <div className="flex flex-col gap-3 min-w-0">
-            {rows.map((r: any, i: number) => (
+            {rows.map((row, index) => (
               <BatchRow
-                key={r.key}
+                key={row.key}
                 layout="stack"
-                row={r}
-                index={i}
+                row={row}
+                index={index}
                 suppliers={suppliers}
                 categories={flatCategories}
                 bookmarkedIds={bookmarks}
@@ -146,26 +178,12 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
               </colgroup>
               <thead>
                 <tr>
-                  {[
-                    { label: '#', align: 'center' },
-                    { label: t('supplier'), align: 'right' },
-                    { label: t('supplierInvoiceNumber'), align: 'center' },
-                    { label: t('total'), align: 'center' },
-                    { label: `${t('net')} / ${t('tax')}`, align: 'center' },
-                    { label: t('date'), align: 'center' },
-                    { label: t('type'), align: 'center' },
-                    { label: t('warrantyFollowUpCol'), align: 'center', title: t('warrantyFollowUpColHint') },
-                    { label: t('category'), align: 'center' },
-                    { label: t('taxPct'), align: 'center', title: t('taxPctTitle') },
-                    { label: t('notes'), align: 'right' },
-                    { label: t('invoiceReceiptCol'), align: 'center', title: t('invoiceReceiptAttachment') },
-                    { label: '', align: 'center' },
-                  ].map(({ label, align, title }: any, hi: number) => (
+                  {tableHeaderCells.map(({ label, align, title }, hi) => (
                     <th
                       key={hi}
                       title={title}
                       className="text-[11px] font-bold text-noorix-muted overflow-hidden whitespace-nowrap py-2 px-1.5"
-                      style={{ textAlign: (align || 'center') as React.CSSProperties['textAlign'] }}
+                      style={{ textAlign: align }}
                     >
                       {label}
                     </th>
@@ -173,12 +191,12 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r: any, i: number) => (
+                {rows.map((row, index) => (
                   <BatchRow
-                    key={r.key}
+                    key={row.key}
                     layout="table"
-                    row={r}
-                    index={i}
+                    row={row}
+                    index={index}
                     suppliers={suppliers}
                     categories={flatCategories}
                     bookmarkedIds={bookmarks}

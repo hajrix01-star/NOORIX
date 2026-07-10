@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
 import { sumObjectValues } from '@noorix/finance-core';
-import { Button, DateField, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import { Button, DialogActions, TransactionDatePicker, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import type { DailySalesChannelEntry } from './DailySalesChannelsChips';
 import { SalesShiftPicker } from './SalesShiftPicker';
 import { SalesShiftEntryCard, isShiftEntryFormValid, buildShiftEntryPayload } from './SalesShiftEntryCard';
@@ -33,35 +33,56 @@ import { buildVaultLookup, channelsFromEntryPayload } from '../utils/salesWhatsA
 import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
 import { useSalesEntryDateContext } from '../hooks/useSalesEntryDateContext';
 import { compareYmd } from '../utils/suggestSalesEntryDate';
+import { compactBusinessIdentifier } from '../../../utils/compactDisplay';
 import { useQueryClient } from '@tanstack/react-query';
 import { salesKeys } from '../../../services/queryKeys';
+import type { CreateSalesSummaryBody, DailySalesBatchPayload, SalesInputVaultRef, SalesMutationResult } from '../../../types/api/domains/sales';
 
 type SavedSummary = {
   id?: string;
-  summaryNumber?: string | number;
-  totalAmount?: string | number;
-  customerCount?: number;
+  summaryNumber?: string | number | null;
+  totalAmount?: string | number | null;
+  customerCount?: number | null;
   shift?: string;
-  transactionDate?: string;
+  transactionDate?: string | null;
   channels?: DailySalesChannelEntry[] | null;
+};
+
+type SalesMutationResponse = {
+  data?: SalesMutationResult;
+  summary?: SavedSummary;
+  summaries?: SavedSummary[];
 };
 
 type Props = {
   companyId: string;
   companyName?: string;
-  salesChannels: { id: string; [key: string]: unknown }[];
+  salesChannels: SalesInputVaultRef[];
   salesChannelsLoading?: boolean;
   salesChannelsError?: string;
   vatEnabled?: boolean;
   vatRate?: number;
-  createSummary: { mutate: Function; isPending: boolean };
-  createSummaryBatch?: { mutate: Function; isPending: boolean };
+  createSummary: SalesMutation<CreateSalesSummaryBody>;
+  createSummaryBatch?: SalesMutation<DailySalesBatchPayload>;
   onSuccess?: (summary: SavedSummary | SavedSummary[]) => void;
   onError?: (msg: string) => void;
   onClose?: () => void;
   onWhatsApp?: (summary: SavedSummary) => void;
   autoCloseOnSuccess?: boolean;
 };
+
+type SalesMutation<TVariables> = {
+  mutate: (
+    variables: TVariables,
+    options?: {
+      onSuccess?: (result: SalesMutationResponse) => void;
+      onError?: (error: unknown) => void;
+    },
+  ) => void;
+  isPending: boolean;
+};
+
+type SalesEntryItem = ReturnType<typeof buildShiftEntryPayload>;
 
 function ensureShiftForms(
   prev: Partial<Record<SalesShiftValue, ShiftEntryFormState>>,
@@ -99,7 +120,7 @@ export function SalesEntryModal({
   const [selection, setSelection] = useState<SalesEntrySelection>(EMPTY_SALES_ENTRY_SELECTION);
   const [shiftForms, setShiftForms] = useState<Partial<Record<SalesShiftValue, ShiftEntryFormState>>>({});
   const [savedSummaries, setSavedSummaries] = useState<SavedSummary[] | null>(null);
-  const [savedEntryItems, setSavedEntryItems] = useState<{ shift: string }[] | null>(null);
+  const [savedEntryItems, setSavedEntryItems] = useState<SalesEntryItem[] | null>(null);
 
   const activeShifts = useMemo(() => getActiveEntryShifts(selection), [selection]);
   const {
@@ -167,7 +188,7 @@ export function SalesEntryModal({
 
   const enrichSummariesWithEntryChannels = useCallback((
     summaries: SavedSummary[],
-    items: { shift: string; channels: { vaultId: string; amount: string }[] }[],
+    items: SalesEntryItem[],
   ): SavedSummary[] => summaries.map((s, i) => {
     const payload = items[i];
     if (!payload?.channels?.length) return s;
@@ -184,13 +205,10 @@ export function SalesEntryModal({
 
   const openDailyWhatsApp = useCallback(async (
     summaries: SavedSummary[],
-    entryItems?: { shift: string; channels?: { vaultId: string; amount: string }[] }[] | null,
+    entryItems?: SalesEntryItem[] | null,
   ) => {
     const enriched = entryItems?.length
-      ? enrichSummariesWithEntryChannels(
-        summaries,
-        entryItems as { shift: string; channels: { vaultId: string; amount: string }[] }[],
-      )
+      ? enrichSummariesWithEntryChannels(summaries, entryItems)
       : summaries;
     const report = entryItems?.length
       ? buildDayShiftReportFromEntryItems(enriched, entryItems)
@@ -275,8 +293,8 @@ export function SalesEntryModal({
   function confirmSaveWarnings(): boolean {
     if (duplicateShifts.length > 0) {
       const shiftLabels = duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? '، ' : ', ');
-      const msg = t('salesEntryDuplicateShiftConfirm', shiftLabels, formatSaudiDate(txDate));
-      if (!window.confirm(msg)) return false;
+      window.alert(duplicateShiftHint || shiftLabels);
+      return false;
     }
     if (gapDaysTotalCount > 0) {
       const msg = t(
@@ -297,10 +315,7 @@ export function SalesEntryModal({
       buildShiftEntryPayload(s, shiftForms[s]!, salesChannels),
     );
 
-    const onSaveSuccess = (summaries: SavedSummary[], usedLegacyNoShift = false) => {
-      if (usedLegacyNoShift) {
-        showToast(t('salesEntryLegacyServerWarning'), 'error');
-      }
+    const onSaveSuccess = (summaries: SavedSummary[]) => {
       if (sendWhatsAppAfter && summaries.length > 0) {
         openDailyWhatsApp(summaries, items);
       }
@@ -324,10 +339,9 @@ export function SalesEntryModal({
           batchIdempotencyKey,
         },
         {
-          onSuccess: (res: { data?: { summaries?: SavedSummary[]; usedLegacyNoShift?: boolean } }) => {
+          onSuccess: (res) => {
             const data = res?.data ?? res;
-            const pack = data as { summaries?: SavedSummary[]; usedLegacyNoShift?: boolean };
-            onSaveSuccess(pack.summaries ?? [], !!pack.usedLegacyNoShift);
+            onSaveSuccess(data.summaries ?? []);
           },
           onError: (e: unknown) => onError?.(formatSaveError(e)),
         },
@@ -350,10 +364,10 @@ export function SalesEntryModal({
         omitIdempotencyKey: true,
       }),
       {
-        onSuccess: (res: { data?: { summary?: SavedSummary }; summary?: SavedSummary }) => {
+        onSuccess: (res) => {
           const data = res?.data ?? res;
-          const summary = (data as { summary?: SavedSummary })?.summary ?? (data as SavedSummary);
-          onSaveSuccess([summary]);
+          const summary = data.summary ?? data;
+          onSaveSuccess(summary && 'id' in summary ? [summary] : []);
         },
         onError: (e: unknown) => onError?.(formatSaveError(e)),
       },
@@ -376,10 +390,27 @@ export function SalesEntryModal({
         side="start"
         className="sales-entry-success-drawer"
         footer={
-          <>
-            <Button onClick={() => { void resetForm(); }}>{t('addNewSummary')}</Button>
-            <Button variant="ghost" onClick={() => { onClose?.(); void resetForm(); }}>{t('close')}</Button>
-          </>
+          <DialogActions
+            actions={[
+              {
+                key: 'close',
+                label: t('close'),
+                role: 'close',
+                onClick: () => {
+                  onClose?.();
+                  void resetForm();
+                },
+              },
+              {
+                key: 'add-new-summary',
+                label: t('addNewSummary'),
+                role: 'primary',
+                onClick: () => {
+                  void resetForm();
+                },
+              },
+            ]}
+          />
         }
       >
         <div className="flex flex-col gap-4">
@@ -397,7 +428,9 @@ export function SalesEntryModal({
                     t,
                   )}
                 </span>
-                <strong className="text-[13px] text-noorix-blue">#{s.summaryNumber}</strong>
+                <strong className="text-[13px] text-noorix-blue" title={String(s.summaryNumber || '')}>
+                  #{compactBusinessIdentifier(s.summaryNumber)}
+                </strong>
               </div>
               <div className="flex justify-between text-[13px]">
                 <span className="text-noorix-muted">{t('total')}</span>
@@ -428,7 +461,7 @@ export function SalesEntryModal({
                   const form = shiftForms[shift];
                   return form
                     ? buildShiftEntryPayload(shift, form, salesChannels)
-                    : { shift: item.shift, channels: [] as { vaultId: string; amount: string }[] };
+                    : item;
                 });
                 const [enriched] = enrichSummariesWithEntryChannels(savedSummaries, entryPayloads);
                 onWhatsApp?.(enriched ?? savedSummaries[0]);
@@ -452,19 +485,25 @@ export function SalesEntryModal({
       className="sales-entry-drawer"
       footer={
         isBatch ? (
-          <Button onClick={resetForm} className="w-full">{t('reset')}</Button>
+          <DialogActions
+            actions={[
+              { key: 'reset', label: t('reset'), role: 'secondary', onClick: resetForm },
+            ]}
+            className="w-full"
+          />
         ) : (
-          <>
-            <Button
-              variant="primary"
-              disabled={saveDisabled}
-              onClick={() => handleSave(false)}
-              className="flex-1 min-w-0"
-            >
-              {saving ? t('saving') : t('saveSummary')}
-            </Button>
-            <Button onClick={resetForm}>{t('reset')}</Button>
-          </>
+          <DialogActions
+            actions={[
+              { key: 'reset', label: t('reset'), role: 'secondary', onClick: resetForm },
+              {
+                key: 'save-summary',
+                label: saving ? t('saving') : t('saveSummary'),
+                role: 'save',
+                disabled: saveDisabled,
+                onClick: () => handleSave(false),
+              },
+            ]}
+          />
         )
       }
     >
@@ -472,7 +511,7 @@ export function SalesEntryModal({
         <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 px-3 py-2 text-[12px] leading-relaxed text-noorix-muted">
           {contextLoading ? t('loading') : dateBannerText}
         </div>
-        <DateField
+        <TransactionDatePicker
           label={t('transactionDate')}
           value={txDate}
           onValueChange={(value) => {

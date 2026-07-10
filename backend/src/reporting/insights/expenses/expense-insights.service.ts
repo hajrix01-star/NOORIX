@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ReportingFacade, type DashboardSummaryDateRange, type DashboardSummaryPayload } from '../../reporting.facade';
 import {
   ruleFixedExpensePressure,
@@ -16,7 +16,10 @@ import { buildExpenseCategoryBreakdownForMonth } from '../shared/overview-pl-bre
  */
 @Injectable()
 export class ExpenseInsightsService {
-  constructor(private readonly reportingFacade: ReportingFacade) {}
+  constructor(
+    @Inject(ReportingFacade)
+    private readonly reportingFacade: Pick<ReportingFacade, 'getDashboardSummary'>,
+  ) {}
 
   async buildExpenseInsights(
     companyId: string,

@@ -1,7 +1,8 @@
 import Decimal from 'decimal.js';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { fmt } from '../../../utils/format';
-import { openPrintWindow } from '../../../utils/printUtils';
+import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
+import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import type { CostAppsPlResult } from '../costAccountingAppsModel';
 import { parseMoneyInput, type FixedLine } from './costAccountingAppsScreenUtils';
 
@@ -23,8 +24,7 @@ export function buildCostAppsPrintBody(params: {
   expensesAnnualTotal: Decimal;
 }): string {
   const { t, appSalesRowLabel, withAppsScenarioLabel, plWith, plWithout, fixedLines, salaryStr } = params;
-  const rows = [
-    ['', withAppsScenarioLabel, t('reportCostAppsScenarioNoApps')],
+  const scenarioRows: Array<[string, string, string]> = [
     [appSalesRowLabel, fmt2(plWith.grossApp), fmt2(plWithout.grossApp)],
     [t('reportCostAppsPlLocalSales'), fmt2(plWith.grossLocal), fmt2(plWithout.grossLocal)],
     [t('reportCostAppsGrossTotal'), fmt2(plWith.grossTotal), fmt2(plWithout.grossTotal)],
@@ -41,45 +41,68 @@ export function buildCostAppsPrintBody(params: {
     ],
     [t('reportCostAppsNetProfit'), fmt2(plWith.netProfit), fmt2(plWithout.netProfit)],
   ];
+  const fixedLineRows: Array<[string, string, string]> = [
+    [
+      t('reportCostAppsPayrollLineLabel'),
+      fmt(parseMoneyInput(salaryStr).toNumber(), 2),
+      fmt(parseMoneyInput(salaryStr).mul(12).toNumber(), 2),
+    ],
+    ...fixedLines.map((line): [string, string, string] => {
+      const monthly = parseMoneyInput(line.amount);
+      return [line.label || '-', fmt(monthly.toNumber(), 2), fmt(monthly.mul(12).toNumber(), 2)];
+    }),
+  ];
 
-  return `
-      <table>
-        <thead><tr><th>${t('reportItem')}</th><th>${withAppsScenarioLabel}</th><th>${t('reportCostAppsScenarioNoApps')}</th></tr></thead>
-        <tbody>
-          ${rows
-            .slice(1)
-            .map(
-              (r) =>
-                `<tr><td>${String(r[0]).replace(/</g, '&lt;')}</td><td style="text-align:right">${r[1]}</td><td style="text-align:right">${r[2]}</td></tr>`,
-            )
-            .join('')}
-        </tbody>
-      </table>
-      <h3 style="margin:12px 0 6px;font-size:13px;">${t('reportCostAppsFixedLines')}</h3>
-      <table>
-        <thead><tr><th>${t('reportCostAppsLineLabel')}</th><th style="text-align:right">${t('reportCostAppsLineMonthlyAmount')}</th><th style="text-align:right">${t('reportCostAppsLineAnnualAmount')}</th></tr></thead>
-        <tbody>
-          <tr>
-            <td class="border border-noorix-border px-2 py-2">${String(t('reportCostAppsPayrollLineLabel')).replace(/</g, '&lt;')}</td>
-            <td style="text-align:right">${fmt(parseMoneyInput(salaryStr).toNumber(), 2)}</td>
-            <td style="text-align:right">${fmt(parseMoneyInput(salaryStr).mul(12).toNumber(), 2)}</td>
-          </tr>
-          ${fixedLines
-            .map((l) => {
-              const m = parseMoneyInput(l.amount);
-              const a = m.mul(12);
-              return `<tr><td>${String(l.label || '—').replace(/</g, '&lt;')}</td><td style="text-align:right">${fmt(m.toNumber(), 2)}</td><td style="text-align:right">${fmt(a.toNumber(), 2)}</td></tr>`;
-            })
-            .join('')}
-          <tr><td><strong>${t('reportTotalAmount')}</strong></td><td style="text-align:right"><strong>${fmt2(params.expensesMonthlyTotal)}</strong></td><td style="text-align:right"><strong>${fmt2(params.expensesAnnualTotal)}</strong></td></tr>
-        </tbody>
-      </table>
-    `;
+  return [
+    buildPrintHtmlTable({
+      wrapperClassName: null,
+      headerRows: [{
+        cells: [
+          { value: t('reportItem') },
+          { value: withAppsScenarioLabel, align: 'end' },
+          { value: t('reportCostAppsScenarioNoApps'), align: 'end' },
+        ],
+      }],
+      bodyRows: scenarioRows.map((row) => ({
+        cells: [
+          { value: row[0] },
+          { value: row[1], align: 'end' },
+          { value: row[2], align: 'end' },
+        ],
+      })),
+    }),
+    '<h3 style="margin:12px 0 6px;font-size:13px;">' + t('reportCostAppsFixedLines') + '</h3>',
+    buildPrintHtmlTable({
+      wrapperClassName: null,
+      headerRows: [{
+        cells: [
+          { value: t('reportCostAppsLineLabel') },
+          { value: t('reportCostAppsLineMonthlyAmount'), align: 'end' },
+          { value: t('reportCostAppsLineAnnualAmount'), align: 'end' },
+        ],
+      }],
+      bodyRows: fixedLineRows.map((row) => ({
+        cells: [
+          { value: row[0] },
+          { value: row[1], align: 'end' },
+          { value: row[2], align: 'end' },
+        ],
+      })),
+      footerRows: [{
+        cells: [
+          { value: t('reportTotalAmount'), style: 'font-weight:700' },
+          { value: fmt2(params.expensesMonthlyTotal), align: 'end', style: 'font-weight:700' },
+          { value: fmt2(params.expensesAnnualTotal), align: 'end', style: 'font-weight:700' },
+        ],
+      }],
+    }),
+  ].join('\n');
 }
 
-export function printCostAppsReport(params: {
+export function buildCostAppsReportPrintHtml(params: {
   t: TranslateFn;
   companyName: string;
+  logoUrl?: string;
   appSalesRowLabel: string;
   withAppsScenarioLabel: string;
   plWith: CostAppsPlResult;
@@ -88,10 +111,11 @@ export function printCostAppsReport(params: {
   salaryStr: string;
   expensesMonthlyTotal: Decimal;
   expensesAnnualTotal: Decimal;
-}) {
-  openPrintWindow({
+}): string {
+  return buildPrintDocumentHtml({
     title: params.t('reportCostAppsTitle'),
     companyName: params.companyName || params.t('reports'),
+    logoUrl: params.logoUrl || '',
     subtitle: params.t('reportCostAppsTitle'),
     landscape: false,
     showPageCounter: false,
@@ -109,6 +133,7 @@ export function printCostAppsReport(params: {
 export async function exportCostAppsReportExcel(params: {
   t: TranslateFn;
   companyName: string;
+  logoUrl?: string;
   appSalesRowLabel: string;
   withAppsScenarioLabel: string;
   plWith: CostAppsPlResult;
@@ -137,6 +162,7 @@ export async function exportCostAppsReportExcel(params: {
     filename: 'cost-apps-calculator.xlsx',
     title: t('reportCostAppsTitle'),
     companyName: params.companyName || '',
+    logoUrl: params.logoUrl || '',
     sheetName: 'P&L',
     columns: [
       { key: 'item', label: t('reportItem') },

@@ -3,6 +3,9 @@
  */
 export type DashboardOverviewFilter = {
   label?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  isCustomRange?: boolean;
 };
 
 export type DashboardOverviewTabProps = {

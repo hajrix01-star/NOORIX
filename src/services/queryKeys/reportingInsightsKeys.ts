@@ -1,20 +1,9 @@
+import type { DashboardPeriodQueryKeyInput } from '../domains/apiEndpoints/dashboard-period-query';
+
 /**
  * مفاتيح React Query — رؤى التقارير / لوحة التحكم (Reporting insights)
  */
-export type ReportingInsightsDashboardKeyInput = {
-  companyId: string;
-  year: number;
-  yearStart: string;
-  yearEnd: string;
-  dailyStart: string | null;
-  dailyEnd: string | null;
-  monthStart: string | null;
-  monthEnd: string | null;
-  periodStart: string;
-  periodEnd: string;
-  selectedMonth: number | null;
-  includeCancelledSales: boolean;
-};
+export type ReportingInsightsDashboardKeyInput = DashboardPeriodQueryKeyInput;
 
 export const reportingInsightsKeys = {
   dashboard: (p: ReportingInsightsDashboardKeyInput) =>

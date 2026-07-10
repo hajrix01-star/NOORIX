@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import { roundMoney } from '@noorix/finance-core';
+import { roundMoney, type DecimalInput } from '@noorix/finance-core';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { getHrAdvanceTotals } from './hr-advance-balance.util';
 import { computeHrPayrollLineNet } from './hr-payroll-line-net.util';
@@ -9,8 +9,8 @@ import {
   sumHrCustomAllowanceAmounts,
 } from './utils/employee-salary-package.util';
 
-function money(value: unknown): number {
-  return roundMoney(value as any);
+function money(value: DecimalInput): number {
+  return roundMoney(value);
 }
 
 function decimalMoney(value: Prisma.Decimal | number | string | null | undefined): number {

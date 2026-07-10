@@ -1,5 +1,18 @@
 import { setRefreshToken } from '../../authStore';
-import type { ApiParsedResult, AuthLoginRefreshPayload } from '../../../types/api';
+import type { ApiParsedResult, AuthLoginRefreshPayload, AuthSessionUser } from '../../../types/api';
+import type {
+  BankCategoryLite,
+  BankReconciliationStats,
+  BankStatementLite,
+  BankTemplate,
+} from '../../../modules/Reports/bank/bankAnalysisTab.types';
+import type { BankSheetData } from '../../../modules/Reports/bank/bankMappingAutoDetect';
+import type {
+  BankClassificationRule,
+  BankTreeCategory,
+  BankTreeCategoryPatch,
+  BankTreeCategoryPayload,
+} from '../../../modules/Reports/bank/bankCategoryTree.types';
 import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete, getApiBaseUrl, getAuthHeaders } from '../../core/apiHttp';
 
@@ -8,6 +21,33 @@ function errMsg(err: unknown): string {
 }
 
 type JsonRecord = Record<string, unknown>;
+type AiHealthData = {
+  error?: string;
+  isNetworkError?: boolean;
+  geminiAvailable?: boolean;
+  [key: string]: unknown;
+};
+type GeminiTestResult = {
+  ok?: boolean;
+  intent?: string;
+  error?: string;
+  [key: string]: unknown;
+};
+type BankStatementResponse = BankStatementLite | { data?: BankStatementLite | null } | null;
+type BankStatementsSummary = {
+  statementCount?: number;
+  totalDeposits?: number | string;
+  totalWithdrawals?: number | string;
+  netFlow?: number | string;
+  [key: string]: unknown;
+};
+type BankStatementFull = BankStatementLite & {
+  rawData?: BankSheetData | null;
+  _fullRaw?: BankSheetData;
+};
+type BankMutationResult = { success?: boolean; id?: string; [key: string]: unknown };
+type BankHeaderSuggestionResult = { headerRow?: number; dataStartRow?: number; columns?: Record<string, unknown> };
+type BankRulesExportPack = { categories?: BankTreeCategory[]; rules?: BankClassificationRule[]; [key: string]: unknown };
 
 // ——— فحص الاتصال ———
 export async function checkApiConnection(): Promise<{ ok: boolean; status?: number; error?: string }> {
@@ -27,7 +67,7 @@ export async function checkApiConnection(): Promise<{ ok: boolean; status?: numb
 }
 
 /** جلب حالة الصحة الكاملة (يتضمن geminiAvailable) */
-export async function getHealth(): Promise<ApiParsedResult> {
+export async function getHealth(): Promise<ApiParsedResult<AiHealthData>> {
   try {
     const base = getApiBaseUrl();
     const url = base ? `${base}/api/v1/health` : '/api/v1/health';
@@ -45,15 +85,15 @@ export async function getHealth(): Promise<ApiParsedResult> {
 }
 
 /** اختبار Gemini مباشرة — للتشخيص */
-export async function testGemini(_variables?: unknown): Promise<ApiParsedResult> {
-  return apiGet('/api/v1/gemini-test');
+export async function testGemini(_variables?: unknown): Promise<ApiParsedResult<GeminiTestResult>> {
+  return apiGet<GeminiTestResult>('/api/v1/gemini-test');
 }
 
 /**
  * تسجيل الدخول — إرجاع { access_token, refresh_token, user }.
  */
-export async function login(email: string, password: string): Promise<ApiParsedResult> {
-  const res = await apiPost('/api/v1/auth/login', { email, password });
+export async function login(email: string, password: string): Promise<ApiParsedResult<AuthLoginRefreshPayload>> {
+  const res = await apiPost<AuthLoginRefreshPayload>('/api/v1/auth/login', { email, password });
   if (!res.success) return res;
   const data = res.data as AuthLoginRefreshPayload | undefined;
   if (data?.refresh_token) {
@@ -65,106 +105,99 @@ export async function login(email: string, password: string): Promise<ApiParsedR
 /**
  * المستخدم الحالي — يتطلب JWT.
  */
-export async function getMe(): Promise<ApiParsedResult> {
-  return apiGet('/api/v1/auth/me');
+export async function getMe(): Promise<ApiParsedResult<AuthSessionUser>> {
+  return apiGet<AuthSessionUser>('/api/v1/auth/me');
 }
 
 /**
  * تغيير كلمة المرور — يتطلب JWT.
  */
-export async function changePassword(currentPassword: string, newPassword: string): Promise<ApiParsedResult> {
-  const res = await apiPost('/api/v1/auth/change-password', { currentPassword, newPassword });
+export async function changePassword(currentPassword: string, newPassword: string): Promise<ApiParsedResult<{ success?: boolean }>> {
+  const res = await apiPost<{ success?: boolean }>('/api/v1/auth/change-password', { currentPassword, newPassword });
   return res;
 }
 
-/**
- * المحادثة الذكية — إرسال استعلام والحصول على إجابة.
- */
-export async function chatQuery(query: string): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/chat/query', { query });
-}
-
 /** تحليل كشوف الحساب */
-export async function bankStatementUpload(body: unknown): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/bank-statements/upload', body, { timeout: 60000 });
+export async function bankStatementUpload(body: unknown): Promise<ApiParsedResult<BankStatementLite>> {
+  return apiPost<BankStatementLite>('/api/v1/bank-statements/upload', body, { timeout: 60000 });
 }
 
 export async function bankStatementSuggestHeaderMetadata(
   companyId: string,
   raw: unknown,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<BankHeaderSuggestionResult>> {
   const slice = Array.isArray(raw) ? raw.slice(0, 24) : [];
-  return apiPost(
+  return apiPost<BankHeaderSuggestionResult>(
     '/api/v1/bank-statements/suggest-header-metadata',
     { companyId, raw: slice },
     { timeout: 45000 },
   );
 }
-export async function bankStatementConfirmMapping(id: string, body: unknown): Promise<ApiParsedResult> {
-  return apiPatch(`/api/v1/bank-statements/${id}/confirm-mapping`, body);
+export async function bankStatementConfirmMapping(id: string, body: unknown): Promise<ApiParsedResult<BankStatementLite>> {
+  return apiPatch<BankStatementLite>(`/api/v1/bank-statements/${id}/confirm-mapping`, body);
 }
 export async function bankStatementsList(
   companyId: string,
   params: Record<string, string | number | boolean | null | undefined> = {},
-): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/bank-statements', { companyId, ...params });
+): Promise<ApiParsedResult<BankStatementLite[]>> {
+  const res = await apiGet<BankStatementLite[]>('/api/v1/bank-statements', { companyId, ...params });
   return res.success ? { success: true, data: res.data ?? [] } : res;
 }
-export async function bankStatementSummary(companyId: string): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/bank-statements/summary', { companyId });
+export async function bankStatementSummary(companyId: string): Promise<ApiParsedResult<BankStatementsSummary>> {
+  const res = await apiGet<BankStatementsSummary>('/api/v1/bank-statements/summary', { companyId });
   return res;
 }
-export async function bankStatementGet(companyId: string, id: string): Promise<ApiParsedResult> {
-  return apiGet(`/api/v1/bank-statements/${id}`, { companyId });
+export async function bankStatementGet(companyId: string, id: string): Promise<ApiParsedResult<BankStatementFull>> {
+  return apiGet<BankStatementFull>(`/api/v1/bank-statements/${id}`, { companyId });
 }
 export async function bankStatementUpdateTxCategory(
   statementId: string,
   txId: string,
   companyId: string,
-  categoryId: string,
-): Promise<ApiParsedResult> {
-  return apiPatch(`/api/v1/bank-statements/${statementId}/transactions/${txId}/category`, { companyId, categoryId });
+  categoryId: string | null,
+): Promise<ApiParsedResult<BankMutationResult>> {
+  return apiPatch<BankMutationResult>(`/api/v1/bank-statements/${statementId}/transactions/${txId}/category`, { companyId, categoryId });
 }
 export async function bankStatementUpdateTxNote(
   statementId: string,
   txId: string,
   companyId: string,
   note: string,
-): Promise<ApiParsedResult> {
-  return apiPatch(`/api/v1/bank-statements/${statementId}/transactions/${txId}/note`, { companyId, note });
+): Promise<ApiParsedResult<BankMutationResult>> {
+  return apiPatch<BankMutationResult>(`/api/v1/bank-statements/${statementId}/transactions/${txId}/note`, { companyId, note });
 }
-export async function bankStatementDelete(companyId: string, id: string): Promise<ApiParsedResult> {
-  return apiDelete(`/api/v1/bank-statements/${id}?companyId=${companyId}`);
+export async function bankStatementDelete(companyId: string, id: string): Promise<ApiParsedResult<{ success?: boolean }>> {
+  return apiDelete<{ success?: boolean }>(`/api/v1/bank-statements/${id}?companyId=${companyId}`);
 }
-export async function bankStatementCategories(companyId: string): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/bank-statements/categories', { companyId });
+export async function bankStatementCategories(companyId: string): Promise<ApiParsedResult<BankCategoryLite[]>> {
+  const res = await apiGet<BankCategoryLite[]>('/api/v1/bank-statements/categories', { companyId });
   return res.success ? { success: true, data: res.data ?? [] } : res;
 }
-export async function bankStatementCreateCategory(body: unknown): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/bank-statements/categories', body);
+export async function bankStatementCreateCategory(body: unknown): Promise<ApiParsedResult<BankCategoryLite>> {
+  return apiPost<BankCategoryLite>('/api/v1/bank-statements/categories', body);
 }
-export async function bankStatementDeleteCategory(companyId: string, id: string): Promise<ApiParsedResult> {
-  return apiDelete(`/api/v1/bank-statements/categories/${id}?companyId=${companyId}`);
+export async function bankStatementDeleteCategory(companyId: string, id: string): Promise<ApiParsedResult<{ success?: boolean }>> {
+  return apiDelete<{ success?: boolean }>(`/api/v1/bank-statements/categories/${id}?companyId=${companyId}`);
 }
 
-export async function bankStatementReclassify(companyId: string, statementId: string): Promise<ApiParsedResult> {
-  return apiPost(`/api/v1/bank-statements/${statementId}/reclassify`, { companyId }, { timeout: 120000 });
+export async function bankStatementReclassify(companyId: string, statementId: string): Promise<ApiParsedResult<BankStatementLite>> {
+  return apiPost<BankStatementLite>(`/api/v1/bank-statements/${statementId}/reclassify`, { companyId }, { timeout: 120000 });
 }
 
 export async function bankStatementReconciliationStats(
   companyId: string,
   startDate: unknown,
   endDate: unknown,
-): Promise<ApiParsedResult> {
-  return apiGet('/api/v1/bank-statements/reconciliation-stats', {
+): Promise<ApiParsedResult<{ system_data?: BankReconciliationStats | null }>> {
+  return apiGet<{ system_data?: BankReconciliationStats | null }>('/api/v1/bank-statements/reconciliation-stats', {
     companyId,
     startDate: toYmd(startDate),
     endDate: toYmd(endDate),
   });
 }
 
-export async function bankStatementTemplatesList(companyId: string): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/bank-statements/templates', { companyId });
+export async function bankStatementTemplatesList(companyId: string): Promise<ApiParsedResult<BankTemplate[]>> {
+  const res = await apiGet<BankTemplate[]>('/api/v1/bank-statements/templates', { companyId });
   return res.success ? { success: true, data: res.data ?? [] } : res;
 }
 
@@ -172,57 +205,57 @@ export async function bankStatementTemplateSetActive(
   companyId: string,
   templateId: string,
   isActive: boolean,
-): Promise<ApiParsedResult> {
-  return apiPatch(`/api/v1/bank-statements/templates/${templateId}`, { companyId, isActive });
+): Promise<ApiParsedResult<BankTemplate>> {
+  return apiPatch<BankTemplate>(`/api/v1/bank-statements/templates/${templateId}`, { companyId, isActive });
 }
 
 /** حذف القالب نهائياً (مطابق Base44) */
-export async function bankStatementTemplateDelete(companyId: string, templateId: string): Promise<ApiParsedResult> {
-  return apiDelete(`/api/v1/bank-statements/templates/${templateId}?companyId=${companyId}`);
+export async function bankStatementTemplateDelete(companyId: string, templateId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
+  return apiDelete<{ success?: boolean }>(`/api/v1/bank-statements/templates/${templateId}?companyId=${companyId}`);
 }
 
-export async function bankStatementTreeCategoriesList(companyId: string): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/bank-statements/tree-categories', { companyId });
+export async function bankStatementTreeCategoriesList(companyId: string): Promise<ApiParsedResult<BankTreeCategory[]>> {
+  const res = await apiGet<BankTreeCategory[]>('/api/v1/bank-statements/tree-categories', { companyId });
   return res.success ? { success: true, data: res.data ?? [] } : res;
 }
 
-export async function bankStatementTreeCategoryCreate(body: unknown): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/bank-statements/tree-categories', body);
+export async function bankStatementTreeCategoryCreate(body: BankTreeCategoryPayload): Promise<ApiParsedResult<BankTreeCategory>> {
+  return apiPost<BankTreeCategory>('/api/v1/bank-statements/tree-categories', body);
 }
 
 export async function bankStatementTreeCategoryUpdate(
   companyId: string,
   categoryId: string,
-  patch: JsonRecord,
-): Promise<ApiParsedResult> {
-  return apiPatch(`/api/v1/bank-statements/tree-categories/${categoryId}`, { companyId, ...patch });
+  patch: BankTreeCategoryPatch,
+): Promise<ApiParsedResult<BankTreeCategory>> {
+  return apiPatch<BankTreeCategory>(`/api/v1/bank-statements/tree-categories/${categoryId}`, { companyId, ...patch });
 }
 
-export async function bankStatementTreeCategoryDelete(companyId: string, categoryId: string): Promise<ApiParsedResult> {
-  return apiDelete(`/api/v1/bank-statements/tree-categories/${categoryId}?companyId=${companyId}`);
+export async function bankStatementTreeCategoryDelete(companyId: string, categoryId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
+  return apiDelete<{ success?: boolean }>(`/api/v1/bank-statements/tree-categories/${categoryId}?companyId=${companyId}`);
 }
 
 /** استيراد 8 فئات التصنيف الافتراضية — فقط إذا كانت القائمة فارغة */
-export async function bankStatementTreeCategoriesSeedDefaults(companyId: string): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/bank-statements/tree-categories/seed-defaults', { companyId });
+export async function bankStatementTreeCategoriesSeedDefaults(companyId: string): Promise<ApiParsedResult<BankTreeCategory[]>> {
+  return apiPost<BankTreeCategory[]>('/api/v1/bank-statements/tree-categories/seed-defaults', { companyId });
 }
 
-export async function bankStatementClassificationRulesList(companyId: string): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/bank-statements/classification-rules', { companyId });
+export async function bankStatementClassificationRulesList(companyId: string): Promise<ApiParsedResult<BankClassificationRule[]>> {
+  const res = await apiGet<BankClassificationRule[]>('/api/v1/bank-statements/classification-rules', { companyId });
   return res.success ? { success: true, data: res.data ?? [] } : res;
 }
 
-export async function bankStatementClassificationRuleCreate(body: unknown): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/bank-statements/classification-rules', body);
+export async function bankStatementClassificationRuleCreate(body: unknown): Promise<ApiParsedResult<BankClassificationRule>> {
+  return apiPost<BankClassificationRule>('/api/v1/bank-statements/classification-rules', body);
 }
 
-export async function bankStatementClassificationRuleDelete(companyId: string, ruleId: string): Promise<ApiParsedResult> {
-  return apiDelete(`/api/v1/bank-statements/classification-rules/${ruleId}?companyId=${companyId}`);
+export async function bankStatementClassificationRuleDelete(companyId: string, ruleId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
+  return apiDelete<{ success?: boolean }>(`/api/v1/bank-statements/classification-rules/${ruleId}?companyId=${companyId}`);
 }
 
 /** تصدير حزمة قواعد التصنيف (فئات شجرية + قواعد مسطّحة) — JSON */
-export async function bankStatementClassificationRulesExportPack(companyId: string): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/bank-statements/classification-rules/export-pack', { companyId });
+export async function bankStatementClassificationRulesExportPack(companyId: string): Promise<ApiParsedResult<BankRulesExportPack>> {
+  const res = await apiGet<BankRulesExportPack>('/api/v1/bank-statements/classification-rules/export-pack', { companyId });
   if (!res.success) return res;
   return { success: true, data: res.data };
 }
@@ -232,8 +265,8 @@ export async function bankStatementClassificationRulesImportPack(
   companyId: string,
   pack: unknown,
   mode: 'merge' | 'replace' = 'merge',
-): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/bank-statements/classification-rules/import-pack', {
+): Promise<ApiParsedResult<BankRulesExportPack>> {
+  return apiPost<BankRulesExportPack>('/api/v1/bank-statements/classification-rules/import-pack', {
     companyId,
     mode,
     pack,
@@ -245,8 +278,8 @@ export async function bankStatementClassificationRulesImportFromCompany(
   companyId: string,
   sourceCompanyId: string,
   mode: 'merge' | 'replace' = 'merge',
-): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/bank-statements/classification-rules/import-from-company', {
+): Promise<ApiParsedResult<BankRulesExportPack>> {
+  return apiPost<BankRulesExportPack>('/api/v1/bank-statements/classification-rules/import-from-company', {
     companyId,
     sourceCompanyId,
     mode,

@@ -5,12 +5,13 @@ import { useVaults } from '../../../../../hooks/useVaults';
 import { getSaudiToday } from '../../../../../utils/saudiDate';
 import { employeeKeys } from '../../../../../services/queryKeys';
 import type { HrQuickEntryMode } from '../types';
+import type { HrEmployee } from '../../../../../types/api';
 
 export function useHrQuickEntryState(mode: HrQuickEntryMode, companyId: string) {
   const { paymentVaults = [], isLoading: vaultsLoading } = useVaults({ companyId });
   const vaults = paymentVaults;
 
-  const { data: employees = [], isLoading: employeesLoading } = useApiListQuery<any>({
+  const { data: employees = [], isLoading: employeesLoading } = useApiListQuery<HrEmployee>({
     queryKey: employeeKeys.list(companyId, false),
     queryFn: () => getEmployees(companyId, false),
     fallbackMessage: 'فشل تحميل الموظفين',

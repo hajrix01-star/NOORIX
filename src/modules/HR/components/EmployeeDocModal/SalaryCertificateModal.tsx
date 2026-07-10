@@ -22,7 +22,7 @@ export function SalaryCertificateModal({
   const { showToast } = useToast();
   const { rows, total } = useMemo(() => buildSalaryRows(compensationSnapshot), [compensationSnapshot]);
 
-  const { printRef, saving, handlePrint, handleSaveToDocuments } = useEmployeeDocPrintSave({
+  const { printRef, saving, handlePrint, handleSaveToDocuments, printPreviewModal } = useEmployeeDocPrintSave({
     t,
     showToast,
     printTitle: t('salaryCertificate') || 'Salary Certificate',
@@ -30,6 +30,8 @@ export function SalaryCertificateModal({
     employee,
     documentType: 'certificate',
     filePrefix: 'salary-certificate',
+    companyName,
+    companyLogo,
     onSaved,
     onClose,
     saveFailedMessage: t('saveFailed'),
@@ -44,6 +46,7 @@ export function SalaryCertificateModal({
       saving={saving}
       t={t}
     >
+      {printPreviewModal}
       <EmployeeDocPrintFrame printRef={printRef}>
         <EmployeeDocDocumentFrame companyName={companyName} companyLogo={companyLogo} arabicTitle="شهادة تعريف راتب" englishTitle="Employment & Salary Certificate">
           <SalaryCertificatePreview employee={employee} rows={rows} total={total} />

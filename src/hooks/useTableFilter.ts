@@ -17,6 +17,32 @@
  */
 import { useState, useMemo, useCallback } from 'react';
 
+type SortDir = 'asc' | 'desc';
+
+type TableFilterRow = Record<string, unknown>;
+
+export type UseTableFilterOptions = {
+  searchKeys?: readonly string[];
+  pageSize?: number;
+  defaultSortKey?: string | null;
+  defaultSortDir?: SortDir;
+  dateKeys?: readonly string[];
+};
+
+function readRowValue(row: TableFilterRow, key: string): unknown {
+  return row[key];
+}
+
+function toComparableTime(value: unknown): number {
+  if (!value) return 0;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? 0 : value.getTime();
+  if (typeof value === 'string' || typeof value === 'number') {
+    const time = new Date(value).getTime();
+    return Number.isNaN(time) ? 0 : time;
+  }
+  return 0;
+}
+
 /**
  * @param {Array}  data
  * @param {Object} opts
@@ -26,25 +52,25 @@ import { useState, useMemo, useCallback } from 'react';
  * @param {'asc'|'desc'} [opts.defaultSortDir='asc']
  * @param {string[]} [opts.dateKeys]  - حقول التاريخ (مقارنة timestamp)
  */
-export function useTableFilter(data: any = [], {
+export function useTableFilter<TRow extends TableFilterRow = TableFilterRow>(data: TRow[] = [], {
   searchKeys        = [],
   pageSize          = 50,
   defaultSortKey    = null,
   defaultSortDir    = 'asc',
   dateKeys          = [],
-}: any = {}) {
+}: UseTableFilterOptions = {}) {
   const [searchText, setSearch]  = useState('');
   const [page, setPage]          = useState(1);
-  const [sortKey, setSortKey]    = useState(defaultSortKey);
-  const [sortDir, setSortDir]    = useState(defaultSortDir);
+  const [sortKey, setSortKey]    = useState<string>(defaultSortKey ?? '');
+  const [sortDir, setSortDir]    = useState<SortDir>(defaultSortDir);
 
   // ── البحث ────────────────────────────────────────────────
   const searched = useMemo(() => {
     const q = (searchText || '').trim().toLowerCase();
     if (!q || searchKeys.length === 0) return data;
-    return data.filter((row: any) =>
-      searchKeys.some((key: any) => {
-        const val = row[key];
+    return data.filter((row) =>
+      searchKeys.some((key) => {
+        const val = readRowValue(row, key);
         return val != null && String(val).toLowerCase().includes(q);
       }),
     );
@@ -53,13 +79,13 @@ export function useTableFilter(data: any = [], {
   // ── الترتيب ───────────────────────────────────────────────
   const sorted = useMemo(() => {
     if (!sortKey) return searched;
-    return [...searched].sort((a: any, b: any) => {
-      const av = a[sortKey];
-      const bv = b[sortKey];
-      let cmp;
+    return [...searched].sort((a, b) => {
+      const av = readRowValue(a, sortKey);
+      const bv = readRowValue(b, sortKey);
+      let cmp: number;
       if (dateKeys.includes(sortKey) && (av || bv)) {
-        const ta = av ? new Date(av).getTime() : 0;
-        const tb = bv ? new Date(bv).getTime() : 0;
+        const ta = toComparableTime(av);
+        const tb = toComparableTime(bv);
         cmp = ta - tb;
       } else if (typeof av === 'number' && typeof bv === 'number') {
         cmp = av - bv;
@@ -81,9 +107,10 @@ export function useTableFilter(data: any = [], {
   );
 
   // ── تبديل الترتيب ─────────────────────────────────────────
-  const toggleSort = useCallback((key: any) => {
-    setSortKey((prev: any) => {
-      if (prev === key) { setSortDir((d: any) => (d === 'asc' ? 'desc' : 'asc')); return key; }
+  const toggleSort = useCallback((key: string | null | undefined) => {
+    if (!key) return;
+    setSortKey((prev) => {
+      if (prev === key) { setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); return key; }
       setSortDir('asc');
       return key;
     });
@@ -91,7 +118,7 @@ export function useTableFilter(data: any = [], {
   }, []);
 
   // ── تغيير البحث ───────────────────────────────────────────
-  const handleSearch = useCallback((val: any) => {
+  const handleSearch = useCallback((val: string) => {
     setSearch(val);
     setPage(1);
   }, []);

@@ -1,58 +1,55 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  PAGE_SIZE,
   MAX_VAULT_SLOTS,
-  vaultTypeLabelForExport,
+  PAGE_SIZE,
   getAllocationsForExport,
+  vaultTypeLabelForExport,
+  type InvoiceExportVaultSource,
 } from './invoicesListScreenHelpers';
 
-const LABELS: Record<string, string> = { vaultTypeCash: 'نقد', vaultTypeBank: 'بنك', vaultTypeApp: 'تطبيق' };
-const t = (k: any) => LABELS[String(k)] || k;
+const labels: Record<string, string> = {
+  vaultTypeCash: 'Cash',
+  vaultTypeBank: 'Bank',
+  vaultTypeApp: 'App',
+};
+const t = (key: string) => labels[key] || key;
 
 describe('invoicesListScreenHelpers', () => {
-  it('exports pagination constants', () => {
+  it('exports pagination and export slot constants', () => {
     expect(PAGE_SIZE).toBe(50);
     expect(MAX_VAULT_SLOTS).toBe(5);
   });
 
-  it('vaultTypeLabelForExport maps known types', () => {
-    expect(vaultTypeLabelForExport('cash', t)).toBe('نقد');
-    expect(vaultTypeLabelForExport('bank', t)).toBe('بنك');
+  it('maps known vault types and preserves unknown labels', () => {
+    expect(vaultTypeLabelForExport('cash', t)).toBe('Cash');
+    expect(vaultTypeLabelForExport('bank', t)).toBe('Bank');
     expect(vaultTypeLabelForExport('unknown', t)).toBe('unknown');
-    expect(vaultTypeLabelForExport('', t)).toBe('—');
+    expect(vaultTypeLabelForExport('', t)).toBe('\u2014');
   });
 
-  it('getAllocationsForExport uses vaultAllocations when present', () => {
-    const inv = {
+  it('uses vault allocations when present', () => {
+    const invoice: InvoiceExportVaultSource = {
       totalAmount: 100,
       vaultAllocations: [
-        {
-          id: 'a1',
-          amount: 40,
-          vault: { nameAr: 'خ1', nameEn: 'V1', type: 'cash' },
-        },
-        {
-          id: 'a2',
-          amount: 60,
-          vault: { nameAr: 'خ2', type: 'bank' },
-        },
+        { id: 'a1', amount: 40, vault: { nameAr: 'Vault 1 AR', nameEn: 'Vault 1 EN', type: 'cash' } },
+        { id: 'a2', amount: 60, vault: { nameAr: 'Vault 2 AR', type: 'bank' } },
       ],
     };
-    const rows = getAllocationsForExport(inv, 'ar', t);
-    expect(rows).toHaveLength(2);
-    expect(rows[0].type).toBe('نقد');
-    expect(rows[0].amount).toBe(40);
-    expect(rows[1].type).toBe('بنك');
+
+    const rows = getAllocationsForExport(invoice, 'en', t);
+    expect(rows).toEqual([
+      { name: 'Vault 1 EN', type: 'Cash', amount: 40 },
+      { name: 'Vault 2 AR', type: 'Bank', amount: 60 },
+    ]);
   });
 
-  it('getAllocationsForExport falls back to single vault', () => {
-    const inv = {
+  it('falls back to the single invoice vault', () => {
+    const invoice: InvoiceExportVaultSource = {
       totalAmount: 200,
-      vault: { nameAr: 'رئيسي', type: 'app' },
+      vault: { nameAr: 'Main AR', nameEn: 'Main EN', type: 'app' },
     };
-    const rows = getAllocationsForExport(inv, 'ar', t);
-    expect(rows).toHaveLength(1);
-    expect(rows[0].amount).toBe(200);
-    expect(rows[0].type).toBe('تطبيق');
+
+    const rows = getAllocationsForExport(invoice, 'ar', t);
+    expect(rows).toEqual([{ name: 'Main AR', type: 'App', amount: 200 }]);
   });
 });

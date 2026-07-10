@@ -32,6 +32,27 @@ const DEFAULTS = {
   loginDomain: 'hajrix.com',
 };
 
+type BrandingLanguage = 'ar' | 'en';
+
+type BrandingInput = {
+  nameAr?: string;
+  nameEn?: string;
+  taglineAr?: string;
+  taglineEn?: string;
+  logoUrl?: string;
+  color?: string;
+  loginDomain?: string;
+};
+
+type ManifestIcon = {
+  src: string;
+  sizes: string;
+  type: string;
+  purpose: string;
+};
+
+const normalizeLang = (lang: unknown): BrandingLanguage => (lang === 'en' ? 'en' : 'ar');
+
 const get = (key: keyof typeof KEYS) => localStorage.getItem(KEYS[key]) || DEFAULTS[key];
 
 export const getBrandNameAr    = () => get('nameAr');
@@ -56,11 +77,11 @@ export function getResolvedLoginEmailDomain(): string {
 }
 
 /** يُرجع الاسم أو الجملة حسب اللغة الحالية */
-export const getBrandName    = (lang: any = 'ar') => lang === 'en' ? getBrandNameEn()    : getBrandNameAr();
-export const getBrandTagline = (lang: any = 'ar') => lang === 'en' ? getBrandTaglineEn() : getBrandTaglineAr();
+export const getBrandName    = (lang: unknown = 'ar') => normalizeLang(lang) === 'en' ? getBrandNameEn()    : getBrandNameAr();
+export const getBrandTagline = (lang: unknown = 'ar') => normalizeLang(lang) === 'en' ? getBrandTaglineEn() : getBrandTaglineAr();
 
-export function saveBranding({ nameAr, nameEn, taglineAr, taglineEn, logoUrl, color, loginDomain }: any) {
-  const set = (key: keyof typeof KEYS, val: any) =>
+export function saveBranding({ nameAr, nameEn, taglineAr, taglineEn, logoUrl, color, loginDomain }: BrandingInput) {
+  const set = (key: keyof typeof KEYS, val: string | undefined) =>
     val !== undefined && (val ? localStorage.setItem(KEYS[key], val) : localStorage.removeItem(KEYS[key]));
 
   set('nameAr',      nameAr);
@@ -75,15 +96,15 @@ export function saveBranding({ nameAr, nameEn, taglineAr, taglineEn, logoUrl, co
   window.dispatchEvent(new CustomEvent('noorix:branding-changed'));
 }
 
-export function applyBranding(lang: any = 'ar') {
+export function applyBranding(lang: unknown = 'ar') {
   const name  = getBrandName(lang);
   const logo  = getBrandLogo();
   const color = getBrandColor();
 
   document.title = name;
 
-  document.querySelectorAll('meta[name="theme-color"]').forEach((m: any) => {
-    (m as HTMLMetaElement).content = color;
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
+    m.content = color;
   });
 
   const setMeta = (sel: string, val: string) => {
@@ -104,12 +125,12 @@ export function applyBranding(lang: any = 'ar') {
  * تحديث الـ favicon — يعمل على الكمبيوتر والجوال.
  * ينشئ عناصر link جديدة بدلاً من الاكتفاء بتعديل الموجودة.
  */
-function _setFavicon(url: any) {
+function _setFavicon(url: string) {
   // ابنِ PNG بحجم 64×64 بالـ canvas من الصورة المخصصة
   // هذا يضمن توافق أوسع بدلاً من استخدام data: URLs الطويلة مباشرةً
-  _buildSquarePng(url, 64).then((pngUrl: any) => {
+  _buildSquarePng(url, 64).then((pngUrl) => {
     const relTypes = ['icon', 'shortcut icon', 'alternate icon'];
-    relTypes.forEach((rel: any) => {
+    relTypes.forEach((rel) => {
       // أزل العنصر القديم إن وُجد
       const old = document.querySelector(`link[rel="${rel}"]`);
       if (old) old.remove();
@@ -133,7 +154,7 @@ function _setFavicon(url: any) {
     // fallback: تعديل العناصر الموجودة مباشرة
     document
       .querySelectorAll('link[rel="icon"], link[rel="alternate icon"], link[rel="apple-touch-icon"]')
-      .forEach((el: any) => {
+      .forEach((el) => {
         (el as HTMLLinkElement).href = url;
       });
   });
@@ -144,7 +165,7 @@ function _setFavicon(url: any) {
  * يحل مشكلة أن الصور المستطيلة لا تناسب أيقونات PWA.
  */
 function _buildSquarePng(src: string, size: number): Promise<string> {
-  return new Promise((resolve: any, reject: any) => {
+  return new Promise<string>((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -165,7 +186,7 @@ function _buildSquarePng(src: string, size: number): Promise<string> {
         const y = (size - h) / 2;
         ctx.drawImage(img, x, y, w, h);
         resolve(canvas.toDataURL('image/png'));
-      } catch (e: any) {
+      } catch (e) {
         reject(e);
       }
     };
@@ -180,9 +201,9 @@ function _buildSquarePng(src: string, size: number): Promise<string> {
  * - data: URL يعمل في Chrome Android وعدد من المتصفحات الأخرى
  * - iOS يعتمد على apple meta tags المُعيَّنة في applyBranding() وليس الـ manifest
  */
-function _injectDynamicManifest(name: any, shortName: any, logo: any, color: any, lang: any) {
+function _injectDynamicManifest(name: string, shortName: string, logo: string, color: string, lang: unknown) {
   try {
-    const icons = logo
+    const icons: ManifestIcon[] = logo
       ? [{ src: logo, sizes: 'any', type: 'image/png', purpose: 'any maskable' }]
       : [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -216,7 +237,7 @@ function _injectDynamicManifest(name: any, shortName: any, logo: any, color: any
       document.head.appendChild(link);
     }
     link.href = dataUrl;
-  } catch (_: any) {
+  } catch {
     // تجاهل الأخطاء
   }
 }

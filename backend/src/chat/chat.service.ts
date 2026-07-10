@@ -11,11 +11,13 @@ import { VaultsService } from '../vaults/vaults.service';
 import { DashboardInsightsService } from '../reporting/insights/dashboard-insights.service';
 import { ReportingInsightsAggregatorService } from '../reporting/insights/reporting-insights-aggregator.service';
 import { PERMISSIONS, hasPermission } from '../auth/constants/permissions';
+import type { Permission } from '../auth/constants/permissions';
 import { CHAT_HANDLERS } from './handlers';
 import type { ChatResponseExtras } from './handlers/types';
 import { normalizeQuery, parsePeriod } from './handlers/utils';
 import { classifyDashboardInsightsQuery } from './handlers/dashboard-insights.handler';
 import { GeminiService } from './gemini.service';
+import { ChatFinancialMetricsService } from './chat-financial-metrics.service';
 import type { GeminiParseResult } from './gemini-types';
 import { isGeminiOpenModeEnabled, isSmartChatInsightsLlmExplanationEnabled } from '../config/gemini.config';
 
@@ -45,6 +47,7 @@ export class ChatService {
     private readonly dashboardInsightsService: DashboardInsightsService,
     private readonly reportingInsightsAggregatorService: ReportingInsightsAggregatorService,
     private readonly geminiService: GeminiService,
+    private readonly chatFinancialMetrics: ChatFinancialMetricsService,
   ) {}
 
   async processQuery(
@@ -59,7 +62,7 @@ export class ChatService {
     extras?: ChatResponseExtras;
   }> {
     const q = normalizeQuery(query);
-    const can = (p: string) => hasPermission(userRole, p as any, userPermissions);
+    const can = (p: string) => hasPermission(userRole, p as Permission, userPermissions);
 
     if (!can(PERMISSIONS.SMART_CHAT_READ)) {
       return {
@@ -92,6 +95,7 @@ export class ChatService {
       prisma: this.prisma,
       reportsService: this.reportsService,
       vaultsService: this.vaultsService,
+      chatFinancialMetrics: this.chatFinancialMetrics,
       dashboardInsightsService: this.dashboardInsightsService,
       reportingInsightsAggregatorService: this.reportingInsightsAggregatorService,
       intentSource: 'keyword' as const,

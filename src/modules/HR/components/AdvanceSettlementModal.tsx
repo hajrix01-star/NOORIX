@@ -3,9 +3,30 @@ import { createDeduction, updateInvoice, throwIfApiFailed } from '../../../servi
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { hrFmt } from '../utils/hrFmt';
-import { AdaptiveSheet, Button, Checkbox, DateField, Input } from '../../../ui';
+import { AdaptiveSheet, Checkbox, DateField, DialogActions, Input } from '../../../ui';
 
-export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError }: any) {
+type AdvanceSettlementRecord = {
+  id: string;
+  employeeId?: string | null;
+  invoiceNumber?: string | number | null;
+  totalAmount?: number | string | null;
+  settledAmount?: number | string | null;
+  notes?: string | null;
+};
+type AdvanceSettlementModalProps = {
+  advance: AdvanceSettlementRecord;
+  companyId: string;
+  onClose: () => void;
+  onSaved?: () => void;
+  onError?: (message: string) => void;
+};
+type AdvanceSettlementInputChange = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError }: AdvanceSettlementModalProps) {
   const { t } = useTranslation();
   const total = Number(advance?.totalAmount ?? 0);
   const alreadySettled = Number(advance?.settledAmount ?? 0);
@@ -43,6 +64,9 @@ export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, o
       throwIfApiFailed(invRes, t('saveFailed'));
 
       if (applyToSalary) {
+        if (!advance.employeeId) {
+          throw new Error(t('saveFailed'));
+        }
         const dRes = await createDeduction({
           companyId,
           employeeId: advance.employeeId,
@@ -55,8 +79,8 @@ export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, o
         throwIfApiFailed(dRes, t('saveFailed'));
       }
       onSaved?.();
-    } catch (e: any) {
-      onError?.(e?.message || t('saveFailed'));
+    } catch (e: unknown) {
+      onError?.(getErrorMessage(e, t('saveFailed')));
     } finally {
       setSaving(false);
     }
@@ -71,24 +95,32 @@ export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, o
       side="start"
       className="hr-advance-settle-drawer"
       footer={(
-        <>
-          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" disabled={saving} onClick={submit}>{saving ? t('saving') : t('saveChanges')}</Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'save',
+              label: saving ? t('saving') : t('saveChanges'),
+              role: 'save',
+              disabled: saving,
+              onClick: submit,
+            },
+          ]}
+        />
       )}
     >
       <div className="text-[13px] mb-2">{t('advanceRemainingAmount')}: <strong>{hrFmt(remaining)}</strong></div>
       <div className="grid gap-2.5">
-        <Input type="select" label="نوع التسوية" value={settlementType} onChange={(e: any) => setSettlementType(e.target.value)}>
+        <Input type="select" label="نوع التسوية" value={settlementType} onChange={(e: AdvanceSettlementInputChange) => setSettlementType(e.target.value)}>
           <option value="full">{t('settlementFull')}</option>
           <option value="partial">{t('settlementPartial')}</option>
           <option value="defer">{t('settlementDefer')}</option>
         </Input>
         {settlementType === 'partial' && (
-          <Input type="number" label={t('advanceSettledAmount')} min="0.01" step="0.01" value={settleAmount} onChange={(e: any) => setSettleAmount(e.target.value)} />
+          <Input type="number" label={t('advanceSettledAmount')} min="0.01" step="0.01" value={settleAmount} onChange={(e: AdvanceSettlementInputChange) => setSettleAmount(e.target.value)} />
         )}
         {settlementType === 'defer' ? (
-          <Input type="month" label="شهر التأجيل" value={deferMonth} onChange={(e: any) => setDeferMonth(e.target.value)} />
+          <Input type="month" label="شهر التأجيل" value={deferMonth} onChange={(e: AdvanceSettlementInputChange) => setDeferMonth(e.target.value)} />
         ) : (
           <>
             <DateField label={t('advanceSettlementDate')} value={settleDate} onValueChange={setSettleDate} />

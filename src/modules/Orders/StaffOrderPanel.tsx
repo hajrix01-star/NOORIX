@@ -4,7 +4,6 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { fmt } from '../../utils/format';
 import { formatSaudiDate, getSaudiToday, toDateInputYmd } from '../../utils/saudiDate';
-import { unwrapApiData } from '../../services/core/apiHttp';
 import { orderKeys } from '../../services/queryKeys';
 import {
   type StaffBasketLine,
@@ -40,6 +39,7 @@ import {
   StatusBadge,
 } from './StaffOrdersSentPanels';
 import { StaffQtyModal, StaffWhatsAppPromptModal } from './StaffOrderPanelModals';
+import { OrderConfirmModal } from './components/OrderConfirmModal';
 import {
   useMyStaffOrders,
   useStaffSaleNextLogRef,
@@ -50,7 +50,15 @@ import {
   useOrderProducts,
   useOrderSections,
 } from '../../hooks/useOrders';
-import { Badge, Button, DateField, Input, cn } from '../../ui';
+import { Badge, Button, TransactionDatePicker, Input, cn } from '../../ui';
+import type { OrderProduct, OrderSection, StaffOrder } from '../../types/api';
+
+function createDraftLineId(productId: string): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `${productId}-${crypto.randomUUID()}`;
+  }
+  return `${productId}-${performance.now().toString(36)}`;
+}
 export function StaffOrderPanel({
   companyId,
   productType,
@@ -59,6 +67,7 @@ export function StaffOrderPanel({
   productType: 'order' | 'sale';
 }) {
   const { t, lang } = useTranslation();
+  const displayLang = lang === 'en' ? 'en' : 'ar';
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -81,35 +90,36 @@ export function StaffOrderPanel({
   const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [sendWhatsAppPrompt, setSendWhatsAppPrompt] = useState<string | null>(null);
-  const [qtyModal, setQtyModal] = useState<{ product: any; qty: number; unit: string } | null>(null);
+  const [qtyModal, setQtyModal] = useState<{ product: OrderProduct; qty: number; unit: string } | null>(null);
   const [variantModal, setVariantModal] = useState<ReturnType<typeof defaultVariantModalState> | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<StaffOrder | null>(null);
 
   // Repeat orders
   const freqMap = useMemo(
-    () => buildStaffOrderFrequencyMap(myOrders as any[], productType),
+    () => buildStaffOrderFrequencyMap(myOrders, productType),
     [myOrders, productType],
   );
 
-  const productsById = useMemo(() => buildProductsById(allProducts as any[]), [allProducts]);
+  const productsById = useMemo(() => buildProductsById(allProducts), [allProducts]);
 
-  function sectionLabel(s: any) {
+  function sectionLabel(s: OrderSection) {
     return lang === 'en' ? (s.nameEn || s.nameAr) : (s.nameAr || s.nameEn);
   }
 
   const products = useMemo(
-    () => filterStaffOrderProducts({ allProducts: allProducts as any[], sectionFilter, search, freqMap, lang }),
-    [allProducts, sectionFilter, search, freqMap, lang],
+    () => filterStaffOrderProducts({ allProducts, sectionFilter, search, freqMap, lang: displayLang }),
+    [allProducts, sectionFilter, search, freqMap, displayLang],
   );
 
   const qtyMap = useMemo(() => buildStaffQtyMap(basketLines), [basketLines]);
 
   // Orders of this type only
   const myTypedOrders = useMemo(
-    () => filterStaffOrdersByType(myOrders as any[], productType),
+    () => filterStaffOrdersByType(myOrders, productType),
     [myOrders, productType],
   );
-  const pendingOrders = useMemo(() => myTypedOrders.filter((o: any) => o.status === 'pending'), [myTypedOrders]);
-  const sentOrders   = useMemo(() => myTypedOrders.filter((o: any) => o.status === 'sent'),    [myTypedOrders]);
+  const pendingOrders = useMemo(() => myTypedOrders.filter((o) => o.status === 'pending'), [myTypedOrders]);
+  const sentOrders   = useMemo(() => myTypedOrders.filter((o) => o.status === 'sent'),    [myTypedOrders]);
   const sentSaleGroups = useMemo(() => groupSentSaleOrders(sentOrders, isSale), [isSale, sentOrders]);
 
   const sentSalesSummary = useMemo(
@@ -118,7 +128,7 @@ export function StaffOrderPanel({
   );
 
   const editingOrder = useMemo(
-    () => (editingId ? (myOrders as any[]).find((o: any) => o.id === editingId) : null),
+    () => (editingId ? myOrders.find((o) => o.id === editingId) : null),
     [editingId, myOrders],
   );
   const previewNextLogRef = isSale && basketLines.length > 0 && !editingId && !!saleDate;
@@ -126,7 +136,7 @@ export function StaffOrderPanel({
   const basketLogRef = isSale ? (editingOrder?.logRef || nextLogRef || null) : null;
 
   // Card touch handling
-  function tapProduct(product: any) {
+  function tapProduct(product: OrderProduct) {
     if (productHasVariants(product)) {
       setVariantModal(defaultVariantModalState(product));
       return;
@@ -156,7 +166,7 @@ export function StaffOrderPanel({
         qty,
         unit,
         sectionFilter,
-        lineId: `${product.id}-${Date.now()}`,
+        lineId: createDraftLineId(product.id),
       });
     });
     setQtyModal(null);
@@ -169,7 +179,7 @@ export function StaffOrderPanel({
     const v = resolveVariantFromModal(product, variantModal);
     const sec = resolveItemSection(product, sectionFilter);
     setBasketLines((prev) => [...prev, {
-      lineId: `${product.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      lineId: createDraftLineId(product.id),
       productId: product.id,
       quantity: parseFloat(quantity) || 1,
       unit: v.unit,
@@ -209,7 +219,7 @@ export function StaffOrderPanel({
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   }
 
-  function loadForEdit(order: any) {
+  function loadForEdit(order: StaffOrder) {
     setSectionFilter(order.sectionName || '');
     setSaleDate(order.saleDate ? toDateInputYmd(order.saleDate) : getSaudiToday());
     setNotes(order.notes || '');
@@ -229,7 +239,7 @@ export function StaffOrderPanel({
         productType,
         isSale,
         saleDate,
-        lang,
+        lang: displayLang,
         notes,
         basketLines,
         productsById,
@@ -241,10 +251,10 @@ export function StaffOrderPanel({
         const res = editingId
           ? await updateOrder.mutateAsync({ id: editingId, body: payload })
           : await createOrder.mutateAsync(payload);
-        const saved = unwrapApiData(res as any, t('saveFailed')) as { id?: string; whatsAppText?: string };
+        const saved = res.data && 'id' in res.data ? res.data : null;
         if (!saved?.id) throw new Error(t('saveFailed'));
 
-        const savedLogRef = (saved as { logRef?: string })?.logRef;
+        const savedLogRef = saved.logRef;
         showToast(savedLogRef ? t('staffSaleSavedWithRef', savedLogRef) : t('staffSaleSaved'), 'success');
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: orderKeys.staffMy(companyId) }),
@@ -268,44 +278,58 @@ export function StaffOrderPanel({
         showToast(t('staffOrderCreated'), 'success');
       }
       resetForm();
-    } catch (e: any) {
-      showToast(e?.message || t('saveFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('saveFailed'), 'error');
     } finally {
       setSubmitting(false);
     }
-  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, companyId, productType, isSale, lang, t, showToast, createOrder, updateOrder, queryClient]);
+  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, companyId, productType, isSale, displayLang, t, showToast, createOrder, updateOrder, queryClient]);
 
-  const handleResendSale = useCallback(async (order: any) => {
+  const handleResendSale = useCallback(async (order: StaffOrder) => {
     try {
-      const res: any = await resendSale.mutateAsync({ id: order.id, lang });
-      const data = res?.data ?? res;
+      const res = await resendSale.mutateAsync({ id: order.id, lang: displayLang });
+      const data = res.data;
       const waText = data?.whatsAppText;
       if (waText) {
         openWhatsApp(waText);
         showToast(t('staffSaleResent'), 'success');
       }
-    } catch (e: any) {
-      showToast(e?.message || t('saveFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('saveFailed'), 'error');
     }
-  }, [lang, resendSale, t, showToast]);
+  }, [displayLang, resendSale, t, showToast]);
 
-  const handleDelete = useCallback(async (order: any) => {
-    const confirmKey = isSale ? 'staffSaleDeleteConfirm' : 'staffOrderDeleteConfirm';
-    if (!window.confirm(t(confirmKey))) return;
+  const handleDelete = useCallback(async (order: StaffOrder) => {
+    setDeleteTarget(order);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteOrder.mutateAsync(order.id);
-      if (editingId === order.id) resetForm();
+      await deleteOrder.mutateAsync(deleteTarget.id);
+      if (editingId === deleteTarget.id) resetForm();
       showToast(t('deleted'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('deleteFailed'), 'error');
+      setDeleteTarget(null);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('deleteFailed'), 'error');
     }
-  }, [isSale, editingId, t, showToast, deleteOrder]);
+  }, [deleteTarget, isSale, editingId, t, showToast, deleteOrder]);
 
   return (
     <div className="flex flex-col gap-4">
+      <OrderConfirmModal
+        open={!!deleteTarget}
+        title={t('confirmDelete')}
+        message={t(isSale ? 'staffSaleDeleteConfirm' : 'staffOrderDeleteConfirm')}
+        confirmLabel={t('delete')}
+        cancelLabel={t('cancel')}
+        busy={deleteOrder.isPending}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
       {/* Section buttons */}
       <div className="flex flex-wrap gap-2">
-        {(sections as any[]).map((s: any) => {
+        {sections.map((s) => {
           const active = sectionFilter === s.nameAr;
           return (
             <Button
@@ -347,7 +371,7 @@ export function StaffOrderPanel({
       {/* Product grid */}
       {products.length > 0 ? (
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-          {products.map((p: any) => (
+          {products.map((p) => (
             <ProductCard
               key={p.id}
               product={p}
@@ -409,13 +433,13 @@ export function StaffOrderPanel({
           </div>
           <div className="flex flex-col gap-2">
             {isSale && (
-              <DateField
+              <TransactionDatePicker
                 label={t('staffSaleDate')}
                 value={saleDate}
                 onValueChange={setSaleDate}
               />
             )}
-            <Input label={t('notes')} value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={t('optional')} />
+            <Input label={t('notes')} value={notes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)} placeholder={t('optional')} />
           </div>
           <div className={cn('gap-2', isSale ? 'flex flex-col' : 'grid grid-cols-2')}>
             {!isSale && (
@@ -453,7 +477,7 @@ export function StaffOrderPanel({
             <Badge color="amber" size="sm">{pendingOrders.length}</Badge>
           </div>
           <div className="divide-y divide-noorix-border">
-            {pendingOrders.map((o: any) => (
+            {pendingOrders.map((o) => (
               <div key={o.id} className="p-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -467,7 +491,7 @@ export function StaffOrderPanel({
                 </div>
                 <div className="text-[11px] text-noorix-muted">{formatSaudiDate(o.createdAt)}</div>
                 <div className="flex flex-col gap-1">
-                  {(o.items || []).map((it: any, i: number) => {
+                  {(o.items || []).map((it, i) => {
                     const p = it.product;
                     const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '-') : (p?.nameAr || p?.nameEn || '-');
                     const variant = formatVariantLabel(it.size, it.packaging, it.unit);
@@ -524,7 +548,7 @@ export function StaffOrderPanel({
                 />
               ))}
             </div>
-          ) : sentOrders.map((o: any) => (
+          ) : sentOrders.map((o) => (
                 <StaffSentOrderRow
                   key={o.id}
                   order={o}

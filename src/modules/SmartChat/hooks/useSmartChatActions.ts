@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { chatQuery, createCustomAllowance, throwIfApiFailed } from '../../../services/api';
+import type { ExpenseLineRecord } from '../../../types/api';
 import type { ChatMessage, ChatMessageInput, EntryMode, ExpenseMode, HrRecordedPayload } from '../types';
 
 type CreateEmployeeMutate = {
@@ -31,7 +32,7 @@ export type UseSmartChatActionsParams = {
   setAddEmployeeOpen: (v: boolean) => void;
   setEntryMode: (v: EntryMode | null) => void;
   setExpenseMode: (v: ExpenseMode) => void;
-  setExpenseEditLine: (v: unknown) => void;
+  setExpenseEditLine: (v: ExpenseLineRecord | null | undefined) => void;
   create: CreateEmployeeMutate;
 };
 
@@ -86,13 +87,14 @@ export function useSmartChatActions({
       try {
         const res = await chatQuery(q);
         if (res?.success && res?.data) {
+          const data = res.data;
           setMessages((prev) => [
             ...prev,
             {
               role: 'assistant',
-              textAr: res.data.answerAr,
-              textEn: res.data.answerEn,
-              ...(res.data.extras ? { extras: res.data.extras } : {}),
+              textAr: data.answerAr,
+              textEn: data.answerEn,
+              ...(data.extras ? { extras: data.extras } : {}),
             },
           ]);
         } else {

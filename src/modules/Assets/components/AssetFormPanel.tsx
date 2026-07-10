@@ -2,11 +2,17 @@
  * نموذج إضافة/تعديل أصل — AdaptiveSheet (لوحة جانبية).
  */
 import React, { useState } from 'react';
-import { Button, AdaptiveSheet, DateField, Input } from '../../../ui';
+import { Button, AdaptiveSheet, DateField, DialogActions, TransactionDatePicker, Input } from '../../../ui';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { createCompanyAsset, throwIfApiFailed, updateCompanyAsset } from '../../../services/api';
 import type { AssetRegisterListItem, SupplierOption } from '../types';
+import {
+  buildAssetCreatePayload,
+  buildAssetUpdatePayload,
+  initAssetForm,
+  validateAssetForm,
+  type AssetFormState,
+} from '../assetsRegisterModel';
 
 export type AssetFormPanelProps = {
   companyId: string;
@@ -33,65 +39,25 @@ export function AssetFormPanel({
 }: AssetFormPanelProps) {
   const isEdit = Boolean(initial?.id);
   const [err, setErr] = useState('');
-  const [form, setForm] = useState(() => ({
-    nameAr: initial?.nameAr ?? '',
-    nameEn: initial?.nameEn ?? '',
-    serialNumber: initial?.serialNumber ?? '',
-    location: initial?.location ?? '',
-    purchaseDate: initial?.purchaseDate ? toYmd(initial.purchaseDate) : getSaudiToday(),
-    acquisitionCost: initial?.acquisitionCost != null ? String(initial.acquisitionCost) : '',
-    supplierId: initial?.supplier?.id ?? '',
-    warrantyDescription: initial?.warrantyDescription ?? '',
-    warrantyMonths: initial?.warrantyMonths != null ? String(initial.warrantyMonths) : '',
-    warrantyStartDate: initial?.warrantyStartDate ? toYmd(initial.warrantyStartDate) : '',
-    warrantyEndDate: initial?.warrantyEndDate ? toYmd(initial.warrantyEndDate) : '',
-    notes: initial?.notes ?? '',
-  }));
+  const [form, setForm] = useState<AssetFormState>(() => initAssetForm(initial));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canWrite) return;
     setErr('');
-    const nameAr = form.nameAr?.trim();
-    if (!nameAr) {
-      setErr(t('assetName'));
-      return;
-    }
-    const body = {
-      companyId,
-      nameAr,
-      nameEn: form.nameEn?.trim() || undefined,
-      serialNumber: form.serialNumber?.trim() || undefined,
-      location: form.location?.trim() || undefined,
-      purchaseDate: form.purchaseDate?.trim() || undefined,
-      acquisitionCost:
-        form.acquisitionCost !== '' && form.acquisitionCost != null
-          ? Number(form.acquisitionCost)
-          : undefined,
-      supplierId: form.supplierId || undefined,
-      warrantyDescription: form.warrantyDescription?.trim() || undefined,
-      warrantyMonths:
-        form.warrantyMonths !== '' && form.warrantyMonths != null
-          ? parseInt(form.warrantyMonths, 10)
-          : undefined,
-      warrantyStartDate: form.warrantyStartDate?.trim() || undefined,
-      warrantyEndDate: form.warrantyEndDate?.trim() || undefined,
-      notes: form.notes?.trim() || undefined,
-    };
-    if (body.acquisitionCost != null && (Number.isNaN(body.acquisitionCost) || body.acquisitionCost < 0)) {
-      setErr(t('validationInvalidAmount'));
-      return;
-    }
-    if (body.warrantyMonths != null && (Number.isNaN(body.warrantyMonths) || body.warrantyMonths < 0)) {
-      setErr(t('validationInvalidAmount'));
+    const validationKey = validateAssetForm(form);
+    if (validationKey) {
+      setErr(t(validationKey));
       return;
     }
     setSaving(true);
     try {
       if (isEdit && initial?.id) {
+        const body = buildAssetUpdatePayload(form);
         const res = await updateCompanyAsset(initial.id, companyId, body);
         throwIfApiFailed(res, t('loadingError'));
       } else {
+        const body = buildAssetCreatePayload(form, companyId);
         const res = await createCompanyAsset(body);
         throwIfApiFailed(res, t('loadingError'));
       }
@@ -110,14 +76,21 @@ export function AssetFormPanel({
       title={isEdit ? t('assetEdit') : t('assetAdd')}
       size="md"
       footer={
-        <>
-          <Button onClick={onClose}>{t('cancel')}</Button>
-          {canWrite ? (
-            <Button variant="primary" type="submit" form="asset-form" disabled={saving}>
-              {saving ? t('loading') : t('save')}
-            </Button>
-          ) : null}
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            ...(canWrite
+              ? [{
+                  key: 'save',
+                  label: saving ? t('loading') : t('save'),
+                  role: 'save' as const,
+                  type: 'submit' as const,
+                  form: 'asset-form',
+                  disabled: saving,
+                }]
+              : []),
+          ]}
+        />
       }
     >
       <form id="asset-form" onSubmit={submit} className="flex flex-col gap-3">
@@ -155,7 +128,7 @@ export function AssetFormPanel({
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <DateField
+          <TransactionDatePicker
             label={t('assetPurchaseDate')}
             value={form.purchaseDate}
             onValueChange={(value) => setForm((p) => ({ ...p, purchaseDate: value }))}

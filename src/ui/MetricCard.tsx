@@ -178,7 +178,7 @@ MetricCard.Spark = function MetricCardSpark({
   className = '',
 }: {
   /** نقاط السباركلاين — `v` أو `value` أو رقم خام */
-  data?: any[];
+  data?: Array<number | string | null | undefined>;
   color?: string;
   height?: number;
   grow?: boolean;

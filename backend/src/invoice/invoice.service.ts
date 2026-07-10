@@ -1,13 +1,5 @@
-/**
- * InvoiceService — طبقة رفيعة (Thin Layer) فوق FinancialCoreService
- *
- * لا يحتوي على منطق مالي مباشر — يُفوَّض بالكامل للمحرك المركزي.
- * المسؤوليات المتبقية هنا:
- *   - findAll, findOne (قراءة فقط)
- *   - update (AuditLog + مزامنة تاريخ القيود عبر FinancialCoreService)
- *   - createWithLedger يُفوَّض → FinancialCoreService.processOutflow
- */
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import type { Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -21,6 +13,8 @@ import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { resolveFixedExpenseCoverageForCreate } from './invoice-fixed-expense-coverage.util';
 import { toPublicInvoiceView } from './invoice-to-public.util';
 import { buildInvoiceListQueryParts } from './invoice-list-query-parts.util';
+import type { InvoiceListQueryContract } from './invoice-list-query-contract.util';
+import type { PurchaseBatchSummariesQueryContract } from './purchase-batch-summaries-query-contract.util';
 import {
   rollupKindAggForInvoiceList,
   computeOutflowSummaryFromSumsByKind,
@@ -54,7 +48,6 @@ type InvoiceKindAggRow = {
 
 @Injectable()
 export class InvoiceService {
-  /** كاش 60 ثانية لـ count + groupBy بنفس فلاتر القائمة (باستثناء رقم الصفحة) لتخفيف الاستعلامات الثقيلة. */
   private readonly invoiceListAggCache = new Map<
     string,
     { exp: number; total: number; kindAggRows: InvoiceKindAggRow[] }
@@ -82,10 +75,6 @@ export class InvoiceService {
     }
   }
 
-  /**
-   * إنشاء فاتورة — يُفوَّض بالكامل للمحرك المالي المركزي.
-   * حساب الضريبة: الصافي والضريبة يُحسبان دائماً من totalAmount و isTaxable ونسبة الشركة.
-   */
   async createWithLedger(dto: CreateInvoiceDto, userId?: string | null) {
     assertCreateInvoiceSupplierInvoiceNumberIfRequired(dto);
 
@@ -117,7 +106,7 @@ export class InvoiceService {
         expenseLineId:   dto.expenseLineId ?? undefined,
         categoryId:      dto.categoryId ?? undefined,
         supplierInvoiceNumber: dto.supplierInvoiceNumber ?? undefined,
-        kind:                  dto.kind as 'purchase' | 'expense' | 'hr_expense' | 'fixed_expense' | 'salary' | 'advance',
+        kind:            dto.kind,
         totalAmount:     String(dto.totalAmount),
         netAmount:       net,
         taxAmount:       tax,
@@ -150,16 +139,13 @@ export class InvoiceService {
     };
   }
 
-  /**
-   * إنشاء دفعة فواتير في transaction واحدة — Rollback الكل عند فشل أي فاتورة.
-   */
   async createBatchWithLedger(dto: CreateInvoiceBatchDto, userId?: string | null) {
     try {
-      const batchId = `B-${Date.now()}`;
+      const batchId = `B-${randomUUID()}`;
       const batchNotesPart = dto.batchNotes?.trim() || '';
       const validItems = filterValidInvoiceBatchLineItems(dto.items, batchNotesPart);
       if (validItems.length === 0) {
-        throw new BadRequestException('لا توجد صفوف صالحة للحفظ.');
+        throw new BadRequestException('لا توجد فواتير صالحة للحفظ.');
       }
       const txDate = toYmd(
         typeof dto.transactionDate === 'string' ? dto.transactionDate : new Date(dto.transactionDate),
@@ -190,23 +176,18 @@ export class InvoiceService {
     } catch (err) {
       if (err instanceof BadRequestException || err instanceof NotFoundException) throw err;
       throw new BadRequestException(
-        err instanceof Error ? err.message : 'فشل حفظ الدفعة. تأكد من وجود خزنة وحسابات مصروفات للشركة.',
+        err instanceof Error ? err.message : 'فشل حفظ الدفعة. تحقق من بيانات فواتير المشتريات.',
       );
     }
   }
 
-  /**
-   * تعديل فاتورة مع تسجيل القيمة القديمة والجديدة في AuditLog.
-   * عند status: 'cancelled' → يُستدعى cancelOperation لإلغاء الفاتورة والقيود معاً
-   *    (لا تُحتسب الفاتورة الملغاة في الميزانية ولا التقارير).
-   */
   async update(id: string, dto: UpdateInvoiceDto, companyId: string, userId?: string | null) {
     if (dto.status === 'cancelled') {
       const inv = await this.prisma.invoice.findFirstOrThrow({ where: { id, companyId } });
       const refType = resolveInvoiceCancelReferenceType(inv.kind);
       const referenceId = resolveInvoiceCancelReferenceId(inv.kind, id, inv.dailySalesSummaryId);
       await this.financialCore.cancelOperation(
-        { companyId, referenceType: refType, referenceId, reason: 'إلغاء من واجهة الفواتير' },
+        { companyId, referenceType: refType, referenceId, reason: 'إلغاء من شاشة الفواتير' },
         userId ?? undefined,
       );
       this.clearInvoiceListAggCacheForCompany(companyId);
@@ -238,11 +219,8 @@ export class InvoiceService {
     return toPublicInvoiceView(inv);
   }
 
-  /**
-   * مستخدمو النظام الذين لهم فواتير في الشركة — لقائمة فلتر «منشئ السجل».
-   */
   async getCreatorFilterOptions(companyId: string) {
-    if (!companyId?.trim()) return { users: [] as { id: string; nameAr: string | null; nameEn: string | null; email: string }[] };
+    if (!companyId?.trim()) return { users: [] };
     const distinct = await this.prisma.invoice.findMany({
       where: { companyId, createdByUserId: { not: null } },
       select: { createdByUserId: true },
@@ -261,51 +239,9 @@ export class InvoiceService {
     return { users };
   }
 
-  async findAll(
-    companyId: string,
-    page = 1,
-    pageSize = 50,
-    startDate?: string,
-    endDate?: string,
-    batchId?: string,
-    employeeId?: string,
-    kind?: string,
-    supplierId?: string,
-    supplierCategoryId?: string,
-    categoryId?: string,
-    expenseLineId?: string,
-    vaultId?: string,
-    createdByUserId?: string,
-    sortBy = 'transactionDate',
-    sortDir: 'asc' | 'desc' | string = 'desc',
-    q?: string,
-    includeCancelled = true,
-    hasNotes?: string | boolean,
-    requireExpenseLine?: boolean,
-    includeExecSummary = true,
-  ) {
-    const { where, orderBy, size, p, aggKey, activeWhere } = buildInvoiceListQueryParts({
-      companyId,
-      page,
-      pageSize,
-      startDate,
-      endDate,
-      batchId,
-      employeeId,
-      kind,
-      supplierId,
-      supplierCategoryId,
-      categoryId,
-      expenseLineId,
-      vaultId,
-      createdByUserId,
-      sortBy,
-      sortDir,
-      q,
-      includeCancelled,
-      hasNotes,
-      requireExpenseLine,
-    });
+  async findAll(query: InvoiceListQueryContract, includeExecSummary = true) {
+    const { companyId } = query;
+    const { where, orderBy, size, p, aggKey, activeWhere } = buildInvoiceListQueryParts(query);
     const aggTtlMs = 60_000;
     const aggNow = Date.now();
     const hitAgg = this.invoiceListAggCache.get(aggKey);
@@ -361,7 +297,7 @@ export class InvoiceService {
       ]);
       items = loadedItems;
       total = counted;
-      kindAggRows = grouped as InvoiceKindAggRow[];
+      kindAggRows = grouped;
       this.invoiceListAggCache.set(aggKey, { exp: aggNow + aggTtlMs, total, kindAggRows });
     }
     const { sums, sumsByKind } = rollupKindAggForInvoiceList(kindAggRows);
@@ -383,8 +319,8 @@ export class InvoiceService {
     return loadInvoiceDayCloseReport(this.prisma, this.vaultsService, companyId, dateStr);
   }
 
-  async findPurchaseBatchSummaries(companyId: string, startDate?: string, endDate?: string, q?: string, lang = 'ar') {
-    return loadPurchaseBatchSummaries(this.prisma, companyId, startDate, endDate, q, lang);
+  async findPurchaseBatchSummaries(query: PurchaseBatchSummariesQueryContract) {
+    return loadPurchaseBatchSummaries(this.prisma, query);
   }
 
   async saveAttachment(

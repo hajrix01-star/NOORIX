@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../../../../ui';
 import { BatchSummaryBar } from '../../components/BatchSummaryBar';
+import type { BatchTranslateFn } from '../purchaseBatchTypes';
 
 export interface PurchasesBatchSummaryProps {
   count: number;
@@ -10,11 +11,12 @@ export interface PurchasesBatchSummaryProps {
   savePending: boolean;
   saveDisabled: boolean;
   onSave: () => void;
-  t: (key: string, ...args: any[]) => string;
+  onPrint: () => void;
+  t: BatchTranslateFn;
 }
 
 export default function PurchasesBatchSummary(props: PurchasesBatchSummaryProps) {
-  const { count, net, tax, total, savePending, saveDisabled, onSave, t } = props;
+  const { count, net, tax, total, savePending, saveDisabled, onSave, onPrint, t } = props;
   return (
     <>
       <BatchSummaryBar count={count} net={net} tax={tax} total={total} />
@@ -29,7 +31,7 @@ export default function PurchasesBatchSummary(props: PurchasesBatchSummaryProps)
         >
           {savePending ? t('saving') : t('saveBatch', count)}
         </Button>
-        <Button size="sm" onClick={() => window.print()}>
+        <Button size="sm" onClick={onPrint} disabled={count === 0}>
           {t('print')}
         </Button>
       </div>

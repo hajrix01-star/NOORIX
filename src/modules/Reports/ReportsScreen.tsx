@@ -4,11 +4,11 @@
 import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
-import { openPrintWindow } from '../../utils/printUtils';
+import { exportToExcel } from '../../utils/exportUtils';
+import { buildPrintHtmlTable } from '../../utils/printTableHtml';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
-import { ScreenShell } from '../../ui';
+import { ScreenShell, usePrintPreview } from '../../ui';
 import { useIsNarrow700 } from '../../ui';
 import {
   EN_MONTHS,
@@ -26,9 +26,8 @@ import {
 import ProfitLossReportWorkspace from './ProfitLossReportWorkspace';
 import { MONTH_NAMES_AR, MONTH_NAMES_EN } from './profitLossPresentationModel';
 import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPlMonthPrint';
-import { profitLossPdfExportExtraCss } from './reportsPlExportPdfCss';
 import { getSaudiNow } from '../../utils/saudiDate';
-import type { ReportPeriodMode } from './reportTypes';
+import type { PlDisplayRow, ReportDetailState, ReportPeriodMode } from './reportTypes';
 
 export default function ReportsScreen() {
   const { activeCompanyId, companies } = useApp();
@@ -37,7 +36,7 @@ export default function ReportsScreen() {
   const [year, setYear] = useState(() => getSaudiNow().year);
   const [periodMode, setPeriodMode] = useState<ReportPeriodMode>('year');
   const [selectedMonth, setSelectedMonth] = useState(() => String(getSaudiNow().month));
-  const [detailState, setDetailState] = useState<any>(null);
+  const [detailState, setDetailState] = useState<ReportDetailState | null>(null);
   const [plDisplayLevel, setPlDisplayLevel] = useState<PlDisplayLevel>(2);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
     sales: false,
@@ -45,8 +44,14 @@ export default function ReportsScreen() {
     expenses: false,
   });
   const [rowSearch, setRowSearch] = useState('');
-  const company = companies?.find((item: any) => item.id === activeCompanyId);
+  const company = companies?.find((item) => item.id === activeCompanyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: lang === 'ar' ? 'معاينة الطباعة' : 'Print preview',
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
 
   const { data: report, isLoading, error, isFetching, isPlaceholderData } = useReportsGeneralProfitLoss({
     companyId: activeCompanyId,
@@ -73,12 +78,12 @@ export default function ReportsScreen() {
     return names[selectedMonthNumber - 1];
   }, [selectedMonthNumber, lang]);
 
-  const yearOptions = useMemo(() => Array.from({ length: 6 }, (_: any, index: any) => currentYear - index), [currentYear]);
+  const yearOptions = useMemo(() => Array.from({ length: 6 }, (_, index) => currentYear - index), [currentYear]);
 
   const isMobile = useIsNarrow700();
 
-  function toggleGroup(collapseKey: any) {
-    setCollapsedGroups((prev: any) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));
+  function toggleGroup(collapseKey: string) {
+    setCollapsedGroups((prev) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));
   }
 
   const { exportRows, plExportRowMeta } = useMemo(() => {
@@ -126,33 +131,7 @@ export default function ReportsScreen() {
     });
   }
 
-  function handleExportPdf() {
-    if (!report) return;
-    exportTableToPdf({
-      companyName: companyName || t('reports'),
-      title: selectedMonthNumber
-        ? `${t('reportIncomeStatementTitle')} — ${year}`
-        : `${t('reportGeneral')} — ${year}`,
-      subtitle: selectedMonthNumber
-        ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}`
-        : '',
-      filename: `general-profit-loss-${year}${selectedMonthNumber ? `-m${selectedMonthNumber}` : ''}.pdf`,
-      landscape: !selectedMonthNumber,
-      data: exportRows,
-      extraCss: profitLossPdfExportExtraCss(),
-      htmlDir: lang === 'en' ? 'ltr' : 'rtl',
-      htmlLang: lang === 'en' ? 'en' : 'ar',
-      showPageCounter: !selectedMonthNumber,
-      pageMarginMm: selectedMonthNumber ? 8 : 10,
-      pdfRowMetas: plExportRowMeta,
-    });
-  }
-
-  function escPrintCell(s: string) {
-    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  function handlePrint() {
+  function handlePrintPdf() {
     if (!report) return;
     const printFlat = buildFlatRows(report, collapsedGroups);
     const printRowsForDoc = buildVisibleRows(printFlat, collapsedGroups);
@@ -163,9 +142,10 @@ export default function ReportsScreen() {
 
     if (selectedMonthNumber) {
       const amountColumnTitle = `${monthLabel} ${year}`;
-      openPrintWindow({
+      openPrintDocumentPreview({
         title: t('reportIncomeStatementTitle'),
         companyName: companyName || t('reports'),
+        logoUrl: companyLogoUrl,
         subtitle: `${monthLabel} ${year}`,
         landscape: false,
         htmlLang: printLang,
@@ -187,28 +167,39 @@ export default function ReportsScreen() {
       return;
     }
 
-    const head = `${EN_MONTHS.map((month: any) => `<th>${escPrintCell(month)}</th>`).join('')}<th>${escPrintCell(t('reportAnnualTotal'))}</th><th>${escPrintCell(t('reportSalesShareYear'))}</th>`;
-    const bodyRows = printRowsForDoc
-      .map((row: any) => {
-        const firstCell = escPrintCell(displayLabel(row, lang));
-        const monthsCells = (row.months ?? []).map((value: any) => `<td>${amountText(value)}</td>`).join('');
-        return `<tr><td>${firstCell}</td>${monthsCells}<td>${amountText(row.total)}</td><td>${percentText(row.percentOfSalesYear)}</td></tr>`;
-      })
-      .join('');
-
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: t('reportGeneral'),
       companyName: companyName || t('reports'),
+      logoUrl: companyLogoUrl,
       subtitle: `${year} · ${t('reportGeneral')}`,
       landscape: true,
       htmlLang: printLang,
       htmlDir: printDir,
-      body: `<table><thead><tr><th>${escPrintCell(t('reportItem'))}</th>${head}</tr></thead><tbody>${bodyRows}</tbody></table>`,
+      body: buildPrintHtmlTable({
+        wrapperClassName: null,
+        headerRows: [{
+          cells: [
+            { value: t('reportItem') },
+            ...EN_MONTHS.map((month) => ({ value: month, align: 'end' as const })),
+            { value: t('reportAnnualTotal'), align: 'end' },
+            { value: t('reportSalesShareYear'), align: 'end' },
+          ],
+        }],
+        bodyRows: printRowsForDoc.map((row: PlDisplayRow) => ({
+          cells: [
+            { value: displayLabel(row, lang) },
+            ...(row.months ?? []).map((value) => ({ value: amountText(value), align: 'end' as const })),
+            { value: amountText(row.total), align: 'end' },
+            { value: percentText(row.percentOfSalesYear), align: 'end' },
+          ],
+        })),
+      }),
     });
   }
 
   return (
     <ScreenShell>
+      {printPreviewModal}
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
       <ProfitLossReportWorkspace
@@ -240,8 +231,7 @@ export default function ReportsScreen() {
         onToggleGroup={toggleGroup}
         onOpenDetail={(payload) => setDetailState(payload)}
         onExportExcel={handleExportExcel}
-        onExportPdf={handleExportPdf}
-        onPrint={handlePrint}
+        onPrintPdf={handlePrintPdf}
       />
     </ScreenShell>
   );

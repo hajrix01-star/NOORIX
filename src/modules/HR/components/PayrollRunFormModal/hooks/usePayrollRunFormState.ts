@@ -12,6 +12,23 @@ import { useApiListQuery, useApiQuery } from '../../../../../hooks/useApiQuery';
 import { employeeKeys, hrKeys, invoiceKeys } from '../../../../../services/queryKeys';
 import { getDefaultPayrollMonth } from '../utils/payrollRunMappers';
 import type { PayrollRunLineItem } from '../types';
+import type { HrCompensationSnapshot, HrCompensationSnapshotsResult, HrEmployee } from '../../../../../types/api';
+
+type PayrollRunListItem = Record<string, unknown>;
+type PayrollRunEdit = Record<string, unknown> & {
+  payrollMonth?: string | Date;
+  notes?: string;
+  items?: PayrollRunLineItem[];
+};
+type HrInvoiceLike = Record<string, unknown>;
+type HrLeaveLike = Record<string, unknown> & {
+  employeeId?: string;
+  status?: string;
+  leaveType?: string;
+  startDate?: string | Date;
+  endDate?: string | Date;
+};
+type HrLeaveSettlementLike = { employeeId?: string; leave?: { startDate?: string | Date } };
 
 export function usePayrollRunFormState({
   companyId,
@@ -32,21 +49,21 @@ export function usePayrollRunFormState({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: employees = [] } = useApiListQuery<any>({
+  const { data: employees = [] } = useApiListQuery<HrEmployee>({
     queryKey: employeeKeys.list(cid, false),
     queryFn: () => getEmployees(cid, false),
     fallbackMessage: 'فشل تحميل الموظفين',
     enabled: !!cid,
   });
 
-  const { data: existingRuns = [] } = useApiListQuery<any>({
+  const { data: existingRuns = [] } = useApiListQuery<PayrollRunListItem>({
     queryKey: hrKeys.payrollRuns(cid, new Date(payrollMonth).getFullYear()),
     queryFn: () => getPayrollRuns(cid, new Date(payrollMonth).getFullYear()),
     fallbackMessage: 'فشل تحميل مسيرات الرواتب',
     enabled: !!cid && !!payrollMonth,
   });
 
-  const { data: editingRun, isLoading: isLoadingRun } = useApiQuery<any>({
+  const { data: editingRun, isLoading: isLoadingRun } = useApiQuery<PayrollRunEdit>({
     queryKey: hrKeys.payrollRun(runId, cid),
     queryFn: () => getPayrollRun(runId as string, cid),
     fallbackMessage: 'فشل تحميل المسيرة',
@@ -64,7 +81,7 @@ export function usePayrollRunFormState({
     data: compensationSnapshots,
     isLoading: compensationSnapshotsLoading,
     error: compensationSnapshotsError,
-  } = useApiQuery<any>({
+  } = useApiQuery<HrCompensationSnapshotsResult>({
     queryKey: hrKeys.compensationSnapshots(cid, employeeIds),
     queryFn: () => getEmployeeCompensationSnapshots(cid, employeeIds),
     enabled: !!cid && employeeIds.length > 0,
@@ -72,28 +89,28 @@ export function usePayrollRunFormState({
   });
 
   const compensationSnapshotByEmployeeId = useMemo(() => {
-    const map = new Map<string, any>();
+    const map = new Map<string, HrCompensationSnapshot>();
     for (const snapshot of compensationSnapshots?.items ?? []) {
       if (snapshot?.employeeId) map.set(String(snapshot.employeeId), snapshot);
     }
     return map;
   }, [compensationSnapshots]);
 
-  const { data: advances = [] } = useApiListQuery<any>({
+  const { data: advances = [] } = useApiListQuery<HrInvoiceLike>({
     queryKey: invoiceKeys.advancesForMonth(cid, monthStr),
     queryFn: () => getInvoices(cid, undefined, undefined, 1, 1000, null, null, 'advance'),
     fallbackMessage: 'فشل تحميل السلف',
     enabled: !!cid,
   });
 
-  const { data: leaves = [] } = useApiListQuery<any>({
+  const { data: leaves = [] } = useApiListQuery<HrLeaveLike>({
     queryKey: hrKeys.leavesPayrollForm(cid),
     queryFn: () => getLeaves(cid),
     fallbackMessage: 'فشل تحميل الإجازات',
     enabled: !!cid,
   });
 
-  const { data: leaveSalarySettlements = [] } = useApiListQuery<any>({
+  const { data: leaveSalarySettlements = [] } = useApiListQuery<HrLeaveSettlementLike>({
     queryKey: hrKeys.leaveSalarySettlementsForMonth(cid, payrollMonth),
     queryFn: () => getLeaveSalarySettlements(cid, payrollMonth || defaultMonth),
     fallbackMessage: 'فشل تحميل تسويات رواتب الإجازات',

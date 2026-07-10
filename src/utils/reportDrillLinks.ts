@@ -2,10 +2,24 @@
  * روابط من تقرير ربح/خسارة → شاشات التشغيل (فواتير / مبيعات) بمعاملات URL.
  */
 
-export function monthDateBounds(year: any, month: any) {
+type ReportDrillQuery = Record<string, string>;
+
+type ReportDrillLink = {
+  path: string;
+  query: ReportDrillQuery;
+};
+
+type ReportDrillLinkInput = {
+  year: string | number;
+  month?: string | number | null;
+  groupKey?: string | null;
+  itemKey?: string | null;
+};
+
+export function monthDateBounds(year: string | number, month?: string | number | null): { from: string; to: string } {
   const y = Number(year);
-  if (month != null && month >= 1 && month <= 12) {
-    const m = Number(month);
+  const m = Number(month);
+  if (month != null && m >= 1 && m <= 12) {
     const from = `${y}-${String(m).padStart(2, '0')}-01`;
     const last = new Date(y, m, 0).getDate();
     const to = `${y}-${String(m).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
@@ -17,7 +31,7 @@ export function monthDateBounds(year: any, month: any) {
 /**
  * @returns {{ path: string, query: Record<string, string> } | null}
  */
-export function buildReportDrillLink({ year, month, groupKey, itemKey }: any) {
+export function buildReportDrillLink({ year, month, groupKey, itemKey }: ReportDrillLinkInput): ReportDrillLink | null {
   const { from, to } = monthDateBounds(year, month);
   const invBase = { from, to };
 
@@ -67,9 +81,9 @@ export function buildReportDrillLink({ year, month, groupKey, itemKey }: any) {
   return { path: '/invoices', query: invBase };
 }
 
-export function drillToSearchParams(query: any) {
+export function drillToSearchParams(query: Record<string, unknown> | null | undefined): string {
   const sp = new URLSearchParams();
-  Object.entries(query || {}).forEach(([k, v]: any) => {
+  Object.entries(query || {}).forEach(([k, v]) => {
     if (v != null && v !== '') sp.set(k, String(v));
   });
   return sp.toString();

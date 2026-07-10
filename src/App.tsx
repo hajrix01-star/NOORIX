@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useState, useMemo, useTransition, useCallback, useRef } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type Query } from '@tanstack/react-query';
 import { getMe, getCompanies, checkApiConnection } from './services/api';
 import { setActiveCompanyId } from './services/authStore';
 import { AppContext } from './context/AppContext';
@@ -26,7 +26,7 @@ import { formatAppVersion } from './constants/appVersion';
 const DashboardScreen = React.lazy(() => import('./modules/Dashboard/DashboardScreen'));
 const DailySalesScreen = React.lazy(() => import('./modules/Sales/DailySalesScreen'));
 const PurchasesBatchScreen = React.lazy(() => import('./modules/Purchases/PurchasesBatchScreen'));
-const ThemePreviewScreen = React.lazy(() => import('./modules/ThemePreviewScreen'));
+const ThemePreviewScreen = React.lazy(() => import('./modules/themePreview/ThemePreviewScreen'));
 const OwnerDashboardScreen = React.lazy(() => import('./modules/Owner/OwnerDashboardScreen'));
 const ReportsLayout = React.lazy(() => import('./modules/Reports/ReportsLayout'));
 const ReportsIndexRedirect = React.lazy(() => import('./modules/Reports/ReportsIndexRedirect'));
@@ -114,8 +114,8 @@ export default function App() {
   // بعد الدخول: تحميل مسبق لأهم الأقسام أثناء خمول المتصفح — يقلّل انتظار أول زيارة (lazy chunks)
   useEffect(() => {
     if (!isAuthenticated || !user || isLoginPage) return;
-    const routes = ['/', '/sales', '/purchases', '/invoices', '/reports/general'];
-    const run = () => routes.forEach((to: any) => prefetchRouteChunk(to));
+    const routes = ['/', '/sales', '/purchases', '/invoices', '/reports/general'] as const;
+    const run = () => routes.forEach((to) => prefetchRouteChunk(to));
     let idleId: number | undefined;
     /** في المتصفح `setTimeout` يعيد رقمًا؛ أنواع Node تعيد `Timeout` */
     let timeoutId: number | undefined;
@@ -132,7 +132,7 @@ export default function App() {
     };
   }, [isAuthenticated, isLoginPage, user?.id]);
 
-  const { data: companiesFromApi } = useQuery({
+  const { data: companiesFromApi } = useQuery<CompanyListItem[] | null>({
     queryKey: appKeys.companiesRoot(),
     queryFn: async () => {
       try {
@@ -167,13 +167,13 @@ export default function App() {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_COMPANY);
       if (saved) return saved;
-    } catch (_: any) {}
+    } catch {}
     return singleCompanyId || (companiesList[0]?.id ?? '');
   });
   const setActiveCompany = useCallback((id: string) => {
     startCompanyTransition(() => {
       _setActiveCompany(id);
-      try { localStorage.setItem(STORAGE_KEYS.ACTIVE_COMPANY, id); } catch (_: any) {}
+      try { localStorage.setItem(STORAGE_KEYS.ACTIVE_COMPANY, id); } catch {}
     });
   }, [startCompanyTransition]);
   useEffect(() => {
@@ -182,10 +182,10 @@ export default function App() {
 
     const savedId = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_COMPANY); } catch { return null; } })();
 
-    if (savedId && companiesFromApi.some((c: any) => c.id === savedId)) {
+    if (savedId && companiesFromApi.some((c) => c.id === savedId)) {
       // الشركة المحفوظة صالحة في API → استعدها دائماً
       if (activeCompany !== savedId) _setActiveCompany(savedId);
-    } else if (!companiesFromApi.some((c: any) => c.id === activeCompany)) {
+    } else if (!companiesFromApi.some((c) => c.id === activeCompany)) {
       // الشركة الحالية غير موجودة في API ولا توجد قيمة محفوظة صالحة → اختر الأولى
       setActiveCompany(companiesFromApi[0].id);
     }
@@ -215,7 +215,7 @@ export default function App() {
     document.documentElement.setAttribute('data-card-style', String(cardStyle));
     try {
       localStorage.setItem(CARD_STYLE_KEY, String(cardStyle));
-    } catch (_: any) {}
+    } catch {}
   }, [cardStyle]);
 
   const applyLanguage = useCallback((lang: string) => {
@@ -240,7 +240,7 @@ export default function App() {
     if (pref !== language) applyLanguage(pref);
   }, [user?.id, user?.preferredLang]);
 
-  const toggleSidebar = () => setSidebarOpen((prev: any) => !prev);
+  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const handleLogout = () => {
     queryClient.clear();
     setToken(null);
@@ -296,7 +296,7 @@ export default function App() {
     if (!queryClient || !activeCompanyId) return;
     const GLOBAL_KEYS = ['companies', 'me'];
     queryClient.invalidateQueries({
-      predicate: (query: any) => {
+      predicate: (query: Query) => {
         const key = query.queryKey;
         if (!Array.isArray(key)) return false;
         return !GLOBAL_KEYS.includes(key[0]);
@@ -317,7 +317,7 @@ export default function App() {
   const probeConnection = useCallback(async () => {
     let { ok } = await checkApiConnection();
     if (!ok) {
-      await new Promise((r: any) => setTimeout(r, 1000));
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
       if (!connectionProbeMountedRef.current) return;
       const second = await checkApiConnection();
       ok = second.ok;
@@ -371,7 +371,7 @@ export default function App() {
             isAuthenticated={isAuthenticated}
             user={user}
             onLogout={handleLogout}
-            activeCompany={companies?.find((c: any) => c.id === activeCompany) || null}
+            activeCompany={companies?.find((c) => c.id === activeCompany) || null}
             companies={companies}
             activeCompanyId={activeCompany}
             setActiveCompany={setActiveCompany}

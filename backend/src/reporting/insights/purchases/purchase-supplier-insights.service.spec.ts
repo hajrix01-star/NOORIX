@@ -23,7 +23,7 @@ describe('PurchaseSupplierInsightsService', () => {
       },
     };
     const getDashboardSummary = jest.fn().mockResolvedValue(summary);
-    const facade = { getDashboardSummary } as unknown as import('../../reporting.facade').ReportingFacade;
+    const facade = { getDashboardSummary };
     const svc = new PurchaseSupplierInsightsService(facade);
     await svc.buildPurchaseSupplierInsights('c1', dateRange, null);
     expect(getDashboardSummary).toHaveBeenCalledTimes(1);
@@ -81,7 +81,7 @@ describe('PurchaseSupplierInsightsService', () => {
         suppliersInPeriodCount: 3,
       },
     });
-    const facade = { getDashboardSummary } as unknown as import('../../reporting.facade').ReportingFacade;
+    const facade = { getDashboardSummary };
     const svc = new PurchaseSupplierInsightsService(facade);
     const out = await svc.buildPurchaseSupplierInsights('c1', dateRange, 4);
     expect(out.schemaVersion).toBe(1);
@@ -100,7 +100,7 @@ describe('PurchaseSupplierInsightsService', () => {
       salesPack: {},
       periodAnalytics: undefined,
     });
-    const facade = { getDashboardSummary } as unknown as import('../../reporting.facade').ReportingFacade;
+    const facade = { getDashboardSummary };
     const svc = new PurchaseSupplierInsightsService(facade);
     const out = await svc.buildPurchaseSupplierInsights('c1', dateRange, null);
     expect(out.warnings).toEqual([]);

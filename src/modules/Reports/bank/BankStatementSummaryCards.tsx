@@ -2,8 +2,16 @@
 import { fmt } from '../../../utils/format';
 import { toYmd } from '../../../utils/saudiDate';
 import { MetricCard } from '../../../ui';
+import type { BankStatementLite, TranslationFn } from './bankAnalysisTab.types';
 
-export default function BankStatementSummaryCards({ statement, t }: any) {
+type SummaryCard = {
+  title: string;
+  value: string;
+  sub: string;
+  color: string;
+};
+
+export default function BankStatementSummaryCards({ statement, t }: { statement: BankStatementLite | null | undefined; t: TranslationFn }) {
   if (!statement) return null;
 
   const dep = Number(statement.totalDeposits)    || 0;
@@ -11,7 +19,7 @@ export default function BankStatementSummaryCards({ statement, t }: any) {
   const net = dep - wdr;
   const nTx = statement.transactionCount ?? statement.transactions?.length ?? 0;
 
-  const cards = [
+  const cards: SummaryCard[] = [
     {
       title: t('bankStatementBankName'),
       value: statement.bankName || '—',
@@ -52,7 +60,7 @@ export default function BankStatementSummaryCards({ statement, t }: any) {
 
   return (
     <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
-      {cards.map((c: any, i: any) => (
+      {cards.map((c, i) => (
         <MetricCard key={i} color={c.color}>
           <MetricCard.Header label={c.title} />
           <MetricCard.Value value={c.value} />

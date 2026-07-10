@@ -1,12 +1,8 @@
-/**
- * InvoiceEditModal — نافذة تعديل الفاتورة
- */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, type ChangeEvent } from 'react';
 import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
+import { SupplierSelect, type SupplierOptionRow } from '../../../components/common/SupplierSelect';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import {
@@ -17,49 +13,62 @@ import {
   throwIfApiFailed,
 } from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { Button, Checkbox, DateField, FileTrigger, Input, AdaptiveSheet } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
-import { toDateInputYmd } from '../../../utils/saudiDate';
+import { Button, Checkbox, DialogActions, TransactionDatePicker, FileTrigger, Input, AdaptiveSheet, SearchableOptionsPicker } from '../../../ui';
 
-// بلا مورد نهائياً (رواتب وسلف — فواتير نظام داخلية)
-const NO_SUPPLIER_KINDS = new Set(['salary', 'advance']);
-// مورد اختياري (مصاريف ثابتة وHR)
-const OPTIONAL_SUPPLIER_KINDS = new Set(['fixed_expense', 'hr_expense']);
+import {
+  EMPTY_INVOICE_EDIT_FORM,
+  buildInvoiceEditInitialForm,
+  buildInvoiceEditUpdateBody,
+  getInvoiceEditSupplierPolicy,
+  hasPositiveInvoiceEditTotal,
+  resolveInvoiceEditInitialVaultId,
+  type InvoiceEditForm,
+  type InvoiceEditSource,
+  type InvoiceEditUpdateBody,
+  updateInvoiceEditFormField,
+  validateInvoiceEditForm,
+} from '../invoiceEditModel';
+import { getInvoiceListErrorMessage } from '../invoicesListScreenModel';
+import type { InvoiceVaultFilterEntity } from '../invoicesListFilterModel';
+import {
+  getInvoiceAttachmentMeta,
+  normalizeInvoiceAttachmentResponseData,
+  type InvoiceAttachmentMeta,
+} from '../invoiceAttachmentModel';
 
-export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }: any) {
+type InvoiceEditModalProps = {
+  invoice: InvoiceEditSource | null;
+  suppliers?: SupplierOptionRow[] | null;
+  companyId: string;
+  vaultsList?: InvoiceVaultFilterEntity[];
+  onSaved?: () => void;
+  onClose?: () => void;
+};
+
+export function InvoiceEditModal({
+  invoice,
+  suppliers,
+  companyId,
+  vaultsList = [],
+  onSaved,
+  onClose,
+}: InvoiceEditModalProps) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const { companies } = useApp();
   const vatRateDecimal = useMemo(
-    () => vatRateDecimalFromCompany(companies.find((c: any) => c.id === companyId)),
+    () => vatRateDecimalFromCompany(companies.find((company) => company.id === companyId)),
     [companies, companyId],
   );
-  const [form, setForm] = useState({
-    supplierId: '',
-    supplierInvoiceNumber: '',
-    kind: 'purchase',
-    totalAmount: '',
-    isTaxable: true,
-    netAmount: '',
-    taxAmount: '',
-    transactionDate: '',
-    notes: '',
-    vaultId: '',
-  });
+  const [form, setForm] = useState(EMPTY_INVOICE_EDIT_FORM);
   const [error, setError] = useState('');
   const [attachmentBusy, setAttachmentBusy] = useState(false);
-  const [attachMeta, setAttachMeta] = useState({ has: false, name: null });
+  const [attachMeta, setAttachMeta] = useState<InvoiceAttachmentMeta>({ has: false, name: null });
 
   const kind = invoice?.kind;
-  const hasSupplier = !NO_SUPPLIER_KINDS.has(kind);           // purchase, expense, fixed_expense, hr_expense
-  const supplierRequired = !NO_SUPPLIER_KINDS.has(kind) && !OPTIONAL_SUPPLIER_KINDS.has(kind); // purchase, expense فقط
+  const { hasSupplier, supplierRequired } = getInvoiceEditSupplierPolicy(kind);
 
-  const initialVaultKey = useMemo(() => {
-    if (!invoice) return '';
-    const allocs = invoice.vaultAllocations;
-    if (allocs?.length >= 1) return allocs[0].vaultId || '';
-    return invoice.vaultId || '';
-  }, [invoice]);
+  const initialVaultKey = useMemo(() => resolveInvoiceEditInitialVaultId(invoice), [invoice]);
 
   const isMultiVault = (invoice?.vaultAllocations?.length || 0) > 1;
 
@@ -73,73 +82,49 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
 
   const vaultPickerOptions = useMemo(
     () =>
-      vaultsList.map((v: any) => ({
-        value: v.id,
-        label: vaultDisplayName(v, lang) || v.id,
+      vaultsList.map((vault) => ({
+        value: String(vault.id || ''),
+        label: vaultDisplayName(vault, lang) || String(vault.id || ''),
       })),
     [vaultsList, lang],
   );
 
   const saveMutation = useApiMutation({
-    mutationFn: ({ id, body }: any) => updateInvoice(id, body, companyId),
+    mutationFn: ({ id, body }: { id: string; body: InvoiceEditUpdateBody }) => updateInvoice(id, body, companyId),
     showErrorToast: false,
     onSuccess: () => {
       onSaved?.();
       onClose?.();
     },
-    onError: (e: any) => setError(e?.message || t('saveFailed')),
+    onError: (err: unknown) => setError(getInvoiceListErrorMessage(err, t('saveFailed'))),
   });
 
   useEffect(() => {
     if (!invoice) return;
-    const taxable =
-      invoice.isTaxable !== undefined
-        ? invoice.isTaxable !== false
-        : Number(invoice.taxAmount || 0) > 0;
-    const total = Number(invoice.totalAmount || 0);
-    const { net, tax } = splitTaxFromTotalAsNumbers(total, taxable, vatRateDecimal);
-    const resolvedVaultId =
-      invoice.vaultAllocations?.length >= 1
-        ? invoice.vaultAllocations[0].vaultId
-        : invoice.vaultId || '';
-    setForm({
-      supplierId: invoice.supplierId || '',
-      supplierInvoiceNumber: invoice.supplierInvoiceNumber || invoice.invoiceNumber || '',
-      kind: invoice.kind || 'purchase',
-      totalAmount: total > 0 ? String(total) : '',
-      isTaxable: taxable,
-      netAmount: net > 0 ? net.toFixed(2) : '',
-      taxAmount: tax > 0 ? tax.toFixed(2) : '',
-      transactionDate: toDateInputYmd(invoice.transactionDate),
-      notes: invoice.notes || '',
-      vaultId: resolvedVaultId || '',
-    });
-  }, [invoice]);
+    setForm(buildInvoiceEditInitialForm(invoice, vatRateDecimal));
+  }, [invoice, vatRateDecimal]);
 
   useEffect(() => {
     if (!invoice) return;
-    setAttachMeta({
-      has: !!invoice.hasInvoiceAttachment,
-      name: invoice.attachmentOriginalName || null,
-    });
+    setAttachMeta(getInvoiceAttachmentMeta(invoice));
   }, [invoice]);
 
-  async function handleAttachmentFileChange(e: any) {
+  async function handleAttachmentFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !invoice?.id || !companyId) return;
     setAttachmentBusy(true);
     try {
       const res = await uploadInvoiceAttachment(invoice.id, companyId, file);
       throwIfApiFailed(res, t('saveFailed'));
-      const inv = res?.data;
+      const inv = normalizeInvoiceAttachmentResponseData(res?.data);
       setAttachMeta({
         has: !!inv?.hasInvoiceAttachment,
         name: inv?.attachmentOriginalName || file.name,
       });
       showToast(t('documentUploaded'), 'success');
       onSaved?.();
-    } catch (err: any) {
-      showToast(err?.message || t('saveFailed'), 'error');
+    } catch (err: unknown) {
+      showToast(getInvoiceListErrorMessage(err, t('saveFailed')), 'error');
     } finally {
       setAttachmentBusy(false);
       e.target.value = '';
@@ -155,8 +140,8 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
       setAttachMeta({ has: false, name: null });
       showToast(t('invoiceReceiptRemoved'), 'success');
       onSaved?.();
-    } catch (err: any) {
-      showToast(err?.message || t('saveFailed'), 'error');
+    } catch (err: unknown) {
+      showToast(getInvoiceListErrorMessage(err, t('saveFailed')), 'error');
     } finally {
       setAttachmentBusy(false);
     }
@@ -166,62 +151,38 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     if (!invoice?.id || !companyId) return;
     try {
       await downloadInvoiceAttachment(invoice.id, companyId);
-    } catch (err: any) {
-      showToast(err?.message || t('saveFailed'), 'error');
+    } catch (err: unknown) {
+      showToast(getInvoiceListErrorMessage(err, t('saveFailed')), 'error');
     }
   }
 
-  function updateField(field: any, value: any) {
-    setForm((p: any) => {
-      const next = { ...p, [field]: value };
-      if (field === 'totalAmount' || field === 'isTaxable') {
-        const v = parseFloat(String(next.totalAmount || ''));
-        if (!isNaN(v) && v > 0) {
-          const { net, tax } = splitTaxFromTotalAsNumbers(v, next.isTaxable !== false, vatRateDecimal);
-          next.netAmount = net.toFixed(2);
-          next.taxAmount = tax.toFixed(2);
-        } else {
-          next.netAmount = '';
-          next.taxAmount = '';
-        }
-      }
-      return next;
-    });
+  function updateField(field: keyof InvoiceEditForm, value: unknown) {
+    setForm((previous) => updateInvoiceEditFormField(previous, field, value, vatRateDecimal));
   }
   async function handleSave() {
+    if (!invoice?.id) return;
     setError('');
-    const total = parseFloat(form.totalAmount);
-    if (supplierRequired && !form.supplierInvoiceNumber?.trim()) {
-      setError(t('invoiceNumberRequired'));
+    const validationError = validateInvoiceEditForm({
+      form,
+      supplierRequired,
+      hasVaults: vaultsList.length > 0,
+      messages: {
+        invoiceNumberRequired: t('invoiceNumberRequired'),
+        totalMustBePositiveShort: t('totalMustBePositiveShort'),
+        selectVault: t('selectVault'),
+      },
+    });
+    if (validationError) {
+      setError(validationError);
       return;
     }
-    if (isNaN(total) || total <= 0) {
-      setError(t('totalMustBePositiveShort'));
-      return;
-    }
-    if (vaultsList.length > 0 && !String(form.vaultId || '').trim()) {
-      setError(t('selectVault'));
-      return;
-    }
-    const body: Record<string, any> = {
-      totalAmount: total,
-      transactionDate: form.transactionDate || undefined,
-      notes: form.notes?.trim() || undefined,
-    };
-    if (hasSupplier) {
-      body.supplierId = form.supplierId || undefined;
-      if (form.supplierInvoiceNumber?.trim()) body.supplierInvoiceNumber = form.supplierInvoiceNumber.trim();
-      body.isTaxable = form.isTaxable !== false;
-      // النوع قابل للتعديل لـ purchase/expense فقط
-      if (supplierRequired) body.kind = form.kind;
-    } else {
-      body.isTaxable = false;
-    }
-    if (form.vaultId) {
-      if (isMultiVault || form.vaultId !== initialVaultKey) {
-        body.vaultId = form.vaultId;
-      }
-    }
+    const body = buildInvoiceEditUpdateBody({
+      form,
+      hasSupplier,
+      supplierRequired,
+      isMultiVault,
+      initialVaultKey,
+    });
     saveMutation.mutate({ id: invoice.id, body });
   }
 
@@ -236,14 +197,18 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
       side="start"
       className="invoice-edit-drawer"
       footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            {t('cancel')}
-          </Button>
-          <Button variant="primary" disabled={saveMutation.isPending} onClick={handleSave}>
-            {saveMutation.isPending ? t('saving') : t('saveChanges')}
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            {
+              key: 'save',
+              label: saveMutation.isPending ? t('saving') : t('saveChanges'),
+              role: 'save',
+              disabled: saveMutation.isPending,
+              onClick: handleSave,
+            },
+          ]}
+        />
       }
     >
       <div className="invoice-edit-modal-body flex flex flex-col gap-3.5">
@@ -291,9 +256,9 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             <div>
               <label className="text-[12px] font-semibold mb-1 block">{t('supplier')}</label>
               <SupplierSelect
-                suppliers={suppliers}
+                suppliers={suppliers || undefined}
                 value={form.supplierId}
-                onChange={(v: any) => updateField('supplierId', v)}
+                onChange={(value: string) => updateField('supplierId', value)}
                 bookmarkedIds={[]}
                 placeholder={t('selectSupplier')}
               />
@@ -302,7 +267,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             <Input
               label={supplierRequired ? `${t('supplierInvoiceNumber')} *` : t('supplierInvoiceNumber')}
               value={form.supplierInvoiceNumber}
-              onChange={(e: any) => updateField('supplierInvoiceNumber', e.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => updateField('supplierInvoiceNumber', event.target.value)}
               placeholder={t('invoiceNumberPlaceholder')}
             />
 
@@ -325,10 +290,10 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             step="0.01"
             label={t('totalAmountInclTax') || 'الإجمالي (شامل الضريبة) *'}
             value={form.totalAmount}
-            onChange={(e: any) => updateField('totalAmount', e.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => updateField('totalAmount', event.target.value)}
             className="nx-font-numbers"
           />
-          {hasSupplier && form.totalAmount && parseFloat(form.totalAmount) > 0 && (
+          {hasSupplier && hasPositiveInvoiceEditTotal(form.totalAmount) && (
             <div className="mt-2 grid gap-1.5">
               <label className="nx-checkbox text-[12px] text-noorix-text">
                 <Checkbox
@@ -344,7 +309,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
           )}
         </div>
 
-        <DateField
+        <TransactionDatePicker
           label={t('transactionDateLabel')}
           value={form.transactionDate}
           onValueChange={(value) => updateField('transactionDate', value)}
@@ -373,7 +338,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
         <Input
           label={t('notesLabel')}
           value={form.notes}
-          onChange={(e: any) => updateField('notes', e.target.value)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => updateField('notes', event.target.value)}
           placeholder={t('invoiceNotesPlaceholder')}
         />
       </div>

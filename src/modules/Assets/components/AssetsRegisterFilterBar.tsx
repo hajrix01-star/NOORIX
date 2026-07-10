@@ -1,12 +1,14 @@
 import React from 'react';
-import { Button, Input } from '../../../ui';
+import { Button, FilterToolbar, Input, SearchableOptionsPicker } from '../../../ui';
+import type { AssetWarrantyFilter } from '../../../types/api';
+import { parseAssetWarrantyFilter } from '../assetsRegisterModel';
 
 export type AssetsRegisterFilterBarProps = {
   search: string;
   onSearchChange: (value: string) => void;
   onSearchApplied: () => void;
-  warrantyFilter: string;
-  onWarrantyFilterChange: (value: string) => void;
+  warrantyFilter: AssetWarrantyFilter;
+  onWarrantyFilterChange: (value: AssetWarrantyFilter) => void;
   onRefresh: () => void;
   t: (k: string) => string;
 };
@@ -21,7 +23,14 @@ export function AssetsRegisterFilterBar({
   t,
 }: AssetsRegisterFilterBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:items-center">
+    <FilterToolbar
+      filtersClassName="gap-2"
+      actions={(
+        <Button size="sm" variant="ghost" onClick={onRefresh}>
+          {t('refresh')}
+        </Button>
+      )}
+    >
       <Input
         type="search"
         size="sm"
@@ -33,25 +42,24 @@ export function AssetsRegisterFilterBar({
         }}
         placeholder={t('search')}
       />
-      <Input
-        type="select"
-        size="sm"
-        className="w-full sm:w-[220px]"
-        value={warrantyFilter}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-          onWarrantyFilterChange(e.target.value);
-          onSearchApplied();
-        }}
-      >
-        <option value="all">{t('warrantyFilterAll')}</option>
-        <option value="active">{t('warrantyFilterActive')}</option>
-        <option value="expiring90">{t('warrantyFilterExpiring90')}</option>
-        <option value="expired">{t('warrantyFilterExpired')}</option>
-        <option value="none">{t('warrantyFilterNone')}</option>
-      </Input>
-      <Button size="sm" variant="ghost" onClick={onRefresh}>
-        {t('refresh')}
-      </Button>
-    </div>
+      <div className="w-full min-w-0 sm:w-[220px]">
+        <SearchableOptionsPicker
+          size="sm"
+          value={warrantyFilter}
+          onChange={(value) => {
+            onWarrantyFilterChange(parseAssetWarrantyFilter(value));
+            onSearchApplied();
+          }}
+          options={[
+            { value: 'all', label: t('warrantyFilterAll') },
+            { value: 'active', label: t('warrantyFilterActive') },
+            { value: 'expiring90', label: t('warrantyFilterExpiring90') },
+            { value: 'expired', label: t('warrantyFilterExpired') },
+            { value: 'none', label: t('warrantyFilterNone') },
+          ]}
+          aria-label={t('warrantyFilterAll')}
+        />
+      </div>
+    </FilterToolbar>
   );
 }

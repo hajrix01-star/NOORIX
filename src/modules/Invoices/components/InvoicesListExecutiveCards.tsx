@@ -1,7 +1,66 @@
 import React from 'react';
 import { Badge, FmtNum, cn } from '../../../ui';
+import {
+  type InvoiceExecutiveOutflowSummary,
+  type InvoiceExecutiveNumber,
+  type InvoiceExecutiveTotals,
+  type InvoiceExecutiveVaultFlowRow,
+  asInvoiceExecutiveCount,
+  asInvoiceExecutiveNumber,
+  getInvoiceExecutiveEmptyValue,
+  mapInvoiceExecutiveVaultRows,
+} from '../invoiceExecutiveCardsModel';
 
-function SummaryMetric({ label, value, tone = 'neutral' }: any) {
+type Translate = (key: string, ...args: unknown[]) => string;
+type SummaryTone = 'neutral' | 'strong' | 'amber';
+type CardTone = 'inbound' | 'outbound' | 'vault';
+
+type SummaryMetricProps = {
+  label: string;
+  value: React.ReactNode;
+  tone?: SummaryTone;
+};
+
+type MoneyProps = {
+  value: InvoiceExecutiveNumber;
+  className?: string;
+};
+
+type SummaryCardProps = {
+  title: string;
+  total: InvoiceExecutiveNumber;
+  count: InvoiceExecutiveNumber;
+  net: InvoiceExecutiveNumber;
+  tax: InvoiceExecutiveNumber;
+  labels: {
+    validInvoices: string;
+    net: string;
+    tax: string;
+  };
+  tone: CardTone;
+  icon: React.ReactNode;
+  children?: React.ReactNode;
+  isRefreshing: boolean;
+  refreshLabel: string;
+};
+
+type VaultFlowCardProps = {
+  t: Translate;
+  inflowByVault?: InvoiceExecutiveVaultFlowRow[] | null;
+  vaultRowLabel: (row: InvoiceExecutiveVaultFlowRow) => string;
+};
+
+type InvoicesListExecutiveCardsProps = {
+  t: Translate;
+  serverInflow: InvoiceExecutiveTotals;
+  serverOutflow: InvoiceExecutiveTotals;
+  inflowByVault?: InvoiceExecutiveVaultFlowRow[] | null;
+  outflowSummary: InvoiceExecutiveOutflowSummary;
+  vaultRowLabel: (row: InvoiceExecutiveVaultFlowRow) => string;
+  isRefreshing?: boolean;
+};
+
+function SummaryMetric({ label, value, tone = 'neutral' }: SummaryMetricProps) {
   return (
     <div className="nx-invoice-summary-metric">
       <span className="nx-invoice-summary-metric__label">{label}</span>
@@ -12,10 +71,10 @@ function SummaryMetric({ label, value, tone = 'neutral' }: any) {
   );
 }
 
-function Money({ value, className }: any) {
+function Money({ value, className }: MoneyProps) {
   return (
     <span dir="ltr" className={cn('nx-invoice-summary-money', className)}>
-      <FmtNum n={Number(value)} /> <span className="nx-sar">SR</span>
+      <FmtNum n={asInvoiceExecutiveNumber(value)} /> <span className="nx-sar">SR</span>
     </span>
   );
 }
@@ -32,7 +91,7 @@ function SummaryCard({
   children,
   isRefreshing,
   refreshLabel,
-}: any) {
+}: SummaryCardProps) {
   return (
     <section className={cn('nx-invoice-summary-card', `nx-invoice-summary-card--${tone}`)}>
       <div className="nx-invoice-summary-card__stripe" />
@@ -41,19 +100,23 @@ function SummaryCard({
           <div className="nx-invoice-summary-card__icon">{icon}</div>
           <div className="min-w-0">
             <div className="nx-invoice-summary-card__title">{title}</div>
-            {isRefreshing && <Badge size="sm" color="blue">{refreshLabel}</Badge>}
+            {isRefreshing && (
+              <Badge size="sm" color="blue">
+                {refreshLabel}
+              </Badge>
+            )}
           </div>
         </div>
 
         <div className="nx-invoice-summary-card__total">
-          <FmtNum n={Number(total)} className="nx-invoice-summary-card__total-number" />
+          <FmtNum n={asInvoiceExecutiveNumber(total)} className="nx-invoice-summary-card__total-number" />
           <span className="nx-sar">SR</span>
         </div>
 
         {children && <div className="nx-invoice-summary-card__breakdown">{children}</div>}
 
         <div className="nx-invoice-summary-card__metrics">
-          <SummaryMetric label={labels.validInvoices} value={count} />
+          <SummaryMetric label={labels.validInvoices} value={asInvoiceExecutiveCount(count)} />
           <SummaryMetric label={labels.net} value={<Money value={net} />} tone="strong" />
           <SummaryMetric label={labels.tax} value={<Money value={tax} />} tone="amber" />
         </div>
@@ -89,13 +152,17 @@ function VaultIcon() {
   );
 }
 
-function VaultFlowCard({ t, inflowByVault, vaultRowLabel }: any) {
+function VaultFlowCard({ t, inflowByVault, vaultRowLabel }: VaultFlowCardProps) {
+  const rows = mapInvoiceExecutiveVaultRows({ rows: inflowByVault, labelForRow: vaultRowLabel });
+
   return (
     <section className="nx-invoice-summary-card nx-invoice-summary-card--vault">
       <div className="nx-invoice-summary-card__stripe" />
       <div className="nx-invoice-summary-card__body nx-invoice-summary-card__body--vault">
         <div className="nx-invoice-summary-card__head">
-          <div className="nx-invoice-summary-card__icon"><VaultIcon /></div>
+          <div className="nx-invoice-summary-card__icon">
+            <VaultIcon />
+          </div>
           <div className="min-w-0">
             <div className="nx-invoice-summary-card__title">{t('invoicesVaultChannelFlowTitle')}</div>
             <div className="nx-invoice-summary-card__subtitle">
@@ -105,32 +172,23 @@ function VaultFlowCard({ t, inflowByVault, vaultRowLabel }: any) {
         </div>
 
         <div className="nx-invoice-vault-flow__grid">
-          {!inflowByVault?.length ? (
-            <div className="nx-invoice-vault-flow__empty">—</div>
+          {rows.length === 0 ? (
+            <div className="nx-invoice-vault-flow__empty">{getInvoiceExecutiveEmptyValue()}</div>
           ) : (
-            inflowByVault.map((row: any) => {
-              const outNum = Number(row.outflow ?? 0);
-              const remNum = Number(row.remainder ?? 0);
-              return (
-                <div key={row.vaultId} className="nx-invoice-vault-flow__item">
-                  <span className="nx-invoice-vault-flow__name">{vaultRowLabel(row)}</span>
-                  <span className="nx-invoice-vault-flow__amount text-nx-profit">
-                    <FmtNum n={Number(row.total)} /> <span className="nx-sar">SR</span>
-                  </span>
-                  <span className="nx-invoice-vault-flow__amount text-nx-expenses">
-                    <FmtNum n={outNum} /> <span className="nx-sar">SR</span>
-                  </span>
-                  <span
-                    className={cn(
-                      'nx-invoice-vault-flow__amount',
-                      remNum > 0 ? 'text-nx-profit' : remNum < 0 ? 'text-nx-expenses' : 'text-noorix-muted',
-                    )}
-                  >
-                    <FmtNum n={remNum} /> <span className="nx-sar">SR</span>
-                  </span>
-                </div>
-              );
-            })
+            rows.map((row) => (
+              <div key={row.key} className="nx-invoice-vault-flow__item">
+                <span className="nx-invoice-vault-flow__name">{row.label}</span>
+                <span className="nx-invoice-vault-flow__amount text-nx-profit">
+                  <FmtNum n={row.inflow} /> <span className="nx-sar">SR</span>
+                </span>
+                <span className="nx-invoice-vault-flow__amount text-nx-expenses">
+                  <FmtNum n={row.outflow} /> <span className="nx-sar">SR</span>
+                </span>
+                <span className={cn('nx-invoice-vault-flow__amount', row.remainderToneClass)}>
+                  <FmtNum n={row.remainder} /> <span className="nx-sar">SR</span>
+                </span>
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -138,9 +196,6 @@ function VaultFlowCard({ t, inflowByVault, vaultRowLabel }: any) {
   );
 }
 
-/**
- * Executive invoices summary: two balanced financial cards plus a separate vault movement strip.
- */
 export function InvoicesListExecutiveCards({
   t,
   serverInflow,
@@ -149,8 +204,8 @@ export function InvoicesListExecutiveCards({
   outflowSummary,
   vaultRowLabel,
   isRefreshing = false,
-}: any) {
-  const refreshLabel = typeof t === 'function' ? t('refreshing') : 'جاري التحديث';
+}: InvoicesListExecutiveCardsProps) {
+  const refreshLabel = t('refreshing');
   const labels = {
     validInvoices: t('validInvoices'),
     net: t('net'),
@@ -161,7 +216,7 @@ export function InvoicesListExecutiveCards({
     <section className="nx-invoice-summary">
       <div className="nx-invoice-summary__cards">
         <SummaryCard
-          title={`${t('inbound')} — ${t('categoryTypeSale')}`}
+          title={`${t('inbound')} \u2014 ${t('categoryTypeSale')}`}
           total={serverInflow.total}
           count={serverInflow.count}
           net={serverInflow.net}
@@ -174,7 +229,7 @@ export function InvoicesListExecutiveCards({
         />
 
         <SummaryCard
-          title={`${t('outbound')} — ${t('purchases')} / ${t('categoryTypeExpense')}`}
+          title={`${t('outbound')} \u2014 ${t('purchases')} / ${t('categoryTypeExpense')}`}
           total={serverOutflow.total}
           count={serverOutflow.count}
           net={serverOutflow.net}
@@ -186,8 +241,14 @@ export function InvoicesListExecutiveCards({
           refreshLabel={refreshLabel}
         >
           <div className="nx-invoice-summary-splits">
-            <SummaryMetric label={t('purchases')} value={<Money value={outflowSummary.purchasesTotal} className="text-nx-purchases" />} />
-            <SummaryMetric label={t('invoicesCardNonPurchaseOutflow')} value={<Money value={outflowSummary.expensesTotal} className="text-nx-expenses" />} />
+            <SummaryMetric
+              label={t('purchases')}
+              value={<Money value={outflowSummary.purchasesTotal} className="text-nx-purchases" />}
+            />
+            <SummaryMetric
+              label={t('invoicesCardNonPurchaseOutflow')}
+              value={<Money value={outflowSummary.expensesTotal} className="text-nx-expenses" />}
+            />
           </div>
         </SummaryCard>
 

@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "description": "Explicit TypeScript any baseline. Counts exclude string literals, so business values like 'any' filters and translation text are not counted.",
+  "allowedCounts": {}
+}

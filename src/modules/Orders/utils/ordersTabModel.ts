@@ -1,9 +1,10 @@
 import { fmt } from '../../../utils/format';
 import { buildPrintTableHtml } from '../../../utils/printTableHtml';
 import { formatSaudiDate } from '../../../utils/saudiDate';
+import type { OrderProduct, OrderRecord } from '../../../types/api';
 
-export function mergeOrderCatalogProducts(orderCatalog: any[], editingOrder: any): any[] {
-  const byId = new Map<string, any>();
+export function mergeOrderCatalogProducts(orderCatalog: OrderProduct[], editingOrder: OrderRecord | null): OrderProduct[] {
+  const byId = new Map<string, OrderProduct>();
   for (const p of orderCatalog ?? []) byId.set(p.id, p);
   const lineItems = editingOrder?.items;
   if (Array.isArray(lineItems)) {
@@ -39,75 +40,28 @@ function ymdOnly(value: string | null | undefined): string {
   return (value || '').split('T')[0] || value || '';
 }
 
-export function filterOrdersByDate(orders: any[], startDate: string, endDate: string): any[] {
+export function filterOrdersByDate(orders: OrderRecord[], startDate: string, endDate: string): OrderRecord[] {
   const sd = ymdOnly(startDate);
   const ed = ymdOnly(endDate);
   if (!sd || !ed) return orders ?? [];
-  return (orders ?? []).filter((o: any) => {
+  return (orders ?? []).filter((o) => {
     const od = ymdOnly(o.orderDate);
     return od >= sd && od <= ed;
   });
 }
 
-export function filterOrdersByType(orders: any[], orderTypeFilter: string): any[] {
+export function filterOrdersByType(orders: OrderRecord[], orderTypeFilter: string): OrderRecord[] {
   if (orderTypeFilter === 'all') return orders ?? [];
-  return (orders ?? []).filter((o: any) => o.orderType === orderTypeFilter);
+  return (orders ?? []).filter((o) => o.orderType === orderTypeFilter);
 }
 
-export function computeOrdersTotal(orders: any[]): number {
-  return (orders ?? []).reduce((sum: number, o: any) => sum + Number(o.totalAmount ?? 0), 0);
+export function computeOrdersTotal(orders: OrderRecord[]): number {
+  return (orders ?? []).reduce((sum, order) => sum + Number(order.totalAmount ?? 0), 0);
 }
 
-export function computeCashSalesTotal(salesData: any): number {
-  const items = salesData?.items ?? [];
-  return items.reduce((sum: number, summary: any) => {
-    const channels = summary.channels ?? [];
-    const cashOnly = channels.reduce((acc: number, ch: any) => {
-      if (ch?.vault?.type !== 'cash') return acc;
-      return acc + Number(ch.amount ?? 0);
-    }, 0);
-    return sum + cashOnly;
-  }, 0);
-}
-
-export function computeOrdersSummaryForRange({
-  summaryFromApi,
-  dateFilteredOrders,
-  startDate,
-  endDate,
-  year,
-  month,
-}: {
-  summaryFromApi: any;
-  dateFilteredOrders: any[];
-  startDate: string;
-  endDate: string;
-  year: number;
-  month: number;
-}): any {
-  const sd = ymdOnly(startDate);
-  const ed = ymdOnly(endDate);
-  const fullMonthStart = `${year}-${String(month).padStart(2, '0')}-01`;
-  const lastD = new Date(year, month, 0).getDate();
-  const fullMonthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastD).padStart(2, '0')}`;
-  if (summaryFromApi && sd === fullMonthStart && ed === fullMonthEnd) return summaryFromApi;
-
-  const ext = (dateFilteredOrders ?? []).filter((o: any) => o.orderType === 'external');
-  const pettyCash = ext.reduce((s: number, o: any) => s + Number(o.pettyCashAmount ?? 0), 0);
-  const delegatePurchases = ext.reduce((s: number, o: any) => s + Number(o.totalAmount ?? 0), 0);
-  return {
-    pettyCashTotal: pettyCash,
-    delegatePurchasesTotal: delegatePurchases,
-    delegateBalance: pettyCash - delegatePurchases,
-    localPurchasesTotal: (dateFilteredOrders ?? [])
-      .filter((o: any) => o.orderType === 'internal')
-      .reduce((s: number, o: any) => s + Number(o.totalAmount ?? 0), 0),
-  };
-}
-
-export function computeCumulativeRemainingByOrderId(dateFilteredOrders: any[]): Map<string, number> {
+export function computeCumulativeRemainingByOrderId(dateFilteredOrders: OrderRecord[]): Map<string, number> {
   const sorted = [...(dateFilteredOrders ?? [])].sort(
-    (a: any, b: any) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime(),
+    (a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime(),
   );
   const map = new Map<string, number>();
   let cumPetty = 0;
@@ -122,9 +76,11 @@ export function computeCumulativeRemainingByOrderId(dateFilteredOrders: any[]): 
   return map;
 }
 
-export function buildWhatsAppText(order: any, t: any): string {
+type TranslateFn = (key: string, ...args: string[]) => string;
+
+export function buildWhatsAppText(order: OrderRecord, t: TranslateFn): string {
   const lines = (order.items || [])
-    .map((it: any) => {
+    .map((it) => {
       const name = it.product?.nameAr || it.product?.nameEn || '—';
       const parts = [it.size, it.packaging, it.unit].filter(Boolean);
       const variantPart = parts.length > 0 ? ` (${parts.join(' / ')})` : '';
@@ -137,9 +93,9 @@ export function buildWhatsAppText(order: any, t: any): string {
   }\n\n${lines}\n\nالإجمالي: ${total} SR`;
 }
 
-export function buildOrderPrintHtml(order: any, t: any): string {
+export function buildOrderPrintHtml(order: OrderRecord, t: TranslateFn): string {
   const items = order.items ?? [];
-  const rows = items.map((it: any) => {
+  const rows = items.map((it) => {
     const parts = [it.size, it.packaging, it.unit].filter(Boolean);
     const name =
       (it.product?.nameAr || it.product?.nameEn || '—') +
@@ -178,9 +134,9 @@ export function buildOrderPrintHtml(order: any, t: any): string {
   })}`;
 }
 
-export function buildSingleOrderExportRows(order: any, t: any): any[] {
+export function buildSingleOrderExportRows(order: OrderRecord, t: TranslateFn): Record<string, string | number>[] {
   const items = order.items ?? [];
-  const rows = items.map((it: any) => ({
+  const rows: Record<string, string | number>[] = items.map((it) => ({
     [t('orderNumber')]: order.orderNumber,
     [t('orderDate')]: formatSaudiDate(order.orderDate),
     [t('orderType')]: order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal'),

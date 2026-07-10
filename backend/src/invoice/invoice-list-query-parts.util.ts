@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { buildInvoiceTransactionDateFilter } from './invoice-transaction-date-filter.util';
+import type { InvoiceListQueryContract } from './invoice-list-query-contract.util';
 
 function parseCsvTokens(raw?: string): string[] {
   const s = (raw || '').trim();
@@ -65,28 +66,7 @@ export function buildInvoiceListQueryParts({
   includeCancelled,
   hasNotes,
   requireExpenseLine,
-}: {
-  companyId: string;
-  page: number;
-  pageSize: number;
-  startDate?: string;
-  endDate?: string;
-  batchId?: string;
-  employeeId?: string;
-  kind?: string;
-  supplierId?: string;
-  supplierCategoryId?: string;
-  categoryId?: string;
-  expenseLineId?: string;
-  vaultId?: string;
-  createdByUserId?: string;
-  sortBy: string;
-  sortDir: 'asc' | 'desc' | string;
-  q?: string;
-  includeCancelled: boolean;
-  hasNotes?: string | boolean;
-  requireExpenseLine?: boolean;
-}): {
+}: InvoiceListQueryContract): {
   where: Prisma.InvoiceWhereInput;
   orderBy: Prisma.InvoiceOrderByWithRelationInput[];
   size: number;
@@ -97,7 +77,8 @@ export function buildInvoiceListQueryParts({
   const dateFilter = buildInvoiceTransactionDateFilter(startDate, endDate);
   const batchFilter = batchId ? { batchId } : {};
   const employeeFilter = employeeId ? { employeeId } : {};
-  const kindFilter = kind ? { kind: { in: kind.split(',').map((k) => k.trim()) } } : {};
+  const kindIds = parseCsvTokens(kind);
+  const kindFilter = kindIds.length ? { kind: { in: kindIds } } : {};
   const supplierFilter = buildSupplierFilter(supplierId);
   const supplierCategoryFilter = buildSupplierCategoryFilter(supplierCategoryId);
   const categoryFilter = categoryId ? { categoryId } : {};
@@ -107,11 +88,7 @@ export function buildInvoiceListQueryParts({
   const vaultFilter = buildVaultFilter(vaultId);
   const createdByFilter = buildCreatedByUserFilter(createdByUserId);
 
-  const wantHasNotesOnly =
-    hasNotes === true ||
-    hasNotes === 'true' ||
-    hasNotes === '1' ||
-    String(hasNotes || '').toLowerCase() === 'yes';
+  const wantHasNotesOnly = hasNotes === true;
   const notesPresenceFilter: Prisma.InvoiceWhereInput = wantHasNotesOnly
     ? { AND: [{ notes: { not: null } }, { NOT: { notes: { equals: '' } } }] }
     : {};

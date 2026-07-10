@@ -11,21 +11,16 @@ import {
   useUpdateOrderMutation,
   useCancelOrderMutation,
   useOrderProducts,
+  useOrdersRangeSummary,
 } from '../../../hooks/useOrders';
-import { getDailySalesSummaries } from '../../../services/api';
-import { useApiQuery } from '../../../hooks/useApiQuery';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
-import { openPrintWindow } from '../../../utils/printUtils';
-import { salesKeys } from '../../../services/queryKeys';
 import {
   buildOrderPrintHtml,
   buildSingleOrderExportRows,
   buildWhatsAppText,
-  computeCashSalesTotal,
   computeCumulativeRemainingByOrderId,
-  computeOrdersSummaryForRange,
   computeOrdersTotal,
   filterOrdersByDate,
   filterOrdersByType,
@@ -33,10 +28,12 @@ import {
   resolveOrdersDateRange,
 } from '../utils/ordersTabModel';
 import { DateFilterBar } from '../../../ui/date';
-import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
-import { Button, Badge, AdaptiveSheet, SmartTable, KebabMenu, FmtNum } from '../../../ui';
+import { OrderConfirmModal } from './OrderConfirmModal';
+import { Button, Badge, AdaptiveSheet, DialogActions, FilterToolbar, SmartTable, FmtNum, usePrintPreview } from '../../../ui';
+import type { SmartTableColumn } from '../../../ui';
+import type { OrderLine, OrderProduct, OrderRecord } from '../../../types/api';
 
 export function OrdersTab({
   companyId,
@@ -46,20 +43,21 @@ export function OrdersTab({
   endDate: propEndDate,
   dateFilter,
 }: {
-  companyId: any;
-  year: any;
-  month: any;
+  companyId: string;
+  year: number;
+  month: number;
   startDate?: string;
   endDate?: string;
-  dateFilter: any;
+  dateFilter: React.ComponentProps<typeof DateFilterBar>['filter'];
 }) {
   const { t } = useTranslation();
   const { companies = [] } = useApp();
   const [showModal, setShowModal] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [editingOrder, setEditingOrder] = useState<OrderRecord | null>(null);
   const { showToast } = useToast();
   const [orderTypeFilter, setOrderTypeFilter] = useState('all'); // 'all' | 'external' | 'internal'
-  const [viewingOrder, setViewingOrder] = useState<any>(null);
+  const [viewingOrder, setViewingOrder] = useState<OrderRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<OrderRecord | null>(null);
 
   const { startDate, endDate } = useMemo(
     () => resolveOrdersDateRange({ year, month, propStartDate, propEndDate }),
@@ -69,20 +67,11 @@ export function OrdersTab({
   const { data: orders = [], isLoading, error: ordersError } = useOrdersRange(companyId, startDate, endDate);
   const { data: orderCatalog = [] } = useOrderProducts(companyId, 'order');
   /** طلبات المشتريات — أصناف «طلبات» فقط؛ عند التعديل نُبقي أصناف السطر الحالية حتى لو كانت مبيعات قديماً */
-  const products = useMemo(() => mergeOrderCatalogProducts(orderCatalog, editingOrder), [orderCatalog, editingOrder]);
+  const products = useMemo<OrderProduct[]>(() => mergeOrderCatalogProducts(orderCatalog, editingOrder), [orderCatalog, editingOrder]);
   const createOrder = useCreateOrderMutation(companyId);
   const updateOrder = useUpdateOrderMutation(companyId);
   const cancelOrder = useCancelOrderMutation(companyId);
-
-  const { data: salesData } = useApiQuery<any>({
-    queryKey: salesKeys.summaries(companyId, startDate, endDate),
-    queryFn: () => getDailySalesSummaries(companyId, startDate, endDate, 1, 200),
-    fallbackMessage: t('loadingError'),
-    enabled: !!companyId && !!year && !!month,
-  });
-
-  /** نقد المحل: مبيعات قناة النقد فقط (خزائن type=cash)، لا إجمالي كل القنوات */
-  const cashSalesTotal = useMemo(() => computeCashSalesTotal(salesData), [salesData]);
+  const { data: summary, isLoading: summaryLoading } = useOrdersRangeSummary(companyId, startDate, endDate);
 
   const dateFilteredOrders = useMemo(() => filterOrdersByDate(orders, startDate, endDate), [orders, startDate, endDate]);
 
@@ -92,26 +81,12 @@ export function OrdersTab({
   );
 
   const filteredTotal = useMemo(() => computeOrdersTotal(filteredOrders), [filteredOrders]);
-
-  const summary = useMemo(
-    () =>
-      computeOrdersSummaryForRange({
-        summaryFromApi: null,
-        dateFilteredOrders,
-        startDate,
-        endDate,
-        year,
-        month,
-      }),
-    [dateFilteredOrders, startDate, endDate, year, month],
-  );
-
   const cumulativeRemainingByOrderId = useMemo(
     () => computeCumulativeRemainingByOrderId(dateFilteredOrders),
     [dateFilteredOrders],
   );
 
-  const ordersColumns = useMemo(
+  const ordersColumns = useMemo<SmartTableColumn<OrderRecord>[]>(
     () => [
       {
         key: 'orderNumber',
@@ -119,22 +94,31 @@ export function OrdersTab({
         minWidth: 100,
         align: 'center',
         shrink: true,
-        render: (v: any) => <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{v}</span>,
+        render: (_value: unknown, row: OrderRecord) => (
+          <Button
+            variant="raw"
+            size="auto"
+            className="mx-auto !h-auto rounded-md px-2 py-1 text-center nx-cell-num nx-cell-num--blue whitespace-nowrap hover:bg-noorix-blue/10 focus-visible:ring-2 focus-visible:ring-noorix-blue"
+            onClick={() => handleView(row)}
+          >
+            {row.orderNumber}
+          </Button>
+        ),
       },
       {
         key: 'orderDate',
         label: t('orderDate'),
         minWidth: 115,
         align: 'center',
-        render: (v: any) => <span className="whitespace-nowrap">{formatSaudiDate(v)}</span>,
+        render: (_value: unknown, row: OrderRecord) => <span className="whitespace-nowrap">{formatSaudiDate(row.orderDate)}</span>,
       },
       {
         key: 'orderType',
         label: t('orderType'),
         align: 'center',
         shrink: true,
-        render: (v: any) => {
-          const isExt = v === 'external';
+        render: (_value: unknown, row: OrderRecord) => {
+          const isExt = row.orderType === 'external';
           return (
             <Badge color={isExt ? 'blue' : 'green'} size="sm">
               {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
@@ -148,16 +132,16 @@ export function OrdersTab({
         numeric: true,
         align: 'center',
         shrink: true,
-        render: (items: any) => (items ?? []).length,
+        render: (_value: unknown, row: OrderRecord) => (row.items ?? []).length,
       },
       {
         key: 'pettyCashAmount',
         label: t('ordersPettyCashGiven'),
         align: 'center',
         shrink: true,
-        render: (v: any, o: any) =>
-          o.orderType === 'external' && v != null ? (
-            <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap"><FmtNum n={Number(v)} /> SR</span>
+        render: (_value: unknown, o: OrderRecord) =>
+          o.orderType === 'external' && o.pettyCashAmount != null ? (
+            <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap"><FmtNum n={o.pettyCashAmount} /> SR</span>
           ) : (
             <span className="nx-cell-muted">—</span>
           ),
@@ -168,14 +152,14 @@ export function OrdersTab({
         numeric: true,
         align: 'center',
         shrink: true,
-        render: (v: any) => <span className="nx-cell-num font-bold whitespace-nowrap"><FmtNum n={Number(v ?? 0)} /> SR</span>,
+        render: (_value: unknown, row: OrderRecord) => <span className="nx-cell-num font-bold whitespace-nowrap"><FmtNum n={row.totalAmount ?? 0} /> SR</span>,
       },
       {
         key: 'id',
         label: t('ordersCumulativeRemaining'),
         align: 'center',
         shrink: true,
-        render: (_: any, o: any) => {
+        render: (_value: unknown, o: OrderRecord) => {
           const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
           if (cumRem == null) return <span className="nx-cell-muted">—</span>;
           return (
@@ -185,25 +169,6 @@ export function OrdersTab({
             </Badge>
           );
         },
-      },
-      {
-        key: 'actions',
-        label: t('actions'),
-        align: 'center',
-        width: '1%',
-        shrink: true,
-        render: (_: any, o: any) => (
-          <KebabMenu
-            ariaLabel={t('actions')}
-            menuMaxHeight={320}
-            items={[
-              { key: 'view', label: t('view'), style: { color: 'var(--noorix-text)' }, onClick: () => handleView(o) },
-              { key: 'wa', label: t('sendWhatsApp'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleWhatsApp(o) },
-              { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleEdit(o) },
-              { key: 'del', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDelete(o) },
-            ]}
-          />
-        ),
       },
     ],
     [t, fmt, formatSaudiDate, cumulativeRemainingByOrderId],
@@ -219,19 +184,18 @@ export function OrdersTab({
           <FmtNum n={filteredTotal} /> SR
         </td>
         <td className="text-center py-[11px] px-[14px]" />
-        <td className="noorix-print-hide py-[11px] px-[14px]" />
       </>
     ),
     [t, filteredTotal, fmt],
   );
 
   const ordersRenderMobileCard = useCallback(
-    (o: any) => {
+    (o: OrderRecord) => {
       const pettyGiven = o.orderType === 'external' ? Number(o.pettyCashAmount ?? 0) : null;
       const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
       const isExt = o.orderType === 'external';
       return (
-        <div className="flex flex-col gap-2">
+        <div className="flex cursor-pointer flex-col gap-2" onClick={() => handleView(o)}>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="font-bold text-noorix-blue nx-font-numbers">#{o.orderNumber}</span>
             <Badge color={isExt ? 'blue' : 'green'} size="sm">
@@ -266,18 +230,6 @@ export function OrdersTab({
               </div>
             )}
           </div>
-          <div className="flex justify-end">
-            <KebabMenu
-              ariaLabel={t('actions')}
-              menuMaxHeight={320}
-              items={[
-                { key: 'view', label: t('view'), style: { color: 'var(--noorix-text)' }, onClick: () => handleView(o) },
-                { key: 'wa', label: t('sendWhatsApp'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleWhatsApp(o) },
-                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleEdit(o) },
-                { key: 'del', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDelete(o) },
-              ]}
-            />
-          </div>
         </div>
       );
     },
@@ -285,7 +237,7 @@ export function OrdersTab({
   );
 
   const renderCompactRow = useCallback(
-    (o: any) => {
+    (o: OrderRecord) => {
       const isExt = o.orderType === 'external';
       const total = Number(o.totalAmount ?? 0);
       const cumRem = cumulativeRemainingByOrderId?.get(o.id);
@@ -309,17 +261,6 @@ export function OrdersTab({
             </div>
             <div className="nx-cr__line2-end">
               <span className="nx-cr__amount"><FmtNum n={total} /> <span className="nx-sar">SR</span></span>
-              <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-                <KebabMenu
-                  ariaLabel={t('actions')}
-                  items={[
-                    { key: 'view', label: t('view'), onClick: () => handleView(o) },
-                    { key: 'wa', label: t('sendWhatsApp'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleWhatsApp(o) },
-                    { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleEdit(o) },
-                    { key: 'del', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDelete(o) },
-                  ]}
-                />
-              </div>
             </div>
           </div>
         </div>
@@ -328,43 +269,58 @@ export function OrdersTab({
     [t, formatSaudiDate, cumulativeRemainingByOrderId],
   );
 
-  function handleWhatsApp(order: any) {
+  function handleWhatsApp(order: OrderRecord) {
     const text = encodeURIComponent(buildWhatsAppText(order, t));
     window.open(`https://wa.me/?text=${text}`, '_blank');
   }
 
-  function handleEdit(order: any) {
+  function handleEdit(order: OrderRecord) {
     setEditingOrder(order);
     setShowModal(true);
   }
 
-  function handleDelete(order: any) {
-    if (!window.confirm(t('ordersDeleteConfirm', order.orderNumber))) return;
-    cancelOrder.mutate(order.id, {
+  function handleDelete(order: OrderRecord) {
+    setDeleteTarget(order);
+  }
+
+  function confirmDeleteOrder() {
+    if (!deleteTarget) return;
+    cancelOrder.mutate(deleteTarget.id, {
       onSuccess: () => showToast(t('ordersOrderCancelled'), 'success'),
-      onError: (e: any) => showToast(e?.message || t('deleteFailed'), 'error'),
+      onError: (e: Error) => showToast(e?.message || t('deleteFailed'), 'error'),
+      onSettled: () => setDeleteTarget(null),
     });
   }
 
-  function handleView(order: any) {
+  function handleView(order: OrderRecord) {
     setViewingOrder(order);
   }
 
-  const handleExportSingleOrder = async (order: any) => {
+  const company = companies.find((c) => c.id === companyId);
+  const companyName = company?.nameAr || company?.nameEn || '';
+  const companyLogoUrl = String(company?.logoUrl || '').trim();
+  const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
+    title: t('ordersPrintOrder'),
+    closeLabel: t('close') || 'إغلاق',
+    printLabel: `${t('print')} / PDF`,
+  });
+
+  const handleExportSingleOrder = async (order: OrderRecord) => {
     try {
       const rows = buildSingleOrderExportRows(order, t);
       await exportToExcel(rows, `order-${order.orderNumber}.xlsx`);
       showToast(t('exportSuccess'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('exportFailed'), 'error');
     }
   };
 
-  const handlePrintOrder = (order: any) => {
+  const handlePrintOrder = (order: OrderRecord) => {
     const bodyHtml = buildOrderPrintHtml(order, t);
-    openPrintWindow({
+    openPrintDocumentPreview({
       title: `${t('ordersPrintOrder')} — ${order.orderNumber}`,
       companyName,
+      logoUrl: companyLogoUrl,
       subtitle: `${t('ordersViewOrder')} — ${order.orderNumber}`,
       body: bodyHtml,
     });
@@ -375,11 +331,21 @@ export function OrdersTab({
     setEditingOrder(null);
   }
 
-  const companyName = companies.find((c: any) => c.id === companyId)?.nameAr || companies.find((c: any) => c.id === companyId)?.nameEn || '';
   const printDate = `${year}/${String(month).padStart(2, '0')}`;
 
   return (
     <div className="nx-orders-tab-root flex min-w-0 flex-col gap-3 sm:gap-4">
+      {printPreviewModal}
+      <OrderConfirmModal
+        open={!!deleteTarget}
+        title={t('confirmDelete')}
+        message={deleteTarget ? t('ordersDeleteConfirm', deleteTarget.orderNumber) : ''}
+        confirmLabel={t('delete')}
+        cancelLabel={t('cancel')}
+        busy={cancelOrder.isPending}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteOrder}
+      />
       <div className="noorix-print-header hidden print:block">
         {companyName} — {t('ordersTab')} — {printDate}
       </div>
@@ -400,7 +366,7 @@ export function OrdersTab({
         <DateFilterBar filter={dateFilter} />
       </FilterToolbar>
 
-      <OrdersSummaryCard summary={summary} cashSalesTotal={cashSalesTotal} isLoading={isLoading} />
+      <OrdersSummaryCard summary={summary} cashSalesTotal={summary?.cashSalesTotal} isLoading={isLoading || summaryLoading || !summary} />
 
       <SmartTable
         compact={false}
@@ -430,8 +396,8 @@ export function OrdersTab({
         badge={
           <div className="noorix-print-hide flex flex-wrap items-center gap-2 w-full min-w-0">
             <span className="text-[13px] font-semibold text-noorix-muted shrink-0">{t('ordersFilterByType')}:</span>
-            <div className="nx-toolbar flex-wrap">
-              {['all', 'external', 'internal'].map((v: any) => (
+            <FilterToolbar variant="bare" className="nx-toolbar flex-wrap">
+              {['all', 'external', 'internal'].map((v) => (
                 <Button
                   key={v}
                   type="button"
@@ -442,7 +408,7 @@ export function OrdersTab({
                   {v === 'all' ? t('ordersFilterAll') : v === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
                 </Button>
               ))}
-            </div>
+            </FilterToolbar>
             <span className="text-[14px] font-bold nx-font-numbers ms-auto shrink-0">
               {t('ordersFilteredTotal')}: <FmtNum n={filteredTotal} /> SR
             </span>
@@ -458,7 +424,7 @@ export function OrdersTab({
           createOrder={createOrder}
           updateOrder={updateOrder}
           onSuccess={() => showToast(editingOrder ? t('ordersOrderUpdated') : t('orderSaved'), 'success')}
-          onError={(msg: any) => showToast(msg || t('saveFailed'), 'error')}
+          onError={(msg: string) => showToast(msg || t('saveFailed'), 'error')}
           onClose={closeModal}
           onWhatsApp={handleWhatsApp}
         />
@@ -473,14 +439,34 @@ export function OrdersTab({
           side="start"
           className="orders-view-drawer"
           footer={
-            <>
-              <Button variant="primary" size="sm" onClick={() => handlePrintOrder(viewingOrder)}>
-                {t('ordersPrintOrder')}
-              </Button>
-              <Button size="sm" onClick={() => handleExportSingleOrder(viewingOrder)}>
-                {t('exportExcel')}
-              </Button>
-            </>
+            <DialogActions
+              size="sm"
+              actions={[
+                { key: 'print', label: t('ordersPrintOrder'), role: 'print', onClick: () => handlePrintOrder(viewingOrder) },
+                { key: 'excel', label: t('exportExcel'), role: 'secondary', onClick: () => handleExportSingleOrder(viewingOrder) },
+                { key: 'whatsapp', label: t('sendWhatsApp'), role: 'success', onClick: () => handleWhatsApp(viewingOrder) },
+                {
+                  key: 'edit',
+                  label: t('edit'),
+                  role: 'edit',
+                  onClick: () => {
+                    const order = viewingOrder;
+                    setViewingOrder(null);
+                    handleEdit(order);
+                  },
+                },
+                {
+                  key: 'delete',
+                  label: t('delete'),
+                  role: 'delete',
+                  onClick: () => {
+                    const order = viewingOrder;
+                    setViewingOrder(null);
+                    handleDelete(order);
+                  },
+                },
+              ]}
+            />
           }
         >
           <div className="text-[12px] text-noorix-muted mb-4">{companyName}</div>
@@ -507,11 +493,11 @@ export function OrdersTab({
           <div className="text-[16px] font-bold mb-3">{t('orderItems')}</div>
           <SmartTable
             columns={[
-              { key: '_idx', label: '#', shrink: true, render: (_: any, _row: any, i: any) => <span className="nx-cell-muted">{i + 1}</span> },
+              { key: '_idx', label: '#', shrink: true, render: (_: unknown, _row: OrderLine, i: number) => <span className="nx-cell-muted">{i + 1}</span> },
               {
                 key: 'product',
                 label: t('product'),
-                render: (_: any, it: any) => (
+                render: (_: unknown, it: OrderLine) => (
                   <>
                     {it.product?.nameAr || it.product?.nameEn || '—'}
                     {[it.size, it.packaging, it.unit].filter(Boolean).length > 0 && (
@@ -521,8 +507,8 @@ export function OrdersTab({
                 ),
               },
               { key: 'quantity', label: t('quantity'), numeric: true, align: 'center' },
-              { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (v: any) => `${fmt(v ?? 0)} SR` },
-              { key: 'amount',    label: t('total'),    numeric: true, render: (v: any) => <span className="font-semibold"><FmtNum n={v ?? 0} /> SR</span> },
+              { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (_value: unknown, row: OrderLine) => `${fmt(row.unitPrice ?? 0)} SR` },
+              { key: 'amount',    label: t('total'),    numeric: true, render: (_value: unknown, row: OrderLine) => <span className="font-semibold"><FmtNum n={row.amount ?? 0} /> SR</span> },
             ]}
             data={viewingOrder.items ?? []}
             tableMinWidth={480}

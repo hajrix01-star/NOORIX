@@ -1,7 +1,20 @@
 import React from 'react';
-import { Button } from '../../../ui';
-import { DateFilterBar } from '../../../ui/date';
-import FilterToolbar from '../../../shared/components/FilterToolbar';
+import { Button, FilterToolbar } from '../../../ui';
+import { DateFilterBar, type DateFilterController } from '../../../ui/date';
+
+type Translate = (key: string, ...args: unknown[]) => string;
+
+export type InvoicesListPageHeaderProps = {
+  t: Translate;
+  dateFilter: DateFilterController;
+  companyId: string;
+  exportBusy: boolean;
+  displayedTotal: number;
+  onExportExcel: () => void;
+  onPrintInvoices: () => void;
+  onPrintCashReport: () => void;
+  showExecSummaryActions?: boolean;
+};
 
 export function InvoicesListPageHeader({
   t,
@@ -13,7 +26,7 @@ export function InvoicesListPageHeader({
   onPrintInvoices,
   onPrintCashReport,
   showExecSummaryActions = true,
-}: any) {
+}: InvoicesListPageHeaderProps) {
   return (
     <>
       <div>

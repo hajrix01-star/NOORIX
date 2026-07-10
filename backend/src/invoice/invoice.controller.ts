@@ -37,8 +37,12 @@ import { requireCompanyId }     from '../common/utils/require-company-id';
 import { CreateInvoiceDto }      from './dto/create-invoice.dto';
 import { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { UpdateInvoiceDto }      from './dto/update-invoice.dto';
+import { InvoiceListQueryDto } from './dto/invoice-list-query.dto';
+import { PurchaseBatchSummariesQueryDto } from './dto/purchase-batch-summaries-query.dto';
 import { InvoiceService }        from './invoice.service';
 import { resolveInvoiceListKindFilter } from './invoice-list-resolved-kind.util';
+import { normalizeInvoiceListQuery } from './invoice-list-query-contract.util';
+import { normalizePurchaseBatchSummariesQuery } from './purchase-batch-summaries-query-contract.util';
 
 @Controller('invoices')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -72,12 +76,11 @@ export class InvoiceController {
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async purchaseBatchSummaries(
     @CompanyId() companyId: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate')   endDate?:   string,
-    @Query('q')         q?:         string,
-    @Query('lang')      lang?:      string,
+    @Query() query: PurchaseBatchSummariesQueryDto,
   ) {
-    return this.invoiceService.findPurchaseBatchSummaries(requireCompanyId(companyId), startDate, endDate, q, lang);
+    return this.invoiceService.findPurchaseBatchSummaries(
+      normalizePurchaseBatchSummariesQuery(requireCompanyId(companyId), query),
+    );
   }
 
   @Get('day-close-report')
@@ -101,25 +104,7 @@ export class InvoiceController {
   async findAll(
     @CurrentUser()        user:        JwtUser,
     @CompanyId() companyId: string,
-    @Query('page')        page?:       string,
-    @Query('pageSize')    pageSize?:   string,
-    @Query('startDate')   startDate?:  string,
-    @Query('endDate')     endDate?:    string,
-    @Query('batchId')     batchId?:    string,
-    @Query('employeeId')  employeeId?: string,
-    @Query('kind')        kind?:       string,
-    @Query('supplierId')  supplierId?: string,
-    @Query('supplierCategoryId') supplierCategoryId?: string,
-    @Query('categoryId')  categoryId?: string,
-    @Query('expenseLineId') expenseLineId?: string,
-    @Query('vaultId')      vaultId?:    string,
-    @Query('sortBy')      sortBy?:     string,
-    @Query('sortDir')     sortDir?:    string,
-    @Query('q')           q?:          string,
-    @Query('includeCancelled') includeCancelled?: string,
-    @Query('hasNotes')   hasNotes?:   string,
-    @Query('createdByUserId') createdByUserId?: string,
-    @Query('requireExpenseLine') requireExpenseLine?: string,
+    @Query() query: InvoiceListQueryDto,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
     const role  = (user?.role  || '').toLowerCase();
@@ -132,7 +117,7 @@ export class InvoiceController {
       hasPermission(role, PERMISSIONS.HR_WRITE, perms);
 
     const resolvedKind = resolveInvoiceListKindFilter({
-      requestedKind: kind,
+      requestedKind: query.kind,
       canSales,
       canPurchases,
       canHr,
@@ -145,26 +130,11 @@ export class InvoiceController {
     );
 
     return this.invoiceService.findAll(
-      resolvedCompanyId,
-      page     ? parseInt(page, 10)     : 1,
-      pageSize ? parseInt(pageSize, 10) : 50,
-      startDate,
-      endDate,
-      batchId,
-      employeeId,
-      resolvedKind,
-      supplierId,
-      supplierCategoryId,
-      categoryId,
-      expenseLineId,
-      vaultId?.trim() || undefined,
-      createdByUserId,
-      sortBy,
-      sortDir,
-      q,
-      includeCancelled === '1' || includeCancelled === 'true',
-      hasNotes,
-      requireExpenseLine === '1' || requireExpenseLine === 'true',
+      normalizeInvoiceListQuery(
+        resolvedCompanyId,
+        query,
+        resolvedKind,
+      ),
       includeExecSummary,
     );
   }

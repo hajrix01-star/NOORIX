@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   exportToExcel,
   importFromExcel,
-  exportTableToPdf,
   flattenOrderProductsToAoA,
   ORDER_PRODUCTS_EXCEL_HEADERS,
   normalizeColumnDefs,
@@ -12,10 +11,6 @@ describe('exportUtils barrel', () => {
   it('re-exports excel helpers', () => {
     expect(typeof exportToExcel).toBe('function');
     expect(typeof importFromExcel).toBe('function');
-  });
-
-  it('re-exports pdf helper', () => {
-    expect(typeof exportTableToPdf).toBe('function');
   });
 
   it('re-exports orders helpers', () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '../../../../../ui';
+import { DialogActions } from '../../../../../ui';
 
 type Props = {
   cancelLabel: string;
@@ -17,13 +17,18 @@ export function PayrollRunActions({
   primaryDisabled,
 }: Props) {
   return (
-    <div className="flex gap-2.5 flex flex-wrap">
-      <Button variant="ghost" onClick={onCancel}>
-        {cancelLabel}
-      </Button>
-      <Button variant="primary" onClick={onPrimary} disabled={primaryDisabled} className="font-bold min-w-[120px]">
-        {primaryLabel}
-      </Button>
-    </div>
+    <DialogActions
+      actions={[
+        { key: 'cancel', label: cancelLabel, role: 'cancel', onClick: onCancel },
+        {
+          key: 'primary',
+          label: primaryLabel,
+          role: 'save',
+          disabled: primaryDisabled,
+          className: 'font-bold min-w-[120px]',
+          onClick: onPrimary,
+        },
+      ]}
+    />
   );
 }

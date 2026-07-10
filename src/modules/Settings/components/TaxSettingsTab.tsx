@@ -2,7 +2,7 @@
  * TaxSettingsTab — إعدادات الضريبة للشركة النشطة
  * تفعيل ضريبة القيمة المضافة للمبيعات ونسبة الضريبة (%)
  */
-import React, { useState, useEffect } from 'react';
+import React, { type ChangeEvent, useState, useEffect } from 'react';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useApp } from '../../../context/AppContext';
@@ -10,13 +10,23 @@ import { getCompany, updateCompany } from '../../../services/api';
 import { Button, Checkbox, Input } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 
+type TaxCompanySettings = {
+  vatEnabledForSales?: boolean | null;
+  vatRatePercent?: number | string | null;
+};
+
+type TaxCompanyPatch = {
+  vatEnabledForSales: boolean;
+  vatRatePercent: number;
+};
+
 export default function TaxSettingsTab() {
   const { activeCompanyId } = useApp();
 
   const [vatEnabled, setVatEnabled] = useState(false);
   const [vatRate, setVatRate] = useState(15);
 
-  const { data: company, isLoading, isError, error } = useApiQuery<any>({
+  const { data: company, isLoading, isError, error } = useApiQuery<TaxCompanySettings>({
     queryKey: companyKeys.single(activeCompanyId || ''),
     queryFn: () => getCompany(activeCompanyId),
     fallbackMessage: 'تعذر تحميل إعدادات الشركة',
@@ -32,7 +42,7 @@ export default function TaxSettingsTab() {
   }, [company]);
 
   const updateMutation = useApiMutation({
-    mutationFn: (body: any) => updateCompany(activeCompanyId, body),
+    mutationFn: (body: TaxCompanyPatch) => updateCompany(activeCompanyId, body),
     invalidateQueries: [companyKeys.single(activeCompanyId || ''), appKeys.companiesRoot()],
     showErrorToast: false,
   });
@@ -91,7 +101,7 @@ export default function TaxSettingsTab() {
             <label className="block text-[14px] font-semibold m-0 min-w-0">تفعيل ضريبة القيمة المضافة للمبيعات</label>
             <Checkbox
               checked={vatEnabled}
-              onChange={(e: any) => setVatEnabled(e.target.checked)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setVatEnabled(e.target.checked)}
               label={<span className="text-[13px] text-noorix-muted">{vatEnabled ? 'مفعّل' : 'معطّل'}</span>}
               containerClassName="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green"
             />
@@ -106,7 +116,7 @@ export default function TaxSettingsTab() {
               max={100}
               step={0.01}
               value={vatRate}
-              onChange={(e: any) => setVatRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setVatRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
             />
             <p className="text-[12px] text-noorix-muted mt-1.5 mb-0">
               القيمة الافتراضية 15% (ZATCA / السعودية)

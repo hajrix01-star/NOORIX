@@ -2,18 +2,19 @@
  * reportHelpers — دوال مساعدة لتقارير ربح وخسارة
  */
 import { fmt } from '../../utils/format';
+import type { GeneralProfitLossReport, PlDisplayRow, PlRowType } from './reportTypes';
 
 export const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const PERCENT_COLOR = '#0d9488';
 
-export function isEmptyMetric(value: any) {
+export function isEmptyMetric(value: unknown) {
   if (value == null || value === '') return true;
   const num = Number(value);
   return !Number.isFinite(num) || Math.abs(num) < 0.0000001;
 }
 
-export function formatSmartNumber(value: any, decimals: any = 1) {
+export function formatSmartNumber(value: unknown, decimals = 1) {
   if (isEmptyMetric(value)) return '-';
   return Number(value).toLocaleString('en', {
     minimumFractionDigits: 0,
@@ -21,45 +22,45 @@ export function formatSmartNumber(value: any, decimals: any = 1) {
   });
 }
 
-export function amountText(value: any) {
+export function amountText(value: unknown) {
   if (isEmptyMetric(value)) return '-';
   return fmt(value, 0);
 }
 
-export function moneyText(value: any) {
+export function moneyText(value: unknown) {
   const text = amountText(value);
   return text === '-' ? '-' : `${text} SAR`;
 }
 
 /** قيمة لـ MetricCard.Value (رقم أو '-' للعرض كنص) — العملة تُمرَّر عبر currency="SR" */
-export function metricCardAmountValue(value: any) {
+export function metricCardAmountValue(value: unknown) {
   if (isEmptyMetric(value)) return '-';
   return Math.round(Number(value));
 }
 
-export function percentText(value: any) {
+export function percentText(value: unknown) {
   return isEmptyMetric(value) ? '-' : `${fmt(value, 1)}%`;
 }
 
-export function truncateText(value: any, max: any = 42) {
+export function truncateText(value: unknown, max = 42) {
   const text = String(value || '').trim();
   if (!text) return '—';
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
-export function displayLabel(row: any, lang: any) {
+export function displayLabel(row: PlDisplayRow, lang: string) {
   return lang === 'en' ? (row.labelEn || row.labelAr || '—') : (row.labelAr || row.labelEn || '—');
 }
 
-export function getContextAmount(row: any, selectedMonth: any) {
+export function getContextAmount(row: PlDisplayRow, selectedMonth: number | null | undefined) {
   return selectedMonth ? row?.months?.[selectedMonth - 1] : row?.total;
 }
 
-export function getContextPercent(row: any, selectedMonth: any) {
+export function getContextPercent(row: PlDisplayRow, selectedMonth: number | null | undefined) {
   return selectedMonth ? row?.percentOfSalesMonths?.[selectedMonth - 1] : row?.percentOfSalesYear;
 }
 
-export function getRowTone(row: any) {
+export function getRowTone(row: PlDisplayRow) {
   if (row.rowType === 'summary') {
     const val = Number(row?.total || 0);
     const accent = val >= 0 ? '#2563eb' : '#dc2626';
@@ -79,13 +80,18 @@ export function getRowTone(row: any) {
   return { bg: 'transparent', stickyBg: 'var(--noorix-bg-surface)', accent: 'var(--noorix-text)', isSummary: false };
 }
 
-function flattenExpenseTree(items: any, groupKey: any, collapsedGroups: any, depth: any = 0): any[] {
-  const rows: any[] = [];
+function flattenExpenseTree(
+  items: readonly PlDisplayRow[] | undefined,
+  groupKey: string,
+  collapsedGroups: Record<string, boolean>,
+  depth = 0,
+): PlDisplayRow[] {
+  const rows: PlDisplayRow[] = [];
   for (const node of items || []) {
     const hasChildren = Array.isArray(node.children) && node.children.length > 0;
     const isCategory = node.key?.startsWith('category:');
     const collapseKey = isCategory ? node.key : null;
-    const isCollapsed = !!(collapseKey && (collapsedGroups as Record<string, any>)[collapseKey]);
+    const isCollapsed = !!(collapseKey && collapsedGroups[collapseKey]);
     rows.push({
       ...node,
       rowType: hasChildren ? 'category' : 'item',
@@ -101,11 +107,14 @@ function flattenExpenseTree(items: any, groupKey: any, collapsedGroups: any, dep
   return rows;
 }
 
-export function buildFlatRows(report: any, collapsedGroups: any = {}): any[] {
-  const rows: any[] = [];
+export function buildFlatRows(
+  report: GeneralProfitLossReport | null | undefined,
+  collapsedGroups: Record<string, boolean> = {},
+): PlDisplayRow[] {
+  const rows: PlDisplayRow[] = [];
   for (const group of report?.groups || []) {
     rows.push({ ...group, rowType: 'group', groupKey: group.key, itemKey: null });
-    if (Array.isArray(group.items) && group.items.some((i: any) => i.children)) {
+    if (Array.isArray(group.items) && group.items.some((i) => i.children)) {
       rows.push(...flattenExpenseTree(group.items, group.key, collapsedGroups));
     } else {
       for (const item of group.items || []) {
@@ -119,17 +128,20 @@ export function buildFlatRows(report: any, collapsedGroups: any = {}): any[] {
   return rows;
 }
 
-export function buildVisibleRows(rows: any, collapsedGroups: any) {
-  return rows.filter((row: any) => {
+export function buildVisibleRows(
+  rows: readonly PlDisplayRow[],
+  collapsedGroups: Record<string, boolean>,
+): PlDisplayRow[] {
+  return rows.filter((row) => {
     if (row.rowType !== 'item' && row.rowType !== 'category') return true;
-    return !collapsedGroups[row.groupKey];
+    return !collapsedGroups[row.groupKey ?? ''];
   });
 }
 
 /** يجمع مفاتيح category:* التي لها أبناء — لطي الأفرع تحت فئة (أي مجموعة بها شجرة) */
-function collectCategoryKeysWithChildren(nodes: any[]): string[] {
+function collectCategoryKeysWithChildren(nodes: readonly PlDisplayRow[]): string[] {
   const keys: string[] = [];
-  const walk = (list: any[]) => {
+  const walk = (list: readonly PlDisplayRow[]) => {
     for (const node of list || []) {
       const ch = Array.isArray(node?.children) ? node.children : [];
       if (node?.key?.startsWith('category:') && ch.length > 0) {
@@ -151,7 +163,10 @@ export type PlDisplayLevel = 1 | 2 | 3;
  * - المستوى 2: إظهار أول طبقة تحت كل قسم (فئات الجذر ظاهرة، أفرع الفئات مطوية).
  * - المستوى 3: توسيع كل الفئات.
  */
-export function buildCollapsedGroupsForLevel(report: any, level: PlDisplayLevel): Record<string, boolean> {
+export function buildCollapsedGroupsForLevel(
+  report: GeneralProfitLossReport | null | undefined,
+  level: PlDisplayLevel,
+): Record<string, boolean> {
   if (level === 3) {
     return { sales: false, purchases: false, expenses: false };
   }
@@ -160,7 +175,7 @@ export function buildCollapsedGroupsForLevel(report: any, level: PlDisplayLevel)
   }
   const out: Record<string, boolean> = { sales: false, purchases: false, expenses: false };
   for (const g of report?.groups || []) {
-    if (Array.isArray(g.items) && g.items.some((i: any) => i.children)) {
+    if (Array.isArray(g.items) && g.items.some((i) => i.children)) {
       for (const k of collectCategoryKeysWithChildren(g.items)) {
         out[k] = true;
       }
@@ -170,10 +185,10 @@ export function buildCollapsedGroupsForLevel(report: any, level: PlDisplayLevel)
 }
 
 /** تصفية صفوف الجدول المعروضة حسب نص البحث (يبقي رؤوس الأقسام والملخص) */
-export function filterVisibleRowsByLabel(rows: any[], query: string, lang: any) {
+export function filterVisibleRowsByLabel(rows: readonly PlDisplayRow[], query: string, lang: string): PlDisplayRow[] {
   const q = String(query || '').trim().toLowerCase();
-  if (!q) return rows;
-  return rows.filter((row: any) => {
+  if (!q) return [...rows];
+  return rows.filter((row) => {
     if (row.rowType === 'group' || row.rowType === 'summary') return true;
     const lab = String(displayLabel(row, lang) || '').toLowerCase();
     return lab.includes(q);
@@ -184,7 +199,7 @@ export function filterVisibleRowsByLabel(rows: any[], query: string, lang: any) 
  * أعمدة إيرادات / مشتريات / مصاريف للتصدير إلى Excel: رقم في عمود الفئة فقط لصفوف البند والتصنيف
  * (بدون صف المجموعة لتفادي ازدواجية مع جمع البنود تحتها).
  */
-function plCategorySplitNumericCells(row: any, selectedMonth: number | null | undefined) {
+function plCategorySplitNumericCells(row: PlDisplayRow, selectedMonth: number | null | undefined) {
   const empty = '' as const;
   if (row.rowType === 'summary' || row.rowType === 'group') {
     return { sales: empty, purchases: empty, expenses: empty };
@@ -201,9 +216,9 @@ function plCategorySplitNumericCells(row: any, selectedMonth: number | null | un
 
 /** صفوف تصدير Excel/PDF من صفوف مسطّحة معروضة (نفس مستوى العرض والطي) */
 export function buildExportRowsFromVisibleRows(
-  rows: any[],
-  lang: any,
-  t: any,
+  rows: readonly PlDisplayRow[],
+  lang: string,
+  t: (key: string) => string,
   selectedMonth: number | null | undefined,
   exportOpts?: { amountColumnTitle?: string },
 ) {
@@ -214,9 +229,9 @@ export function buildExportRowsFromVisibleRows(
         ? t('selectedMonth')
         : null;
 
-  return rows.map((row: any) => {
+  return rows.map((row) => {
     const indent = '  '.repeat(row.depth || 0) + (row.rowType === 'item' ? '  ' : '');
-    const base: Record<string, any> = {
+    const base: Record<string, string | number> = {
       [t('reportItem')]: `${indent}${displayLabel(row, lang)}`,
     };
     const split = plCategorySplitNumericCells(row, selectedMonth ?? null);
@@ -228,7 +243,7 @@ export function buildExportRowsFromVisibleRows(
       base[t('reportSalesShareMonth')] = percentText(getContextPercent(row, selectedMonth));
     }
     if (!selectedMonth) {
-      EN_MONTHS.forEach((month: any, index: any) => {
+      EN_MONTHS.forEach((month, index) => {
         base[month] = amountText(row?.months?.[index]);
       });
       base[t('reportAnnualTotal')] = amountText(row?.total);
@@ -239,9 +254,9 @@ export function buildExportRowsFromVisibleRows(
 }
 
 export function buildExportRows(
-  report: any,
-  lang: any,
-  t: any,
+  report: GeneralProfitLossReport,
+  lang: string,
+  t: (key: string) => string,
   selectedMonth: number | null | undefined,
   exportOpts?: { amountColumnTitle?: string },
 ) {
@@ -267,20 +282,20 @@ export function filterProfitLossExportSummaryOnly<T extends Record<string, unkno
 
 /** بيانات وصفية لصف التصدير (Excel/PDF) — نفس ترتيب الصفوف الممرَّرة */
 export function buildProfitLossExportRowMeta(
-  report: any,
+  report: GeneralProfitLossReport,
   selectedMonthNum: number | null,
-  rows?: any[],
+  rows?: readonly PlDisplayRow[],
 ) {
   const src = rows !== undefined ? rows : buildFlatRows(report, {});
-  return src.map((row: any) => ({
-    rowType: row.rowType as string,
+  return src.map((row) => ({
+    rowType: row.rowType as PlRowType | 'groupTotal' | undefined,
     groupKey: (row.groupKey ?? null) as string | null,
     key: row.key as string | undefined,
     tone: profitLossSummaryTone(row, selectedMonthNum),
   }));
 }
 
-function profitLossSummaryTone(row: any, selectedMonthNum: number | null): 'pos' | 'neg' | undefined {
+function profitLossSummaryTone(row: PlDisplayRow, selectedMonthNum: number | null): 'pos' | 'neg' | undefined {
   if (row.rowType !== 'summary' || (row.key !== 'netProfit' && row.key !== 'grossProfit')) return undefined;
   const amt =
     selectedMonthNum != null

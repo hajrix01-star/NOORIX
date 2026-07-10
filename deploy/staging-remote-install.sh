@@ -112,7 +112,7 @@ cd "$BACKEND_ROOT"
 rm -rf node_modules
 npm ci
 npx prisma generate
-npx prisma migrate deploy
+bash "$DEPLOY_ROOT/prisma-migrate-deploy-with-recovery.sh"
 npm run build
 
 log "==> Install frontend into $FRONTEND_ROOT"
@@ -182,4 +182,3 @@ log "==> Staging API is healthy."
 log "==> Frontend root: $FRONTEND_ROOT"
 log "==> Backend service: $SERVICE_NAME"
 log "==> Staging deploy completed for $DEPLOY_SHA"
-

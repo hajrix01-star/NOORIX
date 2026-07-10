@@ -30,6 +30,25 @@ Keep the answer concise and business-friendly.
 Arabic first when the user writes Arabic.
 Structure: one short opening sentence on overall status, then 1–3 bullet points based only on warnings/insights from the JSON. If there are no warnings and no relevant insights in the JSON, say the neutral line that current figures do not exceed configured warning thresholds (in both languages).`;
 
+type GeminiGenerateContentResponse = {
+  candidates?: Array<{
+    finishReason?: string;
+    content?: {
+      parts?: Array<{ text?: string }>;
+    };
+  }>;
+};
+
+function getGeminiCandidateText(data: GeminiGenerateContentResponse): string | null {
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  return typeof text === 'string' && text.trim() ? text : null;
+}
+
+function getGeminiFinishReason(data: GeminiGenerateContentResponse): string | undefined {
+  const reason = data.candidates?.[0]?.finishReason;
+  return typeof reason === 'string' ? reason : undefined;
+}
+
 @Injectable()
 export class GeminiService {
   private readonly apiKey: string | null;
@@ -92,8 +111,8 @@ export class GeminiService {
         return null;
       }
 
-      const data = (await response.json()) as any;
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const data: GeminiGenerateContentResponse = await response.json();
+      const text = getGeminiCandidateText(data);
       if (!text) return null;
 
       const parsed = extractJson<{ intent?: string; period?: string | null; confidence?: number }>(text);
@@ -184,8 +203,8 @@ export class GeminiService {
 
         if (!response.ok) return null;
 
-        const data = (await response.json()) as any;
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const data: GeminiGenerateContentResponse = await response.json();
+        const text = getGeminiCandidateText(data);
         if (!text) return null;
 
         const parsed = extractJson<{ answerAr?: string; answerEn?: string }>(text);
@@ -250,8 +269,8 @@ export class GeminiService {
 
       if (!response.ok) return null;
 
-      const data = (await response.json()) as any;
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const data: GeminiGenerateContentResponse = await response.json();
+      const text = getGeminiCandidateText(data);
       if (!text) return null;
 
       const parsed = extractJson<{ answerAr?: string; answerEn?: string }>(text);
@@ -326,10 +345,10 @@ ${textSample}
         this.logger.warn(`Phase1 API ${response.status}: ${errText.slice(0, 300)}`);
         return null;
       }
-      const data = (await response.json()) as any;
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const data: GeminiGenerateContentResponse = await response.json();
+      const text = getGeminiCandidateText(data);
       if (!text) {
-        const reason = data?.candidates?.[0]?.finishReason;
+        const reason = getGeminiFinishReason(data);
         this.logger.warn(`Phase1 no text, finishReason: ${reason}`);
         return null;
       }
@@ -415,8 +434,8 @@ ${sampleRows}
         this.logger.warn(`Phase2 API ${response.status}: ${errText.slice(0, 300)}`);
         return null;
       }
-      const data = (await response.json()) as any;
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const data: GeminiGenerateContentResponse = await response.json();
+      const text = getGeminiCandidateText(data);
       if (!text) {
         this.logger.warn(`Phase2 no text`);
         return null;
@@ -498,8 +517,8 @@ ${headerText}
         }),
       });
       if (!response.ok) return null;
-      const data = (await response.json()) as any;
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const data: GeminiGenerateContentResponse = await response.json();
+      const text = getGeminiCandidateText(data);
       if (!text) return null;
       const parsed = extractJson<{
         customer_name?: string;

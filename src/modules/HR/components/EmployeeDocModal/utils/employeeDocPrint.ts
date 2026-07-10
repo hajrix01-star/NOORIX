@@ -1,13 +1,16 @@
-import { openPrintWindow } from '../../../../../utils/printUtils';
+import { buildPrintDocumentHtml } from '../../../../../utils/printUtils';
 import { EMPLOYEE_DOC_EXTRA_CSS } from '../constants';
-import type { PrintWindowStub } from '../types';
 
-export function buildPrintWindow(title: string, html: string): PrintWindowStub {
-  openPrintWindow({ title, body: html, extraCss: EMPLOYEE_DOC_EXTRA_CSS });
-  return {
-    onload: null,
-    onafterprint: null,
-    print: () => {},
-    close: () => {},
-  };
+export type EmployeeDocPrintOptions = {
+  companyName?: string;
+  companyLogo?: string;
+};
+
+export function buildEmployeeDocPrintHtml(title: string, html: string, _options: EmployeeDocPrintOptions = {}): string {
+  return buildPrintDocumentHtml({
+    title,
+    subtitle: title,
+    body: html,
+    extraCss: EMPLOYEE_DOC_EXTRA_CSS,
+  });
 }

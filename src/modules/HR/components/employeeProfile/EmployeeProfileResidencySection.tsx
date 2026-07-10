@@ -1,9 +1,33 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
-import { hrFmt } from '../../utils/hrFmt';
-import { Badge, Button, KebabMenu, SmartTable, cn } from '../../../../ui';
-import { HRActionsCell } from '../HRActionsCell';
+import { Badge, Button, SmartTable, cn } from '../../../../ui';
 import { HR_SERVICE_CATEGORY_LABEL_KEYS, formatHrServiceDetail, formatHrServiceSecondaryDate } from '../../constants/employeeHrServiceCategories';
 import { HrServiceQuickAddBar } from '../HrServiceQuickAddBar';
+
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+type ProfileResidencyRow = Record<string, unknown> & {
+  id?: string | null;
+  serviceCategory?: string | null;
+  iqamaNumber?: string | null;
+  referenceLabel?: string | null;
+  issueDate?: string | null;
+  expiryDate?: string | null;
+  status?: string | null;
+  invoiceId?: string | null;
+  invoice?: { invoiceNumber?: string | number | null; totalAmount?: number | string | null } | null;
+  invoiceNumber?: string | number | null;
+  residencyInvoiceAmount?: number | string | null;
+  invoiceAmount?: number | string | null;
+};
+type EmployeeProfileResidencySectionProps = {
+  t: TranslationFn;
+  residencies: ProfileResidencyRow[];
+  residencyProfileStatusMap: Record<string, unknown>;
+  canAddService?: boolean;
+  canEditService?: boolean;
+  onQuickAdd?: (category: string) => void;
+  onOpenService?: (row: ProfileResidencyRow) => void;
+  onDeleteService?: (row: ProfileResidencyRow) => void;
+};
 
 export function EmployeeProfileResidencySection({
   t,
@@ -13,29 +37,12 @@ export function EmployeeProfileResidencySection({
   canEditService,
   onQuickAdd,
   onOpenService,
-  onDeleteService,
-}: any) {
-  const enrichedRows = (residencies || []).map((row: any) => ({
+}: EmployeeProfileResidencySectionProps) {
+  const enrichedRows = (residencies || []).map((row) => ({
     ...row,
     invoiceNumber: row.invoice?.invoiceNumber || null,
     invoiceAmount: row.residencyInvoiceAmount ?? row.invoice?.totalAmount,
   }));
-
-  const serviceKebabItems = (row: any) => [
-    { key: 'view', label: t('view'), onClick: () => onOpenService?.(row) },
-    {
-      key: 'edit',
-      label: t('edit'),
-      style: { color: 'var(--noorix-accent-green)' },
-      onClick: () => onOpenService?.(row),
-    },
-    ...(canEditService && onDeleteService ? [{
-      key: 'delete',
-      label: t('delete'),
-      style: { color: 'var(--noorix-accent-red)' },
-      onClick: () => onDeleteService(row),
-    }] : []),
-  ];
 
   return (
     <div className="noorix-surface-card overflow-hidden">
@@ -55,14 +62,13 @@ export function EmployeeProfileResidencySection({
       <SmartTable
         compact
         showRowNumbers
-        rowNumberWidth="1%"
         innerPadding={8}
         columns={[
           {
             key: 'serviceCategory',
             label: t('hrServiceCategory'),
-            width: '18%',
-            render: (_v: any, row: any) => (
+            size: 'supplier',
+            render: (_v: unknown, row: ProfileResidencyRow) => (
               <Badge
                 color="blue"
                 size="sm"
@@ -73,8 +79,8 @@ export function EmployeeProfileResidencySection({
           {
             key: 'serviceDetail',
             label: t('hrServiceDetailColumn'),
-            width: '18%',
-            render: (_v: any, row: any) => (
+            size: 'name',
+            render: (_v: unknown, row: ProfileResidencyRow) => (
               <Button
                 variant="raw"
                 type="button"
@@ -88,16 +94,16 @@ export function EmployeeProfileResidencySection({
           {
             key: 'secondary',
             label: t('hrServiceSecondaryColumn'),
-            width: '16%',
-            render: (_v: any, row: any) => (
+            size: 'date',
+            render: (_v: unknown, row: ProfileResidencyRow) => (
               <span className="nx-cell-muted-sm">{formatHrServiceSecondaryDate(row, t, formatSaudiDate)}</span>
             ),
           },
           {
             key: 'invoiceNumber',
             label: t('invoiceNumber'),
-            width: '14%',
-            render: (_v: any, row: any) => (
+            size: 'document',
+            render: (_v: unknown, row: ProfileResidencyRow) => (
               row.invoiceNumber ? (
                 <Button
                   variant="raw"
@@ -115,33 +121,16 @@ export function EmployeeProfileResidencySection({
           {
             key: 'status',
             label: t('status'),
-            width: '14%',
-            render: (v: any) => <Badge {...Badge.fromStatus(v, residencyProfileStatusMap)} size="sm" />,
+            kind: 'status',
+            render: (v: unknown) => <Badge {...Badge.fromStatus(v, residencyProfileStatusMap)} size="sm" />,
           },
-          ...(canEditService
-            ? [{
-                key: 'actions',
-                label: t('actions'),
-                width: '10%',
-                align: 'center',
-                render: (_: any, row: any) => (
-                  <HRActionsCell
-                    row={row}
-                    type="residency"
-                    onView={() => onOpenService?.(row)}
-                    onEdit={() => onOpenService?.(row)}
-                    onDelete={onDeleteService ? () => onDeleteService(row) : undefined}
-                  />
-                ),
-              }]
-            : []),
         ]}
         data={enrichedRows}
         total={enrichedRows.length}
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={(row: any) => (
+        renderCompactRow={(row: ProfileResidencyRow) => (
           <div
             className={cn(canEditService && 'cursor-pointer')}
             onClick={canEditService ? () => onOpenService?.(row) : undefined}
@@ -167,16 +156,11 @@ export function EmployeeProfileResidencySection({
                 {row.invoiceNumber && (
                   <span className="text-[12px] ltr text-noorix-blue">{row.invoiceNumber}</span>
                 )}
-                {canEditService && (
-                  <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-                    <KebabMenu ariaLabel={t('actions')} items={serviceKebabItems(row)} />
-                  </div>
-                )}
               </div>
             </div>
           </div>
         )}
-        renderMobileCard={(row: any) => (
+        renderMobileCard={(row: ProfileResidencyRow) => (
           <div
             className={cn('flex flex-col gap-2', canEditService && 'cursor-pointer')}
             onClick={canEditService ? () => onOpenService?.(row) : undefined}
@@ -205,11 +189,6 @@ export function EmployeeProfileResidencySection({
                 <div className="text-[12px] text-noorix-text">{formatSaudiDate(row.expiryDate)}</div>
               </div>
             </div>
-            {canEditService && (
-              <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
-                <KebabMenu ariaLabel={t('actions')} items={serviceKebabItems(row)} />
-              </div>
-            )}
           </div>
         )}
       />

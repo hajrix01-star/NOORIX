@@ -1,6 +1,7 @@
 import React from 'react';
-import type { SmartTableColumn, SmartTableFooterSegment } from './types';
+import type { SmartTableColumn, SmartTableFooterSegment, SmartTableRow } from './types';
 import { columnLabel } from './columnUtils';
+import { buildFooterCellStyle, buildFooterRowNumberStyle } from './smartTableStyles';
 
 type FooterCellCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
 
@@ -9,30 +10,28 @@ export { columnLabel, getAlign } from './columnUtils';
 /**
  * يحوّل footerRow إلى خلايا <td> مدركة لإخفاء الأعمدة — نفس المنطق السابق.
  */
-export function buildFooterCells({
+export function buildFooterCells<TRow extends SmartTableRow = SmartTableRow>({
   footerRow,
   columns,
   hiddenCols,
   showRowNumbers,
-  rowNumberWidth,
-  cellPad,
 }: {
   footerRow: SmartTableFooterSegment[];
-  columns: SmartTableColumn[];
+  columns: SmartTableColumn<TRow>[];
   hiddenCols: Set<string>;
   showRowNumbers: boolean;
-  rowNumberWidth?: number | string;
-  cellPad: { th: string; td: string };
 }): React.ReactNode[] {
   const cells: React.ReactNode[] = [];
-  const rowNumberStyle: FooterCellCssVars = {
-    '--nx-smart-footer-rn-width': rowNumberWidth || 36,
-    '--nx-smart-footer-rn-padding': cellPad.td,
-  };
+  const rowNumberStyle: FooterCellCssVars = buildFooterRowNumberStyle();
+  const footerCellStyle: FooterCellCssVars = buildFooterCellStyle();
 
   if (showRowNumbers) {
     cells.push(
-      <td key="__num__" className="nx-smart-footer-rn-cell" style={rowNumberStyle} />,
+      <td
+        key="__num__"
+        className="nx-row-number-td nx-smart-row-number-cell nx-smart-footer-cell-vars"
+        style={rowNumberStyle}
+      />,
     );
   }
 
@@ -82,7 +81,8 @@ export function buildFooterCells({
         <td
           key={item.key}
           colSpan={totalSpan > 1 ? totalSpan : undefined}
-          className={item.className || undefined}
+          className={['nx-smart-footer-cell-vars', item.className].filter(Boolean).join(' ') || undefined}
+          style={footerCellStyle}
         >
           {item.content}
         </td>,
@@ -92,7 +92,14 @@ export function buildFooterCells({
   }
 
   if (pendingSpan > 0) {
-    cells.push(<td key="__trail__" colSpan={pendingSpan > 1 ? pendingSpan : undefined} />);
+    cells.push(
+      <td
+        key="__trail__"
+        colSpan={pendingSpan > 1 ? pendingSpan : undefined}
+        className="nx-smart-footer-cell-vars"
+        style={footerCellStyle}
+      />,
+    );
   }
 
   return cells;

@@ -1,105 +1,92 @@
-﻿/**
- * ExpensesScreen — المصاريف الثابتة والمتغيرة
- * نفس إيقاع الموارد البشرية: nx-page-header، تبويبات متصلة، محتوى تبويب داخل ScreenShell embedded + pt-4
- */
-import React, { useState, useMemo, useEffect } from 'react';
-import { useTabSearchParam } from '../../hooks/useTabSearchParam';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useApiListQuery } from '../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { getExpenseLines, deactivateExpenseLine } from '../../services/api';
+import { deactivateExpenseLine, getExpenseLines } from '../../services/api';
 import { expenseKeys } from '../../services/queryKeys';
-import { Button, ScreenTabs, ScreenShell, cn } from '../../ui';
+import { Button, ScreenTabs, ScreenShell, cn, FilterToolbar } from '../../ui';
 import { DateFilterBar, useDateFilter } from '../../ui/date';
-import FilterToolbar from '../../shared/components/FilterToolbar';
+import type { ExpenseLineKind, ExpenseLineRecord } from '../../types/api';
 import ExpenseLineList from './components/ExpenseLineList';
 import ExpenseLineDetailModal from './components/ExpenseLineDetailModal';
 import ExpenseLineFormModal from './components/ExpenseLineFormModal';
 import ExpenseFormModal from './components/ExpenseFormModal';
 import ExpenseBatchTable from './components/ExpenseBatchTable';
 import PaymentHistoryTab from './components/PaymentHistoryTab';
+import { expenseLineDisplayName } from './expenseModels';
 
-const TABS = [
+type ExpenseTabId = 'lines' | 'entry' | 'batch' | 'payments';
+
+const TABS: Array<{ id: ExpenseTabId; labelKey: string; shortLabelKey: string }> = [
   { id: 'lines', labelKey: 'expenseLinesTab', shortLabelKey: 'expenseLinesTabShort' },
   { id: 'entry', labelKey: 'expenseEntryTab', shortLabelKey: 'expenseEntryTabShort' },
   { id: 'batch', labelKey: 'expenseBatchTab', shortLabelKey: 'expenseBatchTabShort' },
   { id: 'payments', labelKey: 'paymentHistoryTab', shortLabelKey: 'paymentHistoryTabShort' },
 ];
-const EXPENSE_TAB_IDS = TABS.map((tab: any) => tab.id);
+
+const EXPENSE_TAB_IDS = TABS.map((tab) => tab.id);
 
 export default function ExpensesScreen() {
   const { activeCompanyId } = useApp();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const queryClient = useQueryClient();
   const dateFilter = useDateFilter();
+  const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useTabSearchParam(EXPENSE_TAB_IDS, 'lines');
-  const { showToast } = useToast();
-  const [selectedLineId, setSelectedLineId] = useState<any>(null);
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [editingLine, setEditingLine] = useState<any>(null);
-  const [filterKind, setFilterKind] = useState('');
+  const [editingLine, setEditingLine] = useState<ExpenseLineRecord | null>(null);
+  const [filterKind, setFilterKind] = useState<ExpenseLineKind | ''>('');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
 
-  const { data: expenseLines = [], isLoading: linesLoading, isError: linesError } = useApiListQuery<any>({
+  const { data: expenseLines = [], isLoading: linesLoading, isError: linesError } = useApiListQuery<ExpenseLineRecord>({
     queryKey: expenseKeys.linesWithKind(companyId, filterKind),
     queryFn: () => getExpenseLines(companyId, filterKind || undefined),
     fallbackMessage: t('loadingError'),
     enabled: !!companyId,
   });
 
-  const handleLineClick = (line: any) => setSelectedLineId(line?.id ?? null);
-  const handleCloseDetail = () => setSelectedLineId(null);
+  const refreshExpenseLines = () => queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
 
-  const handleCreateLine = () => {
-    setEditingLine(null);
-    setShowFormModal(true);
-  };
-  const handleEditLine = (line: any) => {
-    setEditingLine(line);
-    setShowFormModal(true);
-  };
-  const handleCloseForm = () => {
-    setShowFormModal(false);
-    setEditingLine(null);
-  };
-
-  const handleDeleteLine = (line: any) => {
-    if (!confirm(`هل تريد إلغاء تفعيل بند المصروف "${line.nameAr || line.nameEn}"؟\n(لن يُحذف حذفاً نهائياً، بل سيُستبعد من القوائم النشطة)`)) return;
+  const handleDeleteLine = (line: ExpenseLineRecord) => {
+    const lineName = expenseLineDisplayName(line, lang);
+    if (!window.confirm(`${t('deleteConfirm') || 'Confirm delete'}: ${lineName}`)) return;
     deactivateExpenseLine(line.id, companyId)
       .then(() => {
-        queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
-        showToast(t('savedSuccessfully') || 'تم إلغاء التفعيل بنجاح');
+        refreshExpenseLines();
+        showToast(t('savedSuccessfully'));
       })
-      .catch((err: any) => showToast(err?.message || 'فشل', 'error'));
+      .catch((error: Error) => showToast(error.message || t('saveFailed'), 'error'));
   };
 
   const handleFormSaved = () => {
     invalidateOnFinancialMutation(queryClient);
-    queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
-    handleCloseForm();
-    showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
+    refreshExpenseLines();
+    setShowFormModal(false);
+    setEditingLine(null);
+    showToast(t('savedSuccessfully'));
   };
 
   const expenseTabItems = useMemo(
     () =>
-      TABS.map((tab: any) => {
+      TABS.map((tab) => {
         const full = t(tab.labelKey);
-        const short = tab.shortLabelKey ? t(tab.shortLabelKey) : full;
-        const label =
-          short === full ? (
-            full
-          ) : (
+        const short = t(tab.shortLabelKey);
+        return {
+          id: tab.id,
+          label: short === full ? full : (
             <>
               <span className="hidden sm:inline">{full}</span>
               <span className="sm:hidden">{short}</span>
             </>
-          );
-        return { id: tab.id, label };
+          ),
+        };
       }),
     [t],
   );
@@ -115,14 +102,14 @@ export default function ExpensesScreen() {
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>
           <p className="text-[13px] text-noorix-muted m-0 mt-1">{t('expensesDesc')}</p>
         </div>
-        {companyId && (
+        {companyId ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-1.5 text-[13px]">
               <span className="text-noorix-muted shrink-0">{t('expenseLinesTab')}</span>
               <span className="font-bold tabular-nums text-noorix-blue">{expenseLines.length}</span>
             </span>
           </div>
-        )}
+        ) : null}
       </div>
 
       <ScreenTabs
@@ -131,7 +118,7 @@ export default function ExpensesScreen() {
         onChange={setActiveTab}
         contentClassName="nx-tab-content min-h-[200px]"
       >
-        {activeTab === 'lines' && (
+        {activeTab === 'lines' ? (
           !companyId ? (
             <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
           ) : (
@@ -142,16 +129,17 @@ export default function ExpensesScreen() {
               isError={linesError}
               filterKind={filterKind}
               onFilterKindChange={setFilterKind}
-              onCreateLine={handleCreateLine}
-              onRefresh={() => queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() })}
-              onLineClick={handleLineClick}
-              onEditLine={handleEditLine}
-              onDeleteLine={handleDeleteLine}
+              onCreateLine={() => {
+                setEditingLine(null);
+                setShowFormModal(true);
+              }}
+              onRefresh={refreshExpenseLines}
+              onLineClick={(line) => setSelectedLineId(line.id)}
             />
           )
-        )}
+        ) : null}
 
-        {activeTab === 'entry' && (
+        {activeTab === 'entry' ? (
           <ScreenShell embedded className={cn('pt-4')}>
             {!companyId ? (
               <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
@@ -163,33 +151,36 @@ export default function ExpensesScreen() {
                     {t('expenseRecordNew')}
                   </Button>
                 </div>
-                {showExpenseForm && (
+                {showExpenseForm ? (
                   <ExpenseFormModal
                     companyId={companyId}
                     onClose={() => setShowExpenseForm(false)}
                     onSaved={() => {
                       setShowExpenseForm(false);
                       invalidateOnFinancialMutation(queryClient);
-                      queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
-                      showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
+                      refreshExpenseLines();
+                      showToast(t('savedSuccessfully'));
                     }}
                   />
-                )}
+                ) : null}
               </>
             )}
           </ScreenShell>
-        )}
+        ) : null}
 
-        {activeTab === 'batch' && (
-          <ExpenseBatchTable embedded companyId={companyId} onSaved={() => {
-            invalidateOnFinancialMutation(queryClient);
-            queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
-            showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
-          }}
+        {activeTab === 'batch' ? (
+          <ExpenseBatchTable
+            embedded
+            companyId={companyId}
+            onSaved={() => {
+              invalidateOnFinancialMutation(queryClient);
+              refreshExpenseLines();
+              showToast(t('savedSuccessfully'));
+            }}
           />
-        )}
+        ) : null}
 
-        {activeTab === 'payments' && (
+        {activeTab === 'payments' ? (
           <ScreenShell embedded className={cn('pt-4')}>
             {!companyId ? (
               <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
@@ -202,28 +193,35 @@ export default function ExpensesScreen() {
               </>
             )}
           </ScreenShell>
-        )}
+        ) : null}
       </ScreenTabs>
 
-      {selectedLineId && (
+      {selectedLineId ? (
         <ExpenseLineDetailModal
           lineId={selectedLineId}
           companyId={companyId}
-          onClose={handleCloseDetail}
+          onClose={() => setSelectedLineId(null)}
           dateFilter={dateFilter}
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() })}
+          onRefresh={refreshExpenseLines}
+          onEditLine={(line) => {
+            setEditingLine(line);
+            setShowFormModal(true);
+          }}
+          onDeleteLine={handleDeleteLine}
         />
-      )}
+      ) : null}
 
-      {showFormModal && (
+      {showFormModal ? (
         <ExpenseLineFormModal
           companyId={companyId}
           editing={editingLine}
-          onClose={handleCloseForm}
+          onClose={() => {
+            setShowFormModal(false);
+            setEditingLine(null);
+          }}
           onSaved={handleFormSaved}
         />
-      )}
-
+      ) : null}
     </ScreenShell>
   );
 }

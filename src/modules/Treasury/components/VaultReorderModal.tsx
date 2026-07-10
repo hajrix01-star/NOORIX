@@ -5,31 +5,40 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Modal, Badge } from '../../../ui';
+import type { VaultRecord } from '../../../types/api';
 
-export function VaultReorderModal({ open, onClose, vaultsList, onApply, isSaving }: any) {
+type VaultReorderModalProps = {
+  open: boolean;
+  onClose: () => void;
+  vaultsList: VaultRecord[];
+  onApply: (vaultIds: string[]) => void;
+  isSaving: boolean;
+};
+
+export function VaultReorderModal({ open, onClose, vaultsList, onApply, isSaving }: VaultReorderModalProps) {
   const { t, lang } = useTranslation();
-  const [orderedIds, setOrderedIds] = useState<any[]>([]);
+  const [orderedIds, setOrderedIds] = useState<string[]>([]);
 
-  const vaultById = useMemo(() => new Map(vaultsList.map((v: any) => [v.id, v])), [vaultsList]);
+  const vaultById = useMemo(() => new Map(vaultsList.map((v) => [v.id, v])), [vaultsList]);
 
   useEffect(() => {
     if (open) {
       const ids = [...vaultsList]
-        .filter((v: any) => v.isActive !== false && !v.isArchived)
+        .filter((v) => v.isActive !== false && !v.isArchived)
         .sort(
-          (a: any, b: any) =>
+          (a, b) =>
             (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
             String(a.nameAr).localeCompare(String(b.nameAr), 'ar'),
         )
-        .map((v: any) => v.id);
+        .map((v) => v.id);
       setOrderedIds(ids);
     }
   }, [open, vaultsList]);
 
-  function move(i: any, dir: any) {
+  function move(i: number, dir: number) {
     const j = i + dir;
     if (j < 0 || j >= orderedIds.length) return;
-    setOrderedIds((prev: any) => {
+    setOrderedIds((prev) => {
       const next = [...prev];
       [next[i], next[j]] = [next[j], next[i]];
       return next;
@@ -40,7 +49,7 @@ export function VaultReorderModal({ open, onClose, vaultsList, onApply, isSaving
     <Modal open={open} onClose={onClose} title={t('vaultReorderTitle')} size="md">
       <p className="text-[13px] text-noorix-muted mb-3 m-0">{t('vaultReorderHint')}</p>
       <ul className="flex flex-col gap-2 max-h-[min(60vh,420px)] overflow-y-auto p-0 m-0 list-none">
-        {orderedIds.map((id: any, i: any) => {
+        {orderedIds.map((id, i) => {
           const v = vaultById.get(id);
           if (!v) return null;
           return (
@@ -53,7 +62,7 @@ export function VaultReorderModal({ open, onClose, vaultsList, onApply, isSaving
                   {vaultDisplayName(v, lang)}
                 </span>
                 <div className="flex flex-wrap gap-1">
-                  {(v as { isSalesChannel?: boolean }).isSalesChannel ? (
+                  {v.isSalesChannel ? (
                     <Badge color="green" size="sm">
                       {t('salesChannel')}
                     </Badge>

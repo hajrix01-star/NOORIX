@@ -1,6 +1,6 @@
 import React from 'react';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
-import { Checkbox, Input, cn, FmtNum } from '../../../../../ui';
+import { Checkbox, EditableNumberCell, cn, FmtNum } from '../../../../../ui';
 import type { PayrollRunLineItem } from '../types';
 
 type Emp = { id?: string; name?: string; nameAr?: string };
@@ -76,50 +76,41 @@ export function PayrollRunRowsTable({
                       <FmtNum n={items[idx].grossSalary} className="payroll-run-cell-num nx-font-numbers" />
                     </td>
                     <td className="text-center">
-                      <Input
-                        type="number"
-                        inputMode="decimal"
+                      <EditableNumberCell
                         step={1}
-                        min={0}
-                        size="sm"
                         className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
                         value={items[idx].allowancesAdd ?? 0}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           updateItem(idx, 'allowancesAdd', e.target.value)
                         }
+                        selectOnFocus
                         onFocus={selectInput}
                         aria-label={t('payrollAllowances')}
                       />
                     </td>
                     <td className="text-center">
-                      <Input
-                        type="number"
-                        inputMode="decimal"
+                      <EditableNumberCell
                         step={1}
-                        min={0}
-                        size="sm"
                         className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
                         value={items[idx].deductions ?? 0}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           updateItem(idx, 'deductions', e.target.value)
                         }
+                        selectOnFocus
                         onFocus={selectInput}
                         aria-label={t('payrollDeductions')}
                       />
                     </td>
                     <td className="text-center">
-                      <Input
-                        type="number"
-                        inputMode="decimal"
+                      <EditableNumberCell
                         step={1}
-                        min={0}
-                        size="sm"
                         className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
                         value={items[idx].advancesDeduct ?? 0}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           updateItem(idx, 'advancesDeduct', e.target.value)
                         }
                         disabled={items[idx].deferAdvances}
+                        selectOnFocus
                         onFocus={selectInput}
                         aria-label={t('payrollAdvances')}
                       />

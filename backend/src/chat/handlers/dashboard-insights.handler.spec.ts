@@ -1,4 +1,5 @@
 import { PERMISSIONS } from '../../auth/constants/permissions';
+import Decimal from 'decimal.js';
 import { INSIGHTS_SCHEMA_VERSION } from '../../reporting/insights/insights.types';
 import type { DashboardInsightsPayload } from '../../reporting/insights/insights.types';
 import { EXTENDED_REPORTING_INSIGHTS_SCHEMA_VERSION } from '../../reporting/insights/reporting-insights-aggregator.types';
@@ -223,11 +224,40 @@ const RAW_PAYLOAD_KEYS = [
   'expenseInsights',
 ] as const;
 
+function mockDependency<T extends object>(value: object): T {
+  return value as T;
+}
+
+const chatFinancialMetricsMock = mockDependency<ChatHandlerContext['chatFinancialMetrics']>({
+  sumRevenue: jest.fn().mockResolvedValue(new Decimal(10_000)),
+  sumPurchases: jest.fn().mockResolvedValue(new Decimal(2_000)),
+  sumOperatingExpenses: jest.fn().mockResolvedValue(new Decimal(1_000)),
+  annualSales: jest.fn().mockResolvedValue(new Decimal(10_000)),
+  annualPurchases: jest.fn().mockResolvedValue(new Decimal(2_000)),
+  annualExpenses: jest.fn().mockResolvedValue(new Decimal(1_000)),
+});
+
+type ChatHandlerContextTestOverrides = Partial<
+  Omit<
+    ChatHandlerContext,
+    | 'dashboardInsightsService'
+    | 'reportingInsightsAggregatorService'
+    | 'prisma'
+    | 'reportsService'
+    | 'vaultsService'
+    | 'chatFinancialMetrics'
+  >
+> & {
+  prisma?: object;
+  reportsService?: object;
+  vaultsService?: object;
+  chatFinancialMetrics?: object;
+  dashboardInsightsService?: { buildDashboardInsights: jest.Mock };
+  reportingInsightsAggregatorService?: { getExtendedInsights: jest.Mock };
+};
+
 function mkCtx(
-  partial: Partial<Omit<ChatHandlerContext, 'dashboardInsightsService' | 'reportingInsightsAggregatorService'>> & {
-    dashboardInsightsService?: { buildDashboardInsights: jest.Mock };
-    reportingInsightsAggregatorService?: { getExtendedInsights: jest.Mock };
-  },
+  partial: ChatHandlerContextTestOverrides,
 ): ChatHandlerContext {
   const buildDashboardInsights = partial.dashboardInsightsService?.buildDashboardInsights ?? jest.fn();
   const getExtendedInsights =
@@ -244,21 +274,40 @@ function mkCtx(
     year: 2024,
     month: 3,
     period: null as ChatHandlerContext['period'],
-    can: (p: string) =>
-      [PERMISSIONS.SMART_CHAT_READ, PERMISSIONS.REPORTS_READ].includes(p as any),
-    prisma: {},
-    reportsService: {},
-    vaultsService: {},
-    dashboardInsightsService: { buildDashboardInsights } as unknown as ChatHandlerContext['dashboardInsightsService'],
-    reportingInsightsAggregatorService: { getExtendedInsights } as unknown as ChatHandlerContext['reportingInsightsAggregatorService'],
+    can: (p: string) => p === PERMISSIONS.SMART_CHAT_READ || p === PERMISSIONS.REPORTS_READ,
+    prisma: mockDependency<ChatHandlerContext['prisma']>({}),
+    reportsService: mockDependency<ChatHandlerContext['reportsService']>({}),
+    vaultsService: mockDependency<ChatHandlerContext['vaultsService']>({}),
+    chatFinancialMetrics: chatFinancialMetricsMock,
+    dashboardInsightsService: mockDependency<ChatHandlerContext['dashboardInsightsService']>({ buildDashboardInsights }),
+    reportingInsightsAggregatorService: mockDependency<ChatHandlerContext['reportingInsightsAggregatorService']>({
+      getExtendedInsights,
+    }),
     ...partial,
   };
   if (partial.dashboardInsightsService) {
-    base.dashboardInsightsService = partial.dashboardInsightsService as unknown as ChatHandlerContext['dashboardInsightsService'];
+    base.dashboardInsightsService = mockDependency<ChatHandlerContext['dashboardInsightsService']>(
+      partial.dashboardInsightsService,
+    );
   }
   if (partial.reportingInsightsAggregatorService) {
-    base.reportingInsightsAggregatorService =
-      partial.reportingInsightsAggregatorService as unknown as ChatHandlerContext['reportingInsightsAggregatorService'];
+    base.reportingInsightsAggregatorService = mockDependency<
+      ChatHandlerContext['reportingInsightsAggregatorService']
+    >(partial.reportingInsightsAggregatorService);
+  }
+  if (partial.prisma) {
+    base.prisma = mockDependency<ChatHandlerContext['prisma']>(partial.prisma);
+  }
+  if (partial.reportsService) {
+    base.reportsService = mockDependency<ChatHandlerContext['reportsService']>(partial.reportsService);
+  }
+  if (partial.vaultsService) {
+    base.vaultsService = mockDependency<ChatHandlerContext['vaultsService']>(partial.vaultsService);
+  }
+  if (partial.chatFinancialMetrics) {
+    base.chatFinancialMetrics = mockDependency<ChatHandlerContext['chatFinancialMetrics']>(
+      partial.chatFinancialMetrics,
+    );
   }
   return base as ChatHandlerContext;
 }

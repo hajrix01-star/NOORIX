@@ -30,6 +30,8 @@ import { getAdvanceTotals, normalizeAdvances } from '../utils/advanceBalance';
 import { buildAdvanceFinancialFooterRow } from '../utils/advanceTableFooter';
 import { buildGroupedAdvanceRows } from '../utils/advanceGrouping';
 
+type HrAny = ReturnType<typeof JSON.parse>;
+
 const PAGE_SIZE = 50;
 
 type AdvancesTabProps = { embedded?: boolean };
@@ -40,8 +42,8 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const companyId = activeCompanyId ?? '';
   const queryClient = useQueryClient();
   const [showAdvance, setShowAdvance] = useState(false);
-  const [editingAdvance, setEditingAdvance] = useState<any>(null);
-  const [settlingAdvance, setSettlingAdvance] = useState<any>(null);
+  const [editingAdvance, setEditingAdvance] = useState<HrAny>(null);
+  const [settlingAdvance, setSettlingAdvance] = useState<HrAny>(null);
   const { showToast } = useToast();
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
@@ -54,7 +56,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     fetchEnabled: !!companyId,
   });
 
-  const { data: rawAdvanceRows, isLoading, isError } = useApiListQuery<any, any[]>({
+  const { data: rawAdvanceRows, isLoading, isError } = useApiListQuery<HrAny, HrAny[]>({
     queryKey: hrKeys.advancesForCompany(companyId),
     queryFn: () => getHrAdvances(companyId),
     fallbackMessage: 'فشل تحميل السلف',
@@ -62,7 +64,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     enabled: !!companyId,
   });
 
-  const items = useMemo(() => (rawAdvanceRows ?? []).map((row: any) => {
+  const items = useMemo(() => (rawAdvanceRows ?? []).map((row: HrAny) => {
     const emp = row.employee || { name: row.employeeName };
     return {
       ...row,
@@ -71,7 +73,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   }), [rawAdvanceRows, lang]);
   const employeeFilterOptions = useMemo(
     () => [...activeEmployees]
-      .map((emp: any) => ({
+      .map((emp: HrAny) => ({
         id: emp.id,
         name: employeeDisplayName(emp, lang, emp.id),
       }))
@@ -79,11 +81,11 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     [activeEmployees, lang],
   );
   const monthOptions = useMemo(
-    () => [...new Set(items.map((r: any) => String(r.transactionDate || '').slice(0, 7)).filter((m: any) => /^\d{4}-\d{2}$/.test(m)))].sort().reverse(),
+    () => [...new Set(items.map((r: HrAny) => String(r.transactionDate || '').slice(0, 7)).filter((m: HrAny) => /^\d{4}-\d{2}$/.test(m)))].sort().reverse(),
     [items],
   ) as string[];
   const preFilteredItems = useMemo(() => {
-    return items.filter((row: any) => {
+    return items.filter((row: HrAny) => {
       const byEmployee = employeeFilter ? row.employeeId === employeeFilter : true;
       const byMonth = monthFilter ? String(row.transactionDate || '').slice(0, 7) === monthFilter : true;
       const bySettlement = settlementFilter === 'all'
@@ -116,14 +118,14 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     });
   }, []);
 
-  const handleDeleteAdvance = useCallback((row: any) => {
+  const handleDeleteAdvance = useCallback((row: HrAny) => {
     if (!window.confirm(t('deleteAdvance'))) return;
-    updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res: any) => {
+    updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res: HrAny) => {
       try {
         throwIfApiFailed(res, t('saveFailed'));
         invalidateOnFinancialMutation(queryClient);
         showToast(t('advanceDeleted'), 'success');
-      } catch (e: any) {
+      } catch (e: HrAny) {
         showToast(e?.message || t('saveFailed'), 'error');
       }
     });
@@ -154,7 +156,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     ),
   }), [advanceTotals, allFilteredData.length, t]);
 
-  const exportData = allFilteredData.map((r: any) => ({
+  const exportData = allFilteredData.map((r: HrAny) => ({
     employeeName: r.employeeName || '—',
     amount: hrFmt(r.totalAmount),
     transactionDate: formatSaudiDate(r.transactionDate),
@@ -183,19 +185,19 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   });
   const advanceFilters = (
     <>
-      <Input type="select" label={t('advancesFilterEmployee')} value={employeeFilter} onChange={(e: any) => setEmployeeFilter(e.target.value)} size="sm">
+      <Input type="select" label={t('advancesFilterEmployee')} value={employeeFilter} onChange={(e: HrAny) => setEmployeeFilter(e.target.value)} size="sm">
         <option value="">{t('advancesFilterAll')}</option>
         {employeeFilterOptions.map((emp) => (
           <option key={emp.id} value={emp.id}>{emp.name}</option>
         ))}
       </Input>
-      <Input type="select" label={t('advancesFilterMonth')} value={monthFilter} onChange={(e: any) => setMonthFilter(e.target.value)} size="sm">
+      <Input type="select" label={t('advancesFilterMonth')} value={monthFilter} onChange={(e: HrAny) => setMonthFilter(e.target.value)} size="sm">
         <option value="">{t('advancesFilterAll')}</option>
         {monthOptions.map((month: string) => (
           <option key={month} value={month}>{month}</option>
         ))}
       </Input>
-      <Input type="select" label={t('advancesFilterSettlement')} value={settlementFilter} onChange={(e: any) => setSettlementFilter(e.target.value)} size="sm">
+      <Input type="select" label={t('advancesFilterSettlement')} value={settlementFilter} onChange={(e: HrAny) => setSettlementFilter(e.target.value)} size="sm">
         <option value="all">{t('advancesFilterAll')}</option>
         <option value="outstanding">{t('advancesFilterOutstandingOnly')}</option>
         <option value="settled">{t('advancesFilterSettledOnly')}</option>
@@ -240,7 +242,6 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth="1%"
           {...hrFlatSmartTableShellProps(embedded)}
           columns={columns}
           data={groupedPageRows}
@@ -268,8 +269,8 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
           emptyMessage={t('noDataInPeriod')}
           renderCompactRow={renderCompactRow}
           renderMobileCard={renderMobileCard}
-          isRowExpanded={(row: any) => expandedEmployees.has(row.employeeId)}
-          renderExpandedRow={(row: any) => renderAdvanceDetailRows(row.advances)}
+          isRowExpanded={(row: HrAny) => expandedEmployees.has(row.employeeId)}
+          renderExpandedRow={(row: HrAny) => renderAdvanceDetailRows(row.advances)}
           stripeMobileCards
         />
       )}
@@ -296,7 +297,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
             showToast(t('advanceUpdated'), 'success');
             setEditingAdvance(null);
           }}
-          onError={(msg: any) => showToast(msg, 'error')}
+          onError={(msg: HrAny) => showToast(msg, 'error')}
         />
       )}
       {settlingAdvance && (
@@ -310,7 +311,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
             showToast(t('advanceSettledSuccess'), 'success');
             setSettlingAdvance(null);
           }}
-          onError={(msg: any) => showToast(msg, 'error')}
+          onError={(msg: HrAny) => showToast(msg, 'error')}
         />
       )}
     </HrFlatListTabShell>

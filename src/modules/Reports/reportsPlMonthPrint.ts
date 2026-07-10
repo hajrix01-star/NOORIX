@@ -12,6 +12,8 @@ import {
   getContextPercent,
   percentText,
 } from './reportHelpers';
+import type { GeneralProfitLossReport, PlDisplayRow } from './reportTypes';
+import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../utils/printTableHtml';
 
 function esc(s: string) {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -25,13 +27,13 @@ function monthIdx0(m: number) {
   return m - 1;
 }
 
-function groupMonthAmount(report: any, key: string, m: number): string {
-  const g = report?.groups?.find((x: any) => x.key === key);
+function groupMonthAmount(report: GeneralProfitLossReport, key: string, m: number): string {
+  const g = report.groups.find((x) => x.key === key);
   return g?.months?.[monthIdx0(m)] ?? '0';
 }
 
-function summaryMonthAmount(report: any, key: string, m: number): string {
-  const s = report?.summaryRows?.find((x: any) => x.key === key);
+function summaryMonthAmount(report: GeneralProfitLossReport, key: string, m: number): string {
+  const s = report.summaryRows.find((x) => x.key === key);
   return s?.months?.[monthIdx0(m)] ?? '0';
 }
 
@@ -60,7 +62,7 @@ function densityClass(rowCount: number): string {
 
 type TFn = (key: string) => string;
 
-function buildExecutiveSummaryHtml(report: any, m: number, _lang: string, t: TFn): string {
+function buildExecutiveSummaryHtml(report: GeneralProfitLossReport, m: number, _lang: string, t: TFn): string {
   const sales = groupMonthAmount(report, 'sales', m);
   const pur = groupMonthAmount(report, 'purchases', m);
   const exp = groupMonthAmount(report, 'expenses', m);
@@ -75,21 +77,28 @@ function buildExecutiveSummaryHtml(report: any, m: number, _lang: string, t: TFn
     { label: t('annualNetProfit'), val: net, sub: `${t('reportPlKpiOfSales')} ${pctOfPart(net, sales)}` },
   ];
 
-  const kpiRow = cells
+  const kpiCells = cells
     .map((c) => {
       const subLine = c.sub ? `<div class="pl-kpi-sub">${esc(c.sub)}</div>` : '';
-      return `<td class="pl-kpi-cell">
+      return {
+        className: 'pl-kpi-cell',
+        html: `
         <div class="pl-kpi-label">${esc(c.label)}</div>
         <div class="pl-kpi-val">${esc(amountText(c.val))} <span class="pl-sr">SR</span></div>
         ${subLine}
-      </td>`;
-    })
-    .join('');
+      `,
+      };
+    });
+  const kpiTable = buildPrintHtmlTable({
+    bodyRows: [{ cells: kpiCells }],
+    tableClassName: 'pl-kpi',
+    wrapperClassName: null,
+  });
 
   return (
     `<section class="pl-exec-summary" aria-label="${esc(t('reportPlExecutiveSummary'))}">
       <h3 class="pl-section-title">${esc(t('reportPlExecutiveSummary'))}</h3>
-      <table class="pl-kpi" role="presentation"><tr>${kpiRow}</tr></table>
+      ${kpiTable}
       <p class="pl-formula-foot">${esc(t('reportPlFormulaSmart'))}</p>
     </section>`
   );
@@ -294,7 +303,7 @@ table.pl-grid tbody tr.pl-row-detail:nth-child(even) td.pl-col-num { background:
 }
 
 export function buildPlMonthStatementBody(opts: {
-  report: any;
+  report: GeneralProfitLossReport;
   selectedMonthNumber: number;
   monthLabel: string;
   year: number;
@@ -307,25 +316,19 @@ export function buildPlMonthStatementBody(opts: {
   const { report, selectedMonthNumber, monthLabel, year, lang, t, amountColumnTitle, collapsedGroups } = opts;
   const printFlat = buildFlatRows(report, collapsedGroups);
   const printRows = buildVisibleRows(printFlat, collapsedGroups);
-  const hasDetailLines = printRows.some((row: any) => row.rowType === 'item' || row.rowType === 'category');
+  const hasDetailLines = printRows.some((row) => row.rowType === 'item' || row.rowType === 'category');
   const m = selectedMonthNumber;
   const n = printRows.length;
   const zoom = getPlMonthPrintZoom(n);
   const dens = densityClass(n);
 
-  const head = `<thead><tr>
-    <th class="pl-col-desc">${esc(t('reportItem'))}</th>
-    <th class="pl-col-num">${esc(amountColumnTitle)}</th>
-    <th class="pl-col-num">${esc(t('reportSalesShareMonth'))}</th>
-  </tr></thead>`;
-
-  const bodyParts: string[] = ['<tbody>'];
-  printRows.forEach((row: any, i: number) => {
+  const bodyRows: PrintHtmlTableRow[] = [];
+  printRows.forEach((row: PlDisplayRow, i: number) => {
     if (row.rowType === 'group' && i > 0) {
-      bodyParts.push('<tr class="pl-gap"><td colspan="3"></td></tr>');
+      bodyRows.push({ className: 'pl-gap', cells: [{ value: '', colSpan: 3 }] });
     }
 
-    const label = esc(displayLabel(row, lang));
+    const label = displayLabel(row, lang);
     const amt = amountText(getContextAmount(row, m));
     const pctM = percentText(getContextPercent(row, m));
 
@@ -343,20 +346,32 @@ export function buildPlMonthStatementBody(opts: {
       row.rowType === 'summary' && (row.key === 'netProfit' || row.key === 'grossProfit')
         ? Number(getContextAmount(row, m) || 0)
         : null;
-    const amtAttr =
+    const amtStyle =
       summaryAmt != null && Number.isFinite(summaryAmt)
-        ? ` style="color:${summaryAmt < 0 ? '#b91c1c' : '#15803d'}"`
+        ? `color:${summaryAmt < 0 ? '#b91c1c' : '#15803d'}`
         : '';
 
-    bodyParts.push(
-      `<tr class="${trClass}">` +
-        `<td class="pl-col-desc">${label}</td>` +
-        `<td class="pl-col-num"${amtAttr}>${esc(amt)}</td>` +
-        `<td class="pl-col-num">${esc(pctM)}</td>` +
-        `</tr>`,
-    );
+    bodyRows.push({
+      className: trClass,
+      cells: [
+        { value: label, className: 'pl-col-desc' },
+        { value: amt, className: 'pl-col-num', style: amtStyle },
+        { value: pctM, className: 'pl-col-num' },
+      ],
+    });
   });
-  bodyParts.push('</tbody>');
+  const detailTable = buildPrintHtmlTable({
+    tableClassName: 'pl-grid',
+    wrapperClassName: null,
+    headerRows: [{
+      cells: [
+        { value: t('reportItem'), className: 'pl-col-desc' },
+        { value: amountColumnTitle, className: 'pl-col-num' },
+        { value: t('reportSalesShareMonth'), className: 'pl-col-num' },
+      ],
+    }],
+    bodyRows,
+  });
 
   const title = esc(t('reportIncomeStatementTitle'));
   const period = esc(periodLine(t, monthLabel, year));
@@ -374,7 +389,7 @@ export function buildPlMonthStatementBody(opts: {
     summaryHtml +
     `<section class="pl-detail-block">` +
     `<h3 class="pl-section-title">${esc(hasDetailLines ? t('reportPlDetailSectionTitle') : t('reportPlDetailSectionTitleSummary'))}</h3>` +
-    `<table class="pl-grid">${head}${bodyParts.join('')}</table>` +
+    detailTable +
     `</section>` +
     `<p class="pl-footer-meta">${meta} · ${esc(t('reportPlSinglePageLayout'))}</p>` +
     `</div></div>`

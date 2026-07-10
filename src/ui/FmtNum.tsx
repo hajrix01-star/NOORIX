@@ -1,6 +1,8 @@
 import React from 'react';
 import { fmt, fmtTax } from '../utils/format';
 
+type NumericDisplayValue = number | string | null | undefined | { toNumber: () => number };
+
 /**
  * FmtNum — يعرض الجزء الصحيح بالخط العادي
  * والكسر العشري بلون رمادي خافت وحجم أصغر.
@@ -17,12 +19,14 @@ export function FmtNum({
   tax = false,
   className = '',
 }: {
-  n: number;
+  n: NumericDisplayValue;
   maxDecimals?: number;
   tax?: boolean;
   className?: string;
 }) {
-  const str = tax ? fmtTax(n) : fmt(n, maxDecimals);
+  const numeric = typeof n === 'object' && n && 'toNumber' in n ? n.toNumber() : Number(n ?? 0);
+  const safeNumber = Number.isFinite(numeric) ? numeric : 0;
+  const str = tax ? fmtTax(safeNumber) : fmt(safeNumber, maxDecimals);
   const dotIdx = str.indexOf('.');
 
   if (dotIdx === -1) {

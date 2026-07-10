@@ -5,19 +5,18 @@ import React, { useMemo } from 'react';
 import Decimal from 'decimal.js';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { splitTaxFromTotal, sumObjectValues } from '@noorix/finance-core';
-import { Button, Input, FmtNum, Card } from '../../../ui';
+import { Button, Input, Card, SummaryBar, type SummaryBarItem } from '../../../ui';
 import type { SalesShiftValue } from '../constants/salesShift';
 import type { ShiftEntryFormState } from '../constants/salesShiftEntry';
 import { shiftEntryTitleKey } from '../constants/salesShiftEntry';
 import { formatSalesApiAmount } from '../utils/salesApiPayload';
-
-type VaultRow = { id: string; nameAr?: string; nameEn?: string; [key: string]: unknown };
+import type { SalesInputVaultRef } from '../../../types/api/domains/sales';
 
 type Props = {
   shift: SalesShiftValue;
   form: ShiftEntryFormState;
   onChange: (next: ShiftEntryFormState) => void;
-  salesChannels: VaultRow[];
+  salesChannels: SalesInputVaultRef[];
   salesChannelsLoading?: boolean;
   salesChannelsError?: string;
   lang: string;
@@ -56,6 +55,17 @@ export function SalesShiftEntryCard({
   const patch = (partial: Partial<ShiftEntryFormState>) => onChange({ ...form, ...partial });
 
   const shiftEmoji = shift === 'morning' ? '🌅' : shift === 'evening' ? '🌙' : '☀️';
+  const summaryItems: SummaryBarItem[] = [
+    { key: 'total', label: t('totalLabel'), value: totalAmount.toNumber(), tone: 'green', currency: 'SR' },
+    ...(vatEnabled && totalAmount.gt(0)
+      ? [
+          { key: 'net', label: t('net'), value: totalNet.toNumber(), tone: 'blue' as const, currency: 'SR' },
+          { key: 'tax', label: t('tax'), value: totalTax.toNumber(), tone: 'amber' as const, currency: 'SR' },
+        ]
+      : []),
+    { key: 'customers', label: t('customersLabel'), value: form.customerCount || 0, tone: 'blue' },
+    { key: 'average', label: t('avgPerOrder'), value: avgPerCustomer.toNumber(), currency: 'SR' },
+  ];
 
   return (
     <Card className="flex flex-col gap-3 p-4">
@@ -146,40 +156,7 @@ export function SalesShiftEntryCard({
         placeholder={t('notesPlaceholder')}
       />
 
-      <div className={`noorix-summary-bar noorix-summary-bar--${vatEnabled && totalAmount.gt(0) ? '5' : '3'}`}>
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('totalLabel')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">
-            <FmtNum n={totalAmount.toNumber()} /> <span className="nx-sar">SR</span>
-          </div>
-        </div>
-        {vatEnabled && totalAmount.gt(0) && (
-          <>
-            <div className="noorix-summary-bar__item">
-              <div className="noorix-summary-bar__label">الصافي</div>
-              <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">
-                <FmtNum n={totalNet.toNumber()} /> <span className="nx-sar">SR</span>
-              </div>
-            </div>
-            <div className="noorix-summary-bar__item">
-              <div className="noorix-summary-bar__label">الضريبة</div>
-              <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">
-                <FmtNum n={totalTax.toNumber()} /> <span className="nx-sar">SR</span>
-              </div>
-            </div>
-          </>
-        )}
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('customersLabel')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{form.customerCount || 0}</div>
-        </div>
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('avgPerOrder')}</div>
-          <div className="noorix-summary-bar__value">
-            <FmtNum n={avgPerCustomer.toNumber()} /> <span className="nx-sar">SR</span>
-          </div>
-        </div>
-      </div>
+      <SummaryBar items={summaryItems} />
     </Card>
   );
 }
@@ -187,7 +164,7 @@ export function SalesShiftEntryCard({
 /** هل بطاقة الشفت جاهزة للحفظ؟ */
 export function isShiftEntryFormValid(
   form: ShiftEntryFormState,
-  salesChannels: VaultRow[],
+  salesChannels: SalesInputVaultRef[],
 ): boolean {
   const cc = parseInt(form.customerCount, 10) || 0;
   if (cc <= 0) return false;
@@ -200,7 +177,7 @@ export function isShiftEntryFormValid(
 export function buildShiftEntryPayload(
   shift: SalesShiftValue,
   form: ShiftEntryFormState,
-  salesChannels: VaultRow[],
+  salesChannels: SalesInputVaultRef[],
 ) {
   const channels = salesChannels
     .map((v) => ({

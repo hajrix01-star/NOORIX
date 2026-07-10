@@ -351,7 +351,7 @@ export class AccountingInitService {
           code:      sub.code,
           nameAr:    sub.nameAr,
           nameEn:    sub.nameEn,
-          type:      parent.type as any,
+          type:      parent.type,
           sortOrder: sub.sortOrder ?? 0,
           isActive:  true,
         },

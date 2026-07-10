@@ -3,26 +3,26 @@
  * العرض فقط؛ المنطق في useHajriTaxScreen.
  */
 import React, { useCallback } from 'react';
-import { getRowValue, roundMoney2 } from '../../constants/taxDisclosure';
+import { getRowValue, roundMoney2, type TaxDisclosureField, type TaxDisclosureRowKey } from '../../constants/taxDisclosure';
 import { Button, FileTrigger, Input } from '../../ui';
 import HajriTaxDetailEditor from './HajriTaxDetailEditor';
 import HajriTaxRegistryList from './HajriTaxRegistryList';
 import HajriTaxNewDeclarationModal from './HajriTaxNewDeclarationModal';
 import HajriTaxBulkImportModal from './HajriTaxBulkImportModal';
 import { useHajriTaxScreen } from './useHajriTaxScreen';
+import type { HajriTaxCellEdit, VatPlanningRecord } from '../../types/api/domains/hajriTax';
 
 export default function HajriTaxScreen() {
   const s = useHajriTaxScreen();
 
   const renderEditableCell = useCallback(
-    (key: any, field: any) => {
+    (key: TaxDisclosureRowKey, field: TaxDisclosureField) => {
       const cellId = `${key}:${field}`;
       const raw = getRowValue(s.draftData, key, field);
       const n = Number(raw);
       const rounded = Number.isFinite(n) ? roundMoney2(n) : NaN;
       const isZero = !Number.isFinite(rounded) || rounded === 0;
-      const committed =
-        raw === '' || raw === null || raw === undefined || !Number.isFinite(n) || isZero ? '' : rounded.toFixed(2);
+      const committed = !Number.isFinite(n) || isZero ? '' : rounded.toFixed(2);
       const display = s.cellEdit?.id === cellId ? s.cellEdit.text : committed;
 
       return (
@@ -34,18 +34,17 @@ export default function HajriTaxScreen() {
           placeholder=" "
           onFocus={() => {
             if (s.detailReadOnly) return;
-            const start =
-              raw === '' || raw === null || raw === undefined || !Number.isFinite(n) || isZero ? '' : roundMoney2(n).toFixed(2);
+            const start = !Number.isFinite(n) || isZero ? '' : roundMoney2(n).toFixed(2);
             s.setCellEdit({ id: cellId, text: start });
           }}
           onBlur={() => {
-            s.setCellEdit((cur: any) => {
+            s.setCellEdit((cur: HajriTaxCellEdit | null) => {
               if (cur?.id !== cellId) return cur;
               s.updateRow(key, field, cur.text);
               return null;
             });
           }}
-          onChange={(e: any) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             if (s.detailReadOnly) return;
             const text = e.target.value;
             s.setCellEdit({ id: cellId, text });
@@ -68,49 +67,52 @@ export default function HajriTaxScreen() {
   if (s.detailCompanyId) {
     const { name, tax } = s.companyMeta(s.detailCompanyId);
     return (
-      <HajriTaxDetailEditor
-        t={s.t}
-        lang={s.lang}
-        periodLabel={s.periodLabel}
-        companyName={name}
-        taxNumber={tax}
-        closeDetail={s.closeDetail}
-        handleImportFromTaxReport={s.handleImportFromTaxReport}
-        importingReport={s.importingReport}
-        handleSaveDetail={s.handleSaveDetail}
-        savePending={s.upsertMutation.isPending}
-        printDetail={s.printDetail}
-        exportDetailExcel={s.exportDetailExcel}
-        saveHint={s.saveHint}
-        outputTotal={s.outputTotal}
-        inputTotal={s.inputTotal}
-        netPayableDraft={s.netPayableDraft}
-        netVat={s.netVat}
-        priorAdj={s.priorAdj}
-        balanceCarried={s.balanceCarried}
-        paymentTargetStr={s.paymentTargetStr}
-        setPaymentTargetStr={s.setPaymentTargetStr}
-        notes={s.notes}
-        setNotes={s.setNotes}
-        sourceSnapshot={s.sourceSnapshot}
-        showSimulator={s.showSimulator}
-        setShowSimulator={s.setShowSimulator}
-        handleBalancePayment={s.handleBalancePayment}
-        simulatorRequiredInputVat={s.simulatorRequiredInputVat}
-        simulatorEstimatedBaseAt15={s.simulatorEstimatedBaseAt15}
-        simulatorInvalidTarget={s.simulatorInvalidTarget}
-        paymentTargetParsed={s.paymentTargetParsed}
-        renderEditableCell={renderEditableCell}
-        updateRow={s.updateRow}
-        salesAmountIncludesVat={s.salesAmountIncludesVat}
-        setSalesAmountIncludesVat={s.setSalesAmountIncludesVat}
-        readOnly={s.detailReadOnly}
-        onSwitchToEdit={() => s.setDetailReadOnly(false)}
-        filingSubmitted={s.detailFilingSubmitted}
-        onApproveFiling={() => void s.persistDetailFilingSubmitted(true)}
-        onReopenFiling={() => void s.persistDetailFilingSubmitted(false)}
-        filingActionPending={s.upsertMutation.isPending}
-      />
+      <>
+        {s.printPreviewModal}
+        <HajriTaxDetailEditor
+          t={s.t}
+          lang={s.lang}
+          periodLabel={s.periodLabel}
+          companyName={name}
+          taxNumber={tax}
+          closeDetail={s.closeDetail}
+          handleImportFromTaxReport={s.handleImportFromTaxReport}
+          importingReport={s.importingReport}
+          handleSaveDetail={s.handleSaveDetail}
+          savePending={s.upsertMutation.isPending}
+          printDetail={s.printDetail}
+          exportDetailExcel={s.exportDetailExcel}
+          saveHint={s.saveHint}
+          outputTotal={s.outputTotal}
+          inputTotal={s.inputTotal}
+          netPayableDraft={s.netPayableDraft}
+          netVat={s.netVat}
+          priorAdj={s.priorAdj}
+          balanceCarried={s.balanceCarried}
+          paymentTargetStr={s.paymentTargetStr}
+          setPaymentTargetStr={s.setPaymentTargetStr}
+          notes={s.notes}
+          setNotes={s.setNotes}
+          sourceSnapshot={s.sourceSnapshot}
+          showSimulator={s.showSimulator}
+          setShowSimulator={s.setShowSimulator}
+          handleBalancePayment={s.handleBalancePayment}
+          simulatorRequiredInputVat={s.simulatorRequiredInputVat}
+          simulatorEstimatedBaseAt15={s.simulatorEstimatedBaseAt15}
+          simulatorInvalidTarget={s.simulatorInvalidTarget}
+          paymentTargetParsed={s.paymentTargetParsed}
+          renderEditableCell={renderEditableCell}
+          updateRow={s.updateRow}
+          salesAmountIncludesVat={s.salesAmountIncludesVat}
+          setSalesAmountIncludesVat={s.setSalesAmountIncludesVat}
+          readOnly={s.detailReadOnly}
+          onSwitchToEdit={() => s.setDetailReadOnly(false)}
+          filingSubmitted={s.detailFilingSubmitted}
+          onApproveFiling={() => void s.persistDetailFilingSubmitted(true)}
+          onReopenFiling={() => void s.persistDetailFilingSubmitted(false)}
+          filingActionPending={s.upsertMutation.isPending}
+        />
+      </>
     );
   }
 
@@ -140,6 +142,7 @@ export default function HajriTaxScreen() {
 
   return (
     <>
+      {s.printPreviewModal}
       <HajriTaxRegistryList
         t={s.t}
         lang={s.lang}
@@ -155,8 +158,8 @@ export default function HajriTaxScreen() {
         filterCompanyId={s.regFilterCompany}
         setFilterCompanyId={s.setRegFilterCompany}
         onNewDeclaration={() => s.setShowNewDeclarationModal(true)}
-        onViewRow={(row: any) => s.openFromRegistryRow(row, 'view')}
-        onEditRow={(row: any) => s.openFromRegistryRow(row, 'edit')}
+        onViewRow={(row: VatPlanningRecord) => s.openFromRegistryRow(row, 'view')}
+        onEditRow={(row: VatPlanningRecord) => s.openFromRegistryRow(row, 'edit')}
         onRegistryFilingChange={s.handleRegistryFilingChange}
         filingBusyRowId={s.filingBusyRowId}
         jsonToolbar={jsonToolbar}

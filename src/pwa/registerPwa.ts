@@ -5,6 +5,18 @@ import { registerSW } from 'virtual:pwa-register';
 
 let refreshingForNewSw = false;
 
+async function clearDevelopmentServiceWorkers(): Promise<void> {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+  }
+
+  if (typeof caches !== 'undefined') {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((key) => caches.delete(key)));
+  }
+}
+
 function listenForServiceWorkerRefresh(): void {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -16,6 +28,11 @@ function listenForServiceWorkerRefresh(): void {
 
 export function registerPwa(): void {
   if (typeof window === 'undefined') return;
+  if (import.meta.env.DEV) {
+    void clearDevelopmentServiceWorkers();
+    return;
+  }
+
   listenForServiceWorkerRefresh();
 
   registerSW({

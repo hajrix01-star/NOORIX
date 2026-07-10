@@ -175,7 +175,6 @@ export async function loadInvoiceDayCloseReport(
       netAmount: inv.netAmount.toString(),
       taxAmount: inv.taxAmount.toString(),
       transactionDate: inv.transactionDate,
-      notes: inv.notes,
       hasInvoiceAttachment: !!(inv.attachmentPath && String(inv.attachmentPath).trim()),
       attachmentOriginalName: inv.attachmentOriginalName ?? null,
       supplierNameAr: inv.supplier?.nameAr ?? null,
@@ -196,7 +195,6 @@ export async function loadInvoiceDayCloseReport(
     customerCount: s.customerCount,
     cashOnHand: s.cashOnHand.toString(),
     totalAmount: s.totalAmount.toString(),
-    notes: s.notes,
     channels: s.channels.map((ch) => ({
       vaultNameAr: ch.vault?.nameAr ?? '—',
       vaultNameEn: ch.vault?.nameEn ?? null,

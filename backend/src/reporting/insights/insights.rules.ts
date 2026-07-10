@@ -39,7 +39,7 @@ export type AccountingSnapshot = {
 export function parseAmount(value: unknown): number | null {
   if (value == null || value === '') return null;
   if (typeof value === 'number' && Number.isFinite(value)) return value;
-  const n = parseFloat(String(value));
+  const n = Number(String(value).replace(/,/g, '').trim());
   return Number.isFinite(n) ? n : null;
 }
 
@@ -490,7 +490,7 @@ function buildUnusualProfitChangeItem(
     id,
     severity: isUp ? 'info' : 'warning',
     category: 'profitability',
-    metricBasis: 'accounting_pl' as InsightMetricBasis,
+    metricBasis: 'accounting_pl',
     titleAr: isUp ? titleArUp : titleArDown,
     titleEn: isUp ? titleEnUp : titleEnDown,
     detailAr: isUp ? detailArUp(pct) : detailArDown(pct),

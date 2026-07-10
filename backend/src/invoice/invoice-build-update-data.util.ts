@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import type { UpdateInvoiceDto } from './dto/update-invoice.dto';
+import { parseInvoiceDate } from './invoice-date.util';
 
 /** حقول التحديث المباشرة من DTO — بدون منطق إلغاء أو قيود. */
 export function buildInvoiceUncheckedUpdateFromDto(dto: UpdateInvoiceDto): Prisma.InvoiceUncheckedUpdateInput {
@@ -8,8 +9,8 @@ export function buildInvoiceUncheckedUpdateFromDto(dto: UpdateInvoiceDto): Prism
   if (dto.supplierInvoiceNumber !== undefined) updateData.supplierInvoiceNumber = dto.supplierInvoiceNumber;
   if (dto.kind !== undefined) updateData.kind = dto.kind;
   if (dto.totalAmount !== undefined) updateData.totalAmount = new Prisma.Decimal(dto.totalAmount);
-  if (dto.transactionDate !== undefined) updateData.transactionDate = new Date(dto.transactionDate);
-  if (dto.settledAt !== undefined) updateData.settledAt = dto.settledAt ? new Date(dto.settledAt) : null;
+  if (dto.transactionDate !== undefined) updateData.transactionDate = parseInvoiceDate(dto.transactionDate);
+  if (dto.settledAt !== undefined) updateData.settledAt = dto.settledAt ? parseInvoiceDate(dto.settledAt, 'settledAt') : null;
   if (dto.settledAmount !== undefined) updateData.settledAmount = new Prisma.Decimal(dto.settledAmount);
   if (dto.vaultSplits !== undefined && dto.vaultSplits.length > 0) {
     updateData.vaultId = dto.vaultSplits.length === 1 ? dto.vaultSplits[0].vaultId : null;

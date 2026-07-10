@@ -4,21 +4,22 @@ import {
   filterOrderCategoriesForManageTab,
   filterOrderProductsForManageTab,
 } from './itemsManageModel';
+import type { OrderCategory, OrderProduct } from '../../../types/api';
 
 describe('itemsManageModel', () => {
-  const products = [
+  const products: OrderProduct[] = [
     {
       id: 'p1',
-      nameAr: 'برجر دجاج',
+      nameAr: 'Chicken burger',
       nameEn: 'Chicken burger',
       categoryId: 'c1',
-      category: { nameAr: 'وجبات', nameEn: 'Meals' },
+      category: { id: 'c1', nameAr: 'Meals', nameEn: 'Meals' },
       sections: ['hot'],
       variants: [{ size: 'large', packaging: 'box', unit: 'piece', lastPrice: '20' }],
     },
     {
       id: 'p2',
-      nameAr: 'ماء',
+      nameAr: 'Water',
       nameEn: 'Water',
       categoryId: 'c2',
       sections: [],
@@ -34,24 +35,24 @@ describe('itemsManageModel', () => {
   });
 
   it('filters categories by Arabic or English name', () => {
-    const categories = [
-      { id: 'c1', nameAr: 'وجبات', nameEn: 'Meals' },
-      { id: 'c2', nameAr: 'مشروبات', nameEn: 'Drinks' },
+    const categories: OrderCategory[] = [
+      { id: 'c1', nameAr: 'Meals', nameEn: 'Meals' },
+      { id: 'c2', nameAr: 'Drinks', nameEn: 'Drinks' },
     ];
     expect(filterOrderCategoriesForManageTab(categories, 'drink')).toEqual([categories[1]]);
-    expect(filterOrderCategoriesForManageTab(categories, 'وج')).toEqual([categories[0]]);
+    expect(filterOrderCategoriesForManageTab(categories, 'meal')).toEqual([categories[0]]);
   });
 
   it('builds a simple product payload when no real variants exist', () => {
     expect(buildOrderProductPayload({
-      nameAr: '  ماء  ',
+      nameAr: '  Water  ',
       nameEn: '',
       categoryId: '',
-      sectionIds: ['', undefined],
+      sectionIds: [''],
       simpleLastPrice: '5',
       variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
     }, 'sale')).toEqual({
-      nameAr: 'ماء',
+      nameAr: 'Water',
       nameEn: undefined,
       categoryId: undefined,
       sectionIds: undefined,
@@ -62,7 +63,7 @@ describe('itemsManageModel', () => {
 
   it('builds a variants payload and normalizes empty fields', () => {
     expect(buildOrderProductPayload({
-      nameAr: 'وجبة',
+      nameAr: 'Meal',
       nameEn: 'Meal',
       categoryId: 'c1',
       sectionIds: ['hot', ''],
@@ -71,7 +72,7 @@ describe('itemsManageModel', () => {
         { size: '', packaging: '', unit: 'piece', lastPrice: '' },
       ],
     }, 'order')).toEqual({
-      nameAr: 'وجبة',
+      nameAr: 'Meal',
       nameEn: 'Meal',
       categoryId: 'c1',
       sectionIds: ['hot'],

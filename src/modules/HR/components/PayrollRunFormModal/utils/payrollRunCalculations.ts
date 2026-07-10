@@ -19,6 +19,12 @@ import {
   parseDeferredMonth,
 } from './payrollRunMappers';
 
+type PayrollCompensationTotalSnapshot = {
+  salaryPackage?: {
+    total?: unknown;
+  };
+};
+
 export function computeLeaveSettledEmployeeIds(
   leaveSalarySettlements: Array<{ employeeId?: string }>,
 ): Set<string> {
@@ -159,7 +165,7 @@ type BuildLineDeps = {
   emp: Record<string, unknown> & { id?: string };
   payrollMonth: string;
   defaultMonth: string;
-  compensationSnapshotByEmployeeId: Map<string, any>;
+  compensationSnapshotByEmployeeId: Map<string, PayrollCompensationTotalSnapshot>;
   leaveDaysByEmployee: Map<string, Set<string>>;
   settledDaysByEmployee: Map<string, Set<string>>;
   advancesByEmployee: Map<string, PayrollAdvanceDueRow[]>;

@@ -1,91 +1,135 @@
-/**
- * BatchEditPanel — عرض دفعة وتعديل/حذف فواتيرها
- * جدول على العرض الواسع، بطاقات تحت 700px — سطر موحّد: BatchEditInvoiceLine
- */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt, sumAmounts } from '../../../utils/format';
-import { Button, AdaptiveSheet } from '../../../ui';
+import { DialogActions, AdaptiveSheet } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { useIsNarrow700 } from '../../../ui';
 import { toDateInputYmd } from '../../../utils/saudiDate';
-import { BatchEditInvoiceLine } from './BatchEditInvoiceLine';
+import {
+  BatchEditInvoiceLine,
+  type BatchEditInvoiceUpdater,
+} from './BatchEditInvoiceLine';
+import { toPurchaseBatchFiniteNumber, toPurchaseBatchPositiveNumber } from '../batch/purchaseBatchNumberModel';
+import type {
+  PurchaseBatchEditableInvoice,
+  PurchaseBatchInvoice,
+  PurchaseBatchSupplier,
+  PurchaseBatchSummaryRow,
+} from '../batch/purchaseBatchTypes';
 
-export function BatchEditPanel({ batch, suppliers, companyId: _companyId, vatRateDecimal, onSaveInvoice, onClose }: any) {
+export type BatchEditPanelProps = {
+  batch: PurchaseBatchSummaryRow;
+  suppliers: PurchaseBatchSupplier[];
+  companyId: string;
+  vatRateDecimal?: number;
+  onSaveInvoice: (invoice: PurchaseBatchInvoice) => Promise<unknown>;
+  onClose: () => void;
+};
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function toEditableInvoice(invoice: PurchaseBatchInvoice): PurchaseBatchEditableInvoice {
+  return {
+    ...invoice,
+    totalAmount: toPurchaseBatchFiniteNumber(invoice.totalAmount),
+    netAmount: toPurchaseBatchFiniteNumber(invoice.netAmount),
+    taxAmount: toPurchaseBatchFiniteNumber(invoice.taxAmount),
+    transactionDate: toDateInputYmd(invoice.transactionDate) || '',
+  };
+}
+
+export function BatchEditPanel({
+  batch,
+  suppliers,
+  vatRateDecimal,
+  onSaveInvoice,
+  onClose,
+}: BatchEditPanelProps) {
   const { t, lang } = useTranslation();
   const narrow = useIsNarrow700();
-  const invList = batch?.invoices || batch || [];
-  const [invoices, setInvoices] = useState(() =>
-    invList.map((i: any) => ({
-      ...i,
-      totalAmount: Number(i.totalAmount),
-      netAmount: Number(i.netAmount),
-      taxAmount: Number(i.taxAmount),
-      transactionDate: toDateInputYmd(i.transactionDate) || '',
-    })),
+  const [invoices, setInvoices] = useState<PurchaseBatchEditableInvoice[]>(() =>
+    batch.invoices.map(toEditableInvoice),
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const batchId = batch?.batchId || invList[0]?.batchId;
+  const batchId = batch.batchId || invoices[0]?.batchId;
 
-  function updateInv(idx: any, fieldOrObj: any, value: any) {
-    setInvoices((p: any) =>
-      p.map((inv: any, i: any) =>
-        i === idx
-          ? typeof fieldOrObj === 'object'
-            ? { ...inv, ...fieldOrObj }
-            : { ...inv, [fieldOrObj]: value }
-          : inv,
+  const updateInv: BatchEditInvoiceUpdater = (index, fieldOrPatch, value) => {
+    setInvoices((previousInvoices) =>
+      previousInvoices.map((invoice, invoiceIndex) =>
+        invoiceIndex === index
+          ? typeof fieldOrPatch === 'object'
+            ? { ...invoice, ...fieldOrPatch }
+            : { ...invoice, [fieldOrPatch]: value }
+          : invoice,
       ),
     );
-  }
+  };
 
   async function handleSave() {
+    const invalidAmount = invoices.find(
+      (invoice) => invoice.status !== 'cancelled' && toPurchaseBatchPositiveNumber(invoice.totalAmount) == null,
+    );
+    if (invalidAmount) {
+      setError(t('purchaseBatchAmountMustBePositive'));
+      return;
+    }
+
     setSaving(true);
     setError('');
     try {
-      for (const inv of invoices) {
-        const res = await onSaveInvoice(inv);
-        throwIfApiFailed(res, t('saveFailed'));
+      for (const invoice of invoices) {
+        const result = await onSaveInvoice(invoice);
+        throwIfApiFailed(result, t('saveFailed'));
       }
-      onClose?.();
-    } catch (e: any) {
-      setError(e?.message || 'فشل الحفظ');
+      onClose();
+    } catch (saveError) {
+      setError(errorMessage(saveError, t('saveFailed')));
     } finally {
       setSaving(false);
     }
   }
 
-  const items = invoices.filter((i: any) => i.status !== 'cancelled');
-  const total = sumAmounts(items, 'totalAmount').toNumber();
+  const activeInvoices = invoices.filter((invoice) => invoice.status !== 'cancelled');
+  const total = sumAmounts(activeInvoices, 'totalAmount').toNumber();
 
   return (
     <AdaptiveSheet
       open
       onClose={onClose}
-      title={`${t('batchLabel', batchId)} — ${t('batchSummary', items.length, fmt(total))}`}
+      title={`${t('batchLabel', batchId)} - ${t('batchSummary', activeInvoices.length, fmt(total))}`}
       size="xl"
       side="start"
       className="batch-edit-drawer"
       footer={
-        <Button variant="primary" disabled={saving} onClick={handleSave}>
-          {saving ? t('saving') : t('saveChanges')}
-        </Button>
+        <DialogActions
+          actions={[
+            {
+              key: 'save',
+              label: saving ? t('saving') : t('saveChanges'),
+              role: 'save',
+              disabled: saving,
+              onClick: handleSave,
+            },
+          ]}
+        />
       }
     >
-      {error && (
+      {error ? (
         <div className="rounded-lg text-[13px] p-3 mb-3 bg-red-50 border border-red-200 text-noorix-red">
           {error}
         </div>
-      )}
+      ) : null}
       {narrow ? (
         <div className="flex flex-col gap-3 min-w-0">
-          {invoices.map((inv: any, i: any) => (
+          {invoices.map((invoice, index) => (
             <BatchEditInvoiceLine
-              key={inv.id || i}
-              inv={inv}
-              i={i}
+              key={invoice.id || index}
+              inv={invoice}
+              i={index}
               suppliers={suppliers}
               lang={lang}
               t={t}
@@ -110,11 +154,11 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, vatRat
               </tr>
             </thead>
             <tbody>
-              {invoices.map((inv: any, i: any) => (
+              {invoices.map((invoice, index) => (
                 <BatchEditInvoiceLine
-                  key={inv.id || i}
-                  inv={inv}
-                  i={i}
+                  key={invoice.id || index}
+                  inv={invoice}
+                  i={index}
                   suppliers={suppliers}
                   lang={lang}
                   t={t}

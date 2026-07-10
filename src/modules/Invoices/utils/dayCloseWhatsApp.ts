@@ -10,89 +10,99 @@ import {
   waShiftSectionTitle,
   waSubheading,
 } from '../../../utils/whatsappTextFormat';
+import { toInvoiceFiniteNumber } from '../invoiceNumberModel';
+import {
+  type DayCloseKindLabels,
+  type DayCloseKindRow,
+  type DayCloseReportData,
+  type DayCloseSalesSummary,
+  pickDayCloseBilingualName,
+} from '../dayCloseReportModel';
 
-export type DayCloseKindLabels = Record<string, string>;
-
-const PURCHASE_KIND = 'purchase';
-const EXPENSE_KINDS = new Set(['expense', 'fixed_expense', 'hr_expense', 'salary', 'advance']);
-
-function pickBilingual(lang: string, nameAr?: string | null, nameEn?: string | null): string {
-  const ar = nameAr != null && String(nameAr).trim() !== '' ? String(nameAr).trim() : '';
-  const en = nameEn != null && String(nameEn).trim() !== '' ? String(nameEn).trim() : '';
-  if (lang === 'en') return en || ar || '—';
-  return ar || en || '—';
-}
-
-function sumByKinds(byKind: any[], kinds: Set<string> | string): number {
-  const set = typeof kinds === 'string' ? new Set([kinds]) : kinds;
-  return (byKind || []).reduce((s, row) => (set.has(row.kind) ? s + Number(row.total || 0) : s), 0);
-}
-
-function countByKinds(byKind: any[], kinds: Set<string> | string): number {
-  const set = typeof kinds === 'string' ? new Set([kinds]) : kinds;
-  return (byKind || []).reduce((s, row) => (set.has(row.kind) ? s + Number(row.count || 0) : s), 0);
-}
-
-function aggregateSalesChannels(salesSummaries: any[], lang: string): { lines: string[]; total: number } {
-  const buckets = new Map<string, { label: string; vaultType: string | null; amount: number }>();
-  let total = 0;
-  for (const s of salesSummaries || []) {
-    total += Number(s.totalAmount || 0);
-    for (const ch of s.channels || []) {
-      const label = pickBilingual(lang, ch.vaultNameAr, ch.vaultNameEn);
-      const amt = Number(ch.amount || 0);
-      if (amt <= 0) continue;
-      const vaultType = ch.vaultType != null ? String(ch.vaultType) : null;
-      const key = `${vaultType || ''}:${label}`;
-      const prev = buckets.get(key);
-      if (prev) prev.amount += amt;
-      else buckets.set(key, { label, vaultType, amount: amt });
-    }
-  }
-  const lines = [...buckets.values()]
-    .sort((a, b) => b.amount - a.amount)
-    .map((b) => waChannelRow(b.label, fmt(b.amount)));
-  return { lines, total };
-}
-
-function salesCustomersTotal(salesSummaries: any[]): number {
-  return (salesSummaries || []).reduce((s, x) => s + Number(x.customerCount || 0), 0);
-}
+type Translate = (key: string, ...args: unknown[]) => string;
 
 export type BuildDayCloseWhatsAppParams = {
   companyName: string;
   dateLabel: string;
-  data: any;
+  data: DayCloseReportData;
   kindLabel: DayCloseKindLabels;
   lang: string;
-  t: (key: string, ...args: unknown[]) => string;
+  t: Translate;
 };
 
-/** ملخص واتساب مختصر لنهاية اليوم — نفس رموز ملخص المبيعات (☀ ☾ ◆ │ ▸) */
-export function buildDayCloseWhatsAppText(p: BuildDayCloseWhatsAppParams): string {
-  const { companyName, dateLabel, data, kindLabel, lang, t } = p;
-  const name = (companyName || '').trim();
-  const byKind = data.byKind || [];
-  const salesSummaries = data.salesSummaries || [];
+const PURCHASE_KIND = 'purchase';
+const EXPENSE_KINDS = new Set(['expense', 'fixed_expense', 'hr_expense', 'salary', 'advance']);
 
-  const inflowTotal = Number(data.sums?.inflow?.total || 0);
-  const outflowTotal = Number(data.sums?.outflow?.total || 0);
+function sumByKinds(byKind: DayCloseKindRow[], kinds: Set<string> | string): number {
+  const set = typeof kinds === 'string' ? new Set([kinds]) : kinds;
+  return byKind.reduce(
+    (sum, row) => (row.kind && set.has(row.kind) ? sum + toInvoiceFiniteNumber(row.total) : sum),
+    0,
+  );
+}
+
+function countByKinds(byKind: DayCloseKindRow[], kinds: Set<string> | string): number {
+  const set = typeof kinds === 'string' ? new Set([kinds]) : kinds;
+  return byKind.reduce(
+    (sum, row) => (row.kind && set.has(row.kind) ? sum + toInvoiceFiniteNumber(row.count) : sum),
+    0,
+  );
+}
+
+function aggregateSalesChannels(salesSummaries: DayCloseSalesSummary[], lang: string) {
+  const buckets = new Map<string, { label: string; vaultType: string | null; amount: number }>();
+  let total = 0;
+
+  for (const summary of salesSummaries) {
+    total += toInvoiceFiniteNumber(summary.totalAmount);
+    for (const channel of summary.channels ?? []) {
+      const label = pickDayCloseBilingualName(lang, channel.vaultNameAr ?? channel.vaultName, channel.vaultNameEn);
+      const amount = toInvoiceFiniteNumber(channel.amount);
+      if (amount <= 0) continue;
+
+      const vaultType = channel.vaultType != null ? String(channel.vaultType) : null;
+      const key = `${vaultType || ''}:${label}`;
+      const previous = buckets.get(key);
+      if (previous) previous.amount += amount;
+      else buckets.set(key, { label, vaultType, amount });
+    }
+  }
+
+  return {
+    lines: [...buckets.values()]
+      .sort((left, right) => right.amount - left.amount)
+      .map((bucket) => waChannelRow(bucket.label, fmt(bucket.amount))),
+    total,
+  };
+}
+
+function salesCustomersTotal(salesSummaries: DayCloseSalesSummary[]) {
+  return salesSummaries.reduce((sum, summary) => sum + toInvoiceFiniteNumber(summary.customerCount), 0);
+}
+
+export function buildDayCloseWhatsAppText(params: BuildDayCloseWhatsAppParams): string {
+  const { companyName, dateLabel, data, kindLabel, lang, t } = params;
+  const name = (companyName || '').trim();
+  const byKind = data.byKind ?? [];
+  const salesSummaries = data.salesSummaries ?? [];
+
+  const inflowTotal = toInvoiceFiniteNumber(data.sums?.inflow?.total);
+  const outflowTotal = toInvoiceFiniteNumber(data.sums?.outflow?.total);
   const netDay = inflowTotal - outflowTotal;
 
   const { lines: channelLines, total: channelsSum } = aggregateSalesChannels(salesSummaries, lang);
-  const salesTotal = salesSummaries.length > 0
-    ? channelsSum || salesSummaries.reduce((s: number, x: any) => s + Number(x.totalAmount || 0), 0)
-    : inflowTotal;
-  const customers = salesSummaries.length > 0
-    ? salesCustomersTotal(salesSummaries)
-    : countByKinds(byKind, 'sale');
+  const salesTotal =
+    salesSummaries.length > 0
+      ? channelsSum || salesSummaries.reduce((sum, summary) => sum + toInvoiceFiniteNumber(summary.totalAmount), 0)
+      : inflowTotal;
+  const customers = salesSummaries.length > 0 ? salesCustomersTotal(salesSummaries) : countByKinds(byKind, 'sale');
 
   const purchasesTotal = sumByKinds(byKind, PURCHASE_KIND);
   const expensesTotal = sumByKinds(byKind, EXPENSE_KINDS);
 
-  const cashIn = Number(data.cash?.dayTotalIn ?? 0);
-  const cashOut = Number(data.cash?.dayTotalOut ?? 0);
-  const cashAvailable = Number(data.cash?.netDay ?? cashIn - cashOut);
+  const cashIn = toInvoiceFiniteNumber(data.cash?.dayTotalIn);
+  const cashOut = toInvoiceFiniteNumber(data.cash?.dayTotalOut);
+  const cashAvailable = toInvoiceFiniteNumber(data.cash?.netDay ?? cashIn - cashOut);
 
   const lines: string[] = [
     waReportHeader(t('dayCloseWaTitle'), name),
@@ -106,7 +116,7 @@ export function buildDayCloseWhatsAppText(p: BuildDayCloseWhatsAppParams): strin
     if (channelLines.length > 0) {
       lines.push(waSubheading(t('dayCloseWaChannels')));
       lines.push(...channelLines);
-    } else if (byKind.some((r: any) => r.kind === 'sale')) {
+    } else if (byKind.some((row) => row.kind === 'sale')) {
       const saleLabel = kindLabel.sale || 'sale';
       lines.push(waMetricLine(t('dayCloseWaFromInvoices'), `${fmt(inflowTotal)} SR (${saleLabel})`));
     }

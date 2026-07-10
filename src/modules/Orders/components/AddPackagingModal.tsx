@@ -3,9 +3,23 @@
  */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { DialogActions, Input, AdaptiveSheet } from '../../../ui';
 
-export function AddPackagingModal({ visible, onClose, value, onChange, onAdd }: any) {
+type CustomOptionDraft = { ar: string; en: string };
+
+export function AddPackagingModal({
+  visible,
+  onClose,
+  value,
+  onChange,
+  onAdd,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  value: CustomOptionDraft;
+  onChange: React.Dispatch<React.SetStateAction<CustomOptionDraft>>;
+  onAdd: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <AdaptiveSheet
@@ -16,23 +30,25 @@ export function AddPackagingModal({ visible, onClose, value, onChange, onAdd }: 
       side="start"
       className="add-packaging-drawer"
       footer={
-        <>
-          <Button onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" onClick={onAdd}>{t('add')}</Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
+            { key: 'add', label: t('add'), role: 'primary', onClick: onAdd },
+          ]}
+        />
       }
     >
       <div className="grid gap-3">
         <Input
           label={`${t('productNameAr')} *`}
           value={value.ar}
-          onChange={(e: any) => onChange((s: any) => ({ ...s, ar: e.target.value }))}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange((s) => ({ ...s, ar: e.target.value }))}
           placeholder="علبة"
         />
         <Input
           label={t('productNameEn')}
           value={value.en}
-          onChange={(e: any) => onChange((s: any) => ({ ...s, en: e.target.value }))}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange((s) => ({ ...s, en: e.target.value }))}
           placeholder="Box"
         />
       </div>

@@ -12,8 +12,16 @@ import {
   SmartTable,
 } from '../../ui';
 import { useTranslation } from '../../i18n/useTranslation';
+import {
+  buildThemePreviewDemoTabs,
+  buildThemePreviewTableColumns,
+  getThemePreviewDemoContentKey,
+  THEME_PREVIEW_TABLE_ROWS,
+  type ThemePreviewLabBlockProps,
+  type ThemePreviewTranslate,
+} from './themePreviewModel';
 
-function LabBlock({ num, title, hint, children }: any) {
+function LabBlock({ num, title, hint, children }: ThemePreviewLabBlockProps) {
   return (
     <section
       id={`ui-lab-${num}`}
@@ -39,12 +47,7 @@ function LabBlock({ num, title, hint, children }: any) {
   );
 }
 
-const TABLE_ROWS = [
-  { id: '1', name: 'عنصر أ', qty: 2, price: '100.00' },
-  { id: '2', name: 'عنصر ب', qty: 1, price: '250.50' },
-];
-
-export function ShadcnInspiredDateFilterSamples({ t }: { t: (key: string) => string }) {
+export function ShadcnInspiredDateFilterSamples({ t }: { t: ThemePreviewTranslate }) {
   const [active, setActive] = useState('month');
   const [panelOpen, setPanelOpen] = useState(true);
   const [selectedDay, setSelectedDay] = useState('2026-07-04');
@@ -321,38 +324,20 @@ export function ShadcnInspiredDateFilterSamples({ t }: { t: (key: string) => str
   );
 }
 
-/** Lab block 3 — tabs demo: one content area per tab id */
-const LAB3_DEMO_TAB_DEFS = [
-  { id: 'a', labelKey: 'themePreviewLabDemoTabA', contentKey: 'themePreviewLab3ContentA' },
-  { id: 'b', labelKey: 'themePreviewLabDemoTabB', contentKey: 'themePreviewLab3ContentB' },
-  { id: 'c', labelKey: 'themePreviewLabDemoTabC', contentKey: 'themePreviewLab3ContentC' },
-  { id: 'd', labelKey: 'themePreviewLabDemoTabD', contentKey: 'themePreviewLab3ContentD' },
-  { id: 'e', labelKey: 'themePreviewLabDemoTabE', contentKey: 'themePreviewLab3ContentE' },
-  { id: 'f', labelKey: 'themePreviewLabDemoTabF', contentKey: 'themePreviewLab3ContentF' },
-  { id: 'g', labelKey: 'themePreviewLabDemoTabG', contentKey: 'themePreviewLab3ContentG' },
-];
-
 export default function ThemeUILabTab() {
   const { t } = useTranslation();
   const [demoTab, setDemoTab] = useState('a');
   const [modalOpen, setModalOpen] = useState(false);
 
   const demoTabItems = useMemo(
-    () => LAB3_DEMO_TAB_DEFS.map((row: any) => ({ id: row.id, label: t(row.labelKey) })),
+    () => buildThemePreviewDemoTabs(t),
     [t],
   );
 
-  const lab3ContentKey = useMemo(() => {
-    const row = LAB3_DEMO_TAB_DEFS.find((x: any) => x.id === demoTab);
-    return row?.contentKey ?? 'themePreviewLab3ContentA';
-  }, [demoTab]);
+  const lab3ContentKey = useMemo(() => getThemePreviewDemoContentKey(demoTab), [demoTab]);
 
   const tableColumns = useMemo(
-    () => [
-      { key: 'name', header: t('themePreviewLabColName'), sortable: true },
-      { key: 'qty', header: t('themePreviewLabColQty'), sortable: true, className: 'ltr text-end' },
-      { key: 'price', header: t('themePreviewLabColPrice'), sortable: false, className: 'ltr text-end' },
-    ],
+    () => buildThemePreviewTableColumns(t),
     [t],
   );
 
@@ -480,8 +465,8 @@ export default function ThemeUILabTab() {
       >
         <SmartTable
           columns={tableColumns}
-          data={TABLE_ROWS}
-          total={TABLE_ROWS.length}
+          data={THEME_PREVIEW_TABLE_ROWS}
+          total={THEME_PREVIEW_TABLE_ROWS.length}
           page={1}
           pageSize={10}
           onPageChange={() => {}}
@@ -500,14 +485,14 @@ export default function ThemeUILabTab() {
             <div className="noorix-stat-card__stripe" />
             <div className="noorix-stat-card__body">
               <div className="noorix-stat-card__label">{t('themePreviewLab11Label')}</div>
-              <div className="noorix-stat-card__value text-[20px]">┘ة┘ث</div>
+              <div className="noorix-stat-card__value text-[20px]">125</div>
             </div>
           </div>
           <div className="noorix-stat-card noorix-stat-card--amber px-4 py-3 min-w-[140px]">
             <div className="noorix-stat-card__stripe" />
             <div className="noorix-stat-card__body">
               <div className="noorix-stat-card__label">{t('themePreviewLab11Label2')}</div>
-              <div className="noorix-stat-card__value text-[20px]">┘ث</div>
+              <div className="noorix-stat-card__value text-[20px]">32</div>
             </div>
           </div>
         </div>

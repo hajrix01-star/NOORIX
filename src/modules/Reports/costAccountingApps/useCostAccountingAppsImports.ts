@@ -18,6 +18,10 @@ import {
 type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
 type ToastFn = (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export function useCostAccountingAppsImports(params: {
   activeCompanyId: string | null | undefined;
   lang: string;
@@ -66,8 +70,7 @@ export function useCostAccountingAppsImports(params: {
         dailyEnd: importTo,
       });
       throwIfApiFailed(res, t('reportCostAppsImportEmpty'));
-      const raw = res.data?.data ?? res.data;
-      const daily = raw?.dailySummaries ?? [];
+      const daily = res.data?.dailySummaries ?? [];
       const agg = aggregateSalesChannelsInRange(daily, importFrom, importTo);
       if (agg.grossApp.plus(agg.grossLocalCash).plus(agg.grossLocalBank).lte(0)) {
         showToast(t('reportCostAppsImportEmpty'), 'error');
@@ -77,8 +80,8 @@ export function useCostAccountingAppsImports(params: {
       setGrossCashStr(agg.grossLocalCash.toFixed(2));
       setGrossBankStr(agg.grossLocalBank.toFixed(2));
       showToast(t('reportCostAppsImportOk'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || String(e), 'error');
+    } catch (e: unknown) {
+      showToast(errorMessage(e), 'error');
     } finally {
       setImporting(false);
     }
@@ -130,8 +133,8 @@ export function useCostAccountingAppsImports(params: {
       }
       const payrollMonthly = payrollOk ? fmt(amt.toNumber(), 2) : '—';
       showToast(t('reportCostAppsExpensesImportOk', { expenseCount: mapped.length, payrollMonthly }), 'success');
-    } catch (e: any) {
-      showToast(e?.message || String(e), 'error');
+    } catch (e: unknown) {
+      showToast(errorMessage(e), 'error');
     } finally {
       setImportingExpenses(false);
     }
@@ -156,8 +159,8 @@ export function useCostAccountingAppsImports(params: {
         if (cash) setGrossCashStr(cash.replace(/,/g, ''));
         if (bank) setGrossBankStr(bank.replace(/,/g, ''));
         showToast(t('reportCostAppsImportOk'), 'success');
-      } catch (err: any) {
-        showToast(err?.message || String(err), 'error');
+      } catch (err: unknown) {
+        showToast(errorMessage(err), 'error');
       }
     },
     [setGrossAppStr, setGrossBankStr, setGrossCashStr, showToast, t],

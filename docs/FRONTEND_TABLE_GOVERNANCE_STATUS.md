@@ -1,6 +1,6 @@
 # Frontend Table Governance Status
 
-Date: 2026-07-03
+Date: 2026-07-07
 
 Status: governed; no new raw table is allowed without registry count and reason.
 
@@ -8,8 +8,8 @@ Status: governed; no new raw table is allowed without registry count and reason.
 
 | Metric | Count |
 |---|---:|
-| Manual `<table>` outside `src/ui` | 53 |
-| Files with manual tables outside `src/ui` | 33 |
+| Manual `<table>` outside `src/ui` | 35 |
+| Files with manual tables outside `src/ui` | 22 |
 | `SmartTable` JSX usages | 46 |
 | Files using `SmartTable` JSX | 36 |
 | `SimpleTable` JSX usages | 23 |
@@ -21,25 +21,22 @@ Status: governed; no new raw table is allowed without registry count and reason.
 
 | Category | Files | Tables | Decision |
 |---|---:|---:|---|
-| `print-export-html` | 1 | 1 | leave remaining protected payroll print/export layout |
-| `print-financial` | 7 | 15 | protected financial print/export |
 | `document-print` | 4 | 11 | leave fixed document layout |
+| `print-financial` | 2 | 7 | protected financial print/export |
 | `editable-grid` | 6 | 6 | leave until editable table/control phase |
-| `payroll-protected` | 4 | 6 | protected HR financial scope |
-| `financial-report` | 3 | 4 | protected report scope |
-| `tax-protected` | 2 | 3 | protected tax scope |
-| `tax-print` | 1 | 2 | leave until `PrintTable` phase |
-| `matrix-table` | 1 | 1 | leave until `MatrixTable` phase |
-| `bank-print` | 1 | 1 | leave until `PrintTable` phase |
+| `payroll-protected` | 2 | 3 | protected HR financial scope |
+| `financial-report` | 3 | 3 | protected report scope |
+| `tax-protected` | 2 | 2 | protected tax scope |
 | `bank-protected` | 1 | 1 | protected bank workflow |
 | `hr-financial` | 1 | 1 | protected HR financial scope |
+| `matrix-table` | 1 | 1 | leave until `MatrixTable` phase |
 | `purchases-protected` | 1 | 1 | protected purchases workflow |
 
 ## Next Target
 
 | Phase | Target | Acceptance |
 |---|---|---|
-| PrintTable Foundation | Central print/export HTML table builder | `src/utils/pdfTableExport.ts` routes through `src/utils/printTableHtml.ts` |
+| PrintTable Foundation | Central print/export HTML table builder | `src/ui/PrintPreviewModal.tsx` previews documents built with `src/utils/printTableHtml.ts` |
 | PrintTable Conversion Batch 1 | Convert safe plain print/export tables | 7 manual tables removed; protected financial/tax/payroll/bank/purchases tables stay untouched |
 | PrintTable Conversion Batch 2 | Convert remaining safe print/export tables | 4 manual tables removed; calendar/catalog/payroll special layouts stay untouched |
 | SimpleTable Dashboard Conversion | Convert non-financial dashboard comparison table | 1 manual dashboard matrix table removed |
@@ -47,6 +44,9 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | Dashboard Calendar PrintTable Conversion | Convert calendar print matrix through central complex print builder | 1 manual calendar print table removed |
 | MatrixTable RFC | Define wide financial/dashboard matrix rules | P&L, owner, dashboard matrices stay protected |
 | MatrixTable Owner Conversion | Convert safest owner monthly matrix | 1 manual matrix table removed; financial/P&L/payroll/tax/bank/purchases stay untouched |
+| PrintTable Conversion Batch 3 | Convert safe print/export tables in reports, treasury, bank, and tax print model | 11 manual tables removed; official numbers and calculations stay untouched |
+| HR Protected Print Conversion | Convert safe HR payroll/settlement print tables | 4 manual tables removed; editable payroll and signature slips stay protected |
+| Hajri Tax Print Conversion | Convert Hajri tax print/export tables to central print builder | 2 manual tables removed; tax registry screen stays protected |
 | Editable table controls | Define editable cells and row actions | no payroll/purchases conversion without tests |
 | Safe conversion pass | Only non-financial display tables with no inputs, no print, no rowspan/colspan | `check:table-governance` stays green |
 
@@ -65,3 +65,6 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | `docs/DASHBOARD_CALENDAR_PRINT_TABLE_CONVERSION.md` | records the dashboard calendar print-table conversion |
 | `docs/TABLE_NEXT_PHASE_RFC.md` | defines the next MatrixTable/EditTable/financial-print phase boundaries |
 | `docs/MATRIX_TABLE_OWNER_CONVERSION.md` | records the first MatrixTable conversion |
+| `docs/PRINT_TABLE_CONVERSION_BATCH_3.md` | records the third safe print/export conversion batch |
+| `docs/HR_PROTECTED_PRINT_TABLE_CONVERSION.md` | records the safe HR protected print-table conversion |
+| `docs/HAJRI_TAX_PRINT_TABLE_CONVERSION.md` | records the Hajri tax print-table conversion |

@@ -1,15 +1,25 @@
 /**
- * KebabMenu — زر ⋮ + قائمة منسدلة عبر Portal (موضع ذكي RTL/LTR، إغلاق بالنقر خارج)
+ * KebabMenu — زر إجراءات موحد + قائمة منسدلة عبر Portal.
  */
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
 import Button from './Button';
 
-const KebabIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-    <circle cx="8" cy="4" r="1.5" />
-    <circle cx="8" cy="8" r="1.5" />
-    <circle cx="8" cy="12" r="1.5" />
+const ActionsMenuIcon = () => (
+  <svg className="nx-actions-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path
+      d="M3.25 4.25h9.5M3.25 8h9.5M3.25 11.75h5.25"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+    <path
+      d="M10.25 11.35l1.05 1.05 2-2"
+      stroke="currentColor"
+      strokeWidth="1.55"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -17,9 +27,23 @@ const VIEWPORT_GAP = 10;
 const ROW_HEIGHT = 42;
 const MENU_PADDING = 12;
 
-/**
- * @typedef {{ key: string; label: React.ReactNode; onClick: () => void; hidden?: boolean; style?: React.CSSProperties }} KebabMenuItem
- */
+export type KebabMenuItem = {
+  key: string;
+  label: React.ReactNode;
+  onClick?: () => void;
+  hidden?: boolean;
+  disabled?: boolean;
+  style?: React.CSSProperties;
+};
+
+export type KebabMenuProps = {
+  ariaLabel: string;
+  items?: Array<KebabMenuItem | null | undefined | false>;
+  menuWidth?: number;
+  menuMaxHeight?: number;
+  emptyFallback?: React.ReactNode;
+  buttonClassName?: string;
+};
 
 function KebabMenuInner({
   ariaLabel,
@@ -27,12 +51,13 @@ function KebabMenuInner({
   menuWidth = 176,
   menuMaxHeight = 280,
   emptyFallback = null,
-}: any) {
-  const visible = (items || []).filter((x: any) => x && !x.hidden);
+  buttonClassName = '',
+}: KebabMenuProps) {
+  const visible = (items || []).filter((item): item is KebabMenuItem => Boolean(item && !item.hidden));
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
-  const btnRef = useRef<any>(null);
-  const menuRef = useRef<any>(null);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open || !btnRef.current) return;
@@ -53,7 +78,8 @@ function KebabMenuInner({
 
   useEffect(() => {
     if (!open) return;
-    const handleClickOutside = (e: any) => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target instanceof Node)) return;
       if (
         btnRef.current?.contains(e.target) ||
         menuRef.current?.contains(e.target)
@@ -84,11 +110,13 @@ function KebabMenuInner({
       className="nx-actions-menu"
       style={menuStyle}
     >
-      {visible.map((it: any) => (
+      {visible.map((it) => (
         <Button
           key={it.key}
           role="menuitem"
+          disabled={it.disabled}
           onClick={() => {
+            if (it.disabled) return;
             setOpen(false);
             it.onClick?.();
           }}
@@ -110,10 +138,11 @@ function KebabMenuInner({
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-haspopup="true"
-        onClick={() => setOpen((p: any) => !p)}
-        className={`nx-actions-kebab${open ? ' nx-actions-kebab--open' : ''}`}
+        title={typeof ariaLabel === 'string' ? ariaLabel : undefined}
+        onClick={() => setOpen((p) => !p)}
+        className={`nx-actions-kebab${open ? ' nx-actions-kebab--open' : ''}${buttonClassName ? ` ${buttonClassName}` : ''}`}
       >
-        <KebabIcon />
+        <ActionsMenuIcon />
       </Button>
       {menuContent && createPortal(menuContent, document.body)}
     </div>

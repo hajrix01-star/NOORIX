@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useDebouncedValue } from '../../../ui';
+import type { AssetWarrantyFilter } from '../../../types/api';
 
 export const ASSETS_REGISTER_PAGE_SIZE = 50;
 
 export function useAssetsRegisterFilters() {
-  const [warrantyFilter, setWarrantyFilter] = useState('all');
+  const [warrantyFilter, setWarrantyFilter] = useState<AssetWarrantyFilter>('all');
   const [search, setSearch] = useState('');
   const debouncedQ = useDebouncedValue(search.trim(), 300);
   const [page, setPage] = useState(1);

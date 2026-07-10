@@ -223,14 +223,48 @@ async function validateAndListRestoreMembers(archiveAbs: string): Promise<string
   return validateRestoreArchiveEntries(names);
 }
 
-/** تحقق من أرشيف tar.gz للاستعادة الكاملة (قائمة + أنواع + مسارات آمنة) */
-export function verifySystemFullTarGz(abs: string): Promise<{ ok: boolean; error?: string }> {
-  return validateAndListRestoreMembers(abs)
-    .then(() => ({ ok: true as const }))
-    .catch((e) => ({
-      ok: false as const,
+async function verifyPgCustomDumpFile(dumpPath: string): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn('pg_restore', ['-l', dumpPath], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let err = '';
+    child.stderr?.on('data', (c) => {
+      err += String(c);
+    });
+    child.on('error', (e) => reject(new BadRequestException(`Unable to run pg_restore: ${(e as Error).message}`)));
+    child.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new BadRequestException(`db.dump verification failed: ${err || 'exit code ' + code}`));
+    });
+  });
+}
+
+async function verifySystemFullTarGzOrThrow(abs: string): Promise<void> {
+  const members = await validateAndListRestoreMembers(abs);
+  const dbDumpMember = members.find((member) => normalizeTarListEntry(member) === 'db.dump');
+  if (!dbDumpMember) {
+    throw new BadRequestException('Archive does not contain db.dump');
+  }
+
+  const tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), 'noorix-verify-sysfull-'));
+  try {
+    await extractSingleMember(abs, tmpBase, dbDumpMember);
+    await assertExtractedTreeContainedIn(tmpBase);
+    await verifyPgCustomDumpFile(path.join(tmpBase, 'db.dump'));
+  } finally {
+    await fs.rm(tmpBase, { recursive: true, force: true }).catch(() => undefined);
+  }
+}
+
+export async function verifySystemFullTarGz(abs: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await verifySystemFullTarGzOrThrow(abs);
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
       error: e instanceof BadRequestException ? e.message : (e as Error).message,
-    }));
+    };
+  }
 }
 
 /**

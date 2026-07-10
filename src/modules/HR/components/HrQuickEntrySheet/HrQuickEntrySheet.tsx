@@ -20,6 +20,7 @@ import { HrQuickEntryDeductionForm } from './components/HrQuickEntryDeductionFor
 import { HrQuickEntryIncreaseForm } from './components/HrQuickEntryIncreaseForm';
 import { MODE_META } from './constants';
 import type { HrQuickEntryMode, HrQuickEntrySheetProps } from './types';
+import type { HrCompensationSnapshot, HrCompensationSnapshotsResult } from '../../../../types/api';
 
 export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, variant: _variant }: HrQuickEntrySheetProps) {
   const { t, lang } = useTranslation();
@@ -31,7 +32,13 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
 
   const st = useHrQuickEntryState(mode as HrQuickEntryMode, companyId);
 
-  const { activeEmployees } = useHrQuickEntryRows(st.employees as never[]);
+  const quickEntryEmployees = st.employees.map((employee) => ({
+    ...employee,
+    status: employee.status || undefined,
+    name: employee.name || undefined,
+    nameAr: employee.nameAr || undefined,
+  }));
+  const { activeEmployees } = useHrQuickEntryRows(quickEntryEmployees);
   const activeEmployeeIds = React.useMemo(
     () => activeEmployees.map((emp) => String(emp.id || '')).filter(Boolean),
     [activeEmployees],
@@ -40,14 +47,14 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     data: compensationSnapshots,
     isLoading: compensationSnapshotsLoading,
     error: compensationSnapshotsError,
-  } = useApiQuery<any>({
+  } = useApiQuery<HrCompensationSnapshotsResult>({
     queryKey: hrKeys.compensationSnapshots(companyId, activeEmployeeIds),
     queryFn: () => getEmployeeCompensationSnapshots(companyId, activeEmployeeIds),
     enabled: mode === 'increase' && !!companyId && activeEmployeeIds.length > 0,
     fallbackMessage: t('loadingError'),
   });
   const compensationSnapshotByEmployeeId = React.useMemo(() => {
-    const map = new Map<string, any>();
+    const map = new Map<string, HrCompensationSnapshot>();
     for (const snapshot of compensationSnapshots?.items ?? []) {
       if (snapshot?.employeeId) map.set(String(snapshot.employeeId), snapshot);
     }
@@ -98,9 +105,9 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     t,
     submitting,
     activeEmployees,
-    employees: st.employees as Array<Record<string, unknown> & { id?: string }>,
+    employees: quickEntryEmployees,
     compensationSnapshotByEmployeeId,
-    vaults: st.vaults as never[],
+    vaults: st.vaults,
     st: stateSlice,
     advMut,
     leaveMut,

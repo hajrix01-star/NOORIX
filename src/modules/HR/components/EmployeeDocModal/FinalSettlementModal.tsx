@@ -21,7 +21,7 @@ export function FinalSettlementModal({
   const { showToast } = useToast();
   const doc = useFinalSettlementDoc(employee, compensationSnapshot);
 
-  const { printRef, saving, handlePrint, handleSaveToDocuments } = useEmployeeDocPrintSave({
+  const { printRef, saving, handlePrint, handleSaveToDocuments, printPreviewModal } = useEmployeeDocPrintSave({
     t,
     showToast,
     printTitle: t('finalSettlement') || 'Final Settlement',
@@ -29,6 +29,8 @@ export function FinalSettlementModal({
     employee,
     documentType: 'other',
     filePrefix: 'final-settlement',
+    companyName,
+    companyLogo,
     onSaved,
     onClose,
     saveFailedMessage: t('saveFailed'),
@@ -43,6 +45,7 @@ export function FinalSettlementModal({
       saving={saving}
       t={t}
     >
+      {printPreviewModal}
       <EmployeeDocPrintFrame printRef={printRef}>
         <FinalSettlementPreview
           employee={employee}
