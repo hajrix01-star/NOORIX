@@ -106,16 +106,17 @@ export default function GeneralReportV2Screen() {
   const { activeCompanyId, companies } = useApp();
   const { t, lang } = useTranslation();
   const dateFilter = useDateFilter();
-  const compareFilter = useDateFilter();
+  const compareFilter = useDateFilter('all');
   const [compareSelectedMonths, setCompareSelectedMonths] = useState<number[]>([]);
   const currentPeriod = useMemo(() => deriveComparablePeriod(dateFilter.state), [dateFilter.state]);
   const comparePeriodBase = useMemo(() => deriveComparablePeriod(compareFilter.state), [compareFilter.state]);
+  const canCustomizeCompareMonths = comparePeriodBase.mode === 'month' || comparePeriodBase.mode === 'months';
   const compareMonthSet = useMemo(
     () => [...new Set(compareSelectedMonths)].filter((month) => month >= 1 && month <= 12).sort((a, b) => a - b),
     [compareSelectedMonths],
   );
   const comparePeriod = useMemo<ComparablePeriod>(() => {
-    if (compareMonthSet.length === 0 || comparePeriodBase.mode === 'all') return comparePeriodBase;
+    if (!canCustomizeCompareMonths || compareMonthSet.length === 0) return comparePeriodBase;
     return {
       ...comparePeriodBase,
       mode: compareMonthSet.length === 1 ? 'month' : 'months',
@@ -124,8 +125,9 @@ export default function GeneralReportV2Screen() {
       monthEnd: compareMonthSet[compareMonthSet.length - 1],
       months: compareMonthSet,
     };
-  }, [compareMonthSet, comparePeriodBase]);
+  }, [canCustomizeCompareMonths, compareMonthSet, comparePeriodBase]);
   const compareEnabled = comparePeriod.mode !== 'all';
+  const showCompareMonthPicker = compareEnabled && canCustomizeCompareMonths;
   const year = currentPeriod.year;
   const [detailState, setDetailState] = useState<ReportDetailState | null>(null);
   const [printPreviewHtml, setPrintPreviewHtml] = useState('');
@@ -713,7 +715,7 @@ export default function GeneralReportV2Screen() {
           </div>
         </FilterToolbar>
 
-        {compareEnabled && (
+        {showCompareMonthPicker && (
           <div className="border-b border-noorix-border bg-white px-4 py-3">
             <div className="mx-auto flex max-w-[980px] flex-wrap items-center justify-center gap-2">
               <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'أشهر المقارنة' : 'Compare months'}</span>

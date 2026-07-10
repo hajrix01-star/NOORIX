@@ -8,10 +8,10 @@ import {
   type DatePeriodState,
 } from './datePeriod';
 
-export function useDateFilter() {
+export function useDateFilter(initialMode: DatePeriodMode = 'months') {
   const now = getSaudiNow();
 
-  const [mode, setMode] = useState<DatePeriodMode>('months');
+  const [mode, setMode] = useState<DatePeriodMode>(initialMode);
   const [selYear, setSelYear] = useState(now.year);
   const [selMonth, setSelMonth] = useState(now.month);
   const [selQuarter, setSelQuarter] = useState(Math.ceil(now.month / 3));
@@ -70,7 +70,7 @@ export function useDateFilter() {
 
   const reset = useCallback(() => {
     const n = getSaudiNow();
-    setMode('months');
+    setMode(initialMode);
     setSelYear(n.year);
     setSelMonth(n.month);
     setSelQuarter(Math.ceil(n.month / 3));
@@ -83,7 +83,7 @@ export function useDateFilter() {
     setMonthRangeEndMonth(n.month);
     setYearRangeStart(n.year);
     setYearRangeEnd(n.year);
-  }, []);
+  }, [initialMode]);
 
   return useMemo(
     () => ({
