@@ -185,9 +185,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
             <SupplierTable
               suppliers={suppliers}
               flatCategories={supplierCategories}
-              onEdit={setEditingSupplier}
               onOpenProfile={setProfileSupplier}
-              onDelete={handleDelete}
               selectedIds={selectedIds}
               onSelectChange={handleSelectChange}
               onSelectAll={handleSelectAll}
@@ -209,6 +207,8 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
           companyId={companyId}
           flatCategories={supplierCategories}
           onClose={() => setProfileSupplier(null)}
+          onEdit={setEditingSupplier}
+          onDelete={handleDelete}
         />
       )}
     </ScreenShell>

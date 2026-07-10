@@ -1,6 +1,6 @@
 import React, { memo, type ChangeEvent, type CSSProperties } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Badge, Button, Checkbox, SmartTable, KebabMenu } from '../../../ui';
+import { Badge, Button, Checkbox, SmartTable } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui/SmartTable/types';
 import type { SupplierCategoryRecord, SupplierRecord } from '../supplierTypes';
 import {
@@ -84,9 +84,7 @@ function SupplierCheckbox({
 export type SupplierTableProps = {
   suppliers?: SupplierRecord[];
   flatCategories?: SupplierCategoryRecord[];
-  onEdit?: (supplier: SupplierRecord) => void;
   onOpenProfile?: (supplier: SupplierRecord) => void;
-  onDelete?: (supplier: SupplierRecord) => void;
   selectedIds?: Set<string>;
   onSelectChange?: (id: string, checked: boolean) => void;
   onSelectAll?: (checked: boolean) => void;
@@ -96,9 +94,7 @@ export type SupplierTableProps = {
 export const SupplierTable = memo(function SupplierTable({
   suppliers = [],
   flatCategories = [],
-  onEdit,
   onOpenProfile,
-  onDelete,
   selectedIds = new Set<string>(),
   onSelectChange,
   onSelectAll,
@@ -204,22 +200,6 @@ export const SupplierTable = memo(function SupplierTable({
       shrink: true,
       render: (_value, row) => <TypeBadge type={row.supplierType || 'purchases'} />,
     },
-    {
-      key: 'actions',
-      label: t('actions'),
-      kind: 'actions',
-      align: 'center',
-      shrink: true,
-      render: (_value, row) => (
-        <KebabMenu
-          ariaLabel={t('actions')}
-          items={[
-            { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
-            { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDelete?.(row) },
-          ]}
-        />
-      ),
-    },
   ];
 
   const badge = hasSelection ? (
@@ -280,15 +260,6 @@ export const SupplierTable = memo(function SupplierTable({
               <div className="nx-cr__line2-start">
                 {category && <span className="nx-cr__meta">{getSupplierCategoryName(category, lang)}</span>}
                 {row.taxNumber && <span className="nx-cr__meta nx-cell-num">{row.taxNumber}</span>}
-              </div>
-              <div className="nx-cr__kebab" onClick={(event) => event.stopPropagation()}>
-                <KebabMenu
-                  ariaLabel={t('actions')}
-                  items={[
-                    { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
-                    { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDelete?.(row) },
-                  ]}
-                />
               </div>
             </div>
           </div>

@@ -5,10 +5,9 @@
  */
 import React, { useMemo, useCallback } from 'react';
 import { formatSaudiDate } from '../../utils/saudiDate';
-import { Badge, Button, FilterToolbar, ScreenShell, FmtNum, KebabMenu, SmartTable } from '../../ui';
+import { Badge, Button, FilterToolbar, ScreenShell, FmtNum, SmartTable } from '../../ui';
 import type { SmartTableColumn } from '../../ui/SmartTable/types';
 import { DateFilterBar } from '../../ui/date';
-import { SalesActionsCell } from '../../components/common/SalesActionsCell';
 import { SalesDayEditModal } from './components/SalesDayEditModal';
 import { SalesEntryModal } from './components/SalesEntryModal';
 import { DailySalesChannelsChips } from './components/DailySalesChannelsChips';
@@ -82,7 +81,14 @@ export default function DailySalesScreen() {
     { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '12ch',
       render: (_: unknown, row: DailySalesTableRow) => (
         <div className="flex flex-col items-start gap-0.5">
-          <span className="nx-cell-num nx-cell-accent">{row.summaryNumbersText || row.summaryNumber}</span>
+          <Button
+            variant="raw"
+            size="auto"
+            className="!h-auto rounded-md px-2 py-1 text-start nx-cell-num nx-cell-accent hover:bg-noorix-blue/10 hover:underline focus-visible:ring-2 focus-visible:ring-noorix-blue"
+            onClick={() => setEditingSummary(row)}
+          >
+            {row.summaryNumbersText || row.summaryNumber}
+          </Button>
           {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
         </div>
       ) },
@@ -105,18 +111,7 @@ export default function DailySalesScreen() {
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', kind: 'status', label: t('statusLabel'), width: '9ch',
       render: (v: unknown) => <Badge {...Badge.fromStatus(v as string, STATUS_MAP)} size="sm" /> },
-    { key: 'actions', kind: 'actions', label: t('actions'), align: 'center', width: '48px',
-      render: (_: unknown, row: DailySalesTableRow) => (
-        <SalesActionsCell
-          summary={row}
-          userRole={userRole}
-          onPrint={openWhatsApp}
-          onEdit={setEditingSummary}
-          onDelete={handleDeleteSummary}
-        />
-      ),
-    },
-  ] as SmartTableColumn[], [userRole, t, STATUS_MAP, handleDeleteSummary, lang, openWhatsApp, setEditingSummary]);
+  ] as SmartTableColumn[], [t, STATUS_MAP, lang, setEditingSummary]);
 
   const footerCells = (
     <>
@@ -130,7 +125,7 @@ export default function DailySalesScreen() {
       <td className="nx-tfoot-num nx-cell-num--blue">{totalCustomers.toLocaleString('en')}</td>
       <td className="nx-tfoot-num nx-cell-num--green"><FmtNum n={totalAmountSum} /></td>
       <td className="nx-tfoot-num nx-cell-num--violet"><FmtNum n={avgPerCustomer} /></td>
-      <td colSpan={2} />
+      <td />
     </>
   );
 
@@ -164,11 +159,8 @@ export default function DailySalesScreen() {
           <div className="nx-mc__stat-value text-[13px] font-bold text-noorix-violet"><FmtNum n={row.avgPerCustomer} /></div>
         </div>
       </div>
-      <div className="flex justify-end mt-1">
-        <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
-      </div>
     </div>
-  ), [STATUS_MAP, userRole, t, handleDeleteSummary, lang, openWhatsApp, setEditingSummary]);
+  ), [STATUS_MAP, t, lang, setEditingSummary]);
 
   const renderCompactRow = useCallback((row: DailySalesTableRow) => (
     <div className="cursor-pointer" onClick={() => setEditingSummary(row)}>
@@ -184,15 +176,6 @@ export default function DailySalesScreen() {
         </div>
         <div className="nx-cr__line2-end">
           <span className="nx-cr__amount text-noorix-green"><FmtNum n={Number(row.totalAmount)} /> <span className="nx-sar">SR</span></span>
-          <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-            <KebabMenu
-              ariaLabel={t('actions')}
-              items={[
-                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingSummary(row) },
-                ...(row.status !== 'cancelled' ? [{ key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDeleteSummary(row) }] : []),
-              ]}
-            />
-          </div>
         </div>
       </div>
     </div>
@@ -211,6 +194,9 @@ export default function DailySalesScreen() {
           vatRate={vatRate}
           onSaved={handleEditSave}
           onClose={() => setEditingSummary(null)}
+          onWhatsApp={openWhatsApp}
+          onDelete={handleDeleteSummary}
+          canDelete={(userRole || '').toLowerCase() === 'owner'}
         />
       )}
 

@@ -42,6 +42,8 @@ export type SupplierProfileModalProps = {
   companyId: string;
   flatCategories?: SupplierCategoryRecord[];
   onClose: () => void;
+  onEdit?: (supplier: SupplierRecord) => void;
+  onDelete?: (supplier: SupplierRecord) => void;
 };
 
 export function SupplierProfileModal({
@@ -50,6 +52,8 @@ export function SupplierProfileModal({
   companyId,
   flatCategories = [],
   onClose,
+  onEdit,
+  onDelete,
 }: SupplierProfileModalProps) {
   const { t, lang } = useTranslation();
   const { companies = [] } = useApp();
@@ -207,6 +211,30 @@ export function SupplierProfileModal({
         <>
           <Button size="sm" onClick={handlePrintProfile}>{t('supplierProfilePrint')}</Button>
           <Button size="sm" onClick={handlePrintInvoices}>{t('supplierProfilePrintInvoices')}</Button>
+          {onEdit && (
+            <Button
+              size="sm"
+              variant="success"
+              onClick={() => {
+                onClose();
+                onEdit(supplier);
+              }}
+            >
+              {t('edit')}
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => {
+                onClose();
+                onDelete(supplier);
+              }}
+            >
+              {t('delete')}
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={onClose}>{t('close')}</Button>
         </>
       )}

@@ -18,6 +18,9 @@ type Props = {
   vatRate?: number;
   onSaved: (body: Array<{ id: string; body: DailySalesEditBody }>) => Promise<void>;
   onClose: () => void;
+  onWhatsApp?: (day: DailySalesTableRow) => void;
+  onDelete?: (day: DailySalesTableRow) => void;
+  canDelete?: boolean;
 };
 
 function formFromSummary(summary: SalesSummaryItem): ShiftEntryFormState {
@@ -41,6 +44,9 @@ export function SalesDayEditModal({
   vatRate = 0.15,
   onSaved,
   onClose,
+  onWhatsApp,
+  onDelete,
+  canDelete = false,
 }: Props) {
   const { lang, t } = useTranslation();
   const [txDate, setTxDate] = useState('');
@@ -103,6 +109,27 @@ export function SalesDayEditModal({
       side="start"
       footer={
         <>
+          {onWhatsApp && (
+            <Button
+              variant="success"
+              onClick={() => onWhatsApp(day)}
+              disabled={saving}
+            >
+              {t('printWhatsApp')}
+            </Button>
+          )}
+          {canDelete && onDelete && (
+            <Button
+              variant="danger"
+              onClick={() => {
+                onClose();
+                onDelete(day);
+              }}
+              disabled={saving}
+            >
+              {t('delete')}
+            </Button>
+          )}
           <Button
             variant="primary"
             disabled={saving || !valid}
