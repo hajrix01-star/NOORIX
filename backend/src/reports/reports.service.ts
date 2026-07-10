@@ -350,7 +350,9 @@ export class ReportsService {
           };
         });
 
-      const hasCategoryItems = flatItems.some((i) => i.key.startsWith('category:') || i.key.startsWith('expense-line:'));
+      const hasCategoryItems =
+        groupKey !== 'sales' &&
+        flatItems.some((i) => i.key.startsWith('category:') || i.key.startsWith('expense-line:'));
       const items = hasCategoryItems
         ? buildPlCategoryHierarchy(groupKey, flatItems, categories, expenseLines, salesMonths, totalSales)
         : flatItems
