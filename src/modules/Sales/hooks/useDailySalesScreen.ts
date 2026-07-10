@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useDebouncedValue, usePrintPreview } from '../../../ui';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,22 +30,14 @@ import type {
 } from '../../../types/api/domains/sales';
 import { getSalesShiftLabel, resolveSalesSummaryShift } from '../constants/salesShift';
 import {
-  buildSummaryChannelWhatsAppLines,
   buildVaultLookup,
 } from '../utils/salesWhatsAppChannels';
-import { computeAppShare, type AppShareResult } from '../utils/salesAppShare';
-import { appendAppShareWaLines } from '../utils/salesWhatsAppAppShare';
 import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
 import {
-  waCashLine,
-  waCustomersLine,
-  waMetaLine,
-  waMetricLine,
-  waAvgSaleMetricLine,
-  waReportHeader,
-  waShiftSectionTitle,
-  waSubheading,
-} from '../utils/salesWhatsAppFormat';
+  aggregateSalesDayByShift,
+  buildDailyShiftWhatsAppText,
+  openWhatsAppWithText,
+} from '../utils/salesDayShiftReport';
 
 const PAGE_SIZE = 50;
 
@@ -208,73 +200,37 @@ export function useDailySalesScreen() {
 
   const vaultById = useMemo(() => buildVaultLookup(salesChannels), [salesChannels]);
 
-  const buildWhatsAppText = useCallback((s: DailySalesSummary, monthAppShare?: AppShareResult) => {
-    const cc = s.customerCount || 0;
-    const total = Number(s.totalAmount || 0);
-    const name = (companyName || '').trim();
-    const dateRaw = formatSaudiDate(s.transactionDate);
-    let dateWithWeekday = dateRaw;
-    if (dateRaw !== '—') {
-      const wd = formatSaudiWeekdayName(s.transactionDate, lang);
-      if (wd) dateWithWeekday = `${dateRaw} ${wd}`;
+  const buildWhatsAppText = useCallback((
+    summaries: DailySalesSummary[],
+    targetDate: string,
+    monthAppShare?: Awaited<ReturnType<typeof fetchMonthAppShare>>,
+  ) => {
+    const report = aggregateSalesDayByShift(summaries, targetDate);
+    const dateRaw = formatSaudiDate(targetDate);
+    let dateLabel = dateRaw;
+    if (dateRaw !== 'â€”') {
+      const wd = formatSaudiWeekdayName(targetDate, lang);
+      if (wd) dateLabel = `${dateRaw} ${wd}`;
     }
-
-    const shift = resolveSalesSummaryShift(s);
-    const shiftKind = shift === 'morning' ? 'morning' as const : shift === 'evening' ? 'evening' as const : 'fullDay' as const;
-
-    const lines = [
-      waReportHeader(t('salesWhatsAppReportTitle'), name),
-      waMetaLine(t('salesWhatsAppDateLine'), dateWithWeekday),
-      waMetaLine(t('salesWhatsAppSummaryRef'), String(s.summaryNumber ?? '—')),
-      waShiftSectionTitle(shiftKind, `${t('salesWhatsAppShiftLine')} ${getSalesShiftLabel(shift, t)}`),
-    ];
-
-    const channelLines = buildSummaryChannelWhatsAppLines(s.channels, lang, vaultById);
-    if (channelLines.length > 0) {
-      lines.push(waSubheading(t('salesWhatsAppChannelsHeader')));
-      lines.push(...channelLines);
-    } else {
-      lines.push(`  ${t('salesWhatsAppNoChannels')}`);
-    }
-
-    lines.push(
-      '',
-      waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(total)} SR`),
-      waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(cc, 0)),
-      waAvgSaleMetricLine(t('salesWhatsAppAvgInvoiceLine'), total, cc),
-    );
-
-    const summaryShare = computeAppShare(s.channels, total, vaultById);
-    appendAppShareWaLines(lines, summaryShare, t('salesWhatsAppAppShareLine'));
-    if (monthAppShare) {
-      appendAppShareWaLines(lines, monthAppShare, t('salesWhatsAppAppShareMonthLine'), { percentOnly: true });
-    }
-
-    if (Number(s.cashOnHand) > 0) {
-      lines.push(waCashLine(t('salesWhatsAppCashLine'), `${fmt(s.cashOnHand)} SR`));
-    }
-    if (s.notes?.trim()) {
-      lines.push('', `${t('salesShareNotes')}: ${s.notes.trim()}`);
-    }
-    return lines.join('\n');
+    return buildDailyShiftWhatsAppText({
+      companyName,
+      dateLabel,
+      report,
+      t,
+      daySummaries: summaries,
+      dayYmd: targetDate,
+      lang,
+      vaultById,
+      monthAppShare,
+    });
   }, [companyName, lang, t, vaultById]);
-
   const openWhatsApp = useCallback(async (s: DailySalesSummary | DailySalesTableRow) => {
-    const group = 'summaries' in s ? s.summaries : undefined;
-    if (Array.isArray(group) && group.length > 1) {
-      const parts = await Promise.all(group.map(async (item) => {
-        const monthAppShare = companyId
-          ? await fetchMonthAppShare(companyId, item.transactionDate, vaultById)
-          : undefined;
-        return buildWhatsAppText(item, monthAppShare);
-      }));
-      window.open(`https://wa.me/?text=${encodeURIComponent(parts.join('\n\n'))}`, '_blank');
-      return;
-    }
+    const summaries = 'summaries' in s && s.summaries.length > 0 ? s.summaries : [s];
+    const targetDate = toYmd(s.transactionDate) || getSaudiToday();
     const monthAppShare = companyId
-      ? await fetchMonthAppShare(companyId, s.transactionDate, vaultById)
+      ? await fetchMonthAppShare(companyId, targetDate, vaultById)
       : undefined;
-    window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(s, monthAppShare))}`, '_blank');
+    openWhatsAppWithText(buildWhatsAppText(summaries, targetDate, monthAppShare));
   }, [buildWhatsAppText, companyId, vaultById]);
 
   async function handleEditSave(body: DailySalesEditBody | Array<{ id: string; body: DailySalesEditBody }>) {

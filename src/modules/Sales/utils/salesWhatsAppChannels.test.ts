@@ -1,49 +1,58 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  aggregateShiftChannelWhatsAppLines,
-  buildSummaryChannelWhatsAppLines,
+  aggregateDayChannelWhatsAppSummary,
   buildVaultLookup,
+  channelsFromEntryPayload,
 } from './salesWhatsAppChannels';
 
 describe('salesWhatsAppChannels', () => {
   const vaultById = buildVaultLookup([
-    { id: 'v1', nameAr: 'نقدي', sortOrder: 1, type: 'cash' },
-    { id: 'v2', nameAr: 'بنك', sortOrder: 2, type: 'bank' },
+    { id: 'v1', nameAr: 'Cash', sortOrder: 1, type: 'cash' },
+    { id: 'v2', nameAr: 'Bank', sortOrder: 2, type: 'bank' },
   ]);
 
-  it('builds lines from channels with vaultId only', () => {
-    const lines = buildSummaryChannelWhatsAppLines(
-      [{ vaultId: 'v1', amount: 100 }],
-      'ar',
-      vaultById,
-    );
-    expect(lines).toEqual(['  • نقدي: 100 SR']);
-  });
-
-  it('aggregates channels per shift for a day', () => {
-    const lines = aggregateShiftChannelWhatsAppLines(
+  it('aggregates active day channels into one compact collection line', () => {
+    const line = aggregateDayChannelWhatsAppSummary(
       [
         {
           status: 'active',
           transactionDate: '2026-05-10',
-          shift: 'morning',
           channels: [
-            { vaultId: 'v1', amount: 100, vault: { nameAr: 'نقدي', sortOrder: 1, type: 'cash' } },
-            { vaultId: 'v2', amount: 50, vault: { nameAr: 'بنك', sortOrder: 2, type: 'bank' } },
+            { vaultId: 'v1', amount: 100 },
+            { vaultId: 'v2', amount: 50 },
           ],
         },
         {
           status: 'active',
           transactionDate: '2026-05-10',
-          shift: 'morning',
-          channels: [{ vaultId: 'v1', amount: 200, vault: { nameAr: 'نقدي', sortOrder: 1 } }],
+          channels: [{ vaultId: 'v1', amount: 200 }],
+        },
+        {
+          status: 'cancelled',
+          transactionDate: '2026-05-10',
+          channels: [{ vaultId: 'v1', amount: 999 }],
         },
       ],
       '2026-05-10',
-      'morning',
       'ar',
+      vaultById,
     );
-    expect(lines).toContain('  • نقدي: 300 SR');
-    expect(lines).toContain('  • بنك: 50 SR');
+
+    expect(line).toBe('Cash: 300 | Bank: 50');
+  });
+
+  it('builds entry payload channels with vault references', () => {
+    const channels = channelsFromEntryPayload(
+      { channels: [{ vaultId: 'v1', amount: '125' }] },
+      [{ id: 'v1', nameAr: 'Cash', sortOrder: 1 }],
+    );
+
+    expect(channels).toEqual([
+      {
+        vaultId: 'v1',
+        amount: '125',
+        vault: { id: 'v1', nameAr: 'Cash', nameEn: undefined, sortOrder: 1, type: null },
+      },
+    ]);
   });
 });
