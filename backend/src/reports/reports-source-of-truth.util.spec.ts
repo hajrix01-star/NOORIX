@@ -19,6 +19,13 @@ describe('reports source-of-truth guardrails', () => {
     expect(model).toContain('amountBasis: GeneralPnlAmountBasis');
   });
 
+  it('keeps sales breakdown out of category hierarchy noise', () => {
+    const service = readFileSync(join(reportsDir, 'reports.service.ts'), 'utf8');
+
+    expect(service).toContain("groupKey !== 'sales'");
+    expect(service).toContain('buildPlCategoryHierarchy(groupKey, flatItems, categories, expenseLines, salesMonths, totalSales)');
+  });
+
   it('keeps VAT disclosure calculation centralized in TaxVatCore', () => {
     const taxVatService = readFileSync(join(reportsDir, 'reports-tax-vat.service.ts'), 'utf8');
 
