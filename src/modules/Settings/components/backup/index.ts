@@ -1,6 +1,4 @@
-export { BackupCompanySection } from './BackupCompanySection';
-export { BackupSystemSection } from './BackupSystemSection';
-export { BackupJobsHistory } from './BackupJobsHistory';
+export { BackupCommandCenter } from './BackupCommandCenter';
 export { BackupSheetsAndModals } from './BackupSheetsAndModals';
 export { BackupCountsGrid } from './BackupCountsGrid';
 export {

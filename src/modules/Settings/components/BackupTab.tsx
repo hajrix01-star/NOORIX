@@ -31,9 +31,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useApp } from '../../../context/AppContext';
 import { ScreenTitle } from '../../../ui';
 import {
-  BackupCompanySection,
-  BackupSystemSection,
-  BackupJobsHistory,
+  BackupCommandCenter,
   BackupSheetsAndModals,
 } from './backup';
 import { appKeys, settingsKeys } from '../../../services/queryKeys';
@@ -336,56 +334,44 @@ export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
         <p className="text-[12px] text-noorix-muted m-0 leading-relaxed max-w-2xl">{t('backupIntro')}</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 lg:items-stretch min-w-0">
-        <BackupCompanySection
-          t={t}
-          activeCompanies={activeCompanies}
-          companyId={companyId}
-          setCompanyId={setCompanyId}
-          coForm={coForm}
-          setCoForm={setCoForm}
-          coCfgRes={coCfgRes}
-          triggerMut={triggerMut}
-          saveCoMut={saveCoMut}
-        />
-
-        {canSystemBackup && (
-          <BackupSystemSection
-            t={t}
-            lang={lang}
-            sysForm={sysForm}
-            setSysForm={setSysForm}
-            sysCfgRes={sysCfgRes}
-            saveSysMut={saveSysMut}
-            runFullArchiveMut={runFullArchiveMut}
-            systemArchiveFileRef={systemArchiveFileRef}
-            restoreFromPcFileRef={restoreFromPcFileRef}
-            uploadSysArchiveMut={uploadSysArchiveMut}
-            restorePcMut={restorePcMut}
-            setRestorePcPhrase={setRestorePcPhrase}
-            setRestorePcModal={setRestorePcModal}
-            sysJobsLoading={sysJobsLoading}
-            sysJobsRes={sysJobsRes}
-            downloadSysMut={downloadSysMut}
-            verifySysMut={verifySysMut}
-            restoreMut={restoreMut}
-            setRestorePhrase={setRestorePhrase}
-            setRestoreModal={setRestoreModal}
-          />
-        )}
-      </div>
-
-      <BackupJobsHistory
+      <BackupCommandCenter
         t={t}
         lang={lang}
+        canSystemBackup={canSystemBackup}
+        activeCompanies={activeCompanies}
+        companyId={companyId}
+        setCompanyId={setCompanyId}
+        coForm={coForm}
+        setCoForm={setCoForm}
+        coCfgRes={coCfgRes}
+        sysForm={sysForm}
+        setSysForm={setSysForm}
+        sysCfgRes={sysCfgRes}
         isLoading={isLoading}
         jobs={jobs}
+        sysJobs={sysJobsRes.success ? sysJobsRes.data : []}
+        sysJobsLoading={sysJobsLoading}
+        triggerMut={triggerMut}
+        saveCoMut={saveCoMut}
+        saveSysMut={saveSysMut}
+        runFullArchiveMut={runFullArchiveMut}
         reportMut={reportMut}
         downloadMut={downloadMut}
         verifyCoMut={verifyCoMut}
+        downloadSysMut={downloadSysMut}
+        verifySysMut={verifySysMut}
+        restoreMut={restoreMut}
+        uploadSysArchiveMut={uploadSysArchiveMut}
+        restorePcMut={restorePcMut}
+        systemArchiveFileRef={systemArchiveFileRef}
+        restoreFromPcFileRef={restoreFromPcFileRef}
         setImportNameAr={setImportNameAr}
         setImportConfirmed={setImportConfirmed}
         setImportModal={setImportModal}
+        setRestorePhrase={setRestorePhrase}
+        setRestoreModal={setRestoreModal}
+        setRestorePcPhrase={setRestorePcPhrase}
+        setRestorePcModal={setRestorePcModal}
       />
 
       <BackupSheetsAndModals

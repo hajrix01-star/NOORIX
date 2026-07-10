@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  BackupCompanySection,
-  BackupSystemSection,
-  BackupJobsHistory,
+  BackupCommandCenter,
   BackupSheetsAndModals,
   BackupCountsGrid,
   formatBackupDate,
@@ -15,9 +13,7 @@ import {
 
 describe('backup module barrel', () => {
   it('re-exports section components as functions', () => {
-    expect(typeof BackupCompanySection).toBe('function');
-    expect(typeof BackupSystemSection).toBe('function');
-    expect(typeof BackupJobsHistory).toBe('function');
+    expect(typeof BackupCommandCenter).toBe('function');
     expect(typeof BackupSheetsAndModals).toBe('function');
     expect(typeof BackupCountsGrid).toBe('function');
   });
