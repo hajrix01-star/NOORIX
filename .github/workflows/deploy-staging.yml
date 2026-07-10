@@ -70,6 +70,10 @@ jobs:
           STAGING_USER: ${{ secrets.STAGING_USERNAME }}
           STAGING_KEY: ${{ secrets.STAGING_SSH_KEY }}
           STAGING_PORT: ${{ secrets.STAGING_SSH_PORT }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
           DEPLOY_SHA: ${{ github.sha }}
           APP_ROOT: ${{ inputs.app_root }}
           API_PORT: ${{ inputs.api_port }}
@@ -77,17 +81,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "${STAGING_HOST:-}" ] || [ -z "${STAGING_USER:-}" ] || [ -z "${STAGING_KEY:-}" ]; then
-            echo "ERROR: Add STAGING_HOST, STAGING_USERNAME, and STAGING_SSH_KEY to GitHub Secrets."
+          DEPLOY_HOST="${STAGING_HOST:-${VPS_HOST:-}}"
+          DEPLOY_USER="${STAGING_USER:-${VPS_USER:-}}"
+          DEPLOY_KEY="${STAGING_KEY:-${VPS_KEY:-}}"
+          DEPLOY_PORT="${STAGING_PORT:-${VPS_PORT:-22}}"
+
+          if [ -z "${DEPLOY_HOST:-}" ] || [ -z "${DEPLOY_USER:-}" ] || [ -z "${DEPLOY_KEY:-}" ]; then
+            echo "ERROR: Add STAGING_* secrets, or keep the existing VPS_* secrets configured."
             exit 1
           fi
 
-          PORT="$(printf '%s' "${STAGING_PORT:-22}" | tr -d '[:space:]\r')"
+          PORT="$(printf '%s' "${DEPLOY_PORT:-22}" | tr -d '[:space:]\r')"
           [ -z "$PORT" ] && PORT=22
 
           mkdir -p ~/.ssh
           KEY="$HOME/.ssh/noorix_staging_key"
-          printf '%s\n' "$STAGING_KEY" > "$KEY"
+          printf '%s\n' "$DEPLOY_KEY" > "$KEY"
           chmod 600 "$KEY"
 
           SSH_OPTS=( -o BatchMode=yes -o StrictHostKeyChecking=accept-new
@@ -97,13 +106,12 @@ jobs:
                      -o ServerAliveInterval=20 -o ServerAliveCountMax=12
                      -o ConnectTimeout=30 -i "$KEY" -P "$PORT" )
 
-          echo "==> Uploading staging artifacts to ${STAGING_USER}@${STAGING_HOST}:${PORT}"
+          echo "==> Uploading staging artifacts to ${DEPLOY_USER}@${DEPLOY_HOST}:${PORT}"
           scp "${SCP_OPTS[@]}" \
             noorix-staging-frontend.tar.gz \
             noorix-staging-source.tar.gz \
-            "${STAGING_USER}@${STAGING_HOST}:/tmp/"
+            "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/"
 
-          ssh "${SSH_OPTS[@]}" "${STAGING_USER}@${STAGING_HOST}" \
+          ssh "${SSH_OPTS[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "DEPLOY_SHA='${DEPLOY_SHA}' APP_ROOT='${APP_ROOT}' API_PORT='${API_PORT}' PUBLIC_URL='${PUBLIC_URL}' bash -s" \
             < deploy/staging-remote-install.sh
-

@@ -17,12 +17,21 @@ The staging workflow is manual only. It deploys a selected branch or commit to:
 
 ## Required GitHub Secrets
 
-Add these repository secrets before running the workflow:
+Preferred dedicated staging secrets:
 
 - `STAGING_HOST`
 - `STAGING_USERNAME`
 - `STAGING_SSH_KEY`
 - `STAGING_SSH_PORT` optional, defaults to `22`
+
+If those are not configured, the workflow falls back to the existing live server SSH secrets:
+
+- `VPS_HOST`
+- `VPS_USERNAME`
+- `VPS_SSH_KEY`
+- `VPS_SSH_PORT` optional
+
+This fallback only reuses the SSH entrance to the same server. The staging installer still refuses the live app root, live API port, and live database name.
 
 ## Required Server File
 
@@ -65,4 +74,3 @@ Validate these flows before merging to live:
 - HR contract, salary certificate, final settlement PDF/save
 - general report V2 and profit/loss report
 - dashboard and core navigation
-
