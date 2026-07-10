@@ -28,13 +28,21 @@ import {
 import type { DatePeriodState } from '../../utils/datePeriod';
 
 type ComparablePeriod = {
-  mode: 'all' | 'month' | 'months' | 'quarter' | 'year';
+  mode: 'all' | 'month' | 'months' | 'quarter' | 'year' | 'range';
   year: number;
   month: number | null;
   monthStart: number;
   monthEnd: number;
   months?: number[];
 };
+
+function parseYearMonth(value: string, fallbackYear: number, fallbackMonth: number) {
+  const [year, month] = String(value || '').split('-').map(Number);
+  return {
+    year: Number.isFinite(year) && year > 0 ? year : fallbackYear,
+    month: Number.isFinite(month) && month >= 1 && month <= 12 ? month : fallbackMonth,
+  };
+}
 
 function deriveComparablePeriod(state: DatePeriodState): ComparablePeriod {
   if (state.mode === 'all') {
@@ -57,6 +65,18 @@ function deriveComparablePeriod(state: DatePeriodState): ComparablePeriod {
       month: sameMonth ? state.monthRangeStartMonth : null,
       monthStart: Math.min(state.monthRangeStartMonth, state.monthRangeEndMonth),
       monthEnd: Math.max(state.monthRangeStartMonth, state.monthRangeEndMonth),
+    };
+  }
+  if (state.mode === 'range') {
+    const start = parseYearMonth(state.rangeStart, state.selYear, state.selMonth);
+    const end = parseYearMonth(state.rangeEnd, start.year, start.month);
+    const sameMonth = start.year === end.year && start.month === end.month;
+    return {
+      mode: sameMonth ? 'month' : 'range',
+      year: start.year,
+      month: sameMonth ? start.month : null,
+      monthStart: Math.min(start.month, end.month),
+      monthEnd: Math.max(start.month, end.month),
     };
   }
   return { mode: 'month', year: state.selYear, month: state.selMonth, monthStart: state.selMonth, monthEnd: state.selMonth };
@@ -710,7 +730,7 @@ export default function GeneralReportV2Screen() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'المقارنة' : 'Compare with'}</span>
-              <DateFilterBar filter={compareFilter} modes={['all', 'month', 'months', 'quarter', 'year']} />
+              <DateFilterBar filter={compareFilter} modes={['all', 'range', 'quarter', 'year']} />
             </div>
           </div>
         </FilterToolbar>

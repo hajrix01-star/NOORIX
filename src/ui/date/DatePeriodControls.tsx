@@ -89,7 +89,7 @@ export function DatePeriodActions({
         title={resetLabel}
         aria-label={resetLabel}
       >
-        {String.fromCharCode(0x21ba)}
+        {resetLabel}
       </Button>
     </div>
   );

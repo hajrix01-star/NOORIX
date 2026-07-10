@@ -217,7 +217,7 @@ export default function DateFilterBar({
       {showActions && (
         <DatePeriodActions
           applyLabel={t('dateFilterApply')}
-          resetLabel={t('dateFilterReset')}
+          resetLabel={lang === 'ar' ? 'إعادة' : 'Reset'}
           canApply={isDirty}
           onApply={apply}
           onReset={reset}
