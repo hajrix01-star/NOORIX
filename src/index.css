@@ -6303,9 +6303,9 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   --nx-table-foot-fg: var(--noorix-text);
   --nx-table-row-hover: color-mix(in srgb, var(--noorix-accent-blue) 4%, var(--noorix-bg-surface));
   --nx-table-line: var(--noorix-table-header-border);
-  --nx-table-line-soft: color-mix(in srgb, var(--noorix-border) 76%, transparent);
-  --nx-table-col-line: var(--noorix-table-header-border);
-  --nx-table-body-col-line: color-mix(in srgb, var(--noorix-border) 82%, transparent);
+  --nx-table-line-soft: color-mix(in srgb, var(--noorix-border) 92%, #94a3b8);
+  --nx-table-col-line: rgba(255, 255, 255, 0.34);
+  --nx-table-body-col-line: color-mix(in srgb, var(--noorix-border) 90%, #94a3b8);
 }
 .noorix-table {
   width: 100%;
@@ -6354,6 +6354,23 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 .noorix-table tfoot td:first-child {
   border-inline-start: 0 !important;
+}
+.noorix-report-table--fit {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+}
+.noorix-report-table--fit .noorix-report-table__table {
+  width: auto !important;
+}
+@media (max-width: 768px) {
+  .noorix-report-table--fit {
+    display: block;
+    width: 100%;
+  }
+  .noorix-report-table--fit .noorix-report-table__table {
+    width: 100% !important;
+  }
 }
 .noorix-table td[data-column-kind="text"] {
   padding-inline-start: 14px !important;

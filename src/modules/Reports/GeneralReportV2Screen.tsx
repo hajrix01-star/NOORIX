@@ -167,13 +167,13 @@ export default function GeneralReportV2Screen() {
 
   const rowKey = (row: PlDisplayRow) => `${row.groupKey || ''}:${row.itemKey || row.key || ''}:${row.rowType || ''}:${row.depth || 0}`;
 
-  function percentChange(current: number, previous: number) {
-    if (!previous) return null;
-    return ((current - previous) / Math.abs(previous)) * 100;
-  }
-
-  function formatChange(value: number | null) {
-    if (value == null || !Number.isFinite(value)) return lang === 'ar' ? 'غير منطقي' : 'N/A';
+  function formatChange(current: number, previous: number) {
+    if (!Number.isFinite(current) || !Number.isFinite(previous)) return '-';
+    if (previous === 0) {
+      if (current === 0) return '-';
+      return current > 0 ? (lang === 'ar' ? 'جديد' : 'New') : (lang === 'ar' ? 'بدون أساس' : 'No base');
+    }
+    const value = ((current - previous) / Math.abs(previous)) * 100;
     const rounded = Math.round(value * 10) / 10;
     return `${rounded > 0 ? '+' : ''}${rounded.toLocaleString('en', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
   }
@@ -190,10 +190,14 @@ export default function GeneralReportV2Screen() {
     return 'text-slate-700';
   }
 
+  const isYearTable = currentPeriod.mode === 'year';
+  const reportMonthCount = report?.months?.length || 12;
+  const labelColumnMinWidth = isYearTable ? 320 : compareEnabled ? 300 : 260;
+
   const labelColumn = useMemo<SimpleTableColumn<PlDisplayRow>>(() => ({
     key: 'label',
     label: '',
-    minWidth: 380,
+    minWidth: labelColumnMinWidth,
     align: 'start',
     headerClassName: 'text-start',
     cellClassName: 'text-start',
@@ -202,7 +206,11 @@ export default function GeneralReportV2Screen() {
       const collapseKey = row.rowType === 'group' || row.rowType === 'groupTotal' ? row.groupKey : row.collapseKey;
       const rowType = row.originalRowType || row.rowType;
       const depth = row.rowType === 'summary' || row.rowType === 'groupTotal' ? 0 : Math.max(0, Math.min(3, Number(row.depth || 0)));
-      const indent = depth >= 2 ? 'ps-36' : depth === 1 ? 'ps-20' : 'ps-0';
+      const indent = depth >= 2
+        ? isYearTable ? 'ps-28' : 'ps-14'
+        : depth === 1
+          ? isYearTable ? 'ps-16' : 'ps-8'
+          : 'ps-0';
       const labelClass = row.rowType === 'summary' || row.rowType === 'groupTotal'
         ? 'font-black text-slate-900'
         : depth >= 2
@@ -226,7 +234,7 @@ export default function GeneralReportV2Screen() {
         </div>
       );
     },
-  }), [collapsedGroups, lang, selectedMonthNumber]);
+  }), [collapsedGroups, isYearTable, labelColumnMinWidth, lang, selectedMonthNumber]);
 
   const comparisonColumns = useMemo<SimpleTableColumn<PlDisplayRow>[]>(() => {
     const columns: SimpleTableColumn<PlDisplayRow>[] = [
@@ -288,7 +296,7 @@ export default function GeneralReportV2Screen() {
           const compareRow = compareRows.get(rowKey(row));
           const current = periodAmount(row, currentPeriod);
           const previous = compareRow ? periodAmount(compareRow, comparePeriod) : 0;
-          return <span className="inline-block min-w-[78px] text-end font-black text-slate-500" dir="ltr">{compareRow ? formatChange(percentChange(current, previous)) : '-'}</span>;
+          return <span className="inline-block min-w-[78px] text-end font-black text-slate-500" dir="ltr">{compareRow ? formatChange(current, previous) : '-'}</span>;
         },
       },
     );
@@ -349,8 +357,12 @@ export default function GeneralReportV2Screen() {
     },
   ], [labelColumn, report?.months, t, year]);
 
-  const activeColumns = currentPeriod.mode === 'year' ? yearlyColumns : comparisonColumns;
-  const tableMinWidth = currentPeriod.mode === 'year' ? 1780 : compareEnabled ? 820 : 620;
+  const activeColumns = isYearTable ? yearlyColumns : comparisonColumns;
+  const tableMinWidth = isYearTable
+    ? Math.max(980, labelColumnMinWidth + reportMonthCount * 112 + 132 + 96)
+    : compareEnabled
+      ? labelColumnMinWidth + 160 + 160 + 120
+      : Math.max(480, labelColumnMinWidth + 160);
 
   function toggleGroup(key: string) {
     setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -417,7 +429,7 @@ export default function GeneralReportV2Screen() {
             return [
               amountText(current),
               compareRow ? amountText(previous) : '-',
-              compareRow ? formatChange(percentChange(current, previous)) : '-',
+              compareRow ? formatChange(current, previous) : '-',
             ];
           })();
       return `<tr class="${rowKind.trim()}"><td class="label" style="padding-inline-start:${12 + depth * 22}px">${label}</td>${cells.map((cell) => `<td class="num">${escHtml(cell)}</td>`).join('')}</tr>`;
@@ -650,7 +662,7 @@ export default function GeneralReportV2Screen() {
               <MetricCard.Header label={t('annualNetProfit')} subLabel={dateFilter.label} />
               <MetricCard.Value value={currentNetProfit} currency="SR" color="var(--color-nx-net-profit)" />
               <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
-                {compareEnabled ? `${lang === 'ar' ? 'التغير' : 'Change'} ${formatChange(percentChange(currentNetProfit, compareNetProfit))}` : (lang === 'ar' ? 'بدون مقارنة' : 'No comparison')}
+                {compareEnabled ? `${lang === 'ar' ? 'التغير' : 'Change'} ${formatChange(currentNetProfit, compareNetProfit)}` : (lang === 'ar' ? 'بدون مقارنة' : 'No comparison')}
               </MetricCard.Footer>
             </MetricCard>
 
@@ -673,7 +685,7 @@ export default function GeneralReportV2Screen() {
             <MetricCard color={compareEnabled ? 'var(--color-nx-profit)' : 'var(--noorix-border)'} className="min-h-[138px]">
               <MetricCard.Header label={lang === 'ar' ? 'المقارنة' : 'Comparison'} subLabel={compareEnabled ? compareFilter.label : (lang === 'ar' ? 'معطلة' : 'Off')} />
               <MetricCard.Value
-                value={compareEnabled ? formatChange(percentChange(currentNetProfit, compareNetProfit)) : (lang === 'ar' ? 'بدون' : 'Off')}
+                value={compareEnabled ? formatChange(currentNetProfit, compareNetProfit) : (lang === 'ar' ? 'بدون' : 'Off')}
                 color={compareEnabled ? 'var(--color-nx-profit)' : 'var(--noorix-muted)'}
               />
               <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
@@ -720,6 +732,8 @@ export default function GeneralReportV2Screen() {
             columns={activeColumns}
             data={visibleRows}
             tableMinWidth={tableMinWidth}
+            frameClassName={isYearTable ? '' : 'noorix-report-table--fit'}
+            tableClassName={isYearTable ? '' : 'noorix-report-table__table'}
             compact
             cellPadding="8px 14px"
             getRowClassName={(row) => tableRowClass(row)}
