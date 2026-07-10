@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getSaudiNow } from '../../utils/saudiDate';
@@ -76,11 +76,13 @@ export default function DateFilterBar({
     if (nextMode === 'all') {
       filter.setMode('all');
       updateDraft({ mode: 'all' });
+      setPopoverStyle(null);
       setOpenPanel(null);
       return;
     }
     const change = getDatePeriodModeChange(draft, nextMode, now);
     updateDraft(change.patch);
+    setPopoverStyle(null);
     setOpenPanel(change.openPanel);
   };
 
@@ -91,7 +93,7 @@ export default function DateFilterBar({
     setOpenPanel(null);
   }, [availableModes, draft, fallbackMode, mode, now, updateDraft]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!openPanel) return undefined;
     const updatePopoverPosition = () => {
       const anchor = anchorRef.current ?? rootRef.current;
@@ -118,6 +120,7 @@ export default function DateFilterBar({
       if (!(target instanceof Node)) return;
       if (rootRef.current?.contains(target)) return;
       if (popoverRef.current?.contains(target)) return;
+      setPopoverStyle(null);
       setOpenPanel(null);
     };
     updatePopoverPosition();
@@ -135,11 +138,13 @@ export default function DateFilterBar({
 
   const apply = () => {
     applyDatePeriodDraft(filter, draft);
+    setPopoverStyle(null);
     setOpenPanel(null);
   };
 
   const reset = () => {
     filter.reset();
+    setPopoverStyle(null);
     setOpenPanel(null);
   };
 
@@ -150,7 +155,7 @@ export default function DateFilterBar({
       role="dialog"
       aria-label={t('dateFilterPeriod')}
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
-      style={popoverStyle ?? undefined}
+      style={popoverStyle ?? { position: 'fixed', top: 0, left: 0, width: 380, visibility: 'hidden' }}
     >
       {mode === 'month' && (
         <MonthRangeCalendar
