@@ -208,7 +208,7 @@ export function useDailySalesScreen() {
     const report = aggregateSalesDayByShift(summaries, targetDate);
     const dateRaw = formatSaudiDate(targetDate);
     let dateLabel = dateRaw;
-    if (dateRaw !== 'â€”') {
+    if (dateRaw !== '—') {
       const wd = formatSaudiWeekdayName(targetDate, lang);
       if (wd) dateLabel = `${dateRaw} ${wd}`;
     }
