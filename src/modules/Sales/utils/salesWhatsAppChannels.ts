@@ -145,6 +145,17 @@ export function aggregateDayChannelWhatsAppLines(
 }
 
 /** قنوات من نموذج الإدخال (بعد الحفظ عندما لا تُرجع API القنوات) */
+export function aggregateDayChannelWhatsAppSummary(
+  summaries: SalesSummaryChannelsLike[],
+  dayYmd: string,
+  lang: string,
+  vaultById?: Map<string, DailySalesVaultRef>,
+): string {
+  return aggregateDayChannelWhatsAppLines(summaries, dayYmd, lang, vaultById)
+    .map((row) => row.replace(/^\s*[^ ]+\s+/, '').replace(/ SR$/, ''))
+    .join(' | ');
+}
+
 export function channelsFromEntryPayload(
   payload: { channels: { vaultId: string; amount: string }[] },
   salesChannels: Array<{ id: string; nameAr?: string | null; nameEn?: string | null; sortOrder?: number | null }>,

@@ -3,23 +3,11 @@ import { fmt } from '../../../utils/format';
 import type { SalesShiftValue } from '../constants/salesShift';
 import { parseSalesShiftValue, resolveSalesSummaryShift } from '../constants/salesShift';
 import {
-  aggregateDayChannelWhatsAppLines,
-  aggregateShiftChannelWhatsAppLines,
+  aggregateDayChannelWhatsAppSummary,
   type SalesSummaryChannelsLike,
 } from './salesWhatsAppChannels';
 import type { DailySalesVaultRef } from '../components/DailySalesChannelsChips';
-import { computeDayAppShare, computeShiftAppShare, type AppShareResult } from './salesAppShare';
-import { appendAppShareWaLines } from './salesWhatsAppAppShare';
-import {
-  waAvgSaleMetricLine,
-  waCustomersLine,
-  waMetaLine,
-  waMetricLine,
-  waReportHeader,
-  waShiftSectionTitle,
-  waSubheading,
-  type SalesWaShiftKind,
-} from './salesWhatsAppFormat';
+import { computeDayAppShare, type AppShareResult } from './salesAppShare';
 
 export type SalesSummaryLike = {
   status?: string;
@@ -131,97 +119,58 @@ type BuildDailyWaParams = {
   monthAppShare?: AppShareResult;
 };
 
-function shiftBlock(
-  kind: SalesWaShiftKind,
-  shiftLabel: string,
-  agg: ShiftDayAggregate,
-  t: (key: string) => string,
-  channelLines: string[],
-  appShare?: AppShareResult,
-): string[] {
-  const title = waShiftSectionTitle(kind, shiftLabel);
-  if (agg.summaryCount === 0) {
-    return [title, `  ${t('salesDailyWaNoShiftData')}`, ''];
-  }
-  const lines = [title];
-  if (channelLines.length > 0) {
-    lines.push(waSubheading(t('salesWhatsAppChannelsHeader')));
-    lines.push(...channelLines);
-  }
-  lines.push(
-    waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(agg.total)} SR`),
-    waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(agg.customers, 0)),
-    waAvgSaleMetricLine(t('salesWhatsAppAvgInvoiceLine'), agg.total, agg.customers),
-  );
-  if (appShare) {
-    appendAppShareWaLines(lines, appShare, t('salesWhatsAppAppShareLine'));
-  }
-  lines.push('');
-  return lines;
+function avgCustomerText(agg: ShiftDayAggregate): string {
+  return fmt(agg.customers > 0 ? agg.total / agg.customers : 0);
+}
+
+function shiftSummaryLine(label: string, agg: ShiftDayAggregate): string | null {
+  if (agg.summaryCount === 0) return null;
+  return `${label} ${fmt(agg.total)} | ${fmt(agg.customers, 0)} عميل | متوسط ${avgCustomerText(agg)}`;
+}
+
+function appShareSummaryLine(dayShare?: AppShareResult, monthShare?: AppShareResult): string | null {
+  const parts: string[] = [];
+  if (dayShare && dayShare.totalAmount > 0) parts.push(`اليوم ${fmt(dayShare.appPercent, 1)}%`);
+  if (monthShare && monthShare.totalAmount > 0) parts.push(`الشهر ${fmt(monthShare.appPercent, 1)}%`);
+  return parts.length > 0 ? `التطبيقات: ${parts.join(' | ')}` : null;
 }
 
 /** نص واتساب لتقرير يومي شامل (صباحي + مسائي + يوم كامل + المجموع) */
 export function buildDailyShiftWhatsAppText(p: BuildDailyWaParams): string {
-  const { companyName, dateLabel, report, t, daySummaries, dayYmd, lang, vaultById, monthAppShare } = p;
+  const { companyName, dateLabel, report, daySummaries, dayYmd, lang, vaultById, monthAppShare } = p;
   const name = (companyName || '').trim();
   const day = dayYmd ? toYmd(dayYmd) : null;
   const canChannels = !!(day && daySummaries?.length && lang);
 
-  const morningChannels = canChannels
-    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'morning', lang!, vaultById)
-    : [];
-  const eveningChannels = canChannels
-    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'evening', lang!, vaultById)
-    : [];
-  const fullDayChannels = canChannels
-    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'all', lang!, vaultById)
-    : [];
-
-  const morningShare = canChannels
-    ? computeShiftAppShare(daySummaries!, day, 'morning', vaultById)
-    : undefined;
-  const eveningShare = canChannels
-    ? computeShiftAppShare(daySummaries!, day, 'evening', vaultById)
-    : undefined;
-  const fullDayShare = canChannels
-    ? computeShiftAppShare(daySummaries!, day, 'all', vaultById)
-    : undefined;
   const grandShare = canChannels
     ? computeDayAppShare(daySummaries!, day, vaultById)
     : undefined;
+  const collectionLine = canChannels
+    ? aggregateDayChannelWhatsAppSummary(daySummaries!, day, lang!, vaultById)
+    : '';
 
-  const lines: string[] = [
-    waReportHeader(t('salesDailyWaTitle'), name),
-    waMetaLine(t('salesWhatsAppDateLine'), dateLabel),
-    '',
-    ...shiftBlock('morning', t('salesShiftMorning'), report.morning, t, morningChannels, morningShare),
-    ...shiftBlock('evening', t('salesShiftEvening'), report.evening, t, eveningChannels, eveningShare),
-  ];
+  const shiftLines = [
+    shiftSummaryLine('الصباحي', report.morning),
+    shiftSummaryLine('المسائي', report.evening),
+    shiftSummaryLine('يوم كامل', report.fullDay),
+  ].filter((line): line is string => Boolean(line));
 
-  if (report.fullDay.summaryCount > 0) {
-    lines.push(...shiftBlock('fullDay', t('salesShiftFullDay'), report.fullDay, t, fullDayChannels, fullDayShare));
-  }
-
-  const grandChannelLines = canChannels
-    ? aggregateDayChannelWhatsAppLines(daySummaries!, day, lang!, vaultById)
-    : [];
-
-  lines.push(waShiftSectionTitle('grand', t('salesDailyWaGrandTotal')));
-  if (grandChannelLines.length > 0) {
-    lines.push(waSubheading(t('salesWhatsAppChannelsHeader')));
-    lines.push(...grandChannelLines);
-  }
+  const lines: string[] = ['ملخص مبيعات اليوم'];
+  if (name) lines.push(name);
+  lines.push(dateLabel, '');
+  lines.push(...shiftLines);
   lines.push(
-    waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(report.grand.total)} SR`),
-    waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(report.grand.customers, 0)),
-    waAvgSaleMetricLine(t('salesWhatsAppAvgInvoiceLine'), report.grand.total, report.grand.customers),
+    '',
+    `الإجمالي ${fmt(report.grand.total)}`,
+    `العملاء ${fmt(report.grand.customers, 0)}`,
+    `متوسط العميل ${avgCustomerText(report.grand)}`,
   );
-  if (grandShare) {
-    appendAppShareWaLines(lines, grandShare, t('salesWhatsAppAppShareLine'));
+  if (collectionLine) {
+    lines.push('', `التحصيل: ${collectionLine}`);
   }
-  if (monthAppShare) {
-    appendAppShareWaLines(lines, monthAppShare, t('salesWhatsAppAppShareMonthLine'), { percentOnly: true });
-  }
+  const appLine = appShareSummaryLine(grandShare, monthAppShare);
+  if (appLine) lines.push(appLine);
+
   return lines.join('\n').trim();
 }
 

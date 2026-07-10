@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   aggregateSalesDayByShift,
   buildDailyShiftWhatsAppText,
   buildDayShiftReportFromEntryItems,
 } from './salesDayShiftReport';
+import { formatShiftNoteTag } from '../constants/salesShift';
 
 describe('aggregateSalesDayByShift', () => {
   it('reads shift from legacy notes tag when DB shift is all', () => {
@@ -15,7 +16,7 @@ describe('aggregateSalesDayByShift', () => {
           shift: 'all',
           totalAmount: 10,
           customerCount: 10,
-          notes: 'ملاحظة\n[شفت: شفت صباحي]',
+          notes: `note\n${formatShiftNoteTag('morning')}`,
         },
       ],
       '2026-05-26',
@@ -55,27 +56,32 @@ describe('buildDayShiftReportFromEntryItems', () => {
 describe('buildDailyShiftWhatsAppText', () => {
   const t = (k: string) => k;
 
-  it('includes grand total line', () => {
+  it('builds a compact daily sales summary', () => {
     const text = buildDailyShiftWhatsAppText({
-      companyName: 'مطعم',
-      dateLabel: '2026-05-10',
+      companyName: 'Noorix',
+      dateLabel: 'Friday 2026-07-10',
       report: {
-        morning: { total: 100, customers: 10, summaryCount: 1 },
-        evening: { total: 0, customers: 0, summaryCount: 0 },
+        morning: { total: 4000, customers: 40, summaryCount: 1 },
+        evening: { total: 6000, customers: 60, summaryCount: 1 },
         fullDay: { total: 0, customers: 0, summaryCount: 0 },
-        grand: { total: 100, customers: 10, summaryCount: 1 },
+        grand: { total: 10000, customers: 100, summaryCount: 2 },
       },
       t,
     });
-    expect(text).toContain('salesDailyWaGrandTotal');
-    expect(text).toContain('100');
-    expect(text).toContain('salesWhatsAppAvgInvoiceLine');
-    expect(text.startsWith('salesDailyWaTitle')).toBe(true);
+
+    expect(text).toContain('ملخص مبيعات اليوم');
+    expect(text).toContain('Noorix');
+    expect(text).toContain('الصباحي 4,000 | 40 عميل | متوسط 100');
+    expect(text).toContain('المسائي 6,000 | 60 عميل | متوسط 100');
+    expect(text).toContain('الإجمالي 10,000');
+    expect(text).toContain('العملاء 100');
+    expect(text).toContain('متوسط العميل 100');
+    expect(text).not.toContain('salesDailyWaGrandTotal');
   });
 
-  it('includes sales channels when day summaries provided', () => {
+  it('includes sales channels as one compact collection line', () => {
     const text = buildDailyShiftWhatsAppText({
-      companyName: 'مطعم',
+      companyName: 'Noorix',
       dateLabel: '2026-05-10',
       report: {
         morning: { total: 100, customers: 10, summaryCount: 1 },
@@ -91,18 +97,19 @@ describe('buildDailyShiftWhatsAppText', () => {
           status: 'active',
           transactionDate: '2026-05-10',
           shift: 'morning',
-          channels: [{ vault: { nameAr: 'نقدي', sortOrder: 1 }, amount: 100 }],
+          channels: [{ vault: { nameAr: 'Cash', sortOrder: 1 }, amount: 100 }],
         },
       ],
     });
-    expect(text).toContain('salesWhatsAppChannelsHeader');
-    expect(text).toContain('• نقدي');
-    expect(text).toContain('100');
+
+    expect(text).toContain('التحصيل: Cash: 100');
+    expect(text).not.toContain('salesWhatsAppChannelsHeader');
+    expect(text).not.toContain('•');
   });
 
-  it('includes app share lines for shift, day, and month', () => {
+  it('includes compact app share for day and month without amounts', () => {
     const text = buildDailyShiftWhatsAppText({
-      companyName: 'مطعم',
+      companyName: 'Noorix',
       dateLabel: '2026-05-10',
       report: {
         morning: { total: 1000, customers: 10, summaryCount: 1 },
@@ -120,20 +127,16 @@ describe('buildDailyShiftWhatsAppText', () => {
           shift: 'morning',
           totalAmount: 1000,
           channels: [
-            { amount: 300, vault: { type: 'app', nameAr: 'جاهز', sortOrder: 1 } },
-            { amount: 700, vault: { type: 'cash', nameAr: 'نقدي', sortOrder: 2 } },
+            { amount: 300, vault: { type: 'app', nameAr: 'App', sortOrder: 1 } },
+            { amount: 700, vault: { type: 'cash', nameAr: 'Cash', sortOrder: 2 } },
           ],
         },
       ],
       monthAppShare: { appAmount: 500, totalAmount: 2000, appPercent: 25 },
     });
-    expect(text).toContain('salesWhatsAppAppShareLine');
-    expect(text).toContain('30%');
-    expect(text).toContain('1,000');
-    expect(text).toContain('salesWhatsAppAppShareMonthLine');
-    expect(text).toContain('25%');
-    const monthTail = text.split('salesWhatsAppAppShareMonthLine')[1] ?? '';
-    expect(monthTail).not.toContain('2,000');
-    expect(monthTail).not.toContain('500');
+
+    expect(text).toContain('التطبيقات: اليوم 30% | الشهر 25%');
+    expect(text).not.toContain('2,000');
+    expect(text).not.toContain('500');
   });
 });
