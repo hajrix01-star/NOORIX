@@ -53,6 +53,9 @@ type LeaveFormModalProps = {
   employeeId?: string;
   editLeave?: LeaveRecord | null;
   lockEmployeeSelector?: boolean;
+  onReturnFromLeave?: () => void;
+  onSalarySettlement?: () => void;
+  onDelete?: (leave: LeaveRecord) => void;
   onSuccess?: () => void;
   onClose?: () => void;
 };
@@ -80,6 +83,9 @@ export function LeaveFormModal({
   employeeId: initialEmployeeId,
   editLeave = null,
   lockEmployeeSelector = false,
+  onReturnFromLeave,
+  onSalarySettlement,
+  onDelete,
   onSuccess,
   onClose,
 }: LeaveFormModalProps) {
@@ -238,6 +244,21 @@ export function LeaveFormModal({
         className="leave-form-drawer"
         footer={
           <>
+            {isEdit && onDelete && (
+              <Button variant="danger" className="me-auto" onClick={() => onDelete(editLeave)}>
+                {t('delete')}
+              </Button>
+            )}
+            {isEdit && onReturnFromLeave && (
+              <Button variant="primary" onClick={onReturnFromLeave}>
+                {t('leaveReturnFromLeave')}
+              </Button>
+            )}
+            {isEdit && onSalarySettlement && (
+              <Button variant="success" onClick={onSalarySettlement}>
+                {t('leaveSalarySettlement')}
+              </Button>
+            )}
             <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
             <Button type="submit" form={LEAVE_FORM_ID} variant="primary" disabled={submitting}>
               {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}

@@ -51,19 +51,15 @@ export function EmployeeProfileDocumentsSection({
             label: t('documentType') || 'المستند',
             size: 'name',
             render: (_v: unknown, row: ProfileDocumentRow) => (
-              <span className="nx-cell-ellipsis" title={row.fileName || row.documentType || ''}>
+              <Button
+                variant="raw"
+                size="auto"
+                disabled={!row.id}
+                className="nx-cell-ellipsis text-noorix-blue hover:underline disabled:text-noorix-muted disabled:no-underline"
+                title={row.fileName || row.documentType || ''}
+                onClick={() => row.id && onDownload(row.id)}
+              >
                 {row.fileName || row.documentType || 'مستند'}
-              </span>
-            ),
-          },
-          {
-            key: 'actions',
-            label: t('actions'),
-            kind: 'actions',
-            align: 'center',
-            render: (_: unknown, row: ProfileDocumentRow) => (
-              <Button size="sm" disabled={!row.id} onClick={() => row.id && onDownload(row.id)}>
-                {t('download')}
               </Button>
             ),
           },

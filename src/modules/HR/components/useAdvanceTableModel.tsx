@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
-import { Badge, Button, cn, FmtNum, KebabMenu } from '../../../ui';
+import { Badge, Button, cn, FmtNum } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
-import { HRActionsCell } from './HRActionsCell';
 
 type HrAny = ReturnType<typeof JSON.parse>;
 
@@ -86,12 +85,13 @@ export function useAdvanceTableModel({
                     <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className={cn('shrink-0', settled && 'line-through')} />
                   </td>
                   <td className="px-3 py-2 text-center">
-                    <HRActionsCell
-                      row={row}
-                      onEdit={() => setEditingAdvance(row)}
-                      onSettle={canSettle ? () => setSettlingAdvance(row) : undefined}
-                      onDelete={() => handleDeleteAdvance(row)}
-                    />
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(row)}>{t('edit')}</Button>
+                      {canSettle && (
+                        <Button size="sm" className="h-6 px-2" variant="primary" onClick={() => setSettlingAdvance(row)}>{t('settleAdvance')}</Button>
+                      )}
+                      <Button size="sm" className="h-6 px-2" variant="danger" onClick={() => handleDeleteAdvance(row)}>{t('delete')}</Button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -162,13 +162,12 @@ export function useAdvanceTableModel({
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-end">
-                    <HRActionsCell
-                      row={advance}
-                      onEdit={() => setEditingAdvance(advance)}
-                      onSettle={canSettle ? () => setSettlingAdvance(advance) : undefined}
-                      onDelete={() => handleDeleteAdvance(advance)}
-                    />
+                  <div className="flex items-center justify-end gap-1.5">
+                    <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(advance)}>{t('edit')}</Button>
+                    {canSettle && (
+                      <Button size="sm" className="h-6 px-2" variant="primary" onClick={() => setSettlingAdvance(advance)}>{t('settleAdvance')}</Button>
+                    )}
+                    <Button size="sm" className="h-6 px-2" variant="danger" onClick={() => handleDeleteAdvance(advance)}>{t('delete')}</Button>
                   </div>
                 </div>
               );
@@ -226,17 +225,14 @@ export function useAdvanceTableModel({
                       <span className={cn('nx-cr__amount', remainingClass(advance.remainingAmount || 0))}>
                         <FmtNum n={advance.remainingAmount} /> <span className="nx-sar">SR</span>
                       </span>
-                      <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-                        <KebabMenu
-                          ariaLabel={t('actions')}
-                          items={[
-                            { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingAdvance(advance) },
-                            ...(canSettle ? [{ key: 'settle', label: t('settleAdvance'), style: { color: 'var(--noorix-accent-blue)' }, onClick: () => setSettlingAdvance(advance) }] : []),
-                            { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDeleteAdvance(advance) },
-                          ]}
-                        />
-                      </div>
                     </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
+                    <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(advance)}>{t('edit')}</Button>
+                    {canSettle && (
+                      <Button size="sm" className="h-6 px-2" variant="primary" onClick={() => setSettlingAdvance(advance)}>{t('settleAdvance')}</Button>
+                    )}
+                    <Button size="sm" className="h-6 px-2" variant="danger" onClick={() => handleDeleteAdvance(advance)}>{t('delete')}</Button>
                   </div>
                 </div>
               );

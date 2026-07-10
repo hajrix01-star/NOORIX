@@ -17,10 +17,9 @@ import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { PayrollRunFormModal } from '../components/PayrollRunFormModal';
 import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
-import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, DateField, Input, Modal, FmtNum, KebabMenu, SmartTable, YearDateFilter, usePrintPreview } from '../../../ui';
+import { Button, Badge, DateField, Input, Modal, FmtNum, SmartTable, YearDateFilter, usePrintPreview } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -198,7 +197,16 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
 
   const columns = useMemo(() => [
     { key: 'runNumber', label: t('payrollRunNumber'), sortable: true, width: 150, minWidth: 140,
-      render: (v: HrAny) => <span className="nx-cell-num nx-cell-accent text-[13px] whitespace-nowrap">{v || '—'}</span> },
+      render: (v: HrAny, row: HrAny) => (
+        <Button
+          variant="raw"
+          size="auto"
+          className="nx-cell-num nx-cell-accent text-[13px] whitespace-nowrap hover:underline"
+          onClick={() => setDetailRunId(row.id)}
+        >
+          {v || '—'}
+        </Button>
+      ) },
     { key: 'month', label: t('payrollMonth'), sortable: true, width: 130, minWidth: 120,
       render: (v: HrAny) => <span className="text-[13px]">{v || '—'}</span> },
     { key: 'grossTotal', label: t('payrollGross'), numeric: true, sortable: true, width: 130, minWidth: 120,
@@ -230,30 +238,14 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
         )
       ),
     },
-    { key: 'actions', label: t('actions'), kind: 'actions' as const, align: 'center',
-      render: (_: HrAny, row: HrAny) => {
-        const st = String(row.status || '').toLowerCase();
-        const canPay = st === 'completed' && !row.issuedInvoiceNumber;
-        return (
-        <HRActionsCell
-          row={row}
-          type="payroll"
-          onView={() => setDetailRunId(row.id)}
-          onEdit={st === 'draft' ? () => setEditingRunId(row.id) : undefined}
-          onDelete={canDeletePayroll ? () => handleDeletePayrollRun(row) : undefined}
-          onApprove={st === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
-          onPay={canPay ? () => openPayModal(row) : undefined}
-        />
-        );
-      } },
-  ], [t, payrollStatusMap, payrollRunBadgeProps, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll]);
+  ], [t, payrollRunBadgeProps, setDetailRunId]);
 
   const footerCells = (
     <>
       <td colSpan={2} className="text-[12px] text-noorix-muted font-semibold py-1.5 px-3">{t('payrollTotal')} ({allFilteredData.length})</td>
       <td className="text-[13px] text-end py-1.5 px-3 nx-font-numbers">{hrFmt(allFilteredData.reduce((s: HrAny, r: HrAny) => s + (r.grossTotal ?? 0), 0))}</td>
       <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers">{hrFmt(totalNet)}</td>
-      <td colSpan={3} />
+      <td colSpan={2} />
     </>
   );
 
@@ -268,7 +260,13 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
 
   const renderMobileCard = useCallback((row: HrAny) => {
     return (
-      <div>
+      <div
+        className="cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onClick={() => setDetailRunId(row.id)}
+        onKeyDown={(event) => { if (event.key === 'Enter') setDetailRunId(row.id); }}
+      >
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="nx-cell-num nx-cell-accent text-[14px]">{row.runNumber}</span>
           <Badge {...payrollRunBadgeProps(row)} size="sm" className="shrink-0" />
@@ -291,32 +289,25 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
               to={payrollSalaryInvoiceListHref(row.id, row.monthRaw)}
               className="font-semibold text-noorix-blue hover:underline"
               title={t('payrollOpenIssuedInvoice')}
+              onClick={(event) => event.stopPropagation()}
             >
               {row.issuedInvoiceNumber}
             </Link>
           </div>
         )}
-        <div className="flex flex items-center justify-end">
-          <HRActionsCell
-            row={row}
-            type="payroll"
-            onView={() => setDetailRunId(row.id)}
-            onEdit={String(row.status || '').toLowerCase() === 'draft' ? () => setEditingRunId(row.id) : undefined}
-            onDelete={canDeletePayroll ? () => handleDeletePayrollRun(row) : undefined}
-            onApprove={String(row.status || '').toLowerCase() === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
-            onPay={String(row.status || '').toLowerCase() === 'completed' && !row.issuedInvoiceNumber ? () => openPayModal(row) : undefined}
-          />
-        </div>
       </div>
     );
-  }, [payrollStatusMap, payrollRunBadgeProps, t, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll]);
+  }, [payrollRunBadgeProps, t, setDetailRunId]);
 
   const renderCompactRow = useCallback((row: HrAny) => {
-    const isDraft = String(row.status || '').toLowerCase() === 'draft';
-    const isCompleted = String(row.status || '').toLowerCase() === 'completed';
-    const canPay = isCompleted && !row.issuedInvoiceNumber;
     return (
-      <div>
+      <div
+        className="cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onClick={() => setDetailRunId(row.id)}
+        onKeyDown={(event) => { if (event.key === 'Enter') setDetailRunId(row.id); }}
+      >
         <div className="nx-cr__line1">
           <span className="nx-cr__id">{row.runNumber}</span>
           <span className="nx-cr__sub">{row.month}</span>
@@ -328,23 +319,11 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
           </div>
           <div className="nx-cr__line2-end">
             <span className="nx-cr__amount text-noorix-green">{hrFmt(row.netTotal)} <span className="nx-sar">SR</span></span>
-            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-              <KebabMenu
-                ariaLabel={t('actions')}
-                items={[
-                  { key: 'view', label: t('view'), onClick: () => setDetailRunId(row.id) },
-                  ...(isDraft ? [{ key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingRunId(row.id) }] : []),
-                  ...(isDraft ? [{ key: 'approve', label: t('payrollApprove'), style: { color: 'var(--noorix-accent-blue)' }, onClick: () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) }] : []),
-                  ...(canPay ? [{ key: 'pay', label: t('payrollPay'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => openPayModal(row) }] : []),
-                  ...(canDeletePayroll ? [{ key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDeletePayrollRun(row) }] : []),
-                ]}
-              />
-            </div>
           </div>
         </div>
       </div>
     );
-  }, [t, payrollRunBadgeProps, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll, setDetailRunId, setEditingRunId]);
+  }, [t, payrollRunBadgeProps, setDetailRunId]);
 
   function handleExportExcel() {
     exportToExcel(exportData, `payroll-runs-${year}.xlsx`);
@@ -450,6 +429,22 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
           companyName={companyName}
           companyNameEn={activeCompany?.nameEn || activeCompany?.nameAr || ''}
           companyLogo={companyLogo}
+          onEdit={(run) => {
+            setDetailRunId(null);
+            setEditingRunId(run.id);
+          }}
+          onApprove={(run) => updateStatusMutation.mutate({ id: run.id, status: 'completed' })}
+          onPay={(run) => openPayModal({
+            id: run.id,
+            runNumber: run.runNumber,
+            month: run.payrollMonth ? formatSaudiDate(run.payrollMonth) : null,
+            monthRaw: run.payrollMonth,
+            netTotal: Number(run.totalAmount ?? 0),
+          })}
+          onDelete={canDeletePayroll ? (run) => handleDeletePayrollRun({
+            id: run.id,
+            status: run.status,
+          }) : undefined}
           onClose={() => setDetailRunId(null)}
         />
       )}

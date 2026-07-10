@@ -1,6 +1,5 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
-import { Badge, KebabMenu, SmartTable } from '../../../../ui';
-import { HRActionsCell } from '../HRActionsCell';
+import { Badge, Button, SmartTable } from '../../../../ui';
 import { TYPE_MAP } from './employeeProfileModel';
 
 type TranslationFn = (key: string, ...args: unknown[]) => string;
@@ -41,7 +40,20 @@ export function EmployeeProfileLeaveSection({
             key: 'leaveType',
             label: t('leaveType'),
             size: 'supplier',
-            render: (v: unknown) => t((TYPE_MAP as Record<string, string>)[String(v)] || 'leaveOther'),
+            render: (v: unknown, row: ProfileLeaveRow) => (
+              canEditHrLeave ? (
+                <Button
+                  variant="raw"
+                  size="auto"
+                  className="text-[13px] font-semibold text-noorix-blue hover:underline"
+                  onClick={() => onEditLeave(row)}
+                >
+                  {t((TYPE_MAP as Record<string, string>)[String(v)] || 'leaveOther')}
+                </Button>
+              ) : (
+                t((TYPE_MAP as Record<string, string>)[String(v)] || 'leaveOther')
+              )
+            ),
           },
           {
             key: 'startDate',
@@ -68,19 +80,6 @@ export function EmployeeProfileLeaveSection({
             kind: 'status',
             render: (v: unknown) => <Badge {...Badge.fromStatus(v, leaveProfileStatusMap)} size="sm" />,
           },
-          ...(canEditHrLeave
-            ? [
-                {
-                  key: 'actions',
-                  label: t('actions'),
-                  kind: 'actions' as const,
-                  align: 'center',
-                  render: (_: unknown, row: ProfileLeaveRow) => (
-                    <HRActionsCell row={row} type="leave" onEdit={() => onEditLeave(row)} />
-                  ),
-                },
-              ]
-            : []),
         ]}
         data={leaves}
         total={leaves.length}
@@ -88,7 +87,13 @@ export function EmployeeProfileLeaveSection({
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
         renderCompactRow={(row: ProfileLeaveRow) => (
-          <div>
+          <div
+            className={canEditHrLeave ? 'cursor-pointer' : undefined}
+            role={canEditHrLeave ? 'button' : undefined}
+            tabIndex={canEditHrLeave ? 0 : undefined}
+            onClick={canEditHrLeave ? () => onEditLeave(row) : undefined}
+            onKeyDown={canEditHrLeave ? (event) => { if (event.key === 'Enter') onEditLeave(row); } : undefined}
+          >
             <div className="nx-cr__line1">
               <span className="nx-cr__name">{t((TYPE_MAP as Record<string, string>)[String(row.leaveType)] || 'leaveOther')}</span>
               <Badge {...Badge.fromStatus(row.status, leaveProfileStatusMap)} size="sm" />
@@ -99,17 +104,18 @@ export function EmployeeProfileLeaveSection({
               </div>
               <div className="nx-cr__line2-end">
                 <span className="nx-cr__amount">{row.daysCount ?? '—'} {t('daysCount')}</span>
-                {canEditHrLeave && (
-                  <div className="nx-cr__kebab" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
-                    <KebabMenu ariaLabel={t('actions')} items={[{ key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEditLeave(row) }]} />
-                  </div>
-                )}
               </div>
             </div>
           </div>
         )}
         renderMobileCard={(row: ProfileLeaveRow) => (
-          <div className="flex flex-col gap-2">
+          <div
+            className={canEditHrLeave ? 'flex flex-col gap-2 cursor-pointer' : 'flex flex-col gap-2'}
+            role={canEditHrLeave ? 'button' : undefined}
+            tabIndex={canEditHrLeave ? 0 : undefined}
+            onClick={canEditHrLeave ? () => onEditLeave(row) : undefined}
+            onKeyDown={canEditHrLeave ? (event) => { if (event.key === 'Enter') onEditLeave(row); } : undefined}
+          >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-[14px] font-bold text-noorix-text">
                 {t((TYPE_MAP as Record<string, string>)[String(row.leaveType)] || 'leaveOther')}
@@ -130,15 +136,6 @@ export function EmployeeProfileLeaveSection({
                 <div className="text-[13px] font-semibold ltr">{row.daysCount ?? '—'}</div>
               </div>
             </div>
-            {canEditHrLeave ? (
-              <div className="nx-mc__actions border-t border-noorix-border pt-2">
-                <HRActionsCell
-                  row={row}
-                  type="leave"
-                  onEdit={() => onEditLeave(row)}
-                />
-              </div>
-            ) : null}
           </div>
         )}
       />

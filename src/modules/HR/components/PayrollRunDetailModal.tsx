@@ -50,9 +50,24 @@ type PayrollRunDetailModalProps = {
   companyNameEn?: string;
   companyLogo?: string;
   onClose: () => void;
+  onEdit?: (run: PayrollRunDetail) => void;
+  onApprove?: (run: PayrollRunDetail) => void;
+  onPay?: (run: PayrollRunDetail) => void;
+  onDelete?: (run: PayrollRunDetail) => void;
 };
 
-export function PayrollRunDetailModal({ runId, companyId, companyName, companyNameEn, companyLogo, onClose }: PayrollRunDetailModalProps) {
+export function PayrollRunDetailModal({
+  runId,
+  companyId,
+  companyName,
+  companyNameEn,
+  companyLogo,
+  onClose,
+  onEdit,
+  onApprove,
+  onPay,
+  onDelete,
+}: PayrollRunDetailModalProps) {
   const { t, lang } = useTranslation();
   const [slipModalOpen, setSlipModalOpen] = useState(false);
   const [slipNetOnly, setSlipNetOnly] = useState(false);
@@ -120,6 +135,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
 
   const items = run.items || [];
   const st = String(run.status || '').toLowerCase();
+  const isDraft = st === 'draft';
+  const canPay = st === 'completed' && !run.issuedSalaryInvoiceNumber;
   const statusInfo =
     st === 'completed' && run.issuedSalaryInvoiceNumber
       ? { labelKey: 'payrollPaid', badgeColor: 'green' }
@@ -249,6 +266,18 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       className="payroll-run-detail-drawer"
       footer={
         <>
+          {isDraft && onEdit && (
+            <Button variant="default" onClick={() => onEdit(run)}>{t('edit')}</Button>
+          )}
+          {isDraft && onApprove && (
+            <Button variant="primary" onClick={() => onApprove(run)}>{t('payrollApprove')}</Button>
+          )}
+          {canPay && onPay && (
+            <Button variant="success" onClick={() => onPay(run)}>{t('payrollPay')}</Button>
+          )}
+          {onDelete && (
+            <Button variant="danger" onClick={() => onDelete(run)}>{t('delete')}</Button>
+          )}
           <Button onClick={handlePrint}>{t('printPayroll')}</Button>
           <Button variant="default" onClick={handlePrintEmployeeSlips}>{t('payrollSlipBatchPrint')}</Button>
           <Button variant="ghost" onClick={onClose}>{t('close') || 'إغلاق'}</Button>

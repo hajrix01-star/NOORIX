@@ -17,13 +17,12 @@ import { formatSaudiDate, getSaudiToday, toDateInputYmd } from '../../../utils/s
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { LeaveFormModal } from '../components/LeaveFormModal';
-import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, DateField, Input, Modal, Spinner, KebabMenu, SmartTable, YearDateFilter } from '../../../ui';
+import { Button, Badge, DateField, Input, Modal, Spinner, SmartTable, YearDateFilter } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
@@ -232,6 +231,13 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     ...l,
     employeeName: employeeDisplayName(l.employee || { name: l.employeeName }, lang),
   })), [data, lang]);
+
+  const handleDeleteLeave = useCallback((row: HrLeaveRow) => {
+    if (!window.confirm(t('deleteLeaveConfirm'))) return;
+    if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
+    deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
+  }, [deleteLeaveMutation, t]);
+
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
     useTableFilter(items, {
       searchKeys: ['employeeName', 'leaveType'],
@@ -242,8 +248,17 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     });
 
   const columns = useMemo(() => [
-    { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
-      render: (v: unknown) => <span className="font-semibold text-[13px]">{String(v || '—')}</span> },
+    {
+      key: 'employeeName',
+      label: t('employeeName'),
+      sortable: true,
+      minWidth: 180,
+      render: (v: unknown, row: HrLeaveRow) => (
+        <Button variant="raw" size="auto" className="font-semibold text-[13px] text-noorix-blue hover:underline" onClick={() => setEditLeave(row)}>
+          {String(v || '-')}
+        </Button>
+      ),
+    },
     { key: 'leaveType', label: t('leaveType'), sortable: true, width: 130, minWidth: 120,
       render: (v: unknown) => (
         <span className="text-[13px]">{t(TYPE_MAP[v as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
@@ -265,22 +280,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           <span className="text-noorix-muted text-[12px]">—</span>
         )
       ) },
-    { key: 'actions', label: t('actions'), kind: 'actions' as const, align: 'center',
-      render: (_: unknown, row: HrLeaveRow) => (
-        <HRActionsCell
-          row={row}
-          type="leave"
-          onEdit={() => setEditLeave(row)}
-          onReturnFromLeave={canShowLeaveReturnRow(row) ? () => setReturnRow(row) : undefined}
-          onLeaveSalarySettlement={canShowSalarySettlement(row) ? () => setSettlementRow(row) : undefined}
-          onDelete={() => {
-            if (!window.confirm(t('deleteLeaveConfirm'))) return;
-            if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
-            deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
-          }}
-        />
-      ) },
-  ], [t, deleteLeaveMutation]);
+  ], [t]);
 
   const exportData = allFilteredData.map((r: HrLeaveRow & { employeeName?: string }) => ({
     employeeName: r.employeeName || '—',
@@ -293,7 +293,13 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
 
   const renderMobileCard = useCallback((row: HrLeaveRow & { employeeName?: string }) => {
     return (
-      <div>
+      <div
+        className="cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onClick={() => setEditLeave(row)}
+        onKeyDown={(event) => { if (event.key === 'Enter') setEditLeave(row); }}
+      >
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="font-bold text-[14px]">{String(row.employeeName || '—')}</span>
         </div>
@@ -317,37 +323,18 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
             <div className="nx-mc__stat-value text-[14px] font-bold">{row.daysCount ?? '—'}</div>
           </div>
         </div>
-        {canShowLeaveReturnRow(row) && (
-          <Button variant="primary" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setReturnRow(row)}>
-            {t('leaveReturnFromLeave')}
-          </Button>
-        )}
-        {canShowSalarySettlement(row) && (
-          <Button variant="success" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setSettlementRow(row)}>
-            {t('leaveSalarySettlement')}
-          </Button>
-        )}
-        <Button variant="ghost" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setEditLeave(row)}>
-          {t('edit')}
-        </Button>
-        <Button
-          variant="danger"
-          size="sm"
-          className="w-full mt-2 min-h-[44px]"
-          onClick={() => {
-            if (!window.confirm(t('deleteLeaveConfirm'))) return;
-            if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
-            deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
-          }}
-        >
-          {t('delete')}
-        </Button>
       </div>
     );
-  }, [t, deleteLeaveMutation]);
+  }, [t, setEditLeave]);
 
   const renderCompactRow = useCallback((row: HrLeaveRow & { employeeName?: string }) => (
-    <div>
+    <div
+      className="cursor-pointer"
+      role="button"
+      tabIndex={0}
+      onClick={() => setEditLeave(row)}
+      onKeyDown={(event) => { if (event.key === 'Enter') setEditLeave(row); }}
+    >
       <div className="nx-cr__line1">
         <span className="nx-cr__name">{String(row.employeeName || '—')}</span>
         <span className="nx-cr__sub">{t(TYPE_MAP[row.leaveType as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
@@ -359,25 +346,10 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
         </div>
         <div className="nx-cr__line2-end">
           <span className="nx-cr__amount">{row.daysCount ?? '—'} {t('daysCount')}</span>
-          <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-            <KebabMenu
-              ariaLabel={t('actions')}
-              items={[
-                ...(canShowLeaveReturnRow(row) ? [{ key: 'return', label: t('leaveReturnFromLeave'), style: { color: 'var(--noorix-accent-blue)' }, onClick: () => setReturnRow(row) }] : []),
-                ...(canShowSalarySettlement(row) ? [{ key: 'settle', label: t('leaveSalarySettlement'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setSettlementRow(row) }] : []),
-                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditLeave(row) },
-                { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => {
-                  if (!window.confirm(t('deleteLeaveConfirm'))) return;
-                  if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
-                  deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
-                }},
-              ]}
-            />
-          </div>
         </div>
       </div>
     </div>
-  ), [t, deleteLeaveMutation, setReturnRow, setSettlementRow, setEditLeave, canShowLeaveReturnRow, canShowSalarySettlement]);
+  ), [t, setEditLeave]);
 
   const yearLeading = <YearDateFilter year={year} onYearChange={setYear} />;
 
@@ -439,6 +411,9 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           companyId={companyId}
           employeeId={editLeave?.employeeId}
           editLeave={editLeave}
+          onReturnFromLeave={editLeave && canShowLeaveReturnRow(editLeave) ? () => setReturnRow(editLeave) : undefined}
+          onSalarySettlement={editLeave && canShowSalarySettlement(editLeave) ? () => setSettlementRow(editLeave) : undefined}
+          onDelete={editLeave ? handleDeleteLeave : undefined}
           onSuccess={() => {
             invalidateAfterLeaveFormModalSuccess(queryClient, companyId, year);
             showToast(editLeave ? t('leaveUpdated') : t('leaveAdded'), 'success');

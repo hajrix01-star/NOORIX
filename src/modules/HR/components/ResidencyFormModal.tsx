@@ -77,6 +77,7 @@ type ResidencyFormModalProps = {
   onSuccess?: () => void;
   onClose?: () => void;
   onDelete?: (residency: ResidencyRecord) => void;
+  onIssueInvoice?: (residency: ResidencyRecord) => void;
 };
 
 export function ResidencyFormModal({
@@ -87,6 +88,7 @@ export function ResidencyFormModal({
   onSuccess,
   onClose,
   onDelete,
+  onIssueInvoice,
 }: ResidencyFormModalProps) {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies } = useApp();
@@ -282,6 +284,11 @@ export function ResidencyFormModal({
           {isEdit && onDelete && (
             <Button variant="danger" className="me-auto" onClick={() => onDelete(residency)}>
               {t('delete')}
+            </Button>
+          )}
+          {isEdit && onIssueInvoice && !residency?.invoiceId && (
+            <Button variant="success" onClick={() => onIssueInvoice(residency)}>
+              {t('hrServiceIssueInvoice')}
             </Button>
           )}
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>

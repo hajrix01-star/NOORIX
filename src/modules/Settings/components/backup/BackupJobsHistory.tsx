@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Badge, KebabMenu } from '../../../../ui';
+import { Card, Badge, Button } from '../../../../ui';
 import { formatSaudiDateTime } from '../../../../utils/saudiDate';
 import type {
   BackupImportModal,
@@ -77,40 +77,32 @@ export function BackupJobsHistory({
                     {statusLabel(job.status, t)}
                   </Badge>
                 </div>
-                <div className="shrink-0 pt-0.5 min-h-[44px] min-w-[44px] flex items-start justify-center">
-                  <KebabMenu
-                    ariaLabel={t('backupActionsMenu')}
-                    menuWidth={200}
-                    items={[
-                      {
-                        key: 'report',
-                        label: t('backupRestoreReport'),
-                        onClick: () => reportMut.mutate(job.id),
-                      },
-                      {
-                        key: 'download',
-                        label: t('backupDownload'),
-                        hidden: !(job.scope === 'company_logical' && job.status === 'completed' && job.localRelativePath),
-                        onClick: () => downloadMut.mutate(job.id),
-                      },
-                      {
-                        key: 'import',
-                        label: t('backupImportNewCompany'),
-                        hidden: !(job.scope === 'company_logical' && job.status === 'completed' && job.localRelativePath),
-                        onClick: () => {
+                <div className="shrink-0 pt-0.5 flex flex-wrap items-start justify-end gap-1.5">
+                  <Button size="sm" className="h-7 px-2" variant="ghost" onClick={() => reportMut.mutate(job.id)}>
+                    {t('backupRestoreReport')}
+                  </Button>
+                  {job.scope === 'company_logical' && job.status === 'completed' && job.localRelativePath ? (
+                    <>
+                      <Button size="sm" className="h-7 px-2" variant="ghost" onClick={() => downloadMut.mutate(job.id)}>
+                        {t('backupDownload')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-7 px-2"
+                        variant="primary"
+                        onClick={() => {
                           setImportNameAr(defaultImportCompanyName(job, t, lang));
                           setImportConfirmed(false);
                           setImportModal({ jobId: job.id });
-                        },
-                      },
-                      {
-                        key: 'verify',
-                        label: t('backupVerify'),
-                        hidden: !(job.scope === 'company_logical' && job.status === 'completed' && job.localRelativePath),
-                        onClick: () => verifyCoMut.mutate(job.id),
-                      },
-                    ]}
-                  />
+                        }}
+                      >
+                        {t('backupImportNewCompany')}
+                      </Button>
+                      <Button size="sm" className="h-7 px-2" variant="ghost" onClick={() => verifyCoMut.mutate(job.id)}>
+                        {t('backupVerify')}
+                      </Button>
+                    </>
+                  ) : null}
                 </div>
               </div>
               <p className="text-[11px] text-noorix-muted m-0 leading-snug break-words">{metaParts.join(' - ')}</p>

@@ -1,7 +1,5 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
-import { hrFmt } from '../../utils/hrFmt';
-import { Badge, Button, KebabMenu, SmartTable, cn } from '../../../../ui';
-import { HRActionsCell } from '../HRActionsCell';
+import { Badge, Button, SmartTable, cn } from '../../../../ui';
 import { HR_SERVICE_CATEGORY_LABEL_KEYS, formatHrServiceDetail, formatHrServiceSecondaryDate } from '../../constants/employeeHrServiceCategories';
 import { HrServiceQuickAddBar } from '../HrServiceQuickAddBar';
 
@@ -39,29 +37,12 @@ export function EmployeeProfileResidencySection({
   canEditService,
   onQuickAdd,
   onOpenService,
-  onDeleteService,
 }: EmployeeProfileResidencySectionProps) {
   const enrichedRows = (residencies || []).map((row) => ({
     ...row,
     invoiceNumber: row.invoice?.invoiceNumber || null,
     invoiceAmount: row.residencyInvoiceAmount ?? row.invoice?.totalAmount,
   }));
-
-  const serviceKebabItems = (row: ProfileResidencyRow) => [
-    { key: 'view', label: t('view'), onClick: () => onOpenService?.(row) },
-    {
-      key: 'edit',
-      label: t('edit'),
-      style: { color: 'var(--noorix-accent-green)' },
-      onClick: () => onOpenService?.(row),
-    },
-    ...(canEditService && onDeleteService ? [{
-      key: 'delete',
-      label: t('delete'),
-      style: { color: 'var(--noorix-accent-red)' },
-      onClick: () => onDeleteService(row),
-    }] : []),
-  ];
 
   return (
     <div className="noorix-surface-card overflow-hidden">
@@ -143,23 +124,6 @@ export function EmployeeProfileResidencySection({
             kind: 'status',
             render: (v: unknown) => <Badge {...Badge.fromStatus(v, residencyProfileStatusMap)} size="sm" />,
           },
-          ...(canEditService
-            ? [{
-                key: 'actions',
-                label: t('actions'),
-                kind: 'actions' as const,
-                align: 'center',
-                render: (_: unknown, row: ProfileResidencyRow) => (
-                  <HRActionsCell
-                    row={row}
-                    type="residency"
-                    onView={() => onOpenService?.(row)}
-                    onEdit={() => onOpenService?.(row)}
-                    onDelete={onDeleteService ? () => onDeleteService(row) : undefined}
-                  />
-                ),
-              }]
-            : []),
         ]}
         data={enrichedRows}
         total={enrichedRows.length}
@@ -191,11 +155,6 @@ export function EmployeeProfileResidencySection({
               <div className="nx-cr__line2-end flex items-center gap-2">
                 {row.invoiceNumber && (
                   <span className="text-[12px] ltr text-noorix-blue">{row.invoiceNumber}</span>
-                )}
-                {canEditService && (
-                  <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-                    <KebabMenu ariaLabel={t('actions')} items={serviceKebabItems(row)} />
-                  </div>
                 )}
               </div>
             </div>
@@ -230,11 +189,6 @@ export function EmployeeProfileResidencySection({
                 <div className="text-[12px] text-noorix-text">{formatSaudiDate(row.expiryDate)}</div>
               </div>
             </div>
-            {canEditService && (
-              <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
-                <KebabMenu ariaLabel={t('actions')} items={serviceKebabItems(row)} />
-              </div>
-            )}
           </div>
         )}
       />
