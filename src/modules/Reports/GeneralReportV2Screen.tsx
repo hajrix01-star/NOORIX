@@ -145,6 +145,28 @@ export default function GeneralReportV2Screen() {
   const comparePeriodLabel = comparePeriod.months?.length
     ? comparePeriod.months.map((month) => monthNames[month - 1]).join(' + ')
     : compareFilter.label;
+  const compareColumnPeriods = useMemo(() => {
+    if (!compareEnabled) return [];
+    if (comparePeriod.months?.length) {
+      return comparePeriod.months.map((month) => ({
+        key: `compare-${comparePeriod.year}-${month}`,
+        label: `${monthNames[month - 1]} ${comparePeriod.year}`,
+        period: {
+          ...comparePeriod,
+          mode: 'month' as const,
+          month,
+          monthStart: month,
+          monthEnd: month,
+          months: undefined,
+        },
+      }));
+    }
+    return [{
+      key: `compare-${comparePeriod.year}-${comparePeriod.mode}-${comparePeriod.monthStart}-${comparePeriod.monthEnd}`,
+      label: `${comparePeriod.year} ${comparePeriodLabel}`,
+      period: comparePeriod,
+    }];
+  }, [compareEnabled, comparePeriod, comparePeriodLabel, monthNames]);
 
   const { data: report, isLoading, error, isFetching, isPlaceholderData } = useReportsGeneralProfitLoss({
     companyId: activeCompanyId,
@@ -293,26 +315,28 @@ export default function GeneralReportV2Screen() {
       },
     ];
     if (!compareEnabled) return columns;
-    columns.push(
-      {
-        key: 'compare',
+    for (const compareColumn of compareColumnPeriods) {
+      columns.push({
+        key: compareColumn.key,
         label: (
           <div className="grid gap-0.5 text-center">
             <span className="font-black text-white">{comparePeriod.year}</span>
-            <span className="max-w-[140px] truncate text-[11px] font-black text-white/75">{comparePeriodLabel}</span>
+            <span className="max-w-[140px] truncate text-[11px] font-black text-white/75">{compareColumn.label}</span>
           </div>
         ),
         numeric: true,
-        width: 160,
+        width: 144,
         align: 'end',
         headerClassName: 'text-center',
         cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
         render: (_value, row) => {
           const compareRow = compareRows.get(rowKey(row));
-          const previous = compareRow ? periodAmount(compareRow, comparePeriod) : 0;
+          const previous = compareRow ? periodAmount(compareRow, compareColumn.period) : 0;
           return <span className={`inline-block min-w-[116px] text-end font-black ${valueClass(previous, row)}`} dir="ltr">{compareRow ? amountText(previous) : '-'}</span>;
         },
-      },
+      });
+    }
+    columns.push(
       {
         key: 'change',
         label: (
@@ -329,13 +353,15 @@ export default function GeneralReportV2Screen() {
         render: (_value, row) => {
           const compareRow = compareRows.get(rowKey(row));
           const current = periodAmount(row, currentPeriod);
-          const previous = compareRow ? periodAmount(compareRow, comparePeriod) : 0;
+          const previous = compareRow
+            ? compareColumnPeriods.reduce((total, item) => total + periodAmount(compareRow, item.period), 0)
+            : 0;
           return <span className="inline-block min-w-[78px] text-end font-black text-slate-500" dir="ltr">{compareRow ? formatChange(current, previous) : '-'}</span>;
         },
       },
     );
     return columns;
-  }, [compareEnabled, comparePeriod, comparePeriodLabel, compareRows, currentPeriod, dateFilter.label, labelColumn, lang, year]);
+  }, [compareColumnPeriods, compareEnabled, comparePeriod.year, compareRows, currentPeriod, dateFilter.label, labelColumn, lang, year]);
 
   const yearlyColumns = useMemo<SimpleTableColumn<PlDisplayRow>[]>(() => [
     labelColumn,
@@ -398,7 +424,7 @@ export default function GeneralReportV2Screen() {
   const tableMinWidth = isYearTable
     ? Math.max(1360, labelColumnMinWidth + reportMonthCount * 86 + 104 + 72)
     : compareEnabled
-      ? labelColumnMinWidth + 160 + 160 + 120
+      ? labelColumnMinWidth + 160 + Math.max(1, compareColumnPeriods.length) * 144 + 120
       : Math.max(480, labelColumnMinWidth + 160);
 
   function toggleGroup(key: string) {
@@ -445,7 +471,7 @@ export default function GeneralReportV2Screen() {
       : [
           t('reportItem'),
           `${year} ${periodTitle}`,
-          ...(compareEnabled ? [`${comparePeriod.year} ${compareTitle}`, '%'] : []),
+          ...(compareEnabled ? [...compareColumnPeriods.map((item) => item.label), '%'] : []),
         ];
     const rowsHtml = visibleRows.map((row) => {
       const tone = groupToneClassModel(row);
@@ -462,11 +488,14 @@ export default function GeneralReportV2Screen() {
             const current = periodAmount(row, currentPeriod);
             if (!compareEnabled) return [amountText(current)];
             const compareRow = compareRows.get(rowKey(row));
-            const previous = compareRow ? periodAmount(compareRow, comparePeriod) : 0;
+            const previousValues = compareColumnPeriods.map((item) => (
+              compareRow ? periodAmount(compareRow, item.period) : 0
+            ));
+            const previousTotal = previousValues.reduce((total, value) => total + value, 0);
             return [
               amountText(current),
-              compareRow ? amountText(previous) : '-',
-              compareRow ? formatChange(current, previous) : '-',
+              ...previousValues.map((value) => compareRow ? amountText(value) : '-'),
+              compareRow ? formatChange(current, previousTotal) : '-',
             ];
           })();
       return `<tr class="${rowKind.trim()}"><td class="label" style="padding-inline-start:${12 + depth * 22}px">${label}</td>${cells.map((cell) => `<td class="num">${escHtml(cell)}</td>`).join('')}</tr>`;
