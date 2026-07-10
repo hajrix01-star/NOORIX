@@ -6303,7 +6303,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   --nx-table-row-hover: color-mix(in srgb, var(--noorix-accent-blue) 4%, var(--noorix-bg-surface));
   --nx-table-line: var(--noorix-table-header-border);
   --nx-table-line-soft: color-mix(in srgb, var(--noorix-border) 92%, #94a3b8);
-  --nx-table-col-line: rgba(255, 255, 255, 0.34);
+  --nx-table-col-line: var(--noorix-table-header-border);
   --nx-table-body-col-line: color-mix(in srgb, var(--noorix-border) 90%, #94a3b8);
 }
 .noorix-table {
