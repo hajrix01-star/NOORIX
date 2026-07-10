@@ -1,0 +1,117 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or commit to deploy"
+        required: true
+        default: "codex/centralize-filter-system"
+      app_root:
+        description: "Remote staging root"
+        required: true
+        default: "/var/www/noorix-staging"
+      api_port:
+        description: "Remote staging API port"
+        required: true
+        default: "3001"
+      public_url:
+        description: "Optional staging public URL, e.g. https://staging.example.com"
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-noorix-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Build frontend
+        run: |
+          npm ci
+          npm run build
+        env:
+          CI: false
+          VITE_BUILD_ID: ${{ github.sha }}
+
+      - name: Pack frontend and source
+        run: |
+          tar czf noorix-staging-frontend.tar.gz -C dist .
+          tar czf noorix-staging-source.tar.gz \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            --exclude='backend/node_modules' \
+            --exclude='backend/dist' \
+            --exclude='backend/.env' \
+            --exclude='packages/*/node_modules' \
+            --exclude='packages/*/dist' \
+            --exclude='packages/*/dist-esm' \
+            backend packages deploy package.json package-lock.json
+
+      - name: Upload artifacts and deploy on staging host
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USERNAME }}
+          STAGING_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          STAGING_PORT: ${{ secrets.STAGING_SSH_PORT }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
+          DEPLOY_SHA: ${{ github.sha }}
+          APP_ROOT: ${{ inputs.app_root }}
+          API_PORT: ${{ inputs.api_port }}
+          PUBLIC_URL: ${{ inputs.public_url }}
+        run: |
+          set -euo pipefail
+
+          DEPLOY_HOST="${STAGING_HOST:-${VPS_HOST:-}}"
+          DEPLOY_USER="${STAGING_USER:-${VPS_USER:-}}"
+          DEPLOY_KEY="${STAGING_KEY:-${VPS_KEY:-}}"
+          DEPLOY_PORT="${STAGING_PORT:-${VPS_PORT:-22}}"
+
+          if [ -z "${DEPLOY_HOST:-}" ] || [ -z "${DEPLOY_USER:-}" ] || [ -z "${DEPLOY_KEY:-}" ]; then
+            echo "ERROR: Add STAGING_* secrets, or keep the existing VPS_* secrets configured."
+            exit 1
+          fi
+
+          PORT="$(printf '%s' "${DEPLOY_PORT:-22}" | tr -d '[:space:]\r')"
+          [ -z "$PORT" ] && PORT=22
+
+          mkdir -p ~/.ssh
+          KEY="$HOME/.ssh/noorix_staging_key"
+          printf '%s\n' "$DEPLOY_KEY" > "$KEY"
+          chmod 600 "$KEY"
+
+          SSH_OPTS=( -o BatchMode=yes -o StrictHostKeyChecking=accept-new
+                     -o ServerAliveInterval=20 -o ServerAliveCountMax=12
+                     -o ConnectTimeout=30 -i "$KEY" -p "$PORT" )
+          SCP_OPTS=( -o BatchMode=yes -o StrictHostKeyChecking=accept-new
+                     -o ServerAliveInterval=20 -o ServerAliveCountMax=12
+                     -o ConnectTimeout=30 -i "$KEY" -P "$PORT" )
+
+          echo "==> Uploading staging artifacts to ${DEPLOY_USER}@${DEPLOY_HOST}:${PORT}"
+          scp "${SCP_OPTS[@]}" \
+            noorix-staging-frontend.tar.gz \
+            noorix-staging-source.tar.gz \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/"
+
+          ssh "${SSH_OPTS[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "DEPLOY_SHA='${DEPLOY_SHA}' APP_ROOT='${APP_ROOT}' API_PORT='${API_PORT}' PUBLIC_URL='${PUBLIC_URL}' bash -s" \
+            < deploy/staging-remote-install.sh
