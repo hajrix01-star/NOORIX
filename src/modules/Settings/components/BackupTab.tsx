@@ -147,22 +147,38 @@ export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
     fallbackMessage: t('backupError'),
   });
 
-  const jobsRes: SettingsApiResult<BackupJob[]> = jobsIsError
-    ? { success: false, error: jobsError?.message || t('backupError') }
-    : { success: true, data: jobsData };
-  const sysCfgRes: SettingsApiResult<BackupConfigData> | undefined = sysCfgIsError
-    ? { success: false, error: sysCfgError?.message || t('backupError') }
-    : (sysCfgData ? { success: true, data: sysCfgData } : undefined);
-  const sysJobsRes: SettingsApiResult<BackupJob[]> = sysJobsIsError
-    ? { success: false, error: sysJobsError?.message || t('backupError') }
-    : { success: true, data: sysJobsData };
-  const coCfgRes: SettingsApiResult<BackupConfigData> | undefined = coCfgIsError
-    ? { success: false, error: coCfgError?.message || t('backupError') }
-    : (coCfgData ? { success: true, data: coCfgData } : undefined);
+  const jobsRes = React.useMemo<SettingsApiResult<BackupJob[]>>(
+    () =>
+      jobsIsError
+        ? { success: false, error: jobsError?.message || t('backupError') }
+        : { success: true, data: jobsData },
+    [jobsData, jobsError?.message, jobsIsError, t],
+  );
+  const sysCfgRes = React.useMemo<SettingsApiResult<BackupConfigData> | undefined>(
+    () =>
+      sysCfgIsError
+        ? { success: false, error: sysCfgError?.message || t('backupError') }
+        : (sysCfgData ? { success: true, data: sysCfgData } : undefined),
+    [sysCfgData, sysCfgError?.message, sysCfgIsError, t],
+  );
+  const sysJobsRes = React.useMemo<SettingsApiResult<BackupJob[]>>(
+    () =>
+      sysJobsIsError
+        ? { success: false, error: sysJobsError?.message || t('backupError') }
+        : { success: true, data: sysJobsData },
+    [sysJobsData, sysJobsError?.message, sysJobsIsError, t],
+  );
+  const coCfgRes = React.useMemo<SettingsApiResult<BackupConfigData> | undefined>(
+    () =>
+      coCfgIsError
+        ? { success: false, error: coCfgError?.message || t('backupError') }
+        : (coCfgData ? { success: true, data: coCfgData } : undefined),
+    [coCfgData, coCfgError?.message, coCfgIsError, t],
+  );
 
   React.useEffect(() => {
-    if (!sysCfgRes?.success || !sysCfgRes.data) return;
-    const d = sysCfgRes.data;
+    if (!sysCfgData) return;
+    const d = sysCfgData;
     if (typeof d !== 'object' || d.enabled === undefined) return;
     const h = Number(d.scheduleHour);
     const m = Number(d.scheduleMinute);
@@ -175,11 +191,11 @@ export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
       gdriveScriptUrl: typeof d.gdriveScriptUrl === 'string' ? d.gdriveScriptUrl : '',
       gdriveFolderId: typeof d.gdriveFolderId === 'string' ? d.gdriveFolderId : '',
     });
-  }, [sysCfgRes]);
+  }, [sysCfgData]);
 
   React.useEffect(() => {
-    if (!coCfgRes?.success || !coCfgRes.data) return;
-    const d = coCfgRes.data;
+    if (!coCfgData) return;
+    const d = coCfgData;
     if (typeof d !== 'object') return;
     const h = Number(d.scheduleHour);
     const m = Number(d.scheduleMinute);
@@ -192,7 +208,7 @@ export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
       gdriveScriptUrl: typeof d.gdriveScriptUrl === 'string' ? d.gdriveScriptUrl : '',
       gdriveFolderId: typeof d.gdriveFolderId === 'string' ? d.gdriveFolderId : '',
     });
-  }, [coCfgRes]);
+  }, [coCfgData]);
 
   const jobs = jobsRes.success ? jobsRes.data : [];
 
