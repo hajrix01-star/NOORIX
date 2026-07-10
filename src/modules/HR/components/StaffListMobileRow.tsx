@@ -1,35 +1,23 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, cn, FmtNum, KebabMenu } from '../../../ui';
+import { Badge, cn, FmtNum } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import type { HrEmployee } from '../../../types/api';
 
-type TranslationFn = (key: string, ...args: unknown[]) => string;
 type StaffMobileRow = HrEmployee & {
   totalSalary?: number | null;
 };
-type StaffMenuItem = {
-  key: string;
-  label: string;
-  onClick: () => void;
-  style?: React.CSSProperties;
-};
-
 type StaffListMobileRowProps = {
   row: StaffMobileRow;
   lang: string;
-  t: TranslationFn;
   statusMap: Record<string, unknown>;
-  renderMenuItems: (row: StaffMobileRow) => StaffMenuItem[];
 };
 
 export function StaffListMobileRow({
   row,
   lang,
-  t,
   statusMap,
-  renderMenuItems,
 }: StaffListMobileRowProps) {
   const navigate = useNavigate();
   const displayName = employeeDisplayName(row, lang);
@@ -72,12 +60,6 @@ export function StaffListMobileRow({
               <span className="nx-cell-muted">—</span>
             )}
           </span>
-          <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-            <KebabMenu
-              ariaLabel={t('actions')}
-              items={renderMenuItems(row)}
-            />
-          </div>
         </div>
       </div>
     </div>

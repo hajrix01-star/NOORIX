@@ -12,6 +12,7 @@ import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
+import { getSaudiToday } from '../../utils/saudiDate';
 import {
   getLeaves,
   getResidencies,
@@ -37,6 +38,7 @@ import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovement
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
 import { LeaveFormModal } from './components/LeaveFormModal';
 import { ResidencyFormModal } from './components/ResidencyFormModal';
+import { StaffListModals } from './components/StaffListModals';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import {
   buildAdvanceSettlementStatusMap,
@@ -63,6 +65,8 @@ import { EmployeeProfileAdvancesSection } from './components/employeeProfile/Emp
 import { EmployeeProfileResidencySection } from './components/employeeProfile/EmployeeProfileResidencySection';
 import { EmployeeProfileDocumentsSection } from './components/employeeProfile/EmployeeProfileDocumentsSection';
 import { EmployeeProfileSummary } from './components/employeeProfile/EmployeeProfileSummary';
+import { syncCustomAllowanceRows, type HrStaffSavePayload } from './staffListDataOps';
+import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import {
   buildEmployeeProfileSummary,
   buildCareerTableRows,
@@ -73,7 +77,7 @@ import {
   type ProfileRecord,
 } from './components/employeeProfile/employeeProfileModel';
 import { normalizeAdvances } from './utils/advanceBalance';
-import type { HrCompensationSnapshot } from '../../types/api';
+import type { HrCompensationSnapshot, HrEmployee } from '../../types/api';
 
 type HrProfileCompanyRef = {
   id?: string | null;
@@ -137,6 +141,14 @@ export default function EmployeeProfileScreen() {
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
   const [showAdvance, setShowAdvance] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<HrEmployee | null>(null);
+  const [terminatingEmployee, setTerminatingEmployee] = useState<HrEmployee | null>(null);
+  const [terminationSettlementEmp, setTerminationSettlementEmp] = useState<HrEmployee | null>(null);
+  const [terminationForm, setTerminationForm] = useState({
+    reason: '',
+    clause: '',
+    date: getSaudiToday(),
+  });
   const [careerModal, setCareerModal] = useState<'movement' | 'promotion' | 'raise' | null>(null);
   const [editRaiseMovement, setEditRaiseMovement] = useState<ProfileRecord | null>(null);
   const [docModal, setDocModal] = useState<'salary' | 'contract' | 'settlement' | null>(null);
@@ -150,7 +162,7 @@ export default function EmployeeProfileScreen() {
   const docFileRef = React.useRef<HTMLInputElement | null>(null);
 
   const { data: employee, isLoading, error } = useEmployee(id, companyId);
-  const { createAdvance } = useEmployees(companyId, { includeTerminated: true });
+  const { update, createAdvance } = useEmployees(companyId, { includeTerminated: true });
   const {
     data: compensationSnapshot,
     isLoading: isCompensationSnapshotLoading,
@@ -355,6 +367,68 @@ export default function EmployeeProfileScreen() {
     permanentDeleteEmployeeMut.mutate({ empId: employee.id });
   }
 
+  function handleSaveProfileEmployee(payload: HrStaffSavePayload | Record<string, unknown>) {
+    if (!editingEmployee?.id || !companyId) return;
+    const { employeeBody, customAllowances: customRows = [] } = payload && 'employeeBody' in payload
+      ? payload as HrStaffSavePayload
+      : { employeeBody: payload, customAllowances: [] };
+    update.mutate(
+      { id: editingEmployee.id, body: employeeBody },
+      {
+        onSuccess: async () => {
+          try {
+            await syncCustomAllowanceRows({ companyId, employeeId: editingEmployee.id, desiredRows: customRows, queryClient, t });
+            showToast(t('employeeUpdated'), 'success');
+            setEditingEmployee(null);
+            invalidateAll();
+            invalidateEmployeeProfile();
+          } catch (e: unknown) {
+            showToast(getErrorMessage(e, t('saveFailed')), 'error');
+          }
+        },
+        onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
+      },
+    );
+  }
+
+  function handleArchiveEmployeeFromProfile() {
+    if (!employee?.id || !companyId) return;
+    const parsed = parseEmployeeNotesMeta(employee.notes);
+    update.mutate(
+      {
+        id: employee.id,
+        body: { status: 'archived', notes: composeEmployeeNotes(parsed.notesText, parsed.meta) },
+      },
+      {
+        onSuccess: () => {
+          showToast(t('employeeArchived'), 'success');
+          invalidateAll();
+          invalidateEmployeeProfile();
+        },
+        onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
+      },
+    );
+  }
+
+  function handleRestoreEmployeeFromProfile() {
+    if (!employee?.id || !companyId) return;
+    const parsed = parseEmployeeNotesMeta(employee.notes);
+    update.mutate(
+      {
+        id: employee.id,
+        body: { status: 'active', notes: composeEmployeeNotes(parsed.notesText, parsed.meta) },
+      },
+      {
+        onSuccess: () => {
+          showToast(t('employeeRestored'), 'success');
+          invalidateAll();
+          invalidateEmployeeProfile();
+        },
+        onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
+      },
+    );
+  }
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: employeeKeys.detailPartial(id) });
     queryClient.invalidateQueries({ queryKey: hrKeys.customAllowances(companyId, String(id)) });
@@ -484,7 +558,18 @@ export default function EmployeeProfileScreen() {
         onContract={() => setDocModal('contract')}
         onSettlement={() => setDocModal('settlement')}
         onPayAdvance={() => setShowAdvance(true)}
+        onEdit={() => setEditingEmployee(employee)}
+        onTerminate={() => {
+          setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
+          setTerminatingEmployee(employee);
+        }}
+        onArchive={handleArchiveEmployeeFromProfile}
+        onRestore={handleRestoreEmployeeFromProfile}
         onPermanentDelete={handlePermanentDeleteFromProfile}
+        canEdit={canEditEmployee}
+        canTerminate={canEditEmployee && employee.status !== 'terminated' && employee.status !== 'archived'}
+        canArchive={canEditEmployee && employee.status !== 'archived'}
+        canRestore={canEditEmployee && employee.status === 'archived'}
         canDelete={canDeleteEmployee}
         canPayAdvance={employee.status === 'active'}
       />
@@ -699,6 +784,29 @@ export default function EmployeeProfileScreen() {
           onDelete={handleDeleteService}
         />
       )}
+      <StaffListModals
+        t={t}
+        companyId={companyId}
+        companyName={companyName}
+        showForm={false}
+        setShowForm={() => undefined}
+        editingEmployee={editingEmployee}
+        setEditingEmployee={setEditingEmployee}
+        advanceEmployee={null}
+        setAdvanceEmployee={() => undefined}
+        terminatingEmployee={terminatingEmployee}
+        setTerminatingEmployee={setTerminatingEmployee}
+        terminationSettlementEmp={terminationSettlementEmp}
+        setTerminationSettlementEmp={setTerminationSettlementEmp}
+        terminationForm={terminationForm}
+        setTerminationForm={setTerminationForm}
+        handleSave={handleSaveProfileEmployee}
+        create={{ isPending: false }}
+        update={update}
+        createAdvance={createAdvance}
+        queryClient={queryClient}
+        showToast={showToast}
+      />
     </ScreenShell>
   );
 }

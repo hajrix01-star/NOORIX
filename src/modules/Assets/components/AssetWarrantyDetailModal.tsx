@@ -18,6 +18,10 @@ export type AssetWarrantyDetailModalProps = {
   asset: AssetRegisterListItem;
   companyId: string;
   onClose: () => void;
+  onEdit: (asset: AssetRegisterListItem) => void;
+  onDelete: (asset: AssetRegisterListItem) => void;
+  canWrite: boolean;
+  canDelete: boolean;
   t: (key: string) => string;
   lang: string;
 };
@@ -26,6 +30,10 @@ export function AssetWarrantyDetailModal({
   asset,
   companyId,
   onClose,
+  onEdit,
+  onDelete,
+  canWrite,
+  canDelete,
   t,
   lang,
 }: AssetWarrantyDetailModalProps) {
@@ -72,7 +80,17 @@ export function AssetWarrantyDetailModal({
       onClose={onClose}
       title={t('assetWarrantyDetails')}
       size="md"
-      footer={<Button onClick={onClose}>{t('close')}</Button>}
+      footer={(
+        <>
+          <Button variant="ghost" onClick={onClose}>{t('close')}</Button>
+          {canWrite ? (
+            <Button onClick={() => onEdit(detail)}>{t('edit')}</Button>
+          ) : null}
+          {canDelete ? (
+            <Button variant="danger" onClick={() => onDelete(detail)}>{t('delete')}</Button>
+          ) : null}
+        </>
+      )}
     >
       <div className="flex flex-col gap-3">
         <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted p-3 shadow-sm">

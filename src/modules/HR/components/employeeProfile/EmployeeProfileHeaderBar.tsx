@@ -7,7 +7,15 @@ type EmployeeProfileHeaderBarProps = {
   onContract: () => void;
   onSettlement: () => void;
   onPayAdvance: () => void;
+  onEdit: () => void;
+  onTerminate: () => void;
+  onArchive: () => void;
+  onRestore: () => void;
   onPermanentDelete: () => void;
+  canEdit: boolean;
+  canTerminate: boolean;
+  canArchive: boolean;
+  canRestore: boolean;
   canDelete: boolean;
   canPayAdvance: boolean;
 };
@@ -19,7 +27,15 @@ export function EmployeeProfileHeaderBar({
   onContract,
   onSettlement,
   onPayAdvance,
+  onEdit,
+  onTerminate,
+  onArchive,
+  onRestore,
   onPermanentDelete,
+  canEdit,
+  canTerminate,
+  canArchive,
+  canRestore,
   canDelete,
   canPayAdvance,
 }: EmployeeProfileHeaderBarProps) {
@@ -41,6 +57,26 @@ export function EmployeeProfileHeaderBar({
         {canPayAdvance && (
           <Button variant="primary" size="sm" onClick={onPayAdvance}>
             {t('payAdvance')}
+          </Button>
+        )}
+        {canEdit && (
+          <Button size="sm" onClick={onEdit}>
+            {t('edit')}
+          </Button>
+        )}
+        {canTerminate && (
+          <Button size="sm" onClick={onTerminate}>
+            {t('terminateEmployee')}
+          </Button>
+        )}
+        {canRestore && (
+          <Button size="sm" onClick={onRestore}>
+            {t('restoreEmployee')}
+          </Button>
+        )}
+        {canArchive && (
+          <Button size="sm" onClick={onArchive}>
+            {t('archiveEmployee')}
           </Button>
         )}
         {canDelete && (

@@ -196,10 +196,6 @@ export default function AssetsRegisterScreen() {
               errorMessage={error?.message || t('loadingError')}
               t={t}
               lang={lang}
-              canWrite={canWrite}
-              canDelete={canDelete}
-              onEdit={openEdit}
-              onDelete={handleDelete}
               onOpenWarranty={setWarrantyDetailAsset}
             />
           </>
@@ -253,6 +249,13 @@ export default function AssetsRegisterScreen() {
           asset={warrantyDetailAsset}
           companyId={companyId}
           onClose={() => setWarrantyDetailAsset(null)}
+          onEdit={(asset) => {
+            setWarrantyDetailAsset(null);
+            openEdit(asset);
+          }}
+          onDelete={handleDelete}
+          canWrite={canWrite}
+          canDelete={canDelete}
           t={t}
           lang={lang}
         />

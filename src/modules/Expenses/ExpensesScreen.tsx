@@ -135,11 +135,6 @@ export default function ExpensesScreen() {
               }}
               onRefresh={refreshExpenseLines}
               onLineClick={(line) => setSelectedLineId(line.id)}
-              onEditLine={(line) => {
-                setEditingLine(line);
-                setShowFormModal(true);
-              }}
-              onDeleteLine={handleDeleteLine}
             />
           )
         ) : null}
@@ -208,6 +203,11 @@ export default function ExpensesScreen() {
           onClose={() => setSelectedLineId(null)}
           dateFilter={dateFilter}
           onRefresh={refreshExpenseLines}
+          onEditLine={(line) => {
+            setEditingLine(line);
+            setShowFormModal(true);
+          }}
+          onDeleteLine={handleDeleteLine}
         />
       ) : null}
 

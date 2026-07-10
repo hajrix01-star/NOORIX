@@ -3,7 +3,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
 import { fmt } from '../../../utils/format';
-import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, KebabMenu, FilterToolbar, SearchableOptionsPicker, usePrintPreview } from '../../../ui';
+import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, FilterToolbar, SearchableOptionsPicker, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
@@ -26,8 +26,6 @@ type ExpenseLineListProps = {
   onCreateLine: () => void;
   onRefresh: () => void;
   onLineClick: (line: ExpenseLineRecord) => void;
-  onEditLine: (line: ExpenseLineRecord) => void;
-  onDeleteLine: (line: ExpenseLineRecord) => void;
 };
 
 type ExpenseLineTableRow = ExpenseLineRecord & {
@@ -91,8 +89,6 @@ export default function ExpenseLineList({
   onCreateLine,
   onRefresh,
   onLineClick,
-  onEditLine,
-  onDeleteLine,
 }: ExpenseLineListProps) {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies = [] } = useApp();
@@ -211,25 +207,7 @@ export default function ExpenseLineList({
       numeric: true,
       render: (_value, row) => <ExpenseLineMoneyCell amount={row.annualAmount} />,
     },
-    {
-      key: 'actions',
-      kind: 'actions',
-      label: t('actions'),
-      shrink: true,
-      render: (_value, row) => (
-        <div className="flex justify-center" onClick={(event) => event.stopPropagation()}>
-          <KebabMenu
-            ariaLabel={t('actions')}
-            items={[
-              { key: 'open', label: t('view'), onClick: () => onLineClick(row) },
-              { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEditLine(row) },
-              { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDeleteLine(row) },
-            ]}
-          />
-        </div>
-      ),
-    },
-  ], [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, lang]);
+  ], [onLineClick, kindBadgeMap, t, lang]);
 
   const exportData = useMemo(
     () =>

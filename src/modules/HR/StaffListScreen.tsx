@@ -7,9 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useQueryClient } from '@tanstack/react-query';
-import { useApiMutation } from '../../hooks/useApiMutation';
 import { useApiQuery } from '../../hooks/useApiQuery';
-import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ImportExportModal from '../../components/ImportExportModal';
@@ -17,13 +15,11 @@ import {
   EMPLOYEE_EXCEL_EXPORT_OPTS,
 } from '../../utils/importTemplates';
 import {
-  deleteEmployee,
   getEmployeeCompensationSnapshots,
   getEmployeesPaged,
   getEmployeesBulk,
 } from '../../services/api';
 import { Badge, Button, Input, ScreenShell, FmtNum, SmartTable } from '../../ui';
-import { HRActionsCell } from './components/HRActionsCell';
 import { StaffListMobileRow } from './components/StaffListMobileRow';
 import { StaffListModals } from './components/StaffListModals';
 import {
@@ -32,7 +28,7 @@ import {
   syncCustomAllowanceRows,
   type HrStaffSavePayload,
 } from './staffListDataOps';
-import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
+import { parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
@@ -64,10 +60,6 @@ type HrCompanyRef = {
   nameEn?: string | null;
 };
 
-type EmployeeMutationVariables = {
-  id: string;
-};
-
 type HrStaffTableRow = HrEmployee & {
   totalSalary?: number | null;
   terminationReason?: string;
@@ -88,7 +80,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 export default function StaffListScreen({ embedded }: StaffListScreenProps) {
   const navigate = useNavigate();
-  const { activeCompanyId, companies, userPermissions } = useApp();
+  const { activeCompanyId, companies } = useApp();
   const activeCompany = (companies as HrCompanyRef[] | undefined)?.find((c) => c.id === activeCompanyId);
   const companyNameAr = activeCompany?.nameAr || activeCompany?.name || '';
   const { t, lang } = useTranslation();
@@ -132,21 +124,6 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     [t],
   );
   const queryClient = useQueryClient();
-  const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
-
-  const permanentDeleteEmployeeMut = useApiMutation({
-    mutationFn: ({ id }: EmployeeMutationVariables) => deleteEmployee(id, companyId),
-    successToast: () => t('employeeDeletedPermanent'),
-    errorToast: (e: unknown) => getErrorMessage(e, t('updateFailed')),
-    onSuccess: (_data: ApiParsedResult, variables: EmployeeMutationVariables) => {
-      const id = variables.id;
-      queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
-      queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
-      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(id, companyId) });
-      invalidateOnFinancialMutation(queryClient);
-    },
-  });
-
   const { create, update, createAdvance } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: false });
 
   const [listPage, setListPage] = useState(1);
@@ -255,13 +232,6 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     setListPage(1);
   }, []);
 
-  const handlePermanentDelete = useCallback((row: HrStaffTableRow) => {
-    if (!companyId || !row?.id) return;
-    if (!window.confirm(t('deleteEmployeePermanentConfirm', employeeDisplayName(row, lang, '')))) return;
-    if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
-    permanentDeleteEmployeeMut.mutate({ id: row.id });
-  }, [companyId, t, lang, permanentDeleteEmployeeMut]);
-
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120,
       render: (v: unknown) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={String(v || '')}>{String(v || '—')}</span> },
@@ -304,52 +274,7 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
           },
         ]
       : []),
-    { key: 'actions', label: t('actions'), width: 60, align: 'center',
-      render: (_: unknown, row: HrStaffTableRow) => (
-        <HRActionsCell
-          row={row}
-          onEdit={() => setEditingEmployee(row)}
-          onAdvance={row.status === 'active' ? () => setAdvanceEmployee(row) : undefined}
-          onTerminate={row.status !== 'terminated' && row.status !== 'archived'
-            ? () => {
-                setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
-                setTerminatingEmployee(row);
-              }
-            : undefined}
-          onArchive={row.status !== 'archived'
-            ? () => {
-                const parsed = parseEmployeeNotesMeta(row.notes);
-                update.mutate(
-                  {
-                    id: row.id,
-                    body: { status: 'archived', notes: composeEmployeeNotes(parsed.notesText, parsed.meta) },
-                  },
-                  {
-                    onSuccess: () => showToast(t('employeeArchived'), 'success'),
-                    onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
-                  },
-                );
-              }
-            : undefined}
-          onRestore={row.status === 'archived'
-            ? () => {
-                const parsed = parseEmployeeNotesMeta(row.notes);
-                update.mutate(
-                  {
-                    id: row.id,
-                    body: { status: 'active', notes: composeEmployeeNotes(parsed.notesText, parsed.meta) },
-                  },
-                  {
-                    onSuccess: () => showToast(t('employeeRestored'), 'success'),
-                    onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
-                  },
-                );
-              }
-            : undefined}
-          onPermanentDelete={canDeleteEmployee ? handlePermanentDelete : undefined}
-        />
-      ) },
-  ], [t, lang, STATUS_MAP, viewMode, navigate, update, canDeleteEmployee, handlePermanentDelete, showToast]);
+  ], [t, lang, STATUS_MAP, viewMode, navigate]);
 
   async function handleExportExcel() {
     if (!companyId) return;
@@ -423,53 +348,15 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     }
   }
 
-  const renderStaffRowMenuItems = useCallback((row: HrStaffTableRow) => [
-    {
-      key: 'profile',
-      label: t('viewEmployeeProfile'),
-      onClick: () => navigate(`/hr/employee/${row.id}`),
-    },
-    {
-      key: 'edit',
-      label: t('edit'),
-      style: { color: 'var(--noorix-accent-green)' },
-      onClick: () => setEditingEmployee(row),
-    },
-    ...(row.status === 'active' ? [{
-      key: 'advance',
-      label: t('quickAdvance'),
-      style: { color: 'var(--noorix-accent-blue)' },
-      onClick: () => setAdvanceEmployee(row),
-    }] : []),
-    ...(row.status !== 'terminated' && row.status !== 'archived' ? [{
-      key: 'terminate',
-      label: t('terminateEmployee'),
-      style: { color: 'var(--noorix-accent-amber)' },
-      onClick: () => {
-        setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
-        setTerminatingEmployee(row);
-      },
-    }] : []),
-    ...(canDeleteEmployee ? [{
-      key: 'delete',
-      label: t('deleteEmployeePermanent'),
-      style: { color: 'var(--noorix-accent-red)' },
-      onClick: () => handlePermanentDelete(row),
-    }] : []),
-  ], [t, navigate, canDeleteEmployee, handlePermanentDelete,
-      setEditingEmployee, setAdvanceEmployee, setTerminatingEmployee, setTerminationForm]);
-
   const renderStaffMobileRow = useCallback((row: HrStaffTableRow) => {
     return (
       <StaffListMobileRow
         row={row}
         lang={lang}
-        t={t}
         statusMap={STATUS_MAP}
-        renderMenuItems={renderStaffRowMenuItems}
       />
     );
-  }, [STATUS_MAP, t, lang, renderStaffRowMenuItems]);
+  }, [STATUS_MAP, lang]);
 
   const renderCompactRow = useCallback((row: HrStaffTableRow) => renderStaffMobileRow(row), [renderStaffMobileRow]);
 

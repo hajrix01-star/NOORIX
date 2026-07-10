@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { SmartTable, Badge, KebabMenu, type SmartTableColumn } from '../../../ui';
+import { SmartTable, Badge, type SmartTableColumn } from '../../../ui';
 import { formatMoney } from '../../../utils/money';
 import type { AssetRegisterListItem } from '../types';
 import { formatAssetDate, formatWarrantyDuration, getSupplierDisplayName } from '../utils/assetsRegisterMappers';
@@ -18,10 +18,6 @@ export type AssetsRegisterTableProps = {
   errorMessage: string;
   t: (k: string) => string;
   lang: string;
-  canWrite: boolean;
-  canDelete: boolean;
-  onEdit: (row: AssetRegisterListItem) => void;
-  onDelete: (row: AssetRegisterListItem) => void;
   onOpenWarranty: (row: AssetRegisterListItem) => void;
 };
 
@@ -37,10 +33,6 @@ export function AssetsRegisterTable({
   errorMessage,
   t,
   lang,
-  canWrite,
-  canDelete,
-  onEdit,
-  onDelete,
   onOpenWarranty,
 }: AssetsRegisterTableProps) {
   const warrantyBadgeMap = useWarrantyBadgeMap(t);
@@ -176,34 +168,8 @@ export function AssetsRegisterTable({
             '—'
           ),
       },
-      ...(canWrite || canDelete
-        ? [
-            {
-              key: 'actions',
-              header: '',
-              render: (_: unknown, row: AssetRegisterListItem) => (
-                <KebabMenu
-                  ariaLabel={t('edit')}
-                  items={[
-                    ...(canWrite ? [{ key: 'edit', label: t('edit'), onClick: () => onEdit(row) }] : []),
-                    ...(canDelete
-                      ? [
-                          {
-                            key: 'del',
-                            label: t('delete'),
-                            onClick: () => onDelete(row),
-                            style: { color: 'var(--noorix-accent-red)' },
-                          },
-                        ]
-                      : []),
-                  ]}
-                />
-              ),
-            },
-          ]
-        : []),
     ],
-    [canDelete, canWrite, lang, onDelete, onEdit, renderWarrantyTrigger, t],
+    [lang, renderWarrantyTrigger, t],
   );
 
   const footerRow = useMemo(
@@ -255,22 +221,11 @@ export function AssetsRegisterTable({
             {row.acquisitionCost != null && (
               <span className="nx-cr__amount text-noorix-green">{formatMoney(row.acquisitionCost, lang)} <span className="nx-sar">SR</span></span>
             )}
-            {(canWrite || canDelete) && (
-              <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-                <KebabMenu
-                  ariaLabel={t('actions')}
-                  items={[
-                    ...(canWrite ? [{ key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit(row) }] : []),
-                    ...(canDelete ? [{ key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDelete(row) }] : []),
-                  ]}
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>
     ),
-    [t, lang, canWrite, canDelete, onEdit, onDelete, renderWarrantyTrigger],
+    [t, lang, renderWarrantyTrigger],
   );
 
   const renderMobileCard = useCallback(

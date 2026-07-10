@@ -30,6 +30,8 @@ type ExpenseLineDetailModalProps = {
     endDate?: string | null;
   };
   onRefresh: () => void;
+  onEditLine: (line: ExpenseLineRecord) => void;
+  onDeleteLine: (line: ExpenseLineRecord) => void;
 };
 
 export default function ExpenseLineDetailModal({
@@ -37,6 +39,8 @@ export default function ExpenseLineDetailModal({
   companyId,
   onClose,
   dateFilter,
+  onEditLine,
+  onDeleteLine,
 }: ExpenseLineDetailModalProps) {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies = [] } = useApp();
@@ -117,7 +121,38 @@ export default function ExpenseLineDetailModal({
   const modalTitle = lineLoading ? t('loading') : lineName;
 
   return (
-    <AdaptiveSheet open onClose={onClose} title={modalTitle} size="xl" side="start" className="expense-line-detail-drawer">
+    <AdaptiveSheet
+      open
+      onClose={onClose}
+      title={modalTitle}
+      size="xl"
+      side="start"
+      className="expense-line-detail-drawer"
+      footer={(
+        <>
+          <Button variant="ghost" onClick={onClose}>{t('close')}</Button>
+          <Button
+            onClick={() => {
+              if (!line) return;
+              onEditLine(line);
+            }}
+            disabled={!line}
+          >
+            {t('edit')}
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              if (!line) return;
+              onDeleteLine(line);
+            }}
+            disabled={!line}
+          >
+            {t('delete')}
+          </Button>
+        </>
+      )}
+    >
       {printPreviewModal}
       <div className="flex flex-wrap gap-3 text-[13px] text-noorix-muted mb-4">
         <span>{t('expenseLineKindCol')}: {expenseLineKindLabel(line?.kind, lang)}</span>
