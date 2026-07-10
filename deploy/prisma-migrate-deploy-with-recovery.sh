@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
-# يُستدعى من backend/ أثناء النشر — يُشغّل prisma migrate deploy مع معالجة الأخطاء الشائعة.
-#
-# الأخطاء المعالجة:
-#   P3009 / P3018  — migration فاشل أو مُتضارب → resolve --rolled-back ثم إعادة migrate
-#   P3005          — قاعدة البيانات تحتوي migrations غير موجودة في المشروع (baseline) → resolve --applied
-#   خطأ عام        — طباعة السجل الكامل والخروج بكود الخطأ الأصلي (لا يسقط deploy)
+# Runs Prisma migrations with a narrow recovery path for restored/staging databases.
 set -euo pipefail
 
 LOG="$(mktemp)"
@@ -12,59 +7,66 @@ cleanup() { rm -f "$LOG"; }
 trap cleanup EXIT
 
 attempt_migrate() {
+  : >"$LOG"
   set +e
   npx prisma migrate deploy 2>&1 | tee "$LOG"
   local code="${PIPESTATUS[0]}"
   set -e
-  echo "$code"
+  return "$code"
 }
 
-echo "==> [prisma] migrate deploy — المحاولة الأولى"
-mc=$(attempt_migrate)
+first_migration_from_log() {
+  grep -oE '[0-9]{14}_[A-Za-z0-9_-]+' "$LOG" | head -1 || true
+}
 
-if [ "$mc" -eq 0 ]; then
-  echo "==> [prisma] migrate deploy: نجح ✅"
+retry_after_applied() {
+  local migration="$1"
+  echo "==> [prisma] marking migration as applied: $migration"
+  npx prisma migrate resolve --applied "$migration"
+  echo "==> [prisma] retrying migrate deploy"
+  attempt_migrate
+}
+
+retry_after_rolled_back() {
+  local migration="$1"
+  echo "==> [prisma] rolling back failed migration state: $migration"
+  npx prisma migrate resolve --rolled-back "$migration" || true
+  echo "==> [prisma] retrying migrate deploy"
+  attempt_migrate
+}
+
+echo "==> [prisma] migrate deploy"
+if attempt_migrate; then
+  echo "==> [prisma] migrate deploy succeeded"
   exit 0
 fi
 
-echo "==> [prisma] migrate deploy فشل بكود $mc — تحليل الخطأ..."
+echo "==> [prisma] migrate deploy failed; checking known recovery cases"
+failed_migration="$(first_migration_from_log)"
 
-# ── P3009 / P3018: migration فاشل أو مُتضارب ────────────────────────────────
-if grep -qE 'P3009|P3018' "$LOG"; then
-  # استخرج اسم الـ migration الأول المذكور في الخطأ
-  failed_migration=$(grep -oP '\d{14}_\S+' "$LOG" | head -1 || true)
-  if [ -n "$failed_migration" ]; then
-    echo "==> [prisma] P3009/P3018 على migration: $failed_migration — resolve --rolled-back"
-    npx prisma migrate resolve --rolled-back "$failed_migration" || true
-    echo "==> [prisma] إعادة migrate deploy بعد resolve"
-    mc=$(attempt_migrate)
-    if [ "$mc" -eq 0 ]; then
-      echo "==> [prisma] migrate deploy: نجح بعد resolve ✅"
-      exit 0
-    fi
+if grep -q 'already exists' "$LOG" && [ -n "$failed_migration" ]; then
+  echo "==> [prisma] existing database object detected for $failed_migration"
+  if retry_after_applied "$failed_migration"; then
+    echo "==> [prisma] migrate deploy succeeded after applied resolve"
+    exit 0
   fi
 fi
 
-# ── P3005: baseline مطلوب ─────────────────────────────────────────────────────
-if grep -qE 'P3005' "$LOG"; then
-  unapplied=$(grep -oP '\d{14}_\S+' "$LOG" | head -1 || true)
-  if [ -n "$unapplied" ]; then
-    echo "==> [prisma] P3005 — resolve --applied على: $unapplied"
-    npx prisma migrate resolve --applied "$unapplied" || true
-    echo "==> [prisma] إعادة migrate deploy بعد baseline"
-    mc=$(attempt_migrate)
-    if [ "$mc" -eq 0 ]; then
-      echo "==> [prisma] migrate deploy: نجح بعد baseline ✅"
-      exit 0
-    fi
+if grep -qE 'P3005' "$LOG" && [ -n "$failed_migration" ]; then
+  echo "==> [prisma] baseline required for $failed_migration"
+  if retry_after_applied "$failed_migration"; then
+    echo "==> [prisma] migrate deploy succeeded after baseline resolve"
+    exit 0
   fi
 fi
 
-# ── خطأ غير معروف ─────────────────────────────────────────────────────────────
-# نطبع السجل للتشخيص لكن لا نوقف النشر إذا كانت المشكلة في migration جديد فقط
-# (الكود القديم في dist لا يزال يعمل حتى يُصلح الـ migration يدوياً)
-echo "==> [prisma] migrate deploy: خطأ غير معالج — راجع السجل أعلاه" >&2
-echo "==> [prisma] تحذير: النشر يستمر بدون تطبيق الـ migrations الجديدة" >&2
-echo "==> [prisma] لإصلاح يدوي: ssh root@hajrix.com ثم bash /var/www/noorix/deploy/repair-api-on-vps.sh" >&2
-# نخرج بـ 0 لمنع توقف PM2 بسبب migration — المطور سيُصلح الـ migration لاحقاً
-exit 0
+if grep -qE 'P3009|P3018' "$LOG" && [ -n "$failed_migration" ]; then
+  echo "==> [prisma] failed migration state detected for $failed_migration"
+  if retry_after_rolled_back "$failed_migration"; then
+    echo "==> [prisma] migrate deploy succeeded after rollback resolve"
+    exit 0
+  fi
+fi
+
+echo "==> [prisma] migrate deploy could not be recovered automatically" >&2
+exit 1
