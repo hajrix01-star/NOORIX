@@ -90,27 +90,20 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         sortable: true,
         size: 'document',
         render: (value, row) => (
-          <button
-            type="button"
-            className="font-bold nx-cell-ellipsis text-noorix-blue nx-font-numbers hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-noorix-blue rounded"
-            onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
-            disabled={batchActionLoading === row.batchId}
-            title={String(value ?? '')}
-          >
-            {compactIdentifier(value, { head: 9, tail: 4, maxLength: 16 })}
-          </button>
-        ),
-      },
-      {
-        key: 'transactionDate',
-        kind: 'date',
-        label: t('transactionDate'),
-        sortable: true,
-        size: 'date',
-        render: (value) => (
-          <span className="text-[12px] text-noorix-muted nx-font-numbers">
-            {formatSaudiDate(String(value ?? ''))}
-          </span>
+          <div className="flex flex-col items-start gap-1">
+            <button
+              type="button"
+              className="font-bold nx-cell-ellipsis text-noorix-blue nx-font-numbers hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-noorix-blue rounded"
+              onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
+              disabled={batchActionLoading === row.batchId}
+              title={String(value ?? '')}
+            >
+              {compactIdentifier(value, { head: 7, tail: 3, maxLength: 12 })}
+            </button>
+            <span className="text-[12px] text-noorix-muted nx-font-numbers">
+              {formatSaudiDate(row.transactionDate)}
+            </span>
+          </div>
         ),
       },
       {
@@ -209,7 +202,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
               disabled={batchActionLoading === row.batchId}
               title={row.batchId}
             >
-              {compactIdentifier(row.batchId, { head: 9, tail: 4, maxLength: 16 })}
+              {compactIdentifier(row.batchId, { head: 7, tail: 3, maxLength: 12 })}
             </button>
             <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
             <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
@@ -241,7 +234,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
               disabled={batchActionLoading === row.batchId}
               title={row.batchId}
             >
-              {compactIdentifier(row.batchId, { head: 9, tail: 4, maxLength: 16 })}
+              {compactIdentifier(row.batchId, { head: 7, tail: 3, maxLength: 12 })}
             </button>
             <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
           </div>
@@ -285,7 +278,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
   const batchesFooterRow = useMemo(
     () => [
       {
-        keys: ['batchId', 'transactionDate', 'invoiceCount', 'supplierNames', 'vaultName'],
+        keys: ['batchId', 'invoiceCount', 'supplierNames', 'vaultName'],
         className: 'nx-tfoot-label text-[12px] text-center',
         content: formatBatchesFooterLabel(t, activeOnlyLength),
       },
@@ -315,7 +308,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       showRowNumbers
       tableId="purchases-batches"
       tableLayout="fixed"
-      tableMinWidth={1100}
+      tableMinWidth={980}
       innerPadding={8}
       total={displayedTotal}
       page={page}

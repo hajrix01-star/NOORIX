@@ -14,7 +14,7 @@ export function compactIdentifierList(value: unknown): string {
   return text
     .split(/\s*(?:\/|\||،|,)\s*/)
     .filter(Boolean)
-    .map((part) => compactIdentifier(part, { head: 13, tail: 3, maxLength: 18 }))
+    .map((part) => compactIdentifier(part, { head: 10, tail: 3, maxLength: 13 }))
     .join(' / ');
 }
 

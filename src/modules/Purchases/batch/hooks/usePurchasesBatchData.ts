@@ -142,19 +142,21 @@ export function usePurchasesBatchData(options: {
     return batchesTableData.filter((batch) => batch.status !== 'cancelled');
   }, [batchesTableData, showCancelledBatches]);
 
-  const { filteredData, allFilteredData, page, setPage, sortKey, sortDir, toggleSort } = useTableFilter(
+  const { filteredData, allFilteredData, page, setPage, sortKey, sortDir, toggleSort, setSearch: setBatchTableSearch } = useTableFilter(
     batchesForTable,
     {
-      searchKeys: [],
+      searchKeys: ['batchId', 'transactionDate', 'supplierNames', 'vaultName'],
       pageSize: PAGE_SIZE,
       defaultSortKey: 'transactionDate',
       defaultSortDir: 'desc',
+      dateKeys: ['transactionDate'],
     },
   );
 
   useEffect(() => {
+    setBatchTableSearch(debouncedBatchQ);
     setPage(1);
-  }, [debouncedBatchQ, showCancelledBatches, setPage]);
+  }, [debouncedBatchQ, showCancelledBatches, setBatchTableSearch, setPage]);
 
   const filteredPurchaseBatches: PurchaseBatchSummaryRow[] = filteredData;
   const allFilteredPurchaseBatches: PurchaseBatchSummaryRow[] = allFilteredData;

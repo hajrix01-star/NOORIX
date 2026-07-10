@@ -89,9 +89,9 @@ export default function DailySalesScreen() {
   );
 
   const columns = useMemo(() => [
-    { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '12ch',
+    { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '16ch',
       render: (_: unknown, row: DailySalesTableRow) => (
-        <div className="flex flex-col items-start gap-0.5">
+        <div className="flex flex-col items-start gap-1">
           <Button
             variant="raw"
             size="auto"
@@ -101,16 +101,11 @@ export default function DailySalesScreen() {
           >
             {compactSummaryNumberText(row)}
           </Button>
-          {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
-        </div>
-      ) },
-    { key: 'transactionDate', kind: 'date', label: t('transactionDate'), sortable: true, width: '13ch',
-      render: (v: unknown, row: DailySalesTableRow) => (
-        <div className="flex flex-col items-start gap-0.5">
-          <span className="nx-cell-muted-sm">{formatSaudiDate(v as string)}</span>
+          <span className="nx-cell-muted-sm nx-font-numbers">{formatSaudiDate(row.transactionDate)}</span>
           <span className="inline-flex items-center rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
             {row.shiftsText || getSalesShiftLabel(row.shift, t)}
           </span>
+          {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
         </div>
       ) },
     { key: 'channelsText', kind: 'text', size: 'name', label: t('salesChannels'), sortable: false,
@@ -128,7 +123,7 @@ export default function DailySalesScreen() {
   const footerCells = (
     <>
       <td />
-      <td colSpan={3} className="nx-tfoot-label">
+      <td colSpan={2} className="nx-tfoot-label">
         {t('totalSummaries', activeRowCount)}
         {displayedTotal > PAGE_SIZE ? (
           <span className="nx-cell-muted-sm me-1.5"> (إجمالي الصفحة الحالية)</span>

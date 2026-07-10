@@ -412,7 +412,7 @@ export function SalesEntryModal({
                   )}
                 </span>
                 <strong className="text-[13px] text-noorix-blue" title={String(s.summaryNumber || '')}>
-                  #{compactIdentifier(s.summaryNumber, { head: 13, tail: 3, maxLength: 18 })}
+                  #{compactIdentifier(s.summaryNumber, { head: 10, tail: 3, maxLength: 13 })}
                 </strong>
               </div>
               <div className="flex justify-between text-[13px]">

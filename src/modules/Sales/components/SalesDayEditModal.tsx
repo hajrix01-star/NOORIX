@@ -169,7 +169,7 @@ export function SalesDayEditModal({
           return (
             <div key={summary.id} className="flex min-w-0 flex-col gap-2">
               <div className="text-[12px] font-bold text-noorix-muted" title={String(summary.summaryNumber || '')}>
-                #{compactIdentifier(summary.summaryNumber, { head: 13, tail: 3, maxLength: 18 }) || '—'} · {getSalesShiftLabel(shift, t)}
+                #{compactIdentifier(summary.summaryNumber, { head: 10, tail: 3, maxLength: 13 }) || '—'} · {getSalesShiftLabel(shift, t)}
               </div>
               <SalesShiftEntryCard
                 shift={shift}
