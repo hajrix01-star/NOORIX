@@ -8,13 +8,21 @@ export function compactIdentifier(value: unknown, options?: { head?: number; tai
   return `${text.slice(0, head)}...${text.slice(-tail)}`;
 }
 
+export function compactBusinessIdentifier(value: unknown): string {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  const dateSequenceMatch = text.match(/^([A-Za-z]+)-\d{8}-(\d+)$/);
+  if (dateSequenceMatch) return `${dateSequenceMatch[1]}-${dateSequenceMatch[2]}`;
+  return compactIdentifier(text, { head: 7, tail: 3, maxLength: 12 });
+}
+
 export function compactIdentifierList(value: unknown): string {
   const text = String(value ?? '').trim();
   if (!text) return '';
   return text
-    .split(/\s*(?:\/|\||،|,)\s*/)
+    .split(/\s*(?:\/|\||،|,|ØŒ)\s*/)
     .filter(Boolean)
-    .map((part) => compactIdentifier(part, { head: 10, tail: 3, maxLength: 13 }))
+    .map((part) => compactBusinessIdentifier(part))
     .join(' / ');
 }
 

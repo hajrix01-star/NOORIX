@@ -79,7 +79,13 @@ export default function DailySalesScreen() {
   } = useDailySalesScreen();
 
   const summaryNumberText = useCallback(
-    (row: DailySalesTableRow) => String(row.summaryNumbersText || row.summaryNumber || ''),
+    (row: DailySalesTableRow) => {
+      const numbers = row.summaries
+        .map((summary) => summary.summaryNumber)
+        .filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
+        .map((value) => String(value).trim());
+      return numbers.length > 0 ? numbers.join(' / ') : String(row.summaryNumber || '');
+    },
     [],
   );
 

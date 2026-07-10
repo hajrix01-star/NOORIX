@@ -5,7 +5,7 @@ import { Badge, SmartTable } from '../../../../ui';
 import type { SmartTableColumn } from '../../../../ui';
 import { formatSaudiDate, toYmd } from '../../../../utils/saudiDate';
 import { fmt } from '../../../../utils/format';
-import { compactIdentifier } from '../../../../utils/compactDisplay';
+import { compactBusinessIdentifier } from '../../../../utils/compactDisplay';
 import { PAGE_SIZE } from '../constants';
 import { formatBatchesFooterLabel } from '../utils/purchasesBatchFormatters';
 import type {
@@ -98,7 +98,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
               disabled={batchActionLoading === row.batchId}
               title={String(value ?? '')}
             >
-              {compactIdentifier(value, { head: 7, tail: 3, maxLength: 12 })}
+              {compactBusinessIdentifier(value)}
             </button>
             <span className="text-[12px] text-noorix-muted nx-font-numbers">
               {formatSaudiDate(row.transactionDate)}
@@ -202,7 +202,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
               disabled={batchActionLoading === row.batchId}
               title={row.batchId}
             >
-              {compactIdentifier(row.batchId, { head: 7, tail: 3, maxLength: 12 })}
+              {compactBusinessIdentifier(row.batchId)}
             </button>
             <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
             <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
@@ -234,7 +234,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
               disabled={batchActionLoading === row.batchId}
               title={row.batchId}
             >
-              {compactIdentifier(row.batchId, { head: 7, tail: 3, maxLength: 12 })}
+              {compactBusinessIdentifier(row.batchId)}
             </button>
             <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
           </div>

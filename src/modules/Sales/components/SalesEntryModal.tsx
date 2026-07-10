@@ -33,7 +33,7 @@ import { buildVaultLookup, channelsFromEntryPayload } from '../utils/salesWhatsA
 import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
 import { useSalesEntryDateContext } from '../hooks/useSalesEntryDateContext';
 import { compareYmd } from '../utils/suggestSalesEntryDate';
-import { compactIdentifier } from '../../../utils/compactDisplay';
+import { compactBusinessIdentifier } from '../../../utils/compactDisplay';
 import { useQueryClient } from '@tanstack/react-query';
 import { salesKeys } from '../../../services/queryKeys';
 import type { CreateSalesSummaryBody, DailySalesBatchPayload, SalesInputVaultRef, SalesMutationResult } from '../../../types/api/domains/sales';
@@ -412,7 +412,7 @@ export function SalesEntryModal({
                   )}
                 </span>
                 <strong className="text-[13px] text-noorix-blue" title={String(s.summaryNumber || '')}>
-                  #{compactIdentifier(s.summaryNumber, { head: 10, tail: 3, maxLength: 13 })}
+                  #{compactBusinessIdentifier(s.summaryNumber)}
                 </strong>
               </div>
               <div className="flex justify-between text-[13px]">

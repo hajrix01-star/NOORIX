@@ -8,7 +8,7 @@ import type { ShiftEntryFormState } from '../constants/salesShiftEntry';
 import { getSalesShiftLabel, resolveSalesSummaryShift } from '../constants/salesShift';
 import { SalesShiftEntryCard, buildShiftEntryPayload, isShiftEntryFormValid } from './SalesShiftEntryCard';
 import type { SalesInputVaultRef, SalesSummaryItem } from '../../../types/api/domains/sales';
-import { compactIdentifier } from '../../../utils/compactDisplay';
+import { compactBusinessIdentifier } from '../../../utils/compactDisplay';
 
 type Props = {
   day: DailySalesTableRow;
@@ -169,7 +169,7 @@ export function SalesDayEditModal({
           return (
             <div key={summary.id} className="flex min-w-0 flex-col gap-2">
               <div className="text-[12px] font-bold text-noorix-muted" title={String(summary.summaryNumber || '')}>
-                #{compactIdentifier(summary.summaryNumber, { head: 10, tail: 3, maxLength: 13 }) || '—'} · {getSalesShiftLabel(shift, t)}
+                #{compactBusinessIdentifier(summary.summaryNumber) || '—'} · {getSalesShiftLabel(shift, t)}
               </div>
               <SalesShiftEntryCard
                 shift={shift}
