@@ -313,13 +313,6 @@ export function useDashboardOverviewModel(
 
   const revenueMtdDailyAvg = useMemo(() => {
     if (selectedMonth == null) return null;
-    if (salesMetrics?.monthAverage) {
-      return {
-        avgDaily: salesMetrics.monthAverage.revenueAvgDaily,
-        total: salesMetrics.monthAverage.total,
-        calendarDays: salesMetrics.monthAverage.calendarDays,
-      };
-    }
     return computeRevenueMonthDailyAvg({
       monthSales: monthSalesForDailyAvg,
       year,
@@ -327,18 +320,20 @@ export function useDashboardOverviewModel(
       todayYear: saudiNow.year,
       todayMonth: saudiNow.month,
       todayDay: saudiNow.day,
+      endDayInclusive: revenueMtdEndDay > 0 ? revenueMtdEndDay : undefined,
     });
-  }, [salesMetrics?.monthAverage, monthSalesForDailyAvg, year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day]);
+  }, [
+    monthSalesForDailyAvg,
+    year,
+    selectedMonth,
+    revenueMtdEndDay,
+    saudiNow.year,
+    saudiNow.month,
+    saudiNow.day,
+  ]);
 
   const revenuePrevMonthDailyAvg = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
-    if (prevMonthMetrics?.monthAverage) {
-      return {
-        avgDaily: prevMonthMetrics.monthAverage.revenueAvgDaily,
-        total: prevMonthMetrics.monthAverage.total,
-        calendarDays: prevMonthMetrics.monthAverage.calendarDays,
-      };
-    }
     const prev = prevCalendarMonth(year, selectedMonth);
     return computeRevenueMonthDailyAvg({
       monthSales: prevMonthSalesForDailyAvg,
@@ -350,7 +345,6 @@ export function useDashboardOverviewModel(
       endDayInclusive: revenueMtdEndDay,
     });
   }, [
-    prevMonthMetrics?.monthAverage,
     prevMonthSalesForDailyAvg,
     year,
     selectedMonth,
@@ -362,13 +356,6 @@ export function useDashboardOverviewModel(
 
   const customerMtdDailyAvg = useMemo(() => {
     if (selectedMonth == null) return null;
-    if (salesMetrics?.monthAverage) {
-      return {
-        avgDaily: salesMetrics.monthAverage.customerAvgDaily,
-        total: salesMetrics.monthAverage.customerCount,
-        calendarDays: salesMetrics.monthAverage.calendarDays,
-      };
-    }
     return computeCustomerMonthDailyAvg({
       monthSales: monthSalesForDailyAvg,
       year,
@@ -379,7 +366,6 @@ export function useDashboardOverviewModel(
       endDayInclusive: revenueMtdEndDay > 0 ? revenueMtdEndDay : undefined,
     });
   }, [
-    salesMetrics?.monthAverage,
     monthSalesForDailyAvg,
     year,
     selectedMonth,
@@ -391,13 +377,6 @@ export function useDashboardOverviewModel(
 
   const customerPrevMonthDailyAvg = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
-    if (prevMonthMetrics?.monthAverage) {
-      return {
-        avgDaily: prevMonthMetrics.monthAverage.customerAvgDaily,
-        total: prevMonthMetrics.monthAverage.customerCount,
-        calendarDays: prevMonthMetrics.monthAverage.calendarDays,
-      };
-    }
     const prev = prevCalendarMonth(year, selectedMonth);
     return computeCustomerMonthDailyAvg({
       monthSales: prevMonthSalesForDailyAvg,
@@ -409,7 +388,6 @@ export function useDashboardOverviewModel(
       endDayInclusive: revenueMtdEndDay,
     });
   }, [
-    prevMonthMetrics?.monthAverage,
     prevMonthSalesForDailyAvg,
     year,
     selectedMonth,
@@ -449,19 +427,6 @@ export function useDashboardOverviewModel(
   ]);
 
   const yearlyDailyAvgRows = useMemo(() => {
-    if (salesMetrics?.yearMonthlyDailyAverages?.length) {
-      const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
-      return salesMetrics.yearMonthlyDailyAverages.map((row) => ({
-        month: row.month,
-        monthLabel: monthNames[row.month - 1] ?? String(row.month),
-        totalSales: row.totalSales,
-        avgDaily: row.avgDaily,
-        calendarDays: row.calendarDays,
-        deltaPctVsPrev: row.deltaPctVsPrev,
-        tone: row.tone,
-        isCurrentMonth: row.isCurrentMonth,
-      }));
-    }
     const capMonth = yearMonthlyDailyAvgCapMonth(year, saudiYM.year, saudiYM.month);
     const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
     const alignPrevMonthDay =
@@ -482,7 +447,7 @@ export function useDashboardOverviewModel(
       currentDay: saudiNow.day,
       prevMonthAlignEndDay: alignPrevMonthDay,
     });
-  }, [salesMetrics?.yearMonthlyDailyAverages, year, yearSummaries, lang, saudiYM.year, saudiYM.month, saudiNow.day, selectedMonth, revenueMtdEndDay]);
+  }, [year, yearSummaries, lang, saudiYM.year, saudiYM.month, saudiNow.day, selectedMonth, revenueMtdEndDay]);
 
   const monthName = selectedMonth
     ? lang === 'ar'
