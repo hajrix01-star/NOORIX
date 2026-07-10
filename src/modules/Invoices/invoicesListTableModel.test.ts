@@ -35,7 +35,6 @@ describe('invoicesListTableModel', () => {
       'taxAmount',
       'totalAmount',
       'status',
-      'actions',
     ]);
     expect(cols.find((column) => column.key === 'invoiceNumber')?.size).toBe('document');
     expect(cols.find((column) => column.key === 'taxAmount')?.size).toBe('tax');

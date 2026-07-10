@@ -186,7 +186,7 @@ export function useInvoicesListScreen() {
   });
 
   const confirmAndDeleteInvoice = useCallback(
-    (r: InvoiceTableRow) => {
+    (r: InvoiceTableRow | InvoiceViewSource) => {
       if (!canDeleteInvoiceRow(r)) return;
       if (!confirm(buildInvoiceDeleteConfirmationMessage(t, r))) return;
       deleteInvoiceMut.mutate({ id: r.id });
@@ -461,10 +461,14 @@ export function useInvoicesListScreen() {
     displayedTotal,
     handleExportExcel,
     handlePrintInvoices,
+    handlePrintSingleInvoice,
     printPreviewModal,
     handlePrintCashReport,
     editingInvoice,
     setEditingInvoice,
+    confirmAndDeleteInvoice,
+    userRole,
+    userPermissions,
     viewingInvoice,
     setViewingInvoice,
     queryClient,

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { hasPermission } from '../../../constants/permissions';
 import { downloadInvoiceAttachment } from '../../../services/api';
 import { Button, Modal, FmtNum } from '../../../ui';
 import {
@@ -25,6 +26,11 @@ type InvoiceViewModalProps = {
   t: Translate;
   lang: InvoiceViewLang;
   fmt: (value: number) => string;
+  userRole?: string | null;
+  userPermissions?: readonly string[] | null;
+  onPrint?: (invoice: InvoiceViewSource) => void;
+  onEdit?: (invoice: InvoiceViewSource) => void;
+  onDelete?: (invoice: InvoiceViewSource) => void;
 };
 
 function fieldToneClass(field: InvoiceViewField) {
@@ -46,6 +52,11 @@ export function InvoiceViewModal({
   t,
   lang,
   fmt,
+  userRole,
+  userPermissions,
+  onPrint,
+  onEdit,
+  onDelete,
 }: InvoiceViewModalProps) {
   const fields = useMemo(
     () =>
@@ -79,6 +90,10 @@ export function InvoiceViewModal({
   const showAttachment = shouldShowInvoiceViewAttachment(invoice, companyId);
   const attachmentName = getInvoiceViewAttachmentName(invoice);
   const emptyValue = getInvoiceViewEmptyValue();
+  const isOwner = (userRole || '').toLowerCase() === 'owner';
+  const canPrint = !!onPrint && hasPermission(userRole, 'INVOICES_READ', userPermissions);
+  const canEdit = !!onEdit && isOwner && invoice.status === 'active' && invoice.kind !== 'sale';
+  const canDelete = !!onDelete && isOwner;
 
   const handleDownloadAttachment = async () => {
     if (!companyId) return;
@@ -168,6 +183,40 @@ export function InvoiceViewModal({
             </Button>
           </div>
         )}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-noorix-border bg-noorix-bg-muted/60 px-5 py-3">
+        <Button variant="ghost" onClick={onClose}>
+          {t('close')}
+        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {canPrint && (
+            <Button variant="primary" onClick={() => onPrint?.(invoice)}>
+              {t('print')}
+            </Button>
+          )}
+          {canEdit && (
+            <Button
+              variant="success"
+              onClick={() => {
+                onClose();
+                onEdit?.(invoice);
+              }}
+            >
+              {t('edit')}
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              variant="danger"
+              onClick={() => {
+                onClose();
+                onDelete?.(invoice);
+              }}
+            >
+              {t('delete')}
+            </Button>
+          )}
+        </div>
       </div>
     </Modal>
   );

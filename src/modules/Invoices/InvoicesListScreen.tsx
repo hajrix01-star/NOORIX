@@ -131,6 +131,11 @@ export default function InvoicesListScreen() {
               t={s.t}
               lang={s.lang}
               fmt={s.fmt}
+              userRole={s.userRole}
+              userPermissions={s.userPermissions}
+              onPrint={s.handlePrintSingleInvoice}
+              onEdit={s.setEditingInvoice}
+              onDelete={s.confirmAndDeleteInvoice}
             />
           )}
           <SmartTable

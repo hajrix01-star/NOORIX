@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge, FmtNum, KebabMenu, cn } from '../../ui';
+import { Badge, FmtNum, cn } from '../../ui';
 import type { SmartTableColumn } from '../../ui';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
 import { PAGE_SIZE } from './invoicesListScreenHelpers';
@@ -73,19 +73,24 @@ function renderTextCell(value: unknown, className = 'nx-cell-ellipsis') {
   );
 }
 
-function renderDocumentCell(row: InvoiceTableRow) {
+function renderDocumentCell(row: InvoiceTableRow, onView: InvoiceRowSetter) {
   const fullNumber = asInvoiceTableText(row.invoiceNumber);
   const compactNumber = compactInvoiceDocumentNumber(row.invoiceNumber);
   const date = formatInvoiceTableDate(row.transactionDate);
   const title = date === getInvoiceTableEmptyValue() ? fullNumber : `${fullNumber} - ${date}`;
 
   return (
-    <span className="flex min-w-0 flex-col items-center justify-center gap-0.5 leading-tight" title={title}>
+    <button
+      type="button"
+      className="mx-auto flex min-w-0 flex-col items-center justify-center gap-0.5 leading-tight rounded-md px-2 py-1 text-center transition hover:bg-noorix-blue/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-noorix-blue"
+      title={title}
+      onClick={() => onView(row)}
+    >
       <span className={cn('nx-cell-num max-w-full truncate font-bold', getInvoiceTableDocumentToneClass(row))}>
         {compactNumber}
       </span>
       <span className="nx-cell-muted-sm whitespace-nowrap">{date}</span>
-    </span>
+    </button>
   );
 }
 
@@ -156,12 +161,7 @@ export function buildInvoiceListColumns({
   fmt,
   STATUS_MAP,
   KIND_MAP,
-  userRole,
-  companyId,
   setViewingInvoice,
-  setEditingInvoice,
-  printInvoice,
-  confirmAndDeleteInvoice,
 }: InvoiceListColumnsParams): SmartTableColumn<InvoiceTableRow>[] {
   return [
     {
@@ -173,7 +173,7 @@ export function buildInvoiceListColumns({
       shrink: true,
       width: '10ch',
       sortable: true,
-      render: (_value: unknown, row: InvoiceTableRow) => renderDocumentCell(row),
+      render: (_value: unknown, row: InvoiceTableRow) => renderDocumentCell(row, setViewingInvoice),
     },
     {
       key: 'supplierInvoiceNumber',
@@ -269,25 +269,6 @@ export function buildInvoiceListColumns({
       width: '9ch',
       render: (value: unknown) => <Badge {...Badge.fromStatus(value, STATUS_MAP)} size="sm" />,
     },
-    {
-      key: 'actions',
-      kind: 'actions',
-      label: t('actions'),
-      align: 'center',
-      width: '48px',
-      shrink: true,
-      render: (_: unknown, row: InvoiceTableRow) => (
-        <InvoiceActionsCell
-          row={row}
-          userRole={userRole}
-          companyId={companyId}
-          onView={(invoiceRow: InvoiceTableRow) => setViewingInvoice(invoiceRow)}
-          onPrint={printInvoice}
-          onEdit={(invoiceRow: InvoiceTableRow) => setEditingInvoice(invoiceRow)}
-          onDelete={confirmAndDeleteInvoice}
-        />
-      ),
-    },
   ];
 }
 
@@ -357,34 +338,6 @@ export function createInvoiceCompactRowRenderer({
             <span className={`nx-cr__amount ${amountToneClass}`}>
               <FmtNum n={asInvoiceTableNumber(row.totalAmount)} /> <span className="nx-sar">SR</span>
             </span>
-            <div className="nx-cr__kebab" onClick={(event: React.MouseEvent) => event.stopPropagation()}>
-              <KebabMenu
-                ariaLabel={t('actions')}
-                items={[
-                  {
-                    key: 'view',
-                    label: t('view'),
-                    onClick: () => setViewingInvoice?.(row),
-                  },
-                  ...(userRole !== 'viewer'
-                    ? [
-                        {
-                          key: 'edit',
-                          label: t('edit'),
-                          style: { color: 'var(--noorix-accent-green)' },
-                          onClick: () => setEditingInvoice(row),
-                        },
-                      ]
-                    : []),
-                  {
-                    key: 'delete',
-                    label: t('delete'),
-                    style: { color: 'var(--noorix-accent-red)' },
-                    onClick: () => confirmAndDeleteInvoice(row),
-                  },
-                ]}
-              />
-            </div>
           </div>
         </div>
       </div>

@@ -31,7 +31,7 @@ import { DateFilterBar } from '../../../ui/date';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
 import { OrderConfirmModal } from './OrderConfirmModal';
-import { Button, Badge, AdaptiveSheet, FilterToolbar, SmartTable, KebabMenu, FmtNum, usePrintPreview } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, FilterToolbar, SmartTable, FmtNum, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import type { OrderLine, OrderProduct, OrderRecord } from '../../../types/api';
 
@@ -94,7 +94,16 @@ export function OrdersTab({
         minWidth: 100,
         align: 'center',
         shrink: true,
-        render: (_value: unknown, row: OrderRecord) => <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{row.orderNumber}</span>,
+        render: (_value: unknown, row: OrderRecord) => (
+          <Button
+            variant="raw"
+            size="auto"
+            className="mx-auto !h-auto rounded-md px-2 py-1 text-center nx-cell-num nx-cell-num--blue whitespace-nowrap hover:bg-noorix-blue/10 focus-visible:ring-2 focus-visible:ring-noorix-blue"
+            onClick={() => handleView(row)}
+          >
+            {row.orderNumber}
+          </Button>
+        ),
       },
       {
         key: 'orderDate',
@@ -161,25 +170,6 @@ export function OrdersTab({
           );
         },
       },
-      {
-        key: 'actions',
-        label: t('actions'),
-        kind: 'actions',
-        align: 'center',
-        shrink: true,
-        render: (_value: unknown, o: OrderRecord) => (
-          <KebabMenu
-            ariaLabel={t('actions')}
-            menuMaxHeight={320}
-            items={[
-              { key: 'view', label: t('view'), style: { color: 'var(--noorix-text)' }, onClick: () => handleView(o) },
-              { key: 'wa', label: t('sendWhatsApp'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleWhatsApp(o) },
-              { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleEdit(o) },
-              { key: 'del', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDelete(o) },
-            ]}
-          />
-        ),
-      },
     ],
     [t, fmt, formatSaudiDate, cumulativeRemainingByOrderId],
   );
@@ -194,7 +184,6 @@ export function OrdersTab({
           <FmtNum n={filteredTotal} /> SR
         </td>
         <td className="text-center py-[11px] px-[14px]" />
-        <td className="noorix-print-hide py-[11px] px-[14px]" />
       </>
     ),
     [t, filteredTotal, fmt],
@@ -206,7 +195,7 @@ export function OrdersTab({
       const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
       const isExt = o.orderType === 'external';
       return (
-        <div className="flex flex-col gap-2">
+        <div className="flex cursor-pointer flex-col gap-2" onClick={() => handleView(o)}>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="font-bold text-noorix-blue nx-font-numbers">#{o.orderNumber}</span>
             <Badge color={isExt ? 'blue' : 'green'} size="sm">
@@ -241,18 +230,6 @@ export function OrdersTab({
               </div>
             )}
           </div>
-          <div className="flex justify-end">
-            <KebabMenu
-              ariaLabel={t('actions')}
-              menuMaxHeight={320}
-              items={[
-                { key: 'view', label: t('view'), style: { color: 'var(--noorix-text)' }, onClick: () => handleView(o) },
-                { key: 'wa', label: t('sendWhatsApp'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleWhatsApp(o) },
-                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleEdit(o) },
-                { key: 'del', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDelete(o) },
-              ]}
-            />
-          </div>
         </div>
       );
     },
@@ -284,17 +261,6 @@ export function OrdersTab({
             </div>
             <div className="nx-cr__line2-end">
               <span className="nx-cr__amount"><FmtNum n={total} /> <span className="nx-sar">SR</span></span>
-              <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-                <KebabMenu
-                  ariaLabel={t('actions')}
-                  items={[
-                    { key: 'view', label: t('view'), onClick: () => handleView(o) },
-                    { key: 'wa', label: t('sendWhatsApp'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleWhatsApp(o) },
-                    { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleEdit(o) },
-                    { key: 'del', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDelete(o) },
-                  ]}
-                />
-              </div>
             </div>
           </div>
         </div>
@@ -479,6 +445,30 @@ export function OrdersTab({
               </Button>
               <Button size="sm" onClick={() => handleExportSingleOrder(viewingOrder)}>
                 {t('exportExcel')}
+              </Button>
+              <Button variant="success" size="sm" onClick={() => handleWhatsApp(viewingOrder)}>
+                {t('sendWhatsApp')}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  const order = viewingOrder;
+                  setViewingOrder(null);
+                  handleEdit(order);
+                }}
+              >
+                {t('edit')}
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => {
+                  const order = viewingOrder;
+                  setViewingOrder(null);
+                  handleDelete(order);
+                }}
+              >
+                {t('delete')}
               </Button>
             </>
           }

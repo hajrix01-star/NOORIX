@@ -10,7 +10,6 @@ import {
   asInvoiceTableText,
   formatInvoiceTableDate,
   getInvoiceTableVaultName,
-  mapInvoiceTableVaultChips,
   type InvoiceTableRow,
 } from './invoiceTableRowModel';
 import {
@@ -25,11 +24,17 @@ import {
   type InvoiceListRawInvoice,
 } from './invoicesListScreenModel';
 import { toInvoiceFiniteNumber } from './invoiceNumberModel';
+import {
+  getInvoiceViewVaultSplits,
+  pickInvoiceViewName,
+  type InvoiceViewSource,
+} from './invoiceViewModel';
 
 type Translate = (key: string, ...args: unknown[]) => string;
 type ToastVariant = 'success' | 'error' | 'info' | 'warning' | string;
 type UrlExtraFilters = { categoryId: string; expenseLineId: string };
 type InvoiceListActionTotals = { count: number; net: unknown; tax: unknown; total: unknown };
+type InvoicePrintSource = InvoiceTableRow | InvoiceViewSource;
 
 type InvoiceListActionParams = {
   companyId: string;
@@ -92,24 +97,29 @@ function mapRawInvoicesForExport(
 }
 
 function invoicePrintRows(input: {
-  invoice: InvoiceTableRow;
+  invoice: InvoicePrintSource;
   lang: string;
   fmt: (value: number) => string;
   t: Translate;
 }): Record<string, string>[] {
   const { invoice, lang, fmt, t } = input;
   const documentNumber = asInvoiceTableText(invoice.supplierInvoiceNumber || invoice.invoiceNumber);
-  const vaultChips = mapInvoiceTableVaultChips({ row: invoice, lang, fmt });
-  const vaultLabel = vaultChips.length
-    ? vaultChips.map((chip) => `${chip.label}: ${fmt(chip.amount)} SR`).join(' | ')
-    : getInvoiceTableVaultName(invoice, lang);
+  const vaultSplits = getInvoiceViewVaultSplits(invoice, lang);
+  const vaultLabel = vaultSplits.length
+    ? vaultSplits.map((split) => `${split.vaultName}: ${fmt(split.amount)} SR`).join(' | ')
+    : 'supplierName' in invoice
+      ? getInvoiceTableVaultName(invoice, lang)
+      : pickInvoiceViewName(lang, invoice.vault);
+  const supplierLabel = 'supplierName' in invoice
+    ? asInvoiceTableText(invoice.supplierName)
+    : pickInvoiceViewName(lang, invoice.supplier);
 
   const rows = [
     [t('invoiceNumber'), documentNumber],
     [t('date'), formatInvoiceTableDate(invoice.transactionDate)],
     [t('type'), asInvoiceTableText(invoice.kind)],
     [t('status'), asInvoiceTableText(invoice.status)],
-    [t('supplier'), asInvoiceTableText(invoice.supplierName)],
+    [t('supplier'), supplierLabel],
     [t('invoiceVaultColumn'), vaultLabel],
     [t('net'), `${fmt(asInvoiceTableNumber(invoice.netAmount))} SR`],
     [t('tax'), `${fmt(asInvoiceTableNumber(invoice.taxAmount))} SR`],
@@ -277,7 +287,7 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
     openPrintDocumentPreview,
   ]);
 
-  const handlePrintSingleInvoice = useCallback((invoice: InvoiceTableRow) => {
+  const handlePrintSingleInvoice = useCallback((invoice: InvoicePrintSource) => {
     const documentNumber = asInvoiceTableText(invoice.supplierInvoiceNumber || invoice.invoiceNumber);
     openPrintDocumentPreview({
       title: `${t('invoicesTitle')} - ${documentNumber}`,

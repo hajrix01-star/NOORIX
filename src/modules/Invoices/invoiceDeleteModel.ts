@@ -1,11 +1,14 @@
-import type { InvoiceTableRow } from './invoiceTableRowModel';
-
 type Translate = (key: string, ...args: unknown[]) => string;
 
-export function buildInvoiceDeleteConfirmationMessage(t: Translate, invoice: InvoiceTableRow) {
+type InvoiceDeleteSource = {
+  id?: string | null;
+  invoiceNumber?: string | number | null;
+};
+
+export function buildInvoiceDeleteConfirmationMessage(t: Translate, invoice: InvoiceDeleteSource) {
   return t('deleteInvoiceConfirm', invoice.invoiceNumber || '');
 }
 
-export function canDeleteInvoiceRow(invoice: InvoiceTableRow): invoice is InvoiceTableRow & { id: string } {
+export function canDeleteInvoiceRow<TInvoice extends InvoiceDeleteSource>(invoice: TInvoice): invoice is TInvoice & { id: string } {
   return Boolean(invoice.id);
 }
