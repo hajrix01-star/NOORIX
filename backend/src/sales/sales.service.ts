@@ -4,13 +4,14 @@
  * createSummary يُفوَّض بالكامل → FinancialCoreService.processInflow
  * findAll تبقى هنا (قراءة بحتة).
  */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma }                from '@prisma/client';
 import { TenantPrismaService }   from '../prisma/tenant-prisma.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
 import { toYmd } from '../common/utils/to-ymd.util';
 import { nowSaudi } from '../common/utils/date-utils';
 import { buildSalesSummaryListModel } from './sales-summary-list-model.util';
+import { buildActiveSalesSummaryShiftDuplicateWhere } from './sales-summary-duplicate.util';
 
 type DashboardDailyMetricRow = {
   transactionDate: string;
@@ -522,6 +523,29 @@ export class SalesService {
     companyId: string,
     shift: 'morning' | 'evening' | 'all',
   ) {
+    const summary = await this.prisma.dailySalesSummary.findFirst({
+      where: { id, companyId, status: 'active' },
+      select: { id: true, transactionDate: true },
+    });
+    if (!summary) {
+      throw new NotFoundException('الملخص غير موجود أو تم إلغاؤه.');
+    }
+
+    const duplicate = await this.prisma.dailySalesSummary.findFirst({
+      where: buildActiveSalesSummaryShiftDuplicateWhere({
+        companyId,
+        transactionDate: summary.transactionDate,
+        shift,
+        excludeId: id,
+      }),
+      select: { summaryNumber: true },
+    });
+    if (duplicate) {
+      throw new BadRequestException(
+        'يوجد ملخص مبيعات نشط لنفس التاريخ والشفت. ألغِ الملخص السابق أو عدّله بدلاً من إنشاء مكرر.',
+      );
+    }
+
     const updated = await this.prisma.dailySalesSummary.updateMany({
       where: { id, companyId, status: 'active' },
       data: { shift },

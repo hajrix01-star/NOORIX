@@ -292,8 +292,8 @@ export function SalesEntryModal({
   function confirmSaveWarnings(): boolean {
     if (duplicateShifts.length > 0) {
       const shiftLabels = duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? '، ' : ', ');
-      const msg = t('salesEntryDuplicateShiftConfirm', shiftLabels, formatSaudiDate(txDate));
-      if (!window.confirm(msg)) return false;
+      window.alert(duplicateShiftHint || shiftLabels);
+      return false;
     }
     if (gapDaysTotalCount > 0) {
       const msg = t(

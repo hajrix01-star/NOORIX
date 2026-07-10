@@ -21,10 +21,13 @@ import type { InflowDto, SalesChannelDto, SalesShift } from './dto/financial-ope
 import { assertValidInflowBatch } from './financial-inflow-batch.util';
 import { resolveVatRateDecimal } from '@noorix/finance-core';
 import type { TxClient } from './financial-core-helpers.util';
+import {
+  buildActiveSalesSummaryShiftDuplicateWhere,
+  normalizeSalesSummaryShift,
+} from '../sales/sales-summary-duplicate.util';
 
 function normalizeSalesShift(value: unknown): SalesShift {
-  if (value === 'morning' || value === 'evening' || value === 'all') return value;
-  return 'all';
+  return normalizeSalesSummaryShift(value);
 }
 
 @Injectable()
@@ -35,6 +38,30 @@ export class FinancialInflowService {
     private readonly idempotency: IdempotencyService,
     private readonly support: FinancialCoreSupportService,
   ) {}
+
+  private async assertNoActiveSummaryForShift(
+    tx: TxClient,
+    companyId: string,
+    transactionDate: Date,
+    shift: SalesShift,
+    excludeId?: string,
+  ) {
+    const duplicate = await tx.dailySalesSummary.findFirst({
+      where: buildActiveSalesSummaryShiftDuplicateWhere({
+        companyId,
+        transactionDate,
+        shift,
+        excludeId,
+      }),
+      select: { summaryNumber: true },
+    });
+
+    if (duplicate) {
+      throw new BadRequestException(
+        'يوجد ملخص مبيعات نشط لنفس التاريخ والشفت. ألغِ الملخص السابق أو عدّله بدلاً من إنشاء مكرر.',
+      );
+    }
+  }
 
   // 2. INFLOW — دخل: المبيعات اليومية (ملخص بقنوات متعددة)
   // ══════════════════════════════════════════════════════════
@@ -50,6 +77,7 @@ export class FinancialInflowService {
       const keyHash = this.idempotency.hashKey('processInflow', {
         companyId:       dto.companyId,
         transactionDate: dto.transactionDate,
+        shift:           normalizeSalesShift(dto.shift),
         channels:        dto.channels,
         idempotencyKey:  dto.idempotencyKey,
       });
@@ -135,6 +163,8 @@ export class FinancialInflowService {
     const totalAmount = sumInflowChannelAmounts(dto.channels!);
     assertInflowTotalPositive(totalAmount);
     const activeChannels = filterPositiveInflowChannels(dto.channels!);
+    const shift = normalizeSalesShift(dto.shift);
+    await this.assertNoActiveSummaryForShift(tx, dto.companyId, txDate, shift);
 
     // ── [A] توليد رقم ملخص فريد DS-YYYYMMDD-NNN ────────
     const dateStr  = dto.transactionDate.replace(/-/g, '').slice(0, 8);
@@ -179,7 +209,7 @@ export class FinancialInflowService {
           summaryNumber,
           transactionDate: txDate,
           customerCount:   dto.customerCount || 0,
-          shift:           normalizeSalesShift(dto.shift),
+          shift,
           cashOnHand:      new Prisma.Decimal(dto.cashOnHand || '0'),
           totalAmount,
           notes:           dto.notes ?? null,
@@ -253,7 +283,7 @@ export class FinancialInflowService {
             summaryNumber,
             totalAmount:   totalAmount.toString(),
             customerCount: dto.customerCount,
-            shift:         normalizeSalesShift(dto.shift),
+            shift,
             channelCount:  activeChannels.length,
           } as JsonObject,
           createdAt: entryDate,
@@ -308,6 +338,9 @@ export class FinancialInflowService {
         await this.fiscalPeriod.assertPeriodOpenForDate(tx, companyId, summary.transactionDate);
       }
 
+      const shift = dto.shift ?? normalizeSalesShift(summary.shift);
+      await this.assertNoActiveSummaryForShift(tx, companyId, txDate, shift, summaryId);
+
       await this.support.assertVaultsUsableAsSalesPayment(
         tx,
         companyId,
@@ -338,7 +371,7 @@ export class FinancialInflowService {
         data:  {
           transactionDate: txDate,
           customerCount:   dto.customerCount,
-          shift:           dto.shift ?? normalizeSalesShift(summary.shift),
+          shift,
           cashOnHand:      new Prisma.Decimal(dto.cashOnHand || '0'),
           totalAmount,
           notes:           dto.notes ?? null,
@@ -417,7 +450,7 @@ export class FinancialInflowService {
           newValue:  {
             totalAmount:   totalAmount.toString(),
             customerCount: dto.customerCount,
-            shift:         dto.shift ?? normalizeSalesShift(summary.shift),
+            shift,
             channelCount:  activeChannels.length,
           } as JsonObject,
           createdAt: entryDate,
