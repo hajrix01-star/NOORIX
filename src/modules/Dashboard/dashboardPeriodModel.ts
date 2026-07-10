@@ -1,9 +1,16 @@
-import type { DatePeriodState } from '../../utils/datePeriod';
+import {
+  resolveDatePeriodRange,
+  toYmdOnly,
+  type DatePeriodState,
+} from '../../utils/datePeriod';
 
 export type DashboardPeriodFilter = {
   year: number;
   selectedMonth: number | null;
   label: string;
+  periodStart: string;
+  periodEnd: string;
+  isCustomRange: boolean;
 };
 
 export function buildDashboardYearOptions(currentYear: number, count = 3): number[] {
@@ -22,22 +29,33 @@ export function buildDashboardPeriodFilter(
   year: number,
   selectedMonth: number | null,
   label: string,
+  periodStart: string,
+  periodEnd: string,
+  isCustomRange: boolean,
 ): DashboardPeriodFilter {
   const safeMonth = selectedMonth != null && selectedMonth >= 1 && selectedMonth <= 12 ? selectedMonth : null;
   return {
     year,
     selectedMonth: safeMonth,
     label,
+    periodStart,
+    periodEnd,
+    isCustomRange,
   };
 }
 
 export function deriveDashboardPeriodFromDateFilter(
   state: DatePeriodState,
-  fallback: { year: number; month: number },
-): Pick<DashboardPeriodFilter, 'year' | 'selectedMonth'> {
+  fallback: { year: number; month: number; day: number },
+): Pick<DashboardPeriodFilter, 'year' | 'selectedMonth' | 'periodStart' | 'periodEnd' | 'isCustomRange'> {
+  const range = resolveDatePeriodRange(state, fallback);
+  const periodStart = toYmdOnly(range.startDate);
+  const periodEnd = toYmdOnly(range.endDate);
+  const firstPeriodMonth = parseYmdMonth(periodStart);
+
   if (state.mode === 'day' && state.selDay) {
     const parsed = parseYmdMonth(state.selDay);
-    if (parsed) return parsed;
+    if (parsed) return { ...parsed, periodStart, periodEnd, isCustomRange: true };
   }
 
   if (state.mode === 'month' || state.mode === 'months') {
@@ -47,17 +65,39 @@ export function deriveDashboardPeriodFromDateFilter(
     return {
       year: state.monthRangeStartYear || state.selYear || fallback.year,
       selectedMonth: sameMonth ? parseDashboardMonthValue(state.monthRangeStartMonth) : null,
+      periodStart,
+      periodEnd,
+      isCustomRange: !sameMonth,
     };
   }
 
-  if (state.mode === 'quarter' || state.mode === 'year' || state.mode === 'range' || state.mode === 'all') {
+  if (state.mode === 'range') {
+    return {
+      year: firstPeriodMonth?.year ?? state.selYear ?? fallback.year,
+      selectedMonth: null,
+      periodStart,
+      periodEnd,
+      isCustomRange: true,
+    };
+  }
+
+  if (state.mode === 'quarter' || state.mode === 'year' || state.mode === 'all') {
     return {
       year: state.selYear || fallback.year,
       selectedMonth: null,
+      periodStart,
+      periodEnd,
+      isCustomRange: state.mode === 'quarter',
     };
   }
 
-  return { year: fallback.year, selectedMonth: fallback.month };
+  return {
+    year: fallback.year,
+    selectedMonth: fallback.month,
+    periodStart,
+    periodEnd,
+    isCustomRange: false,
+  };
 }
 
 function parseYmdMonth(value: string): Pick<DashboardPeriodFilter, 'year' | 'selectedMonth'> | null {

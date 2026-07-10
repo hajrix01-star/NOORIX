@@ -194,6 +194,7 @@ export type DashboardInsightsPayload = {
 };
 
 export type DashboardPeriodDataLike = {
+  totalsByKind?: Record<string, { totalAmount?: string | number | null; invoiceCount?: number | null }>;
   topSuppliers?: Array<Record<string, unknown>>;
   purchaseCategoryBreakdown?: Array<Record<string, unknown>>;
   purchaseCategoryTotal?: unknown;

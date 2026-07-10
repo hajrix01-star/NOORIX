@@ -22,20 +22,29 @@ describe('dashboardPeriodModel', () => {
   });
 
   it('builds the shared dashboard period label', () => {
-    expect(buildDashboardPeriodFilter(2026, 2, 'Feb 2026')).toEqual({
+    expect(buildDashboardPeriodFilter(2026, 2, 'Feb 2026', '2026-02-01', '2026-02-28', false)).toEqual({
       year: 2026,
       selectedMonth: 2,
       label: 'Feb 2026',
+      periodStart: '2026-02-01',
+      periodEnd: '2026-02-28',
+      isCustomRange: false,
     });
-    expect(buildDashboardPeriodFilter(2026, null, '2026')).toEqual({
+    expect(buildDashboardPeriodFilter(2026, null, '2026', '2026-01-01', '2026-12-31', false)).toEqual({
       year: 2026,
       selectedMonth: null,
       label: '2026',
+      periodStart: '2026-01-01',
+      periodEnd: '2026-12-31',
+      isCustomRange: false,
     });
-    expect(buildDashboardPeriodFilter(2026, 13, '2026')).toEqual({
+    expect(buildDashboardPeriodFilter(2026, 13, '2026', '2026-01-01', '2026-12-31', false)).toEqual({
       year: 2026,
       selectedMonth: null,
       label: '2026',
+      periodStart: '2026-01-01',
+      periodEnd: '2026-12-31',
+      isCustomRange: false,
     });
   });
 
@@ -56,19 +65,34 @@ describe('dashboardPeriodModel', () => {
       yearRangeEnd: 2026,
     };
 
-    expect(deriveDashboardPeriodFromDateFilter(state, { year: 2026, month: 7 })).toEqual({
+    expect(deriveDashboardPeriodFromDateFilter(state, { year: 2026, month: 7, day: 8 })).toEqual({
       year: 2026,
       selectedMonth: 7,
+      periodStart: '2026-07-01',
+      periodEnd: '2026-07-31',
+      isCustomRange: false,
     });
 
-    expect(deriveDashboardPeriodFromDateFilter({ ...state, mode: 'quarter', selQuarter: 3 }, { year: 2026, month: 7 })).toEqual({
+    expect(deriveDashboardPeriodFromDateFilter({ ...state, mode: 'quarter', selQuarter: 3 }, { year: 2026, month: 7, day: 8 })).toEqual({
       year: 2026,
       selectedMonth: null,
+      periodStart: '2026-07-01',
+      periodEnd: '2026-09-30',
+      isCustomRange: true,
     });
 
-    expect(deriveDashboardPeriodFromDateFilter({ ...state, mode: 'day', selDay: '2025-12-03' }, { year: 2026, month: 7 })).toEqual({
+    expect(deriveDashboardPeriodFromDateFilter({
+      ...state,
+      mode: 'day',
+      selDay: '2025-12-03',
+      rangeStart: '2025-12-03',
+      rangeEnd: '2025-12-03',
+    }, { year: 2026, month: 7, day: 8 })).toEqual({
       year: 2025,
       selectedMonth: 12,
+      periodStart: '2025-12-03',
+      periodEnd: '2025-12-03',
+      isCustomRange: true,
     });
   });
 });

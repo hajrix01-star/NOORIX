@@ -29,14 +29,28 @@ export default function DashboardScreen() {
   const dashboardDateFilter = useDateFilter();
   const dashboardPeriod = useMemo(
     () => deriveDashboardPeriodFromDateFilter(dashboardDateFilter.state, now),
-    [dashboardDateFilter.state, now.year, now.month],
+    [dashboardDateFilter.state, now.year, now.month, now.day],
   );
   const year = dashboardPeriod.year;
   const selectedMonthNumber = dashboardPeriod.selectedMonth;
 
   const filter = useMemo(
-    () => buildDashboardPeriodFilter(year, selectedMonthNumber, dashboardDateFilter.label),
-    [dashboardDateFilter.label, year, selectedMonthNumber],
+    () => buildDashboardPeriodFilter(
+      year,
+      selectedMonthNumber,
+      dashboardDateFilter.label,
+      dashboardPeriod.periodStart,
+      dashboardPeriod.periodEnd,
+      dashboardPeriod.isCustomRange,
+    ),
+    [
+      dashboardDateFilter.label,
+      dashboardPeriod.isCustomRange,
+      dashboardPeriod.periodEnd,
+      dashboardPeriod.periodStart,
+      selectedMonthNumber,
+      year,
+    ],
   );
 
   const dashboardTabItems = useMemo(
