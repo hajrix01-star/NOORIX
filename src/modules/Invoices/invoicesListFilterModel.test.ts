@@ -58,7 +58,7 @@ describe('invoicesListFilterModel', () => {
     expect(categories).toEqual([{ value: 'c1', label: 'Maintenance' }]);
   });
 
-  it('prepends the unrecorded creator option and falls back to email', () => {
+  it('prepends the unrecorded creator option and falls back to email username', () => {
     const options = buildInvoiceCreatorFilterOptions(
       [
         { id: 'u1', nameAr: '', nameEn: '', email: 'user@example.com' },
@@ -69,7 +69,7 @@ describe('invoicesListFilterModel', () => {
     );
 
     expect(options[0]).toEqual({ value: '__none__', label: 'Unrecorded' });
-    expect(options[1]).toEqual({ value: 'u1', label: 'user@example.com' });
+    expect(options[1]).toEqual({ value: 'u1', label: 'user' });
     expect(options[2]).toEqual({ value: 'u2', label: 'Arabic user' });
   });
 

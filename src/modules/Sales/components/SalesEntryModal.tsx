@@ -33,6 +33,7 @@ import { buildVaultLookup, channelsFromEntryPayload } from '../utils/salesWhatsA
 import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
 import { useSalesEntryDateContext } from '../hooks/useSalesEntryDateContext';
 import { compareYmd } from '../utils/suggestSalesEntryDate';
+import { compactIdentifier } from '../../../utils/compactDisplay';
 import { useQueryClient } from '@tanstack/react-query';
 import { salesKeys } from '../../../services/queryKeys';
 import type { CreateSalesSummaryBody, DailySalesBatchPayload, SalesInputVaultRef, SalesMutationResult } from '../../../types/api/domains/sales';
@@ -410,7 +411,9 @@ export function SalesEntryModal({
                     t,
                   )}
                 </span>
-                <strong className="text-[13px] text-noorix-blue">#{s.summaryNumber}</strong>
+                <strong className="text-[13px] text-noorix-blue" title={String(s.summaryNumber || '')}>
+                  #{compactIdentifier(s.summaryNumber, { head: 13, tail: 3, maxLength: 18 })}
+                </strong>
               </div>
               <div className="flex justify-between text-[13px]">
                 <span className="text-noorix-muted">{t('total')}</span>

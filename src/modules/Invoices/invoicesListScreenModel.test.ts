@@ -73,7 +73,7 @@ describe('invoicesListScreenModel', () => {
     expect(rows[1]).toMatchObject({
       id: 'invoice-2',
       supplierName: 'Sales',
-      createdByDisplayName: 'sales@example.com',
+      createdByDisplayName: 'sales',
       notesOrEmployee: '',
     });
   });

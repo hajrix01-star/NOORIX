@@ -5,6 +5,7 @@ import { Badge, SmartTable } from '../../../../ui';
 import type { SmartTableColumn } from '../../../../ui';
 import { formatSaudiDate, toYmd } from '../../../../utils/saudiDate';
 import { fmt } from '../../../../utils/format';
+import { compactIdentifier } from '../../../../utils/compactDisplay';
 import { PAGE_SIZE } from '../constants';
 import { formatBatchesFooterLabel } from '../utils/purchasesBatchFormatters';
 import type {
@@ -94,8 +95,9 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
             className="font-bold nx-cell-ellipsis text-noorix-blue nx-font-numbers hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-noorix-blue rounded"
             onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
             disabled={batchActionLoading === row.batchId}
+            title={String(value ?? '')}
           >
-            {String(value ?? '')}
+            {compactIdentifier(value, { head: 9, tail: 4, maxLength: 16 })}
           </button>
         ),
       },
@@ -205,8 +207,9 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
               className="nx-cr__id text-noorix-blue hover:underline"
               onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
               disabled={batchActionLoading === row.batchId}
+              title={row.batchId}
             >
-              {row.batchId}
+              {compactIdentifier(row.batchId, { head: 9, tail: 4, maxLength: 16 })}
             </button>
             <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
             <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
@@ -236,8 +239,9 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
               className="font-bold text-[14px] text-noorix-blue nx-font-numbers hover:underline"
               onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
               disabled={batchActionLoading === row.batchId}
+              title={row.batchId}
             >
-              {row.batchId}
+              {compactIdentifier(row.batchId, { head: 9, tail: 4, maxLength: 16 })}
             </button>
             <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
           </div>

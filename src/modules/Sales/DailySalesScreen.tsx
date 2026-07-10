@@ -17,6 +17,7 @@ import ImportExportModal from '../../components/ImportExportModal';
 import { useDailySalesScreen } from './hooks/useDailySalesScreen';
 import type { DailySalesTableRow } from './hooks/useDailySalesScreen';
 import { getSalesShiftLabel } from './constants/salesShift';
+import { compactIdentifierList } from '../../utils/compactDisplay';
 
 export default function DailySalesScreen() {
   const {
@@ -77,6 +78,16 @@ export default function DailySalesScreen() {
     showToast,
   } = useDailySalesScreen();
 
+  const summaryNumberText = useCallback(
+    (row: DailySalesTableRow) => String(row.summaryNumbersText || row.summaryNumber || ''),
+    [],
+  );
+
+  const compactSummaryNumberText = useCallback(
+    (row: DailySalesTableRow) => compactIdentifierList(summaryNumberText(row)),
+    [summaryNumberText],
+  );
+
   const columns = useMemo(() => [
     { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '12ch',
       render: (_: unknown, row: DailySalesTableRow) => (
@@ -85,9 +96,10 @@ export default function DailySalesScreen() {
             variant="raw"
             size="auto"
             className="!h-auto rounded-md px-2 py-1 text-start nx-cell-num nx-cell-accent hover:bg-noorix-blue/10 hover:underline focus-visible:ring-2 focus-visible:ring-noorix-blue"
+            title={summaryNumberText(row)}
             onClick={() => setEditingSummary(row)}
           >
-            {row.summaryNumbersText || row.summaryNumber}
+            {compactSummaryNumberText(row)}
           </Button>
           {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
         </div>
@@ -111,7 +123,7 @@ export default function DailySalesScreen() {
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', kind: 'status', label: t('statusLabel'), width: '9ch',
       render: (v: unknown) => <Badge {...Badge.fromStatus(v as string, STATUS_MAP)} size="sm" /> },
-  ] as SmartTableColumn[], [t, STATUS_MAP, lang, setEditingSummary]);
+  ] as SmartTableColumn[], [t, STATUS_MAP, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText]);
 
   const footerCells = (
     <>
@@ -132,7 +144,7 @@ export default function DailySalesScreen() {
   const renderMobileCard = useCallback((row: DailySalesTableRow) => (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-noorix-blue ltr">#{row.summaryNumbersText || row.summaryNumber}</span>
+        <span className="text-[14px] font-bold text-noorix-blue ltr" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
           <span className="rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
@@ -160,12 +172,12 @@ export default function DailySalesScreen() {
         </div>
       </div>
     </div>
-  ), [STATUS_MAP, t, lang, setEditingSummary]);
+  ), [STATUS_MAP, t, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText]);
 
   const renderCompactRow = useCallback((row: DailySalesTableRow) => (
     <div className="cursor-pointer" onClick={() => setEditingSummary(row)}>
       <div className="nx-cr__line1">
-        <span className="nx-cr__id">#{row.summaryNumbersText || row.summaryNumber}</span>
+        <span className="nx-cr__id" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
         <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
         <span className="nx-cr__meta">{row.shiftsText || getSalesShiftLabel(row.shift, t)}</span>
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
@@ -179,7 +191,7 @@ export default function DailySalesScreen() {
         </div>
       </div>
     </div>
-  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary]);
+  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary, compactSummaryNumberText, summaryNumberText]);
 
   return (
     <ScreenShell>

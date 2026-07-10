@@ -8,6 +8,7 @@ import {
   type InvoiceTableNamedEntity,
   type InvoiceTableRow,
 } from './invoiceTableRowModel';
+import { displayNameFromEmail } from '../../utils/compactDisplay';
 
 export type InvoiceListCreatorUser = {
   id?: string | null;
@@ -102,7 +103,7 @@ export function getInvoiceListCreatedByDisplayName(
   lang: InvoiceTableLang,
 ) {
   if (!user) return '';
-  return pickInvoiceTableName(lang, user, '') || String(user.email ?? '').trim();
+  return pickInvoiceTableName(lang, user, '') || displayNameFromEmail(user.email);
 }
 
 export function getInvoiceListSupplierName(input: {

@@ -1,5 +1,6 @@
 import type { SearchableOption } from '../../ui';
 import { localizedDisplayName, vaultDisplayName } from '../../utils/vaultDisplay';
+import { displayNameFromEmail } from '../../utils/compactDisplay';
 
 export type InvoiceFilterLang = 'ar' | 'en' | string;
 export type InvoiceFilterTranslate = (key: string, ...args: unknown[]) => string;
@@ -19,7 +20,7 @@ export type InvoiceVaultFilterEntity = InvoiceNamedEntity & {
 
 function localizedName(entity: InvoiceNamedEntity | null | undefined, lang: InvoiceFilterLang, fallback = '') {
   if (!entity) return fallback;
-  return localizedDisplayName(entity, lang, '') || entity.email || entity.id || fallback;
+  return localizedDisplayName(entity, lang, '') || displayNameFromEmail(entity.email) || entity.id || fallback;
 }
 
 function optionFromEntity(entity: InvoiceNamedEntity, lang: InvoiceFilterLang): SearchableOption | null {
