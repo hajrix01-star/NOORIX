@@ -33,6 +33,7 @@ type ComparablePeriod = {
   month: number | null;
   monthStart: number;
   monthEnd: number;
+  months?: number[];
 };
 
 function deriveComparablePeriod(state: DatePeriodState): ComparablePeriod {
@@ -69,6 +70,9 @@ function numericAmount(value: unknown) {
 function periodAmount(row: PlDisplayRow, period: ComparablePeriod) {
   if (period.mode === 'year' || period.mode === 'all') return numericAmount(row.total);
   if (period.mode === 'month' && period.month) return numericAmount(row.months?.[period.month - 1]);
+  if (period.months?.length) {
+    return period.months.reduce((total, month) => total + numericAmount(row.months?.[month - 1]), 0);
+  }
   let total = 0;
   for (let month = period.monthStart; month <= period.monthEnd; month++) {
     total += numericAmount(row.months?.[month - 1]);
@@ -84,6 +88,9 @@ function cardAmount(report: GeneralProfitLossReport | null | undefined, key: Pro
     ...(report?.summaryRows || []),
   ].find((item) => item.key === key);
   if (!row) return 0;
+  if (period.months?.length) {
+    return period.months.reduce((total, month) => total + numericAmount(row.months?.[month - 1]), 0);
+  }
   let total = 0;
   for (let month = period.monthStart; month <= period.monthEnd; month++) {
     total += numericAmount(row.months?.[month - 1]);
@@ -100,8 +107,24 @@ export default function GeneralReportV2Screen() {
   const { t, lang } = useTranslation();
   const dateFilter = useDateFilter();
   const compareFilter = useDateFilter();
+  const [compareSelectedMonths, setCompareSelectedMonths] = useState<number[]>([]);
   const currentPeriod = useMemo(() => deriveComparablePeriod(dateFilter.state), [dateFilter.state]);
-  const comparePeriod = useMemo(() => deriveComparablePeriod(compareFilter.state), [compareFilter.state]);
+  const comparePeriodBase = useMemo(() => deriveComparablePeriod(compareFilter.state), [compareFilter.state]);
+  const compareMonthSet = useMemo(
+    () => [...new Set(compareSelectedMonths)].filter((month) => month >= 1 && month <= 12).sort((a, b) => a - b),
+    [compareSelectedMonths],
+  );
+  const comparePeriod = useMemo<ComparablePeriod>(() => {
+    if (compareMonthSet.length === 0 || comparePeriodBase.mode === 'all') return comparePeriodBase;
+    return {
+      ...comparePeriodBase,
+      mode: compareMonthSet.length === 1 ? 'month' : 'months',
+      month: compareMonthSet.length === 1 ? compareMonthSet[0] : null,
+      monthStart: compareMonthSet[0],
+      monthEnd: compareMonthSet[compareMonthSet.length - 1],
+      months: compareMonthSet,
+    };
+  }, [compareMonthSet, comparePeriodBase]);
   const compareEnabled = comparePeriod.mode !== 'all';
   const year = currentPeriod.year;
   const [detailState, setDetailState] = useState<ReportDetailState | null>(null);
@@ -119,6 +142,9 @@ export default function GeneralReportV2Screen() {
   const selectedMonthNumber = currentPeriod.mode === 'month' ? currentPeriod.month : null;
   const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
   const monthLabel = selectedMonthNumber ? monthNames[selectedMonthNumber - 1] : dateFilter.label;
+  const comparePeriodLabel = comparePeriod.months?.length
+    ? comparePeriod.months.map((month) => monthNames[month - 1]).join(' + ')
+    : compareFilter.label;
 
   const { data: report, isLoading, error, isFetching, isPlaceholderData } = useReportsGeneralProfitLoss({
     companyId: activeCompanyId,
@@ -167,6 +193,14 @@ export default function GeneralReportV2Screen() {
 
   const rowKey = (row: PlDisplayRow) => `${row.groupKey || ''}:${row.itemKey || row.key || ''}:${row.rowType || ''}:${row.depth || 0}`;
 
+  function toggleCompareMonth(month: number) {
+    setCompareSelectedMonths((prev) => (
+      prev.includes(month)
+        ? prev.filter((item) => item !== month)
+        : [...prev, month].sort((a, b) => a - b)
+    ));
+  }
+
   function formatChange(current: number, previous: number) {
     if (!Number.isFinite(current) || !Number.isFinite(previous)) return '-';
     if (previous === 0) {
@@ -191,8 +225,8 @@ export default function GeneralReportV2Screen() {
   }
 
   const isYearTable = currentPeriod.mode === 'year';
-  const reportMonthCount = report?.months?.length || 12;
-  const labelColumnMinWidth = isYearTable ? 320 : compareEnabled ? 300 : 260;
+  const reportMonthCount = 12;
+  const labelColumnMinWidth = isYearTable ? 240 : compareEnabled ? 300 : 260;
 
   const labelColumn = useMemo<SimpleTableColumn<PlDisplayRow>>(() => ({
     key: 'label',
@@ -265,7 +299,7 @@ export default function GeneralReportV2Screen() {
         label: (
           <div className="grid gap-0.5 text-center">
             <span className="font-black text-white">{comparePeriod.year}</span>
-            <span className="max-w-[140px] truncate text-[11px] font-black text-white/75">{compareFilter.label}</span>
+            <span className="max-w-[140px] truncate text-[11px] font-black text-white/75">{comparePeriodLabel}</span>
           </div>
         ),
         numeric: true,
@@ -301,32 +335,35 @@ export default function GeneralReportV2Screen() {
       },
     );
     return columns;
-  }, [compareEnabled, compareFilter.label, comparePeriod, compareRows, currentPeriod, dateFilter.label, labelColumn, lang, year]);
+  }, [compareEnabled, comparePeriod, comparePeriodLabel, compareRows, currentPeriod, dateFilter.label, labelColumn, lang, year]);
 
   const yearlyColumns = useMemo<SimpleTableColumn<PlDisplayRow>[]>(() => [
     labelColumn,
-    ...(report?.months || []).map((month): SimpleTableColumn<PlDisplayRow> => ({
-      key: `m${month.index}`,
+    ...monthNames.map((label, index): SimpleTableColumn<PlDisplayRow> => {
+      const monthIndex = index + 1;
+      return ({
+      key: `m${monthIndex}`,
       label: (
         <div className="grid gap-0.5 text-center">
-          <span className="font-black text-white">{month.label}</span>
+          <span className="font-black text-white">{label}</span>
           <span className="text-[11px] font-black text-white/75">{year}</span>
         </div>
       ),
       numeric: true,
-      width: 112,
+      width: 86,
       align: 'end',
       headerClassName: 'text-center',
       cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
       render: (_value, row) => {
-        const value = numericAmount(row.months?.[month.index - 1]);
+        const value = numericAmount(row.months?.[monthIndex - 1]);
         return (
-          <Button variant="raw" type="button" className={`inline-block min-w-[86px] p-0 text-end font-black ${valueClass(value, row)}`} onClick={() => openDetail(row, month.index, (row.originalRowType || row.rowType) === 'item')} dir="ltr">
+          <Button variant="raw" type="button" className={`inline-block min-w-[64px] p-0 text-end font-black ${valueClass(value, row)}`} onClick={() => openDetail(row, monthIndex, (row.originalRowType || row.rowType) === 'item')} dir="ltr">
             {amountText(value)}
           </Button>
         );
       },
-    })),
+    });
+    }),
     {
       key: 'total',
       label: (
@@ -336,30 +373,30 @@ export default function GeneralReportV2Screen() {
         </div>
       ),
       numeric: true,
-      width: 132,
+      width: 104,
       align: 'end',
       headerClassName: 'text-center',
       cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
       render: (_value, row) => {
         const value = numericAmount(row.total);
-        return <span className={`inline-block min-w-[104px] text-end font-black ${valueClass(value, row)}`} dir="ltr">{amountText(value)}</span>;
+        return <span className={`inline-block min-w-[78px] text-end font-black ${valueClass(value, row)}`} dir="ltr">{amountText(value)}</span>;
       },
     },
     {
       key: 'percent',
       label: '%',
       numeric: true,
-      width: 96,
+      width: 72,
       align: 'end',
       headerClassName: 'text-center',
       cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
-      render: (_value, row) => <span className="inline-block min-w-[72px] text-end font-black text-slate-500" dir="ltr">{percentText(row.percentOfSalesYear)}</span>,
+      render: (_value, row) => <span className="inline-block min-w-[52px] text-end font-black text-slate-500" dir="ltr">{percentText(row.percentOfSalesYear)}</span>,
     },
-  ], [labelColumn, report?.months, t, year]);
+  ], [labelColumn, monthNames, t, year]);
 
   const activeColumns = isYearTable ? yearlyColumns : comparisonColumns;
   const tableMinWidth = isYearTable
-    ? Math.max(980, labelColumnMinWidth + reportMonthCount * 112 + 132 + 96)
+    ? Math.max(1360, labelColumnMinWidth + reportMonthCount * 86 + 104 + 72)
     : compareEnabled
       ? labelColumnMinWidth + 160 + 160 + 120
       : Math.max(480, labelColumnMinWidth + 160);
@@ -397,7 +434,7 @@ export default function GeneralReportV2Screen() {
     const isArabic = lang !== 'en';
     const isYear = currentPeriod.mode === 'year';
     const periodTitle = dateFilter.label;
-    const compareTitle = compareEnabled ? compareFilter.label : '';
+    const compareTitle = compareEnabled ? comparePeriodLabel : '';
     const headerCells = isYear
       ? [
           t('reportItem'),
@@ -647,17 +684,47 @@ export default function GeneralReportV2Screen() {
           </div>
         </FilterToolbar>
 
-        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(260px,0.75fr)_minmax(0,1.5fr)]">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
+        {compareEnabled && (
+          <div className="border-b border-noorix-border bg-white px-4 py-3">
+            <div className="mx-auto flex max-w-[980px] flex-wrap items-center justify-center gap-2">
+              <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'أشهر المقارنة' : 'Compare months'}</span>
+              {monthNames.map((name, index) => {
+                const month = index + 1;
+                const selected = compareMonthSet.includes(month);
+                return (
+                  <Button
+                    key={month}
+                    size="sm"
+                    variant={selected ? 'primary' : 'default'}
+                    type="button"
+                    onClick={() => toggleCompareMonth(month)}
+                  >
+                    {name}
+                  </Button>
+                );
+              })}
+              {compareMonthSet.length > 0 && (
+                <Button size="sm" type="button" onClick={() => setCompareSelectedMonths([])}>
+                  {lang === 'ar' ? 'إلغاء التخصيص' : 'Clear custom'}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="grid gap-4 p-4">
+          <div className="mx-auto min-w-0 max-w-[760px] text-center">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <Badge color="blue" size="sm">{t('reportIncomeStatementTitle')}</Badge>
               <Badge color="gray" size="sm">{companyName || t('reports')}</Badge>
             </div>
             <h2 className="m-0 mt-3 text-[22px] font-black text-noorix-text">{t('reportGeneralV2')}</h2>
-            <div className="mt-3 text-[12px] font-bold text-noorix-muted">{dateFilter.label}</div>
+            <div className="mt-3 text-[12px] font-bold text-noorix-muted">
+              {dateFilter.label}{compareEnabled ? ` | ${lang === 'ar' ? 'مقارنة' : 'Compare'}: ${comparePeriodLabel}` : ''}
+            </div>
           </div>
 
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mx-auto grid w-full max-w-[980px] min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard color="var(--color-nx-net-profit)" className="min-h-[138px]">
               <MetricCard.Header label={t('annualNetProfit')} subLabel={dateFilter.label} />
               <MetricCard.Value value={currentNetProfit} currency="SR" color="var(--color-nx-net-profit)" />
@@ -683,13 +750,13 @@ export default function GeneralReportV2Screen() {
             </MetricCard>
 
             <MetricCard color={compareEnabled ? 'var(--color-nx-profit)' : 'var(--noorix-border)'} className="min-h-[138px]">
-              <MetricCard.Header label={lang === 'ar' ? 'المقارنة' : 'Comparison'} subLabel={compareEnabled ? compareFilter.label : (lang === 'ar' ? 'معطلة' : 'Off')} />
+              <MetricCard.Header label={lang === 'ar' ? 'المقارنة' : 'Comparison'} subLabel={compareEnabled ? comparePeriodLabel : (lang === 'ar' ? 'معطلة' : 'Off')} />
               <MetricCard.Value
                 value={compareEnabled ? formatChange(currentNetProfit, compareNetProfit) : (lang === 'ar' ? 'بدون' : 'Off')}
                 color={compareEnabled ? 'var(--color-nx-profit)' : 'var(--noorix-muted)'}
               />
               <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
-                {compareEnabled ? `${lang === 'ar' ? 'مقارنة مع' : 'Compared with'} ${compareFilter.label}` : (lang === 'ar' ? 'لا تظهر أعمدة المقارنة' : 'Comparison columns hidden')}
+                {compareEnabled ? `${lang === 'ar' ? 'مقارنة مع' : 'Compared with'} ${comparePeriodLabel}` : (lang === 'ar' ? 'لا تظهر أعمدة المقارنة' : 'Comparison columns hidden')}
               </MetricCard.Footer>
             </MetricCard>
           </div>
@@ -727,13 +794,13 @@ export default function GeneralReportV2Screen() {
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-5 text-center font-bold text-red-700">{error.message}</div>}
 
       {activeCompanyId && report && (
-        <section className={isFetching && isPlaceholderData ? 'opacity-70' : undefined}>
+        <section className={`flex justify-center ${isFetching && isPlaceholderData ? 'opacity-70' : ''}`}>
           <SimpleTable
             columns={activeColumns}
             data={visibleRows}
             tableMinWidth={tableMinWidth}
-            frameClassName={isYearTable ? '' : 'noorix-report-table--fit'}
-            tableClassName={isYearTable ? '' : 'noorix-report-table__table'}
+            frameClassName={isYearTable ? 'noorix-report-table--year' : 'noorix-report-table--fit'}
+            tableClassName={isYearTable ? 'noorix-report-table__table--year' : 'noorix-report-table__table'}
             compact
             cellPadding="8px 14px"
             getRowClassName={(row) => tableRowClass(row)}
