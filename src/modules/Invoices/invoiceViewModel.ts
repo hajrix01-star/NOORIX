@@ -163,7 +163,10 @@ export function buildInvoiceViewFields(input: {
   ] satisfies InvoiceViewField[];
 }
 
-export function getInvoiceViewVaultSplits(invoice: InvoiceViewSource, lang: InvoiceViewLang) {
+export function getInvoiceViewVaultSplits(
+  invoice: Pick<InvoiceViewSource, 'vaultAllocations'>,
+  lang: InvoiceViewLang,
+) {
   return (invoice.vaultAllocations ?? []).map<InvoiceViewVaultSplit>((allocation, index) => ({
     key: allocation.id || `vault-allocation-${index}`,
     vaultName: pickInvoiceViewName(lang, allocation.vault),

@@ -13,6 +13,8 @@ import { OrderConfirmModal } from '../OrderConfirmModal';
 import type { ItemsManageTabController } from '../../hooks/useItemsManageTab';
 import type { OrderProduct } from '../../../../types/api';
 
+type DeactivateTarget = 'selected' | { id: string };
+
 export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController }) {
   const {
     t,
@@ -72,7 +74,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
   const [bulkBusy, setBulkBusy] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetMode, setSheetMode] = useState<'create' | 'edit'>('create');
-  const [deactivateTarget, setDeactivateTarget] = useState<OrderProduct | 'selected' | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<DeactivateTarget | null>(null);
 
   const totalOfType = products.filter((p) => (p.productType || 'order') === catalogProductType).length;
 
@@ -311,7 +313,9 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         saving={sheetMode === 'edit' ? updateProduct.isPending : createProduct.isPending}
         onClose={closeSheet}
         onSave={handleSave}
-        onDelete={sheetMode === 'edit' && editingProduct ? () => setDeactivateTarget(editingProduct) : undefined}
+        onDelete={sheetMode === 'edit' && editingProduct?.id ? () => {
+          if (editingProduct.id) setDeactivateTarget({ id: editingProduct.id });
+        } : undefined}
         onAddSize={() => setAddSizeModal(true)}
         onAddPackaging={() => setAddPackagingModal(true)}
         addVariant={variantHandlers.addVariant}

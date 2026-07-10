@@ -37,7 +37,7 @@ type LeaveFormState = {
   status: string;
   employeeId: string;
 };
-type LeaveRecord = Record<string, unknown> & {
+type LeaveRecord = {
   id?: string | null;
   employeeId?: string | null;
   leaveType?: LeaveType | string | null;
@@ -252,7 +252,9 @@ export function LeaveFormModal({
                 role: 'delete',
                 hidden: !isEdit || !onDelete,
                 className: 'me-auto',
-                onClick: () => onDelete?.(editLeave),
+                onClick: () => {
+                  if (editLeave) onDelete?.(editLeave);
+                },
               },
               {
                 key: 'return-from-leave',

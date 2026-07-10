@@ -68,6 +68,10 @@ type InvoiceListActionParams = {
   serverAll: InvoiceListActionTotals;
 };
 
+function isInvoiceTablePrintSource(invoice: InvoicePrintSource): invoice is InvoiceTableRow {
+  return 'supplierName' in invoice;
+}
+
 export function buildInvoiceListActionFetchParams(params: InvoiceListActionParams): InvoiceListFetchParams {
   return buildInvoiceListFetchParams({
     companyId: params.companyId,
@@ -107,10 +111,10 @@ function invoicePrintRows(input: {
   const vaultSplits = getInvoiceViewVaultSplits(invoice, lang);
   const vaultLabel = vaultSplits.length
     ? vaultSplits.map((split) => `${split.vaultName}: ${fmt(split.amount)} SR`).join(' | ')
-    : 'supplierName' in invoice
+    : isInvoiceTablePrintSource(invoice)
       ? getInvoiceTableVaultName(invoice, lang)
       : pickInvoiceViewName(lang, invoice.vault);
-  const supplierLabel = 'supplierName' in invoice
+  const supplierLabel = isInvoiceTablePrintSource(invoice)
     ? asInvoiceTableText(invoice.supplierName)
     : pickInvoiceViewName(lang, invoice.supplier);
 

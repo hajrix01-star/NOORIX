@@ -6,6 +6,8 @@ import type { DailySalesChannelEntry, DailySalesVaultRef } from '../components/D
 export type SalesSummaryChannelsLike = {
   status?: string;
   transactionDate?: string | null;
+  shift?: unknown;
+  notes?: unknown;
   totalAmount?: number | string | null;
   channels?: DailySalesChannelEntry[] | null;
 };

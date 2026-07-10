@@ -289,14 +289,18 @@ export function ResidencyFormModal({
               role: 'delete',
               hidden: !isEdit || !onDelete,
               className: 'me-auto',
-              onClick: () => onDelete?.(residency),
+              onClick: () => {
+                if (residency) onDelete?.(residency);
+              },
             },
             {
               key: 'issue-invoice',
               label: t('hrServiceIssueInvoice'),
               role: 'success',
               hidden: !isEdit || !onIssueInvoice || !!residency?.invoiceId,
-              onClick: () => onIssueInvoice?.(residency),
+              onClick: () => {
+                if (residency) onIssueInvoice?.(residency);
+              },
             },
             {
               key: 'save',

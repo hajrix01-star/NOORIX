@@ -5,7 +5,7 @@ import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
-import { AdaptiveSheet, Checkbox, DialogActions, Input, SearchableOptionsPicker } from '../../../ui';
+import { AdaptiveSheet, Button, Checkbox, DialogActions, Input, SearchableOptionsPicker } from '../../../ui';
 import type {
   ExpenseLineCreatePayload,
   ExpenseLineRecord,

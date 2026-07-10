@@ -244,7 +244,7 @@ export function EmployeeCareerMovementModal({
               label: saving ? t('saving') : t('careerSaveMovement'),
               role: 'save',
               disabled: saving || raiseBlocked,
-              onClick: handleSubmit,
+              onClick: () => void handleSubmit({ preventDefault: () => undefined } as React.FormEvent),
             },
           ]}
         />

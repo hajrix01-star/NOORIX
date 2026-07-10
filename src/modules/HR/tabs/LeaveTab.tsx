@@ -413,7 +413,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           editLeave={editLeave}
           onReturnFromLeave={editLeave && canShowLeaveReturnRow(editLeave) ? () => setReturnRow(editLeave) : undefined}
           onSalarySettlement={editLeave && canShowSalarySettlement(editLeave) ? () => setSettlementRow(editLeave) : undefined}
-          onDelete={editLeave ? handleDeleteLeave : undefined}
+          onDelete={editLeave ? () => handleDeleteLeave(editLeave) : undefined}
           onSuccess={() => {
             invalidateAfterLeaveFormModalSuccess(queryClient, companyId, year);
             showToast(editLeave ? t('leaveUpdated') : t('leaveAdded'), 'success');
