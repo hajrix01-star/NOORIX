@@ -13,6 +13,7 @@ const governanceChecks = [
   'check-kpi-summary-governance.mjs',
   'check-chart-state-governance.mjs',
   'check-print-export-governance.mjs',
+  'check-dialog-actions-governance.mjs',
   'check-editable-grid-governance.mjs',
   'check-display-grid-governance.mjs',
   'check-any-typing-governance.mjs',

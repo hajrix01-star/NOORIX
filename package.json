@@ -21,6 +21,7 @@
     "ui:audit:strict": "node scripts/ui-audit.mjs --strict",
     "check:table-governance": "node scripts/check-table-governance.mjs",
     "check:control-governance": "node scripts/check-control-governance.mjs",
+    "check:dialog-actions-governance": "node scripts/check-dialog-actions-governance.mjs",
     "check:date-control-governance": "node scripts/check-date-control-governance.mjs",
     "check:dashboard-governance": "node scripts/check-dashboard-governance.mjs",
     "check:invoices-governance": "node scripts/check-invoices-governance.mjs",

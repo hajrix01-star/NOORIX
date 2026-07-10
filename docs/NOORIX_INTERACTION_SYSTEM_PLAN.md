@@ -20,6 +20,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | Date filter import path | Use `src/ui/date` as the official home for `DateFilterBar`, `YearDateFilter`, `MonthDateFilter`, `TransactionDatePicker`, and `useDateFilter` |
 | Date labels | Generate Gregorian month/weekday labels centrally via `src/ui/date/dateLocale.ts` |
 | Date governance | Block new direct `type="date"` usage outside documented exceptions |
+| Central dialog action footers | Use `DialogActions` for modal/drawer footer buttons instead of raw local `Button` groups |
 | Protected domains | Skip payroll, tax, bank, purchases, invoices, sales, expenses, treasury, and reports in this batch |
 
 ## Implemented Foundation
@@ -50,6 +51,8 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `scripts/check-date-control-governance.mjs` | Prevents new ungoverned `type="date"`, old `DateFilterBar` imports, and direct `hooks/useDateFilter` imports |
 | `scripts/check-responsive-governance.mjs` | Prevents new direct responsive imports from `src/hooks/useMediaQuery` and stale responsive docs |
 | `scripts/check-timing-governance.mjs` | Prevents new direct debounce imports from `src/hooks/useDebouncedValue` and stale timing docs |
+| `src/ui/DialogActions.tsx` | Central action footer primitive for dialogs, drawers, and print preview surfaces |
+| `scripts/check-dialog-actions-governance.mjs` | `check:dialog-actions-governance` prevents new modal/drawer footers from using raw `Button` groups instead of `DialogActions` or approved central primitives |
 
 ## Migration Priority
 

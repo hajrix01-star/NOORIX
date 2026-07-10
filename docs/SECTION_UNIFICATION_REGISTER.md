@@ -1660,11 +1660,12 @@ Closed on 2026-07-08 with local commit `46ffc33f`.
   - KPI/summary primitive
   - chart state primitive
   - print/export foundation
+  - dialog-actions foundation
   - editable-grid foundation
   - display-name foundation
   - official-number boundary
   - query/date boundary
-  - table, filter, date-control, and responsive governance
+  - dialog-actions, table, filter, date-control, and responsive governance
 
 ### Centralized
 
@@ -1691,6 +1692,33 @@ Closed on 2026-07-08 with local commit `46ffc33f`.
   - `check:system-governance-consolidated` passed.
   - `check-node-scripts` passed after adding the consolidated governance script.
   - `git diff --check` passed.
+
+## Dialog Actions Governance
+
+Closed on 2026-07-10 as a local implementation batch.
+
+### Scope
+
+- Added the executable guard:
+  - `scripts/check-dialog-actions-governance.mjs`
+  - `package.json` script `check:dialog-actions-governance`
+- Added the guard to `check:system-governance-consolidated`.
+- The guard scans `src/components`, `src/modules`, and `src/ui` for modal/drawer footer actions.
+
+### Centralized
+
+- Footer actions for dialogs and drawers must use `DialogActions` or an approved central primitive.
+- Raw local `<Button>` groups inside a `footer` prop or `const footer` are blocked.
+- Approved central primitives currently include `DialogActions`, `PayrollRunActions`, and `FileTrigger`.
+
+### Protected Exceptions
+
+- Table footer rows and matrix/table total rows are outside this guard.
+- Buttons inside a modal body, such as refresh, retry, row edit, import selection, or inline add actions, remain allowed.
+
+### Closure Checks
+
+- `check:dialog-actions-governance` protects future windows from drifting out of the central action-footer system.
 
 ## Print Table Conversion Batch 3
 
