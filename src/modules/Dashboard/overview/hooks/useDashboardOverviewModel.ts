@@ -24,7 +24,7 @@ import {
   yearMonthlyDailyAvgCapMonth,
 } from '../utils/dashboardOverviewBuilders';
 import { computeSalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
-import { buildDashboardWeeklySalesComparisonRows } from '../utils/dashboardWeeklySalesComparisonModel';
+import { buildDashboardWeeklySalesComparisonRowsFromDaily } from '../utils/dashboardWeeklySalesComparisonModel';
 import type { DashboardOverviewFilter } from '../types';
 import type { DashboardSalesMetricChannel, DashboardSalesMetricDay, DashboardSalesSummary } from '../../../../types/api/domains/dashboard';
 
@@ -591,10 +591,41 @@ export function useDashboardOverviewModel(
     lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : MONTH_NAMES_EN[chartMonthForDaily - 1];
 
   const weeklySalesWeekRows = useMemo(() => {
-    return buildDashboardWeeklySalesComparisonRows(weeklyMetricsA?.dailyWeekly, weeklyMetricsB?.dailyWeekly);
+    const isSelectedPeriod =
+      selectedMonth != null &&
+      weeklyPanelYearA === year &&
+      weeklyPanelMonthA === selectedMonth &&
+      revenueMtdEndDay > 0;
+    const isCurrentCalendarMonth =
+      weeklyPanelYearA === saudiNow.year && weeklyPanelMonthA === saudiNow.month;
+    const currentMaxDayInclusive = isSelectedPeriod
+      ? revenueMtdEndDay
+      : isCurrentCalendarMonth
+        ? saudiNow.day
+        : undefined;
+
+    return buildDashboardWeeklySalesComparisonRowsFromDaily({
+      current: weeklyMetricsA?.dailyDaily,
+      baseline: weeklyMetricsB?.dailyDaily,
+      currentYear: weeklyPanelYearA,
+      currentMonth: weeklyPanelMonthA,
+      baselineYear: weeklyPanelYearB,
+      baselineMonth: weeklyPanelMonthB,
+      currentMaxDayInclusive,
+    });
   }, [
-    weeklyMetricsA?.dailyWeekly,
-    weeklyMetricsB?.dailyWeekly,
+    selectedMonth,
+    weeklyPanelYearA,
+    weeklyPanelMonthA,
+    weeklyPanelYearB,
+    weeklyPanelMonthB,
+    year,
+    revenueMtdEndDay,
+    saudiNow.year,
+    saudiNow.month,
+    saudiNow.day,
+    weeklyMetricsA?.dailyDaily,
+    weeklyMetricsB?.dailyDaily,
   ]);
 
   const weeklySalesPanelLoading = weeklyPackALoading || weeklyPackBLoading;
