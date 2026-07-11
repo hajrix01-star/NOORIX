@@ -203,6 +203,44 @@ describe('ChatService intent routing', () => {
     expect(res.answerAr).toMatch(/ملخص الربح والخسارة/);
   });
 
+  it('answers this-month P&L from period backend metrics without annual cards', async () => {
+    const { chat, reports, chatFinancialMetrics } = mkDeps({
+      isAvailable: () => false,
+      parseIntent: jest.fn(),
+    });
+
+    const query =
+      '\u0623\u0639\u0637\u0646\u064a \u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0631\u0628\u062d \u0648\u0627\u0644\u062e\u0633\u0627\u0631\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631';
+    const res = await chat.processQuery(companyId, query, 'owner', undefined);
+
+    expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
+    expect(chatFinancialMetrics.sumRevenue).toHaveBeenCalled();
+    expect(chatFinancialMetrics.sumPurchases).toHaveBeenCalled();
+    expect(chatFinancialMetrics.sumOperatingExpenses).toHaveBeenCalled();
+    expect(res.answerAr).toContain('\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0631\u0628\u062d \u0648\u0627\u0644\u062e\u0633\u0627\u0631\u0629');
+    expect(res.answerAr).toContain('10000 SR');
+    expect(res.answerAr).toContain('7000 SR');
+  });
+
+  it('answers explicit month P&L when the user names a month number', async () => {
+    const { chat, reports, chatFinancialMetrics } = mkDeps({
+      isAvailable: () => false,
+      parseIntent: jest.fn(),
+    });
+
+    const query =
+      '\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0631\u0628\u062d \u0648\u0627\u0644\u062e\u0633\u0627\u0631\u0629 \u0634\u0647\u0631 2 2026';
+    const res = await chat.processQuery(companyId, query, 'owner', undefined);
+
+    expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
+    expect(chatFinancialMetrics.sumRevenue).toHaveBeenCalledWith(
+      companyId,
+      new Date(2026, 1, 1, 0, 0, 0, 0),
+      new Date(2026, 2, 0, 23, 59, 59, 999),
+    );
+    expect(res.answerAr).toContain('\u0641\u0628\u0631\u0627\u064a\u0631 2026');
+  });
+
   it('routes نسبة المشتريات من المبيعات to finance ratios when Gemini returns finance_ratios', async () => {
     const { chat, dashboard, reportingInsightsAggregator } = mkDeps({
       parseIntent: jest.fn().mockResolvedValue({

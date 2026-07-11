@@ -15,6 +15,73 @@ export function matches(q: string, patterns: string[]): boolean {
   return patterns.some((p) => lower.includes(p.toLowerCase()));
 }
 
+const MONTH_LABELS_AR = [
+  '\u064a\u0646\u0627\u064a\u0631',
+  '\u0641\u0628\u0631\u0627\u064a\u0631',
+  '\u0645\u0627\u0631\u0633',
+  '\u0623\u0628\u0631\u064a\u0644',
+  '\u0645\u0627\u064a\u0648',
+  '\u064a\u0648\u0646\u064a\u0648',
+  '\u064a\u0648\u0644\u064a\u0648',
+  '\u0623\u063a\u0633\u0637\u0633',
+  '\u0633\u0628\u062a\u0645\u0628\u0631',
+  '\u0623\u0643\u062a\u0648\u0628\u0631',
+  '\u0646\u0648\u0641\u0645\u0628\u0631',
+  '\u062f\u064a\u0633\u0645\u0628\u0631',
+] as const;
+
+const MONTH_TERMS = [
+  ['\u064a\u0646\u0627\u064a\u0631', 'jan', 'january'],
+  ['\u0641\u0628\u0631\u0627\u064a\u0631', 'feb', 'february'],
+  ['\u0645\u0627\u0631\u0633', 'mar', 'march'],
+  ['\u0627\u0628\u0631\u064a\u0644', '\u0623\u0628\u0631\u064a\u0644', 'apr', 'april'],
+  ['\u0645\u0627\u064a\u0648', 'may'],
+  ['\u064a\u0648\u0646\u064a\u0648', 'jun', 'june'],
+  ['\u064a\u0648\u0644\u064a\u0648', 'jul', 'july'],
+  ['\u0627\u063a\u0633\u0637\u0633', '\u0623\u063a\u0633\u0637\u0633', 'aug', 'august'],
+  ['\u0633\u0628\u062a\u0645\u0628\u0631', 'sep', 'september'],
+  ['\u0627\u0643\u062a\u0648\u0628\u0631', '\u0623\u0643\u062a\u0648\u0628\u0631', 'oct', 'october'],
+  ['\u0646\u0648\u0641\u0645\u0628\u0631', 'nov', 'november'],
+  ['\u062f\u064a\u0633\u0645\u0628\u0631', 'dec', 'december'],
+] as const;
+
+function buildFullMonthRange(monthOneBased: number, year: number) {
+  const monthIndex = monthOneBased - 1;
+  const start = new Date(year, monthIndex, 1, 0, 0, 0, 0);
+  const end = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999);
+  return {
+    start,
+    end,
+    labelAr: `${MONTH_LABELS_AR[monthIndex]} ${year}`,
+    labelEn: `${start.toLocaleString('en', { month: 'long' })} ${year}`,
+  };
+}
+
+function parseExplicitMonthRange(
+  q: string,
+  now: Date,
+): { start: Date; end: Date; labelAr: string; labelEn: string } | null {
+  const yearMatch = q.match(/\b(20\d{2})\b/);
+  const selectedYear = yearMatch ? Number(yearMatch[1]) : now.getFullYear();
+  const numericMonth =
+    q.match(/(?:\u0634\u0647\u0631|\u0627\u0644\u0634\u0647\u0631|month)\s*(\d{1,2})(?:\s*(?:\u0639\u0627\u0645|\u0633\u0646\u0629|year)?\s*(20\d{2}))?/i) ??
+    q.match(/\b(\d{1,2})[/-](20\d{2})\b/);
+
+  if (numericMonth) {
+    const month = Number(numericMonth[1]);
+    const year = numericMonth[2] ? Number(numericMonth[2]) : selectedYear;
+    if (month >= 1 && month <= 12) return buildFullMonthRange(month, year);
+  }
+
+  for (let index = 0; index < MONTH_TERMS.length; index += 1) {
+    if (MONTH_TERMS[index].some((term) => q.includes(term))) {
+      return buildFullMonthRange(index + 1, selectedYear);
+    }
+  }
+
+  return null;
+}
+
 /**
  * من أول الشهر الحالي حتى نهاية أمس (أيام مكتملة فقط — لا يُحسب اليوم الجاري قبل اكتماله).
  * إن كان أمس في الشهر السابق (مثلاً يوم 1) يُرجع نطاقاً فارغاً عملياً (end قبل start) لعدم وجود يوم مكتمل في الشهر الحالي.
@@ -70,6 +137,9 @@ export function parsePeriod(
   const y = now.getFullYear();
   const m = now.getMonth();
   const d = now.getDate();
+
+  const explicitMonth = parseExplicitMonthRange(q, now);
+  if (explicitMonth) return explicitMonth;
 
   /* «حتى أمس» ضمن سياق الشهر — لا يُفسَّر كيوم «أمس» كامل (يُطابق نص الأسئلة الجاهزة) */
   if (matches(q, ['حتى أمس', 'حتى امس', 'through yesterday'])) {

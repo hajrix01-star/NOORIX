@@ -11,38 +11,27 @@ import { canUseFaqQuestion } from './smartChatFaqAccess';
 export const CHAT_PAGE_SIZE = 6;
 
 const canSales = (c: PermissionChecker) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ);
-const canVaults = (c: PermissionChecker) => c(PERMISSIONS.VIEW_VAULTS) || c(PERMISSIONS.VAULTS_READ);
 const canReports = (c: PermissionChecker) => c(PERMISSIONS.VIEW_REPORTS) || c(PERMISSIONS.REPORTS_READ);
 const canInvoices = (c: PermissionChecker) => c(PERMISSIONS.VIEW_INVOICES) || c(PERMISSIONS.INVOICES_READ);
-const canSuppliers = (c: PermissionChecker) => c(PERMISSIONS.VIEW_SUPPLIERS) || c(PERMISSIONS.SUPPLIERS_READ);
-const canEmployees = (c: PermissionChecker) => c(PERMISSIONS.VIEW_EMPLOYEES) || c(PERMISSIONS.EMPLOYEES_READ);
+const canExpenses = (c: PermissionChecker) => c(PERMISSIONS.VIEW_EXPENSES) || c(PERMISSIONS.EXPENSES_READ);
 
 export const PERMANENT_QUESTIONS: PermanentQuestion[] = [
   {
-    key: 'annualSales',
+    key: 'monthlySales',
     section: 'reports',
-    ar: 'كم مبيعات السنة؟',
-    en: 'What are annual sales?',
-    shortAr: 'مبيعات السنة',
-    shortEn: 'Annual sales',
+    ar: 'كم مبيعات هذا الشهر؟',
+    en: 'What are this month sales?',
+    shortAr: 'مبيعات الشهر',
+    shortEn: 'Monthly sales',
     canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_ANNUAL_SALES, canSales),
-  },
-  {
-    key: 'vaultBalances',
-    section: 'reports',
-    ar: 'ما أرصدة الخزائن؟',
-    en: 'What are vault balances?',
-    shortAr: 'أرصدة الخزائن',
-    shortEn: 'Vault balances',
-    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_VAULT_BALANCES, canVaults),
   },
   {
     key: 'pnlSummary',
     section: 'reports',
-    ar: 'أعطني ملخص الربح والخسارة',
-    en: 'Give me P&L summary',
-    shortAr: 'ملخص الربح والخسارة',
-    shortEn: 'P&L summary',
+    ar: 'أعطني تقرير الربح والخسارة لهذا الشهر',
+    en: 'Give me this month profit and loss report',
+    shortAr: 'ربح وخسارة الشهر',
+    shortEn: 'Monthly P&L',
     canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_PNL_SUMMARY, canReports),
   },
   {
@@ -56,7 +45,7 @@ export const PERMANENT_QUESTIONS: PermanentQuestion[] = [
       canUseFaqQuestion(
         c,
         PERMISSIONS.CHAT_FAQ_LOAD_VS_SALES,
-        (x) => canSales(x) && canInvoices(x) && canVaults(x),
+        (x) => canSales(x) && canInvoices(x) && canExpenses(x),
       ),
   },
   {
@@ -64,36 +53,9 @@ export const PERMANENT_QUESTIONS: PermanentQuestion[] = [
     section: 'compare',
     ar: 'مبيعات الشهر الحالي مقابل الماضي (نفس الفترة)',
     en: 'This month vs last month sales (aligned partial months).',
-    shortAr: 'مبيعات: الحالي vs الماضي',
+    shortAr: 'مبيعات: الحالي مقابل الماضي',
     shortEn: 'Sales: this vs last month',
     canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_SALES_COMPARE, canSales),
-  },
-  {
-    key: 'invoiceCount',
-    section: 'counts',
-    ar: 'كم عدد الفواتير؟',
-    en: 'How many invoices?',
-    shortAr: 'عدد الفواتير',
-    shortEn: 'Invoice count',
-    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_INVOICE_COUNT, canInvoices),
-  },
-  {
-    key: 'supplierCount',
-    section: 'counts',
-    ar: 'كم عدد الموردين؟',
-    en: 'How many suppliers?',
-    shortAr: 'عدد الموردين',
-    shortEn: 'Supplier count',
-    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_SUPPLIER_COUNT, canSuppliers),
-  },
-  {
-    key: 'employeeCount',
-    section: 'counts',
-    ar: 'كم عدد الموظفين؟',
-    en: 'How many employees?',
-    shortAr: 'عدد الموظفين',
-    shortEn: 'Employee count',
-    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_EMPLOYEE_COUNT, canEmployees),
   },
   {
     key: 'help',
