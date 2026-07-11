@@ -4,9 +4,9 @@ import {
   amountText,
   percentText,
   displayLabel,
-  getContextAmount,
   getContextPercent,
   getRowTone,
+  isEmptyMetric,
 } from './reportHelpers';
 import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState } from './reportTypes';
 import {
@@ -26,6 +26,7 @@ export type GeneralPlTableProps = {
   selectedMonthNumber: number | null;
   monthNames: string[];
   onOpenDetail: (payload: ReportDetailState) => void;
+  currentColumnPeriod?: ComparisonColumnPeriod | null;
   compareColumnPeriods?: ComparisonColumnPeriod[];
   compareRows?: Map<string, PlDisplayRow>;
 };
@@ -33,30 +34,35 @@ export type GeneralPlTableProps = {
 export default function GeneralPlTable({
   report,
   visibleRows,
-  collapsedGroups,
-  toggleGroup,
   lang,
   t,
   isMobile,
   selectedMonthNumber,
   monthNames,
   onOpenDetail,
+  currentColumnPeriod = null,
   compareColumnPeriods = [],
   compareRows = new Map<string, PlDisplayRow>(),
 }: GeneralPlTableProps) {
   const stickyEdge = lang === 'en' ? 'left' : 'right';
-  const isMonthlyMode = selectedMonthNumber != null;
-  const visibleMonthColumns = isMonthlyMode ? [] : (report?.months ?? []);
-  const showAnnualTotal = !isMonthlyMode;
-  const monthCompareColumns = isMonthlyMode ? compareColumnPeriods : [];
+  const isPeriodMode = currentColumnPeriod != null;
+  const visibleMonthColumns = isPeriodMode ? [] : (report?.months ?? []);
+  const showAnnualTotal = !isPeriodMode;
+  const monthCompareColumns = isPeriodMode ? compareColumnPeriods : [];
 
   return (
     <div className="nx-pl-table-scroll">
-      <table className={cn('nx-pl-table w-full table-fixed border-collapse', plMinWidthClass(isMobile, isMonthlyMode, monthCompareColumns.length))}>
+      <table
+        className={cn(
+          'nx-pl-table w-full table-fixed border-collapse',
+          isPeriodMode && 'nx-pl-table--fit',
+          plMinWidthClass(isMobile, isPeriodMode, monthCompareColumns.length),
+        )}
+      >
         <colgroup>
-          <col className={isMobile ? 'w-[48%]' : isMonthlyMode ? 'w-[300px]' : 'w-[260px]'} />
-          {isMonthlyMode && <col className={isMobile ? 'w-[26%]' : 'w-[170px]'} />}
-          {isMonthlyMode && monthCompareColumns.map((column) => (
+          <col className={isMobile ? 'w-[48%]' : isPeriodMode ? 'w-[300px]' : 'w-[260px]'} />
+          {isPeriodMode && <col className={isMobile ? 'w-[26%]' : 'w-[170px]'} />}
+          {isPeriodMode && monthCompareColumns.map((column) => (
             <col key={column.key} className={isMobile ? 'w-[26%]' : 'w-[154px]'} />
           ))}
           {!isMobile && visibleMonthColumns.map((month) => <col key={month.index} className="w-[76px]" />)}
@@ -73,12 +79,12 @@ export default function GeneralPlTable({
             >
               {t('reportItem')}
             </th>
-            {isMonthlyMode && (
+            {isPeriodMode && currentColumnPeriod && (
               <th className="nx-pl-table__th nx-pl-table__th--amount text-center font-primary text-noorix-text">
-                {monthNames[selectedMonthNumber - 1]}
+                {currentColumnPeriod.label}
               </th>
             )}
-            {isMonthlyMode && monthCompareColumns.map((column) => (
+            {isPeriodMode && monthCompareColumns.map((column) => (
               <th
                 key={column.key}
                 className="nx-pl-table__th nx-pl-table__th--amount text-center font-primary text-noorix-text"
@@ -96,7 +102,7 @@ export default function GeneralPlTable({
                 </th>
               ))}
             {showAnnualTotal && (
-              <th className="nx-pl-table__th nx-pl-table__th--total text-end font-primary text-noorix-text">
+              <th className="nx-pl-table__th nx-pl-table__th--total text-center font-primary text-noorix-text">
                 {t('reportAnnualTotal')}
               </th>
             )}
@@ -109,8 +115,6 @@ export default function GeneralPlTable({
             const isCategory = row.rowType === 'category';
             const isSummary = row.rowType === 'summary';
             const canOpenItem = row.rowType === 'item';
-            const collapseKey = isGroup ? row.groupKey : row.collapseKey;
-            const isCollapsed = !!collapseKey && !!collapsedGroups[String(collapseKey)];
             const canCollapse = isGroup || isCategory;
             const rowTone = getRowTone(row);
 
@@ -136,23 +140,18 @@ export default function GeneralPlTable({
                   style={{ background: rowTone.stickyBg }}
                 >
                   {canCollapse ? (
-                    <Button
-                      type="button"
-                      onClick={() => toggleGroup(String(collapseKey))}
+                    <div
                       className={cn(
-                        'flex w-full min-w-0 cursor-pointer items-center gap-2 border-0 bg-transparent p-0 font-primary',
+                        'flex w-full min-w-0 items-center gap-2 border-0 bg-transparent p-0 font-primary',
                         lang === 'en' ? 'text-left' : 'text-right',
                         isCategory ? 'font-bold' : 'font-extrabold',
                         plAmountColorClass(row, rowTone, isSummary, row.total),
                         plIndentClass(row.depth || 0, 0),
                       )}
-                      title={`${displayLabel(row, lang)} - ${isCollapsed ? t('expand') : t('collapse')}`}
+                      title={displayLabel(row, lang)}
                     >
-                      <span className="nx-pl-table__toggle" aria-hidden>
-                        {isCollapsed ? '+' : '-'}
-                      </span>
                       <span className="min-w-0 truncate">{displayLabel(row, lang)}</span>
-                    </Button>
+                    </div>
                   ) : (
                     <Button
                       type="button"
@@ -182,11 +181,11 @@ export default function GeneralPlTable({
                   )}
                 </td>
 
-                {isMonthlyMode && (
+                {isPeriodMode && currentColumnPeriod && (
                   <td
                     className={cn(
                       'nx-pl-table__cell nx-pl-table__cell--amount text-center font-bold nx-font-numbers',
-                      plAmountColorClass(row, rowTone, isSummary, getContextAmount(row, selectedMonthNumber)),
+                      plAmountColorClass(row, rowTone, isSummary, periodAmount(row, currentColumnPeriod.period)),
                     )}
                   >
                     <Button
@@ -196,23 +195,23 @@ export default function GeneralPlTable({
                       onClick={() =>
                         row.groupKey &&
                         onOpenDetail({
-                          month: selectedMonthNumber,
+                          month: currentColumnPeriod.period.month,
                           groupKey: row.groupKey,
                           itemKey: row.itemKey,
                           showTrend: row.rowType === 'item',
                         })
                       }
                     >
-                      <div className="nx-pl-table__amount">{amountText(getContextAmount(row, selectedMonthNumber))}</div>
+                      <div className="nx-pl-table__amount">{tableAmountText(periodAmount(row, currentColumnPeriod.period))}</div>
                       <div className="nx-pl-table__percent">
-                        {percentText(getContextPercent(row, selectedMonthNumber))}
+                        {currentColumnPeriod.period.month ? tablePercentText(getContextPercent(row, currentColumnPeriod.period.month)) : ''}
                       </div>
                     </Button>
                   </td>
                 )}
 
-                {isMonthlyMode && monthCompareColumns.map((column) => {
-                  const compareRow = compareRows.get(rowIdentity(row));
+                {isPeriodMode && monthCompareColumns.map((column) => {
+                  const compareRow = compareRows.get(`${column.period.year}:${rowIdentity(row)}`);
                   const compareValue = compareRow ? periodAmount(compareRow, column.period) : null;
                   return (
                     <td
@@ -223,13 +222,13 @@ export default function GeneralPlTable({
                       )}
                     >
                       <div className="nx-pl-table__amount">
-                        {compareValue == null ? '-' : amountText(compareValue)}
+                        {compareValue == null ? '' : tableAmountText(compareValue)}
                       </div>
                     </td>
                   );
                 })}
 
-                {!isMobile &&
+                {!isPeriodMode && !isMobile &&
                   (row.months ?? []).map((value, index) => (
                     <td
                       key={`${row.groupKey}-${index}`}
@@ -254,10 +253,10 @@ export default function GeneralPlTable({
                         }
                       >
                         <div className={cn('nx-pl-table__amount', isGroup || isSummary ? 'text-[13px]' : 'text-xs')}>
-                          {amountText(value)}
+                          {tableAmountText(value)}
                         </div>
                         <div className="nx-pl-table__percent">
-                          {percentText(row.percentOfSalesMonths?.[index])}
+                          {tablePercentText(row.percentOfSalesMonths?.[index])}
                         </div>
                       </Button>
                     </td>
@@ -266,15 +265,15 @@ export default function GeneralPlTable({
                 {showAnnualTotal && (
                   <td
                     className={cn(
-                      'nx-pl-table__cell nx-pl-table__cell--total text-end font-extrabold nx-font-numbers',
+                    'nx-pl-table__cell nx-pl-table__cell--total text-center font-extrabold nx-font-numbers',
                       plAmountColorClass(row, rowTone, isSummary, row.total),
                     )}
                   >
                     <div className={cn('nx-pl-table__amount', isGroup || isSummary ? 'text-sm' : 'text-[13px]')}>
-                      {amountText(row.total)}
+                      {tableAmountText(row.total)}
                     </div>
                     <div className="nx-pl-table__percent">
-                      {percentText(row.percentOfSalesYear)}
+                      {tablePercentText(row.percentOfSalesYear)}
                     </div>
                   </td>
                 )}
@@ -285,6 +284,14 @@ export default function GeneralPlTable({
       </table>
     </div>
   );
+}
+
+function tableAmountText(value: unknown) {
+  return isEmptyMetric(value) ? '' : amountText(value);
+}
+
+function tablePercentText(value: unknown) {
+  return isEmptyMetric(value) ? '' : percentText(value);
 }
 
 function plMinWidthClass(isMobile: boolean, isMonthlyMode: boolean, compareColumnCount: number) {
@@ -311,17 +318,10 @@ function plIndentClass(depth: number, extra: number) {
 }
 
 function plAmountColorClass(
-  row: PlDisplayRow,
-  rowTone: ReturnType<typeof getRowTone>,
-  isSummary: boolean,
-  value: unknown,
+  _row: PlDisplayRow,
+  _rowTone: ReturnType<typeof getRowTone>,
+  _isSummary: boolean,
+  _value: unknown,
 ) {
-  if (isSummary) {
-    return Number(value || 0) >= 0 ? 'text-noorix-blue' : 'text-noorix-red';
-  }
-  if (Number(value || 0) < 0) return 'text-noorix-red';
-  if (row.groupKey === 'purchases') return 'text-noorix-red';
-  if (row.groupKey === 'expenses') return 'text-noorix-amber';
-  if (rowTone?.accent === 'var(--noorix-text)') return 'text-noorix-text';
-  return 'text-noorix-blue';
+  return 'text-noorix-text';
 }

@@ -61,21 +61,10 @@ export function getContextPercent(row: PlDisplayRow, selectedMonth: number | nul
 }
 
 export function getRowTone(row: PlDisplayRow) {
-  if (row.rowType === 'summary') {
-    const val = Number(row?.total || 0);
-    const accent = val >= 0 ? '#2563eb' : '#dc2626';
-    const bg = 'rgba(15,23,42,0.04)';
-    const borderTop = '2px solid rgba(15,23,42,0.12)';
-    return { bg, stickyBg: bg, accent, isSummary: true, borderTop };
-  }
-  if (row.groupKey === 'purchases') {
-    return { bg: row.rowType === 'group' ? 'rgba(239,68,68,0.09)' : 'rgba(239,68,68,0.03)', stickyBg: row.rowType === 'group' ? 'rgba(239,68,68,0.09)' : 'rgba(255,255,255,0.98)', accent: '#dc2626', isSummary: false };
-  }
-  if (row.groupKey === 'expenses') {
-    return { bg: row.rowType === 'group' ? 'rgba(217,119,6,0.09)' : 'rgba(217,119,6,0.035)', stickyBg: row.rowType === 'group' ? 'rgba(217,119,6,0.09)' : 'rgba(255,255,255,0.98)', accent: '#b45309', isSummary: false };
-  }
-  if (row.rowType === 'group') {
-    return { bg: 'rgba(37,99,235,0.04)', stickyBg: 'rgba(37,99,235,0.04)', accent: '#2563eb', isSummary: false };
+  if (row.rowType === 'summary' || row.rowType === 'group') {
+    const bg = 'rgba(15,23,42,0.055)';
+    const borderTop = '1px solid rgba(15,23,42,0.12)';
+    return { bg, stickyBg: bg, accent: 'var(--noorix-text)', isSummary: row.rowType === 'summary', borderTop };
   }
   return { bg: 'transparent', stickyBg: 'var(--noorix-bg-surface)', accent: 'var(--noorix-text)', isSummary: false };
 }
