@@ -36,7 +36,7 @@ export type GeneralProfitLossReport = {
   };
 };
 
-export type ReportPeriodMode = 'year' | 'month';
+export type ReportPeriodMode = 'year' | 'quarter' | 'month';
 
 export type PlDisplayRowType = PlRowType | 'groupTotal';
 

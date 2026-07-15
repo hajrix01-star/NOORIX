@@ -10,7 +10,7 @@ import { useToast } from '../../../context/ToastContext';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { buildDayCloseWhatsAppText, openDayCloseWhatsApp } from '../utils/dayCloseWhatsApp';
 import { DayCloseReportBody } from './DayCloseReportBody';
-import { DAY_CLOSE_REPORT_STYLES } from './dayCloseReportStyles';
+import { DAY_CLOSE_PRINT_PREVIEW_IFRAME_FIX, DAY_CLOSE_REPORT_STYLES } from './dayCloseReportStyles';
 import {
   type DayClosePrintRow,
   type DayCloseReportData,
@@ -161,6 +161,7 @@ export default function DayCloseReportModal({
       subtitle: `${t('dayCloseReportDate')}: ${reportDateLabel}`,
       body: buildDayClosePrintSection({ date: dateStr, data }),
       extraCss: `${DAY_CLOSE_REPORT_STYLES}
+        ${DAY_CLOSE_PRINT_PREVIEW_IFRAME_FIX}
         .day-close-preview-section + .day-close-preview-section { page-break-before: always; margin-top: 18px; }
       `,
       htmlDir: lang === 'ar' ? 'rtl' : 'ltr',
@@ -194,6 +195,7 @@ export default function DayCloseReportModal({
         subtitle: `${formatDayCloseReportDateLabel(rangeFrom)} - ${formatDayCloseReportDateLabel(rangeTo)}`,
         body: rows.map(buildDayClosePrintSection).join(''),
         extraCss: `${DAY_CLOSE_REPORT_STYLES}
+          ${DAY_CLOSE_PRINT_PREVIEW_IFRAME_FIX}
           .day-close-preview-section + .day-close-preview-section { page-break-before: always; margin-top: 18px; }
         `,
         htmlDir: lang === 'ar' ? 'rtl' : 'ltr',

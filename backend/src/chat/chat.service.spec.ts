@@ -203,6 +203,44 @@ describe('ChatService intent routing', () => {
     expect(res.answerAr).toMatch(/ملخص الربح والخسارة/);
   });
 
+  it('answers this-month P&L from period backend metrics without annual cards', async () => {
+    const { chat, reports, chatFinancialMetrics } = mkDeps({
+      isAvailable: () => false,
+      parseIntent: jest.fn(),
+    });
+
+    const query =
+      '\u0623\u0639\u0637\u0646\u064a \u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0631\u0628\u062d \u0648\u0627\u0644\u062e\u0633\u0627\u0631\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631';
+    const res = await chat.processQuery(companyId, query, 'owner', undefined);
+
+    expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
+    expect(chatFinancialMetrics.sumRevenue).toHaveBeenCalled();
+    expect(chatFinancialMetrics.sumPurchases).toHaveBeenCalled();
+    expect(chatFinancialMetrics.sumOperatingExpenses).toHaveBeenCalled();
+    expect(res.answerAr).toContain('\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0631\u0628\u062d \u0648\u0627\u0644\u062e\u0633\u0627\u0631\u0629');
+    expect(res.answerAr).toContain('10000 SR');
+    expect(res.answerAr).toContain('7000 SR');
+  });
+
+  it('answers explicit month P&L when the user names a month number', async () => {
+    const { chat, reports, chatFinancialMetrics } = mkDeps({
+      isAvailable: () => false,
+      parseIntent: jest.fn(),
+    });
+
+    const query =
+      '\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0631\u0628\u062d \u0648\u0627\u0644\u062e\u0633\u0627\u0631\u0629 \u0634\u0647\u0631 2 2026';
+    const res = await chat.processQuery(companyId, query, 'owner', undefined);
+
+    expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
+    expect(chatFinancialMetrics.sumRevenue).toHaveBeenCalledWith(
+      companyId,
+      new Date(2026, 1, 1, 0, 0, 0, 0),
+      new Date(2026, 2, 0, 23, 59, 59, 999),
+    );
+    expect(res.answerAr).toContain('\u0641\u0628\u0631\u0627\u064a\u0631 2026');
+  });
+
   it('routes نسبة المشتريات من المبيعات to finance ratios when Gemini returns finance_ratios', async () => {
     const { chat, dashboard, reportingInsightsAggregator } = mkDeps({
       parseIntent: jest.fn().mockResolvedValue({
@@ -215,9 +253,28 @@ describe('ChatService intent routing', () => {
     const res = await chat.processQuery(companyId, 'نسبة المشتريات من المبيعات', 'owner', undefined);
 
     expect(res.meta?.intent).toBe('finance_ratios');
-    expect(res.answerAr).toMatch(/مؤشرات الخارج على المبيعات/);
+    expect(res.answerAr).toMatch(/الخارج على المبيعات/);
     expect(dashboard.buildDashboardInsights).not.toHaveBeenCalled();
     expect(reportingInsightsAggregator.getExtendedInsights).not.toHaveBeenCalled();
+  });
+
+  it('keeps ready finance ratios answer compact and table-first', async () => {
+    const { chat } = mkDeps({
+      isAvailable: () => false,
+      parseIntent: jest.fn(),
+    });
+
+    const query =
+      '\u0646\u0633\u0628 \u0627\u0644\u062e\u0627\u0631\u062c \u0639\u0644\u0649 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a (\u0645\u0634\u062a\u0631\u064a\u0627\u062a\u060c \u0645\u0635\u0631\u0648\u0641\u0627\u062a\u060c \u0627\u0644\u0645\u062c\u0645\u0648\u0639 \u2014 \u062d\u062a\u0649 \u0623\u0645\u0633)';
+    const res = await chat.processQuery(companyId, query, 'owner', undefined);
+
+    expect(res.answerAr).toContain('\u0627\u0644\u0628\u0646\u062f\t\u0627\u0644\u0645\u0628\u0644\u063a\t\u0627\u0644\u0646\u0633\u0628\u0629');
+    expect(res.answerAr).toContain('\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a\t');
+    expect(res.answerAr).not.toContain('SR');
+    expect(res.answerAr).not.toContain('\u0627\u0644\u062e\u0644\u0627\u0635\u0629');
+    expect(res.answerAr).not.toContain('\u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644 \u0623\u062f\u0646\u0627\u0647');
+    expect(res.answerAr).not.toContain('\u0646\u0633\u0628\u0629 (\u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a + \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062a)');
+    expect(res.extras?.chart).toBeUndefined();
   });
 
   it('keyword fallback still handles month status when Gemini is unavailable', async () => {

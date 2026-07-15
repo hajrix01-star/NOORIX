@@ -3,17 +3,18 @@
   "description": "Baseline for central CSS footprint. This check blocks unreviewed CSS growth while the theme cleanup runs incrementally.",
   "changeNotes": [
     "2026-07-10: Raised src/index.css limits for unified print preview, HR document preview/PDF alignment, invoice day-close filters, and report workspace presentation work included in PR #248.",
-    "2026-07-10: Rebased PR #248 on main and documented the final central filter/table CSS footprint after the staging deploy conflict resolution."
+    "2026-07-10: Rebased PR #248 on main and documented the final central filter/table CSS footprint after the staging deploy conflict resolution.",
+    "2026-07-15: Raised only the src/index.css report-scope limits for the new general report period-filter layout and adaptive comparison table styles introduced on codex/fix-profit-loss-sales-category-noise."
   ],
   "files": {
     "src/index.css": {
-      "maxLines": 7193,
-      "maxMediaQueries": 55,
-      "maxImportant": 249,
+      "maxLines": 7889,
+      "maxMediaQueries": 57,
+      "maxImportant": 250,
       "maxKeyframes": 12,
       "maxCssVariableDefinitions": 237,
-      "maxCssVariableReferences": 1122,
-      "maxColorMix": 190
+      "maxCssVariableReferences": 1206,
+      "maxColorMix": 200
     },
     "src/ui/ui.css": {
       "maxLines": 1705,
@@ -54,7 +55,7 @@
       },
       "reports": {
         "pattern": "(reports|nx-pl|nx-gr2|pl-|bank-analysis|costAccounting|result-panel)",
-        "maxMatches": 238
+        "maxMatches": 267
       },
       "invoices": {
         "pattern": "(invoice|inv-)",

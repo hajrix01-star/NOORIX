@@ -22,6 +22,9 @@ const requiredFiles = [
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'reports-query.test.ts'),
   path.join(reportsRoot, 'generalReportV2Model.ts'),
   path.join(reportsRoot, 'generalReportV2Model.spec.ts'),
+  path.join(reportsRoot, 'accountingReportPeriodModel.ts'),
+  path.join(reportsRoot, 'accountingReportPeriodModel.test.ts'),
+  path.join(reportsRoot, 'reportsComparablePeriodModel.ts'),
   path.join(reportsRoot, 'taxReportTabModel.ts'),
   path.join(reportsRoot, 'taxReportTabModel.spec.ts'),
 ];
@@ -141,8 +144,29 @@ if (fs.existsSync(generalV2Path)) {
 const reportsScreenPath = path.join(reportsRoot, 'ReportsScreen.tsx');
 if (fs.existsSync(reportsScreenPath)) {
   const source = fs.readFileSync(reportsScreenPath, 'utf8');
-  if (!source.includes('./reportsPlMonthPrint')) {
-    report(reportsScreenPath, 'ReportsScreen must delegate monthly print body building to reportsPlMonthPrint.');
+  if (source.includes('./reportsPlMonthPrint')) {
+    report(reportsScreenPath, 'ReportsScreen must not use the legacy monthly print template.');
+  }
+  for (const symbol of [
+    'openPrintDocumentPreview',
+    'buildPrintHtmlTable',
+    'profitLossUnifiedPrintCss',
+    'comparisonPrintColumns',
+    'accountingReportPeriodModel',
+  ]) {
+    if (!source.includes(symbol)) {
+      report(reportsScreenPath, `ReportsScreen unified print must include ${symbol}.`);
+    }
+  }
+  for (const localPeriodHelper of [
+    'function sortMonthPeriods',
+    'function sortQuarterPeriods',
+    'function toggleAccountingMonthPeriod',
+    'function toggleAccountingQuarterPeriod',
+  ]) {
+    if (source.includes(localPeriodHelper)) {
+      report(reportsScreenPath, `ReportsScreen must not own accounting period helper: ${localPeriodHelper}.`);
+    }
   }
 }
 

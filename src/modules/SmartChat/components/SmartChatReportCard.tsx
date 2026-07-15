@@ -10,6 +10,7 @@ import type { ChatAnswerExtras } from '../types';
 import type { ChatChartFinanceRatios, ChatChartMonthCompare } from '../../../types/api';
 import { formatMiniChartTooltipValue, formatMiniChartYAxisTick } from '../utils/smartChatFormatters';
 import { SimpleTable } from '../../../ui';
+import type { SimpleTableColumn } from '../../../ui';
 
 type ChatReportTableRow = { id: number } & Record<string, string | number>;
 
@@ -43,10 +44,12 @@ function ReportDataTable({ rows, isAr }: { rows: string[][]; isAr: boolean }) {
   const cellNumericClass = (cell: string) =>
     /^[\d۰-۹٠-٩,.%\s—–-]+$/.test(cell.replace(/,/g, '')) ? 'nx-ltr tabular-nums' : '';
 
-  const columns = header.map((h, index) => ({
+  const columns: SimpleTableColumn<ChatReportTableRow>[] = header.map((h, index) => ({
     key: `c${index}`,
     label: h,
-    cellClassName: 'min-w-0',
+    align: index > 0 ? 'center' : undefined,
+    numeric: index > 0,
+    cellClassName: index > 0 ? 'min-w-0 text-center tabular-nums' : 'min-w-0',
     render: (_value: unknown, row: ChatReportTableRow) => {
       const cell = String(row[`c${index}`] || '');
       return <span className={index > 0 ? cellNumericClass(cell) : undefined}>{cell}</span>;
