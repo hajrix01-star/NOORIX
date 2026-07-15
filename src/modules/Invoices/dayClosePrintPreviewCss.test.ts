@@ -6,7 +6,7 @@ describe('day close print preview CSS', () => {
   it('keeps central iframe print content visible after legacy modal print rules', () => {
     const html = buildPrintDocumentHtml({
       title: 'Day close',
-      body: '<section class="day-close-preview-section"><table class="dc-table"><tbody><tr><td>100</td></tr></tbody></table></section>',
+      body: '<section class="day-close-preview-section"><div class="dc-section-title">100</div></section>',
       extraCss: `${DAY_CLOSE_REPORT_STYLES}${DAY_CLOSE_PRINT_PREVIEW_IFRAME_FIX}`,
       autoPrint: false,
     });
