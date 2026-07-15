@@ -173,3 +173,17 @@ export const DAY_CLOSE_REPORT_STYLES = `
           .day-close-report .dc-print-cash-line__sub { font-size: 7.5pt !important; margin-top: 2px !important; }
         }
 `;
+
+export const DAY_CLOSE_PRINT_PREVIEW_IFRAME_FIX = `
+        @media print {
+          body > *:not(.nx-modal-backdrop) {
+            display: revert !important;
+          }
+          .print-header,
+          .print-footer,
+          .day-close-preview-section {
+            display: block !important;
+            visibility: visible !important;
+          }
+        }
+`;

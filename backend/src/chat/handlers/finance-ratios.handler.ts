@@ -1,233 +1,172 @@
 import Decimal from 'decimal.js';
-import { formatReportMoneyInteger, formatReportPercentNumber } from '../../common/utils/report-display-format.util';
 import { PERMISSIONS } from '../../auth/constants/permissions';
-import type { ChatHandler, ChatHandlerContext } from './types';
+import { formatReportMoneyInteger, formatReportPercentNumber } from '../../common/utils/report-display-format.util';
+import type { ChatHandler, ChatHandlerContext, ChatHandlerResult } from './types';
 import { matches, thisMonthToDateRange } from './utils';
 
-function canSales(can: (p: string) => boolean) {
+const AR_OUTFLOW_TITLE = '\u0627\u0644\u062e\u0627\u0631\u062c \u0639\u0644\u0649 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a';
+const AR_PERIOD = '\u0627\u0644\u0641\u062a\u0631\u0629';
+const AR_ITEM = '\u0627\u0644\u0628\u0646\u062f';
+const AR_AMOUNT = '\u0627\u0644\u0645\u0628\u0644\u063a';
+const AR_RATIO = '\u0627\u0644\u0646\u0633\u0628\u0629';
+const AR_SALES = '\u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a';
+const AR_PURCHASES = '\u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a';
+const AR_EXPENSES = '\u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062a';
+const AR_TOTAL = '\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a';
+
+const BUNDLE_PATTERNS = [
+  '\u0646\u0633\u0628 \u0627\u0644\u062e\u0627\u0631\u062c \u0639\u0644\u0649 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a',
+  '\u0646\u0633\u0628 \u0627\u0644\u0637\u0644\u0628 \u0639\u0644\u0649 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a',
+  '\u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u062a\u0634\u063a\u064a\u0644\u064a\u0629 \u0645\u0646 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a',
+  '\u0646\u0633\u0628 \u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a \u0648\u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062a \u0648\u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a',
+  'mtd operating ratios',
+  'operating ratios vs sales',
+];
+
+const PURCHASES_PATTERNS = [
+  '\u0646\u0633\u0628\u0629 \u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a \u0645\u0646 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a',
+  '\u0646\u0633\u0628\u0629 \u0645\u0634\u062a\u0631\u064a\u0627\u062a \u0645\u0646 \u0645\u0628\u064a\u0639\u0627\u062a',
+  'purchases as % of sales',
+  'purchases as a percentage of sales',
+];
+
+const EXPENSES_PATTERNS = [
+  '\u0646\u0633\u0628\u0629 \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062a \u0645\u0646 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a',
+  '\u0646\u0633\u0628\u0629 \u0645\u0635\u0631\u0648\u0641\u0627\u062a \u0645\u0646 \u0645\u0628\u064a\u0639\u0627\u062a',
+  'expenses as % of sales',
+  'expenses as a percentage of sales',
+];
+
+const TOTAL_PATTERNS = [
+  '\u0646\u0633\u0628\u0629 \u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a \u0648\u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062a \u0645\u0646 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a',
+  '\u0646\u0633\u0628\u0629 \u0645\u0634\u062a\u0631\u064a\u0627\u062a \u0648\u0645\u0635\u0631\u0648\u0641\u0627\u062a \u0645\u0646 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a',
+  '\u0645\u062c\u0645\u0648\u0639 \u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a \u0648\u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062a \u0645\u0646 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a',
+  'purchases plus expenses',
+  'purchases and expenses as a share of sales',
+];
+
+function canSales(can: (p: string) => boolean): boolean {
   return can(PERMISSIONS.VIEW_SALES) || can(PERMISSIONS.SALES_READ);
 }
-function canPurchases(can: (p: string) => boolean) {
+
+function canPurchases(can: (p: string) => boolean): boolean {
   return can(PERMISSIONS.VIEW_INVOICES);
 }
-function canExpenses(can: (p: string) => boolean) {
+
+function canExpenses(can: (p: string) => boolean): boolean {
   return can(PERMISSIONS.VIEW_EXPENSES) || can(PERMISSIONS.EXPENSES_READ);
 }
 
-async function sumRevenue(ctx: ChatHandlerContext, start: Date, end: Date): Promise<Decimal> {
-  return ctx.chatFinancialMetrics.sumRevenue(ctx.companyId, start, end);
-}
-
-async function sumPurchases(ctx: ChatHandlerContext, start: Date, end: Date): Promise<Decimal> {
-  return ctx.chatFinancialMetrics.sumPurchases(ctx.companyId, start, end);
-}
-
-async function sumOperatingExpenses(ctx: ChatHandlerContext, start: Date, end: Date): Promise<Decimal> {
-  return ctx.chatFinancialMetrics.sumOperatingExpenses(ctx.companyId, start, end);
-}
-
 function pctOf(numer: Decimal, denom: Decimal): string {
-  if (denom.lte(0)) return '—';
+  if (denom.lte(0)) return '';
   return `${formatReportPercentNumber(numer.div(denom).mul(100))}%`;
 }
 
-/** نسبة رقمية 0–100 للواجهة (شريط مكدّس) */
-function pctOfSalesNumber(numer: Decimal, sales: Decimal): number {
-  if (sales.lte(0)) return 0;
-  const n = numer.div(sales).mul(100).toNumber();
-  return Math.min(100, Math.round(n * 10) / 10);
+function fmtAmount(n: Decimal): string {
+  return formatReportMoneyInteger(n);
 }
 
-function fmtMoney(n: Decimal): string {
-  return `${formatReportMoneyInteger(n)} SR`;
+function emptyAnswer(messageAr: string, messageEn: string, period?: { labelAr: string; labelEn: string }): ChatHandlerResult {
+  const ar = [`## ${AR_OUTFLOW_TITLE}`];
+  const en = ['## Outflow vs sales'];
+  if (period) {
+    ar.push(`${AR_PERIOD}: ${period.labelAr}`);
+    en.push(`Period: ${period.labelEn}`);
+  }
+  ar.push(messageAr);
+  en.push(messageEn);
+  return { answerAr: ar.join('\n'), answerEn: en.join('\n') };
+}
+
+function buildRows(
+  sales: Decimal,
+  purchases: Decimal,
+  expenses: Decimal,
+  show: { purchases: boolean; expenses: boolean; total: boolean },
+): { ar: string[]; en: string[] } {
+  const total = purchases.plus(expenses);
+  const ar = [`${AR_ITEM}\t${AR_AMOUNT}\t${AR_RATIO}`, `${AR_SALES}\t${fmtAmount(sales)}\t100%`];
+  const en = ['Item\tAmount\tRatio', `Sales\t${fmtAmount(sales)}\t100%`];
+
+  if (show.purchases) {
+    ar.push(`${AR_PURCHASES}\t${fmtAmount(purchases)}\t${pctOf(purchases, sales)}`);
+    en.push(`Purchases\t${fmtAmount(purchases)}\t${pctOf(purchases, sales)}`);
+  }
+
+  if (show.expenses) {
+    ar.push(`${AR_EXPENSES}\t${fmtAmount(expenses)}\t${pctOf(expenses, sales)}`);
+    en.push(`Expenses\t${fmtAmount(expenses)}\t${pctOf(expenses, sales)}`);
+  }
+
+  if (show.total) {
+    ar.push(`${AR_TOTAL}\t${fmtAmount(total)}\t${pctOf(total, sales)}`);
+    en.push(`Total\t${fmtAmount(total)}\t${pctOf(total, sales)}`);
+  }
+
+  return { ar, en };
+}
+
+function requestedRows(query: string, can: (p: string) => boolean): { purchases: boolean; expenses: boolean; total: boolean } {
+  const bundle = matches(query, BUNDLE_PATTERNS);
+  const wantsPurchases = bundle || matches(query, PURCHASES_PATTERNS);
+  const wantsExpenses = bundle || matches(query, EXPENSES_PATTERNS);
+  const wantsTotal = bundle || matches(query, TOTAL_PATTERNS);
+
+  return {
+    purchases: canPurchases(can) && wantsPurchases,
+    expenses: canExpenses(can) && wantsExpenses,
+    total: canPurchases(can) && canExpenses(can) && wantsTotal,
+  };
 }
 
 export const financeRatiosHandler: ChatHandler = {
   priority: 7,
   intent: 'finance_ratios',
   matchesIntent: (intent, can) => intent === 'finance_ratios' && canSales(can),
-  canHandle: (q, can) => {
+  canHandle: (query, can) => {
     if (!canSales(can)) return false;
-    const askRatiosBundleShort =
-      matches(q, [
-        'نسب الخارج على المبيعات',
-        'نسب الطلب على المبيعات',
-        'النسب التشغيلية من المبيعات',
-        'نسب المشتريات والمصروفات والمبيعات',
-        'mtd operating ratios',
-        'operating ratios vs sales',
-      ]);
-    const askPurVsSales =
-      matches(q, ['نسبة المشتريات من المبيعات', 'نسبة مشتريات من مبيعات']) ||
-      matches(q, ['purchases as % of sales', 'purchases as a percentage of sales']);
-    const askExpVsSales =
-      matches(q, ['نسبة المصروفات من المبيعات', 'نسبة مصروفات من مبيعات']) ||
-      matches(q, ['expenses as % of sales', 'expenses as a percentage of sales']);
-    const askPurPlusExpVsSales =
-      matches(q, [
-        'نسبة المشتريات والمصروفات من المبيعات',
-        'نسبة مشتريات ومصروفات من المبيعات',
-        'مجموع المشتريات والمصروفات من المبيعات',
-      ]) || matches(q, ['purchases plus expenses', 'purchases and expenses as a share of sales']);
-    return askRatiosBundleShort || askPurVsSales || askExpVsSales || askPurPlusExpVsSales;
+    return matches(query, BUNDLE_PATTERNS) || matches(query, PURCHASES_PATTERNS) || matches(query, EXPENSES_PATTERNS) || matches(query, TOTAL_PATTERNS);
   },
-  process: async (ctx) => {
-    const { can, query } = ctx;
-    if (!canSales(can)) return null;
+  process: async (ctx: ChatHandlerContext) => {
+    if (!canSales(ctx.can)) return null;
 
-    const q = query.toLowerCase();
-    const askPurVsSales =
-      matches(q, ['نسبة المشتريات من المبيعات', 'نسبة مشتريات من مبيعات']) ||
-      matches(q, ['purchases as % of sales', 'purchases as a percentage of sales']);
-    const askExpVsSales =
-      matches(q, ['نسبة المصروفات من المبيعات', 'نسبة مصروفات من مبيعات']) ||
-      matches(q, ['expenses as % of sales', 'expenses as a percentage of sales']);
-    const askPurPlusExpVsSales =
-      matches(q, [
-        'نسبة المشتريات والمصروفات من المبيعات',
-        'نسبة مشتريات ومصروفات من المبيعات',
-        'مجموع المشتريات والمصروفات من المبيعات',
-      ]) || matches(q, ['purchases plus expenses', 'purchases and expenses as a share of sales']);
-
-    const askRatiosBundleShort =
-      matches(q, [
-        'نسب الخارج على المبيعات',
-        'نسب الطلب على المبيعات',
-        'النسب التشغيلية من المبيعات',
-        'نسب المشتريات والمصروفات والمبيعات',
-        'mtd operating ratios',
-        'operating ratios vs sales',
-      ]);
-
-    const compoundPreset =
-      askRatiosBundleShort || (askPurVsSales && askExpVsSales && askPurPlusExpVsSales);
-
-    const showPur = canPurchases(can) && (askPurVsSales || compoundPreset);
-    const showExp = canExpenses(can) && (askExpVsSales || compoundPreset);
-    const showSum =
-      canPurchases(can) &&
-      canExpenses(can) &&
-      (askPurPlusExpVsSales || compoundPreset);
-
-    if (!showPur && !showExp && !showSum) {
-      return {
-        answerAr:
-          '## مؤشرات الخارج على المبيعات\n• الخلاصة: يلزم منحك صلاحية الفواتير (مشتريات) و/أو الخزائن (مصروفات) لعرض النسب.\nلحساب النسب يلزم صلاحية عرض الفواتير (مشتريات) و/أو الخزائن (مصروفات) حسب السؤال.',
-        answerEn:
-          '## Operating load vs sales\n• Summary: invoice and/or vault permissions are required to show these ratios.\nNeed invoice and/or vault permissions for the requested ratios.',
-      };
+    const show = requestedRows(ctx.query, ctx.can);
+    if (!show.purchases && !show.expenses && !show.total) {
+      return emptyAnswer(
+        '\u0644\u0627 \u062a\u0648\u062c\u062f \u0635\u0644\u0627\u062d\u064a\u0629 \u0643\u0627\u0641\u064a\u0629 \u0644\u0639\u0631\u0636 \u0627\u0644\u0646\u0633\u0628.',
+        'Not enough permissions to show ratios.',
+      );
     }
 
     const period = ctx.period ?? thisMonthToDateRange(ctx.now);
-    const { start, end, labelAr, labelEn } = period;
-
-    if (end.getTime() < start.getTime()) {
-      return {
-        answerAr: `## مؤشرات الخارج على المبيعات\nالفترة: ${labelAr}\n• الخلاصة: لا يمكن احتساب «حتى أمس» في أول يوم من الشهر — أعد السؤال غداً أو اختر فترة «الشهر الماضي» للمقارنة.\nلا يوجد يوم مكتمل بعد في الشهر الحالي (مثلاً اليوم أول يوم في الشهر) — لا يمكن حساب «من 1 حتى أمس» بعد.`,
-        answerEn: `## Operating load vs sales\nPeriod: ${labelEn}\n• Summary: month-to-date through yesterday is not available on the first day of the month — try again tomorrow or pick “last month”.\nNo completed calendar day in the current month yet — cannot compute month-to-date through yesterday.`,
-      };
+    if (period.end.getTime() < period.start.getTime()) {
+      return emptyAnswer(
+        '\u0644\u0627 \u062a\u0648\u062c\u062f \u0623\u064a\u0627\u0645 \u0645\u0643\u062a\u0645\u0644\u0629 \u0644\u0644\u062d\u0633\u0627\u0628.',
+        'No completed days are available for this period.',
+        period,
+      );
     }
 
-    const sales = await sumRevenue(ctx, start, end);
-    const purchases = canPurchases(can) ? await sumPurchases(ctx, start, end) : new Decimal(0);
-    const expenses = canExpenses(can) ? await sumOperatingExpenses(ctx, start, end) : new Decimal(0);
-
-    const linesAr: string[] = [];
-    const linesEn: string[] = [];
-    linesAr.push('## مؤشرات الخارج على المبيعات');
-    linesEn.push('## Operating load vs sales');
-    linesAr.push(`الفترة: ${labelAr}`);
-    linesEn.push(`Period: ${labelEn}`);
+    const sales = await ctx.chatFinancialMetrics.sumRevenue(ctx.companyId, period.start, period.end);
+    const purchases = canPurchases(ctx.can)
+      ? await ctx.chatFinancialMetrics.sumPurchases(ctx.companyId, period.start, period.end)
+      : new Decimal(0);
+    const expenses = canExpenses(ctx.can)
+      ? await ctx.chatFinancialMetrics.sumOperatingExpenses(ctx.companyId, period.start, period.end)
+      : new Decimal(0);
 
     if (sales.lte(0)) {
-      linesAr.push(
-        '• الخلاصة: لا مبيعات في هذه الفترة؛ راجع تسجيل الإيراد أو وسّع المدى الزمني ثم أعد السؤال.',
+      return emptyAnswer(
+        '\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0628\u064a\u0639\u0627\u062a \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0641\u062a\u0631\u0629.',
+        'No sales in this period.',
+        period,
       );
-      linesEn.push(
-        '• Summary: no sales in this range; check revenue postings or widen the period, then ask again.',
-      );
-      return { answerAr: linesAr.join('\n'), answerEn: linesEn.join('\n') };
     }
 
-    const sumPe = purchases.plus(expenses);
-    let summaryAr = '';
-    let summaryEn = '';
-    if (showSum) {
-      summaryAr = `• الخلاصة: إيراد الفترة ${fmtMoney(sales)}؛ الخارج التشغيلي (مشتريات + مصروفات) ${pctOf(sumPe, sales)} من ذلك الإيراد — التفاصيل أدناه.`;
-      summaryEn = `• Summary: revenue ${fmtMoney(sales).replace('SR', 'SAR')}; operating load (purchases + expenses) is ${pctOf(sumPe, sales)} of that — see details below.`;
-    } else if (showPur && showExp) {
-      summaryAr = `• الخلاصة: مبيعات ${fmtMoney(sales)}؛ المشتريات ${pctOf(purchases, sales)} والمصروفات ${pctOf(expenses, sales)} من الإيراد — التفاصيل أدناه.`;
-      summaryEn = `• Summary: sales ${fmtMoney(sales).replace('SR', 'SAR')}; purchases ${pctOf(purchases, sales)} and expenses ${pctOf(expenses, sales)} of revenue — details below.`;
-    } else if (showPur) {
-      summaryAr = `• الخلاصة: مبيعات ${fmtMoney(sales)}؛ المشتريات تمثل ${pctOf(purchases, sales)} من الإيراد في هذه الفترة.`;
-      summaryEn = `• Summary: sales ${fmtMoney(sales).replace('SR', 'SAR')}; purchases are ${pctOf(purchases, sales)} of revenue for this range.`;
-    } else if (showExp) {
-      summaryAr = `• الخلاصة: مبيعات ${fmtMoney(sales)}؛ المصروفات تمثل ${pctOf(expenses, sales)} من الإيراد في هذه الفترة.`;
-      summaryEn = `• Summary: sales ${fmtMoney(sales).replace('SR', 'SAR')}; expenses are ${pctOf(expenses, sales)} of revenue for this range.`;
-    } else {
-      summaryAr = `• الخلاصة: مبيعات الفترة ${fmtMoney(sales)} — راجع التفاصيل أدناه.`;
-      summaryEn = `• Summary: revenue for this range is ${fmtMoney(sales).replace('SR', 'SAR')} — see below.`;
-    }
-    linesAr.push(summaryAr);
-    linesEn.push(summaryEn);
-
-    linesAr.push(`• إجمالي المبيعات: ${fmtMoney(sales)}`);
-    linesEn.push(`• Total sales: ${fmtMoney(sales).replace('SR', 'SAR')}`);
-
-    if (showPur) {
-      linesAr.push(`• نسبة المشتريات من المبيعات: ${pctOf(purchases, sales)} (مشتريات: ${fmtMoney(purchases)})`);
-      linesEn.push(`• Purchases / sales: ${pctOf(purchases, sales)} (purchases: ${fmtMoney(purchases).replace('SR', 'SAR')})`);
-    }
-    if (showExp) {
-      linesAr.push(`• نسبة المصروفات من المبيعات: ${pctOf(expenses, sales)} (مصروفات: ${fmtMoney(expenses)})`);
-      linesEn.push(`• Expenses / sales: ${pctOf(expenses, sales)} (expenses: ${fmtMoney(expenses).replace('SR', 'SAR')})`);
-    }
-    if (showSum) {
-      const sum = purchases.plus(expenses);
-      linesAr.push(`• نسبة (المشتريات + المصروفات) من المبيعات: ${pctOf(sum, sales)} (المجموع: ${fmtMoney(sum)})`);
-      linesEn.push(`• (Purchases + expenses) / sales: ${pctOf(sum, sales)} (sum: ${fmtMoney(sum).replace('SR', 'SAR')})`);
-    }
-
-    const tabAr = ['', 'المؤشر\tالقيمة', `إجمالي المبيعات\t${fmtMoney(sales)}`];
-    const tabEn = ['', 'Metric\tValue', `Total sales\t${fmtMoney(sales).replace('SR', 'SAR')}`];
-    if (showPur) {
-      tabAr.push(`المشتريات\t${fmtMoney(purchases)} — ${pctOf(purchases, sales)} من المبيعات`);
-      tabEn.push(`Purchases\t${fmtMoney(purchases).replace('SR', 'SAR')} — ${pctOf(purchases, sales)} of sales`);
-    }
-    if (showExp) {
-      tabAr.push(`المصروفات التشغيلية\t${fmtMoney(expenses)} — ${pctOf(expenses, sales)} من المبيعات`);
-      tabEn.push(`Operating expenses\t${fmtMoney(expenses).replace('SR', 'SAR')} — ${pctOf(expenses, sales)} of sales`);
-    }
-    if (showSum) {
-      const sum = purchases.plus(expenses);
-      tabAr.push(`المشتريات + المصروفات\t${fmtMoney(sum)} — ${pctOf(sum, sales)} من المبيعات`);
-      tabEn.push(`Purchases + expenses\t${fmtMoney(sum).replace('SR', 'SAR')} — ${pctOf(sum, sales)} of sales`);
-    }
-    linesAr.push(...tabAr);
-    linesEn.push(...tabEn);
-
-    const ratioSegments: Array<{ key: 'purchases' | 'expenses'; pct: number }> = [];
-    if (showPur) ratioSegments.push({ key: 'purchases', pct: pctOfSalesNumber(purchases, sales) });
-    if (showExp) ratioSegments.push({ key: 'expenses', pct: pctOfSalesNumber(expenses, sales) });
-    let normalized = ratioSegments;
-    const segSum = ratioSegments.reduce((a, s) => a + s.pct, 0);
-    if (segSum > 100 && ratioSegments.length > 0) {
-      normalized = ratioSegments.map((s) => ({
-        ...s,
-        pct: Math.round(((s.pct / segSum) * 100) * 10) / 10,
-      }));
-    }
-
+    const rows = buildRows(sales, purchases, expenses, show);
     return {
-      answerAr: linesAr.join('\n'),
-      answerEn: linesEn.join('\n'),
-      ...(normalized.length > 0
-        ? {
-            extras: {
-              chart: { kind: 'financeRatios' as const, segments: normalized },
-            },
-          }
-        : {}),
+      answerAr: [`## ${AR_OUTFLOW_TITLE}`, `${AR_PERIOD}: ${period.labelAr}`, '', ...rows.ar].join('\n'),
+      answerEn: ['## Outflow vs sales', `Period: ${period.labelEn}`, '', ...rows.en].join('\n'),
     };
   },
 };

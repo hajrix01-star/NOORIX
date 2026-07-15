@@ -253,9 +253,28 @@ describe('ChatService intent routing', () => {
     const res = await chat.processQuery(companyId, 'نسبة المشتريات من المبيعات', 'owner', undefined);
 
     expect(res.meta?.intent).toBe('finance_ratios');
-    expect(res.answerAr).toMatch(/مؤشرات الخارج على المبيعات/);
+    expect(res.answerAr).toMatch(/الخارج على المبيعات/);
     expect(dashboard.buildDashboardInsights).not.toHaveBeenCalled();
     expect(reportingInsightsAggregator.getExtendedInsights).not.toHaveBeenCalled();
+  });
+
+  it('keeps ready finance ratios answer compact and table-first', async () => {
+    const { chat } = mkDeps({
+      isAvailable: () => false,
+      parseIntent: jest.fn(),
+    });
+
+    const query =
+      '\u0646\u0633\u0628 \u0627\u0644\u062e\u0627\u0631\u062c \u0639\u0644\u0649 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a (\u0645\u0634\u062a\u0631\u064a\u0627\u062a\u060c \u0645\u0635\u0631\u0648\u0641\u0627\u062a\u060c \u0627\u0644\u0645\u062c\u0645\u0648\u0639 \u2014 \u062d\u062a\u0649 \u0623\u0645\u0633)';
+    const res = await chat.processQuery(companyId, query, 'owner', undefined);
+
+    expect(res.answerAr).toContain('\u0627\u0644\u0628\u0646\u062f\t\u0627\u0644\u0645\u0628\u0644\u063a\t\u0627\u0644\u0646\u0633\u0628\u0629');
+    expect(res.answerAr).toContain('\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a\t');
+    expect(res.answerAr).not.toContain('SR');
+    expect(res.answerAr).not.toContain('\u0627\u0644\u062e\u0644\u0627\u0635\u0629');
+    expect(res.answerAr).not.toContain('\u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644 \u0623\u062f\u0646\u0627\u0647');
+    expect(res.answerAr).not.toContain('\u0646\u0633\u0628\u0629 (\u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a + \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062a)');
+    expect(res.extras?.chart).toBeUndefined();
   });
 
   it('keyword fallback still handles month status when Gemini is unavailable', async () => {
