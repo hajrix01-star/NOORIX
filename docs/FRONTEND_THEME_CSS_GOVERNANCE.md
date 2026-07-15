@@ -42,6 +42,8 @@ Note: the local DateFilter calendar CSS compaction batch compacted calendar sele
 
 Note: the local DateFilter popover CSS compaction batch compacted month popover, year control, cell hover/active, and dashboard month trigger declarations, reducing `src/index.css` from 6217 to 6160 lines without changing selectors or visual behavior.
 
+Note: the 2026-07-15 general report batch raised the `src/index.css` baseline to 7889 lines for the new report period-filter rail, adaptive one/multi-period report layout, and comparison table states. The increase is intentionally scoped to report selectors; central `src/ui/ui.css` and SmartChat CSS baselines were not raised.
+
 ## Rule
 
 Run:
@@ -69,7 +71,7 @@ CI runs the same check in `.github/workflows/ci.yml`.
 | File | Group | Matches |
 |---|---|---:|
 | `src/index.css` | table | 288 |
-| `src/index.css` | reports | 238 |
+| `src/index.css` | reports | 267 |
 | `src/index.css` | invoices | 116 |
 | `src/index.css` | dashboard | 125 |
 | `src/index.css` | modal | 116 |
