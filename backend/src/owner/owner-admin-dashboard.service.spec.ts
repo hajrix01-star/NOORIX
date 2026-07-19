@@ -30,7 +30,7 @@ describe('OwnerAdminDashboardService', () => {
     else process.env.ADMIN_DASHBOARD_COMPANY_IDS = previousCompanyIds;
   });
 
-  it('returns independent source values and computes daily averages inside NOORIX', async () => {
+  it('returns the same current daily average rule used by the NOORIX company dashboard', async () => {
     const prisma = {
       company: {
         findMany: jest.fn(async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: 'Company 1' }]),
@@ -55,13 +55,37 @@ describe('OwnerAdminDashboardService', () => {
     expect(snapshot.schemaVersion).toBe(2);
     expect(snapshot.companies).toHaveLength(1);
     expect(snapshot.companies[0]?.dailySalesAverage).toEqual({
-      currentMonthToDate: 10,
+      currentMonthToDate: 190,
       previousFullMonth: 10,
     });
     expect(snapshot.companies[0]?.monthlyPerformance).toHaveLength(6);
     expect(prisma.company.findMany).toHaveBeenCalledWith({
       where: { id: { in: ['company-1'] }, isArchived: false, tenantId: 'tenant-1' },
       select: { id: true, nameAr: true, nameEn: true },
+    });
+  });
+
+  it('uses the last positive sales day as the current period denominator', async () => {
+    const service = new OwnerAdminDashboardService(
+      { company: { findMany: async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: null }] } },
+      { getGeneralProfitLoss: async (_companyId: string, year: number) => report(year === 2026 ? 100 : 1) },
+      {
+        findDashboardPack: async () => ({
+          dailySummaries: [
+            { transactionDate: '2026-07-01', status: 'posted', totalAmount: '100' },
+            { transactionDate: '2026-07-10', status: 'posted', totalAmount: '900' },
+            { transactionDate: '2026-07-18', status: 'posted', totalAmount: '0' },
+            { transactionDate: '2026-06-30', status: 'posted', totalAmount: '300' },
+          ],
+        }),
+      },
+    );
+
+    const snapshot = await service.getSnapshot('tenant-1');
+
+    expect(snapshot.companies[0]?.dailySalesAverage).toEqual({
+      currentMonthToDate: 100,
+      previousFullMonth: 10,
     });
   });
 

@@ -77,6 +77,27 @@ function dailyAverage(items: OwnerOverviewDailySalesItem[], start: string, end: 
   return total.div(days).toDecimalPlaces(2).toNumber();
 }
 
+function lastRevenueDay(
+  items: OwnerOverviewDailySalesItem[],
+  start: string,
+  end: string,
+): number | null {
+  let lastDay: number | null = null;
+  for (const item of items) {
+    const date = dateKey(item.transactionDate);
+    if (!date || date < start || date > end || item.status === 'cancelled') continue;
+    if (item.totalAmount == null || item.totalAmount === '') {
+      throw new Error(`Missing daily sales amount for ${date}`);
+    }
+    const amount = new Decimal(item.totalAmount);
+    if (!amount.isFinite()) throw new Error(`Invalid daily sales amount for ${date}`);
+    if (amount.lte(0)) continue;
+    const day = Number(date.slice(8, 10));
+    if (Number.isInteger(day) && (lastDay == null || day > lastDay)) lastDay = day;
+  }
+  return lastDay;
+}
+
 @Injectable()
 export class OwnerAdminDashboardService {
   constructor(
@@ -130,6 +151,9 @@ export class OwnerAdminDashboardService {
         expenses: reportValue(previousReport, 'expenses', previousRef.month),
       };
       const dailyItems = normalizeOwnerDailySalesItems(salesPack.dailySummaries);
+      const currentStartDate = currentStart.format('YYYY-MM-DD');
+      const currentEndDate = now.format('YYYY-MM-DD');
+      const currentRevenueEndDay = lastRevenueDay(dailyItems, currentStartDate, currentEndDate) ?? now.date();
 
       return {
         companyId: company.id,
@@ -139,7 +163,7 @@ export class OwnerAdminDashboardService {
         purchases: metric(currentValues.purchases, previousValues.purchases),
         expenses: metric(currentValues.expenses, previousValues.expenses),
         dailySalesAverage: {
-          currentMonthToDate: dailyAverage(dailyItems, currentStart.format('YYYY-MM-DD'), now.format('YYYY-MM-DD'), now.date()),
+          currentMonthToDate: dailyAverage(dailyItems, currentStartDate, currentEndDate, currentRevenueEndDay),
           previousFullMonth: dailyAverage(dailyItems, previousStart.format('YYYY-MM-DD'), previousEnd.format('YYYY-MM-DD'), previousEnd.date()),
         },
         monthlyPerformance: history.map(({ year, month }, index) => {
