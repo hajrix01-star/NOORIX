@@ -56,6 +56,17 @@ function periodDailyAverage(rows: readonly DashboardDailyMetricRow[], endDayIncl
   };
 }
 
+function selectedMonthAverageEndDay(rows: readonly DashboardDailyMetricRow[]): number | undefined {
+  if (!rows.length) return undefined;
+  const first = ymdParts(rows[0].transactionDate);
+  if (!first) return undefined;
+  const saudiNow = nowSaudi();
+  const currentYear = saudiNow.getFullYear();
+  const currentMonth = saudiNow.getMonth() + 1;
+  if (first.year !== currentYear || first.month !== currentMonth) return undefined;
+  return saudiNow.getDate();
+}
+
 function weeklyRows(rows: readonly DashboardDailyMetricRow[]) {
   if (!rows.length) return [];
   const first = ymdParts(rows[0].transactionDate);
@@ -431,7 +442,7 @@ export class SalesService {
         dailyDaily: dailyDailyMetrics,
         dailyChannels: dailyChannelMetrics,
         monthDaily: monthDailyMetrics,
-        monthAverage: periodDailyAverage(monthDailyMetrics),
+        monthAverage: periodDailyAverage(monthDailyMetrics, selectedMonthAverageEndDay(monthDailyMetrics)),
         dailyWeekly: weeklyRows(dailyDailyMetrics),
         yearMonthlyDailyAverages: monthlyDailyAverages(yearDailyMetrics),
       },

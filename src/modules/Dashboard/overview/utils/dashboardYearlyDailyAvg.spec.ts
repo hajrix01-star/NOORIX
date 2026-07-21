@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildYearMonthlyDailyAvgRows,
+  buildYearMonthlyDailyAvgRowsFromBackend,
   yearMonthlyDailyAvgCapMonth,
 } from './dashboardOverviewBuilders';
 
@@ -21,6 +22,61 @@ describe('yearMonthlyDailyAvgCapMonth', () => {
 });
 
 describe('buildYearMonthlyDailyAvgRows', () => {
+  it('maps backend monthly averages without recomputing values in the UI', () => {
+    const rows = buildYearMonthlyDailyAvgRowsFromBackend({
+      year: 2026,
+      rows: [
+        {
+          month: 6,
+          totalSales: 158976,
+          avgDaily: 5299.2,
+          calendarDays: 30,
+          deltaPctVsPrev: -2.5,
+          tone: 'down',
+          isCurrentMonth: false,
+        },
+        {
+          month: 7,
+          totalSales: 110083,
+          avgDaily: 5242,
+          calendarDays: 21,
+          deltaPctVsPrev: -1.1,
+          tone: 'down',
+          isCurrentMonth: true,
+        },
+      ],
+      monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+      capMonth: 7,
+      currentYear: 2026,
+      currentMonth: 7,
+    });
+
+    expect(rows[5]).toMatchObject({
+      month: 6,
+      totalSales: 158976,
+      avgDaily: 5299.2,
+      calendarDays: 30,
+      deltaPctVsPrev: -2.5,
+      tone: 'down',
+    });
+    expect(rows[6]).toMatchObject({
+      month: 7,
+      totalSales: 110083,
+      avgDaily: 5242,
+      calendarDays: 21,
+      deltaPctVsPrev: -1.1,
+      tone: 'down',
+      isCurrentMonth: true,
+    });
+    expect(rows[2]).toMatchObject({
+      month: 3,
+      totalSales: null,
+      avgDaily: null,
+      calendarDays: 0,
+      tone: 'neutral',
+    });
+  });
+
   it('uses calendar days for completed months and current month MTD', () => {
     const rows = buildYearMonthlyDailyAvgRows({
       year: 2026,

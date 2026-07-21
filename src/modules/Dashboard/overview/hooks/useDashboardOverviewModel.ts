@@ -14,9 +14,7 @@ import {
   buildPerformanceRows,
   buildPurchaseCategoriesData,
   buildTopSuppliersChartData,
-  buildYearMonthlyDailyAvgRows,
-  computeCustomerMonthDailyAvg,
-  computeRevenueMonthDailyAvg,
+  buildYearMonthlyDailyAvgRowsFromBackend,
   filterSalesThroughDay,
   revenueMtdEndDay as getRevenueMtdEndDay,
   mergePurchaseCategoriesOthers,
@@ -332,6 +330,8 @@ export function useDashboardOverviewModel(
     enabled: !!companyId && selectedMonth != null && !!prevMonthSalesAvgBounds.start,
   });
   const prevMonthSalesForDailyAvg = pickMetricSummaries(prevMonthMetrics?.monthDaily, prevMonthRowsForDailyAvg);
+  const monthAverageForDailyAvg = salesMetrics?.monthAverage;
+  const prevMonthAverageForDailyAvg = prevMonthMetrics?.monthAverage;
 
   const saudiNow = getSaudiNow();
 
@@ -346,92 +346,6 @@ export function useDashboardOverviewModel(
       monthSalesForDailyAvg,
     );
   }, [year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day, monthSalesForDailyAvg]);
-
-  const revenueMtdDailyAvg = useMemo(() => {
-    if (selectedMonth == null) return null;
-    return computeRevenueMonthDailyAvg({
-      monthSales: monthSalesForDailyAvg,
-      year,
-      month: selectedMonth,
-      todayYear: saudiNow.year,
-      todayMonth: saudiNow.month,
-      todayDay: saudiNow.day,
-      endDayInclusive: revenueMtdEndDay > 0 ? revenueMtdEndDay : undefined,
-    });
-  }, [
-    monthSalesForDailyAvg,
-    year,
-    selectedMonth,
-    revenueMtdEndDay,
-    saudiNow.year,
-    saudiNow.month,
-    saudiNow.day,
-  ]);
-
-  const revenuePrevMonthDailyAvg = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
-    const prev = prevCalendarMonth(year, selectedMonth);
-    return computeRevenueMonthDailyAvg({
-      monthSales: prevMonthSalesForDailyAvg,
-      year: prev.year,
-      month: prev.month,
-      todayYear: saudiNow.year,
-      todayMonth: saudiNow.month,
-      todayDay: saudiNow.day,
-      endDayInclusive: revenueMtdEndDay,
-    });
-  }, [
-    prevMonthSalesForDailyAvg,
-    year,
-    selectedMonth,
-    revenueMtdEndDay,
-    saudiNow.year,
-    saudiNow.month,
-    saudiNow.day,
-  ]);
-
-  const customerMtdDailyAvg = useMemo(() => {
-    if (selectedMonth == null) return null;
-    return computeCustomerMonthDailyAvg({
-      monthSales: monthSalesForDailyAvg,
-      year,
-      month: selectedMonth,
-      todayYear: saudiNow.year,
-      todayMonth: saudiNow.month,
-      todayDay: saudiNow.day,
-      endDayInclusive: revenueMtdEndDay > 0 ? revenueMtdEndDay : undefined,
-    });
-  }, [
-    monthSalesForDailyAvg,
-    year,
-    selectedMonth,
-    revenueMtdEndDay,
-    saudiNow.year,
-    saudiNow.month,
-    saudiNow.day,
-  ]);
-
-  const customerPrevMonthDailyAvg = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
-    const prev = prevCalendarMonth(year, selectedMonth);
-    return computeCustomerMonthDailyAvg({
-      monthSales: prevMonthSalesForDailyAvg,
-      year: prev.year,
-      month: prev.month,
-      todayYear: saudiNow.year,
-      todayMonth: saudiNow.month,
-      todayDay: saudiNow.day,
-      endDayInclusive: revenueMtdEndDay,
-    });
-  }, [
-    prevMonthSalesForDailyAvg,
-    year,
-    selectedMonth,
-    revenueMtdEndDay,
-    saudiNow.year,
-    saudiNow.month,
-    saudiNow.day,
-  ]);
 
   const monthSalesThroughMtd = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return monthSalesForDailyAvg;
@@ -468,25 +382,16 @@ export function useDashboardOverviewModel(
   const yearlyDailyAvgRows = useMemo(() => {
     const capMonth = yearMonthlyDailyAvgCapMonth(year, saudiYM.year, saudiYM.month);
     const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
-    const alignPrevMonthDay =
-      selectedMonth != null &&
-      selectedMonth === saudiYM.month &&
-      year === saudiYM.year &&
-      revenueMtdEndDay > 0
-        ? revenueMtdEndDay
-        : undefined;
 
-    return buildYearMonthlyDailyAvgRows({
+    return buildYearMonthlyDailyAvgRowsFromBackend({
       year,
-      yearSummaries,
+      rows: salesMetrics?.yearMonthlyDailyAverages,
       monthNames,
       capMonth,
       currentYear: saudiYM.year,
       currentMonth: saudiYM.month,
-      currentDay: saudiNow.day,
-      prevMonthAlignEndDay: alignPrevMonthDay,
     });
-  }, [year, yearSummaries, lang, saudiYM.year, saudiYM.month, saudiNow.day, selectedMonth, revenueMtdEndDay]);
+  }, [year, salesMetrics?.yearMonthlyDailyAverages, lang, saudiYM.year, saudiYM.month]);
 
   const monthName = isCustomRange
     ? filter?.label ?? null
@@ -697,14 +602,14 @@ export function useDashboardOverviewModel(
     topSuppliersChartData,
     purchaseCategoriesPieData,
     revenueMtdEndDay,
-    revenueDailyAvgCalendar: revenueMtdDailyAvg?.avgDaily ?? null,
-    revenueDailyAvgPrevMonthCalendar: revenuePrevMonthDailyAvg?.avgDaily ?? null,
-    revenueMtdTotalSum: revenueMtdDailyAvg?.total ?? 0,
-    revenuePrevMonthTotalSum: revenuePrevMonthDailyAvg?.total ?? 0,
+    revenueDailyAvgCalendar: selectedMonth != null ? monthAverageForDailyAvg?.revenueAvgDaily ?? null : null,
+    revenueDailyAvgPrevMonthCalendar: selectedMonth != null ? prevMonthAverageForDailyAvg?.revenueAvgDaily ?? null : null,
+    revenueMtdTotalSum: selectedMonth != null ? monthAverageForDailyAvg?.total ?? 0 : 0,
+    revenuePrevMonthTotalSum: selectedMonth != null ? prevMonthAverageForDailyAvg?.total ?? 0 : 0,
     monthName,
     prevMonthName,
-    customerDailyAvgCalendar: customerMtdDailyAvg?.avgDaily ?? null,
-    customerDailyAvgPrevMonthCalendar: customerPrevMonthDailyAvg?.avgDaily ?? null,
+    customerDailyAvgCalendar: selectedMonth != null ? monthAverageForDailyAvg?.customerAvgDaily ?? null : null,
+    customerDailyAvgPrevMonthCalendar: selectedMonth != null ? prevMonthAverageForDailyAvg?.customerAvgDaily ?? null : null,
     salesShiftPeriodTotals,
     yearlyDailyAvgRows,
     hiddenSeries,

@@ -244,6 +244,49 @@ export type YearMonthlyDailyAvgRow = {
   isCurrentMonth: boolean;
 };
 
+export type BackendYearMonthlyDailyAvgRow = {
+  month: number;
+  totalSales: number | null;
+  avgDaily: number | null;
+  calendarDays: number;
+  deltaPctVsPrev: number | null;
+  tone: RevenueDailyAvgCompareTone;
+  isCurrentMonth: boolean;
+};
+
+export function buildYearMonthlyDailyAvgRowsFromBackend(params: {
+  rows: readonly BackendYearMonthlyDailyAvgRow[] | null | undefined;
+  monthNames: readonly string[];
+  capMonth: number;
+  currentYear: number;
+  currentMonth: number;
+  year: number;
+}): YearMonthlyDailyAvgRow[] {
+  const { rows, monthNames, capMonth, currentYear, currentMonth, year } = params;
+  if (capMonth <= 0) return [];
+
+  const byMonth = new Map<number, BackendYearMonthlyDailyAvgRow>();
+  for (const row of rows ?? []) {
+    if (!Number.isInteger(row.month) || row.month < 1 || row.month > 12) continue;
+    byMonth.set(row.month, row);
+  }
+
+  return Array.from({ length: capMonth }, (_, index) => {
+    const month = index + 1;
+    const source = byMonth.get(month);
+    return {
+      month,
+      monthLabel: monthNames[index] ?? String(month),
+      totalSales: source?.totalSales ?? null,
+      avgDaily: source?.avgDaily ?? null,
+      calendarDays: source?.calendarDays ?? 0,
+      deltaPctVsPrev: source?.deltaPctVsPrev ?? null,
+      tone: source?.tone ?? 'neutral',
+      isCurrentMonth: source?.isCurrentMonth ?? (year === currentYear && month === currentMonth),
+    };
+  });
+}
+
 /**
  * Monthly daily revenue averages for a calendar year, Jan → capMonth.
  * Always: sum ÷ calendar days in the period (full month, MTD, or aligned slice).
