@@ -56,6 +56,16 @@ function periodDailyAverage(rows: readonly DashboardDailyMetricRow[], endDayIncl
   };
 }
 
+function lastEnteredSalesDay(rows: readonly DashboardDailyMetricRow[], year: number, month: number): number {
+  let last = 0;
+  for (const row of rows) {
+    const parts = ymdParts(row.transactionDate);
+    if (!parts || parts.year !== year || parts.month !== month) continue;
+    if (parts.day > last) last = parts.day;
+  }
+  return last;
+}
+
 function selectedMonthAverageEndDay(rows: readonly DashboardDailyMetricRow[]): number | undefined {
   if (!rows.length) return undefined;
   const first = ymdParts(rows[0].transactionDate);
@@ -64,7 +74,8 @@ function selectedMonthAverageEndDay(rows: readonly DashboardDailyMetricRow[]): n
   const currentYear = saudiNow.getFullYear();
   const currentMonth = saudiNow.getMonth() + 1;
   if (first.year !== currentYear || first.month !== currentMonth) return undefined;
-  return saudiNow.getDate();
+  const lastEnteredDay = lastEnteredSalesDay(rows, first.year, first.month);
+  return Math.min(saudiNow.getDate(), lastEnteredDay || saudiNow.getDate());
 }
 
 function weeklyRows(rows: readonly DashboardDailyMetricRow[]) {
@@ -116,7 +127,6 @@ function monthlyDailyAverages(rows: readonly DashboardDailyMetricRow[]) {
   const saudiNow = nowSaudi();
   const currentYear = saudiNow.getFullYear();
   const currentMonth = saudiNow.getMonth() + 1;
-  const currentDay = saudiNow.getDate();
   const byMonth = new Map<string, DashboardDailyMetricRow[]>();
   for (const row of rows) {
     const parts = ymdParts(row.transactionDate);
@@ -131,7 +141,7 @@ function monthlyDailyAverages(rows: readonly DashboardDailyMetricRow[]) {
       const first = ymdParts(`${periodKey}-01`);
       const endDay =
         first && first.year === currentYear && first.month === currentMonth
-          ? currentDay
+          ? selectedMonthAverageEndDay(monthRows)
           : undefined;
       const avg = periodDailyAverage(monthRows, endDay);
       const deltaPctVsPrev =
