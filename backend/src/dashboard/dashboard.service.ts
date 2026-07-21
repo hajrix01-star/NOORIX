@@ -27,7 +27,35 @@ import {
 } from './dashboard-calendar-contracts';
 import { isSuperAdmin } from '../auth/constants/permissions';
 
-const EMPTY_SALES_PACK = { yearSummaries: [], dailySummaries: [], monthSummaries: [] } as const;
+const EMPTY_SALES_PACK = {
+  yearSummaries: [],
+  dailySummaries: [],
+  monthSummaries: [],
+  metrics: {
+    yearDaily: [],
+    yearChannels: [],
+    dailyDaily: [],
+    dailyTotals: [],
+    dailyChannels: [],
+    channelBreakdown: [],
+    monthDaily: [],
+    monthAverage: null,
+    dailyWeekly: [],
+    dailyWeeklyComparison: [],
+    shiftTotals: [],
+    yearMonthlyDailyAverages: [],
+    appSales: {
+      year: null,
+      totals: [],
+      monthlyRows: [],
+      yearAverage: null,
+      selectedMonthAverage: null,
+      selectedMonthAppShare: null,
+      previousMonthAverage: null,
+      selectedMonth: null,
+    },
+  },
+} as const;
 
 type DashboardDailyMetricRow = {
   transactionDate: string;
