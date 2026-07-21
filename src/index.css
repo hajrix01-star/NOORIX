@@ -3647,7 +3647,8 @@ select option {
   inset-inline-end: 0;
   display: grid;
   gap: 8px;
-  width: min(320px, calc(100vw - 32px));
+  width: max-content;
+  max-width: calc(100vw - 32px);
   border: 1px solid var(--noorix-border);
   border-radius: 14px;
   background: var(--noorix-bg-surface);
@@ -3661,12 +3662,9 @@ select option {
   overflow-y: auto;
 }
 .ndfb-calendar--months,
-.ndfb-calendar--days,
 .ndfb-calendar--quarters,
-.ndfb-calendar--years {
-  width: 100%;
-  grid-template-columns: 1fr;
-}
+.ndfb-calendar--years { width: auto; grid-template-columns: 1fr; }
+.ndfb-calendar--days { width: min(300px, calc(100vw - 54px)); grid-template-columns: 1fr; }
 .ndfb-calendar-panel {
   min-width: 0;
   border: 1px solid #d8e2ef;
