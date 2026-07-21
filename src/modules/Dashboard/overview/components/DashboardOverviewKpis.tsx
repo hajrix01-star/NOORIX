@@ -4,21 +4,15 @@ import { amountText } from '../../../Reports/reportHelpers';
 import { FmtNum, MetricCard } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../../../constants/kpiCardTheme';
-import {
-  getCardValue,
-  getPctStringForCard,
-  type PlReportLike,
-} from '../utils/dashboardOverviewCalculations';
+import type { DashboardKpiCardMetric } from '../../../../types/api/domains/dashboard';
 import type { DashboardOverviewFilter } from '../types';
 import type { KpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
 import { DashboardOverviewKpiCardFooter } from './DashboardOverviewKpiCardFooter';
 import { formatPercentLabel } from '../../../../shared/reporting/plDisplaySelectors';
 import {
   formatSalesShiftSharePercent,
-  salesShiftPeriodGrandTotal,
-  salesShiftSharePercent,
-  type SalesShiftPeriodTotals,
 } from '../utils/dashboardSalesShiftTotals';
+import type { DashboardSalesShiftTotals } from '../../../../types/api/domains/dashboard';
 import { DashboardOverviewRevenueDailyAvgPanel } from './DashboardOverviewRevenueDailyAvgPanel';
 
 type CardDef = {
@@ -26,6 +20,19 @@ type CardDef = {
   label: string;
   formulaKey: string;
   pctLabelKey: string;
+};
+
+type Props = {
+  cards: CardDef[];
+  kpiCardsByKey: Map<string, DashboardKpiCardMetric>;
+  filter: DashboardOverviewFilter | undefined;
+  year: number;
+  salesShiftPeriodTotals: DashboardSalesShiftTotals | null;
+  revenueDailyAvgCalendar: number | null;
+  revenueDailyAvgPrevMonthCalendar: number | null;
+  customerDailyAvgCalendar: number | null;
+  customerDailyAvgPrevMonthCalendar: number | null;
+  kpiInsightFooters: KpiInsightFooterMap;
 };
 
 function kpiSparklineColor(key: string): string {
@@ -37,30 +44,22 @@ function kpiSparklineColor(key: string): string {
   return KPI_CARD_SPARKLINE_COLORS.sales;
 }
 
-type Props = {
-  report: PlReportLike | null | undefined;
-  selectedMonth: number | null;
-  cards: CardDef[];
-  filter: DashboardOverviewFilter | undefined;
-  year: number;
-  salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
-  revenueDailyAvgCalendar: number | null;
-  revenueDailyAvgPrevMonthCalendar: number | null;
-  customerDailyAvgCalendar: number | null;
-  customerDailyAvgPrevMonthCalendar: number | null;
-  kpiInsightFooters: KpiInsightFooterMap;
-};
+function badgeClassForTone(tone: DashboardKpiCardMetric['tone'] | undefined): string {
+  if (tone === 'positive') return 'bg-[#eaf3de] text-[#3B6D11]';
+  if (tone === 'negative') return 'bg-[#FCEBEB] text-[#A32D2D]';
+  if (tone === 'cost') return 'bg-[#fff7ed] text-[#9a3412]';
+  return 'bg-noorix-bg-muted text-noorix-muted';
+}
 
 function RevenueShiftSummary({
   totals,
   t,
 }: {
-  totals: SalesShiftPeriodTotals | null;
+  totals: DashboardSalesShiftTotals | null;
   t: (key: string) => string;
 }) {
   if (!totals) return null;
 
-  const grandTotal = salesShiftPeriodGrandTotal(totals);
   const rows = [
     { key: 'morning' as const, label: t('salesShiftMorning'), value: totals.morning },
     { key: 'evening' as const, label: t('salesShiftEvening'), value: totals.evening },
@@ -76,7 +75,6 @@ function RevenueShiftSummary({
         </div>
         <div className="flex flex-col divide-y divide-noorix-border/80">
           {rows.map((row) => {
-            const pct = salesShiftSharePercent(row.value.amount, grandTotal);
             return (
               <div key={row.key} className="flex items-center justify-between gap-2 py-1.5">
                 <span className="min-w-0 flex-1 truncate text-[10px] font-medium text-noorix-muted">
@@ -86,7 +84,7 @@ function RevenueShiftSummary({
                   <FmtNum n={row.value.amount} /> <span className="nx-sar text-[8px]">SR</span>
                 </span>
                 <span dir="ltr" className="w-10 shrink-0 text-end text-[10px] font-bold text-noorix-blue nx-font-numbers">
-                  {pct != null ? `${formatSalesShiftSharePercent(pct)}%` : '0%'}
+                  {row.value.sharePct != null ? `${formatSalesShiftSharePercent(row.value.sharePct)}%` : '0%'}
                 </span>
               </div>
             );
@@ -98,9 +96,8 @@ function RevenueShiftSummary({
 }
 
 export function DashboardOverviewKpis({
-  report,
-  selectedMonth,
   cards,
+  kpiCardsByKey,
   filter,
   year,
   salesShiftPeriodTotals,
@@ -116,38 +113,15 @@ export function DashboardOverviewKpis({
     <div className="nx-kpi-container">
       <div className="nx-kpi-grid nx-kpi-grid--dashboard">
         {cards.map((card) => {
-          const rawVal = getCardValue(report, card.key, selectedMonth);
-          const isProfit = card.key === 'grossProfit' || card.key === 'netProfit';
+          const metric = kpiCardsByKey.get(card.key);
+          const rawVal = metric?.value ?? 0;
           const isSales = card.key === 'sales';
-          const pct = getPctStringForCard(report, card.key, selectedMonth);
-          const pctNum = pct != null ? Number(pct) : null;
-
-          const accentColor = kpiSparklineColor(card.key);
-
-          let badgeTone = 'neutral';
-          let arrow = '';
-          if (isSales && pctNum != null) {
-            badgeTone = 'neutral';
-            arrow = '';
-          } else if (isProfit && pctNum != null) {
-            if (pctNum > 0) { badgeTone = 'positive'; arrow = '↑ '; }
-            else if (pctNum < 0) { badgeTone = 'negative'; arrow = '↓ '; }
-          } else if (!isSales && pctNum != null) {
-            badgeTone = 'zero';
-            arrow = '↓ ';
-          }
-
-          const badgeClass =
-            badgeTone === 'positive'
-              ? 'bg-[#eaf3de] text-[#3B6D11]'
-              : badgeTone === 'negative'
-                ? 'bg-[#FCEBEB] text-[#A32D2D]'
-                : 'bg-noorix-bg-muted text-noorix-muted';
-
-          const periodLabel = filter?.label || String(year);
-          const pctLabelText = t(card.pctLabelKey);
+          const pctNum = metric?.pct ?? null;
           const pctText = pctNum != null ? formatPercentLabel(pctNum) : null;
-          const pctTitle = pctText != null ? `${pctLabelText}: ${arrow}${pctText}` : pctLabelText;
+          const pctLabelText = t(card.pctLabelKey);
+          const pctTitle = pctText != null ? `${pctLabelText}: ${pctText}` : pctLabelText;
+          const accentColor = kpiSparklineColor(card.key);
+          const badgeClass = badgeClassForTone(metric?.tone);
 
           const insightBundle =
             card.key === 'purchases' ||
@@ -159,23 +133,23 @@ export function DashboardOverviewKpis({
 
           const footerRows = insightBundle?.rows;
           const pctFallback = !isSales || !footerRows?.length ? (
-            <div className="flex items-center justify-between gap-3 py-0.5 min-h-[28px]">
-              <span className="min-w-0 flex-1 text-[10px] leading-snug text-noorix-muted text-start truncate">
+            <div className="flex min-h-[28px] items-center justify-between gap-3 py-0.5">
+              <span className="min-w-0 flex-1 truncate text-start text-[10px] leading-snug text-noorix-muted">
                 {pctLabelText}
               </span>
-              {pctNum != null ? (
+              {pctText != null ? (
                 <span
                   className={cn(
-                    'inline-flex shrink-0 max-w-[55%] items-center justify-end truncate rounded px-2 py-0.5',
+                    'inline-flex max-w-[55%] shrink-0 items-center justify-end truncate rounded px-2 py-0.5',
                     'text-[11px] font-bold nx-font-numbers ltr',
                     badgeClass,
                   )}
                   title={pctTitle}
                 >
-                  {arrow}{pctText}
+                  {pctText}
                 </span>
               ) : (
-                <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>
+                <span className="shrink-0 text-[11px] font-medium text-noorix-muted">-</span>
               )}
             </div>
           ) : null;
@@ -188,7 +162,11 @@ export function DashboardOverviewKpis({
             >
               <MetricCard.Header
                 label={card.label}
-                subLabel={isSales ? t('reportAmountBasisGrossShort') : `${t(card.formulaKey)} - ${t('reportAmountBasisGrossShort')}`}
+                subLabel={
+                  isSales
+                    ? t('reportAmountBasisGrossShort')
+                    : `${t(card.formulaKey)} - ${t('reportAmountBasisGrossShort')}`
+                }
               />
               <MetricCard.Value value={amountText(rawVal)} currency="SR" className="pb-1" />
 
@@ -206,7 +184,7 @@ export function DashboardOverviewKpis({
               ) : null}
 
               <DashboardOverviewKpiCardFooter
-                periodLabel={periodLabel}
+                periodLabel={filter?.label || String(year)}
                 rows={!isSales ? footerRows : undefined}
                 fallback={isSales ? null : pctFallback}
               />

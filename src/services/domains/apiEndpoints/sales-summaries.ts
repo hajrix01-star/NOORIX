@@ -84,6 +84,8 @@ export async function getDashboardSalesPack({
   dailyEnd,
   monthStart,
   monthEnd,
+  baselineStart,
+  baselineEnd,
 }: {
   companyId: string;
   yearStart: string;
@@ -92,6 +94,8 @@ export async function getDashboardSalesPack({
   dailyEnd?: string;
   monthStart?: string;
   monthEnd?: string;
+  baselineStart?: string;
+  baselineEnd?: string;
 }): Promise<ApiParsedResult<DashboardSalesPackData>> {
   const params: Record<string, string> = {
     companyId: String(companyId),
@@ -102,6 +106,8 @@ export async function getDashboardSalesPack({
   if (dailyEnd) params.dailyEnd = toYmd(dailyEnd);
   if (monthStart) params.monthStart = toYmd(monthStart);
   if (monthEnd) params.monthEnd = toYmd(monthEnd);
+  if (baselineStart) params.baselineStart = toYmd(baselineStart);
+  if (baselineEnd) params.baselineEnd = toYmd(baselineEnd);
   return apiGet('/api/v1/sales/summaries/dashboard-pack', params);
 }
 

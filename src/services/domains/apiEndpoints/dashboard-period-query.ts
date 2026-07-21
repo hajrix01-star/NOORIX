@@ -11,6 +11,16 @@ export interface DashboardPeriodApiParams {
   dailyEnd?: string | null;
   monthStart?: string | null;
   monthEnd?: string | null;
+  weeklyYearStart?: string | null;
+  weeklyYearEnd?: string | null;
+  weeklyStart?: string | null;
+  weeklyEnd?: string | null;
+  weeklyBaselineStart?: string | null;
+  weeklyBaselineEnd?: string | null;
+  previousMonthYearStart?: string | null;
+  previousMonthYearEnd?: string | null;
+  previousMonthStart?: string | null;
+  previousMonthEnd?: string | null;
   selectedMonth?: number | null;
   includeCancelledSales?: boolean;
 }
@@ -26,6 +36,16 @@ export interface DashboardPeriodQueryKeyInput {
   dailyEnd: string | null;
   monthStart: string | null;
   monthEnd: string | null;
+  weeklyYearStart?: string | null;
+  weeklyYearEnd?: string | null;
+  weeklyStart?: string | null;
+  weeklyEnd?: string | null;
+  weeklyBaselineStart?: string | null;
+  weeklyBaselineEnd?: string | null;
+  previousMonthYearStart?: string | null;
+  previousMonthYearEnd?: string | null;
+  previousMonthStart?: string | null;
+  previousMonthEnd?: string | null;
   selectedMonth: number | null;
   includeCancelledSales: boolean;
 }
@@ -42,6 +62,16 @@ export function normalizeDashboardPeriodKeyInput(params: DashboardPeriodApiParam
     dailyEnd: optionalYmd(params.dailyEnd),
     monthStart: optionalYmd(params.monthStart),
     monthEnd: optionalYmd(params.monthEnd),
+    weeklyYearStart: optionalYmd(params.weeklyYearStart),
+    weeklyYearEnd: optionalYmd(params.weeklyYearEnd),
+    weeklyStart: optionalYmd(params.weeklyStart),
+    weeklyEnd: optionalYmd(params.weeklyEnd),
+    weeklyBaselineStart: optionalYmd(params.weeklyBaselineStart),
+    weeklyBaselineEnd: optionalYmd(params.weeklyBaselineEnd),
+    previousMonthYearStart: optionalYmd(params.previousMonthYearStart),
+    previousMonthYearEnd: optionalYmd(params.previousMonthYearEnd),
+    previousMonthStart: optionalYmd(params.previousMonthStart),
+    previousMonthEnd: optionalYmd(params.previousMonthEnd),
     selectedMonth:
       params.selectedMonth != null && params.selectedMonth >= 1 && params.selectedMonth <= 12
         ? params.selectedMonth
@@ -79,6 +109,16 @@ export function buildDashboardPeriodQuery(params: DashboardPeriodApiParams): Rec
   addOptionalQueryValue(query, 'dailyEnd', normalized.dailyEnd);
   addOptionalQueryValue(query, 'monthStart', normalized.monthStart);
   addOptionalQueryValue(query, 'monthEnd', normalized.monthEnd);
+  addOptionalQueryValue(query, 'weeklyYearStart', normalized.weeklyYearStart);
+  addOptionalQueryValue(query, 'weeklyYearEnd', normalized.weeklyYearEnd);
+  addOptionalQueryValue(query, 'weeklyStart', normalized.weeklyStart);
+  addOptionalQueryValue(query, 'weeklyEnd', normalized.weeklyEnd);
+  addOptionalQueryValue(query, 'weeklyBaselineStart', normalized.weeklyBaselineStart);
+  addOptionalQueryValue(query, 'weeklyBaselineEnd', normalized.weeklyBaselineEnd);
+  addOptionalQueryValue(query, 'previousMonthYearStart', normalized.previousMonthYearStart);
+  addOptionalQueryValue(query, 'previousMonthYearEnd', normalized.previousMonthYearEnd);
+  addOptionalQueryValue(query, 'previousMonthStart', normalized.previousMonthStart);
+  addOptionalQueryValue(query, 'previousMonthEnd', normalized.previousMonthEnd);
 
   if (normalized.selectedMonth != null) {
     query.selectedMonth = normalized.selectedMonth;
@@ -97,8 +137,22 @@ function optionalYmd(value: string | null | undefined): string | null {
 
 function addOptionalQueryValue(
   query: Record<string, string | number | boolean>,
-  key: 'dailyStart' | 'dailyEnd' | 'monthStart' | 'monthEnd',
-  value: string | null,
+  key:
+    | 'dailyStart'
+    | 'dailyEnd'
+    | 'monthStart'
+    | 'monthEnd'
+    | 'weeklyYearStart'
+    | 'weeklyYearEnd'
+    | 'weeklyStart'
+    | 'weeklyEnd'
+    | 'weeklyBaselineStart'
+    | 'weeklyBaselineEnd'
+    | 'previousMonthYearStart'
+    | 'previousMonthYearEnd'
+    | 'previousMonthStart'
+    | 'previousMonthEnd',
+  value: string | null | undefined,
 ) {
   if (value) {
     query[key] = value;

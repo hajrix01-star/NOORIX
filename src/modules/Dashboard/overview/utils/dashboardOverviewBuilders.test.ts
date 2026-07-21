@@ -1,48 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { buildChannelPieRows } from './dashboardOverviewBuilders';
+import { buildChannelBreakdownRowsFromBackend } from './dashboardOverviewBuilders';
 
-describe('buildChannelPieRows', () => {
-  const yearSummaries = [
-    {
-      channels: [
-        { amount: 100, vault: { nameAr: 'بنك', nameEn: 'Bank' } },
-        { amount: 50, vault: { nameAr: 'نقد', nameEn: 'Cash' } },
+describe('buildChannelBreakdownRowsFromBackend', () => {
+  it('keeps backend values and percentages unchanged', () => {
+    const rows = buildChannelBreakdownRowsFromBackend({
+      lang: 'en',
+      rows: [
+        { nameAr: 'بنك', nameEn: 'Bank', amount: 300, sharePct: 75 },
+        { nameAr: 'نقد', nameEn: 'Cash', amount: 100, sharePct: 25 },
       ],
-    },
-    {
-      channels: [{ amount: 200, vault: { nameAr: 'بنك', nameEn: 'Bank' } }],
-    },
-  ];
-
-  const mayDaily = [
-    {
-      channels: [{ amount: 30, vault: { nameAr: 'بنك', nameEn: 'Bank' } }],
-    },
-    {
-      channels: [{ amount: 20, vault: { nameAr: 'نقد', nameEn: 'Cash' } }],
-    },
-  ];
-
-  it('uses daily summaries when a month is selected (page filter)', () => {
-    const rows = buildChannelPieRows({
-      yearSummaries,
-      dailySummaries: mayDaily,
-      selectedMonth: 5,
-      lang: 'ar',
     });
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({ name: 'بنك', value: 30 });
-    expect(rows[1]).toMatchObject({ name: 'نقد', value: 20 });
-  });
 
-  it('uses year summaries when no month filter (all months)', () => {
-    const rows = buildChannelPieRows({
-      yearSummaries,
-      dailySummaries: mayDaily,
-      selectedMonth: null,
-      lang: 'ar',
-    });
-    expect(rows[0]).toMatchObject({ name: 'بنك', value: 300 });
-    expect(rows[1]).toMatchObject({ name: 'نقد', value: 50 });
+    expect(rows).toEqual([
+      { name: 'Bank', value: 300, pct: '75.0' },
+      { name: 'Cash', value: 100, pct: '25.0' },
+    ]);
   });
 });

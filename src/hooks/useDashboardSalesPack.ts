@@ -11,11 +11,16 @@ const EMPTY_SALES_PACK: DashboardSalesPackData = {
     yearDaily: [],
     yearChannels: [],
     dailyDaily: [],
+    dailyTotals: [],
     dailyChannels: [],
-    monthDaily: [],
-    monthAverage: undefined,
-    dailyWeekly: [],
-    yearMonthlyDailyAverages: [],
+    channelBreakdown: [],
+      monthDaily: [],
+      monthAverage: undefined,
+        dailyWeekly: [],
+        dailyWeeklyComparison: [],
+        shiftTotals: undefined,
+        yearMonthlyDailyAverages: [],
+        appSales: undefined,
   },
 };
 
@@ -30,11 +35,16 @@ function normalizeSalesPack(raw: DashboardSalesPackData | null | undefined): Das
       yearDaily: Array.isArray(metrics?.yearDaily) ? metrics.yearDaily : [],
       yearChannels: Array.isArray(metrics?.yearChannels) ? metrics.yearChannels : [],
       dailyDaily: Array.isArray(metrics?.dailyDaily) ? metrics.dailyDaily : [],
+      dailyTotals: Array.isArray(metrics?.dailyTotals) ? metrics.dailyTotals : [],
       dailyChannels: Array.isArray(metrics?.dailyChannels) ? metrics.dailyChannels : [],
-      monthDaily: Array.isArray(metrics?.monthDaily) ? metrics.monthDaily : [],
-      monthAverage: metrics?.monthAverage,
-      dailyWeekly: Array.isArray(metrics?.dailyWeekly) ? metrics.dailyWeekly : [],
-      yearMonthlyDailyAverages: Array.isArray(metrics?.yearMonthlyDailyAverages) ? metrics.yearMonthlyDailyAverages : [],
+      channelBreakdown: Array.isArray(metrics?.channelBreakdown) ? metrics.channelBreakdown : [],
+        monthDaily: Array.isArray(metrics?.monthDaily) ? metrics.monthDaily : [],
+        monthAverage: metrics?.monthAverage,
+        dailyWeekly: Array.isArray(metrics?.dailyWeekly) ? metrics.dailyWeekly : [],
+        dailyWeeklyComparison: Array.isArray(metrics?.dailyWeeklyComparison) ? metrics.dailyWeeklyComparison : [],
+        shiftTotals: metrics?.shiftTotals,
+        yearMonthlyDailyAverages: Array.isArray(metrics?.yearMonthlyDailyAverages) ? metrics.yearMonthlyDailyAverages : [],
+        appSales: metrics?.appSales,
     },
   };
 }
@@ -47,6 +57,8 @@ export function useDashboardSalesPack(p: {
   dailyEnd: string | null;
   monthStart: string | null;
   monthEnd: string | null;
+  baselineStart?: string | null;
+  baselineEnd?: string | null;
   enabled?: boolean;
 }) {
   const {
@@ -57,6 +69,8 @@ export function useDashboardSalesPack(p: {
     dailyEnd,
     monthStart,
     monthEnd,
+    baselineStart = null,
+    baselineEnd = null,
     enabled = true,
   } = p;
 
@@ -69,6 +83,8 @@ export function useDashboardSalesPack(p: {
       dailyEnd,
       monthStart,
       monthEnd,
+      baselineStart,
+      baselineEnd,
     ),
     queryFn: () => getDashboardSalesPack({
       companyId,
@@ -78,6 +94,8 @@ export function useDashboardSalesPack(p: {
       dailyEnd: dailyEnd ?? undefined,
       monthStart: monthStart ?? undefined,
       monthEnd: monthEnd ?? undefined,
+      baselineStart: baselineStart ?? undefined,
+      baselineEnd: baselineEnd ?? undefined,
     }),
     fallbackMessage: 'Failed to load dashboard sales pack',
     enabled: !!companyId && enabled,

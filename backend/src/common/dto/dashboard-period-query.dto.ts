@@ -41,6 +41,56 @@ export abstract class DashboardPeriodQueryDto {
   @Matches(DASHBOARD_YMD_PATTERN)
   monthEnd?: string;
 
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  weeklyYearStart?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  weeklyYearEnd?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  weeklyStart?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  weeklyEnd?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  weeklyBaselineStart?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  weeklyBaselineEnd?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  previousMonthYearStart?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  previousMonthYearEnd?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  previousMonthStart?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(DASHBOARD_YMD_PATTERN)
+  previousMonthEnd?: string;
+
   @IsString()
   @Matches(DASHBOARD_YMD_PATTERN)
   periodStart: string;

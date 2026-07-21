@@ -2,9 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { Button, FmtNum, SearchableOptionsPicker, SimpleTable, cn, type SearchableOption, type SimpleTableColumn } from '../../../../ui';
 import type {
-  DashboardWeeklySalesComparisonData,
-  DashboardWeeklySalesComparisonRow,
-} from '../utils/dashboardWeeklySalesComparisonModel';
+  DashboardSalesMetricWeeklyComparisonRow,
+} from '../../../../types/api/domains/dashboard';
+
+type DashboardWeeklySalesComparisonData = {
+  rows: DashboardSalesMetricWeeklyComparisonRow[];
+};
+
+type DashboardWeeklySalesComparisonRow = DashboardSalesMetricWeeklyComparisonRow;
 
 const TH_CELL =
   'border border-noorix-border bg-[var(--noorix-table-header-bg)] px-1 py-1.5 text-center text-[9px] font-bold leading-tight text-white sm:px-2 sm:py-2.5 sm:text-xs';

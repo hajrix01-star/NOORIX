@@ -14,8 +14,21 @@ export const dashboardKeys = {
     dailyEnd: string | null,
     monthStart: string | null,
     monthEnd: string | null,
+    baselineStart: string | null = null,
+    baselineEnd: string | null = null,
   ) =>
-    ['sales-dashboard-pack', companyId, yearStart, yearEnd, dailyStart, dailyEnd, monthStart, monthEnd] as const,
+    [
+      'sales-dashboard-pack',
+      companyId,
+      yearStart,
+      yearEnd,
+      dailyStart,
+      dailyEnd,
+      monthStart,
+      monthEnd,
+      baselineStart,
+      baselineEnd,
+    ] as const,
 
   salesPackRoot: () => ['sales-dashboard-pack'] as const,
 

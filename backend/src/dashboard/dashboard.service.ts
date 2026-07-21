@@ -29,6 +29,201 @@ import { isSuperAdmin } from '../auth/constants/permissions';
 
 const EMPTY_SALES_PACK = { yearSummaries: [], dailySummaries: [], monthSummaries: [] } as const;
 
+type DashboardDailyMetricRow = {
+  transactionDate: string;
+  totalAmount: string | number;
+  customerCount: number;
+};
+
+type DashboardProfitLossGroup = {
+  key?: string;
+  months?: Array<string | number | null | undefined>;
+};
+
+type DashboardProfitLossReport = {
+  cards?: Record<string, string | number | null | undefined>;
+  summaryRows?: DashboardProfitLossGroup[];
+  groups?: DashboardProfitLossGroup[];
+};
+
+type DashboardTimelineRow = {
+  label: string;
+  sales: number;
+  purchases: number;
+  expenses: number;
+  customers: number;
+  avgInvoice: number;
+};
+
+type DashboardKpiCardMetric = {
+  key: string;
+  value: number;
+  pct: number | null;
+  tone: 'positive' | 'negative' | 'neutral' | 'cost';
+};
+
+type DashboardPeriodData = {
+  totalsByKind?: Record<string, { totalAmount?: string | number | null }>;
+} | null;
+
+function monthNumberFromYmd(value: string): number | null {
+  const ymd = toYmd(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+  const month = Number(ymd.slice(5, 7));
+  return Number.isInteger(month) && month >= 1 && month <= 12 ? month : null;
+}
+
+function dayNumberFromYmd(value: string): number | null {
+  const ymd = toYmd(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+  const day = Number(ymd.slice(8, 10));
+  return Number.isInteger(day) && day >= 1 && day <= 31 ? day : null;
+}
+
+function inclusiveDayRange(startDate: string | null, endDate: string | null): number[] {
+  if (!startDate || !endDate) return [];
+  const start = toYmd(startDate);
+  const end = toYmd(endDate);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return [];
+  if (start.slice(0, 7) !== end.slice(0, 7)) return [];
+  const startDay = dayNumberFromYmd(start);
+  const endDay = dayNumberFromYmd(end);
+  if (startDay == null || endDay == null || endDay < startDay) return [];
+  return Array.from({ length: endDay - startDay + 1 }, (_, index) => startDay + index);
+}
+
+function reportMonthValue(
+  report: DashboardProfitLossReport | null,
+  key: string,
+  monthIndex: number,
+): number {
+  return Number(report?.groups?.find((row) => row.key === key)?.months?.[monthIndex] || 0);
+}
+
+function reportCardValue(
+  report: DashboardProfitLossReport | null,
+  key: string,
+  selectedMonth: number | null,
+): number {
+  if (!report) return 0;
+  if (selectedMonth == null) return Number(report.cards?.[key] || 0);
+  if (key === 'grossProfit' || key === 'netProfit') {
+    return Number(report.summaryRows?.find((row) => row.key === key)?.months?.[selectedMonth - 1] || 0);
+  }
+  return Number(report.groups?.find((row) => row.key === key)?.months?.[selectedMonth - 1] || 0);
+}
+
+function periodKindTotal(
+  periodData: DashboardPeriodData,
+  kinds: readonly string[],
+): number {
+  return kinds.reduce((sum, kind) => sum + Number(periodData?.totalsByKind?.[kind]?.totalAmount || 0), 0);
+}
+
+function sumDailyMetric(rows: readonly DashboardDailyMetricRow[], metric: 'totalAmount' | 'customerCount'): number {
+  return rows.reduce((sum, row) => sum + Number(row[metric] || 0), 0);
+}
+
+function pctOfSales(key: string, value: number, sales: number): number | null {
+  if (!Number.isFinite(sales) || Math.abs(sales) <= 1e-9) return null;
+  if (key === 'sales') return sales > 0 ? 100 : null;
+  return (value / sales) * 100;
+}
+
+function kpiTone(key: string, pct: number | null): DashboardKpiCardMetric['tone'] {
+  if (pct == null || key === 'sales') return 'neutral';
+  if (key === 'purchases' || key === 'expenses') return 'cost';
+  if (pct > 0) return 'positive';
+  if (pct < 0) return 'negative';
+  return 'neutral';
+}
+
+function buildKpiCards(params: {
+  report: DashboardProfitLossReport | null;
+  periodData: DashboardPeriodData;
+  dailyRows: readonly DashboardDailyMetricRow[];
+  selectedMonth: number | null;
+  isCustomRange: boolean;
+}): DashboardKpiCardMetric[] {
+  const { report, periodData, dailyRows, selectedMonth, isCustomRange } = params;
+  const values = isCustomRange
+    ? (() => {
+        const sales = sumDailyMetric(dailyRows, 'totalAmount');
+        const purchases = periodKindTotal(periodData, ['purchase']);
+        const expenses = periodKindTotal(periodData, ['expense', 'fixed_expense', 'hr_expense']);
+        const grossProfit = sales - purchases;
+        const netProfit = grossProfit - expenses;
+        return { sales, purchases, grossProfit, expenses, netProfit };
+      })()
+    : {
+        sales: reportCardValue(report, 'sales', selectedMonth),
+        purchases: reportCardValue(report, 'purchases', selectedMonth),
+        grossProfit: reportCardValue(report, 'grossProfit', selectedMonth),
+        expenses: reportCardValue(report, 'expenses', selectedMonth),
+        netProfit: reportCardValue(report, 'netProfit', selectedMonth),
+      };
+
+  return (['sales', 'purchases', 'grossProfit', 'expenses', 'netProfit'] as const).map((key) => {
+    const value = values[key];
+    const pct = pctOfSales(key, value, values.sales);
+    return { key, value, pct, tone: kpiTone(key, pct) };
+  });
+}
+
+function buildDashboardTimelineMonthlyRows(
+  report: DashboardProfitLossReport | null,
+  yearDaily: readonly DashboardDailyMetricRow[],
+): DashboardTimelineRow[] {
+  const customersByMonth = new Map<number, number>();
+  for (const row of yearDaily) {
+    const month = monthNumberFromYmd(String(row.transactionDate));
+    if (month == null) continue;
+    customersByMonth.set(month, (customersByMonth.get(month) ?? 0) + Number(row.customerCount || 0));
+  }
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    const sales = reportMonthValue(report, 'sales', index);
+    const customers = customersByMonth.get(month) ?? 0;
+    return {
+      label: String(month),
+      sales,
+      purchases: reportMonthValue(report, 'purchases', index),
+      expenses: reportMonthValue(report, 'expenses', index),
+      customers,
+      avgInvoice: customers > 0 ? sales / customers : 0,
+    };
+  });
+}
+
+function buildDashboardTimelineDailyRows(
+  dailyRows: readonly DashboardDailyMetricRow[],
+  startDate: string | null,
+  endDate: string | null,
+): DashboardTimelineRow[] {
+  const byDay = new Map<number, { sales: number; customers: number }>();
+  for (const row of dailyRows) {
+    const day = dayNumberFromYmd(String(row.transactionDate));
+    if (day == null) continue;
+    const current = byDay.get(day) ?? { sales: 0, customers: 0 };
+    current.sales += Number(row.totalAmount || 0);
+    current.customers += Number(row.customerCount || 0);
+    byDay.set(day, current);
+  }
+
+  return inclusiveDayRange(startDate, endDate).map((day) => {
+    const current = byDay.get(day) ?? { sales: 0, customers: 0 };
+    return {
+      label: String(day),
+      sales: current.sales,
+      purchases: 0,
+      expenses: 0,
+      customers: current.customers,
+      avgInvoice: current.customers > 0 ? current.sales / current.customers : 0,
+    };
+  });
+}
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -59,6 +254,16 @@ export class DashboardService {
       dailyEnd,
       monthStart,
       monthEnd,
+      weeklyYearStart,
+      weeklyYearEnd,
+      weeklyStart,
+      weeklyEnd,
+      weeklyBaselineStart,
+      weeklyBaselineEnd,
+      previousMonthYearStart,
+      previousMonthYearEnd,
+      previousMonthStart,
+      previousMonthEnd,
       selectedMonth,
       includeCancelledSales = false,
     } = query;
@@ -76,6 +281,16 @@ export class DashboardService {
     let de = dailyEnd ? toYmd(dailyEnd) : null;
     let ms = monthStart ? toYmd(monthStart) : null;
     let me = monthEnd ? toYmd(monthEnd) : null;
+    let wys = weeklyYearStart ? toYmd(weeklyYearStart) : ys;
+    let wye = weeklyYearEnd ? toYmd(weeklyYearEnd) : ye;
+    let ws = weeklyStart ? toYmd(weeklyStart) : null;
+    let we = weeklyEnd ? toYmd(weeklyEnd) : null;
+    let wbs = weeklyBaselineStart ? toYmd(weeklyBaselineStart) : null;
+    let wbe = weeklyBaselineEnd ? toYmd(weeklyBaselineEnd) : null;
+    let pmys = previousMonthYearStart ? toYmd(previousMonthYearStart) : ys;
+    let pmye = previousMonthYearEnd ? toYmd(previousMonthYearEnd) : ye;
+    let pms = previousMonthStart ? toYmd(previousMonthStart) : null;
+    let pme = previousMonthEnd ? toYmd(previousMonthEnd) : null;
 
     if (!fullHist) {
       const cy = clampSalesSummaryDateQuery(ys, ye, 7);
@@ -91,6 +306,27 @@ export class DashboardService {
         ms = cm.startDate;
         me = cm.endDate;
       }
+      const cwy = clampSalesSummaryDateQuery(wys, wye, 7);
+      wys = cwy.startDate;
+      wye = cwy.endDate;
+      if (ws && we) {
+        const cw = clampSalesSummaryDateQuery(ws, we, 7);
+        ws = cw.startDate;
+        we = cw.endDate;
+      }
+      if (wbs && wbe) {
+        const cwb = clampSalesSummaryDateQuery(wbs, wbe, 7);
+        wbs = cwb.startDate;
+        wbe = cwb.endDate;
+      }
+      const cpmy = clampSalesSummaryDateQuery(pmys, pmye, 7);
+      pmys = cpmy.startDate;
+      pmye = cpmy.endDate;
+      if (pms && pme) {
+        const cpm = clampSalesSummaryDateQuery(pms, pme, 7);
+        pms = cpm.startDate;
+        pme = cpm.endDate;
+      }
     }
 
     const salesPackPromise = hasSalesRead
@@ -100,10 +336,42 @@ export class DashboardService {
           includeCancelledSales,
         )
       : Promise.resolve(EMPTY_SALES_PACK);
+    const weeklyPackPromise = hasSalesRead && ws && we
+      ? this.salesService.findDashboardPack(
+          companyId,
+          {
+            yearStart: wys,
+            yearEnd: wye,
+            dailyStart: ws,
+            dailyEnd: we,
+            monthStart: null,
+            monthEnd: null,
+            baselineStart: wbs,
+            baselineEnd: wbe,
+          },
+          includeCancelledSales,
+        )
+      : Promise.resolve(EMPTY_SALES_PACK);
+    const previousMonthPackPromise = hasSalesRead && pms && pme
+      ? this.salesService.findDashboardPack(
+          companyId,
+          {
+            yearStart: pmys,
+            yearEnd: pmye,
+            dailyStart: null,
+            dailyEnd: null,
+            monthStart: pms,
+            monthEnd: pme,
+          },
+          includeCancelledSales,
+        )
+      : Promise.resolve(EMPTY_SALES_PACK);
 
-    const [report, salesPack, insights, periodData] = await Promise.all([
+    const [report, salesPack, weeklyPack, previousMonthPack, insights, periodData] = await Promise.all([
       this.reportsService.getGeneralProfitLoss(companyId, year),
       salesPackPromise,
+      weeklyPackPromise,
+      previousMonthPackPromise,
       this.dashboardInsightsService.buildDashboardInsights(
         companyId,
         {
@@ -123,7 +391,25 @@ export class DashboardService {
       this.reportsService.getPeriodAnalytics(companyId, periodStart, periodEnd),
     ]);
 
-    return { report, salesPack, insights, periodData };
+    const reportLike = report as DashboardProfitLossReport | null;
+    const salesMetrics = salesPack.metrics;
+    const presentation = {
+      kpiCards: buildKpiCards({
+        report: reportLike,
+        periodData,
+        dailyRows: salesMetrics?.dailyDaily ?? [],
+        selectedMonth: selectedMonth ?? null,
+        isCustomRange: selectedMonth == null && (periodStart !== yearStart || periodEnd !== yearEnd),
+      }),
+      timeline: {
+        monthly: buildDashboardTimelineMonthlyRows(reportLike, salesMetrics?.yearDaily ?? []),
+        daily: buildDashboardTimelineDailyRows(salesMetrics?.dailyDaily ?? [], ds, de),
+      },
+      weeklyComparison: weeklyPack.metrics?.dailyWeeklyComparison ?? [],
+      previousMonthAverage: previousMonthPack.metrics?.monthAverage ?? null,
+    };
+
+    return { report, salesPack, insights, periodData, presentation };
   }
 
   // ── Calendar Data ─────────────────────────────────────

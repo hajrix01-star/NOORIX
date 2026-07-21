@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { bucketMonthIntoWeeks } from './dashboardWeeklySales';
 import {
   computeRevenueMonthDailyAvg,
-  computeSliceDailyAvg,
   dailyAvgFromTotal,
   resolvePeriodEndDay,
   revenueMtdEndDay,
@@ -48,14 +46,6 @@ describe('dashboardDailyAvg — single source', () => {
   it('dailyAvgFromTotal matches overview card example', () => {
     expect(dailyAvgFromTotal(92848, 18)).toBeCloseTo(5158.22, 1);
     expect(dailyAvgFromTotal(97859, 18)).toBeCloseTo(5436.61, 1);
-  });
-
-  it('weekly slice uses same dailyAvgFromTotal via computeSliceDailyAvg', () => {
-    const buckets = bucketMonthIntoWeeks(2026, 6, juneSales, { maxDayInclusive: 15 });
-    const week1 = buckets[0];
-    expect(week1.totalSales).toBe(10000);
-    expect(week1.avgDailyInWeek).toBe(computeSliceDailyAvg(week1.totalSales, week1.calendarDaysInSlice));
-    expect(week1.avgDailyInWeek).toBeCloseTo(10000 / 7, 2);
   });
 
   it('calendar tab path equals overview MTD when given same summaries', () => {

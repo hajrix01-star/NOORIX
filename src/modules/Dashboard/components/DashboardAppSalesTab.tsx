@@ -9,7 +9,7 @@ import { FilterToolbar, SearchableOptionsPicker, SmartTable, FmtNum, type SmartT
 import { LoadingState, EmptyState } from '../../../components/states';
 import {
   buildAppSalesTableFooter,
-  buildDashboardAppSalesModelFromMetrics,
+  buildDashboardAppSalesDisplayModelFromBackend,
   buildDashboardAppSalesYearSpanOptions,
   parseDashboardAppSalesYearSpan,
   type DashboardAppSalesYearSpan,
@@ -50,8 +50,8 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
   const salesMetrics = metrics ?? EMPTY_METRICS;
 
   const model = useMemo(
-    () => buildDashboardAppSalesModelFromMetrics(salesMetrics.yearDaily, salesMetrics.yearChannels, lang, yearEnd, yearsSpan),
-    [salesMetrics.yearDaily, salesMetrics.yearChannels, lang, yearEnd, yearsSpan],
+    () => buildDashboardAppSalesDisplayModelFromBackend(salesMetrics.appSales, lang, yearsSpan),
+    [salesMetrics.appSales, lang, yearsSpan],
   );
 
   const periodLabel = useMemo(() => {

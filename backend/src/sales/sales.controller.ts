@@ -127,6 +127,8 @@ export class SalesController {
     @Query('dailyEnd') dailyEnd?: string,
     @Query('monthStart') monthStart?: string,
     @Query('monthEnd') monthEnd?: string,
+    @Query('baselineStart') baselineStart?: string,
+    @Query('baselineEnd') baselineEnd?: string,
     @Query('includeCancelled') includeCancelled?: string,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
@@ -141,6 +143,8 @@ export class SalesController {
     let de = dailyEnd ? toYmd(dailyEnd) : undefined;
     let ms = monthStart ? toYmd(monthStart) : undefined;
     let me = monthEnd ? toYmd(monthEnd) : undefined;
+    let bs = baselineStart ? toYmd(baselineStart) : undefined;
+    let be = baselineEnd ? toYmd(baselineEnd) : undefined;
 
     if (!fullHist) {
       const cy = clampSalesSummaryDateQuery(ys, ye, 7);
@@ -156,6 +160,11 @@ export class SalesController {
         ms = cm.startDate;
         me = cm.endDate;
       }
+      if (bs && be) {
+        const cb = clampSalesSummaryDateQuery(bs, be, 7);
+        bs = cb.startDate;
+        be = cb.endDate;
+      }
     }
 
     return this.salesService.findDashboardPack(
@@ -167,6 +176,8 @@ export class SalesController {
         dailyEnd: de ?? null,
         monthStart: ms ?? null,
         monthEnd: me ?? null,
+        baselineStart: bs ?? null,
+        baselineEnd: be ?? null,
       },
       includeCancelled === '1' || includeCancelled === 'true',
     );

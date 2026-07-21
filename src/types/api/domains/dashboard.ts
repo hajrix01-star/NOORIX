@@ -29,6 +29,20 @@ export type DashboardSalesMetricDay = {
   customerCount: number;
 };
 
+export type DashboardSalesMetricDailyTotal = {
+  transactionDate: string;
+  totalAmount: number;
+  customerCount: number;
+};
+
+export type DashboardSalesShiftBucket = {
+  amount: number;
+  customers: number;
+  sharePct: number | null;
+};
+
+export type DashboardSalesShiftTotals = Record<'all' | 'morning' | 'evening', DashboardSalesShiftBucket>;
+
 export type DashboardSalesMetricChannel = {
   periodKey: string;
   vaultId: string;
@@ -36,6 +50,14 @@ export type DashboardSalesMetricChannel = {
   nameEn?: string | null;
   type?: string | null;
   amount: string | number;
+};
+
+export type DashboardChannelBreakdownMetricRow = {
+  id: string;
+  nameAr: string;
+  nameEn?: string | null;
+  amount: number;
+  sharePct: number | null;
 };
 
 export type DashboardSalesMetricAverage = {
@@ -55,6 +77,15 @@ export type DashboardSalesMetricWeeklyRow = {
   calendarDaysInSlice: number;
 };
 
+export type DashboardSalesMetricWeeklyComparisonRow = {
+  weekIndex: number;
+  dayStart: number;
+  dayEnd: number;
+  avgDailyCurrent: number | null;
+  avgDailyBaseline: number;
+  deltaPct: number | null;
+};
+
 export type DashboardSalesMetricMonthlyAverageRow = {
   periodKey: string;
   month: number;
@@ -66,15 +97,47 @@ export type DashboardSalesMetricMonthlyAverageRow = {
   isCurrentMonth: boolean;
 };
 
+export type DashboardAppSalesMetricMonthPoint = {
+  year: number;
+  month: number;
+  periodKey: string;
+  total: number;
+  app: number;
+  appPercent: number;
+};
+
+export type DashboardAppSalesMetricChannelRow = {
+  id: string;
+  nameAr: string;
+  nameEn?: string | null;
+  periodAmount: number;
+  periodPercent: number;
+  months: Record<string, { amount: number; percent: number }>;
+};
+
+export type DashboardAppSalesMetricModel = {
+  monthSeries: DashboardAppSalesMetricMonthPoint[];
+  channels: DashboardAppSalesMetricChannelRow[];
+  periodTotal: number;
+  periodApp: number;
+  periodAppPercent: number;
+  hasData: boolean;
+};
+
 export type DashboardSalesPackMetrics = {
   yearDaily: DashboardSalesMetricDay[];
   yearChannels: DashboardSalesMetricChannel[];
   dailyDaily: DashboardSalesMetricDay[];
+  dailyTotals?: DashboardSalesMetricDailyTotal[];
   dailyChannels: DashboardSalesMetricChannel[];
+  channelBreakdown?: DashboardChannelBreakdownMetricRow[];
   monthDaily: DashboardSalesMetricDay[];
   monthAverage?: DashboardSalesMetricAverage;
   dailyWeekly?: DashboardSalesMetricWeeklyRow[];
+  dailyWeeklyComparison?: DashboardSalesMetricWeeklyComparisonRow[];
+  shiftTotals?: DashboardSalesShiftTotals;
   yearMonthlyDailyAverages?: DashboardSalesMetricMonthlyAverageRow[];
+  appSales?: DashboardAppSalesMetricModel;
 };
 
 export type DashboardSalesPackData = {
@@ -195,14 +258,54 @@ export type DashboardInsightsPayload = {
 
 export type DashboardPeriodDataLike = {
   totalsByKind?: Record<string, { totalAmount?: string | number | null; invoiceCount?: number | null }>;
-  topSuppliers?: Array<Record<string, unknown>>;
-  purchaseCategoryBreakdown?: Array<Record<string, unknown>>;
+  topSuppliers?: Array<{
+    supplierId?: string | null;
+    nameAr?: string | null;
+    nameEn?: string | null;
+    totalAmount?: string | number | null;
+    invoiceCount?: number | null;
+    sharePct?: number | null;
+  }>;
+  purchaseCategoryBreakdown?: Array<{
+    categoryId?: string | null;
+    nameAr?: string | null;
+    nameEn?: string | null;
+    amount?: string | number | null;
+    sharePct?: number | null;
+  }>;
   purchaseCategoryTotal?: unknown;
 } | null;
+
+export type DashboardTimelineMetricRow = {
+  label: string;
+  sales: number;
+  purchases: number;
+  expenses: number;
+  customers: number;
+  avgInvoice: number;
+};
+
+export type DashboardKpiCardMetric = {
+  key: string;
+  value: number;
+  pct: number | null;
+  tone: 'positive' | 'negative' | 'neutral' | 'cost';
+};
+
+export type DashboardOverviewPresentation = {
+  kpiCards?: DashboardKpiCardMetric[];
+  timeline?: {
+    monthly?: DashboardTimelineMetricRow[];
+    daily?: DashboardTimelineMetricRow[];
+  };
+  weeklyComparison?: DashboardSalesMetricWeeklyComparisonRow[];
+  previousMonthAverage?: DashboardSalesMetricAverage | null;
+};
 
 export type DashboardOverviewData = {
   report: PlReportLike | null;
   salesPack: DashboardSalesPackData;
   insights: DashboardInsightsPayload | null;
   periodData: DashboardPeriodDataLike;
+  presentation?: DashboardOverviewPresentation;
 };

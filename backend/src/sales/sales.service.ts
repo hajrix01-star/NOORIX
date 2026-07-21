@@ -9,166 +9,21 @@ import { Prisma }                from '@prisma/client';
 import { TenantPrismaService }   from '../prisma/tenant-prisma.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
 import { toYmd } from '../common/utils/to-ymd.util';
-import { nowSaudi } from '../common/utils/date-utils';
 import { buildSalesSummaryListModel } from './sales-summary-list-model.util';
 import { buildActiveSalesSummaryShiftDuplicateWhere } from './sales-summary-duplicate.util';
-
-type DashboardDailyMetricRow = {
-  transactionDate: string;
-  shift: string;
-  totalAmount: string;
-  customerCount: number;
-};
-
-function ymdParts(value: string): { year: number; month: number; day: number } | null {
-  const ymd = toYmd(value);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
-  const year = Number(ymd.slice(0, 4));
-  const month = Number(ymd.slice(5, 7));
-  const day = Number(ymd.slice(8, 10));
-  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
-  return { year, month, day };
-}
-
-function lastDayOfMonth(year: number, month: number): number {
-  return new Date(Date.UTC(year, month, 0)).getUTCDate();
-}
-
-function periodDailyAverage(rows: readonly DashboardDailyMetricRow[], endDayInclusive?: number) {
-  if (!rows.length) return { total: 0, customerCount: 0, calendarDays: 0, revenueAvgDaily: null, customerAvgDaily: null };
-  const first = ymdParts(rows[0].transactionDate);
-  if (!first) return { total: 0, customerCount: 0, calendarDays: 0, revenueAvgDaily: null, customerAvgDaily: null };
-  const cap = Math.max(0, Math.min(endDayInclusive ?? lastDayOfMonth(first.year, first.month), lastDayOfMonth(first.year, first.month)));
-  let total = 0;
-  let customerCount = 0;
-  for (const row of rows) {
-    const parts = ymdParts(row.transactionDate);
-    if (!parts || parts.year !== first.year || parts.month !== first.month || parts.day > cap) continue;
-    total += Number(row.totalAmount || 0);
-    customerCount += row.customerCount || 0;
-  }
-  return {
-    total,
-    customerCount,
-    calendarDays: cap,
-    revenueAvgDaily: cap > 0 ? total / cap : null,
-    customerAvgDaily: cap > 0 ? customerCount / cap : null,
-  };
-}
-
-function lastEnteredSalesDay(rows: readonly DashboardDailyMetricRow[], year: number, month: number): number {
-  let last = 0;
-  for (const row of rows) {
-    const parts = ymdParts(row.transactionDate);
-    if (!parts || parts.year !== year || parts.month !== month) continue;
-    if (parts.day > last) last = parts.day;
-  }
-  return last;
-}
-
-function selectedMonthAverageEndDay(rows: readonly DashboardDailyMetricRow[]): number | undefined {
-  if (!rows.length) return undefined;
-  const first = ymdParts(rows[0].transactionDate);
-  if (!first) return undefined;
-  const saudiNow = nowSaudi();
-  const currentYear = saudiNow.getFullYear();
-  const currentMonth = saudiNow.getMonth() + 1;
-  if (first.year !== currentYear || first.month !== currentMonth) return undefined;
-  const lastEnteredDay = lastEnteredSalesDay(rows, first.year, first.month);
-  return Math.min(saudiNow.getDate(), lastEnteredDay || saudiNow.getDate());
-}
-
-function weeklyRows(rows: readonly DashboardDailyMetricRow[]) {
-  if (!rows.length) return [];
-  const first = ymdParts(rows[0].transactionDate);
-  if (!first) return [];
-  const ld = lastDayOfMonth(first.year, first.month);
-  const byDay = new Map<number, { total: number; customers: number }>();
-  for (const row of rows) {
-    const parts = ymdParts(row.transactionDate);
-    if (!parts || parts.year !== first.year || parts.month !== first.month) continue;
-    const prev = byDay.get(parts.day) ?? { total: 0, customers: 0 };
-    prev.total += Number(row.totalAmount || 0);
-    prev.customers += row.customerCount || 0;
-    byDay.set(parts.day, prev);
-  }
-  const out: Array<{
-    weekIndex: number;
-    dayStart: number;
-    dayEnd: number;
-    totalSales: number;
-    avgDailyInWeek: number;
-    calendarDaysInSlice: number;
-  }> = [];
-  let dayStart = 1;
-  let weekIndex = 1;
-  while (dayStart <= ld) {
-    const dayEnd = Math.min(dayStart + 6, ld);
-    let totalSales = 0;
-    for (let day = dayStart; day <= dayEnd; day += 1) {
-      totalSales += byDay.get(day)?.total ?? 0;
-    }
-    const calendarDaysInSlice = dayEnd - dayStart + 1;
-    out.push({
-      weekIndex,
-      dayStart,
-      dayEnd,
-      totalSales,
-      avgDailyInWeek: calendarDaysInSlice > 0 ? totalSales / calendarDaysInSlice : 0,
-      calendarDaysInSlice,
-    });
-    dayStart = dayEnd + 1;
-    weekIndex += 1;
-  }
-  return out;
-}
-
-function monthlyDailyAverages(rows: readonly DashboardDailyMetricRow[]) {
-  const saudiNow = nowSaudi();
-  const currentYear = saudiNow.getFullYear();
-  const currentMonth = saudiNow.getMonth() + 1;
-  const byMonth = new Map<string, DashboardDailyMetricRow[]>();
-  for (const row of rows) {
-    const parts = ymdParts(row.transactionDate);
-    if (!parts) continue;
-    const key = `${parts.year}-${String(parts.month).padStart(2, '0')}`;
-    byMonth.set(key, [...(byMonth.get(key) ?? []), row]);
-  }
-  let previousAvg: number | null = null;
-  return Array.from(byMonth.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([periodKey, monthRows]) => {
-      const first = ymdParts(`${periodKey}-01`);
-      const endDay =
-        first && first.year === currentYear && first.month === currentMonth
-          ? selectedMonthAverageEndDay(monthRows)
-          : undefined;
-      const avg = periodDailyAverage(monthRows, endDay);
-      const deltaPctVsPrev =
-        avg.revenueAvgDaily != null && previousAvg != null && Math.abs(previousAvg) > 1e-9
-          ? ((avg.revenueAvgDaily - previousAvg) / Math.abs(previousAvg)) * 100
-          : null;
-      const tone =
-        avg.revenueAvgDaily == null || previousAvg == null
-          ? 'neutral'
-          : avg.revenueAvgDaily > previousAvg
-            ? 'up'
-            : avg.revenueAvgDaily < previousAvg
-              ? 'down'
-              : 'neutral';
-      if (avg.revenueAvgDaily != null) previousAvg = avg.revenueAvgDaily;
-      return {
-        periodKey,
-        month: first?.month ?? 0,
-        totalSales: avg.total > 0 ? avg.total : null,
-        avgDaily: avg.revenueAvgDaily,
-        calendarDays: avg.calendarDays,
-        deltaPctVsPrev,
-        tone,
-        isCurrentMonth: first?.year === currentYear && first.month === currentMonth,
-      };
-    });
-}
+import {
+  appSalesModel,
+  channelBreakdown,
+  dailyTotalRows,
+  monthlyDailyAverages,
+  periodDailyAverage,
+  salesShiftTotals,
+  selectedMonthAverageEndDay,
+  weeklyComparisonRows,
+  weeklyRows,
+  type DashboardChannelMetricRow,
+  type DashboardDailyMetricRow,
+} from './sales-dashboard-metrics.util';
 
 @Injectable()
 export class SalesService {
@@ -319,14 +174,7 @@ export class SalesService {
       ? Prisma.sql`s.status IN ('active', 'cancelled')`
       : Prisma.sql`s.status = 'active'`;
 
-    return this.prisma.$queryRaw<Array<{
-      periodKey: string;
-      vaultId: string;
-      nameAr: string;
-      nameEn: string | null;
-      type: string | null;
-      amount: string;
-    }>>(Prisma.sql`
+    return this.prisma.$queryRaw<DashboardChannelMetricRow[]>(Prisma.sql`
       SELECT
         to_char(date_trunc('month', s.transaction_date), 'YYYY-MM') AS "periodKey",
         v.id AS "vaultId",
@@ -359,6 +207,8 @@ export class SalesService {
       dailyEnd?: string | null;
       monthStart?: string | null;
       monthEnd?: string | null;
+      baselineStart?: string | null;
+      baselineEnd?: string | null;
     },
     includeCancelled = false,
   ) {
@@ -406,7 +256,7 @@ export class SalesService {
           }
         : null;
 
-    const [yearSummaries, dailySummaries, monthSummaries, yearDailyMetrics, yearChannelMetrics, dailyDailyMetrics, dailyChannelMetrics, monthDailyMetrics] = await Promise.all([
+    const [yearSummaries, dailySummaries, monthSummaries, yearDailyMetrics, yearChannelMetrics, dailyDailyMetrics, dailyChannelMetrics, monthDailyMetrics, baselineDailyMetrics] = await Promise.all([
       this.prisma.dailySalesSummary.findMany({
         where: yearWhere,
         orderBy,
@@ -440,6 +290,9 @@ export class SalesService {
       monthWhere && ranges.monthStart && ranges.monthEnd
         ? this.buildDashboardDailyMetricRows(companyId, ranges.monthStart, ranges.monthEnd, includeCancelled)
         : Promise.resolve([]),
+      ranges.baselineStart && ranges.baselineEnd
+        ? this.buildDashboardDailyMetricRows(companyId, ranges.baselineStart, ranges.baselineEnd, includeCancelled)
+        : Promise.resolve([]),
     ]);
 
     return {
@@ -450,11 +303,16 @@ export class SalesService {
         yearDaily: yearDailyMetrics,
         yearChannels: yearChannelMetrics,
         dailyDaily: dailyDailyMetrics,
+        dailyTotals: dailyTotalRows(dailyDailyMetrics),
         dailyChannels: dailyChannelMetrics,
+        channelBreakdown: channelBreakdown(dailyChannelMetrics),
         monthDaily: monthDailyMetrics,
         monthAverage: periodDailyAverage(monthDailyMetrics, selectedMonthAverageEndDay(monthDailyMetrics)),
         dailyWeekly: weeklyRows(dailyDailyMetrics),
+        dailyWeeklyComparison: weeklyComparisonRows(dailyDailyMetrics, baselineDailyMetrics),
+        shiftTotals: salesShiftTotals(dailyDailyMetrics),
         yearMonthlyDailyAverages: monthlyDailyAverages(yearDailyMetrics),
+        appSales: appSalesModel(y0, y1, yearDailyMetrics, yearChannelMetrics),
       },
     };
   }

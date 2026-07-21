@@ -15,7 +15,6 @@ import type {
   DashboardSalesSummary,
   DashboardSpecialDay,
 } from '../../../../../types/api/domains/dashboard';
-import { computeRevenueMonthDailyAvg } from '../../../overview/utils/dashboardDailyAvg';
 import { toDashboardNonNegativeNumber, toDashboardNumber } from '../../../utils/dashboardNumberModel';
 import { dashboardDisplayName } from '../../../utils/dashboardDisplayName';
 import { createDashboardSpecialDayId } from '../../../utils/dashboardSpecialDayId';
@@ -63,6 +62,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
 
   const {
     dailySummaries: summaries,
+    metrics: salesMetrics,
     isLoading: salesLoading,
   } = useDashboardSalesPack({
     companyId: companyId ?? '',
@@ -70,8 +70,8 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     yearEnd: `${year}-12-31`,
     dailyStart: startDate,
     dailyEnd: endDate,
-    monthStart: null,
-    monthEnd: null,
+    monthStart: startDate,
+    monthEnd: endDate,
     enabled: !!companyId,
   });
 
@@ -106,24 +106,14 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
 
   const dailySales = useMemo(() => {
     const map = new Map<string, number>();
-    summaries.forEach((summary) => {
-      const date = toYmd(summary.transactionDate);
-      const amount = totalSummaryAmount(summary);
-      map.set(date, (map.get(date) ?? 0) + amount);
+    (salesMetrics?.dailyTotals ?? []).forEach((row) => {
+      const date = toYmd(row.transactionDate);
+      map.set(date, toDashboardNumber(row.totalAmount));
     });
     return map;
-  }, [summaries]);
+  }, [salesMetrics?.dailyTotals]);
 
-  const salesDailyAvgCalendarPeriod = useMemo(() => {
-    return computeRevenueMonthDailyAvg({
-      monthSales: summaries,
-      year,
-      month,
-      todayYear: now.year,
-      todayMonth: now.month,
-      todayDay: now.day,
-    }).avgDaily;
-  }, [summaries, year, month, now.year, now.month, now.day]);
+  const salesDailyAvgCalendarPeriod = salesMetrics?.monthAverage?.revenueAvgDaily ?? null;
 
   const daysInMonth = useMemo<DashboardCalendarDay[]>(() => {
     const days: DashboardCalendarDay[] = [];
