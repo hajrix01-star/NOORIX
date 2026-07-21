@@ -3639,20 +3639,20 @@ select option {
   font-size: 12px !important;
   font-weight: 700;
 }
-.ndfb-calendar { display: grid; gap: 8px; min-width: 0; }
+.ndfb-calendar { display: grid; gap: 7px; min-width: 0; }
 .ndfb-popover {
   position: absolute;
   z-index: 120;
   inset-block-start: calc(100% + 8px);
   inset-inline-end: 0;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   width: min(380px, calc(100vw - 32px));
   border: 1px solid var(--noorix-border);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--noorix-bg-surface);
   box-shadow: 0 22px 46px rgba(15, 23, 42, 0.18);
-  padding: 12px;
+  padding: 10px;
 }
 .ndfb-popover--floating {
   inset: auto;
@@ -3669,10 +3669,10 @@ select option {
 }
 .ndfb-calendar-panel {
   min-width: 0;
-  border: 0;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--noorix-bg-muted) 45%, var(--noorix-bg-surface));
-  padding: 10px;
+  border: 1px solid #d8e2ef;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--noorix-bg-muted) 62%, var(--noorix-bg-surface));
+  padding: 8px;
 }
 .ndfb-calendar-panel__hint {
   border-radius: 999px;
@@ -3695,9 +3695,9 @@ select option {
 .ndfb-calendar-year-select { width: 96px; min-height: 34px; border: 1px solid var(--noorix-border); border-radius: 8px; background: var(--noorix-bg-surface); color: var(--noorix-text); font-family: var(--noorix-font-primary); font-size: 12px; font-weight: 800; padding: 3px 8px; }
 .ndfb-calendar-month-select { width: 112px; min-height: 34px; border: 1px solid var(--noorix-border); border-radius: 8px; background: var(--noorix-bg-surface); color: var(--noorix-text); font-family: var(--noorix-font-primary); font-size: 12px; font-weight: 800; padding: 3px 8px; }
 .ndfb-calendar-head-controls { display: inline-flex; align-items: center; gap: 6px; }
-.ndfb-month-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.ndfb-year-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.ndfb-compact-choice-grid { display: grid; gap: 5px; margin-block-start: 8px; }
+.ndfb-month-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.ndfb-year-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.ndfb-compact-choice-grid { display: grid; gap: 5px; margin-block-start: 6px; }
 .ndfb-compact-choice-grid--years { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .ndfb-compact-choice-grid--quarters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ndfb-compact-choice-label { grid-column: 1 / -1; color: var(--noorix-text-muted); font-size: 11px; font-weight: 900; }
@@ -3713,13 +3713,13 @@ select option {
 .ndfb-year-cell,
 .ndfb-day-cell {
   min-width: 0;
-  min-height: 34px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  min-height: 28px;
+  border: 1px solid #d8e2ef;
+  border-radius: 7px;
   background: var(--noorix-bg-surface);
   color: var(--noorix-text);
   font-family: var(--noorix-font-primary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1.2;
   cursor: pointer;
@@ -3738,7 +3738,7 @@ select option {
   border-color: var(--noorix-accent-blue);
   background: var(--noorix-accent-blue);
   color: #fff;
-  box-shadow: 0 3px 8px var(--noorix-blue-20);
+  box-shadow: 0 2px 7px var(--noorix-blue-20);
 }
 .ndfb-day-cell--blank { visibility: hidden; pointer-events: none; }
 .ndfb-day-cell--range-middle {
