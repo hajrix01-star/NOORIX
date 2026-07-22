@@ -137,7 +137,7 @@ async function extractTarMembersWithFilesFrom(
     await new Promise<void>((resolve, reject) => {
       const child = spawn(
         'tar',
-        ['-xzf', archiveAbs, '-C', destDir, '--files-from', listPath, '--no-absolute-names'],
+        ['-xzf', archiveAbs, '-C', destDir, '--files-from', listPath],
         { stdio: ['ignore', 'pipe', 'pipe'] },
       );
       let err = '';
@@ -158,7 +158,7 @@ async function extractTarMembersWithFilesFrom(
 /** فك عضو واحد (احتياطي إذا رفض tar --files-from) */
 async function extractSingleMember(archiveAbs: string, destDir: string, member: string): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    const child = spawn('tar', ['-xzf', archiveAbs, '-C', destDir, '--no-absolute-names', member], {
+    const child = spawn('tar', ['-xzf', archiveAbs, '-C', destDir, member], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let err = '';

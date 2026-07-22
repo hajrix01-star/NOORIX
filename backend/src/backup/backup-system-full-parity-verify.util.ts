@@ -149,7 +149,7 @@ async function dropTempDatabase(adminUrl: string, dbName: string): Promise<void>
 async function extractDbDump(archiveAbs: string, destDir: string): Promise<string> {
   await fs.mkdir(destDir, { recursive: true });
   await new Promise<void>((resolve, reject) => {
-    const child = spawn('tar', ['-xzf', archiveAbs, '-C', destDir, '--no-absolute-names', 'db.dump'], {
+    const child = spawn('tar', ['-xzf', archiveAbs, '-C', destDir, 'db.dump'], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let err = '';
