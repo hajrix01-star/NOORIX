@@ -4,6 +4,7 @@ export type AdvanceRow = Record<string, unknown> & {
   id?: string | null;
   employeeId?: string | null;
   employeeName?: string | null;
+  recordType?: 'advance' | 'deduction';
   invoiceNumber?: string | null;
   transactionDate?: string | null;
   totalAmount?: number | string | null;
@@ -21,6 +22,7 @@ export type AdvanceGroupRow = {
   employeeId: string;
   employeeName: string;
   advances: AdvanceRow[];
+  deductionCount: number;
   totalAmount: number;
   totalAmountNum: number;
   settledAmountNum: number;
@@ -47,6 +49,7 @@ export function buildGroupedAdvanceRows(
       employeeId,
       employeeName: row.employeeName || '—',
       advances: [],
+      deductionCount: 0,
       totalAmount: 0,
       totalAmountNum: 0,
       settledAmountNum: 0,
@@ -63,6 +66,7 @@ export function buildGroupedAdvanceRows(
     existing.settledAmountNum += Number(row.settledAmountNum || 0);
     existing.remainingAmount += Number(row.remainingAmount || 0);
     existing.advanceCount += 1;
+    if (row.recordType === 'deduction') existing.deductionCount += 1;
     if (!existing.transactionDate || String(row.transactionDate || '') > existing.transactionDate) {
       existing.transactionDate = String(row.transactionDate || '');
     }

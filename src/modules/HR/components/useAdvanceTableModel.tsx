@@ -6,6 +6,7 @@ import { hrFmt } from '../utils/hrFmt';
 type HrAny = ReturnType<typeof JSON.parse>;
 
 const remainingClass = (amount: number) => amount > 0 ? 'text-noorix-amber' : 'text-noorix-green';
+const isDeductionRow = (row: HrAny) => row.recordType === 'deduction';
 
 export function useAdvanceTableModel({
   t,
@@ -34,7 +35,12 @@ export function useAdvanceTableModel({
         );
       } },
     { key: 'advanceCount', label: t('advancesList'), numeric: true, width: 110, minWidth: 100,
-      render: (_: HrAny, row: HrAny) => <span className="nx-cell-num">{row.advanceCount}</span> },
+      render: (_: HrAny, row: HrAny) => (
+        <span className="nx-cell-num">
+          {row.advanceCount}
+          {row.deductionCount ? <span className="ms-1 text-noorix-red">({row.deductionCount})</span> : null}
+        </span>
+      ) },
     { key: 'totalAmount', label: t('advanceAmount'), numeric: true, sortable: true, width: 140, minWidth: 130,
       render: (_: HrAny, row: HrAny) => <span className="nx-cell-num">{hrFmt(row.totalAmount)}</span> },
     { key: 'settledAmount', label: t('advanceSettledAmount'), numeric: true, sortable: true, width: 120, minWidth: 110,
@@ -69,8 +75,9 @@ export function useAdvanceTableModel({
           </thead>
           <tbody>
             {advances.map((row) => {
+              const deduction = isDeductionRow(row);
               const settled = row.settlementStatus === 'settled';
-              const canSettle = row.settlementStatus !== 'settled' && row.settlementStatus !== 'cancelled';
+              const canSettle = !deduction && row.settlementStatus !== 'settled' && row.settlementStatus !== 'cancelled';
               return (
                 <tr key={row.id} className="border-b border-noorix-border last:border-b-0">
                   <td className={cn('px-3 py-2 whitespace-nowrap', settled && 'line-through text-noorix-muted')}>{formatSaudiDate(row.transactionDate)}</td>
@@ -82,16 +89,24 @@ export function useAdvanceTableModel({
                   </td>
                   <td className="px-3 py-2 text-noorix-muted whitespace-nowrap">{row.settledAt ? formatSaudiDate(row.settledAt) : '—'}</td>
                   <td className="px-3 py-2 text-center">
-                    <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className={cn('shrink-0', settled && 'line-through')} />
+                    {deduction ? (
+                      <Badge color="red" label={t('deductionsList')} size="sm" className="shrink-0" />
+                    ) : (
+                      <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className={cn('shrink-0', settled && 'line-through')} />
+                    )}
                   </td>
                   <td className="px-3 py-2 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(row)}>{t('edit')}</Button>
-                      {canSettle && (
-                        <Button size="sm" className="h-6 px-2" variant="primary" onClick={() => setSettlingAdvance(row)}>{t('settleAdvance')}</Button>
-                      )}
-                      <Button size="sm" className="h-6 px-2" variant="danger" onClick={() => handleDeleteAdvance(row)}>{t('delete')}</Button>
-                    </div>
+                    {deduction ? (
+                      <span className="text-noorix-muted">-</span>
+                    ) : (
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(row)}>{t('edit')}</Button>
+                        {canSettle && (
+                          <Button size="sm" className="h-6 px-2" variant="primary" onClick={() => setSettlingAdvance(row)}>{t('settleAdvance')}</Button>
+                        )}
+                        <Button size="sm" className="h-6 px-2" variant="danger" onClick={() => handleDeleteAdvance(row)}>{t('delete')}</Button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               );
@@ -139,12 +154,13 @@ export function useAdvanceTableModel({
         {expanded && (
           <div className="mt-3 grid gap-2">
             {row.advances.map((advance: HrAny) => {
-              const canSettle = advance.settlementStatus !== 'settled' && advance.settlementStatus !== 'cancelled';
+              const deduction = isDeductionRow(advance);
+              const canSettle = !deduction && advance.settlementStatus !== 'settled' && advance.settlementStatus !== 'cancelled';
               return (
                 <div key={advance.id} className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-2.5">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <span className="text-[12px] text-noorix-muted">{formatSaudiDate(advance.transactionDate)}</span>
-                    <Badge {...Badge.fromStatus(advance.settlementStatus, settlementMap)} size="sm" />
+                    {deduction ? <Badge color="red" label={t('deductionsList')} size="sm" /> : <Badge {...Badge.fromStatus(advance.settlementStatus, settlementMap)} size="sm" />}
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center mb-2">
                     <div>
@@ -163,11 +179,17 @@ export function useAdvanceTableModel({
                     </div>
                   </div>
                   <div className="flex items-center justify-end gap-1.5">
-                    <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(advance)}>{t('edit')}</Button>
-                    {canSettle && (
-                      <Button size="sm" className="h-6 px-2" variant="primary" onClick={() => setSettlingAdvance(advance)}>{t('settleAdvance')}</Button>
+                    {deduction ? (
+                      <span className="text-[11px] text-noorix-muted">{advance.notes || t('deductionsList')}</span>
+                    ) : (
+                      <>
+                        <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(advance)}>{t('edit')}</Button>
+                        {canSettle && (
+                          <Button size="sm" className="h-6 px-2" variant="primary" onClick={() => setSettlingAdvance(advance)}>{t('settleAdvance')}</Button>
+                        )}
+                        <Button size="sm" className="h-6 px-2" variant="danger" onClick={() => handleDeleteAdvance(advance)}>{t('delete')}</Button>
+                      </>
                     )}
-                    <Button size="sm" className="h-6 px-2" variant="danger" onClick={() => handleDeleteAdvance(advance)}>{t('delete')}</Button>
                   </div>
                 </div>
               );
@@ -210,12 +232,13 @@ export function useAdvanceTableModel({
         {expanded && (
           <div className="mt-2 grid gap-2">
             {row.advances.map((advance: HrAny) => {
-              const canSettle = advance.settlementStatus !== 'settled' && advance.settlementStatus !== 'cancelled';
+              const deduction = isDeductionRow(advance);
+              const canSettle = !deduction && advance.settlementStatus !== 'settled' && advance.settlementStatus !== 'cancelled';
               return (
                 <div key={advance.id} className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 px-2.5 py-2">
                   <div className="nx-cr__line1">
                     <span className="nx-cr__name text-[12px]">{formatSaudiDate(advance.transactionDate)}</span>
-                    <Badge {...Badge.fromStatus(advance.settlementStatus, settlementMap)} size="sm" />
+                    {deduction ? <Badge color="red" label={t('deductionsList')} size="sm" /> : <Badge {...Badge.fromStatus(advance.settlementStatus, settlementMap)} size="sm" />}
                   </div>
                   <div className="nx-cr__line2">
                     <div className="nx-cr__line2-start">
@@ -228,11 +251,17 @@ export function useAdvanceTableModel({
                     </div>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
-                    <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(advance)}>{t('edit')}</Button>
-                    {canSettle && (
-                      <Button size="sm" className="h-6 px-2" variant="primary" onClick={() => setSettlingAdvance(advance)}>{t('settleAdvance')}</Button>
+                    {deduction ? (
+                      <span className="text-[11px] text-noorix-muted">{advance.notes || t('deductionsList')}</span>
+                    ) : (
+                      <>
+                        <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(advance)}>{t('edit')}</Button>
+                        {canSettle && (
+                          <Button size="sm" className="h-6 px-2" variant="primary" onClick={() => setSettlingAdvance(advance)}>{t('settleAdvance')}</Button>
+                        )}
+                        <Button size="sm" className="h-6 px-2" variant="danger" onClick={() => handleDeleteAdvance(advance)}>{t('delete')}</Button>
+                      </>
                     )}
-                    <Button size="sm" className="h-6 px-2" variant="danger" onClick={() => handleDeleteAdvance(advance)}>{t('delete')}</Button>
                   </div>
                 </div>
               );

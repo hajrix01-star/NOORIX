@@ -7,7 +7,7 @@ import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation'
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getHrAdvances, updateInvoice, throwIfApiFailed } from '../../../services/api';
+import { getDeductions, getHrAdvances, updateInvoice, throwIfApiFailed } from '../../../services/api';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { formatSaudiDate } from '../../../utils/saudiDate';
@@ -52,7 +52,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const [groupPage, setGroupPage] = useState(1);
 
   const { createAdvance, employees: activeEmployees } = useEmployees(companyId, {
-    includeTerminated: false,
+    includeTerminated: true,
     fetchEnabled: !!companyId,
   });
 
@@ -64,13 +64,47 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     enabled: !!companyId,
   });
 
-  const items = useMemo(() => (rawAdvanceRows ?? []).map((row: HrAny) => {
+  const { data: rawDeductionRows = [], isLoading: deductionsLoading, isError: deductionsError } = useApiListQuery<HrAny, HrAny[]>({
+    queryKey: hrKeys.deductionsByCompany(companyId),
+    queryFn: () => getDeductions(companyId),
+    fallbackMessage: 'Failed to load employee deductions',
+    enabled: !!companyId,
+  });
+
+  const employeesById = useMemo(() => new Map(
+    activeEmployees.map((emp: HrAny) => [String(emp.id), emp]),
+  ), [activeEmployees]);
+
+  const items = useMemo(() => {
+    const advanceItems = (rawAdvanceRows ?? []).map((row: HrAny) => {
     const emp = row.employee || { name: row.employeeName };
     return {
       ...row,
+      recordType: 'advance',
       employeeName: employeeDisplayName(emp, lang, row.employeeId),
     };
-  }), [rawAdvanceRows, lang]);
+    });
+    const deductionItems = (rawDeductionRows ?? [])
+      .filter((row: HrAny) => row.deductionType !== 'advance')
+      .map((row: HrAny) => {
+        const emp = row.employee || employeesById.get(String(row.employeeId)) || { name: row.employeeName };
+        const amount = Number(row.amount ?? 0);
+        return {
+          ...row,
+          recordType: 'deduction',
+          employeeName: employeeDisplayName(emp, lang, row.employeeId),
+          transactionDate: row.transactionDate || row.createdAt,
+          totalAmount: amount,
+          totalAmountNum: amount,
+          settledAmountNum: amount,
+          remainingAmount: 0,
+          settlementStatus: 'settled',
+          installmentCount: 0,
+          settledAt: row.transactionDate || row.createdAt,
+        };
+      });
+    return [...advanceItems, ...deductionItems];
+  }, [employeesById, rawAdvanceRows, rawDeductionRows, lang]);
   const employeeFilterOptions = useMemo(
     () => [...activeEmployees]
       .map((emp: HrAny) => ({
@@ -249,8 +283,8 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
           page={groupPage}
           pageSize={PAGE_SIZE}
           onPageChange={setGroupPage}
-          isLoading={isLoading}
-          isError={isError}
+          isLoading={isLoading || deductionsLoading}
+          isError={isError || deductionsError}
           title={embedded ? undefined : t('hrTabAdvances')}
           badge={embedded ? undefined : <span className="nx-pill nx-pill--blue nx-pill--sm">{groupedRows.length}</span>}
           searchValue={searchText}
