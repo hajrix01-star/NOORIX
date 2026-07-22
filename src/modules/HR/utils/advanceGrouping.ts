@@ -23,6 +23,7 @@ export type AdvanceGroupRow = {
   employeeName: string;
   advances: AdvanceRow[];
   deductionCount: number;
+  manualDeductionAmount: number;
   totalAmount: number;
   totalAmountNum: number;
   settledAmountNum: number;
@@ -50,6 +51,7 @@ export function buildGroupedAdvanceRows(
       employeeName: row.employeeName || '—',
       advances: [],
       deductionCount: 0,
+      manualDeductionAmount: 0,
       totalAmount: 0,
       totalAmountNum: 0,
       settledAmountNum: 0,
@@ -61,12 +63,16 @@ export function buildGroupedAdvanceRows(
       settledCount: 0,
     };
     existing.advances.push(row);
-    existing.totalAmount += Number(row.totalAmountNum ?? row.totalAmount ?? 0);
-    existing.totalAmountNum = existing.totalAmount;
-    existing.settledAmountNum += Number(row.settledAmountNum || 0);
-    existing.remainingAmount += Number(row.remainingAmount || 0);
-    existing.advanceCount += 1;
-    if (row.recordType === 'deduction') existing.deductionCount += 1;
+    if (row.recordType === 'deduction') {
+      existing.deductionCount += 1;
+      existing.manualDeductionAmount += Number(row.totalAmountNum ?? row.totalAmount ?? 0);
+    } else {
+      existing.totalAmount += Number(row.totalAmountNum ?? row.totalAmount ?? 0);
+      existing.totalAmountNum = existing.totalAmount;
+      existing.settledAmountNum += Number(row.settledAmountNum || 0);
+      existing.remainingAmount += Number(row.remainingAmount || 0);
+      existing.advanceCount += 1;
+    }
     if (!existing.transactionDate || String(row.transactionDate || '') > existing.transactionDate) {
       existing.transactionDate = String(row.transactionDate || '');
     }

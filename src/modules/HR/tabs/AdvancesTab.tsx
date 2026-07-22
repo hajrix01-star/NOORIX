@@ -140,7 +140,17 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
       dateKeys: ['transactionDate'],
     });
 
-  const advanceTotals = useMemo(() => getAdvanceTotals(allFilteredData), [allFilteredData]);
+  const advanceOnlyRows = useMemo(
+    () => allFilteredData.filter((row: HrAny) => row.recordType !== 'deduction'),
+    [allFilteredData],
+  );
+  const manualDeductionTotal = useMemo(
+    () => allFilteredData
+      .filter((row: HrAny) => row.recordType === 'deduction')
+      .reduce((sum: number, row: HrAny) => sum + Number(row.totalAmountNum ?? row.totalAmount ?? 0), 0),
+    [allFilteredData],
+  );
+  const advanceTotals = useMemo(() => getAdvanceTotals(advanceOnlyRows), [advanceOnlyRows]);
 
   const settlementMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
   const toggleEmployeeExpanded = useCallback((employeeId: string) => {
@@ -184,22 +194,25 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     summary: (
       <>
         {t('advancesList')} ({allFilteredData.length})
+        {manualDeductionTotal > 0 ? ` - ${t('deductionsList')}: ${hrFmt(manualDeductionTotal)}` : ''}
         {advanceTotals.outstandingCount > 0 ? ` — ${t('advanceOutstanding')}: ${advanceTotals.outstandingCount}` : ''}
         {advanceTotals.partialCount > 0 ? ` — ${t('advanceStatusPartial')}: ${advanceTotals.partialCount}` : ''}
       </>
     ),
-  }), [advanceTotals, allFilteredData.length, t]);
+  }), [advanceTotals, allFilteredData.length, manualDeductionTotal, t]);
 
   const exportData = allFilteredData.map((r: HrAny) => ({
     employeeName: r.employeeName || '—',
-    amount: hrFmt(r.totalAmount),
+    amount: r.recordType === 'deduction' ? `-${hrFmt(r.totalAmount)}` : hrFmt(r.totalAmount),
     transactionDate: formatSaudiDate(r.transactionDate),
     installmentCount: r.installmentCount > 1 ? r.installmentCount : '—',
     installmentAmount: r.installmentCount > 1 ? hrFmt(r.installmentAmount ?? 0) : '—',
     settledAmount: hrFmt(r.settledAmountNum || 0),
     remainingAmount: hrFmt(r.remainingAmount || 0),
     settlementDate: r.settledAt ? formatSaudiDate(r.settledAt) : '—',
-    status: r.settlementStatus === 'cancelled'
+    status: r.recordType === 'deduction'
+      ? t('deductionsList')
+      : r.settlementStatus === 'cancelled'
       ? t('cancelled')
       : r.settlementStatus === 'settled'
         ? t('advanceSettled')

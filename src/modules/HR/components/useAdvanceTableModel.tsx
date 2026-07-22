@@ -29,8 +29,8 @@ export function useAdvanceTableModel({
             onClick={() => toggleEmployeeExpanded(row.employeeId)}
             aria-expanded={expanded}
           >
-            <span className="inline-block me-1.5" aria-hidden>{expanded ? '▾' : '▸'}</span>
-            {v || '—'}
+            <span className="inline-block me-1.5" aria-hidden>{expanded ? 'v' : '>'}</span>
+            {v || '-'}
           </Button>
         );
       } },
@@ -42,7 +42,14 @@ export function useAdvanceTableModel({
         </span>
       ) },
     { key: 'totalAmount', label: t('advanceAmount'), numeric: true, sortable: true, width: 140, minWidth: 130,
-      render: (_: HrAny, row: HrAny) => <span className="nx-cell-num">{hrFmt(row.totalAmount)}</span> },
+      render: (_: HrAny, row: HrAny) => (
+        <span className="nx-cell-num">
+          {hrFmt(row.totalAmount)}
+          {row.manualDeductionAmount ? (
+            <span className="block text-[11px] text-noorix-red">-{hrFmt(row.manualDeductionAmount)}</span>
+          ) : null}
+        </span>
+      ) },
     { key: 'settledAmount', label: t('advanceSettledAmount'), numeric: true, sortable: true, width: 120, minWidth: 110,
       render: (_: HrAny, row: HrAny) => <span className="nx-cell-num text-noorix-green">{hrFmt(row.settledAmountNum || 0)}</span> },
     { key: 'remainingAmount', label: t('advanceRemainingAmount'), numeric: true, sortable: true, width: 120, minWidth: 110,
@@ -52,7 +59,7 @@ export function useAdvanceTableModel({
         </span>
       ) },
     { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
-      render: (v: HrAny) => <span className="nx-cell-muted-sm whitespace-nowrap">{v ? formatSaudiDate(v) : '—'}</span> },
+      render: (v: HrAny) => <span className="nx-cell-muted-sm whitespace-nowrap">{v ? formatSaudiDate(v) : '-'}</span> },
     { key: 'status', label: t('status'), width: 130, minWidth: 120,
       render: (_: HrAny, row: HrAny) => <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className="shrink-0" /> },
   ], [expandedEmployees, settlementMap, t, toggleEmployeeExpanded]);
@@ -81,13 +88,15 @@ export function useAdvanceTableModel({
               return (
                 <tr key={row.id} className="border-b border-noorix-border last:border-b-0">
                   <td className={cn('px-3 py-2 whitespace-nowrap', settled && 'line-through text-noorix-muted')}>{formatSaudiDate(row.transactionDate)}</td>
-                  <td className={cn('px-3 py-2 text-end nx-font-numbers', settled && 'line-through text-noorix-muted')}>{hrFmt(row.totalAmountNum)}</td>
+                  <td className={cn('px-3 py-2 text-end nx-font-numbers', deduction && 'text-noorix-red', settled && !deduction && 'line-through text-noorix-muted')}>
+                    {deduction ? '-' : ''}{hrFmt(row.totalAmountNum)}
+                  </td>
                   <td className="px-3 py-2 text-end nx-font-numbers text-noorix-green">{hrFmt(row.settledAmountNum)}</td>
                   <td className={cn('px-3 py-2 text-end nx-font-numbers', remainingClass(row.remainingAmount || 0))}>{hrFmt(row.remainingAmount)}</td>
                   <td className="px-3 py-2 text-noorix-blue font-semibold ltr">
-                    {row.installmentCount > 1 ? `${row.installmentCount} × ${hrFmt(row.installmentAmount ?? 0)}` : '—'}
+                    {deduction ? (row.notes || t('deductionsList')) : row.installmentCount > 1 ? `${row.installmentCount} x ${hrFmt(row.installmentAmount ?? 0)}` : '-'}
                   </td>
-                  <td className="px-3 py-2 text-noorix-muted whitespace-nowrap">{row.settledAt ? formatSaudiDate(row.settledAt) : '—'}</td>
+                  <td className="px-3 py-2 text-noorix-muted whitespace-nowrap">{row.settledAt ? formatSaudiDate(row.settledAt) : '-'}</td>
                   <td className="px-3 py-2 text-center">
                     {deduction ? (
                       <Badge color="red" label={t('deductionsList')} size="sm" className="shrink-0" />
@@ -129,16 +138,17 @@ export function useAdvanceTableModel({
           aria-expanded={expanded}
         >
           <span className="font-bold text-[15px] text-noorix-blue">
-            <span className="inline-block me-1.5" aria-hidden>{expanded ? '▾' : '▸'}</span>
+            <span className="inline-block me-1.5" aria-hidden>{expanded ? 'v' : '>'}</span>
             {row.employeeName}
           </span>
           <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className="shrink-0" />
         </Button>
-        <div className="text-[11px] text-noorix-muted mb-2 text-end">{row.advanceCount} · {formatSaudiDate(row.transactionDate)}</div>
+        <div className="text-[11px] text-noorix-muted mb-2 text-end">{row.advanceCount} - {formatSaudiDate(row.transactionDate)}</div>
         <div className="nx-mc__grid nx-mc__grid--3 mb-2.5">
           <div>
             <div className="nx-mc__stat-label">{t('advanceAmount')}</div>
             <div className="nx-mc__stat-value text-[14px] font-bold">{hrFmt(row.totalAmount)}</div>
+            {row.manualDeductionAmount ? <div className="text-[11px] text-noorix-red">-{hrFmt(row.manualDeductionAmount)}</div> : null}
           </div>
           <div>
             <div className="nx-mc__stat-label">{t('advanceSettledAmount')}</div>
@@ -165,7 +175,7 @@ export function useAdvanceTableModel({
                   <div className="grid grid-cols-3 gap-2 text-center mb-2">
                     <div>
                       <div className="nx-mc__stat-label">{t('advanceAmount')}</div>
-                      <div className="nx-mc__stat-value">{hrFmt(advance.totalAmountNum)}</div>
+                      <div className={cn('nx-mc__stat-value', deduction && 'text-noorix-red')}>{deduction ? '-' : ''}{hrFmt(advance.totalAmountNum)}</div>
                     </div>
                     <div>
                       <div className="nx-mc__stat-label">{t('advanceSettledAmount')}</div>
@@ -213,14 +223,14 @@ export function useAdvanceTableModel({
         >
           <div className="nx-cr__line1">
             <span className="nx-cr__name text-noorix-blue">
-              <span className="inline-block me-1.5" aria-hidden>{expanded ? '▾' : '▸'}</span>
+              <span className="inline-block me-1.5" aria-hidden>{expanded ? 'v' : '>'}</span>
               {row.employeeName}
             </span>
             <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" />
           </div>
           <div className="nx-cr__line2">
             <div className="nx-cr__line2-start">
-              <span className="nx-cr__meta">{row.advanceCount} · {formatSaudiDate(row.transactionDate)}</span>
+              <span className="nx-cr__meta">{row.advanceCount} - {formatSaudiDate(row.transactionDate)}</span>
             </div>
             <div className="nx-cr__line2-end">
               <span className={cn('nx-cr__amount', remainingClass(row.remainingAmount || 0))}>
@@ -242,7 +252,7 @@ export function useAdvanceTableModel({
                   </div>
                   <div className="nx-cr__line2">
                     <div className="nx-cr__line2-start">
-                      <span className="nx-cr__meta">{t('advanceAmount')}: {hrFmt(advance.totalAmountNum)}</span>
+                      <span className={cn('nx-cr__meta', deduction && 'text-noorix-red')}>{deduction ? t('deductionsList') : t('advanceAmount')}: {deduction ? '-' : ''}{hrFmt(advance.totalAmountNum)}</span>
                     </div>
                     <div className="nx-cr__line2-end">
                       <span className={cn('nx-cr__amount', remainingClass(advance.remainingAmount || 0))}>

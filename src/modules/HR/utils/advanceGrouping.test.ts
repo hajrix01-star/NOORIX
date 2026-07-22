@@ -52,12 +52,13 @@ describe('buildGroupedAdvanceRows', () => {
     expect(result).toHaveLength(2);
     expect(result[0]).toMatchObject({
       employeeId: 'e1',
-      totalAmount: 175,
-      settledAmountNum: 65,
+      totalAmount: 150,
+      settledAmountNum: 40,
       remainingAmount: 110,
       transactionDate: '2026-06-11',
-      advanceCount: 3,
+      advanceCount: 2,
       deductionCount: 1,
+      manualDeductionAmount: 25,
       outstandingCount: 1,
       partialCount: 1,
       settlementStatus: 'partial',
