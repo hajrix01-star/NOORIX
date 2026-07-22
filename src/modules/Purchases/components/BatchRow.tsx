@@ -44,6 +44,8 @@ type BatchRowSharedProps = {
   vatRateDecimal?: number;
 };
 
+const BATCH_ATTACHMENT_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp';
+
 function BatchRowTable(props: BatchRowSharedProps) {
   const {
     row, index, suppliers, categories, bookmarkedIds, onUpdate, onRemove, onBookmark,
@@ -217,12 +219,26 @@ function BatchRowTable(props: BatchRowSharedProps) {
             <span className="text-[10px] text-noorix-muted leading-none">·</span>
           )}
           <FileTrigger
-            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
+            accept={BATCH_ATTACHMENT_ACCEPT}
             aria-label={`${t('invoiceReceiptAttachment')} - ${t('batchRowLineAriaLabel', index + 1)}`}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
-            label={row.attachmentFile ? row.attachmentFile.name : t('invoiceReceiptAttachment')}
-            buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-[96px] truncate text-[9px] px-1' }}
+            label={row.attachmentFile ? (t('fileSelected') || t('invoiceReceiptCol')) : t('invoiceReceiptCol')}
+            buttonProps={{
+              variant: row.attachmentFile ? 'secondary' : 'ghost',
+              size: 'sm',
+              className: cn(
+                'h-6 min-h-6 max-w-[88px] truncate border px-1.5 text-[10px] font-bold',
+                row.attachmentFile
+                  ? 'border-noorix-green bg-[var(--noorix-green-8)] text-noorix-green'
+                  : 'border-noorix-border bg-noorix-bg-page text-noorix-blue',
+              ),
+            }}
           />
+          {row.attachmentFile ? (
+            <span className="block max-w-[88px] truncate text-[9px] font-semibold text-noorix-text" title={row.attachmentFile.name}>
+              {row.attachmentFile.name}
+            </span>
+          ) : null}
         </div>
       </td>
 
@@ -424,13 +440,22 @@ function BatchRowStack(props: BatchRowSharedProps) {
           title={!row.supplierId ? (t('notesRequiredForNoSupplier') || '') : ''}
         />
 
-        <div className="rounded-lg border border-noorix-border border-dashed px-2 py-2 bg-noorix-bg-muted/30">
+        <div className="rounded-lg border border-noorix-border px-2 py-2 bg-noorix-bg-page">
           <div className="text-[11px] font-semibold text-noorix-muted mb-1">{t('invoiceReceiptAttachment')}</div>
           <FileTrigger
-            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
+            accept={BATCH_ATTACHMENT_ACCEPT}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
-            label={row.attachmentFile ? row.attachmentFile.name : t('invoiceReceiptChooseFile')}
-            buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-full truncate' }}
+            label={row.attachmentFile ? (t('fileSelected') || t('invoiceReceiptCol')) : t('invoiceReceiptChooseFile')}
+            buttonProps={{
+              variant: row.attachmentFile ? 'secondary' : 'ghost',
+              size: 'sm',
+              className: cn(
+                'max-w-full truncate border font-bold',
+                row.attachmentFile
+                  ? 'border-noorix-green bg-[var(--noorix-green-8)] text-noorix-green'
+                  : 'border-noorix-border bg-noorix-bg-page text-noorix-blue',
+              ),
+            }}
           />
           {row.attachmentFile ? (
             <span className="text-[10px] text-noorix-muted truncate block mt-1" title={row.attachmentFile.name}>
