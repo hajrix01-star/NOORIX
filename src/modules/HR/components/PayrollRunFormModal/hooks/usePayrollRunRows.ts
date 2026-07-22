@@ -4,6 +4,7 @@ import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 import { useTranslation } from '../../../../../i18n/useTranslation';
 import {
   buildAdvancesByEmployee,
+  buildManualDeductionsByEmployee,
   buildPayrollLineForEmployee,
   computeActiveEmployees,
   computeDisplayEmployees,
@@ -53,6 +54,12 @@ type StateShape = {
   monthStr: string;
   compensationSnapshotByEmployeeId: Map<string, HrCompensationSnapshot>;
   advances: Array<Record<string, unknown>>;
+  deductions: Array<{
+    employeeId?: string;
+    deductionType?: string | null;
+    amount?: unknown;
+    transactionDate?: unknown;
+  }>;
   leaves: Array<{
     employeeId?: string;
     status?: string;
@@ -80,6 +87,7 @@ export function usePayrollRunRows(state: StateShape) {
     monthStr,
     compensationSnapshotByEmployeeId,
     advances,
+    deductions,
     leaves,
     leaveSalarySettlements,
   } = state;
@@ -136,6 +144,11 @@ export function usePayrollRunRows(state: StateShape) {
     [advances, monthStr],
   );
 
+  const manualDeductionsByEmployee = useMemo(
+    () => buildManualDeductionsByEmployee(deductions, monthStr),
+    [deductions, monthStr],
+  );
+
   const getMeta = useCallback(
     (empId: string) => getAdvanceMetaForEmployee(advancesByEmployee, empId),
     [advancesByEmployee],
@@ -151,6 +164,7 @@ export function usePayrollRunRows(state: StateShape) {
         leaveDaysByEmployee,
         settledDaysByEmployee,
         advancesByEmployee,
+        manualDeductionsByEmployee,
         lang,
         t,
       }),
@@ -161,6 +175,7 @@ export function usePayrollRunRows(state: StateShape) {
       leaveDaysByEmployee,
       settledDaysByEmployee,
       advancesByEmployee,
+      manualDeductionsByEmployee,
       lang,
       t,
     ],

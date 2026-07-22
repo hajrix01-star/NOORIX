@@ -5,6 +5,7 @@ import {
   getLeaves,
   getPayrollRun,
   getPayrollRuns,
+  getDeductions,
   getLeaveSalarySettlements,
   getEmployeeCompensationSnapshots,
 } from '../../../../../services/api';
@@ -29,6 +30,12 @@ type HrLeaveLike = Record<string, unknown> & {
   endDate?: string | Date;
 };
 type HrLeaveSettlementLike = { employeeId?: string; leave?: { startDate?: string | Date } };
+type HrDeductionLike = Record<string, unknown> & {
+  employeeId?: string;
+  deductionType?: string | null;
+  amount?: unknown;
+  transactionDate?: string | Date;
+};
 
 export function usePayrollRunFormState({
   companyId,
@@ -117,6 +124,13 @@ export function usePayrollRunFormState({
     enabled: !!cid && !!payrollMonth,
   });
 
+  const { data: deductions = [] } = useApiListQuery<HrDeductionLike>({
+    queryKey: hrKeys.deductionsByCompany(cid),
+    queryFn: () => getDeductions(cid),
+    fallbackMessage: 'Failed to load employee deductions',
+    enabled: !!cid,
+  });
+
   return {
     cid,
     isEditMode,
@@ -140,6 +154,7 @@ export function usePayrollRunFormState({
     compensationSnapshotsLoading,
     compensationSnapshotsError,
     advances,
+    deductions,
     leaves,
     leaveSalarySettlements,
     runId,

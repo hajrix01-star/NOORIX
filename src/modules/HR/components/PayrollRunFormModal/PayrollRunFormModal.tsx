@@ -47,6 +47,7 @@ export function PayrollRunFormModal({
     monthStr: st.monthStr,
     compensationSnapshotByEmployeeId: st.compensationSnapshotByEmployeeId,
     advances: st.advances,
+    deductions: st.deductions,
     leaves: st.leaves,
     leaveSalarySettlements: st.leaveSalarySettlements,
   });

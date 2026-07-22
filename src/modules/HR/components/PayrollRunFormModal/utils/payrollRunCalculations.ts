@@ -2,7 +2,7 @@
  * Payroll run row math — logic moved verbatim from PayrollRunFormModal; do not alter formulas.
  */
 import { hrFmt } from '../../../utils/hrFmt';
-import { formatSaudiDate } from '../../../../../utils/saudiDate';
+import { formatSaudiDate, formatSaudiDateISO } from '../../../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../../../utils/moneyInput';
 import { getAdvanceBalanceParts } from '../../../utils/advanceBalance';
@@ -119,6 +119,13 @@ type InvoiceLike = {
   installmentCount?: number | null;
 };
 
+type DeductionLike = {
+  employeeId?: string;
+  deductionType?: string | null;
+  amount?: unknown;
+  transactionDate?: unknown;
+};
+
 export function buildAdvancesByEmployee(
   advances: InvoiceLike[],
   monthStr: string,
@@ -161,6 +168,33 @@ export function getAdvanceMetaForEmployee(
   };
 }
 
+export function buildManualDeductionsByEmployee(
+  deductions: DeductionLike[],
+  monthStr: string,
+): Map<string, { amount: number; datesLabel: string }> {
+  const map = new Map<string, { amount: number; dates: string[] }>();
+  for (const deduction of deductions || []) {
+    if (!deduction?.employeeId) continue;
+    if (deduction.deductionType === 'advance') continue;
+    const ymd = deduction.transactionDate ? formatSaudiDateISO(deduction.transactionDate) : '';
+    if (!ymd.startsWith(monthStr)) continue;
+    const amount = Number(deduction.amount ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    const current = map.get(deduction.employeeId) || { amount: 0, dates: [] };
+    current.amount = roundMoney2(current.amount + amount);
+    if (deduction.transactionDate) current.dates.push(formatSaudiDate(deduction.transactionDate));
+    map.set(deduction.employeeId, current);
+  }
+  const result = new Map<string, { amount: number; datesLabel: string }>();
+  for (const [employeeId, row] of map.entries()) {
+    result.set(employeeId, {
+      amount: row.amount,
+      datesLabel: Array.from(new Set(row.dates)).join(' , '),
+    });
+  }
+  return result;
+}
+
 type BuildLineDeps = {
   emp: Record<string, unknown> & { id?: string };
   payrollMonth: string;
@@ -169,6 +203,7 @@ type BuildLineDeps = {
   leaveDaysByEmployee: Map<string, Set<string>>;
   settledDaysByEmployee: Map<string, Set<string>>;
   advancesByEmployee: Map<string, PayrollAdvanceDueRow[]>;
+  manualDeductionsByEmployee: Map<string, { amount: number; datesLabel: string }>;
   lang: string;
   t: (key: string, ...subst: string[]) => string;
 };
@@ -182,6 +217,7 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
     leaveDaysByEmployee,
     settledDaysByEmployee,
     advancesByEmployee,
+    manualDeductionsByEmployee,
     lang,
     t,
   } = deps;
@@ -206,6 +242,8 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
   const advRows = (emp.id && advancesByEmployee.get(emp.id)) || [];
   const dueAdv = advRows.filter((r) => !r.isDeferred);
   const advancesDeduct = dueAdv.reduce((s, r) => s + r.remaining, 0);
+  const manualDeduction = emp.id ? manualDeductionsByEmployee.get(String(emp.id)) : null;
+  const manualDeductionAmount = roundMoney2(Number(manualDeduction?.amount ?? 0));
   const advanceDatesLabel = dueAdv
     .map((r) => {
       const dateStr = formatSaudiDate(r.transactionDate);
@@ -219,7 +257,7 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
   const netSalary = computePayrollLineNet({
     grossSalary: grossProrated,
     allowancesAdd: 0,
-    deductions: 0,
+    deductions: manualDeductionAmount,
     advancesDeduct,
   });
   const notesParts: string[] = [];
@@ -233,6 +271,9 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
   if (settledDays > 0) {
     notesParts.push(t('payrollLeaveSettlementDaysNote', String(settledDays)));
   }
+  if (manualDeductionAmount > 0) {
+    notesParts.push(`Manual deductions: ${manualDeduction?.datesLabel || hrFmt(manualDeductionAmount)}`);
+  }
   if (paidDays > 0 && paidDays < daysInMonth) {
     notesParts.push(t('payrollLeavePaidDaysNote', String(paidDays), String(daysInMonth)));
   }
@@ -241,7 +282,7 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
     employeeName: employeeDisplayName(emp, lang),
     grossSalary: employmentGross,
     allowancesAdd: 0,
-    deductions: roundMoney2(leaveDeduction + settledDeduction),
+    deductions: roundMoney2(leaveDeduction + settledDeduction + manualDeductionAmount),
     advancesDeduct,
     netSalary,
     deferAdvances: false,
