@@ -72,12 +72,13 @@ export function occasionsToSpecialDayPeriods(
     color: string;
   }>,
   lang: 'ar' | 'en',
+  idPrefix = 'saudi',
 ): Map<number, SpecialDayPeriod[]> {
   const byMonth = new Map<number, SpecialDayPeriod[]>();
 
   for (const occ of occasions) {
     const name = lang === 'ar' ? occ.nameAr : occ.nameEn;
-    const periodId = `saudi-${year}-${occ.id}`;
+    const periodId = `${idPrefix}-${year}-${occ.id}`;
     const slices = splitDateRangeByMonth(occ.fromDate, occ.toDate).filter((s) => s.year === year);
 
     for (const slice of slices) {

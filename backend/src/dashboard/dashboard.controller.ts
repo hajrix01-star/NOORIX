@@ -8,6 +8,7 @@ import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator'
 import { DashboardService } from './dashboard.service';
 import { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.dto';
 import { ApplySpecialOccasionsDto } from './dto/apply-special-occasions.dto';
+import { ApplySchoolHolidaysDto } from './dto/apply-school-holidays.dto';
 import { SkipCompanyCheck } from '../auth/decorators/skip-company-check.decorator';
 
 /**
@@ -96,6 +97,17 @@ export class DashboardController {
     return this.dashboardService.getSaudiOccasions(y);
   }
 
+  @Get('calendar/school-holidays')
+  @RequireAnyPermission('VIEW_DASHBOARD', 'REPORTS_READ')
+  @SkipCompanyCheck()
+  getSchoolAcademicHolidays(@Query('year') year: string, @Query('variant') variant?: 'general' | 'western') {
+    const y = parseInt(year, 10);
+    if (!Number.isFinite(y)) {
+      return { source: null, variant: variant === 'western' ? 'western' : 'general', events: [] };
+    }
+    return this.dashboardService.getSchoolAcademicHolidays(y, variant);
+  }
+
   @Post('calendar/special-days/apply-occasions')
   @RequirePermission('VIEW_DASHBOARD')
   async applySaudiOccasions(
@@ -114,6 +126,27 @@ export class DashboardController {
       lang,
       body.companyIds,
       body.dayShifts,
+    );
+  }
+
+  @Post('calendar/special-days/apply-school-holidays')
+  @RequirePermission('VIEW_DASHBOARD')
+  async applySchoolAcademicHolidays(
+    @Query('companyId') companyId: string,
+    @Body() body: ApplySchoolHolidaysDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    const lang = body.lang === 'en' ? 'en' : 'ar';
+    return this.dashboardService.applySchoolAcademicHolidays(
+      user,
+      user.tenantId ?? '',
+      companyId,
+      body.year,
+      body.eventIds,
+      body.scope,
+      lang,
+      body.companyIds,
+      body.variant,
     );
   }
 

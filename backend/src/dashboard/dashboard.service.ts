@@ -11,6 +11,12 @@ import type { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.d
 import { getSaudiOccasionsForYear } from './saudi-occasions.data';
 import { shiftGregorianYmd } from './saudi-occasions.umalqura';
 import {
+  getSchoolAcademicCalendarSource,
+  getSchoolAcademicHolidaysForYear,
+  normalizeSchoolAcademicCalendarVariant,
+  type SchoolAcademicCalendarVariant,
+} from './school-academic-calendar.data';
+import {
   mergeSpecialDayPeriods,
   occasionsToSpecialDayPeriods,
   type SpecialDayPeriod,
@@ -560,6 +566,15 @@ export class DashboardService {
     return getSaudiOccasionsForYear(year);
   }
 
+  getSchoolAcademicHolidays(year: number, variant?: SchoolAcademicCalendarVariant) {
+    const normalizedVariant = normalizeSchoolAcademicCalendarVariant(variant);
+    return {
+      source: getSchoolAcademicCalendarSource(),
+      variant: normalizedVariant,
+      events: getSchoolAcademicHolidaysForYear(year, normalizedVariant),
+    };
+  }
+
   private async resolveAllowedCompanyIds(
     user: JwtUser,
     tenantId: string,
@@ -660,6 +675,65 @@ export class DashboardService {
       companies: companyIds.length,
       monthsUpdated,
       occasionCount: selected.length,
+    };
+  }
+
+  async applySchoolAcademicHolidays(
+    user: JwtUser,
+    tenantId: string,
+    sourceCompanyId: string,
+    year: number,
+    eventIds: string[],
+    scope: 'company' | 'tenant',
+    lang: 'ar' | 'en',
+    requestedCompanyIds?: string[],
+    variant?: SchoolAcademicCalendarVariant,
+  ): Promise<{ companies: number; monthsUpdated: number; eventCount: number }> {
+    const normalizedVariant = normalizeSchoolAcademicCalendarVariant(variant);
+    const selected = getSchoolAcademicHolidaysForYear(year, normalizedVariant).filter((event) =>
+      eventIds.includes(event.id),
+    );
+    if (!selected.length) {
+      return { companies: 0, monthsUpdated: 0, eventCount: 0 };
+    }
+
+    const companyIds = await this.resolveAllowedCompanyIds(
+      user,
+      tenantId,
+      sourceCompanyId,
+      scope,
+      requestedCompanyIds,
+    );
+
+    const byMonth = occasionsToSpecialDayPeriods(year, selected, lang, 'school');
+    let monthsUpdated = 0;
+
+    for (const companyId of companyIds) {
+      for (const [month, periods] of byMonth.entries()) {
+        const row = await this.prisma.dashboardCalendarData.findUnique({
+          where: { companyId_year_month: { companyId, year, month } },
+        });
+        const existing = normalizeCalendarSpecialDays(row?.specialDays);
+        const merged = mergeSpecialDayPeriods(existing, periods);
+        await this.prisma.dashboardCalendarData.upsert({
+          where: { companyId_year_month: { companyId, year, month } },
+          create: {
+            companyId,
+            tenantId,
+            year,
+            month,
+            specialDays: specialDaysJson(merged),
+          },
+          update: { specialDays: specialDaysJson(merged) },
+        });
+        monthsUpdated += 1;
+      }
+    }
+
+    return {
+      companies: companyIds.length,
+      monthsUpdated,
+      eventCount: selected.length,
     };
   }
 

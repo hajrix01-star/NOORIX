@@ -32,6 +32,25 @@ describe('occasionsToSpecialDayPeriods', () => {
     expect(map.get(9)?.[0].id).toBe('saudi-2026-national');
     expect(map.get(9)?.[0].name).toBe('اليوم الوطني');
   });
+  it('supports independent source prefixes', () => {
+    const map = occasionsToSpecialDayPeriods(
+      2026,
+      [
+        {
+          id: 'midyear-break-1447',
+          nameAr: 'School break AR',
+          nameEn: 'Midyear break',
+          fromDate: '2026-01-09',
+          toDate: '2026-01-17',
+          color: '#0f766e',
+        },
+      ],
+      'en',
+      'school',
+    );
+    expect(map.get(1)?.[0].id).toBe('school-2026-midyear-break-1447');
+    expect(map.get(1)?.[0].name).toBe('Midyear break');
+  });
 });
 
 describe('mergeSpecialDayPeriods', () => {

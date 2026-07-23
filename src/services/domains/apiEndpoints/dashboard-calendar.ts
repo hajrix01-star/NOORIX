@@ -64,6 +64,34 @@ export type SaudiOccasionDto = {
   estimated: boolean;
 };
 
+export type SchoolHolidayVariant = 'general' | 'western';
+
+export type SchoolHolidayDto = {
+  id: string;
+  variant: SchoolHolidayVariant;
+  academicYear: string;
+  nameAr: string;
+  nameEn: string;
+  fromDate: string;
+  toDate: string;
+  color: string;
+  sourceUrl: string;
+  sourceUpdatedAt: string;
+  estimated: boolean;
+};
+
+export type SchoolHolidaysCatalogDto = {
+  source: {
+    nameAr: string;
+    nameEn: string;
+    primaryUrl: string;
+    detailUrl: string;
+    updatedAt: string;
+  } | null;
+  variant: SchoolHolidayVariant;
+  events: SchoolHolidayDto[];
+};
+
 export async function getDashboardSaudiOccasions(
   year: number,
   companyId?: string,
@@ -87,6 +115,35 @@ export async function applyDashboardSpecialOccasions(
 ): Promise<ApiParsedResult<{ companies: number; monthsUpdated: number; occasionCount: number }>> {
   return apiPost(
     `/api/v1/dashboard/calendar/special-days/apply-occasions?companyId=${encodeURIComponent(companyId)}`,
+    payload,
+  );
+}
+
+export async function getDashboardSchoolHolidays(
+  year: number,
+  variant: SchoolHolidayVariant,
+  companyId?: string,
+): Promise<ApiParsedResult<SchoolHolidaysCatalogDto>> {
+  return apiGet('/api/v1/dashboard/calendar/school-holidays', {
+    year: String(year),
+    variant,
+    ...(companyId ? { companyId } : {}),
+  });
+}
+
+export async function applyDashboardSchoolHolidays(
+  companyId: string,
+  payload: {
+    year: number;
+    variant: SchoolHolidayVariant;
+    eventIds: string[];
+    scope: 'company' | 'tenant';
+    companyIds?: string[];
+    lang?: 'ar' | 'en';
+  },
+): Promise<ApiParsedResult<{ companies: number; monthsUpdated: number; eventCount: number }>> {
+  return apiPost(
+    `/api/v1/dashboard/calendar/special-days/apply-school-holidays?companyId=${encodeURIComponent(companyId)}`,
     payload,
   );
 }

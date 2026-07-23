@@ -9,6 +9,7 @@ import { Button, ColorSwatch, DateRangeField, DialogActions, Input, Modal } from
 import { toYmd } from '../../../utils/saudiDate';
 import { getSaudiNow } from '../../../utils/saudiDate';
 import { DashboardSaudiOccasionsImportModal } from './DashboardSaudiOccasionsImportModal';
+import { DashboardSchoolHolidaysImportModal } from './DashboardSchoolHolidaysImportModal';
 import type { DashboardSpecialDay } from '../../../types/api/domains/dashboard';
 import { createDashboardSpecialDayId } from '../utils/dashboardSpecialDayId';
 import {
@@ -49,6 +50,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
 
   const [showForm, setShowForm] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [schoolImportOpen, setSchoolImportOpen] = useState(false);
   const [newFrom, setNewFrom] = useState(startDate);
   const [newTo, setNewTo] = useState(endDate);
   const [newName, setNewName] = useState('');
@@ -171,6 +173,9 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         <Button size="sm" variant="primary" onClick={() => setImportOpen(true)}>
           {t('dashboardImportSaudiOccasions')}
         </Button>
+        <Button size="sm" onClick={() => setSchoolImportOpen(true)}>
+          {t('dashboardImportSchoolHolidays')}
+        </Button>
         {!showForm && (
           <Button size="sm" onClick={() => { setShowForm(true); setNewFrom(startDate); setNewTo(endDate); }}>
             + {t('add')}
@@ -181,6 +186,14 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
       <DashboardSaudiOccasionsImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
+        companyId={companyId}
+        year={year}
+        onApplied={() => void invalidateYear()}
+      />
+
+      <DashboardSchoolHolidaysImportModal
+        open={schoolImportOpen}
+        onClose={() => setSchoolImportOpen(false)}
         companyId={companyId}
         year={year}
         onApplied={() => void invalidateYear()}
