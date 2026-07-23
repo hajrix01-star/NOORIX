@@ -108,6 +108,17 @@ export class DashboardController {
     return this.dashboardService.getSchoolAcademicHolidays(y, variant);
   }
 
+  @Get('calendar/occasion-catalog')
+  @RequireAnyPermission('VIEW_DASHBOARD', 'REPORTS_READ')
+  @SkipCompanyCheck()
+  getCalendarOccasionCatalog(@Query('year') year: string, @Query('variant') variant?: 'general' | 'western') {
+    const y = parseInt(year, 10);
+    if (!Number.isFinite(y)) {
+      return this.dashboardService.getCalendarOccasionCatalog(new Date().getFullYear(), variant);
+    }
+    return this.dashboardService.getCalendarOccasionCatalog(y, variant);
+  }
+
   @Post('calendar/special-days/apply-occasions')
   @RequirePermission('VIEW_DASHBOARD')
   async applySaudiOccasions(

@@ -92,12 +92,70 @@ export type SchoolHolidaysCatalogDto = {
   events: SchoolHolidayDto[];
 };
 
+export type CalendarOccasionStatus = 'current' | 'upcoming' | 'ended';
+export type CalendarOccasionSourceKind = 'saudi' | 'school';
+
+export type CalendarOccasionCatalogEventDto = {
+  key: string;
+  sourceKind: CalendarOccasionSourceKind;
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  fromDate: string;
+  toDate: string;
+  color: string;
+  estimated: boolean;
+  status: CalendarOccasionStatus;
+  categoryAr: string;
+  categoryEn: string;
+  kind?: string;
+  academicYear?: string;
+  variant?: SchoolHolidayVariant;
+  sourceUrl?: string;
+  sourceUpdatedAt?: string;
+};
+
+export type CalendarOccasionCatalogDto = {
+  year: number;
+  today: string;
+  schoolVariant: SchoolHolidayVariant;
+  sources: {
+    saudi: {
+      nameAr: string;
+      nameEn: string;
+      updatedAt: string;
+      mode: 'calculated';
+    };
+    school: {
+      nameAr: string;
+      nameEn: string;
+      primaryUrl: string;
+      detailUrl: string;
+      updatedAt: string;
+    };
+  };
+  counts: Record<CalendarOccasionStatus, number>;
+  events: CalendarOccasionCatalogEventDto[];
+};
+
 export async function getDashboardSaudiOccasions(
   year: number,
   companyId?: string,
 ): Promise<ApiParsedResult<SaudiOccasionDto[]>> {
   return apiGet('/api/v1/dashboard/calendar/saudi-occasions', {
     year: String(year),
+    ...(companyId ? { companyId } : {}),
+  });
+}
+
+export async function getDashboardOccasionCatalog(
+  year: number,
+  variant: SchoolHolidayVariant,
+  companyId?: string,
+): Promise<ApiParsedResult<CalendarOccasionCatalogDto>> {
+  return apiGet('/api/v1/dashboard/calendar/occasion-catalog', {
+    year: String(year),
+    variant,
     ...(companyId ? { companyId } : {}),
   });
 }

@@ -16,6 +16,7 @@ import {
   normalizeSchoolAcademicCalendarVariant,
   type SchoolAcademicCalendarVariant,
 } from './school-academic-calendar.data';
+import { buildCalendarOccasionCatalog } from './calendar-occasion-catalog.util';
 import {
   mergeSpecialDayPeriods,
   occasionsToSpecialDayPeriods,
@@ -573,6 +574,10 @@ export class DashboardService {
       variant: normalizedVariant,
       events: getSchoolAcademicHolidaysForYear(year, normalizedVariant),
     };
+  }
+
+  getCalendarOccasionCatalog(year: number, variant?: SchoolAcademicCalendarVariant) {
+    return buildCalendarOccasionCatalog(year, variant);
   }
 
   private async resolveAllowedCompanyIds(

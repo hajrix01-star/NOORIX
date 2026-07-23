@@ -8,8 +8,7 @@ import { useDashboardYearSpecialDays } from '../../../hooks/useDashboardYearSpec
 import { Button, ColorSwatch, DateRangeField, DialogActions, Input, Modal } from '../../../ui';
 import { toYmd } from '../../../utils/saudiDate';
 import { getSaudiNow } from '../../../utils/saudiDate';
-import { DashboardSaudiOccasionsImportModal } from './DashboardSaudiOccasionsImportModal';
-import { DashboardSchoolHolidaysImportModal } from './DashboardSchoolHolidaysImportModal';
+import { DashboardCalendarOccasionCenter } from './DashboardCalendarOccasionCenter';
 import type { DashboardSpecialDay } from '../../../types/api/domains/dashboard';
 import { createDashboardSpecialDayId } from '../utils/dashboardSpecialDayId';
 import {
@@ -49,8 +48,6 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   });
 
   const [showForm, setShowForm] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
-  const [schoolImportOpen, setSchoolImportOpen] = useState(false);
   const [newFrom, setNewFrom] = useState(startDate);
   const [newTo, setNewTo] = useState(endDate);
   const [newName, setNewName] = useState('');
@@ -169,35 +166,19 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         </p>
       </div>
 
+      <DashboardCalendarOccasionCenter
+        companyId={companyId}
+        year={year}
+        onApplied={() => void invalidateYear()}
+      />
+
       <div className="mb-4 flex flex-wrap gap-2">
-        <Button size="sm" variant="primary" onClick={() => setImportOpen(true)}>
-          {t('dashboardImportSaudiOccasions')}
-        </Button>
-        <Button size="sm" onClick={() => setSchoolImportOpen(true)}>
-          {t('dashboardImportSchoolHolidays')}
-        </Button>
         {!showForm && (
           <Button size="sm" onClick={() => { setShowForm(true); setNewFrom(startDate); setNewTo(endDate); }}>
             + {t('add')}
           </Button>
         )}
       </div>
-
-      <DashboardSaudiOccasionsImportModal
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
-        companyId={companyId}
-        year={year}
-        onApplied={() => void invalidateYear()}
-      />
-
-      <DashboardSchoolHolidaysImportModal
-        open={schoolImportOpen}
-        onClose={() => setSchoolImportOpen(false)}
-        companyId={companyId}
-        year={year}
-        onApplied={() => void invalidateYear()}
-      />
 
       {showForm && (
         <div className="p-5 mb-5 bg-noorix-bg-muted border border-noorix-border rounded-lg">
