@@ -39,6 +39,12 @@ const VARIANT_LABELS: Record<SchoolHolidayVariant, string> = {
   western: 'مكة/المدينة/جدة/الطائف',
 };
 
+const STATUS_EMPTY_LABELS: Record<CalendarOccasionStatus, string> = {
+  current: 'لا توجد مناسبات حالية.',
+  upcoming: 'لا توجد مناسبات قادمة.',
+  ended: 'لا توجد مناسبات منتهية.',
+};
+
 const emptyCatalog: CalendarOccasionCatalogDto = {
   year: 0,
   today: '',
@@ -319,47 +325,60 @@ export function DashboardCalendarOccasionCenter({ companyId, year, onApplied }: 
               </Button>
             </div>
           ) : (
-            <div className="flex max-h-[min(58vh,520px)] flex-col gap-4 overflow-y-auto">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
               {STATUS_ORDER.map((status) => {
                 const items = grouped[status];
-                if (!items.length) return null;
                 return (
-                  <section key={status} className="flex flex-col gap-2">
-                    <div className="text-[12px] font-bold text-noorix-text">{STATUS_LABELS[status]}</div>
-                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                      {items.map((event) => {
-                        const checked = selectedKeys.has(event.key);
-                        return (
-                          <label
-                            key={event.key}
-                            className={cn(
-                              'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
-                              checked
-                                ? 'border-noorix-blue bg-[color-mix(in_srgb,var(--color-nx-sales)_8%,transparent)]'
-                                : 'border-noorix-border bg-noorix-surface',
-                            )}
-                          >
-                            <Checkbox className="mt-0.5 shrink-0" checked={checked} onChange={() => toggleKey(event.key)} />
-                            <ColorSwatch className="mt-1 h-3 w-3 shrink-0 rounded-sm" color={event.color} aria-hidden />
-                            <span className="min-w-0 flex-1">
-                              <span className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[13px] font-bold text-noorix-text">{eventLabel(event, uiLang)}</span>
-                                <span className="rounded bg-noorix-bg-muted px-1.5 py-px text-[10px] text-noorix-muted">
-                                  {sourceLabel(event, uiLang)}
-                                </span>
-                              </span>
-                              <span className="block text-[11px] text-noorix-muted" dir="ltr">
-                                {rangeLabel(event)}
-                              </span>
-                              {event.academicYear && (
-                                <span className="block text-[11px] text-noorix-muted">
-                                  العام الدراسي {event.academicYear}
-                                </span>
+                  <section
+                    key={status}
+                    className="flex min-h-[220px] flex-col rounded-lg border border-noorix-border bg-noorix-surface"
+                  >
+                    <div className="flex items-center justify-between border-b border-noorix-border px-3 py-2">
+                      <div className="text-[13px] font-bold text-noorix-text">{STATUS_LABELS[status]}</div>
+                      <div className="rounded-md bg-noorix-bg-muted px-2 py-1 text-[11px] font-bold text-noorix-muted">
+                        {items.length}
+                      </div>
+                    </div>
+                    <div className="flex max-h-[min(54vh,440px)] flex-col gap-2 overflow-y-auto p-2">
+                      {items.length === 0 ? (
+                        <p className="m-0 rounded-md border border-dashed border-noorix-border bg-noorix-bg-muted px-3 py-6 text-center text-[12px] text-noorix-muted">
+                          {STATUS_EMPTY_LABELS[status]}
+                        </p>
+                      ) : (
+                        items.map((event) => {
+                          const checked = selectedKeys.has(event.key);
+                          return (
+                            <label
+                              key={event.key}
+                              className={cn(
+                                'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
+                                checked
+                                  ? 'border-noorix-blue bg-[color-mix(in_srgb,var(--color-nx-sales)_8%,transparent)]'
+                                  : 'border-noorix-border bg-noorix-surface',
                               )}
-                            </span>
-                          </label>
-                        );
-                      })}
+                            >
+                              <Checkbox className="mt-0.5 shrink-0" checked={checked} onChange={() => toggleKey(event.key)} />
+                              <ColorSwatch className="mt-1 h-3 w-3 shrink-0 rounded-sm" color={event.color} aria-hidden />
+                              <span className="min-w-0 flex-1">
+                                <span className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-[13px] font-bold text-noorix-text">{eventLabel(event, uiLang)}</span>
+                                  <span className="rounded bg-noorix-bg-muted px-1.5 py-px text-[10px] text-noorix-muted">
+                                    {sourceLabel(event, uiLang)}
+                                  </span>
+                                </span>
+                                <span className="block text-[11px] text-noorix-muted" dir="ltr">
+                                  {rangeLabel(event)}
+                                </span>
+                                {event.academicYear && (
+                                  <span className="block text-[11px] text-noorix-muted">
+                                    العام الدراسي {event.academicYear}
+                                  </span>
+                                )}
+                              </span>
+                            </label>
+                          );
+                        })
+                      )}
                     </div>
                   </section>
                 );
