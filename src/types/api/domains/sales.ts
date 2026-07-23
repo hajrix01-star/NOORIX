@@ -19,6 +19,27 @@ export type SalesChannelEntry = {
   vault?: SalesVaultRef | null;
 };
 
+export type SalesDayContextSource = 'saudi' | 'school' | 'manual';
+export type SalesDayContextType = 'occasion' | 'school_holiday' | 'special_day';
+
+export type SalesDayContextEvent = {
+  id: string;
+  name: string;
+  type: SalesDayContextType;
+  source: SalesDayContextSource;
+  fromDate: string;
+  toDate: string;
+  color: string;
+};
+
+export type SalesDayContext = {
+  version: 1;
+  date: string;
+  isSpecialDay: true;
+  primary: SalesDayContextEvent;
+  events: SalesDayContextEvent[];
+};
+
 export type SalesSummaryItem = {
   id: string;
   summaryNumber?: string | number | null;
@@ -28,6 +49,7 @@ export type SalesSummaryItem = {
   cashOnHand: number;
   avgPerCustomer: number;
   notes?: string | null;
+  dayContext?: SalesDayContext | null;
   status: string;
   shift: SalesShiftValue;
   channels: SalesChannelEntry[];

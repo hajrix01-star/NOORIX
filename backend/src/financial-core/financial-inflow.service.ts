@@ -25,6 +25,7 @@ import {
   buildActiveSalesSummaryShiftDuplicateWhere,
   normalizeSalesSummaryShift,
 } from '../sales/sales-summary-duplicate.util';
+import { resolveSalesDayContextSnapshot, salesDayContextJson } from '../sales/sales-day-context.util';
 
 function normalizeSalesShift(value: unknown): SalesShift {
   return normalizeSalesSummaryShift(value);
@@ -200,6 +201,7 @@ export class FinancialInflowService {
         vatEnabled,
         vatRateDecimal,
       );
+      const dayContext = await resolveSalesDayContextSnapshot(tx, dto.companyId, txDate);
 
       // ── [E] Create DailySalesSummary + Channels ──────────
       const summary = await tx.dailySalesSummary.create({
@@ -213,6 +215,7 @@ export class FinancialInflowService {
           cashOnHand:      new Prisma.Decimal(dto.cashOnHand || '0'),
           totalAmount,
           notes:           dto.notes ?? null,
+          dayContext:      salesDayContextJson(dayContext),
           status:          'active',
           createdById:     userId,
           entryDate,
@@ -365,6 +368,7 @@ export class FinancialInflowService {
           amount:  new Prisma.Decimal(ch.amount),
         })),
       });
+      const dayContext = await resolveSalesDayContextSnapshot(tx, companyId, txDate);
 
       await tx.dailySalesSummary.update({
         where: { id: summaryId },
@@ -375,6 +379,7 @@ export class FinancialInflowService {
           cashOnHand:      new Prisma.Decimal(dto.cashOnHand || '0'),
           totalAmount,
           notes:           dto.notes ?? null,
+          dayContext:      salesDayContextJson(dayContext),
         },
       });
 

@@ -1079,6 +1079,7 @@ model DailySalesSummary {
   cashOnHand      Decimal  @default(0)   @map("cash_on_hand")  @db.Decimal(18, 4)
   totalAmount     Decimal  @default(0)   @map("total_amount")  @db.Decimal(18, 4)
   notes           String?
+  dayContext      Json?    @map("day_context")
   status          String   @default("active")
   createdById     String?  @map("created_by_id")    // âœ… ط¨طµظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ… â€” ظ…ط±طھط¨ط· ط¨ظ€ User
   entryDate       DateTime @map("entry_date")

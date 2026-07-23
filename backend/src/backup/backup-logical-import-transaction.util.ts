@@ -10,6 +10,7 @@ import { computeSupplierInvoiceDedupKeyForInvoiceRow } from '../invoice/invoice-
 import { createImportedCompany } from './backup-logical-import-company.util';
 import { mapImportedLedgerRef } from './backup-logical-import-ledger-ref.util';
 import { BackupLogicalImportTxParams } from './backup-logical-import-transaction.types';
+import { normalizeSalesDayContextSnapshotInput, salesDayContextJson } from '../sales/sales-day-context.util';
 
 /**
  * جسم الاستيراد المنطقي داخل transaction — نفس التسلسل والخرائط.
@@ -224,6 +225,7 @@ export async function runBackupLogicalImportInTransaction(
               cashOnHand: dec(s.cashOnHand ?? 0),
               totalAmount: dec(s.totalAmount ?? 0),
               notes: (s.notes as string | null) ?? null,
+              dayContext: salesDayContextJson(normalizeSalesDayContextSnapshotInput(s.dayContext)),
               status: String(s.status ?? 'active'),
               createdById: importingUserId,
               entryDate: ddate(s.entryDate),

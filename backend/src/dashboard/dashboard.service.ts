@@ -33,6 +33,7 @@ import {
   specialDaysJson,
 } from './dashboard-calendar-contracts';
 import { isSuperAdmin } from '../auth/constants/permissions';
+import { buildSalesDayContextSnapshot, salesDayContextJson } from '../sales/sales-day-context.util';
 
 const EMPTY_SALES_PACK = {
   yearSummaries: [],
@@ -267,6 +268,36 @@ export class DashboardService {
     private readonly salesService: SalesService,
     private readonly dashboardInsightsService: DashboardInsightsService,
   ) {}
+
+  private async syncSalesDayContextForCalendarMonth(
+    companyId: string,
+    year: number,
+    month: number,
+    specialDays: SpecialDayPeriod[],
+  ): Promise<void> {
+    const start = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`);
+    const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+    const summaries = await this.prisma.dailySalesSummary.findMany({
+      where: {
+        companyId,
+        transactionDate: { gte: start, lte: end },
+      },
+      select: { id: true, transactionDate: true },
+    });
+
+    await Promise.all(
+      summaries.map((summary) =>
+        this.prisma.dailySalesSummary.update({
+          where: { id: summary.id },
+          data: {
+            dayContext: salesDayContextJson(
+              buildSalesDayContextSnapshot(toYmd(summary.transactionDate), specialDays),
+            ),
+          },
+        }),
+      ),
+    );
+  }
 
   /**
    * يجمع 4 استعلامات منفصلة في طلب واحد بالتوازي:
@@ -560,6 +591,7 @@ export class DashboardService {
       create: { companyId, tenantId, year, month, specialDays: specialDaysJson(normalizedSpecialDays) },
       update: { specialDays: specialDaysJson(normalizedSpecialDays) },
     });
+    await this.syncSalesDayContextForCalendarMonth(companyId, year, month, normalizedSpecialDays);
     return this.getCalendarData(companyId, tenantId, year, month);
   }
 
@@ -672,6 +704,7 @@ export class DashboardService {
           },
           update: { specialDays: specialDaysJson(merged) },
         });
+        await this.syncSalesDayContextForCalendarMonth(companyId, year, month, merged);
         monthsUpdated += 1;
       }
     }
@@ -731,6 +764,7 @@ export class DashboardService {
           },
           update: { specialDays: specialDaysJson(merged) },
         });
+        await this.syncSalesDayContextForCalendarMonth(companyId, year, month, merged);
         monthsUpdated += 1;
       }
     }

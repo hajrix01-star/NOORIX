@@ -94,6 +94,11 @@ export default function DailySalesScreen() {
     [summaryNumberText],
   );
 
+  const dayContextLabel = useCallback(
+    (row: DailySalesTableRow) => row.dayContext?.primary.name?.trim() ?? '',
+    [],
+  );
+
   const columns = useMemo(() => [
     { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '16ch',
       render: (_: unknown, row: DailySalesTableRow) => (
@@ -108,6 +113,11 @@ export default function DailySalesScreen() {
             {compactSummaryNumberText(row)}
           </Button>
           <span className="nx-cell-muted-sm nx-font-numbers">{formatSaudiDate(row.transactionDate)}</span>
+          {dayContextLabel(row) ? (
+            <span className="inline-flex max-w-full items-center truncate rounded-md bg-noorix-blue/10 px-1.5 py-0.5 text-[10px] font-semibold text-noorix-blue">
+              {dayContextLabel(row)}
+            </span>
+          ) : null}
           <span className="inline-flex items-center rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
             {row.shiftsText || getSalesShiftLabel(row.shift, t)}
           </span>
@@ -124,7 +134,7 @@ export default function DailySalesScreen() {
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', kind: 'status', label: t('statusLabel'), width: '9ch',
       render: (v: unknown) => <Badge {...Badge.fromStatus(v as string, STATUS_MAP)} size="sm" /> },
-  ] as SmartTableColumn[], [t, STATUS_MAP, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText]);
+  ] as SmartTableColumn[], [t, STATUS_MAP, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
 
   const footerCells = (
     <>
@@ -148,6 +158,11 @@ export default function DailySalesScreen() {
         <span className="text-[14px] font-bold text-noorix-blue ltr" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
+          {dayContextLabel(row) ? (
+            <span className="rounded-md bg-noorix-blue/10 px-1.5 py-0.5 text-[10px] font-semibold text-noorix-blue">
+              {dayContextLabel(row)}
+            </span>
+          ) : null}
           <span className="rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
             {row.shiftsText || getSalesShiftLabel(row.shift, t)}
           </span>
@@ -173,13 +188,14 @@ export default function DailySalesScreen() {
         </div>
       </div>
     </div>
-  ), [STATUS_MAP, t, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText]);
+  ), [STATUS_MAP, t, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
 
   const renderCompactRow = useCallback((row: DailySalesTableRow) => (
     <div className="cursor-pointer" onClick={() => setEditingSummary(row)}>
       <div className="nx-cr__line1">
         <span className="nx-cr__id" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
         <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
+        {dayContextLabel(row) ? <span className="nx-cr__meta text-noorix-blue">{dayContextLabel(row)}</span> : null}
         <span className="nx-cr__meta">{row.shiftsText || getSalesShiftLabel(row.shift, t)}</span>
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
       </div>
@@ -192,7 +208,7 @@ export default function DailySalesScreen() {
         </div>
       </div>
     </div>
-  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary, compactSummaryNumberText, summaryNumberText]);
+  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
 
   return (
     <ScreenShell>

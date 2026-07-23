@@ -1,4 +1,5 @@
 import { toYmd } from '../common/utils/to-ymd.util';
+import { normalizeSalesDayContextSnapshotInput, type SalesDayContextSnapshot } from './sales-day-context.util';
 
 export type SalesShiftValue = 'all' | 'morning' | 'evening';
 
@@ -26,6 +27,7 @@ export type SalesSummaryListSource = {
   totalAmount?: number | string | { toString(): string } | null;
   cashOnHand?: number | string | { toString(): string } | null;
   notes?: string | null;
+  dayContext?: unknown;
   status?: string | null;
   shift?: string | null;
   channels?: SalesListChannelEntry[] | null;
@@ -40,6 +42,7 @@ export type SalesSummaryListItem = {
   cashOnHand: number;
   avgPerCustomer: number;
   notes?: string | null;
+  dayContext: SalesDayContextSnapshot | null;
   status: string;
   shift: SalesShiftValue;
   channels: SalesListChannelEntry[];
@@ -122,6 +125,7 @@ export function buildSalesSummaryListItem(source: SalesSummaryListSource): Sales
     cashOnHand: amount(source.cashOnHand),
     avgPerCustomer: avg(totalAmount, customerCount),
     notes: source.notes ?? null,
+    dayContext: normalizeSalesDayContextSnapshotInput(source.dayContext),
     status: source.status ?? 'active',
     shift: resolveShift(source.shift),
     channels: sortChannels(source.channels ?? []),
@@ -148,6 +152,7 @@ export function buildSalesSummaryListModel(sources: readonly SalesSummaryListSou
     const shiftsText = ordered.map((item) => item.shift).join(' / ');
     const hasCancelled = ordered.some((item) => item.status === 'cancelled');
     const allCancelled = ordered.every((item) => item.status === 'cancelled');
+    const dayContext = ordered.find((item) => item.dayContext !== null)?.dayContext ?? null;
     return {
       ...primary,
       id: `day-${dateKey}`,
@@ -161,6 +166,7 @@ export function buildSalesSummaryListModel(sources: readonly SalesSummaryListSou
       cashOnHand,
       totalAmount,
       avgPerCustomer: avg(totalAmount, customerCount),
+      dayContext,
       status: allCancelled ? 'cancelled' : hasCancelled ? 'active' : primary.status,
       summaries: ordered,
     };
