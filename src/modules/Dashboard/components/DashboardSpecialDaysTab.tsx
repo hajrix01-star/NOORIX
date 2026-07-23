@@ -87,6 +87,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   const [editingName, setEditingName] = useState('');
   const [pendingDelete, setPendingDelete] = useState<DashboardSpecialDay | null>(null);
   const [saving, setSaving] = useState(false);
+  const [activeSpecialDayStatus, setActiveSpecialDayStatus] = useState<SpecialDayStatus>('current');
   const todayYmd = getSaudiToday();
 
   const groupedSpecialDays = useMemo(() => {
@@ -106,6 +107,8 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
       ended: sortSpecialDaysByStatus('ended', grouped.ended),
     };
   }, [specialDaysList, todayYmd]);
+
+  const activeSpecialDays = groupedSpecialDays[activeSpecialDayStatus];
 
   const showSaveError = useCallback(
     (error: unknown) => {
@@ -275,77 +278,83 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         {yearSpecialDaysLoading && specialDaysList.length === 0 && (
           <p className="text-center text-[13px] text-noorix-muted py-4">{t('loading')}</p>
         )}
-        {(!yearSpecialDaysLoading || specialDaysList.length > 0) && SPECIAL_DAY_STATUS_ORDER.map((status) => {
-          const days = groupedSpecialDays[status];
-          return (
-            <section key={status} className="noorix-surface-card overflow-hidden">
-              <div className="flex items-center justify-between border-b border-noorix-border bg-noorix-bg-muted px-3.5 py-2.5">
-                <h4 className="m-0 text-[13px] font-bold text-noorix-text">{SPECIAL_DAY_STATUS_LABELS[status]}</h4>
-                <span className="rounded-md bg-noorix-surface px-2 py-1 text-[11px] font-bold text-noorix-muted">
-                  {days.length}
-                </span>
-              </div>
-              <div className="flex flex-col divide-y divide-noorix-border">
-                {days.length === 0 ? (
-                  <p className="m-0 px-3.5 py-4 text-center text-[12px] text-noorix-muted">
-                    {SPECIAL_DAY_EMPTY_LABELS[status]}
-                  </p>
-                ) : (
-                  days.map((sp) => (
-                    <div key={`${sp.id}-${sp.fromDate}-${sp.toDate}`} className="flex items-center gap-3 p-3.5">
-                      <ColorSwatch className="h-3 w-3 shrink-0 rounded-md" color={sp.color} fallbackColor="#8b5cf6" />
-                      {editingId === sp.id ? (
-                        <>
-                          <Input
-                            value={editingName}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingName(e.target.value)}
-                            onKeyDown={(e: React.KeyboardEvent) => {
-                              if (e.key === 'Enter') {
-                                void handleUpdate(sp.id, { name: editingName.trim() || sp.name });
-                              }
-                            }}
-                            autoFocus
-                            className="min-w-0 flex-1"
-                          />
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            disabled={saving}
-                            onClick={() => {
+        {(!yearSpecialDaysLoading || specialDaysList.length > 0) && (
+          <section className="noorix-surface-card overflow-hidden">
+            <div className="flex flex-wrap items-center gap-2 border-b border-noorix-border bg-noorix-bg-muted p-2">
+              {SPECIAL_DAY_STATUS_ORDER.map((status) => {
+                const isActive = activeSpecialDayStatus === status;
+                return (
+                  <Button
+                    key={status}
+                    size="sm"
+                    variant={isActive ? 'primary' : 'secondary'}
+                    onClick={() => setActiveSpecialDayStatus(status)}
+                  >
+                    {SPECIAL_DAY_STATUS_LABELS[status]} ({groupedSpecialDays[status].length})
+                  </Button>
+                );
+              })}
+            </div>
+            <div className="flex flex-col divide-y divide-noorix-border">
+              {activeSpecialDays.length === 0 ? (
+                <p className="m-0 px-3.5 py-6 text-center text-[12px] text-noorix-muted">
+                  {SPECIAL_DAY_EMPTY_LABELS[activeSpecialDayStatus]}
+                </p>
+              ) : (
+                activeSpecialDays.map((sp) => (
+                  <div key={`${sp.id}-${sp.fromDate}-${sp.toDate}`} className="flex items-center gap-3 p-3.5">
+                    <ColorSwatch className="h-3 w-3 shrink-0 rounded-md" color={sp.color} fallbackColor="#8b5cf6" />
+                    {editingId === sp.id ? (
+                      <>
+                        <Input
+                          value={editingName}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingName(e.target.value)}
+                          onKeyDown={(e: React.KeyboardEvent) => {
+                            if (e.key === 'Enter') {
                               void handleUpdate(sp.id, { name: editingName.trim() || sp.name });
-                              setEditingId(null);
-                            }}
-                          >
-                            ✓
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <span
-                            className="min-w-0 flex-1 cursor-pointer truncate text-[14px] font-semibold"
-                            onClick={() => {
-                              setEditingId(sp.id);
-                              setEditingName(sp.name || '');
-                            }}
-                            title={t('edit')}
-                          >
-                            {sp.name || '—'}
-                          </span>
-                          <span className="shrink-0 text-[12px] text-noorix-muted ltr" dir="ltr">
-                            {sp.fromDate} — {sp.toDate}
-                          </span>
-                          <Button variant="danger" size="sm" onClick={() => setPendingDelete(sp)}>
-                            ✕
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          );
-        })}
+                            }
+                          }}
+                          autoFocus
+                          className="min-w-0 flex-1"
+                        />
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={saving}
+                          onClick={() => {
+                            void handleUpdate(sp.id, { name: editingName.trim() || sp.name });
+                            setEditingId(null);
+                          }}
+                        >
+                          ✓
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          className="min-w-0 flex-1 cursor-pointer truncate text-[14px] font-semibold"
+                          onClick={() => {
+                            setEditingId(sp.id);
+                            setEditingName(sp.name || '');
+                          }}
+                          title={t('edit')}
+                        >
+                          {sp.name || '—'}
+                        </span>
+                        <span className="shrink-0 text-[12px] text-noorix-muted ltr" dir="ltr">
+                          {sp.fromDate} — {sp.toDate}
+                        </span>
+                        <Button variant="danger" size="sm" onClick={() => setPendingDelete(sp)}>
+                          ✕
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        )}
       </div>
 
       <Modal
