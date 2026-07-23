@@ -10,8 +10,33 @@ import { ToastProvider } from './context/ToastContext';
 import App from './App';
 import './index.css';
 import { registerPwa } from './pwa/registerPwa';
+import { checkForAvailableDeployUpdate, reloadToDeployUpdate } from './utils/deployVersionGuard';
 
 registerPwa();
+
+function watchDeployVersion(): void {
+  if (import.meta.env.DEV || typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  let checking = false;
+  const check = async () => {
+    if (checking) return;
+    checking = true;
+    try {
+      const remote = await checkForAvailableDeployUpdate();
+      if (remote?.buildId) reloadToDeployUpdate(remote.buildId);
+    } finally {
+      checking = false;
+    }
+  };
+
+  window.setTimeout(() => void check(), 2500);
+  window.addEventListener('focus', () => void check());
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void check();
+  });
+}
+
+watchDeployVersion();
 
 // تطبيق هوية التطبيق باللغة المحفوظة قبل أي رسم
 const _storedLang = readStoredLanguage() || 'ar';
