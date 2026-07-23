@@ -1,13 +1,13 @@
 ﻿/**
  * DashboardSpecialDaysTab — إدارة الأيام الخاصة (رمضان، أعياد، إجازات)
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { useDashboardYearSpecialDays } from '../../../hooks/useDashboardYearSpecialDays';
 import { Button, ColorSwatch, DateRangeField, DialogActions, Input, Modal } from '../../../ui';
 import { toYmd } from '../../../utils/saudiDate';
-import { getSaudiNow } from '../../../utils/saudiDate';
+import { getSaudiNow, getSaudiToday } from '../../../utils/saudiDate';
 import { DashboardCalendarOccasionCenter } from './DashboardCalendarOccasionCenter';
 import type { DashboardSpecialDay } from '../../../types/api/domains/dashboard';
 import { createDashboardSpecialDayId } from '../utils/dashboardSpecialDayId';
@@ -19,6 +19,38 @@ import {
 } from '../utils/dashboardSpecialDaysModel';
 
 const DEFAULT_COLORS = ['var(--color-noorix-amber)', '#eab308', '#84cc16', 'var(--noorix-accent-green)', '#8b5cf6'];
+
+type SpecialDayStatus = 'current' | 'upcoming' | 'ended';
+
+const SPECIAL_DAY_STATUS_ORDER: SpecialDayStatus[] = ['current', 'upcoming', 'ended'];
+
+const SPECIAL_DAY_STATUS_LABELS: Record<SpecialDayStatus, string> = {
+  current: 'حالية',
+  upcoming: 'قادمة',
+  ended: 'منتهية',
+};
+
+const SPECIAL_DAY_EMPTY_LABELS: Record<SpecialDayStatus, string> = {
+  current: 'لا توجد أيام خاصة حالية.',
+  upcoming: 'لا توجد أيام خاصة قادمة.',
+  ended: 'لا توجد أيام خاصة منتهية.',
+};
+
+function getSpecialDayStatus(day: DashboardSpecialDay, today: string): SpecialDayStatus {
+  const fromDate = toYmd(day.fromDate);
+  const toDate = toYmd(day.toDate) || fromDate;
+  if (fromDate <= today && today <= toDate) return 'current';
+  if (fromDate > today) return 'upcoming';
+  return 'ended';
+}
+
+function sortSpecialDaysByStatus(status: SpecialDayStatus, days: DashboardSpecialDay[]): DashboardSpecialDay[] {
+  return [...days].sort((a, b) => {
+    const aDate = toYmd(a.fromDate);
+    const bDate = toYmd(b.fromDate);
+    return status === 'ended' ? bDate.localeCompare(aDate) : aDate.localeCompare(bDate);
+  });
+}
 
 export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth }: {
   companyId: string;
@@ -55,6 +87,25 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   const [editingName, setEditingName] = useState('');
   const [pendingDelete, setPendingDelete] = useState<DashboardSpecialDay | null>(null);
   const [saving, setSaving] = useState(false);
+  const todayYmd = getSaudiToday();
+
+  const groupedSpecialDays = useMemo(() => {
+    const grouped: Record<SpecialDayStatus, DashboardSpecialDay[]> = {
+      current: [],
+      upcoming: [],
+      ended: [],
+    };
+
+    for (const specialDay of specialDaysList) {
+      grouped[getSpecialDayStatus(specialDay, todayYmd)].push(specialDay);
+    }
+
+    return {
+      current: sortSpecialDaysByStatus('current', grouped.current),
+      upcoming: sortSpecialDaysByStatus('upcoming', grouped.upcoming),
+      ended: sortSpecialDaysByStatus('ended', grouped.ended),
+    };
+  }, [specialDaysList, todayYmd]);
 
   const showSaveError = useCallback(
     (error: unknown) => {
@@ -220,65 +271,81 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         </div>
       )}
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-3">
         {yearSpecialDaysLoading && specialDaysList.length === 0 && (
           <p className="text-center text-[13px] text-noorix-muted py-4">{t('loading')}</p>
         )}
-        {specialDaysList.map((sp) => (
-          <div key={`${sp.id}-${sp.fromDate}-${sp.toDate}`} className="noorix-surface-card flex items-center gap-3 p-3.5">
-            <ColorSwatch className="w-3 h-3 rounded-md shrink-0" color={sp.color} fallbackColor="#8b5cf6" />
-            {editingId === sp.id ? (
-              <>
-                <Input
-                  value={editingName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingName(e.target.value)}
-                  onKeyDown={(e: React.KeyboardEvent) => {
-                    if (e.key === 'Enter') {
-                      void handleUpdate(sp.id, { name: editingName.trim() || sp.name });
-                    }
-                  }}
-                  autoFocus
-                  className="flex-1 min-w-0"
-                />
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={saving}
-                  onClick={() => {
-                    void handleUpdate(sp.id, { name: editingName.trim() || sp.name });
-                    setEditingId(null);
-                  }}
-                >
-                  ✓
-                </Button>
-              </>
-            ) : (
-              <>
-                <span
-                  className="flex-1 min-w-0 text-[14px] font-semibold cursor-pointer truncate"
-                  onClick={() => {
-                    setEditingId(sp.id);
-                    setEditingName(sp.name || '');
-                  }}
-                  title={t('edit')}
-                >
-                  {sp.name || '—'}
+        {(!yearSpecialDaysLoading || specialDaysList.length > 0) && SPECIAL_DAY_STATUS_ORDER.map((status) => {
+          const days = groupedSpecialDays[status];
+          return (
+            <section key={status} className="noorix-surface-card overflow-hidden">
+              <div className="flex items-center justify-between border-b border-noorix-border bg-noorix-bg-muted px-3.5 py-2.5">
+                <h4 className="m-0 text-[13px] font-bold text-noorix-text">{SPECIAL_DAY_STATUS_LABELS[status]}</h4>
+                <span className="rounded-md bg-noorix-surface px-2 py-1 text-[11px] font-bold text-noorix-muted">
+                  {days.length}
                 </span>
-                <span className="text-[12px] text-noorix-muted shrink-0 ltr" dir="ltr">
-                  {sp.fromDate} — {sp.toDate}
-                </span>
-                <Button variant="danger" size="sm" onClick={() => setPendingDelete(sp)}>
-                  ✕
-                </Button>
-              </>
-            )}
-          </div>
-        ))}
-        {specialDaysList.length === 0 && !showForm && (
-          <div className="text-center text-noorix-muted text-[13px] p-8 rounded-[10px] border border-dashed border-noorix-border">
-            {t('dashboardNoSpecialDays')}
-          </div>
-        )}
+              </div>
+              <div className="flex flex-col divide-y divide-noorix-border">
+                {days.length === 0 ? (
+                  <p className="m-0 px-3.5 py-4 text-center text-[12px] text-noorix-muted">
+                    {SPECIAL_DAY_EMPTY_LABELS[status]}
+                  </p>
+                ) : (
+                  days.map((sp) => (
+                    <div key={`${sp.id}-${sp.fromDate}-${sp.toDate}`} className="flex items-center gap-3 p-3.5">
+                      <ColorSwatch className="h-3 w-3 shrink-0 rounded-md" color={sp.color} fallbackColor="#8b5cf6" />
+                      {editingId === sp.id ? (
+                        <>
+                          <Input
+                            value={editingName}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingName(e.target.value)}
+                            onKeyDown={(e: React.KeyboardEvent) => {
+                              if (e.key === 'Enter') {
+                                void handleUpdate(sp.id, { name: editingName.trim() || sp.name });
+                              }
+                            }}
+                            autoFocus
+                            className="min-w-0 flex-1"
+                          />
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            disabled={saving}
+                            onClick={() => {
+                              void handleUpdate(sp.id, { name: editingName.trim() || sp.name });
+                              setEditingId(null);
+                            }}
+                          >
+                            ✓
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <span
+                            className="min-w-0 flex-1 cursor-pointer truncate text-[14px] font-semibold"
+                            onClick={() => {
+                              setEditingId(sp.id);
+                              setEditingName(sp.name || '');
+                            }}
+                            title={t('edit')}
+                          >
+                            {sp.name || '—'}
+                          </span>
+                          <span className="shrink-0 text-[12px] text-noorix-muted ltr" dir="ltr">
+                            {sp.fromDate} — {sp.toDate}
+                          </span>
+                          <Button variant="danger" size="sm" onClick={() => setPendingDelete(sp)}>
+                            ✕
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       <Modal
