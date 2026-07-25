@@ -38,17 +38,13 @@ describe('OwnerAdminDashboardService', () => {
     };
     const reports = {
       getGeneralProfitLoss: jest.fn(async (_companyId: string, year: number) => report(year === 2026 ? 100 : 1)),
+      getGeneralProfitLossPeriodTotals: jest.fn(async (_companyId: string, startDate: string) =>
+        startDate === '2026-07-01'
+          ? { sales: '190', purchases: '50', expenses: '30' }
+          : { sales: '170', purchases: '40', expenses: '23' },
+      ),
     };
-    const sales = {
-      findDashboardPack: jest.fn(async () => ({
-        dailySummaries: [
-          { transactionDate: '2026-07-01', status: 'posted', totalAmount: '190' },
-          { transactionDate: '2026-06-01', status: 'posted', totalAmount: '300' },
-          { transactionDate: '2026-06-02', status: 'cancelled', totalAmount: '999' },
-        ],
-      })),
-    };
-    const service = new OwnerAdminDashboardService(prisma, reports, sales);
+    const service = new OwnerAdminDashboardService(prisma, reports);
 
     const snapshot = await service.getSnapshot('tenant-1');
 
@@ -56,9 +52,31 @@ describe('OwnerAdminDashboardService', () => {
     expect(snapshot.companies).toHaveLength(1);
     expect(snapshot.companies[0]?.dailySalesAverage).toEqual({
       currentMonthToDate: 10,
-      previousFullMonth: 10,
+      previousComparablePeriod: 8.95,
+      previousFullMonth: 8.95,
+    });
+    expect(snapshot.companies[0]?.sales).toMatchObject({
+      current: 190,
+      previous: 170,
+    });
+    expect(snapshot.previousPeriod).toMatchObject({
+      kind: 'month-to-date',
+      startDate: '2026-06-01',
+      endDate: '2026-06-19',
     });
     expect(snapshot.companies[0]?.monthlyPerformance).toHaveLength(6);
+    expect(reports.getGeneralProfitLossPeriodTotals).toHaveBeenNthCalledWith(
+      1,
+      'company-1',
+      '2026-07-01',
+      '2026-07-19',
+    );
+    expect(reports.getGeneralProfitLossPeriodTotals).toHaveBeenNthCalledWith(
+      2,
+      'company-1',
+      '2026-06-01',
+      '2026-06-19',
+    );
     expect(prisma.company.findMany).toHaveBeenCalledWith({
       where: { id: { in: ['company-1'] }, isArchived: false, tenantId: 'tenant-1' },
       select: { id: true, nameAr: true, nameEn: true },
@@ -70,8 +88,14 @@ describe('OwnerAdminDashboardService', () => {
     invalid.groups[0]!.months[6] = '';
     const service = new OwnerAdminDashboardService(
       { company: { findMany: async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: null }] } },
-      { getGeneralProfitLoss: async () => invalid },
-      { findDashboardPack: async () => ({ dailySummaries: [] }) },
+      {
+        getGeneralProfitLoss: async () => invalid,
+        getGeneralProfitLossPeriodTotals: async () => ({
+          sales: '0',
+          purchases: '0',
+          expenses: '0',
+        }),
+      },
     );
 
     await expect(service.getSnapshot('tenant-1')).rejects.toThrow('Missing sales value');

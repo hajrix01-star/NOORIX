@@ -4,8 +4,6 @@ import moment from 'moment-timezone';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ReportsService } from '../reports/reports.service';
 import type { GeneralProfitLossModel } from '../reports/reports-general-profit-loss-model.util';
-import { SalesService } from '../sales/sales.service';
-import { normalizeOwnerDailySalesItems, type OwnerOverviewDailySalesItem } from './owner-overview-model.util';
 
 type MetricKey = 'sales' | 'purchases' | 'expenses';
 type Direction = 'up' | 'down' | 'stable';
@@ -23,14 +21,11 @@ type AdminDashboardPrisma = {
 
 type AdminDashboardReports = {
   getGeneralProfitLoss(companyId: string, year: number): Promise<GeneralProfitLossModel>;
-};
-
-type AdminDashboardSales = {
-  findDashboardPack(
+  getGeneralProfitLossPeriodTotals(
     companyId: string,
-    range: { yearStart: string; yearEnd: string; dailyStart: string; dailyEnd: string },
-    includeArchived: boolean,
-  ): Promise<{ dailySummaries: unknown[] }>;
+    startDate: string,
+    endDate: string,
+  ): Promise<{ expenses: string; purchases: string; sales: string }>;
 };
 
 type MonthReference = { month: number; year: number };
@@ -60,21 +55,10 @@ function metric(current: number, previous: number) {
   return { changePercent, current, direction, previous };
 }
 
-function dateKey(value: string | Date | null | undefined): string | null {
-  if (!value) return null;
-  return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
-}
-
-function dailyAverage(items: OwnerOverviewDailySalesItem[], start: string, end: string, days: number): number {
-  const total = items.reduce((sum, item) => {
-    const date = dateKey(item.transactionDate);
-    if (!date || date < start || date > end || item.status === 'cancelled') return sum;
-    if (item.totalAmount == null || item.totalAmount === '') throw new Error(`Missing daily sales amount for ${date}`);
-    const amount = new Decimal(item.totalAmount);
-    if (!amount.isFinite()) throw new Error(`Invalid daily sales amount for ${date}`);
-    return sum.plus(amount);
-  }, new Decimal(0));
-  return total.div(days).toDecimalPlaces(2).toNumber();
+function periodValue(value: string, metricName: MetricKey): number {
+  const amount = new Decimal(value);
+  if (!amount.isFinite()) throw new Error(`Invalid ${metricName} period amount`);
+  return amount.toNumber();
 }
 
 @Injectable()
@@ -82,7 +66,6 @@ export class OwnerAdminDashboardService {
   constructor(
     @Inject(TenantPrismaService) private readonly prisma: AdminDashboardPrisma,
     @Inject(ReportsService) private readonly reportsService: AdminDashboardReports,
-    @Inject(SalesService) private readonly salesService: AdminDashboardSales,
   ) {}
 
   async getSnapshot(tenantId: string) {
@@ -93,6 +76,8 @@ export class OwnerAdminDashboardService {
     const currentStart = now.clone().startOf('month');
     const previousStart = currentStart.clone().subtract(1, 'month');
     const previousEnd = previousStart.clone().endOf('month');
+    const comparableDayCount = Math.min(now.date(), previousEnd.date());
+    const previousComparableEnd = previousStart.clone().add(comparableDayCount - 1, 'days');
     const historyWithComparison = Array.from({ length: 7 }, (_, index) => monthReference(currentStart.clone().subtract(index, 'month')));
     const history = historyWithComparison.slice(0, 6);
     const reportYears = [...new Set(historyWithComparison.map((entry) => entry.year))];
@@ -103,14 +88,18 @@ export class OwnerAdminDashboardService {
     });
 
     const companyData = await Promise.all(companies.map(async (company) => {
-      const [reports, salesPack] = await Promise.all([
+      const [reports, currentPeriodAnalytics, previousPeriodAnalytics] = await Promise.all([
         Promise.all(reportYears.map(async (year) => ({ year, report: await this.reportsService.getGeneralProfitLoss(company.id, year) }))),
-        this.salesService.findDashboardPack(company.id, {
-          yearStart: `${Math.min(...reportYears)}-01-01`,
-          yearEnd: `${Math.max(...reportYears)}-12-31`,
-          dailyStart: previousStart.format('YYYY-MM-DD'),
-          dailyEnd: now.format('YYYY-MM-DD'),
-        }, false),
+        this.reportsService.getGeneralProfitLossPeriodTotals(
+          company.id,
+          currentStart.format('YYYY-MM-DD'),
+          now.format('YYYY-MM-DD'),
+        ),
+        this.reportsService.getGeneralProfitLossPeriodTotals(
+          company.id,
+          previousStart.format('YYYY-MM-DD'),
+          previousComparableEnd.format('YYYY-MM-DD'),
+        ),
       ]);
       const reportByYear = new Map(reports.map((entry) => [entry.year, entry.report]));
       const currentRef = monthReference(now);
@@ -120,16 +109,19 @@ export class OwnerAdminDashboardService {
       if (!currentReport || !previousReport) throw new Error(`Missing report for company ${company.id}`);
 
       const currentValues = {
-        sales: reportValue(currentReport, 'sales', currentRef.month),
-        purchases: reportValue(currentReport, 'purchases', currentRef.month),
-        expenses: reportValue(currentReport, 'expenses', currentRef.month),
+        sales: periodValue(currentPeriodAnalytics.sales, 'sales'),
+        purchases: periodValue(currentPeriodAnalytics.purchases, 'purchases'),
+        expenses: periodValue(currentPeriodAnalytics.expenses, 'expenses'),
       };
       const previousValues = {
-        sales: reportValue(previousReport, 'sales', previousRef.month),
-        purchases: reportValue(previousReport, 'purchases', previousRef.month),
-        expenses: reportValue(previousReport, 'expenses', previousRef.month),
+        sales: periodValue(previousPeriodAnalytics.sales, 'sales'),
+        purchases: periodValue(previousPeriodAnalytics.purchases, 'purchases'),
+        expenses: periodValue(previousPeriodAnalytics.expenses, 'expenses'),
       };
-      const dailyItems = normalizeOwnerDailySalesItems(salesPack.dailySummaries);
+      const previousComparableDailySalesAverage = new Decimal(previousValues.sales)
+        .div(comparableDayCount)
+        .toDecimalPlaces(2)
+        .toNumber();
 
       return {
         companyId: company.id,
@@ -139,8 +131,9 @@ export class OwnerAdminDashboardService {
         purchases: metric(currentValues.purchases, previousValues.purchases),
         expenses: metric(currentValues.expenses, previousValues.expenses),
         dailySalesAverage: {
-          currentMonthToDate: dailyAverage(dailyItems, currentStart.format('YYYY-MM-DD'), now.format('YYYY-MM-DD'), now.date()),
-          previousFullMonth: dailyAverage(dailyItems, previousStart.format('YYYY-MM-DD'), previousEnd.format('YYYY-MM-DD'), previousEnd.date()),
+          currentMonthToDate: new Decimal(currentValues.sales).div(now.date()).toDecimalPlaces(2).toNumber(),
+          previousComparablePeriod: previousComparableDailySalesAverage,
+          previousFullMonth: previousComparableDailySalesAverage,
         },
         monthlyPerformance: history.map(({ year, month }, index) => {
           const report = reportByYear.get(year);
@@ -170,11 +163,11 @@ export class OwnerAdminDashboardService {
         endDate: now.format('YYYY-MM-DD'),
       },
       previousPeriod: {
-        kind: 'full-month' as const,
+        kind: 'month-to-date' as const,
         year: previousStart.year(),
         month: previousStart.month() + 1,
         startDate: previousStart.format('YYYY-MM-DD'),
-        endDate: previousEnd.format('YYYY-MM-DD'),
+        endDate: previousComparableEnd.format('YYYY-MM-DD'),
       },
       companies: companyData,
     };

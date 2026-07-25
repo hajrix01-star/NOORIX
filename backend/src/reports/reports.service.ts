@@ -22,6 +22,7 @@ import { GENERAL_PNL_AMOUNT_BASIS } from './reports-pl-contract.util';
 import { createPlGroupStates } from './reports-pl-group-states.util';
 import { resolveExpenseTreeNode } from './reports-expense-tree.util';
 import { formatReportMoneyInteger, formatReportPercentNumber } from '../common/utils/report-display-format.util';
+import { loadPlPeriodTotals } from './reports-pl-period-totals.util';
 
 function resolveCategoryLedgerAccountItemKey(
   categories: Map<string, CategoryNode>,
@@ -42,6 +43,14 @@ export class ReportsService {
 
   async getGeneralProfitLoss(companyId: string, year: number): Promise<GeneralProfitLossModel> {
     return this.buildGeneralProfitLossModel(companyId, year);
+  }
+
+  async getGeneralProfitLossPeriodTotals(
+    companyId: string,
+    startDate: string,
+    endDate: string,
+  ) {
+    return loadPlPeriodTotals(this.prisma, companyId, startDate, endDate);
   }
 
   async getGeneralProfitLossDetails(
