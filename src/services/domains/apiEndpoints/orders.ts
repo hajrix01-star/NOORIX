@@ -22,6 +22,7 @@ import type {
   StaffSaleReport,
   UpdateOrderPayload,
 } from '../../../types/api';
+import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
 // ——— الطلبات ———
@@ -199,8 +200,14 @@ export async function resendStaffSale(
   return apiPost<{ whatsAppText?: string; logRef?: string | null }>(`/api/v1/orders/staff/${id}/resend?companyId=${companyId}`, { lang });
 }
 
-export async function getSalesReport(companyId: string, days = 30): Promise<ApiParsedResult<StaffSaleReport>> {
-  const res = await apiGet<StaffSaleReport>('/api/v1/orders/sales/report', { companyId, days: String(days) });
+export async function getSalesReport(
+  companyId: string,
+  period: number | { startDate: string; endDate: string } = 30,
+): Promise<ApiParsedResult<StaffSaleReport>> {
+  const params = typeof period === 'number'
+    ? { companyId, days: String(period) }
+    : { companyId, startDate: toYmd(period.startDate), endDate: toYmd(period.endDate) };
+  const res = await apiGet<StaffSaleReport>('/api/v1/orders/sales/report', params);
   const empty: StaffSaleReport = { summary: { totalOrders: 0, totalQty: 0, totalAmount: 0, avgPerOrder: 0, uniqueProducts: 0, uniqueSections: 0 }, byProduct: [], bySection: [], byUser: [], byDay: [], byLog: [] };
   return res?.success ? { ...res, data: res.data ?? empty } : res;
 }

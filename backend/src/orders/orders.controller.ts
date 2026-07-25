@@ -116,8 +116,14 @@ export class OrdersController {
   getSalesReport(
     @CompanyId() companyId: string,
     @Query('days') days?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
-    return this.staffService.getSalesReport(requireCompanyId(companyId), parseDaysQuery(days));
+    const range = startDate || endDate ? parseRequiredDateRange(startDate, endDate) : null;
+    return this.staffService.getSalesReport(
+      requireCompanyId(companyId),
+      range ?? parseDaysQuery(days),
+    );
   }
 
   @Post('staff')

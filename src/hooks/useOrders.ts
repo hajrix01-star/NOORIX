@@ -422,10 +422,16 @@ export function useStaffDigest(companyId: string) {
   });
 }
 
-export function useSalesReport(companyId: string, days = 30) {
+export function useSalesReport(
+  companyId: string,
+  period: number | { startDate: string; endDate: string } = 30,
+) {
+  const periodKey = typeof period === 'number'
+    ? `days:${period}`
+    : `range:${period.startDate}:${period.endDate}`;
   return useApiQueryOr<StaffSaleReport>({
-    queryKey: ['salesReport', companyId, days],
-    queryFn: () => getSalesReport(companyId, days),
+    queryKey: ['salesReport', companyId, periodKey],
+    queryFn: () => getSalesReport(companyId, period),
     fallback: emptyStaffSaleReport,
     fallbackMessage: 'Failed to load sales report',
     enabled: !!companyId,

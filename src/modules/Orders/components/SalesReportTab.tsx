@@ -2,13 +2,14 @@
  * SalesReportTab — تقارير المبيعات (staffOrders بـ orderType='sale')
  * ملخص + جدول بالصنف + بالقسم + بالموظف + رسم يومي
  */
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { useSalesReport } from '../../../hooks/useOrders';
 import { useTabSearchParam } from '../../../hooks/useTabSearchParam';
-import { Badge, Button, DataBar, FilterToolbar, SearchableOptionsPicker, SimpleTable as UiSimpleTable, Spinner, ScreenShell, ScreenTitle } from '../../../ui';
+import { Button, DataBar, FilterToolbar, SimpleTable as UiSimpleTable, Spinner } from '../../../ui';
 import type { SimpleTableColumn } from '../../../ui';
+import { DateFilterBar, type DateFilterController } from '../../../ui/date';
 import type {
   StaffSaleReport,
   StaffSaleReportLogRow,
@@ -16,7 +17,6 @@ import type {
   StaffSaleReportUserRow,
 } from '../../../types/api';
 
-const PERIOD_OPTIONS = [7, 14, 30, 60, 90];
 const REPORT_VIEW_IDS = ['log', 'product', 'section', 'user', 'day'] as const;
 
 // ── بطاقة KPI صغيرة ─────────────────────────────────────────────
@@ -50,9 +50,8 @@ function SimpleTable({ headers, rows, emptyMsg }: { headers: string[]; rows: (st
 }
 
 // ── التبويب الرئيسي ──────────────────────────────────────────────
-export function SalesReportTab({ companyId }: { companyId: string }) {
+export function SalesReportTab({ companyId, dateFilter }: { companyId: string; dateFilter: DateFilterController }) {
   const { t, lang } = useTranslation();
-  const [days, setDays] = useState(30);
   const [activeView, setActiveView] = useTabSearchParam(
     REPORT_VIEW_IDS,
     'log',
@@ -62,7 +61,10 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
     { persistDefault: true },
   );
 
-  const { data: report, isLoading, isError, error } = useSalesReport(companyId, days);
+  const { data: report, isLoading, isError, error } = useSalesReport(companyId, {
+    startDate: dateFilter.startDate,
+    endDate: dateFilter.endDate,
+  });
 
   const typedReport: StaffSaleReport | undefined = report;
   const summary = typedReport?.summary ?? { totalOrders: 0, totalQty: 0, totalAmount: 0, avgPerOrder: 0, uniqueProducts: 0, uniqueSections: 0 };
@@ -142,19 +144,9 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
       {/* ── شريط التحكم ── */}
       <FilterToolbar variant="bare" className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2.5 flex flex-wrap items-center gap-2 sm:bg-noorix-surface sm:px-4 sm:py-3 sm:shadow-sm">
         <span className="text-[13px] font-semibold">{t('salesReportTitle')}</span>
-        <div className="w-[160px]">
-          <SearchableOptionsPicker
-            value={String(days)}
-            onChange={(value) => setDays(Number(value))}
-            options={PERIOD_OPTIONS.map((d) => ({
-              value: String(d),
-              label: `${t('salesReportLast')} ${d} ${t('salesReportDays')}`,
-            }))}
-            aria-label={t('salesReportTitle')}
-          />
-        </div>
+        <DateFilterBar filter={dateFilter} />
         <span className="text-[12px] text-noorix-muted ms-auto">
-          {isLoading ? '...' : `${byDay.length} ${t('salesReportDays')}`}
+          {isLoading ? '...' : `${dateFilter.label} · ${byDay.length} ${t('salesReportDays')}`}
         </span>
       </FilterToolbar>
 

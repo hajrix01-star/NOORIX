@@ -216,7 +216,9 @@ function ManagerOrdersScreen({
             />
           )}
           {!digestOnly && activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
-          {activeTab === 'sales-report' && canViewSalesReport && <SalesReportTab companyId={companyId} />}
+          {activeTab === 'sales-report' && canViewSalesReport && (
+            <SalesReportTab companyId={companyId} dateFilter={dateFilter} />
+          )}
           {activeTab === 'staff-digest' && canDigest && <StaffDigestTab companyId={companyId} />}
         </ScreenTabs>
       )}

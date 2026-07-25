@@ -1,14 +1,43 @@
-/**
- * نافذة تقرير مبيعات الموظفين — بداية UTC منتصف الليل لتطابق saleDate (DATE).
- */
+export type StaffSalesReportPeriod = {
+  start: Date;
+  end: Date;
+};
+
 export function buildSalesReportSince(days: number, now: Date = new Date()): Date {
-  const since = new Date(now);
-  since.setUTCDate(since.getUTCDate() - days);
-  since.setUTCHours(0, 0, 0, 0);
-  return since;
+  return buildSalesReportPeriodFromDays(days, now).start;
 }
 
-/** هل سجل مبيعات يقع ضمن نافذة التقرير؟ (مكافئ OR: createdAt|saleDate >= since) */
+export function buildSalesReportPeriodFromDays(days: number, now: Date = new Date()): StaffSalesReportPeriod {
+  const start = new Date(now);
+  start.setUTCDate(start.getUTCDate() - days);
+  start.setUTCHours(0, 0, 0, 0);
+
+  const end = new Date(now);
+  end.setUTCHours(23, 59, 59, 999);
+
+  return { start, end };
+}
+
+export function buildSalesReportPeriodFromYmd(startDate: string, endDate: string): StaffSalesReportPeriod {
+  return {
+    start: new Date(`${startDate}T00:00:00.000Z`),
+    end: new Date(`${endDate}T23:59:59.999Z`),
+  };
+}
+
+function staffSaleReportDate(order: { saleDate?: Date | null; createdAt: Date }): Date {
+  return order.saleDate ?? order.createdAt;
+}
+
+export function staffSaleMatchesReportPeriod(
+  order: { saleDate?: Date | null; createdAt: Date },
+  period: StaffSalesReportPeriod,
+): boolean {
+  const reportDate = staffSaleReportDate(order);
+  return reportDate >= period.start && reportDate <= period.end;
+}
+
+/** @deprecated use staffSaleMatchesReportPeriod with an explicit end date. */
 export function staffSaleMatchesReportWindow(
   order: { saleDate?: Date | null; createdAt: Date },
   since: Date,

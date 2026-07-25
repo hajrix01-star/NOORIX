@@ -9,7 +9,14 @@ import {
   buildStaffSaleLogRef,
   staffSaleLogRefPrefix,
 } from './orders-staff-log-ref.util';
-import { buildSalesReportSince, staffSaleMatchesReportWindow } from './orders-staff-sales-report.util';
+import {
+  buildSalesReportSince,
+  buildSalesReportPeriodFromDays,
+  buildSalesReportPeriodFromYmd,
+  staffSaleMatchesReportPeriod,
+  staffSaleMatchesReportWindow,
+  type StaffSalesReportPeriod,
+} from './orders-staff-sales-report.util';
 import { buildSalesWhatsAppTextCombined, buildStaffPurchaseWhatsAppText } from './orders-staff-whatsapp.util';
 import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 import { parseSaleDateYmd } from './orders-staff-date.util';
@@ -527,8 +534,13 @@ export class OrdersStaffService {
   }
 
   /** تقرير المبيعات — orderType = 'sale' */
-  async getSalesReport(companyId: string, days = 30) {
-    const since = buildSalesReportSince(days);
+  async getSalesReport(
+    companyId: string,
+    periodInput: number | { startDate: string; endDate: string } = 30,
+  ) {
+    const period: StaffSalesReportPeriod = typeof periodInput === 'number'
+      ? buildSalesReportPeriodFromDays(periodInput)
+      : buildSalesReportPeriodFromYmd(periodInput.startDate, periodInput.endDate);
     const tenantId = TenantContext.tryGetTenantId();
     const where: Prisma.StaffOrderWhereInput = { companyId, orderType: 'sale' };
     if (tenantId) where.tenantId = tenantId;
@@ -558,7 +570,7 @@ export class OrdersStaffService {
         },
       },
     });
-    const orders = allSaleOrders.filter((o) => staffSaleMatchesReportWindow(o, since));
+    const orders = allSaleOrders.filter((o) => staffSaleMatchesReportPeriod(o, period));
 
     // جلب بيانات المستخدمين بـ query منفصل (تجنب join قد يسبب مشكلة RLS)
     const userIds = [...new Set(orders.map((o) => o.userId))];
