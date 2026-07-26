@@ -12,6 +12,8 @@ export default {
   ordersItemsReportTabDesc: { ar: 'ما تم شراؤه حسب الصنف والفئة', en: 'What was purchased by item and category' },
   ordersItemsManageTab: { ar: 'إدارة الأصناف', en: 'Manage Items' },
   ordersItemsManageTabShort: { ar: 'أصناف', en: 'Items' },
+  shishaInventoryTab: { ar: 'مخزون وتكلفة الشيشة', en: 'Shisha Inventory & Cost' },
+  shishaInventoryTabShort: { ar: 'مخزون الشيشة', en: 'Shisha' },
   ordersItemsManageTabDesc: { ar: 'تعريف الأصناف والفئات', en: 'Define products and categories' },
   ordersNewOrder: { ar: 'طلب جديد', en: 'New order' },
   ordersNoOrdersInPeriod: { ar: 'لا توجد طلبات في هذه الفترة.', en: 'No orders in this period.' },

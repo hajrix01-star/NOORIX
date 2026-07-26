@@ -16,6 +16,7 @@ import { ItemsReportTab } from './components/ItemsReportTab';
 import { ItemsManageTab } from './components/ItemsManageTab';
 import { StaffDigestTab } from './components/StaffDigestTab';
 import { SalesReportTab } from './components/SalesReportTab';
+import { ShishaInventoryTab } from './components/ShishaInventoryTab';
 import { StaffOrdersView } from './StaffOrdersView';
 import { resolveOrdersScreenMode } from './ordersScreenRouting';
 
@@ -101,7 +102,7 @@ function ManagerOrdersScreen({
     }
     const ids: string[] = [];
     if (canSubmitStaff) ids.push('staff-sales');
-    ids.push('orders', 'items-report', 'items-manage');
+    ids.push('orders', 'items-report', 'items-manage', 'shisha-inventory');
     if (canViewSalesReport) ids.push('sales-report');
     if (canDigest) ids.push('staff-digest');
     return ids;
@@ -151,6 +152,7 @@ function ManagerOrdersScreen({
       { id: 'orders', labelKey: 'ordersTab', shortLabelKey: 'ordersTabShort' },
       { id: 'items-report', labelKey: 'ordersItemsReportTab', shortLabelKey: 'ordersItemsReportTabShort' },
       { id: 'items-manage', labelKey: 'ordersItemsManageTab', shortLabelKey: 'ordersItemsManageTabShort' },
+      { id: 'shisha-inventory', labelKey: 'shishaInventoryTab', shortLabelKey: 'shishaInventoryTabShort' },
     );
     if (canViewSalesReport) {
       tabs.push({ id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' });
@@ -216,6 +218,14 @@ function ManagerOrdersScreen({
             />
           )}
           {!digestOnly && activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
+          {!digestOnly && activeTab === 'shisha-inventory' && (
+            <ShishaInventoryTab
+              companyId={companyId}
+              startDate={startDate}
+              endDate={endDate}
+              dateFilter={dateFilter}
+            />
+          )}
           {activeTab === 'sales-report' && canViewSalesReport && (
             <SalesReportTab companyId={companyId} dateFilter={dateFilter} />
           )}

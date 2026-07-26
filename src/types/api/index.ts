@@ -53,6 +53,13 @@ export type {
   StaffSaleReportSummary,
   StaffSaleReportUserRow,
   UpdateOrderPayload,
+  ShishaInventoryDailyRow,
+  ShishaInventoryMovement,
+  ShishaInventorySummary,
+  ShishaStocktake,
+  InitializeShishaInventoryPayload,
+  CreateShishaPurchasePayload,
+  CreateShishaStocktakePayload,
 } from './domains/orders';
 export type {
   DashboardNamedEntity,

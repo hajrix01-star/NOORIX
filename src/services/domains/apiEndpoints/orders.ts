@@ -21,9 +21,52 @@ import type {
   StaffSaleNextLogRef,
   StaffSaleReport,
   UpdateOrderPayload,
+  ShishaInventorySummary,
+  InitializeShishaInventoryPayload,
+  CreateShishaPurchasePayload,
+  CreateShishaStocktakePayload,
 } from '../../../types/api';
 import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
+
+export async function getShishaInventorySummary(
+  companyId: string,
+  startDate: string,
+  endDate: string,
+): Promise<ApiParsedResult<ShishaInventorySummary>> {
+  return apiGet<ShishaInventorySummary>('/api/v1/orders/shisha-inventory/summary', {
+    companyId,
+    startDate,
+    endDate,
+  });
+}
+
+export async function initializeShishaInventory(
+  body: InitializeShishaInventoryPayload,
+): Promise<ApiParsedResult<ShishaInventorySummary>> {
+  return apiPost<ShishaInventorySummary>(
+    `/api/v1/orders/shisha-inventory/initialize?companyId=${encodeURIComponent(body.companyId)}`,
+    body,
+  );
+}
+
+export async function createShishaInventoryPurchase(
+  body: CreateShishaPurchasePayload,
+): Promise<ApiParsedResult<{ id: string; createdAt: string }>> {
+  return apiPost(
+    `/api/v1/orders/shisha-inventory/purchases?companyId=${encodeURIComponent(body.companyId)}`,
+    body,
+  );
+}
+
+export async function createShishaInventoryStocktake(
+  body: CreateShishaStocktakePayload,
+): Promise<ApiParsedResult<{ id: string; stocktakeDate: string; status: string }>> {
+  return apiPost(
+    `/api/v1/orders/shisha-inventory/stocktakes?companyId=${encodeURIComponent(body.companyId)}`,
+    body,
+  );
+}
 
 // ——— الطلبات ———
 export async function getOrders(

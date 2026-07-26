@@ -11,6 +11,7 @@ export const orderKeys = {
   categoriesRoot: () => ['order-categories'] as const,
   productPurchaseHistoryRoot: () => ['product-purchase-history'] as const,
   categoryPurchaseHistoryRoot: () => ['category-purchase-history'] as const,
+  shishaInventoryRoot: () => ['shisha-inventory'] as const,
 
   list: (companyId: string, year: unknown, month: unknown) =>
     ['orders', companyId, year, month] as const,
@@ -39,4 +40,6 @@ export const orderKeys = {
 
   staffDigestRoot: () => ['staff-orders-digest'] as const,
   staffDigest: (companyId: string) => ['staff-orders-digest', companyId] as const,
+  shishaInventory: (companyId: string, startDate: string, endDate: string) =>
+    ['shisha-inventory', companyId, startDate, endDate] as const,
 };

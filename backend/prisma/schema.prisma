@@ -80,6 +80,8 @@ model User {
   backupJobsCreated BackupJob[] @relation("BackupCreatedBy")
   invoicesCreated Invoice[] @relation("InvoiceCreatedBy")
   staffOrders          StaffOrder[]
+  shishaInventoryMovements ShishaInventoryMovement[] @relation("ShishaInventoryMovementCreatedBy")
+  shishaStocktakes          ShishaStocktake[]          @relation("ShishaStocktakeCreatedBy")
 
   @@index([tenantId])
   @@map("users")
@@ -130,6 +132,9 @@ model Company {
   orderCategories     OrderCategory[]
   orderSections       OrderSection[]
   staffOrders         StaffOrder[]
+  shishaInventorySettings  ShishaInventorySettings?
+  shishaInventoryMovements ShishaInventoryMovement[]
+  shishaStocktakes          ShishaStocktake[]
   bankStatements      BankStatement[]
   bankStatementCategories BankStatementCategory[]
   bankTreeCategories  BankTreeCategory[]
@@ -1336,6 +1341,88 @@ model StaffOrderItem {
   @@index([staffOrderId])
   @@index([productId])
   @@map("staff_order_items")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHISHA INVENTORY — immutable operational ledger under Orders
+// Manual balances are never edited in place. Purchases and approved stocktakes
+// append movements; staff sales are read directly from StaffOrder records.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ShishaInventorySettings {
+  id                    String   @id @default(cuid())
+  tenantId              String   @map("tenant_id")
+  companyId             String   @unique @map("company_id")
+  trackingStartedAt     DateTime @map("tracking_started_at") @db.Date
+  headsPerKg            Decimal  @default(39) @map("heads_per_kg") @db.Decimal(10, 4)
+  charcoalPacksPerCarton Int     @default(10) @map("charcoal_packs_per_carton")
+  charcoalPiecesPerPack  Int     @default(64) @map("charcoal_pieces_per_pack")
+  shishaSectionId       String?  @map("shisha_section_id")
+  changeProductId       String?  @map("change_product_id")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("shisha_inventory_settings")
+}
+
+model ShishaInventoryMovement {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  transactionDate DateTime @map("transaction_date") @db.Date
+  movementType    String   @map("movement_type") // opening | purchase | stocktake_adjustment
+  materialType    String   @map("material_type") // tobacco | hose | charcoal
+  quantityBase    Decimal  @map("quantity_base") @db.Decimal(18, 6) // gram for tobacco, piece otherwise
+  costInclVat     Decimal? @map("cost_incl_vat") @db.Decimal(18, 4)
+  invoiceNumber   String?  @map("invoice_number")
+  supplierName    String?  @map("supplier_name")
+  sourceKey       String?  @unique @map("source_key")
+  stocktakeId     String?  @map("stocktake_id")
+  notes           String?  @db.Text
+  createdByUserId String?  @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  company   Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stocktake ShishaStocktake?  @relation(fields: [stocktakeId], references: [id], onDelete: Restrict)
+  createdBy User?             @relation("ShishaInventoryMovementCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([companyId, transactionDate])
+  @@index([companyId, materialType, transactionDate])
+  @@index([stocktakeId])
+  @@map("shisha_inventory_movements")
+}
+
+model ShishaStocktake {
+  id                     String   @id @default(cuid())
+  tenantId               String   @map("tenant_id")
+  companyId              String   @map("company_id")
+  stocktakeDate          DateTime @map("stocktake_date") @db.Date
+  status                 String   @default("approved")
+  expectedTobaccoGrams   Decimal  @map("expected_tobacco_grams") @db.Decimal(18, 6)
+  physicalTobaccoGrams   Decimal  @map("physical_tobacco_grams") @db.Decimal(18, 6)
+  tobaccoVarianceGrams   Decimal  @map("tobacco_variance_grams") @db.Decimal(18, 6)
+  expectedHoses          Decimal  @map("expected_hoses") @db.Decimal(18, 6)
+  physicalHoses          Decimal  @map("physical_hoses") @db.Decimal(18, 6)
+  hoseVariance           Decimal  @map("hose_variance") @db.Decimal(18, 6)
+  expectedCharcoalPieces Decimal  @map("expected_charcoal_pieces") @db.Decimal(18, 6)
+  physicalCharcoalPieces Decimal  @map("physical_charcoal_pieces") @db.Decimal(18, 6)
+  charcoalVariancePieces Decimal  @map("charcoal_variance_pieces") @db.Decimal(18, 6)
+  notes                  String?  @db.Text
+  createdByUserId        String?  @map("created_by_user_id")
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  company   Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User?                      @relation("ShishaStocktakeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  movements ShishaInventoryMovement[]
+
+  @@unique([companyId, stocktakeDate])
+  @@index([tenantId])
+  @@index([companyId, stocktakeDate])
+  @@map("shisha_stocktakes")
 }
 
 // â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ

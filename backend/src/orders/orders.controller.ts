@@ -9,6 +9,12 @@ import { RequireAnyPermission } from '../auth/decorators/require-any-permission.
 import { requireCompanyId } from '../common/utils/require-company-id';
 import { OrdersService } from './orders.service';
 import { OrdersStaffService } from './orders-staff.service';
+import { ShishaInventoryService } from './shisha-inventory.service';
+import {
+  CreateShishaPurchaseDto,
+  CreateShishaStocktakeDto,
+  InitializeShishaInventoryDto,
+} from './dto/shisha-inventory.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductsBatchDto } from './dto/create-products-batch.dto';
@@ -72,7 +78,61 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly staffService: OrdersStaffService,
+    private readonly shishaInventoryService: ShishaInventoryService,
   ) {}
+
+  @Get('shisha-inventory/summary')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_DIGEST')
+  getShishaInventorySummary(
+    @CompanyId() companyId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const range = parseRequiredDateRange(startDate, endDate);
+    return this.shishaInventoryService.getSummary(requireCompanyId(companyId), range.startDate, range.endDate);
+  }
+
+  @Post('shisha-inventory/initialize')
+  @RequirePermission('ORDERS_WRITE')
+  initializeShishaInventory(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: CurrentAuthUser,
+    @Body() body: InitializeShishaInventoryDto,
+  ) {
+    return this.shishaInventoryService.initialize(
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      body,
+    );
+  }
+
+  @Post('shisha-inventory/purchases')
+  @RequirePermission('ORDERS_WRITE')
+  createShishaInventoryPurchase(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: CurrentAuthUser,
+    @Body() body: CreateShishaPurchaseDto,
+  ) {
+    return this.shishaInventoryService.recordPurchase(
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      body,
+    );
+  }
+
+  @Post('shisha-inventory/stocktakes')
+  @RequirePermission('ORDERS_WRITE')
+  createShishaInventoryStocktake(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: CurrentAuthUser,
+    @Body() body: CreateShishaStocktakeDto,
+  ) {
+    return this.shishaInventoryService.createStocktake(
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      body,
+    );
+  }
 
   // ══════════════════════════════════════════════════
   // STAFF ORDERS — طلبات الأقسام

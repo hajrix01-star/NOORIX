@@ -35,6 +35,10 @@ import {
   updateOrderCategory,
   updateOrderProduct,
   updateStaffOrder,
+  getShishaInventorySummary,
+  initializeShishaInventory,
+  createShishaInventoryPurchase,
+  createShishaInventoryStocktake,
 } from '../services/api';
 import { orderKeys } from '../services/queryKeys';
 import { listYearMonthsInRange } from '../utils/datePeriod';
@@ -59,6 +63,10 @@ import type {
   StaffSaleNextLogRef,
   StaffSaleReport,
   UpdateOrderPayload,
+  ShishaInventorySummary,
+  InitializeShishaInventoryPayload,
+  CreateShishaPurchasePayload,
+  CreateShishaStocktakePayload,
 } from '../types/api';
 
 type MutationArgs<TBody> = { id: string; body: TBody };
@@ -374,6 +382,7 @@ export function useCreateStaffOrderMutation(companyId: string) {
       orderKeys.staffDigest(companyId),
       ['salesReport', companyId],
       ['staffSaleNextLogRef', companyId],
+      orderKeys.shishaInventoryRoot(),
     ],
     showErrorToast: false,
   });
@@ -386,6 +395,7 @@ export function useUpdateStaffOrderMutation(companyId: string) {
       orderKeys.staffMy(companyId),
       orderKeys.staffDigest(companyId),
       ['salesReport', companyId],
+      orderKeys.shishaInventoryRoot(),
     ],
     showErrorToast: false,
   });
@@ -398,8 +408,42 @@ export function useDeleteStaffOrderMutation(companyId: string) {
       orderKeys.staffMy(companyId),
       orderKeys.staffDigest(companyId),
       ['salesReport', companyId],
+      orderKeys.shishaInventoryRoot(),
     ],
     showErrorToast: false,
+  });
+}
+
+export function useShishaInventory(companyId: string, startDate: string, endDate: string) {
+  return useApiQuery<ShishaInventorySummary>({
+    queryKey: orderKeys.shishaInventory(companyId, startDate, endDate),
+    queryFn: () => getShishaInventorySummary(companyId, startDate, endDate),
+    fallbackMessage: 'Failed to load shisha inventory',
+    enabled: !!companyId && !!startDate && !!endDate,
+  });
+}
+
+export function useInitializeShishaInventoryMutation() {
+  return useApiMutation({
+    mutationFn: (body: InitializeShishaInventoryPayload) => initializeShishaInventory(body),
+    invalidateQueries: [orderKeys.shishaInventoryRoot()],
+    successToast: 'تم تسجيل مخزون البداية بنجاح',
+  });
+}
+
+export function useCreateShishaPurchaseMutation() {
+  return useApiMutation({
+    mutationFn: (body: CreateShishaPurchasePayload) => createShishaInventoryPurchase(body),
+    invalidateQueries: [orderKeys.shishaInventoryRoot()],
+    successToast: 'تم تسجيل حركة الشراء بنجاح',
+  });
+}
+
+export function useCreateShishaStocktakeMutation() {
+  return useApiMutation({
+    mutationFn: (body: CreateShishaStocktakePayload) => createShishaInventoryStocktake(body),
+    invalidateQueries: [orderKeys.shishaInventoryRoot()],
+    successToast: 'تم اعتماد الجرد وتسجيل فروقات التصحيح',
   });
 }
 
