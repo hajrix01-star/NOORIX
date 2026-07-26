@@ -16,7 +16,7 @@ import type {
 import { AdaptiveSheet, Badge, Button, DateField, DateFilterBar, DialogActions, Input, MetricCard, SimpleTable, Spinner } from '../../../ui';
 import type { ShishaInventoryMovement } from '../../../types/api';
 import type { SimpleTableColumn } from '../../../ui';
-import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 
 type FormKind = 'opening' | 'purchase' | 'stocktake' | null;
 const num = (value: number | string | null | undefined, digits = 3) =>
@@ -85,18 +85,19 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
   const canWrite = userPermissions.includes('ORDERS_WRITE');
   const normalizedStartDate = toYmd(startDate);
   const normalizedEndDate = toYmd(endDate);
+  const today = getSaudiToday();
   const [form, setForm] = useState<FormKind>(null);
-  const [openingDate, setOpeningDate] = useState(normalizedEndDate);
-  const [purchaseDate, setPurchaseDate] = useState(normalizedEndDate);
-  const [stocktakeDate, setStocktakeDate] = useState(normalizedEndDate);
+  const [openingDate, setOpeningDate] = useState(today);
+  const [purchaseDate, setPurchaseDate] = useState(today);
+  const [stocktakeDate, setStocktakeDate] = useState(today);
   const [purchaseMaterial, setPurchaseMaterial] = useState<CreateShishaPurchasePayload['materialType']>('tobacco');
   const [purchaseUnit, setPurchaseUnit] = useState<CreateShishaPurchasePayload['unit']>('kg');
   useEffect(() => {
     if (form) return;
-    setOpeningDate(normalizedEndDate);
-    setPurchaseDate(normalizedEndDate);
-    setStocktakeDate(normalizedEndDate);
-  }, [form, normalizedEndDate]);
+    setOpeningDate(today);
+    setPurchaseDate(today);
+    setStocktakeDate(today);
+  }, [form, today]);
   const { data, isLoading, error } = useShishaInventory(companyId, normalizedStartDate, normalizedEndDate);
   const initialize = useInitializeShishaInventoryMutation();
   const purchase = useCreateShishaPurchaseMutation();
@@ -173,16 +174,16 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
 
       <AdaptiveSheet open={form === 'opening'} onClose={() => setForm(null)} title="تسجيل مخزون البداية" size="lg"><form onSubmit={submitOpening} className="space-y-4">
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800">هذه العملية تنفذ مرة واحدة ولا يمكن تعديلها لاحقاً. تأكد من الكميات قبل الحفظ.</div>
-        <FieldGrid><DateField label="تاريخ بداية التتبع" value={openingDate} onValueChange={setOpeningDate} required /><Input name="headsPerKg" type="number" label="متوسط الرؤوس لكل كيلو" defaultValue="39" min="1" step="0.01" required /><Input name="tobaccoQuantity" type="number" label="المعسل (كجم)" defaultValue="15" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات (حبة)" defaultValue="0" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم (كرتون)" defaultValue="0" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم (باكت)" defaultValue="0" min="0" step="1" required /><Input name="charcoalPieces" type="number" label="الفحم (حبة)" defaultValue="0" min="0" step="1" required /><Input name="tobaccoCostInclVat" type="number" label="تكلفة المعسل شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="hoseCostInclVat" type="number" label="تكلفة الليات شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="charcoalCostInclVat" type="number" label="تكلفة الفحم شاملة الضريبة (اختياري)" min="0" step="0.01" /></FieldGrid>
+        <FieldGrid><DateField label="تاريخ بداية التتبع" value={openingDate} onValueChange={setOpeningDate} max={today} required /><Input name="headsPerKg" type="number" label="متوسط الرؤوس لكل كيلو" defaultValue="39" min="1" step="0.01" required /><Input name="tobaccoQuantity" type="number" label="المعسل (كجم)" defaultValue="15" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات (حبة)" defaultValue="0" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم (كرتون)" defaultValue="0" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم (باكت)" defaultValue="0" min="0" step="1" required /><Input name="charcoalPieces" type="number" label="الفحم (حبة)" defaultValue="0" min="0" step="1" required /><Input name="tobaccoCostInclVat" type="number" label="تكلفة المعسل شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="hoseCostInclVat" type="number" label="تكلفة الليات شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="charcoalCostInclVat" type="number" label="تكلفة الفحم شاملة الضريبة (اختياري)" min="0" step="0.01" /></FieldGrid>
         <Input name="notes" label="ملاحظات" multiline rows={2} /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'اعتماد مخزون البداية', role: 'save', type: 'submit', loading: initialize.isPending }]} />
       </form></AdaptiveSheet>
       <AdaptiveSheet open={form === 'purchase'} onClose={() => setForm(null)} title="تسجيل شراء للمخزون" size="lg"><form onSubmit={submitPurchase} className="space-y-4">
-        <FieldGrid><DateField label="تاريخ الشراء" value={purchaseDate} onValueChange={setPurchaseDate} required /><Input name="materialType" type="select" label="المادة" value={purchaseMaterial} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => { const material = event.target.value as CreateShishaPurchasePayload['materialType']; setPurchaseMaterial(material); const unit = material === 'tobacco' ? 'kg' : 'piece'; setPurchaseUnit(unit); }} required><option value="tobacco">معسل</option><option value="hose">ليات</option><option value="charcoal">فحم</option></Input><Input name="quantity" type="number" label="الكمية" min="0.001" step="0.001" required /><Input name="unit" type="select" label="الوحدة" value={purchaseUnit} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setPurchaseUnit(event.target.value as CreateShishaPurchasePayload['unit'])} required>{purchaseMaterial === 'tobacco' && <><option value="kg">كيلو</option><option value="g">جرام</option></>}{purchaseMaterial === 'hose' && <option value="piece">حبة</option>}{purchaseMaterial === 'charcoal' && <><option value="piece">حبة</option><option value="pack">باكت</option><option value="carton">كرتون</option></>}</Input><Input name="costInclVat" type="number" label="التكلفة شاملة الضريبة" min="0" step="0.01" /><Input name="invoiceNumber" label="رقم الفاتورة" /><Input name="supplierName" label="المورد" /></FieldGrid>
+        <FieldGrid><DateField label="تاريخ الشراء" value={purchaseDate} onValueChange={setPurchaseDate} max={today} required /><Input name="materialType" type="select" label="المادة" value={purchaseMaterial} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => { const material = event.target.value as CreateShishaPurchasePayload['materialType']; setPurchaseMaterial(material); const unit = material === 'tobacco' ? 'kg' : 'piece'; setPurchaseUnit(unit); }} required><option value="tobacco">معسل</option><option value="hose">ليات</option><option value="charcoal">فحم</option></Input><Input name="quantity" type="number" label="الكمية" min="0.001" step="0.001" required /><Input name="unit" type="select" label="الوحدة" value={purchaseUnit} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setPurchaseUnit(event.target.value as CreateShishaPurchasePayload['unit'])} required>{purchaseMaterial === 'tobacco' && <><option value="kg">كيلو</option><option value="g">جرام</option></>}{purchaseMaterial === 'hose' && <option value="piece">حبة</option>}{purchaseMaterial === 'charcoal' && <><option value="piece">حبة</option><option value="pack">باكت</option><option value="carton">كرتون</option></>}</Input><Input name="costInclVat" type="number" label="التكلفة شاملة الضريبة" min="0" step="0.01" /><Input name="invoiceNumber" label="رقم الفاتورة" /><Input name="supplierName" label="المورد" /></FieldGrid>
         <Input name="notes" label="ملاحظات" multiline rows={2} /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'تسجيل الشراء', role: 'save', type: 'submit', loading: purchase.isPending }]} />
       </form></AdaptiveSheet>
       <AdaptiveSheet open={form === 'stocktake'} onClose={() => setForm(null)} title="الجرد واعتماد التصحيح" size="lg"><form onSubmit={submitStocktake} className="space-y-4">
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">أدخل الكميات الفعلية. سيحسب نوركس الفرق عن الرصيد الدفتري ويسجله كعملية تصحيح مستقلة غير قابلة للتعديل.</div>
-        <FieldGrid><DateField label="تاريخ الجرد" value={stocktakeDate} onValueChange={setStocktakeDate} required /><Input name="tobaccoQuantity" type="number" label="المعسل الفعلي (كجم)" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات الفعلية (حبة)" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم الفعلي (كرتون)" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم الفعلي (باكت)" min="0" step="1" required /><Input name="charcoalPieces" type="number" label="الفحم الفعلي (حبة)" min="0" step="1" required /></FieldGrid>
+        <FieldGrid><DateField label="تاريخ الجرد" value={stocktakeDate} onValueChange={setStocktakeDate} max={today} required /><Input name="tobaccoQuantity" type="number" label="المعسل الفعلي (كجم)" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات الفعلية (حبة)" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم الفعلي (كرتون)" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم الفعلي (باكت)" min="0" step="1" required /><Input name="charcoalPieces" type="number" label="الفحم الفعلي (حبة)" min="0" step="1" required /></FieldGrid>
         <Input name="notes" label="سبب أو ملاحظات الجرد" multiline rows={2} required /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'اعتماد الجرد والتصحيح', role: 'save', type: 'submit', loading: stocktake.isPending }]} />
       </form></AdaptiveSheet>
     </div>

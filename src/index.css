@@ -4788,6 +4788,56 @@ select option {
   .ndfb-month-cell,
   .ndfb-year-cell,
   .ndfb-day-cell { min-height: 40px; font-size: 13px; }
+  .noorix-date-picker-popover {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 8px;
+  }
+  .noorix-date-picker-popover .ndfb-calendar-panel {
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .noorix-date-picker-popover .ndfb-calendar-panel__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 6px;
+  }
+  .noorix-date-picker-popover .ndfb-calendar-panel__head > span {
+    text-align: start;
+  }
+  .noorix-date-picker-popover .ndfb-calendar-head-controls {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr) 34px;
+    width: 100%;
+    gap: 5px;
+  }
+  .noorix-date-picker-popover .ndfb-calendar-year-select,
+  .noorix-date-picker-popover .ndfb-calendar-month-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .noorix-date-picker-popover .ndfb-weekday-grid,
+  .noorix-date-picker-popover .ndfb-day-grid {
+    width: 100%;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    direction: rtl;
+  }
+  .noorix-date-picker-popover[dir="ltr"] .ndfb-weekday-grid,
+  .noorix-date-picker-popover[dir="ltr"] .ndfb-day-grid {
+    direction: ltr;
+  }
+  .noorix-date-picker-popover .ndfb-day-cell {
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0;
+  }
   .ndfb-month-popover { padding: 14px; }
   .ndfb-month-popover__cell { min-height: 52px; font-size: 16px; }
   .ndfb-month-popover__year-value { font-size: 21px; }

@@ -224,6 +224,7 @@ export default function DateField({
         <div
           ref={popoverRef}
           className="noorix-date-picker-popover"
+          dir={safeLang === 'ar' ? 'rtl' : 'ltr'}
           style={popoverStyle ?? { position: 'fixed', top: 0, left: 0, width: 390, visibility: 'hidden' }}
           role="dialog"
           aria-label={typeof label === 'string' ? label : 'Date picker'}
@@ -234,6 +235,7 @@ export default function DateField({
               <div className="ndfb-calendar-head-controls">
                 <Button
                   variant="raw"
+                  size="auto"
                   type="button"
                   className="noorix-date-picker-nav-button"
                   aria-label={safeLang === 'en' ? 'Previous month' : 'الشهر السابق'}
@@ -257,6 +259,7 @@ export default function DateField({
                 />
                 <Button
                   variant="raw"
+                  size="auto"
                   type="button"
                   className="noorix-date-picker-nav-button"
                   aria-label={safeLang === 'en' ? 'Next month' : 'الشهر التالي'}
@@ -281,6 +284,7 @@ export default function DateField({
                 return (
                   <Button
                     variant="raw"
+                    size="auto"
                     key={date}
                     type="button"
                     disabled={blocked}
@@ -296,6 +300,7 @@ export default function DateField({
             <div className="noorix-date-picker-actions">
               <Button
                 variant="raw"
+                size="auto"
                 type="button"
                 className="noorix-date-picker-action"
                 disabled={!canUseToday}
@@ -306,6 +311,7 @@ export default function DateField({
               {!required ? (
                 <Button
                   variant="raw"
+                  size="auto"
                   type="button"
                   className="noorix-date-picker-action"
                   onClick={clearValue}
