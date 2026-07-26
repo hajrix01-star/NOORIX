@@ -4,6 +4,11 @@ import moment from 'moment-timezone';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ReportsService } from '../reports/reports.service';
 import type { GeneralProfitLossModel } from '../reports/reports-general-profit-loss-model.util';
+import {
+  buildOwnerAdminDashboardExecutiveSnapshot,
+  type OwnerExecutiveDailySalesSource,
+  type OwnerExecutiveSalesChannelSource,
+} from './owner-admin-dashboard-executive-snapshot.util';
 
 type MetricKey = 'sales' | 'purchases' | 'expenses';
 type Direction = 'up' | 'down' | 'stable';
@@ -11,6 +16,7 @@ type Direction = 'up' | 'down' | 'stable';
 type CompanyReference = { id: string; nameAr: string; nameEn: string | null };
 
 type AdminDashboardPrisma = {
+  $queryRaw<T>(query: TemplateStringsArray, ...values: unknown[]): Promise<T>;
   company: {
     findMany(args: {
       where: { id: { in: string[] }; isArchived: false; tenantId: string };
@@ -18,6 +24,9 @@ type AdminDashboardPrisma = {
     }): Promise<CompanyReference[]>;
   };
 };
+
+type ExecutiveDailySalesRow = { amount: string; date: Date | string };
+type ExecutiveSalesChannelRow = { amount: string; id: string; labelAr: string; labelEn: string | null };
 
 type AdminDashboardReports = {
   getGeneralProfitLoss(companyId: string, year: number): Promise<GeneralProfitLossModel>;
@@ -36,6 +45,10 @@ function allowedCompanyIds(): string[] {
 
 function monthReference(value: moment.Moment): MonthReference {
   return { month: value.month() + 1, year: value.year() };
+}
+
+function utcDateBoundary(value: moment.Moment, endOfDay = false): Date {
+  return new Date(`${value.format('YYYY-MM-DD')}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`);
 }
 
 function reportValue(report: GeneralProfitLossModel, metric: MetricKey, month: number): number {
@@ -68,11 +81,80 @@ export class OwnerAdminDashboardService {
     @Inject(ReportsService) private readonly reportsService: AdminDashboardReports,
   ) {}
 
+  private async loadExecutiveDailySales(
+    companyId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<OwnerExecutiveDailySalesSource[]> {
+    return this.prisma.$queryRaw<ExecutiveDailySalesRow[]>`
+      WITH channel_sales AS (
+        SELECT dss.transaction_date::date AS date, SUM(dsc.amount) AS amount
+        FROM daily_sales_channels dsc
+        JOIN daily_sales_summaries dss ON dsc.summary_id = dss.id
+        WHERE dss.company_id = ${companyId}
+          AND dss.status = 'active'
+          AND dss.transaction_date BETWEEN ${startDate} AND ${endDate}
+        GROUP BY dss.transaction_date::date
+      ), other_ledger_sales AS (
+        SELECT le.transaction_date::date AS date, SUM(le.amount) AS amount
+        FROM ledger_entries le
+        JOIN accounts ca ON ca.id = le.credit_account_id
+        LEFT JOIN invoices i ON (
+          i.company_id = le.company_id
+          AND (
+            (le.reference_type IN ('invoice', 'salary', 'advance') AND i.id = le.reference_id)
+            OR (le.reference_type = 'sale' AND i.daily_sales_summary_id = le.reference_id)
+          )
+        )
+        WHERE le.company_id = ${companyId}
+          AND le.status = 'active'
+          AND ca.type = 'revenue'
+          AND (i.kind IS NULL OR i.kind <> 'sale')
+          AND le.transaction_date BETWEEN ${startDate} AND ${endDate}
+        GROUP BY le.transaction_date::date
+      )
+      SELECT date, SUM(amount)::text AS amount
+      FROM (
+        SELECT date, amount FROM channel_sales
+        UNION ALL
+        SELECT date, amount FROM other_ledger_sales
+      ) source_sales
+      GROUP BY date
+      ORDER BY date ASC
+    `;
+  }
+
+  private async loadExecutiveSalesChannels(
+    companyId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<OwnerExecutiveSalesChannelSource[]> {
+    return this.prisma.$queryRaw<ExecutiveSalesChannelRow[]>`
+      SELECT
+        v.id AS id,
+        v.name_ar AS "labelAr",
+        v.name_en AS "labelEn",
+        SUM(dsc.amount)::text AS amount
+      FROM daily_sales_channels dsc
+      JOIN daily_sales_summaries dss ON dsc.summary_id = dss.id
+      JOIN vaults v ON dsc.vault_id = v.id
+      WHERE dss.company_id = ${companyId}
+        AND dss.status = 'active'
+        AND dss.transaction_date BETWEEN ${startDate} AND ${endDate}
+      GROUP BY v.id, v.name_ar, v.name_en
+      ORDER BY v.id ASC
+    `;
+  }
+
   async getSnapshot(tenantId: string) {
     const companyIds = allowedCompanyIds();
     if (companyIds.length === 0) throw new Error('ADMIN_DASHBOARD_COMPANY_IDS is not configured');
 
     const now = moment().tz('Asia/Riyadh');
+    const latestCompleteDay = now.clone().startOf('day').subtract(1, 'day');
+    const executiveWindowStart = latestCompleteDay.clone().subtract(13, 'days');
+    const executiveMonthStart = latestCompleteDay.clone().startOf('month');
+    const executiveSalesDataStart = moment.min(executiveWindowStart, executiveMonthStart);
     const currentStart = now.clone().startOf('month');
     const previousStart = currentStart.clone().subtract(1, 'month');
     const previousEnd = previousStart.clone().endOf('month');
@@ -88,7 +170,7 @@ export class OwnerAdminDashboardService {
     });
 
     const companyData = await Promise.all(companies.map(async (company) => {
-      const [reports, currentPeriodAnalytics, previousPeriodAnalytics] = await Promise.all([
+      const [reports, currentPeriodAnalytics, previousPeriodAnalytics, executiveDailySales, executiveSalesChannels] = await Promise.all([
         Promise.all(reportYears.map(async (year) => ({ year, report: await this.reportsService.getGeneralProfitLoss(company.id, year) }))),
         this.reportsService.getGeneralProfitLossPeriodTotals(
           company.id,
@@ -99,6 +181,16 @@ export class OwnerAdminDashboardService {
           company.id,
           previousStart.format('YYYY-MM-DD'),
           previousComparableEnd.format('YYYY-MM-DD'),
+        ),
+        this.loadExecutiveDailySales(
+          company.id,
+          utcDateBoundary(executiveSalesDataStart),
+          utcDateBoundary(latestCompleteDay, true),
+        ),
+        this.loadExecutiveSalesChannels(
+          company.id,
+          utcDateBoundary(executiveMonthStart),
+          utcDateBoundary(latestCompleteDay, true),
         ),
       ]);
       const reportByYear = new Map(reports.map((entry) => [entry.year, entry.report]));
@@ -135,6 +227,11 @@ export class OwnerAdminDashboardService {
           previousComparablePeriod: previousComparableDailySalesAverage,
           previousFullMonth: previousComparableDailySalesAverage,
         },
+        executiveSnapshot: buildOwnerAdminDashboardExecutiveSnapshot({
+          dailySales: executiveDailySales,
+          latestCompleteDate: latestCompleteDay.format('YYYY-MM-DD'),
+          salesChannels: executiveSalesChannels,
+        }),
         monthlyPerformance: history.map(({ year, month }, index) => {
           const report = reportByYear.get(year);
           const previousMonth = historyWithComparison[index + 1];

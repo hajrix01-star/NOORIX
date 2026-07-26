@@ -31,7 +31,12 @@ describe('OwnerAdminDashboardService', () => {
   });
 
   it('returns independent source values and computes daily averages inside NOORIX', async () => {
+    const rawCalls: unknown[][] = [];
     const prisma = {
+      $queryRaw: async <T,>(_query: TemplateStringsArray, ...values: unknown[]) => {
+        rawCalls.push(values);
+        return [] as T;
+      },
       company: {
         findMany: jest.fn(async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: 'Company 1' }]),
       },
@@ -65,6 +70,19 @@ describe('OwnerAdminDashboardService', () => {
       endDate: '2026-06-19',
     });
     expect(snapshot.companies[0]?.monthlyPerformance).toHaveLength(6);
+    expect(snapshot.companies[0]?.executiveSnapshot).toMatchObject({
+      coverage: { currentDays: 18, previousDays: 18 },
+      dailySales: Array.from({ length: 14 }, expect.anything),
+      latestCompleteDay: {
+        date: '2026-07-18',
+        sales: 0,
+        previousDaySales: 0,
+        changePercent: 0,
+        direction: 'stable',
+      },
+      monthEndForecast: 0,
+      salesChannels: [],
+    });
     expect(reports.getGeneralProfitLossPeriodTotals).toHaveBeenNthCalledWith(
       1,
       'company-1',
@@ -81,13 +99,18 @@ describe('OwnerAdminDashboardService', () => {
       where: { id: { in: ['company-1'] }, isArchived: false, tenantId: 'tenant-1' },
       select: { id: true, nameAr: true, nameEn: true },
     });
+    expect(rawCalls[0]?.[1]).toEqual(new Date('2026-07-01T00:00:00.000Z'));
+    expect(rawCalls[0]?.[2]).toEqual(new Date('2026-07-18T23:59:59.999Z'));
   });
 
   it('does not convert a missing financial source value to zero', async () => {
     const invalid = report(100);
     invalid.groups[0]!.months[6] = '';
     const service = new OwnerAdminDashboardService(
-      { company: { findMany: async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: null }] } },
+      {
+        $queryRaw: async <T,>() => [] as T,
+        company: { findMany: async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: null }] },
+      },
       {
         getGeneralProfitLoss: async () => invalid,
         getGeneralProfitLossPeriodTotals: async () => ({
