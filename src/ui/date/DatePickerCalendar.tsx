@@ -97,7 +97,7 @@ export default function DatePickerCalendar({
           disabled={previousMonthBlocked}
           onClick={() => onShiftMonth(-1)}
         >
-          ‹
+          <span className={styles.controlGlyph} aria-hidden="true">‹</span>
         </button>
         <button
           type="button"
@@ -117,7 +117,7 @@ export default function DatePickerCalendar({
           disabled={nextMonthBlocked}
           onClick={() => onShiftMonth(1)}
         >
-          ›
+          <span className={styles.controlGlyph} aria-hidden="true">›</span>
         </button>
       </div>
 
@@ -131,7 +131,7 @@ export default function DatePickerCalendar({
               aria-label={language === 'en' ? 'Previous year' : 'السنة السابقة'}
               onClick={() => previousYear !== null && onYearChange(previousYear)}
             >
-              ‹
+              <span className={styles.controlGlyph} aria-hidden="true">‹</span>
             </button>
             <strong>{year}</strong>
             <button
@@ -141,7 +141,7 @@ export default function DatePickerCalendar({
               aria-label={language === 'en' ? 'Next year' : 'السنة التالية'}
               onClick={() => nextYear !== null && onYearChange(nextYear)}
             >
-              ›
+              <span className={styles.controlGlyph} aria-hidden="true">›</span>
             </button>
           </div>
           <div className={styles.monthGrid}>
@@ -202,7 +202,7 @@ export default function DatePickerCalendar({
                     onKeyDown={(event) => handleDayKeyDown(event, day)}
                     onClick={() => onSelectDay(day)}
                   >
-                    {day}
+                    <span className={styles.dayLabel}>{day}</span>
                   </button>
                 </span>
               );
