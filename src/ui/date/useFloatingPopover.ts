@@ -2,12 +2,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type React from 'react';
 
 export type FloatingPopoverOptions = {
+  enabled?: boolean;
   maxWidth?: number;
   margin?: number;
   offset?: number;
 };
 
 export function useFloatingPopover({
+  enabled = true,
   maxWidth = 360,
   margin = 14,
   offset = 8,
@@ -18,22 +20,34 @@ export function useFloatingPopover({
   const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties | null>(null);
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open || !enabled) return;
 
     const updatePopoverPosition = () => {
       const trigger = triggerRef.current;
-      if (!trigger) return;
+      const popover = popoverRef.current;
+      if (!trigger || !popover) return;
 
       const rect = trigger.getBoundingClientRect();
       const width = Math.min(maxWidth, window.innerWidth - margin * 2);
       const left = Math.min(Math.max(rect.left + rect.width / 2 - width / 2, margin), window.innerWidth - width - margin);
-      const top = Math.min(rect.bottom + offset, window.innerHeight - margin);
+      const viewportHeight = Math.max(0, window.innerHeight - margin * 2);
+      const popoverHeight = Math.min(popover.getBoundingClientRect().height, viewportHeight);
+      const availableBelow = Math.max(0, window.innerHeight - rect.bottom - offset - margin);
+      const availableAbove = Math.max(0, rect.top - offset - margin);
+      const placeAbove = popoverHeight > availableBelow && availableAbove > availableBelow;
+      const availableHeight = placeAbove ? availableAbove : availableBelow;
+      const maxHeight = Math.max(0, Math.min(viewportHeight, availableHeight));
+      const top = placeAbove
+        ? Math.max(margin, rect.top - offset - Math.min(popoverHeight, maxHeight))
+        : Math.min(rect.bottom + offset, window.innerHeight - margin);
 
       setPopoverStyle({
         position: 'fixed',
         top,
         left,
         width,
+        maxHeight,
+        overflowY: 'auto',
       });
     };
 
@@ -45,7 +59,7 @@ export function useFloatingPopover({
       window.removeEventListener('resize', updatePopoverPosition);
       window.removeEventListener('scroll', updatePopoverPosition, true);
     };
-  }, [margin, maxWidth, offset, open]);
+  }, [enabled, margin, maxWidth, offset, open]);
 
   useEffect(() => {
     if (!open) return;

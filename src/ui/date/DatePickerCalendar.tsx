@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { lastDayOfMonth, ymd } from './datePeriod';
 import type { NoorixDateLanguage } from './dateLocale';
 import styles from './DatePickerCalendar.module.css';
@@ -42,6 +42,7 @@ export default function DatePickerCalendar({
   onMonthChange,
   onSelectDay,
 }: DatePickerCalendarProps) {
+  const [periodOpen, setPeriodOpen] = useState(false);
   const daysCount = lastDayOfMonth(year, month);
   const firstWeekday = new Date(year, month - 1, 1).getDay();
   const weekCount = Math.ceil((firstWeekday + daysCount) / 7);
@@ -52,6 +53,39 @@ export default function DatePickerCalendar({
     }),
   );
   const rtl = language === 'ar';
+  const yearIndex = years.findIndex((option) => option.value === year);
+  const previousYear = yearIndex > 0 ? years[yearIndex - 1]?.value : null;
+  const nextYear = yearIndex >= 0 && yearIndex < years.length - 1 ? years[yearIndex + 1]?.value : null;
+  const calendarTitle = `${monthNames[month - 1]} ${year}`;
+  const weekdayLabels = rtl ? ['أحد', 'اثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'] : weekdayNames;
+  const minMonth = min?.slice(0, 7) ?? '';
+  const maxMonth = max?.slice(0, 7) ?? '';
+  const monthKey = (targetYear: number, targetMonth: number) => `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
+  const isMonthBlocked = (targetYear: number, targetMonth: number) => {
+    const key = monthKey(targetYear, targetMonth);
+    return (minMonth !== '' && key < minMonth) || (maxMonth !== '' && key > maxMonth);
+  };
+  const adjacentMonth = (delta: number) => new Date(year, month - 1 + delta, 1);
+  const previousMonth = adjacentMonth(-1);
+  const nextMonth = adjacentMonth(1);
+  const previousMonthBlocked = isMonthBlocked(previousMonth.getFullYear(), previousMonth.getMonth() + 1);
+  const nextMonthBlocked = isMonthBlocked(nextMonth.getFullYear(), nextMonth.getMonth() + 1);
+
+  const handleDayKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, day: number) => {
+    const delta = event.key === 'ArrowRight' ? (rtl ? -1 : 1)
+      : event.key === 'ArrowLeft' ? (rtl ? 1 : -1)
+        : event.key === 'ArrowDown' ? 7
+          : event.key === 'ArrowUp' ? -7
+            : 0;
+    if (!delta) return;
+    event.preventDefault();
+    const targetDay = day + delta;
+    if (targetDay < 1 || targetDay > daysCount) return;
+    event.currentTarget
+      .closest<HTMLElement>('[data-testid="date-picker-calendar"]')
+      ?.querySelector<HTMLButtonElement>(`[data-calendar-date="${ymd(year, month, targetDay)}"]`)
+      ?.focus();
+  };
 
   return (
     <div className={styles.root} data-testid="date-picker-calendar">
@@ -60,39 +94,86 @@ export default function DatePickerCalendar({
           type="button"
           className={styles.nav}
           aria-label={language === 'en' ? 'Previous month' : 'الشهر السابق'}
+          disabled={previousMonthBlocked}
           onClick={() => onShiftMonth(-1)}
         >
           ‹
         </button>
-        <select
-          className={styles.select}
+        <button
+          type="button"
+          className={styles.periodTrigger}
           dir={rtl ? 'rtl' : 'ltr'}
-          aria-label={language === 'en' ? 'Month' : 'الشهر'}
-          value={month}
-          onChange={(event) => onMonthChange(Number(event.target.value))}
+          aria-label={language === 'en' ? 'Choose month and year' : 'اختيار الشهر والسنة'}
+          aria-expanded={periodOpen}
+          onClick={() => setPeriodOpen((open) => !open)}
         >
-          {monthNames.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}
-        </select>
-        <select
-          className={styles.select}
-          aria-label={language === 'en' ? 'Year' : 'السنة'}
-          value={year}
-          onChange={(event) => onYearChange(Number(event.target.value))}
-        >
-          {years.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
+          <span>{calendarTitle}</span>
+          <span className={styles.periodChevron} aria-hidden="true">⌄</span>
+        </button>
         <button
           type="button"
           className={styles.nav}
           aria-label={language === 'en' ? 'Next month' : 'الشهر التالي'}
+          disabled={nextMonthBlocked}
           onClick={() => onShiftMonth(1)}
         >
           ›
         </button>
       </div>
 
+      {periodOpen ? (
+        <div className={styles.periodPanel}>
+          <div className={styles.yearNav} dir="ltr">
+            <button
+              type="button"
+              className={styles.yearButton}
+              disabled={previousYear === null}
+              aria-label={language === 'en' ? 'Previous year' : 'السنة السابقة'}
+              onClick={() => previousYear !== null && onYearChange(previousYear)}
+            >
+              ‹
+            </button>
+            <strong>{year}</strong>
+            <button
+              type="button"
+              className={styles.yearButton}
+              disabled={nextYear === null}
+              aria-label={language === 'en' ? 'Next year' : 'السنة التالية'}
+              onClick={() => nextYear !== null && onYearChange(nextYear)}
+            >
+              ›
+            </button>
+          </div>
+          <div className={styles.monthGrid}>
+            {monthNames.map((name, index) => {
+              const monthValue = index + 1;
+              const blocked = isMonthBlocked(year, monthValue);
+              return (
+                <button
+                  type="button"
+                  key={name}
+                  className={`${styles.monthButton}${monthValue === month ? ` ${styles.monthButtonActive}` : ''}`}
+                  aria-label={`${name} ${year}`}
+                  disabled={blocked}
+                  onClick={() => {
+                    onMonthChange(monthValue);
+                    setPeriodOpen(false);
+                  }}
+                >
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <div className={styles.weekdays} dir={rtl ? 'rtl' : 'ltr'} role="row">
-        {weekdayNames.map((name) => <span key={name} className={styles.weekday} role="columnheader">{name}</span>)}
+        {weekdayNames.map((name, index) => (
+          <span key={name} className={styles.weekday} role="columnheader" aria-label={name}>
+            {weekdayLabels[index]}
+          </span>
+        ))}
       </div>
 
       <div
@@ -117,6 +198,8 @@ export default function DatePickerCalendar({
                     disabled={blocked}
                     className={`${styles.day}${active ? ` ${styles.active}` : ''}${blocked ? ` ${styles.disabled}` : ''}`}
                     aria-label={date}
+                    data-calendar-date={date}
+                    onKeyDown={(event) => handleDayKeyDown(event, day)}
                     onClick={() => onSelectDay(day)}
                   >
                     {day}

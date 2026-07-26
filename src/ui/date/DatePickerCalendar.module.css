@@ -1,6 +1,18 @@
+.inlineHost {
+  position: static;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
 .root {
-  inline-size: 100%;
-  min-inline-size: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   border: 1px solid #d8e2ef;
   border-radius: 12px;
   background: var(--noorix-bg-surface);
@@ -10,7 +22,11 @@
 
 .header {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) minmax(86px, 0.68fr) 40px;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  contain: layout paint;
   align-items: center;
   gap: 6px;
   margin-block-end: 8px;
@@ -21,8 +37,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 40px;
-  block-size: 40px;
+  width: 40px;
+  max-width: 100%;
+  height: 40px;
   box-sizing: border-box;
   border: 1px solid var(--noorix-border);
   border-radius: 9px;
@@ -43,10 +60,31 @@
   outline-offset: 1px;
 }
 
-.select {
-  inline-size: 100%;
-  min-inline-size: 0;
-  block-size: 40px;
+.nav:disabled,
+.monthButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.34;
+}
+
+.nav:disabled:hover,
+.monthButton:disabled:hover {
+  border-color: var(--noorix-border);
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  outline: none;
+}
+
+.periodTrigger {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 40px;
+  overflow: hidden;
   box-sizing: border-box;
   border: 1px solid var(--noorix-border);
   border-radius: 9px;
@@ -57,18 +95,112 @@
   font-size: 13px;
   font-weight: 800;
   text-align: center;
+  cursor: pointer;
 }
 
-.select:focus {
+.periodTrigger:hover,
+.periodTrigger:focus-visible {
   border-color: var(--noorix-accent-blue);
   outline: 2px solid var(--noorix-blue-20);
   outline-offset: 1px;
+}
+
+.periodTrigger > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.periodChevron {
+  flex: 0 0 auto;
+  color: var(--noorix-text-muted);
+  font-size: 15px;
+}
+
+.periodPanel {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid var(--noorix-border);
+  border-radius: 10px;
+  background: var(--noorix-bg-surface);
+  margin-block-end: 8px;
+  padding: 8px;
+}
+
+.yearNav {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  align-items: center;
+  gap: 6px;
+  margin-block-end: 7px;
+  text-align: center;
+}
+
+.yearButton,
+.monthButton {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid var(--noorix-border);
+  border-radius: 7px;
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-primary);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.yearButton {
+  width: 34px;
+  height: 32px;
+  font-size: 18px;
+}
+
+.yearButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+
+.monthButton {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 34px;
+  overflow: hidden;
+  padding: 0 4px;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monthButtonActive {
+  border-color: var(--noorix-accent-blue);
+  background: var(--noorix-blue-8);
+  color: var(--noorix-accent-blue);
 }
 
 .weekdays,
 .week {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  contain: layout paint;
   column-gap: 4px;
 }
 
@@ -91,12 +223,23 @@
 
 .weeks {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  contain: layout paint;
   row-gap: 4px;
 }
 
 .cell {
-  min-inline-size: 0;
-  block-size: 40px;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 40px;
+  overflow: hidden;
+  box-sizing: border-box;
+  contain: layout paint;
 }
 
 .day {
@@ -104,9 +247,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 100%;
-  block-size: 100%;
-  min-inline-size: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 100%;
+  overflow: hidden;
   box-sizing: border-box;
   border: 1px solid #d8e2ef;
   border-radius: 8px;
@@ -155,11 +300,11 @@
 
 @media (max-width: 420px) {
   .root { padding: 8px; }
-  .header { grid-template-columns: 36px minmax(0, 1fr) minmax(78px, 0.65fr) 36px; gap: 4px; }
-  .nav { inline-size: 36px; block-size: 38px; }
-  .select { block-size: 38px; padding-inline: 5px; font-size: 12px; }
+  .header { grid-template-columns: 36px minmax(0, 1fr) 36px; gap: 4px; }
+  .nav { width: 36px; height: 38px; }
+  .periodTrigger { height: 38px; padding: 0 6px; font-size: 12px; }
   .weekdays, .week { column-gap: 3px; }
   .weeks { row-gap: 3px; }
-  .cell { block-size: 38px; }
+  .cell { height: 38px; }
   .day { border-radius: 7px; font-size: 12px; }
 }

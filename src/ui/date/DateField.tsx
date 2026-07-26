@@ -1,7 +1,10 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Button from '../Button';
 import { cn } from '../cn';
+import { useIsMobile640 } from '../responsive';
 import DatePickerCalendar from './DatePickerCalendar';
+import calendarStyles from './DatePickerCalendar.module.css';
 import { getGregorianMonthNames, getGregorianWeekdayNames, type NoorixDateLanguage } from './dateLocale';
 import { ymd } from './datePeriod';
 import { useFloatingPopover } from './useFloatingPopover';
@@ -114,6 +117,7 @@ export default function DateField({
   const monthNames = useMemo(() => getGregorianMonthNames(safeLang), [safeLang]);
   const weekdayNames = useMemo(() => getGregorianWeekdayNames(safeLang), [safeLang]);
   const years = useMemo(() => yearOptions(min, max, calendarYear), [calendarYear, max, min]);
+  const mobileInline = useIsMobile640();
   const {
     triggerRef,
     popoverRef,
@@ -122,7 +126,7 @@ export default function DateField({
     popoverStyle,
     closePopover,
     togglePopover,
-  } = useFloatingPopover({ maxWidth: 390 });
+  } = useFloatingPopover({ enabled: !mobileInline, maxWidth: 390 });
 
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   const displayValue = value || placeholder;
@@ -180,6 +184,55 @@ export default function DateField({
     readOnly && 'bg-noorix-bg-muted cursor-default',
     typeof className === 'string' ? className : '',
   );
+  const calendarPanel = open && !disabled && !readOnly ? (
+    <div
+      ref={popoverRef}
+      className={mobileInline ? calendarStyles.inlineHost : 'noorix-date-picker-popover'}
+      dir={safeLang === 'ar' ? 'rtl' : 'ltr'}
+      style={mobileInline ? undefined : (popoverStyle ?? { position: 'fixed', top: 0, left: 0, width: 390, visibility: 'hidden' })}
+      role="dialog"
+      aria-label={typeof label === 'string' ? label : 'Date picker'}
+    >
+      <DatePickerCalendar
+        language={safeLang}
+        year={calendarYear}
+        month={calendarMonth}
+        value={value}
+        min={min}
+        max={max}
+        monthNames={monthNames}
+        weekdayNames={weekdayNames}
+        years={years}
+        onShiftMonth={shiftCalendarMonth}
+        onYearChange={(nextYear) => setCalendarMonth(nextYear, calendarMonth)}
+        onMonthChange={(nextMonth) => setCalendarMonth(calendarYear, nextMonth)}
+        onSelectDay={selectDay}
+      />
+      <div className="noorix-date-picker-actions">
+        <Button
+          variant="raw"
+          size="auto"
+          type="button"
+          className="noorix-date-picker-action"
+          disabled={!canUseToday}
+          onClick={selectToday}
+        >
+          {safeLang === 'en' ? 'Today' : 'اليوم'}
+        </Button>
+        {!required ? (
+          <Button
+            variant="raw"
+            size="auto"
+            type="button"
+            className="noorix-date-picker-action"
+            onClick={clearValue}
+          >
+            {safeLang === 'en' ? 'Clear' : 'مسح'}
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className={cn('noorix-date-field-wrap flex flex-col gap-1', containerClassName)}>
@@ -214,55 +267,7 @@ export default function DateField({
         <span className="noorix-date-field__icon" aria-hidden="true">v</span>
       </Button>
 
-      {open && !disabled && !readOnly ? (
-        <div
-          ref={popoverRef}
-          className="noorix-date-picker-popover"
-          dir={safeLang === 'ar' ? 'rtl' : 'ltr'}
-          style={popoverStyle ?? { position: 'fixed', top: 0, left: 0, width: 390, visibility: 'hidden' }}
-          role="dialog"
-          aria-label={typeof label === 'string' ? label : 'Date picker'}
-        >
-          <DatePickerCalendar
-            language={safeLang}
-            year={calendarYear}
-            month={calendarMonth}
-            value={value}
-            min={min}
-            max={max}
-            monthNames={monthNames}
-            weekdayNames={weekdayNames}
-            years={years}
-            onShiftMonth={shiftCalendarMonth}
-            onYearChange={(nextYear) => setCalendarMonth(nextYear, calendarMonth)}
-            onMonthChange={(nextMonth) => setCalendarMonth(calendarYear, nextMonth)}
-            onSelectDay={selectDay}
-          />
-          <div className="noorix-date-picker-actions">
-              <Button
-                variant="raw"
-                size="auto"
-                type="button"
-                className="noorix-date-picker-action"
-                disabled={!canUseToday}
-                onClick={selectToday}
-              >
-                {safeLang === 'en' ? 'Today' : 'اليوم'}
-              </Button>
-              {!required ? (
-                <Button
-                  variant="raw"
-                  size="auto"
-                  type="button"
-                  className="noorix-date-picker-action"
-                  onClick={clearValue}
-                >
-                  {safeLang === 'en' ? 'Clear' : 'مسح'}
-                </Button>
-              ) : null}
-          </div>
-        </div>
-      ) : null}
+      {mobileInline ? calendarPanel : (calendarPanel && typeof document !== 'undefined' ? createPortal(calendarPanel, document.body) : null)}
 
       {hint && !error && (
         <p id={`${id}-hint`} className="text-[12px] text-noorix-muted">{hint}</p>

@@ -35,13 +35,43 @@ describe('Noorix date fields', () => {
     );
 
     fireEvent.click(screen.getByLabelText('date'));
-    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '8' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Choose month and year' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aug 2026' }));
 
     expect(onValueChange).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: '2026-08-06' }));
 
     expect(onValueChange).toHaveBeenCalledWith('2026-08-06');
+  });
+
+  it('uses custom period controls instead of native selects', () => {
+    render(
+      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
+        <DateField aria-label="date" lang="en" value="2026-07-27" />
+      </AppTestProviders>,
+    );
+
+    fireEvent.click(screen.getByLabelText('date'));
+
+    const calendar = screen.getByTestId('date-picker-calendar');
+    expect(calendar.querySelector('select')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Choose month and year' }).getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('supports RTL-aware keyboard navigation between day cells', () => {
+    render(
+      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'ar' }}>
+        <DateField aria-label="date" lang="ar" value="2026-07-27" />
+      </AppTestProviders>,
+    );
+
+    fireEvent.click(screen.getByLabelText('date'));
+    const selectedDay = screen.getByRole('button', { name: '2026-07-27' });
+    selectedDay.focus();
+    fireEvent.keyDown(selectedDay, { key: 'ArrowRight' });
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '2026-07-26' }));
   });
 
   it('keeps blocked days disabled when min and max boundaries are present', () => {
@@ -55,6 +85,9 @@ describe('Noorix date fields', () => {
 
     expect(screen.getByRole('button', { name: '2026-07-03' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: '2026-07-07' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Next month' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Choose month and year' }));
+    expect(screen.getByRole('button', { name: 'Aug 2026' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('renders an isolated seven-column calendar without shared Button or table layout styles', () => {

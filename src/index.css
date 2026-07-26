@@ -3762,7 +3762,7 @@ select option {
   line-height: 1;
 }
 .noorix-date-picker-popover {
-  z-index: 90;
+  z-index: 2002;
   border: 1px solid var(--noorix-border);
   border-radius: 14px;
   background: var(--noorix-bg-surface);
