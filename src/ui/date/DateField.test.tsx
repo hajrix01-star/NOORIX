@@ -57,7 +57,7 @@ describe('Noorix date fields', () => {
     expect(screen.getByRole('button', { name: '2026-07-07' }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('renders a fixed seven-column calendar table without the shared Button layout classes', () => {
+  it('renders an isolated seven-column calendar without shared Button or table layout styles', () => {
     render(
       <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
         <DateField aria-label="date" lang="en" value="2026-07-27" />
@@ -66,10 +66,11 @@ describe('Noorix date fields', () => {
 
     fireEvent.click(screen.getByLabelText('date'));
 
-    const table = document.querySelector('.nx-date-table');
-    expect(table?.querySelectorAll('thead th')).toHaveLength(7);
-    expect(table?.querySelectorAll('tbody tr')).toHaveLength(6);
-    expect(table?.querySelectorAll('button[aria-label^="2026-07-"]')).toHaveLength(31);
+    const calendar = screen.getByTestId('date-picker-calendar');
+    expect(calendar.querySelectorAll('[role="columnheader"]')).toHaveLength(7);
+    expect(calendar.querySelectorAll('[data-calendar-week]')).toHaveLength(5);
+    expect(calendar.querySelectorAll('button[aria-label^="2026-07-"]')).toHaveLength(31);
+    expect(calendar.querySelector('table')).toBeNull();
     expect(screen.getByRole('button', { name: '2026-07-27' }).className).not.toContain('inline-flex');
   });
 

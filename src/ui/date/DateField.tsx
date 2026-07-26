@@ -1,9 +1,9 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import Button from '../Button';
 import { cn } from '../cn';
-import { DatePeriodSelect, type DatePeriodSelectOption } from './DatePeriodControls';
+import DatePickerCalendar from './DatePickerCalendar';
 import { getGregorianMonthNames, getGregorianWeekdayNames, type NoorixDateLanguage } from './dateLocale';
-import { lastDayOfMonth, ymd } from './datePeriod';
+import { ymd } from './datePeriod';
 import { useFloatingPopover } from './useFloatingPopover';
 
 const SIZE_FIELD = {
@@ -48,7 +48,7 @@ function todayParts() {
   return { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
 }
 
-function yearOptions(min?: string, max?: string, selectedYear?: number): DatePeriodSelectOption[] {
+function yearOptions(min?: string, max?: string, selectedYear?: number) {
   const current = selectedYear || todayParts().year;
   const minYear = parseYmd(min || '')?.year ?? current - 10;
   const maxYear = parseYmd(max || '')?.year ?? current + 10;
@@ -58,10 +58,6 @@ function yearOptions(min?: string, max?: string, selectedYear?: number): DatePer
     const year = start + index;
     return { value: year, label: year };
   });
-}
-
-function monthOptions(monthNames: string[]): DatePeriodSelectOption[] {
-  return monthNames.map((name, index) => ({ value: index + 1, label: name }));
 }
 
 function isOutOfBounds(date: string, min?: string, max?: string) {
@@ -130,14 +126,6 @@ export default function DateField({
 
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   const displayValue = value || placeholder;
-  const daysCount = lastDayOfMonth(calendarYear, calendarMonth);
-  const firstWeekday = new Date(calendarYear, calendarMonth - 1, 1).getDay();
-  const calendarWeeks = Array.from({ length: 6 }, (_, weekIndex) =>
-    Array.from({ length: 7 }, (_, weekdayIndex) => {
-      const day = weekIndex * 7 + weekdayIndex - firstWeekday + 1;
-      return day >= 1 && day <= daysCount ? day : null;
-    }),
-  );
   const today = todayParts();
   const todayValue = ymd(today.year, today.month, today.day);
   const canUseToday = !isOutOfBounds(todayValue, min, max);
@@ -235,79 +223,22 @@ export default function DateField({
           role="dialog"
           aria-label={typeof label === 'string' ? label : 'Date picker'}
         >
-          <div className="ndfb-calendar-panel">
-            <div className="ndfb-calendar-panel__head">
-              <span>{safeLang === 'en' ? 'Date' : 'التاريخ'}</span>
-              <div className="ndfb-calendar-head-controls">
-                <Button
-                  variant="raw"
-                  size="auto"
-                  type="button"
-                  className="noorix-date-picker-nav-button"
-                  aria-label={safeLang === 'en' ? 'Previous month' : 'الشهر السابق'}
-                  onClick={() => shiftCalendarMonth(-1)}
-                >
-                  {'<'}
-                </Button>
-                <DatePeriodSelect
-                  label={safeLang === 'en' ? 'Year' : 'السنة'}
-                  className="ndfb-calendar-year-select"
-                  value={calendarYear}
-                  options={years}
-                  onValueChange={(nextYear) => setCalendarMonth(Number(nextYear), calendarMonth)}
-                />
-                <DatePeriodSelect
-                  label={safeLang === 'en' ? 'Month' : 'الشهر'}
-                  className="ndfb-calendar-month-select"
-                  value={calendarMonth}
-                  options={monthOptions(monthNames)}
-                  onValueChange={(nextMonth) => setCalendarMonth(calendarYear, Number(nextMonth))}
-                />
-                <Button
-                  variant="raw"
-                  size="auto"
-                  type="button"
-                  className="noorix-date-picker-nav-button"
-                  aria-label={safeLang === 'en' ? 'Next month' : 'الشهر التالي'}
-                  onClick={() => shiftCalendarMonth(1)}
-                >
-                  {'>'}
-                </Button>
-              </div>
-            </div>
-            <table className="nx-date-table">
-              <thead>
-                <tr>
-                  {weekdayNames.map((name) => <th key={name} scope="col" className="text-noorix-muted">{name}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {calendarWeeks.map((week, weekIndex) => (
-                  <tr key={`week-${weekIndex}`}>
-                    {week.map((day, weekdayIndex) => {
-                      if (day === null) return <td key={`blank-${weekIndex}-${weekdayIndex}`} aria-hidden="true" />;
-                      const date = ymd(calendarYear, calendarMonth, day);
-                      const active = date === value;
-                      const blocked = isOutOfBounds(date, min, max);
-                      return (
-                        <td key={date}>
-                          <button
-                            type="button"
-                            disabled={blocked}
-                            className={`ndfb-day-cell${active ? ' ndfb-day-cell--active' : ''}${blocked ? ' noorix-date-picker-day--disabled' : ''}`}
-                            aria-label={date}
-                            onClick={() => selectDay(day)}
-                          >
-                            {day}
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="noorix-date-picker-actions">
+          <DatePickerCalendar
+            language={safeLang}
+            year={calendarYear}
+            month={calendarMonth}
+            value={value}
+            min={min}
+            max={max}
+            monthNames={monthNames}
+            weekdayNames={weekdayNames}
+            years={years}
+            onShiftMonth={shiftCalendarMonth}
+            onYearChange={(nextYear) => setCalendarMonth(nextYear, calendarMonth)}
+            onMonthChange={(nextMonth) => setCalendarMonth(calendarYear, nextMonth)}
+            onSelectDay={selectDay}
+          />
+          <div className="noorix-date-picker-actions">
               <Button
                 variant="raw"
                 size="auto"
@@ -329,7 +260,6 @@ export default function DateField({
                   {safeLang === 'en' ? 'Clear' : 'مسح'}
                 </Button>
               ) : null}
-            </div>
           </div>
         </div>
       ) : null}

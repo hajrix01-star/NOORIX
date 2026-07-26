@@ -3750,7 +3750,6 @@ select option {
   position: relative;
   z-index: 1;
 }
-.nx-date-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2px 5px; } .nx-date-table th { font-size: 10px; font-weight: 800; text-align: center; } .nx-date-table td { width: 14.285%; padding: 0; } .nx-date-table .ndfb-day-cell { display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 0; }
 .noorix-date-field {
   display: inline-flex;
   align-items: center;
@@ -4789,7 +4788,6 @@ select option {
   .ndfb-month-cell,
   .ndfb-year-cell,
   .ndfb-day-cell { min-width: 0; min-height: 36px; font-size: 13px; }
-  .noorix-date-picker-popover > div > div:first-child { align-items: stretch; flex-direction: column; }
   .ndfb-month-popover { padding: 14px; }
   .ndfb-month-popover__cell { min-height: 52px; font-size: 16px; }
   .ndfb-month-popover__year-value { font-size: 21px; }
