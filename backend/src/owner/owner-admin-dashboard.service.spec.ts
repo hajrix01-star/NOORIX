@@ -5,14 +5,50 @@ function report(yearOffset: number): GeneralProfitLossModel {
   const values = Array.from({ length: 12 }, (_, index) => String(yearOffset + index + 1));
   return {
     amountBasis: 'gross_including_vat',
-    months: Array.from({ length: 12 }, (_, index) => ({ index: index + 1, label: String(index + 1) })),
+    months: Array.from({ length: 12 }, (_, index) => ({
+      index: index + 1,
+      label: String(index + 1),
+    })),
     groups: [
-      { key: 'sales', labelAr: 'المبيعات', labelEn: 'Sales', months: values, total: '0', percentOfSalesMonths: [], percentOfSalesYear: '0', items: [] },
-      { key: 'purchases', labelAr: 'المشتريات', labelEn: 'Purchases', months: values.map((value) => String(Number(value) * 2)), total: '0', percentOfSalesMonths: [], percentOfSalesYear: '0', items: [] },
-      { key: 'expenses', labelAr: 'المصروفات', labelEn: 'Expenses', months: values.map((value) => String(Number(value) * 3)), total: '0', percentOfSalesMonths: [], percentOfSalesYear: '0', items: [] },
+      {
+        key: 'sales',
+        labelAr: 'المبيعات',
+        labelEn: 'Sales',
+        months: values,
+        total: '0',
+        percentOfSalesMonths: [],
+        percentOfSalesYear: '0',
+        items: [],
+      },
+      {
+        key: 'purchases',
+        labelAr: 'المشتريات',
+        labelEn: 'Purchases',
+        months: values.map((value) => String(Number(value) * 2)),
+        total: '0',
+        percentOfSalesMonths: [],
+        percentOfSalesYear: '0',
+        items: [],
+      },
+      {
+        key: 'expenses',
+        labelAr: 'المصروفات',
+        labelEn: 'Expenses',
+        months: values.map((value) => String(Number(value) * 3)),
+        total: '0',
+        percentOfSalesMonths: [],
+        percentOfSalesYear: '0',
+        items: [],
+      },
     ],
     summaryRows: [],
-    cards: { sales: '0', purchases: '0', expenses: '0', grossProfit: '0', netProfit: '0' },
+    cards: {
+      sales: '0',
+      purchases: '0',
+      expenses: '0',
+      grossProfit: '0',
+      netProfit: '0',
+    },
   };
 }
 
@@ -33,7 +69,7 @@ describe('OwnerAdminDashboardService', () => {
   it('returns independent source values and computes daily averages inside NOORIX', async () => {
     const rawCalls: unknown[][] = [];
     const prisma = {
-      $queryRaw: async <T,>(_query: TemplateStringsArray, ...values: unknown[]) => {
+      $queryRaw: async <T>(_query: TemplateStringsArray, ...values: unknown[]) => {
         rawCalls.push(values);
         return [] as T;
       },
@@ -44,9 +80,7 @@ describe('OwnerAdminDashboardService', () => {
     const reports = {
       getGeneralProfitLoss: jest.fn(async (_companyId: string, year: number) => report(year === 2026 ? 100 : 1)),
       getGeneralProfitLossPeriodTotals: jest.fn(async (_companyId: string, startDate: string) =>
-        startDate === '2026-07-01'
-          ? { sales: '190', purchases: '50', expenses: '30' }
-          : { sales: '170', purchases: '40', expenses: '23' },
+        startDate === '2026-07-01' ? { sales: '190', purchases: '50', expenses: '30' } : { sales: '170', purchases: '40', expenses: '23' },
       ),
     };
     const service = new OwnerAdminDashboardService(prisma, reports);
@@ -69,7 +103,15 @@ describe('OwnerAdminDashboardService', () => {
       startDate: '2026-06-01',
       endDate: '2026-06-19',
     });
-    expect(snapshot.companies[0]?.monthlyPerformance).toHaveLength(6);
+    expect(snapshot.companies[0]?.monthlyPerformance).toHaveLength(12);
+    expect(snapshot.companies[0]?.monthlyPerformance[0]).toMatchObject({
+      year: 2026,
+      month: 7,
+    });
+    expect(snapshot.companies[0]?.monthlyPerformance[11]).toMatchObject({
+      year: 2025,
+      month: 8,
+    });
     expect(snapshot.companies[0]?.executiveSnapshot).toMatchObject({
       coverage: { currentDays: 18, previousDays: 18 },
       dailySales: Array.from({ length: 14 }, expect.anything),
@@ -83,20 +125,14 @@ describe('OwnerAdminDashboardService', () => {
       monthEndForecast: 0,
       salesChannels: [],
     });
-    expect(reports.getGeneralProfitLossPeriodTotals).toHaveBeenNthCalledWith(
-      1,
-      'company-1',
-      '2026-07-01',
-      '2026-07-19',
-    );
-    expect(reports.getGeneralProfitLossPeriodTotals).toHaveBeenNthCalledWith(
-      2,
-      'company-1',
-      '2026-06-01',
-      '2026-06-19',
-    );
+    expect(reports.getGeneralProfitLossPeriodTotals).toHaveBeenNthCalledWith(1, 'company-1', '2026-07-01', '2026-07-19');
+    expect(reports.getGeneralProfitLossPeriodTotals).toHaveBeenNthCalledWith(2, 'company-1', '2026-06-01', '2026-06-19');
     expect(prisma.company.findMany).toHaveBeenCalledWith({
-      where: { id: { in: ['company-1'] }, isArchived: false, tenantId: 'tenant-1' },
+      where: {
+        id: { in: ['company-1'] },
+        isArchived: false,
+        tenantId: 'tenant-1',
+      },
       select: { id: true, nameAr: true, nameEn: true },
     });
     expect(rawCalls[0]?.[1]).toEqual(new Date('2026-07-01T00:00:00.000Z'));
@@ -108,8 +144,10 @@ describe('OwnerAdminDashboardService', () => {
     invalid.groups[0]!.months[6] = '';
     const service = new OwnerAdminDashboardService(
       {
-        $queryRaw: async <T,>() => [] as T,
-        company: { findMany: async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: null }] },
+        $queryRaw: async <T>() => [] as T,
+        company: {
+          findMany: async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: null }],
+        },
       },
       {
         getGeneralProfitLoss: async () => invalid,
