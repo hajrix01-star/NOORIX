@@ -57,6 +57,22 @@ describe('Noorix date fields', () => {
     expect(screen.getByRole('button', { name: '2026-07-07' }).hasAttribute('disabled')).toBe(true);
   });
 
+  it('renders a fixed seven-column calendar table without the shared Button layout classes', () => {
+    render(
+      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
+        <DateField aria-label="date" lang="en" value="2026-07-27" />
+      </AppTestProviders>,
+    );
+
+    fireEvent.click(screen.getByLabelText('date'));
+
+    const table = document.querySelector('.nx-date-table');
+    expect(table?.querySelectorAll('thead th')).toHaveLength(7);
+    expect(table?.querySelectorAll('tbody tr')).toHaveLength(6);
+    expect(table?.querySelectorAll('button[aria-label^="2026-07-"]')).toHaveLength(31);
+    expect(screen.getByRole('button', { name: '2026-07-27' }).className).not.toContain('inline-flex');
+  });
+
   it('keeps range values and min boundary explicit', () => {
     const onStartChange = vi.fn();
     const onEndChange = vi.fn();

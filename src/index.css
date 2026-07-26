@@ -3750,6 +3750,7 @@ select option {
   position: relative;
   z-index: 1;
 }
+.nx-date-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2px 5px; } .nx-date-table th { font-size: 10px; font-weight: 800; text-align: center; } .nx-date-table td { width: 14.285%; padding: 0; } .nx-date-table .ndfb-day-cell { display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 0; }
 .noorix-date-field {
   display: inline-flex;
   align-items: center;

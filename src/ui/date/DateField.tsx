@@ -132,6 +132,12 @@ export default function DateField({
   const displayValue = value || placeholder;
   const daysCount = lastDayOfMonth(calendarYear, calendarMonth);
   const firstWeekday = new Date(calendarYear, calendarMonth - 1, 1).getDay();
+  const calendarWeeks = Array.from({ length: 6 }, (_, weekIndex) =>
+    Array.from({ length: 7 }, (_, weekdayIndex) => {
+      const day = weekIndex * 7 + weekdayIndex - firstWeekday + 1;
+      return day >= 1 && day <= daysCount ? day : null;
+    }),
+  );
   const today = todayParts();
   const todayValue = ymd(today.year, today.month, today.day);
   const canUseToday = !isOutOfBounds(todayValue, min, max);
@@ -269,34 +275,38 @@ export default function DateField({
                 </Button>
               </div>
             </div>
-            <div className="ndfb-weekday-grid" aria-hidden="true">
-              {weekdayNames.map((name) => <span key={name}>{name}</span>)}
-            </div>
-            <div className="ndfb-day-grid">
-              {Array.from({ length: firstWeekday }).map((_, index) => (
-                <span key={`blank-${index}`} className="ndfb-day-cell ndfb-day-cell--blank" />
-              ))}
-              {Array.from({ length: daysCount }).map((_, index) => {
-                const day = index + 1;
-                const date = ymd(calendarYear, calendarMonth, day);
-                const active = date === value;
-                const blocked = isOutOfBounds(date, min, max);
-                return (
-                  <Button
-                    variant="raw"
-                    size="auto"
-                    key={date}
-                    type="button"
-                    disabled={blocked}
-                    className={`ndfb-day-cell${active ? ' ndfb-day-cell--active' : ''}${blocked ? ' noorix-date-picker-day--disabled' : ''}`}
-                    aria-label={date}
-                    onClick={() => selectDay(day)}
-                  >
-                    {day}
-                  </Button>
-                );
-              })}
-            </div>
+            <table className="nx-date-table">
+              <thead>
+                <tr>
+                  {weekdayNames.map((name) => <th key={name} scope="col" className="text-noorix-muted">{name}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {calendarWeeks.map((week, weekIndex) => (
+                  <tr key={`week-${weekIndex}`}>
+                    {week.map((day, weekdayIndex) => {
+                      if (day === null) return <td key={`blank-${weekIndex}-${weekdayIndex}`} aria-hidden="true" />;
+                      const date = ymd(calendarYear, calendarMonth, day);
+                      const active = date === value;
+                      const blocked = isOutOfBounds(date, min, max);
+                      return (
+                        <td key={date}>
+                          <button
+                            type="button"
+                            disabled={blocked}
+                            className={`ndfb-day-cell${active ? ' ndfb-day-cell--active' : ''}${blocked ? ' noorix-date-picker-day--disabled' : ''}`}
+                            aria-label={date}
+                            onClick={() => selectDay(day)}
+                          >
+                            {day}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             <div className="noorix-date-picker-actions">
               <Button
                 variant="raw"
