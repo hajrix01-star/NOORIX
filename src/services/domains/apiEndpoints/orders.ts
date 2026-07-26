@@ -36,8 +36,8 @@ export async function getShishaInventorySummary(
 ): Promise<ApiParsedResult<ShishaInventorySummary>> {
   return apiGet<ShishaInventorySummary>('/api/v1/orders/shisha-inventory/summary', {
     companyId,
-    startDate,
-    endDate,
+    startDate: toYmd(startDate),
+    endDate: toYmd(endDate),
   });
 }
 

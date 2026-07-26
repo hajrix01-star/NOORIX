@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 import {
   useCreateShishaPurchaseMutation,
@@ -16,7 +16,7 @@ import type {
 import { AdaptiveSheet, Badge, Button, DateField, DateFilterBar, DialogActions, Input, MetricCard, SimpleTable, Spinner } from '../../../ui';
 import type { ShishaInventoryMovement } from '../../../types/api';
 import type { SimpleTableColumn } from '../../../ui';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 
 type FormKind = 'opening' | 'purchase' | 'stocktake' | null;
 const num = (value: number | string | null | undefined, digits = 3) =>
@@ -83,13 +83,21 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
   const { t } = useTranslation();
   const { userPermissions = [] } = useApp();
   const canWrite = userPermissions.includes('ORDERS_WRITE');
+  const normalizedStartDate = toYmd(startDate);
+  const normalizedEndDate = toYmd(endDate);
   const [form, setForm] = useState<FormKind>(null);
-  const [openingDate, setOpeningDate] = useState(endDate);
-  const [purchaseDate, setPurchaseDate] = useState(endDate);
-  const [stocktakeDate, setStocktakeDate] = useState(endDate);
+  const [openingDate, setOpeningDate] = useState(normalizedEndDate);
+  const [purchaseDate, setPurchaseDate] = useState(normalizedEndDate);
+  const [stocktakeDate, setStocktakeDate] = useState(normalizedEndDate);
   const [purchaseMaterial, setPurchaseMaterial] = useState<CreateShishaPurchasePayload['materialType']>('tobacco');
   const [purchaseUnit, setPurchaseUnit] = useState<CreateShishaPurchasePayload['unit']>('kg');
-  const { data, isLoading, error } = useShishaInventory(companyId, startDate, endDate);
+  useEffect(() => {
+    if (form) return;
+    setOpeningDate(normalizedEndDate);
+    setPurchaseDate(normalizedEndDate);
+    setStocktakeDate(normalizedEndDate);
+  }, [form, normalizedEndDate]);
+  const { data, isLoading, error } = useShishaInventory(companyId, normalizedStartDate, normalizedEndDate);
   const initialize = useInitializeShishaInventoryMutation();
   const purchase = useCreateShishaPurchaseMutation();
   const stocktake = useCreateShishaStocktakeMutation();
