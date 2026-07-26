@@ -153,8 +153,9 @@ export class OwnerAdminDashboardService {
     const now = moment().tz('Asia/Riyadh');
     const latestCompleteDay = now.clone().startOf('day').subtract(1, 'day');
     const executiveWindowStart = latestCompleteDay.clone().subtract(13, 'days');
+    const executiveComparisonStart = executiveWindowStart.clone().subtract(1, 'day');
     const executiveMonthStart = latestCompleteDay.clone().startOf('month');
-    const executiveSalesDataStart = moment.min(executiveWindowStart, executiveMonthStart);
+    const executiveSalesDataStart = moment.min(executiveComparisonStart, executiveMonthStart);
     const currentStart = now.clone().startOf('month');
     const previousStart = currentStart.clone().subtract(1, 'month');
     const previousEnd = previousStart.clone().endOf('month');

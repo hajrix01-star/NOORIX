@@ -5,6 +5,7 @@ describe('buildOwnerAdminDashboardExecutiveSnapshot', () => {
     const snapshot = buildOwnerAdminDashboardExecutiveSnapshot({
       latestCompleteDate: '2026-07-18',
       dailySales: [
+        { date: '2026-07-04', amount: '5' },
         { date: '2026-07-05', amount: '10' },
         { date: '2026-07-17', amount: '70' },
         { date: '2026-07-18', amount: '100' },
@@ -18,10 +19,24 @@ describe('buildOwnerAdminDashboardExecutiveSnapshot', () => {
     });
 
     expect(snapshot.dailySales).toHaveLength(14);
-    expect(snapshot.dailySales[0]).toEqual({ date: '2026-07-05', amount: 10 });
-    expect(snapshot.dailySales[1]).toEqual({ date: '2026-07-06', amount: 0 });
-    expect(snapshot.dailySales[12]).toEqual({ date: '2026-07-17', amount: 70 });
-    expect(snapshot.dailySales[13]).toEqual({ date: '2026-07-18', amount: 125 });
+    expect(snapshot.dailySales[0]).toEqual({
+      date: '2026-07-05',
+      amount: 10,
+      previousDaySales: 5,
+      changeAmount: 5,
+      changePercent: 100,
+      direction: 'up',
+    });
+    expect(snapshot.dailySales[1]).toMatchObject({
+      date: '2026-07-06',
+      amount: 0,
+      previousDaySales: 10,
+      changeAmount: -10,
+      changePercent: -100,
+      direction: 'down',
+    });
+    expect(snapshot.dailySales[12]).toMatchObject({ date: '2026-07-17', amount: 70 });
+    expect(snapshot.dailySales[13]).toMatchObject({ date: '2026-07-18', amount: 125 });
     expect(snapshot.latestCompleteDay).toEqual({
       date: '2026-07-18',
       sales: 125,
@@ -31,7 +46,7 @@ describe('buildOwnerAdminDashboardExecutiveSnapshot', () => {
       direction: 'up',
     });
     expect(snapshot.coverage).toEqual({ currentDays: 18, previousDays: 18 });
-    expect(snapshot.monthEndForecast).toBe(353.06);
+    expect(snapshot.monthEndForecast).toBe(361.67);
     expect(snapshot.salesChannels).toEqual([
       { id: 'card', labelAr: 'شبكة', labelEn: null, amount: 25 },
       { id: 'cash', labelAr: 'نقدي', labelEn: 'Cash', amount: 100 },
@@ -39,7 +54,7 @@ describe('buildOwnerAdminDashboardExecutiveSnapshot', () => {
         id: 'ledger-other-sales',
         labelAr: 'مبيعات دفترية أخرى',
         labelEn: 'Other ledger sales',
-        amount: 80,
+        amount: 85,
       },
     ]);
   });
@@ -57,7 +72,7 @@ describe('buildOwnerAdminDashboardExecutiveSnapshot', () => {
 
     expect(snapshot.dailySales).toHaveLength(14);
     expect(snapshot.dailySales[0]?.date).toBe('2026-07-12');
-    expect(snapshot.dailySales[13]).toEqual({ date: '2026-07-25', amount: 30 });
+    expect(snapshot.dailySales[13]).toMatchObject({ date: '2026-07-25', amount: 30 });
     expect(snapshot.monthEndForecast).toBe(446.4);
     expect(snapshot.salesChannels).toContainEqual({
       id: 'ledger-other-sales',

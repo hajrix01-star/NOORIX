@@ -16,7 +16,14 @@ type Direction = 'up' | 'down' | 'stable';
 
 type OwnerExecutiveSnapshot = {
   coverage: { currentDays: number; previousDays: number };
-  dailySales: Array<{ amount: number; date: string }>;
+  dailySales: Array<{
+    amount: number;
+    changeAmount: number;
+    changePercent: number;
+    date: string;
+    direction: Direction;
+    previousDaySales: number;
+  }>;
   latestCompleteDay: {
     changeAmount: number;
     changePercent: number;
@@ -95,7 +102,16 @@ export function buildOwnerAdminDashboardExecutiveSnapshot(input: {
   const firstDailyDate = addDays(latestCompleteDate, -13);
   const dailySales = Array.from({ length: 14 }, (_, index) => {
     const date = addDays(firstDailyDate, index);
-    return { amount: amount(salesByDay.get(date) ?? new Decimal(0)), date };
+    const dailyAmount = amount(salesByDay.get(date) ?? new Decimal(0));
+    const previousDaySales = amount(
+      salesByDay.get(addDays(date, -1)) ?? new Decimal(0),
+    );
+    return {
+      amount: dailyAmount,
+      date,
+      previousDaySales,
+      ...change(dailyAmount, previousDaySales),
+    };
   });
   const sales = dailySales[13]!.amount;
   const previousDaySales = dailySales[12]!.amount;
