@@ -4787,7 +4787,7 @@ select option {
   .ndfb-year-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ndfb-month-cell,
   .ndfb-year-cell,
-  .ndfb-day-cell { width: 100%; min-width: 0; min-height: 36px; padding: 0; font-size: 13px; }
+  .ndfb-day-cell { min-width: 0; min-height: 36px; font-size: 13px; }
   .noorix-date-picker-popover > div > div:first-child { align-items: stretch; flex-direction: column; }
   .ndfb-month-popover { padding: 14px; }
   .ndfb-month-popover__cell { min-height: 52px; font-size: 16px; }
