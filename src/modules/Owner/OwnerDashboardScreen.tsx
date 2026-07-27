@@ -61,7 +61,7 @@ export default function OwnerDashboardScreen() {
 
   if (companyList.length === 0) {
     return (
-      <ScreenShell>
+      <ScreenShell variant="data">
         <ScreenTitle>{t('ownerDashboard')}</ScreenTitle>
         <div className="noorix-surface-card text-center text-noorix-muted mt-4 p-8">
           {t('pleaseSelectCompany')}
@@ -71,7 +71,7 @@ export default function OwnerDashboardScreen() {
   }
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       {printPreviewModal}
       <OwnerFilterBar
         dateFilter={dateFilter}

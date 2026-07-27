@@ -4,11 +4,12 @@
   "changeNotes": [
     "2026-07-10: Raised src/index.css limits for unified print preview, HR document preview/PDF alignment, invoice day-close filters, and report workspace presentation work included in PR #248.",
     "2026-07-10: Rebased PR #248 on main and documented the final central filter/table CSS footprint after the staging deploy conflict resolution.",
-    "2026-07-15: Raised only the src/index.css report-scope limits for the new general report period-filter layout and adaptive comparison table styles introduced on codex/fix-profit-loss-sales-category-noise."
+    "2026-07-15: Raised only the src/index.css report-scope limits for the new general report period-filter layout and adaptive comparison table styles introduced on codex/fix-profit-loss-sales-category-noise.",
+    "2026-07-27: Raised shell CSS footprint for centralized ScreenShell data/report/form workspace width governance."
   ],
   "files": {
     "src/index.css": {
-      "maxLines": 7889,
+      "maxLines": 7890,
       "maxMediaQueries": 57,
       "maxImportant": 250,
       "maxKeyframes": 12,
@@ -47,7 +48,7 @@
       },
       "shell": {
         "pattern": "(app-main|noorix-sidebar|noorix-topbar|user-menu|app-shell)",
-        "maxMatches": 73
+        "maxMatches": 75
       },
       "dashboard": {
         "pattern": "(dashboard|calendar|kpi|stat-card|summary-bar)",

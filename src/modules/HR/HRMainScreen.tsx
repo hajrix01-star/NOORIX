@@ -64,7 +64,7 @@ export default function HRMainScreen() {
     : 'people';
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
 
       {companyId && summaryIsError && (

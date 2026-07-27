@@ -313,7 +313,7 @@ export default function ReportsScreen() {
   }
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="report">
       {printPreviewModal}
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 

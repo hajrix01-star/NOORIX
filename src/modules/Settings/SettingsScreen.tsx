@@ -85,7 +85,7 @@ export default function SettingsScreen() {
   );
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="form">
       <div className="min-w-0">
         <ScreenTitle>الإعدادات</ScreenTitle>
         <p className="text-[13px] text-noorix-muted m-0 leading-relaxed">

@@ -148,7 +148,7 @@ export default function TreasuryScreen() {
   ];
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       <div className="nx-page-header">
         <div className="flex-1 min-w-0">
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('vaults')}</h1>

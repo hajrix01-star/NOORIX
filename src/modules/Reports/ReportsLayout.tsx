@@ -35,7 +35,7 @@ export default function ReportsLayout() {
   );
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="report">
       <div className="nx-reports-page-head">
         <ScreenTitle>{t('reports')}</ScreenTitle>
       </div>

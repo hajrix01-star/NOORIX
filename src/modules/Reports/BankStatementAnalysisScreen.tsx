@@ -174,7 +174,7 @@ export default function BankStatementAnalysisScreen() {
 
   if (selectedStatementId) {
     return (
-      <ScreenShell>
+      <ScreenShell variant="report">
         <BankStatementDetailView
           statementId={selectedStatementId}
           companyId={companyId}
@@ -220,7 +220,7 @@ export default function BankStatementAnalysisScreen() {
   }
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="report">
       <div className="nx-page-header">
         <ScreenTitle>{t('reportBankStatementAnalysis')}</ScreenTitle>
         <Button variant="primary" size="sm" onClick={() => setShowUpload(true)}>

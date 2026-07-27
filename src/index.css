@@ -581,6 +581,8 @@ a { color: inherit; text-decoration: none; }
 .app-main__content { flex: 1; min-width: 0; max-width: 1560px; width: 100%; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
 [dir='rtl'] .app-main__content { margin-right: 0; margin-left: auto; }
 [dir='ltr'] .app-main__content { margin-left: 0; margin-right: auto; }
+.app-main__content:has(.nx-screen-shell--data), .app-main__content:has(.nx-screen-shell--report) { max-width: none; }
+.nx-screen-shell--data, .nx-screen-shell--report, .nx-screen-shell--form { width: 100%; }
 
 .app-main__menu-button {
   height: 36px;
@@ -1178,8 +1180,9 @@ html[data-card-style="10"] .noorix-stat-card {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-width: 1560px;
-  margin-inline: auto;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
 }
 
 .nx-gr2-hero {
@@ -1726,8 +1729,8 @@ html[data-card-style="10"] .noorix-stat-card {
 
 .nx-pl-workspace {
   width: 100%;
-  max-width: 1540px;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;

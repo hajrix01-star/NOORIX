@@ -4,7 +4,7 @@ type TranslationFn = (key: string, ...args: unknown[]) => string;
 
 export function EmployeeProfileLoading({ t }: { t: TranslationFn }) {
   return (
-    <ScreenShell>
+    <ScreenShell variant="form">
       <div className="mx-auto w-full max-w-[1160px] space-y-4 py-6">
         <div className="h-11 rounded-lg bg-noorix-bg-muted animate-pulse" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -22,7 +22,7 @@ export function EmployeeProfileLoading({ t }: { t: TranslationFn }) {
 
 export function EmployeeProfileNotFound({ t, onBack }: { t: TranslationFn; onBack: () => void }) {
   return (
-    <ScreenShell>
+    <ScreenShell variant="form">
       <div className="noorix-surface-card p-8 flex flex-col items-center gap-4 text-center">
         <p className="text-noorix-muted text-[14px] m-0">{t('noEmployees')}</p>
         <Button size="sm" onClick={onBack}>
@@ -43,7 +43,7 @@ export function EmployeeProfileCentralDataError({
   message?: string;
 }) {
   return (
-    <ScreenShell>
+    <ScreenShell variant="form">
       <div className="noorix-surface-card p-8 flex flex-col items-center gap-4 text-center">
         <p className="text-noorix-red text-[14px] font-semibold m-0">
           {message || t('loadFailed') || 'فشل تحميل بيانات HR المركزية'}

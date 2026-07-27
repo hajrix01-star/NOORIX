@@ -96,7 +96,7 @@ export default function ExpensesScreen() {
   }, [activeTab]);
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       <div className="nx-page-header flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>

@@ -517,5 +517,5 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     </HrFlatListTabShell>
   );
 
-  return embedded ? shell : <ScreenShell>{shell}</ScreenShell>;
+  return embedded ? shell : <ScreenShell variant="data">{shell}</ScreenShell>;
 }

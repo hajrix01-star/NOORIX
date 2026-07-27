@@ -27,7 +27,7 @@ export default function SuppliersScreen() {
   );
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('suppliersAndCategoriesTitle')}</h1>
       </div>

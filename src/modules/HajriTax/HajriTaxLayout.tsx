@@ -15,7 +15,7 @@ export default function HajriTaxLayout() {
   const { t } = useTranslation();
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="report">
       <div className="mb-1">
         <ScreenTitle>{t('hajriTax')}</ScreenTitle>
         <p className="mt-1.5 text-[13px] text-noorix-muted max-w-3xl">{t('reportVatRegistryDesc')}</p>

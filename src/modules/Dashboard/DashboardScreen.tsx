@@ -73,7 +73,7 @@ export default function DashboardScreen() {
   );
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       {/* هيدر */}
       <div className="flex flex-wrap items-start justify-between gap-3 nx-page-header">
         <div>

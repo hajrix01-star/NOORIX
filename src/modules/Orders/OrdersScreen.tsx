@@ -44,7 +44,7 @@ export default function OrdersScreen() {
     return companyId
       ? <StaffOrdersView companyId={companyId} />
       : (
-        <ScreenShell>
+        <ScreenShell variant="data">
           <ScreenTitle>{t('ordersTitle')}</ScreenTitle>
           <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
         </ScreenShell>
@@ -53,7 +53,7 @@ export default function OrdersScreen() {
 
   if (routing.mode === 'forbidden') {
     return (
-      <ScreenShell>
+      <ScreenShell variant="data">
         <ScreenTitle>{t('ordersTitle')}</ScreenTitle>
         <div className="noorix-surface-card nx-empty-state flex flex-col gap-2 text-center py-10">
           <div className="text-[16px] font-bold text-noorix-text">{t('forbidden403Title')}</div>
@@ -175,7 +175,7 @@ function ManagerOrdersScreen({
   }, [t, digestOnly, canDigest, canViewSalesReport, canSubmitStaff]);
 
   return (
-    <ScreenShell className="min-w-0">
+    <ScreenShell variant="data" className="min-w-0">
       <div>
         <ScreenTitle>{t('ordersTitle')}</ScreenTitle>
       </div>

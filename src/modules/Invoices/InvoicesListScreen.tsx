@@ -18,7 +18,7 @@ export default function InvoicesListScreen() {
   const s = useInvoicesListScreen();
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       {s.printPreviewModal}
       <InvoicesListPageHeader
         t={s.t}

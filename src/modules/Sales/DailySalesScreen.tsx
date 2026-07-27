@@ -224,7 +224,7 @@ export default function DailySalesScreen() {
   ), [STATUS_MAP, t, handleDeleteSummary, openSummaryEdit, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       {printPreviewModal}
       {editingSummary && (
         <SalesDayEditModal

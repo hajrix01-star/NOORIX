@@ -137,7 +137,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
   }
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       <div className="nx-page-header">
         <Input
           type="search"

@@ -54,7 +54,7 @@ export function StaffOrdersView({
   if (embedded) return tabContent;
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       <ScreenTitle>{t('staffOrdersTitle')}</ScreenTitle>
       {tabContent}
     </ScreenShell>

@@ -126,7 +126,7 @@ export default function PurchasesBatchScreen() {
   };
 
   return (
-    <ScreenShell className="w-full">
+    <ScreenShell variant="data" className="w-full">
       {printPreviewModal}
       <PurchasesBatchHeader />
 

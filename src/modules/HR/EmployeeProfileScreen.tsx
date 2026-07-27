@@ -550,7 +550,7 @@ export default function EmployeeProfileScreen() {
   }));
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="form">
       <EmployeeProfileHeaderBar
         t={t}
         onBack={() => navigate('/hr')}

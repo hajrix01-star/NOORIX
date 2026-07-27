@@ -137,14 +137,14 @@ export default function AssetsRegisterScreen() {
 
   if (isCompanySelectionPending) {
     return (
-      <ScreenShell>
+      <ScreenShell variant="data">
         <LoadingFallback />
       </ScreenShell>
     );
   }
 
   return (
-    <ScreenShell>
+    <ScreenShell variant="data">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <ScreenTitle>{t('assetsRegisterTitle')}</ScreenTitle>
