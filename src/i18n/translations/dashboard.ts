@@ -139,6 +139,7 @@ export default {
   },
   dashboardSalesCustomerDailyAvg: { ar: 'معدل العملاء', en: 'Customer avg' },
   dashboardSalesCustomerDailyAvgUnit: { ar: '/ يوم', en: '/day' },
+  dashboardSalesBasketAvg: { ar: 'معدل السلة', en: 'Basket avg' },
   dashboardSalesByShift: { ar: 'مبيعات حسب الشفت', en: 'Sales by shift' },
   dashboardShiftShareOfSales: { ar: 'نسبة من إجمالي المبيعات', en: 'Share of total sales' },
   dashboardSalesDailyAvgPrevMonth: { ar: 'المعدل اليومي — الشهر الماضي', en: 'Daily avg — prev month' },

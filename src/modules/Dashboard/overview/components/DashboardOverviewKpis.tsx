@@ -32,6 +32,9 @@ type Props = {
   revenueDailyAvgPrevMonthCalendar: number | null;
   customerDailyAvgCalendar: number | null;
   customerDailyAvgPrevMonthCalendar: number | null;
+  basketAvgCalendar: number | null;
+  basketAvgPrevMonthCalendar: number | null;
+  basketAvgDeltaPct: number | null;
   kpiInsightFooters: KpiInsightFooterMap;
 };
 
@@ -105,6 +108,9 @@ export function DashboardOverviewKpis({
   revenueDailyAvgPrevMonthCalendar,
   customerDailyAvgCalendar,
   customerDailyAvgPrevMonthCalendar,
+  basketAvgCalendar,
+  basketAvgPrevMonthCalendar,
+  basketAvgDeltaPct,
   kpiInsightFooters,
 }: Props) {
   const { t } = useTranslation();
@@ -177,6 +183,9 @@ export function DashboardOverviewKpis({
                     revenuePrev={revenueDailyAvgPrevMonthCalendar}
                     customerCurrent={customerDailyAvgCalendar}
                     customerPrev={customerDailyAvgPrevMonthCalendar}
+                    basketCurrent={basketAvgCalendar}
+                    basketPrev={basketAvgPrevMonthCalendar}
+                    basketDeltaPct={basketAvgDeltaPct}
                     t={t}
                   />
                   <RevenueShiftSummary totals={salesShiftPeriodTotals} t={t} />

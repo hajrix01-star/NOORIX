@@ -66,6 +66,7 @@ export type DashboardSalesMetricAverage = {
   calendarDays: number;
   revenueAvgDaily: number | null;
   customerAvgDaily: number | null;
+  basketAvg: number | null;
 };
 
 export type DashboardSalesMetricWeeklyRow = {
@@ -300,6 +301,7 @@ export type DashboardOverviewPresentation = {
   };
   weeklyComparison?: DashboardSalesMetricWeeklyComparisonRow[];
   previousMonthAverage?: DashboardSalesMetricAverage | null;
+  basketAvgDeltaPct?: number | null;
 };
 
 export type DashboardOverviewData = {

@@ -52,9 +52,9 @@ function lastDayOfMonth(year: number, month: number): number {
 }
 
 export function periodDailyAverage(rows: readonly DashboardDailyMetricRow[], endDayInclusive?: number) {
-  if (!rows.length) return { total: 0, customerCount: 0, calendarDays: 0, revenueAvgDaily: null, customerAvgDaily: null };
+  if (!rows.length) return { total: 0, customerCount: 0, calendarDays: 0, revenueAvgDaily: null, customerAvgDaily: null, basketAvg: null };
   const first = ymdParts(rows[0].transactionDate);
-  if (!first) return { total: 0, customerCount: 0, calendarDays: 0, revenueAvgDaily: null, customerAvgDaily: null };
+  if (!first) return { total: 0, customerCount: 0, calendarDays: 0, revenueAvgDaily: null, customerAvgDaily: null, basketAvg: null };
   const cap = Math.max(0, Math.min(endDayInclusive ?? lastDayOfMonth(first.year, first.month), lastDayOfMonth(first.year, first.month)));
   let total = 0;
   let customerCount = 0;
@@ -70,6 +70,7 @@ export function periodDailyAverage(rows: readonly DashboardDailyMetricRow[], end
     calendarDays: cap,
     revenueAvgDaily: cap > 0 ? total / cap : null,
     customerAvgDaily: cap > 0 ? customerCount / cap : null,
+    basketAvg: customerCount > 0 ? total / customerCount : null,
   };
 }
 

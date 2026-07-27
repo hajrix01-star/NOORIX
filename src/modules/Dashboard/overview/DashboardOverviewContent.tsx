@@ -26,6 +26,9 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         revenueDailyAvgPrevMonthCalendar={m.revenueDailyAvgPrevMonthCalendar}
         customerDailyAvgCalendar={m.customerDailyAvgCalendar}
         customerDailyAvgPrevMonthCalendar={m.customerDailyAvgPrevMonthCalendar}
+        basketAvgCalendar={m.basketAvgCalendar}
+        basketAvgPrevMonthCalendar={m.basketAvgPrevMonthCalendar}
+        basketAvgDeltaPct={m.basketAvgDeltaPct}
         kpiInsightFooters={m.kpiInsightFooters}
       />
 

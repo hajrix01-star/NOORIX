@@ -11,6 +11,9 @@ type Props = {
   revenuePrev: number | null;
   customerCurrent: number | null;
   customerPrev: number | null;
+  basketCurrent: number | null;
+  basketPrev: number | null;
+  basketDeltaPct: number | null;
   t: (key: string) => string;
 };
 
@@ -28,6 +31,7 @@ type MetricRowProps = {
   t: (key: string) => string;
   variant: 'currency' | 'count';
   showDivider?: boolean;
+  deltaPctOverride?: number | null;
 };
 
 function DailyAvgMetricRow({
@@ -37,12 +41,17 @@ function DailyAvgMetricRow({
   t,
   variant,
   showDivider = false,
+  deltaPctOverride,
 }: MetricRowProps) {
   if (current == null && prev == null) return null;
 
   const tone = compareRevenueDailyAvgTone(current, prev);
   const deltaPct =
-    current != null && prev != null ? revenueDailyAvgDeltaPct(current, prev) : null;
+    deltaPctOverride !== undefined
+      ? deltaPctOverride
+      : current != null && prev != null
+        ? revenueDailyAvgDeltaPct(current, prev)
+        : null;
 
   const valueClass =
     tone === 'up'
@@ -122,11 +131,15 @@ export function DashboardOverviewRevenueDailyAvgPanel({
   revenuePrev,
   customerCurrent,
   customerPrev,
+  basketCurrent,
+  basketPrev,
+  basketDeltaPct,
   t,
 }: Props) {
   const hasRevenue = revenueCurrent != null || revenuePrev != null;
   const hasCustomers = customerCurrent != null || customerPrev != null;
-  if (!hasRevenue && !hasCustomers) return null;
+  const hasBasket = basketCurrent != null || basketPrev != null;
+  if (!hasRevenue && !hasCustomers && !hasBasket) return null;
 
   return (
     <div className="mx-4 mt-2 overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
@@ -147,6 +160,17 @@ export function DashboardOverviewRevenueDailyAvgPanel({
           t={t}
           variant="count"
           showDivider={hasRevenue}
+        />
+      ) : null}
+      {hasBasket ? (
+        <DailyAvgMetricRow
+          labelKey="dashboardSalesBasketAvg"
+          current={basketCurrent}
+          prev={basketPrev}
+          t={t}
+          variant="currency"
+          showDivider={hasRevenue || hasCustomers}
+          deltaPctOverride={basketDeltaPct}
         />
       ) : null}
     </div>

@@ -91,6 +91,11 @@ type DashboardTimelineRow = {
   avgInvoice: number;
 };
 
+function percentChangeNullable(current: number | null | undefined, previous: number | null | undefined): number | null {
+  if (current == null || previous == null || Math.abs(previous) <= 1e-9) return null;
+  return ((current - previous) / Math.abs(previous)) * 100;
+}
+
 type DashboardKpiCardMetric = {
   key: string;
   value: number;
@@ -473,6 +478,10 @@ export class DashboardService {
       },
       weeklyComparison: weeklyPack.metrics?.dailyWeeklyComparison ?? [],
       previousMonthAverage: previousMonthPack.metrics?.monthAverage ?? null,
+      basketAvgDeltaPct: percentChangeNullable(
+        salesMetrics?.monthAverage?.basketAvg,
+        previousMonthPack.metrics?.monthAverage?.basketAvg,
+      ),
     };
 
     return { report, salesPack, insights, periodData, presentation };
