@@ -44,27 +44,30 @@ export async function getShishaInventorySummary(
 export async function initializeShishaInventory(
   body: InitializeShishaInventoryPayload,
 ): Promise<ApiParsedResult<ShishaInventorySummary>> {
+  const { companyId, ...payload } = body;
   return apiPost<ShishaInventorySummary>(
-    `/api/v1/orders/shisha-inventory/initialize?companyId=${encodeURIComponent(body.companyId)}`,
-    body,
+    `/api/v1/orders/shisha-inventory/initialize?companyId=${encodeURIComponent(companyId)}`,
+    payload,
   );
 }
 
 export async function createShishaInventoryPurchase(
   body: CreateShishaPurchasePayload,
 ): Promise<ApiParsedResult<{ id: string; createdAt: string }>> {
+  const { companyId, ...payload } = body;
   return apiPost(
-    `/api/v1/orders/shisha-inventory/purchases?companyId=${encodeURIComponent(body.companyId)}`,
-    body,
+    `/api/v1/orders/shisha-inventory/purchases?companyId=${encodeURIComponent(companyId)}`,
+    payload,
   );
 }
 
 export async function createShishaInventoryStocktake(
   body: CreateShishaStocktakePayload,
 ): Promise<ApiParsedResult<{ id: string; stocktakeDate: string; status: string }>> {
+  const { companyId, ...payload } = body;
   return apiPost(
-    `/api/v1/orders/shisha-inventory/stocktakes?companyId=${encodeURIComponent(body.companyId)}`,
-    body,
+    `/api/v1/orders/shisha-inventory/stocktakes?companyId=${encodeURIComponent(companyId)}`,
+    payload,
   );
 }
 
