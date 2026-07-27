@@ -142,6 +142,7 @@ export default {
   dashboardSalesBasketAvg: { ar: 'معدل السلة', en: 'Basket avg' },
   dashboardMetricPeriod: { ar: 'الفترة', en: 'Period' },
   dashboardCurrentMonth: { ar: 'الشهر الحالي', en: 'Current month' },
+  dashboardMetricChange: { ar: 'التغيير', en: 'Change' },
   dashboardSalesByShift: { ar: 'مبيعات حسب الشفت', en: 'Sales by shift' },
   dashboardShiftShareOfSales: { ar: 'نسبة من إجمالي المبيعات', en: 'Share of total sales' },
   dashboardSalesDailyAvgPrevMonth: { ar: 'المعدل اليومي — الشهر الماضي', en: 'Daily avg — prev month' },

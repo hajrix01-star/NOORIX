@@ -144,7 +144,7 @@ export function DashboardOverviewRevenueDailyAvgPanel({
             ))}
           </tr>
           <tr>
-            <td className="px-2 py-2 text-noorix-muted">{t('dashboardKpiFooterChangeVsAvg')}</td>
+            <td className="px-2 py-2 text-noorix-muted">{t('dashboardMetricChange')}</td>
             {metrics.map((metric) => {
               const tone = resolveTone(metric.current, metric.prev, metric.deltaPct);
               return (
