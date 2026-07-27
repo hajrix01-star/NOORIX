@@ -95,7 +95,7 @@
   font-size: 14px;
 
   /* مظهر */
-  border-radius: 4px;
+  border-radius: 8px;
   border: 1px solid var(--btn-default-border);
   background: var(--btn-default-bg);
   color: var(--btn-default-text);
@@ -120,7 +120,7 @@
 .nx-btn:hover:not(:disabled) {
   background: var(--btn-default-hover);
   border-color: var(--noorix-border);
-  box-shadow: 0 1px 4px var(--noorix-navy-10), 0 2px 8px rgba(10,31,68,0.06);
+  box-shadow: 0 1px 4px var(--noorix-navy-10), 0 2px 8px rgba(65,52,31,0.06);
 }
 .nx-btn:active:not(:disabled)  { transform: translateY(1px); }
 .nx-btn:disabled                { opacity: 0.45; cursor: not-allowed; }
@@ -134,12 +134,12 @@
   background: var(--btn-primary-bg);
   border-color: var(--btn-primary-bg);
   color: #fff;
-  box-shadow: 0 1px 3px rgba(37,99,235,0.2);
+  box-shadow: 0 1px 3px rgba(20,112,68,0.2);
 }
 .nx-btn--primary:hover:not(:disabled) {
   background: var(--btn-primary-hover);
   border-color: var(--btn-primary-hover);
-  box-shadow: 0 2px 8px var(--noorix-blue-30), 0 4px 16px rgba(37,99,235,0.12);
+  box-shadow: 0 2px 8px var(--noorix-blue-30), 0 4px 16px rgba(20,112,68,0.12);
   color: #fff;
 }
 
@@ -147,7 +147,7 @@
   background: var(--btn-success-bg);
   border-color: var(--btn-success-bg);
   color: #fff;
-  box-shadow: 0 1px 3px rgba(22,163,74,0.2);
+  box-shadow: 0 1px 3px rgba(20,112,68,0.2);
 }
 .nx-btn--success:hover:not(:disabled) {
   background: var(--btn-success-hover);
@@ -206,7 +206,7 @@
   min-height: 30px;
   padding: 4px 12px;
   font-size: 12px;
-  border-radius: 4px;
+  border-radius: 8px;
   gap: 5px;
 }
 
@@ -214,7 +214,7 @@
   min-height: 48px;
   padding: 12px 24px;
   font-size: 15px;
-  border-radius: 4px;
+  border-radius: 8px;
   gap: 8px;
 }
 

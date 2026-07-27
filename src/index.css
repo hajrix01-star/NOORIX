@@ -5,16 +5,16 @@
 
 @theme {
   /* ألوان نووريكس الأساسية */
-  --color-noorix-blue:    #2563eb;
-  --color-noorix-green:   #16a34a;
+  --color-noorix-blue:    #147044;
+  --color-noorix-green:   #147044;
   --color-noorix-red:     #dc2626;
   --color-noorix-amber:   #d97706;
   --color-noorix-violet:  #6366f1;
   --color-noorix-sky:     #0284c7;
   --color-noorix-rose:    #e11d48;
-  --color-noorix-navy:    #0a1f44;
-  --color-noorix-navy-mid: #123159;
-  --color-noorix-navy-light: #1b3f73;
+  --color-noorix-navy:    #28251f;
+  --color-noorix-navy-mid: #1f2d25;
+  --color-noorix-navy-light: #2f4d3b;
 
   /* ألوان ديناميكية من CSS variables */
   --color-noorix-text:     var(--noorix-text);
@@ -50,7 +50,7 @@
    * للـ Recharts (يحتاج hex): استخدم KPI_RECHARTS_COLORS/VAULT_RECHARTS_COLORS من kpiCardTheme.js
    * ??????????????????????????????????????????????????????????? */
 
-  --color-nx-sales:      #185FA5;   /* مبيعات · خزينة بنكية       */
+  --color-nx-sales:      #147044;   /* مبيعات · خزينة بنكية       */
   --color-nx-profit:     #3B6D11;   /* ربح إجمالي · خزينة نقدية   */
   --color-nx-net-profit: #854F0B;   /* صافي ربح                    */
   --color-nx-purchases:  #888780;   /* مشتريات                     */
@@ -153,51 +153,51 @@
 /* ========== متغيرات الثيم ========== */
 :root {
   /* ألوان أساسية */
-  --noorix-navy:        #0a1f44;
-  --noorix-navy-mid:    #123159;
-  --noorix-navy-light:  #1b3f73;
+  --noorix-navy:        #28251f;
+  --noorix-navy-mid:    #1f2d25;
+  --noorix-navy-light:  #2f4d3b;
   /* خلفيات */
-  --noorix-bg-page:     #f5f6f8;
+  --noorix-bg-page:     #f7f4ee;
   --noorix-bg-surface:  #ffffff;
   --noorix-surface:     #ffffff;
-  --noorix-bg-muted:    #f1f3f6;
+  --noorix-bg-muted:    #f3efe7;
   /* طبقات سطح — مستخدمة في تقارير/حاسبة التكاليف (كانت تشير لمتغيرات غير معرّفة) */
   --noorix-surface-1:   var(--noorix-bg-surface);
   --noorix-surface-2:   var(--noorix-bg-muted);
   /* نصوص */
-  --noorix-text:        #1a2332;
-  --noorix-text-muted:  #5a6a7e;
-  --noorix-text-muted-2:#8fa0b4;
+  --noorix-text:        #28251f;
+  --noorix-text-muted:  #6f675d;
+  --noorix-text-muted-2:#9a9286;
   /* حدود */
-  --noorix-border:      #dde3ec;
-  --noorix-border-muted:rgba(148,163,184,0.22);
-  --noorix-border-strong:rgba(100,130,170,0.45);
+  --noorix-border:      #e8e1d3;
+  --noorix-border-muted:rgba(152,139,118,0.22);
+  --noorix-border-strong:rgba(132,111,78,0.4);
   /* كروت السطح — نفس مظهر KPI في لوحة التحكم */
-  --noorix-card-radius: 12px;
+  --noorix-card-radius: 14px;
   --noorix-sidebar-width: 232px;
-  --noorix-card-shadow: 0 2px 8px rgba(15, 23, 42, 0.07), 0 10px 28px rgba(15, 23, 42, 0.11);
-  --noorix-card-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.09), 0 14px 36px rgba(15, 23, 42, 0.13);
+  --noorix-card-shadow: 0 4px 18px rgba(65, 52, 31, 0.06), 0 18px 45px -30px rgba(65, 52, 31, 0.42);
+  --noorix-card-shadow-hover: 0 8px 22px rgba(65, 52, 31, 0.08), 0 24px 56px -30px rgba(65, 52, 31, 0.48);
   /* سايدبار */
-  --noorix-sidebar-bg:     linear-gradient(180deg,#1b3f73 0%,#123159 55%,#0a1f44 100%);
+  --noorix-sidebar-bg:     linear-gradient(180deg,#28251f 0%,#1f2d25 54%,#10251b 100%);
   --noorix-sidebar-text:   #ffffff;
   --noorix-sidebar-text-sub:#ffffff;
   /* توببار */
-  --noorix-topbar-bg:      #f8fafc;
-  --noorix-topbar-text:    #1a2332;
-  --noorix-topbar-border:  #e2e8f0;
+  --noorix-topbar-bg:      #fffdf8;
+  --noorix-topbar-text:    #28251f;
+  --noorix-topbar-border:  #e8e1d3;
   /* جداول احترافية */
-  --noorix-table-header-bg: var(--color-nx-sales);
-  --noorix-table-header-fg: #ffffff;
-  --noorix-table-header-border: rgba(255,255,255,0.2);
-  --noorix-table-header-hover-bg: color-mix(in srgb, var(--color-nx-sales) 86%, #0a1f44);
-  --noorix-table-row-number-bg: #f8fafc;
-  --noorix-table-row-even: #fafbfd;
+  --noorix-table-header-bg: #f3efe7;
+  --noorix-table-header-fg: #28251f;
+  --noorix-table-header-border: #e1d8c8;
+  --noorix-table-header-hover-bg: #ece4d6;
+  --noorix-table-row-number-bg: #f7f3eb;
+  --noorix-table-row-even: #fbfaf7;
   /* ألوان تمييز */
-  --noorix-accent-green:  #16a34a;
+  --noorix-accent-green:  #147044;
   /* أسماء قصيرة مستخدمة في مكوّنات قديمة — تُشير لنفس التوكنات المعيارية */
   --noorix-bg:          var(--noorix-bg-page);
   --noorix-green:       var(--noorix-accent-green);
-  --noorix-accent-blue:   #2563eb;
+  --noorix-accent-blue:   #147044;
   --noorix-accent-sky:    #0284c7;
   --noorix-accent-violet: #6366f1;
   --noorix-accent-amber:  #d97706;
@@ -301,14 +301,14 @@
   /* Semantic alias */
   --noorix-accent-soft: var(--noorix-blue-10);
   /* أزرار */
-  --btn-default-bg:     #ffffff;
-  --btn-default-border: #c8d4e3;
-  --btn-default-text:   #2c3e55;
-  --btn-default-hover:  #eef2f8;
-  --btn-primary-bg:     #2563eb;
-  --btn-primary-hover:  #1d4ed8;
-  --btn-success-bg:     #16a34a;
-  --btn-success-hover:  #15803d;
+  --btn-default-bg:     #fffdf8;
+  --btn-default-border: #d8cdbb;
+  --btn-default-text:   #3b342b;
+  --btn-default-hover:  #f2eadc;
+  --btn-primary-bg:     #147044;
+  --btn-primary-hover:  #0f5a35;
+  --btn-success-bg:     #147044;
+  --btn-success-hover:  #0f5a35;
   --btn-danger-bg:      #dc2626;
   --btn-danger-hover:   #b91c1c;
   --btn-warning-bg:     #d97706;
@@ -316,8 +316,8 @@
   /* خطوط نوركس المركزية */
   --noorix-font-primary: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',sans-serif;
   --noorix-font-numbers: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',sans-serif;
-  --noorix-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(10,31,68,0.07);
-  --noorix-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --noorix-shadow: 0 1px 3px rgba(65,52,31,0.04), 0 4px 16px rgba(65,52,31,0.07);
+  --noorix-shadow-sm: 0 1px 3px rgba(65,52,31,0.06);
   --noorix-shadow-md: 0 4px 20px var(--noorix-navy-10);
   --noorix-shadow-lg: 0 8px 32px rgba(10,31,68,0.14);
   --noorix-radius-xs: 6px;
@@ -340,21 +340,21 @@
 /* ورقة/لوحة منبثقة بثيم فاتح ثابت — وضوح عند تشغيل التطبيق بالوضع الداكن */
 .noorix-light-sheet {
   color-scheme: light;
-  --noorix-bg-page: #f5f6f8;
+  --noorix-bg-page: #f7f4ee;
   --noorix-bg-surface: #ffffff;
-  --noorix-bg-muted: #f1f3f6;
+  --noorix-bg-muted: #f3efe7;
   --noorix-bg-modal: #ffffff;
-  --noorix-text: #1a2332;
-  --noorix-text-muted: #5a6a7e;
-  --noorix-text-muted-2: #8fa0b4;
-  --noorix-border: #dde3ec;
-  --noorix-border-muted: rgba(148, 163, 184, 0.22);
-  --noorix-border-subtle: #e8ecf2;
-  --btn-default-bg: #ffffff;
-  --btn-default-border: #c8d4e3;
-  --btn-default-text: #2c3e55;
-  --btn-default-hover: #eef2f8;
-  color: #1a2332;
+  --noorix-text: #28251f;
+  --noorix-text-muted: #6f675d;
+  --noorix-text-muted-2: #9a9286;
+  --noorix-border: #e8e1d3;
+  --noorix-border-muted: rgba(152, 139, 118, 0.22);
+  --noorix-border-subtle: #eee6d8;
+  --btn-default-bg: #fffdf8;
+  --btn-default-border: #d8cdbb;
+  --btn-default-text: #3b342b;
+  --btn-default-hover: #f2eadc;
+  color: #28251f;
 }
 
 /* ???????????????????????????????????????????????????????????????
@@ -366,11 +366,11 @@
   /* أبيض لؤلؤي نقي — لا رمادي أبداً */
   --noorix-bg-modal:          #ffffff;
   --noorix-modal-header-bg:   #ffffff;
-  --noorix-modal-footer-bg:   #f8fafc;   /* رمادي بارد خفيف جداً لتمييز الـ footer */
+  --noorix-modal-footer-bg:   #f7f3eb;   /* سطح دافئ خفيف لتمييز الـ footer */
   --noorix-modal-shadow:
-    0 0 0 1px rgba(200,215,235,0.7),        /* حد خارجي ناعم */
-    0 4px 16px rgba(10,31,68,0.08),
-    0 20px 60px rgba(10,31,68,0.18);
+    0 0 0 1px rgba(232,225,211,0.86),        /* حد خارجي ناعم */
+    0 4px 16px rgba(65,52,31,0.08),
+    0 20px 60px rgba(65,52,31,0.18);
   --noorix-modal-radius:      18px;
 }
 

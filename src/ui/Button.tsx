@@ -11,10 +11,10 @@ const VARIANT = {
   default: 'bg-white border border-[var(--btn-default-border)] text-[var(--btn-default-text)] hover:bg-[var(--btn-default-hover)] active:bg-[var(--btn-default-hover)]',
   /** alias تاريخي — نفس أسلوب default */
   secondary: 'bg-white border border-[var(--btn-default-border)] text-[var(--btn-default-text)] hover:bg-[var(--btn-default-hover)] active:bg-[var(--btn-default-hover)]',
-  primary: 'bg-noorix-blue text-white hover:bg-blue-700 active:bg-blue-800 border border-transparent',
-  success: 'bg-noorix-green text-white hover:bg-green-700 active:bg-green-800 border border-transparent',
-  danger:  'bg-noorix-red  text-white hover:bg-red-700  active:bg-red-800  border border-transparent',
-  warning: 'bg-noorix-amber text-white hover:bg-amber-700 active:bg-amber-800 border border-transparent',
+  primary: 'bg-[var(--btn-primary-bg)] text-white hover:bg-[var(--btn-primary-hover)] active:bg-[var(--btn-primary-hover)] border border-transparent',
+  success: 'bg-[var(--btn-success-bg)] text-white hover:bg-[var(--btn-success-hover)] active:bg-[var(--btn-success-hover)] border border-transparent',
+  danger:  'bg-[var(--btn-danger-bg)] text-white hover:bg-[var(--btn-danger-hover)] active:bg-[var(--btn-danger-hover)] border border-transparent',
+  warning: 'bg-[var(--btn-warning-bg)] text-white hover:bg-[var(--btn-warning-hover)] active:bg-[var(--btn-warning-hover)] border border-transparent',
   ghost:   'bg-transparent border border-transparent text-noorix-text hover:bg-noorix-bg-muted active:bg-noorix-bg-muted',
   raw:     '',
 };
@@ -26,7 +26,7 @@ const SIZE = {
   auto: '',
 };
 
-const BASE = 'inline-flex items-center justify-center font-medium font-cairo cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-noorix-blue focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none';
+const BASE = 'inline-flex items-center justify-center font-medium font-cairo cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--noorix-accent-blue)] focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none';
 
 export type ButtonProps = React.ComponentPropsWithoutRef<'button'> & {
   variant?: keyof typeof VARIANT;
