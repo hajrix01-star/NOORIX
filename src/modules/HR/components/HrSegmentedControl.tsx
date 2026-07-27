@@ -50,9 +50,16 @@ export function HrSegmentedControl({
       animateContent={false}
       barClassName={cn(
         isFilter
-          ? 'nx-segmented-tab-bar nx-segmented-tab-bar--fill nx-hr-filter-pills'
+          ? 'nx-segmented-tab-bar nx-hr-filter-pills'
           : HR_SEGMENTED_BAR_CLASS,
       )}
+      getTabClassName={(_, active) =>
+        cn(
+          'nx-hr-segment-pill',
+          isFilter ? 'nx-hr-segment-pill--filter' : 'nx-hr-segment-pill--section',
+          active && 'nx-hr-segment-pill--active',
+        )
+      }
       shellClassName={cn(
         isFilter
           ? 'nx-hr-filter-shell w-full min-w-0'

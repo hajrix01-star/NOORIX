@@ -6083,11 +6083,10 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     box-sizing: border-box;
   }
   .nx-segmented-tab-bar--hr { width: max-content; min-width: 0; max-width: 100%; justify-content: flex-start; gap: 6px; overflow-x: auto; }
-  .nx-segmented-tab-bar--hr .nx-tab-btn.nx-tab-btn--segmented { flex: 0 0 auto; min-height: 30px; padding: 0.32rem 0.8rem; border-color: #e1d8c8; background: #fff; color: #28251f; font-size: 12px; font-weight: 700; box-shadow: none; }
-  .nx-segmented-tab-bar--hr .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active):hover { border-color: #d8cdbb; background: #f7f3eb; color: #28251f; }
-  .nx-segmented-tab-bar--hr .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: #147044; background: #147044; color: #fff; box-shadow: 0 4px 12px rgba(20, 112, 68, 0.14); }
-  .nx-segmented-shell--flat .nx-segmented-tab-bar--track,
-  .nx-hr-segmented-inline .nx-segmented-tab-bar--track { border-color: color-mix(in srgb, var(--noorix-border) 65%, transparent); background: color-mix(in srgb, var(--noorix-bg-muted) 88%, var(--noorix-bg-surface)); }
+  .nx-hr-segment-pill.nx-tab-btn--segmented { flex: 0 0 auto; min-height: 30px; padding: 0.32rem 0.8rem; border-color: #e1d8c8; background: #fff; color: #28251f; font-size: 12px; font-weight: 700; box-shadow: none; }
+  .nx-hr-segment-pill.nx-tab-btn--segmented:not(.nx-hr-segment-pill--active):hover { border-color: #d8cdbb; background: #f7f3eb; color: #28251f; }
+  .nx-hr-segment-pill.nx-tab-btn--segmented.nx-hr-segment-pill--active { border-color: #147044; background: #147044; color: #fff; box-shadow: 0 4px 12px rgba(20, 112, 68, 0.14); }
+  .nx-segmented-shell--flat .nx-segmented-tab-bar--track { border-color: color-mix(in srgb, var(--noorix-border) 65%, transparent); background: color-mix(in srgb, var(--noorix-bg-muted) 88%, var(--noorix-bg-surface)); }
   .nx-segmented-tab-bar--fill:not(.nx-segmented-tab-bar--hr) .nx-tab-btn.nx-tab-btn--segmented {
     flex: 1 1 0;
     min-width: 0;
@@ -6121,33 +6120,11 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     padding-top: 0.45rem;
     margin-bottom: 0;
   }
-  .nx-hr-subtab-section .nx-segmented-tab-bar--track { border-color: #e8e1d3; background: #fff; }
   /* فلاتر داخل الشاشة (نشطون | مفصولين | …) — pills صغيرة بدون track */
-  .nx-hr-filter-shell { border: none; background: transparent; box-shadow: none; }
-  .nx-hr-filter-pills { width: 100%; min-width: 0; gap: 6px; padding: 0; background: transparent; border: none; box-shadow: none; overflow: visible; }
-  .nx-hr-filter-pills .nx-tab-btn.nx-tab-btn--segmented {
-    flex: 0 0 auto;
-    min-width: max-content;
-    min-height: 2rem;
-    padding: 0.35rem 0.5rem;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 0.5rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .nx-hr-filter-pills { width: max-content; min-width: 0; max-width: 100%; gap: 6px; padding: 0; background: transparent; border: none; box-shadow: none; overflow-x: auto; }
+  .nx-hr-segment-pill--filter.nx-tab-btn--segmented { min-width: max-content; min-height: 2rem; padding: 0.35rem 0.7rem; border-radius: 0.5rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   @media (min-width: 641px) {
-    .nx-hr-filter-pills .nx-tab-btn.nx-tab-btn--segmented {
-      flex: 0 1 auto;
-      min-width: 0;
-      padding: 0.4rem 0.85rem;
-      font-size: 12px;
-    }
-  }
-  .nx-hr-view-modes {
-    width: 100%;
-    min-width: 0;
+    .nx-hr-segment-pill--filter.nx-tab-btn--segmented { padding: 0.36rem 0.85rem; }
   }
   .nx-segmented-shell--flat {
     position: relative;
@@ -6168,9 +6145,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     width: 100%;
     min-width: 0;
     -webkit-overflow-scrolling: touch;
-  }
-  .nx-hr-subtab-inline {
-    border-radius: 0;
   }
   .nx-hr-workspace__body {
     position: relative;
