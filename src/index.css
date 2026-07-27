@@ -6023,8 +6023,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     transition: color var(--noorix-transition), border-color var(--noorix-transition), background var(--noorix-transition);
     margin: 0;
   }
-  .nx-tab-btn:hover { color: var(--noorix-accent-blue); background: rgba(37, 99, 235, 0.04); }
-  .nx-tab-btn--active { color: var(--noorix-accent-blue); border-bottom-color: var(--noorix-accent-blue); background: rgba(37, 99, 235, 0.07); font-weight: 700; }
+  .nx-tab-btn:hover { color: var(--noorix-accent-blue); background: var(--noorix-blue-4); }
+  .nx-tab-btn--active { color: var(--noorix-accent-blue); border-bottom-color: var(--noorix-accent-blue); background: var(--noorix-blue-8); font-weight: 700; }
 
   /* شريط تبويبات segmented (حبات داخل كرت — مثل الموارد البشرية) */
   .nx-segmented-tab-bar {
@@ -6033,7 +6033,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     flex-wrap: nowrap;
     align-items: stretch;
     /* مسافة أوضح بين الحبات — يمنع انطباع «سطر نص واحد» */
-    gap: 10px;
+    gap: 8px;
     min-width: 100%;
     width: max-content;
     overflow-x: auto;
@@ -6048,37 +6048,37 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   .nx-segmented-tab-bar::-webkit-scrollbar { display: none; }
   .nx-tab-btn.nx-tab-btn--segmented {
     border-bottom: none;
-    border-radius: 0.625rem;
+    border-radius: 0.55rem;
     margin: 0;
     border: 1px solid transparent;
     /* حشو أفقي أوفر للعربي — الحروف تتجاوز صندوق الإيمو أحياناً فتُقصّ مع الزوايا */
-    padding: 0.55rem 1.25rem;
-    min-height: 2.5rem;
+    padding: 0.5rem 1rem;
+    min-height: 2.35rem;
     font-size: 13px;
     line-height: 1.45;
     overflow: visible;
     box-sizing: border-box;
   }
   /* غير نشط: سطح أبيض + حد واضح + ظل — يبرز فوق شريط الخلفية المموّه */
-  .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) { border-color: var(--noorix-border); background: var(--noorix-bg-surface); color: var(--noorix-text-muted); box-shadow: 0 1px 2px rgba(10, 31, 68, 0.07); }
-  .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) { color: var(--noorix-text); background: var(--noorix-bg-surface); border-color: var(--noorix-accent-blue); box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12); }
-  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: #15803d; background: var(--noorix-accent-green); color: #fff; font-weight: 700; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35); }
-  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: #fff; background: var(--noorix-accent-green); filter: brightness(1.03); box-shadow: 0 3px 10px rgba(22, 163, 74, 0.4); }
+  .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) { border-color: var(--noorix-border); background: var(--btn-default-bg); color: var(--noorix-text-muted); box-shadow: 0 1px 2px rgba(65, 52, 31, 0.07); }
+  .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) { color: var(--noorix-text); background: var(--noorix-bg-surface); border-color: var(--noorix-accent-blue); box-shadow: 0 2px 6px rgba(20, 112, 68, 0.12); }
+  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: var(--noorix-accent-green); background: var(--noorix-accent-green); color: #fff; font-weight: 800; box-shadow: 0 2px 8px rgba(20, 112, 68, 0.28); }
+  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: #fff; background: var(--noorix-accent-green); filter: brightness(1.03); box-shadow: 0 3px 10px rgba(20, 112, 68, 0.32); }
 
   /* توزيع متساوٍ على عرض السطر — تبويبات فرعية HR (2–4 حبات) */
   .nx-segmented-tab-bar--fill {
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    gap: 6px;
+    gap: 7px;
     overflow: hidden;
     box-sizing: border-box;
   }
   /* مسار رمادي خلف الحبات — يبرز الحبة النشطة (أبيض + أزرق) */
   .nx-segmented-tab-bar--track {
     background: var(--noorix-bg-muted);
-    border-radius: 10px;
-    padding: 5px;
+    border-radius: 12px;
+    padding: 6px;
     border: 1px solid var(--noorix-border);
     box-sizing: border-box;
   }
@@ -6115,20 +6115,21 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
       padding: 0.6rem 0.75rem;
     }
   }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) { border-color: transparent; background: transparent; color: var(--noorix-text-muted); box-shadow: none; }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) { color: var(--noorix-text); background: color-mix(in srgb, var(--noorix-bg-surface) 55%, transparent); border-color: transparent; box-shadow: none; }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: var(--noorix-border); background: var(--noorix-bg-surface); color: var(--noorix-accent-blue); font-weight: 700; box-shadow: 0 1px 4px rgba(10, 31, 68, 0.12); }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: var(--noorix-accent-blue); background: var(--noorix-bg-surface); filter: none; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.14); }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) { border-color: #e6ddcf; background: rgba(255,255,255,0.72); color: var(--noorix-text-muted); box-shadow: none; }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) { color: var(--noorix-text); background: #fff; border-color: #bdd6c9; box-shadow: none; }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: #bdd6c9; background: #fff; color: var(--noorix-accent-blue); font-weight: 800; box-shadow: inset 0 3px 0 var(--noorix-accent-blue), 0 1px 4px rgba(65, 52, 31, 0.1); }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: var(--noorix-accent-blue); background: var(--noorix-bg-surface); filter: none; box-shadow: inset 0 3px 0 var(--noorix-accent-blue), 0 2px 6px rgba(20, 112, 68, 0.12); }
 
   /* مساحة عمل HR — كرت واحد (تبويبات رئيسية) + pills فرعية + محتوى */
   .nx-hr-workspace { display: flex; flex-direction: column; min-width: 0; width: 100%; padding: 0; }
   /* تبويبات فرعية — pills تحت الرئيسي (بدون sparkline، خط واحد أسفل الشريط) */
   .nx-hr-subtab-section > .nx-segmented-shell--flat {
-    border-bottom: 1px solid var(--noorix-border);
+    border-block: 1px solid var(--noorix-border);
     padding-bottom: 0.625rem;
+    padding-top: 0.625rem;
     margin-bottom: 0;
   }
-  .nx-hr-subtab-section .nx-segmented-tab-bar--track { border-color: color-mix(in srgb, var(--noorix-border) 70%, transparent); background: color-mix(in srgb, var(--noorix-bg-muted) 90%, var(--noorix-bg-surface)); }
+  .nx-hr-subtab-section .nx-segmented-tab-bar--track { border-color: #e1d8c8; background: #f7f3eb; }
   /* فلاتر داخل الشاشة (نشطون | مفصولين | …) — pills صغيرة بدون track */
   .nx-hr-filter-shell { border: none; background: transparent; box-shadow: none; }
   .nx-hr-filter-pills { width: 100%; min-width: 0; gap: 6px; padding: 0; background: transparent; border: none; box-shadow: none; overflow: visible; }
