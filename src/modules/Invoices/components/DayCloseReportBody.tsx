@@ -269,7 +269,7 @@ export function DayCloseReportBody({
                   <td className="dc-num">{money(summary.cashOnHand)}</td>
                   <td className="dc-num">{money(summary.totalAmount)}</td>
                   {!compact && (
-                    <td className="dc-muted text-[10px]">
+                    <td className="dc-muted text-[12px]">
                       {formatSalesChannels(summary.channels, lang)}
                     </td>
                   )}

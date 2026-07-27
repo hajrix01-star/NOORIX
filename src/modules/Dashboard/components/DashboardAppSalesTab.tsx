@@ -215,7 +215,7 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
                   <div className="grid grid-cols-2 gap-2">
                     {activeMonths.slice(-6).map((p) => (
                       <div key={p.periodKey} className="rounded-lg bg-noorix-bg-muted px-2 py-1.5">
-                        <div className="text-[10px] text-noorix-muted">{p.label}</div>
+                        <div className="text-[12px] text-noorix-muted">{p.label}</div>
                         <div className="nx-font-numbers text-[13px] font-semibold">
                           {fmt(row.months[p.periodKey]?.percent ?? 0, 1)}%
                         </div>

@@ -107,13 +107,13 @@ export function BatchNetTaxReadonly({ net, tax, variant = 'table', t }: BatchNet
     return (
       <div className="grid grid-cols-2 gap-2 rounded-lg bg-noorix-bg py-2 px-2.5">
         <div>
-          <div className="text-[10px] text-noorix-muted mb-0.5">{t('net')}</div>
+          <div className="text-[12px] text-noorix-muted mb-0.5">{t('net')}</div>
           <div className="text-[13px] font-semibold text-noorix-text nx-font-numbers">
             {net || '-'}
           </div>
         </div>
         <div>
-          <div className="text-[10px] text-noorix-muted mb-0.5">{t('tax')}</div>
+          <div className="text-[12px] text-noorix-muted mb-0.5">{t('tax')}</div>
           <div className="text-[13px] font-semibold text-noorix-amber nx-font-numbers">
             {tax || '-'}
           </div>

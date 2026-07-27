@@ -58,14 +58,14 @@ export function BankCategoryCardRow({
             </span>
             {transactionSide && transactionSide !== 'any' ? (
               <span
-                className={`text-[10px] py-[2px] px-2 rounded-md border border-noorix-border ${
+                className={`text-[11px] py-[2px] px-2 rounded-md border border-noorix-border ${
                   transactionSide === 'debit' ? 'bg-[var(--noorix-red-8)]' : 'bg-[var(--noorix-green-8)]'
                 }`}
               >
                 {sideInfo.icon} {t(sideInfo.labelKey)}
               </span>
             ) : null}
-            <span className="text-[10px] px-2 py-[2px] rounded-[6px] bg-noorix-bg-muted">
+            <span className="text-[11px] px-2 py-[2px] rounded-[6px] bg-noorix-bg-muted">
               {classifications.length} {t('bankTreeStatsClassifications')} · {totalKw}{' '}
               {t('bankTreeStatsKeywords')}
             </span>
@@ -82,7 +82,7 @@ export function BankCategoryCardRow({
                   <strong>{cl.name}</strong>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {(cl.keywords || []).map((kw, ki) => (
-                      <code key={ki} className="text-[10px] px-1.5 py-[2px] rounded bg-noorix-bg-muted">
+                      <code key={ki} className="text-[11px] px-1.5 py-[2px] rounded bg-noorix-bg-muted">
                         {kw}
                       </code>
                     ))}

@@ -78,7 +78,7 @@ export function OwnerMonthlyComparisonTable({
       label: month,
       minWidth: 56,
       numeric: true,
-      headerClassName: 'text-[10px] text-noorix-muted font-semibold',
+      headerClassName: 'text-[12px] text-noorix-muted font-semibold',
       cellClassName: (row) => {
         const value = row.months[monthIndex] ?? 0;
         return cn(
@@ -88,7 +88,7 @@ export function OwnerMonthlyComparisonTable({
       },
       render: (_value, row) => {
         const value = row.months[monthIndex] ?? 0;
-        return value === 0 ? <span className="text-[10px] opacity-30">-</span> : formatCompactNumber(value, lang);
+        return value === 0 ? <span className="text-[11px] opacity-30">-</span> : formatCompactNumber(value, lang);
       },
     })),
     {
@@ -108,7 +108,7 @@ export function OwnerMonthlyComparisonTable({
       label: '%',
       minWidth: 48,
       numeric: true,
-      headerClassName: 'text-[10px] text-noorix-muted font-semibold',
+      headerClassName: 'text-[12px] text-noorix-muted font-semibold',
       cellClassName: 'py-2.5 px-3 text-end text-[11px] text-noorix-muted',
       render: (_value, row) =>
         row.shareOfGrandTotalPct == null ? '-' : `${formatNumber(row.shareOfGrandTotalPct, lang)}%`,
@@ -169,7 +169,7 @@ export function OwnerMonthlyComparisonTable({
               </td>
               {comparison.grandMonthlyTotals.map((value, monthIndex) => (
                 <td key={monthIndex} className={cn('py-3 px-1.5 text-end font-bold tabular-nums', valClass(value) || 'text-noorix-text')}>
-                  {value === 0 ? <span className="text-[10px] opacity-30">-</span> : formatCompactNumber(value, lang)}
+                  {value === 0 ? <span className="text-[11px] opacity-30">-</span> : formatCompactNumber(value, lang)}
                 </td>
               ))}
               <td className={cn('py-3 px-3 text-end font-bold tabular-nums', valClass(comparison.grandTotal) || OWNER_METRIC_TEXT_CLASSES[comparisonMetric])}>

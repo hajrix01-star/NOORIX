@@ -42,7 +42,7 @@ export default function DashboardCalendarLegend({ lang, targetsOverall, t }: Das
         </div>
       </div>
       {targetsOverall != null && (
-        <div className="text-noorix-muted mt-2 border-t border-noorix-border pt-2 text-[10px]">
+        <div className="text-noorix-muted mt-2 border-t border-noorix-border pt-2 text-[12px]">
           {t('dashboardSalesTarget')}: <FmtNum n={targetsOverall} /> <span className="nx-sar">SR</span>
         </div>
       )}

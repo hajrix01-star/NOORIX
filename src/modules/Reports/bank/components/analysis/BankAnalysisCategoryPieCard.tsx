@@ -78,12 +78,12 @@ export function BankAnalysisCategoryPieCard({
         <div className="nx-pie-chart-wrap">
           {pieDisplayData.length > 0 ? (
             <div className="nx-pie-center-label">
-              <div className="text-noorix-muted font-semibold text-[10px] nx-line-145">{centerTitle}</div>
+              <div className="text-noorix-muted font-semibold text-[12px] nx-line-145">{centerTitle}</div>
               <div className="font-extrabold text-noorix-text nx-ltr mt-1 text-[17px]">
                 <FmtNum n={centerMain} />
               </div>
               {pieMode === 'combined' && (pieGrandTotals.totalDebit > 0 || pieGrandTotals.totalCredit > 0) ? (
-                <div className="text-[10px] mt-[6px] leading-[1.35]">
+                <div className="text-[11px] mt-[6px] leading-[1.35]">
                   <div className="text-noorix-red nx-ltr">
                     <FmtNum n={pieGrandTotals.totalDebit} />
                   </div>

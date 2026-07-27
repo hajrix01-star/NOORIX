@@ -214,9 +214,9 @@ function BatchRowTable(props: BatchRowSharedProps) {
       <td className="text-center align-middle p-1" style={cp} title={t('invoiceReceiptAttachment')}>
         <div className="flex flex-col items-center gap-0.5 min-h-[36px] justify-center">
           {row.attachmentFile ? (
-            <span className="text-[10px] font-bold leading-none text-noorix-green">✓</span>
+            <span className="text-[11px] font-bold leading-none text-noorix-green">✓</span>
           ) : (
-            <span className="text-[10px] text-noorix-muted leading-none">·</span>
+            <span className="text-[11px] text-noorix-muted leading-none">·</span>
           )}
           <FileTrigger
             accept={BATCH_ATTACHMENT_ACCEPT}
@@ -227,7 +227,7 @@ function BatchRowTable(props: BatchRowSharedProps) {
               variant: row.attachmentFile ? 'secondary' : 'ghost',
               size: 'sm',
               className: cn(
-                'h-6 min-h-6 max-w-[88px] truncate border px-1.5 text-[10px] font-bold',
+                'h-6 min-h-6 max-w-[88px] truncate border px-1.5 text-[11px] font-bold',
                 row.attachmentFile
                   ? 'border-noorix-green bg-[var(--noorix-green-8)] text-noorix-green'
                   : 'border-noorix-border bg-noorix-bg-page text-noorix-blue',
@@ -235,7 +235,7 @@ function BatchRowTable(props: BatchRowSharedProps) {
             }}
           />
           {row.attachmentFile ? (
-            <span className="block max-w-[88px] truncate text-[9px] font-semibold text-noorix-text" title={row.attachmentFile.name}>
+            <span className="block max-w-[88px] truncate text-[11px] font-semibold text-noorix-text" title={row.attachmentFile.name}>
               {row.attachmentFile.name}
             </span>
           ) : null}
@@ -458,7 +458,7 @@ function BatchRowStack(props: BatchRowSharedProps) {
             }}
           />
           {row.attachmentFile ? (
-            <span className="text-[10px] text-noorix-muted truncate block mt-1" title={row.attachmentFile.name}>
+            <span className="text-[11px] text-noorix-muted truncate block mt-1" title={row.attachmentFile.name}>
               {row.attachmentFile.name}
             </span>
           ) : null}

@@ -108,7 +108,7 @@ export default function ConnectedTabStrip({
                           : cn(
                               'text-[14px] max-sm:leading-tight',
                               denseMobile
-                                ? 'max-sm:text-[10px] max-sm:whitespace-normal'
+                                ? 'max-sm:text-[11px] max-sm:whitespace-normal'
                                 : 'max-sm:text-[11px] max-sm:whitespace-nowrap',
                             ),
                       )

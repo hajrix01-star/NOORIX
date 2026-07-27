@@ -27,7 +27,7 @@ export function StepIndicator({ steps, current }: { steps: string[]; current: nu
         return (
           <React.Fragment key={i}>
             <div className={`flex items-center gap-1.5 text-[11px] whitespace-nowrap ${active ? 'text-noorix-primary font-semibold' : done ? 'text-noorix-primary' : 'text-noorix-muted'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 transition-colors ${done ? 'bg-noorix-primary text-white' : active ? 'border-2 border-noorix-primary text-noorix-primary' : 'border border-noorix-border text-noorix-muted'}`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 transition-colors ${done ? 'bg-noorix-primary text-white' : active ? 'border-2 border-noorix-primary text-noorix-primary' : 'border border-noorix-border text-noorix-muted'}`}>
                 {done ? '✓' : i + 1}
               </span>
               <span className="hidden sm:inline">{label}</span>
@@ -49,7 +49,7 @@ function StatusBadge({ status, label }: { status: RowStatus; label: string }) {
     invalid: 'bg-red-50 border-red-200 text-red-700',
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-semibold ${styles[status]}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-semibold ${styles[status]}`}>
       {label}
     </span>
   );
@@ -258,7 +258,7 @@ export function OrdersImportPreview({
               }`}
             >
               {label}
-              <span className={`ms-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${filter === key ? 'bg-noorix-primary/10' : 'bg-noorix-bg-muted'}`}>
+              <span className={`ms-1.5 px-1.5 py-0.5 rounded-full text-[11px] font-bold ${filter === key ? 'bg-noorix-primary/10' : 'bg-noorix-bg-muted'}`}>
                 {count}
               </span>
             </Button>

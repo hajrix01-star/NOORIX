@@ -29,7 +29,7 @@ export function DashboardOverviewKpiCardFooter({
         className,
       )}
     >
-      <span className="text-[10px] font-medium leading-snug text-noorix-muted text-start">
+      <span className="text-[12px] font-medium leading-snug text-noorix-muted text-start">
         {periodLabel}
       </span>
 
@@ -41,12 +41,12 @@ export function DashboardOverviewKpiCardFooter({
               className="flex items-center justify-between gap-3 py-1.5 min-h-[28px]"
               title={row.tooltip}
             >
-              <span className="min-w-0 flex-1 text-[10px] leading-snug text-noorix-muted text-start truncate">
+              <span className="min-w-0 flex-1 text-[12px] leading-snug text-noorix-muted text-start truncate">
                 {row.label}
               </span>
               <span
                 className={cn(
-                  'shrink-0 max-w-[55%] text-end text-[11px] font-bold leading-tight nx-font-numbers ltr',
+                  'shrink-0 max-w-[55%] text-end text-[13px] font-bold leading-tight nx-font-numbers ltr',
                   kpiFooterRowColorClass(row.color),
                 )}
               >
@@ -60,7 +60,7 @@ export function DashboardOverviewKpiCardFooter({
       )}
 
       {timelineHint ? (
-        <p className="m-0 pt-0.5 text-[9px] leading-snug text-noorix-muted text-start border-t border-dashed border-noorix-border/80">
+        <p className="m-0 pt-0.5 text-[11px] leading-snug text-noorix-muted text-start border-t border-dashed border-noorix-border/80">
           {timelineHint}
         </p>
       ) : null}

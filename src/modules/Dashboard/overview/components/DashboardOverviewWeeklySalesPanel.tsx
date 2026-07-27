@@ -12,9 +12,9 @@ type DashboardWeeklySalesComparisonData = {
 type DashboardWeeklySalesComparisonRow = DashboardSalesMetricWeeklyComparisonRow;
 
 const TH_CELL =
-  'border border-noorix-border bg-[var(--noorix-table-header-bg)] px-1 py-1.5 text-center text-[9px] font-bold leading-tight text-white sm:px-2 sm:py-2.5 sm:text-xs';
+  'border border-noorix-border bg-[var(--noorix-table-header-bg)] px-1.5 py-2 text-center text-[12px] font-bold leading-tight text-white sm:px-2.5 sm:py-2.5 sm:text-[13px]';
 const TD_CELL =
-  'border border-noorix-border px-1 py-1.5 text-center text-[10px] leading-tight sm:px-2 sm:py-2 sm:text-[13px]';
+  'border border-noorix-border px-1.5 py-2 text-center text-[13px] leading-tight sm:px-2.5 sm:py-2.5 sm:text-[14px]';
 
 type Props = {
   weeklyYearOptions: number[];
@@ -47,10 +47,10 @@ function MonthHeader({
 }) {
   return (
     <>
-      <div className="mb-0.5 text-[10px] font-bold leading-tight text-white sm:text-[12px]">
+      <div className="mb-0.5 text-[12px] font-bold leading-tight text-white sm:text-[13px]">
         {monthLabel} {year}
       </div>
-      <div className="text-[8px] font-semibold text-white/75 sm:text-[10px]">
+      <div className="text-[11px] font-semibold text-white/75 sm:text-[12px]">
         {subtitle}
       </div>
     </>
@@ -115,7 +115,7 @@ function MonthSelector({
 
   return (
     <div className="grid min-w-[min(100%,18rem)] grid-cols-2 gap-2 rounded-lg border border-noorix-border bg-noorix-surface p-2">
-      <div className="col-span-2 text-center text-[11px] font-semibold text-noorix-muted">
+      <div className="col-span-2 text-center text-[12px] font-semibold text-noorix-muted">
         {title}
       </div>
       <SearchableOptionsPicker
@@ -227,10 +227,10 @@ export function DashboardOverviewWeeklySalesPanel({
     <section className="noorix-surface-card min-w-0 overflow-hidden p-0" aria-label={t('dashboardWeeklySalesTitle')}>
       <div className="flex flex-wrap items-center gap-2 border-b border-noorix-border bg-noorix-bg-muted/40 px-2 py-2.5 sm:gap-3 sm:px-3 sm:py-3">
         <span className="h-7 w-1 shrink-0 rounded-full bg-noorix-blue sm:h-8" aria-hidden />
-        <h2 className="m-0 min-w-0 flex-1 text-[12px] font-bold leading-snug text-noorix-text sm:text-[13px]">
+        <h2 className="m-0 min-w-0 flex-1 text-[15px] font-bold leading-snug text-noorix-text sm:text-[16px]">
           {t('dashboardWeeklySalesTitle')}
         </h2>
-        <span className="shrink-0 rounded bg-noorix-bg-muted px-2 py-1 text-[10px] font-bold text-noorix-muted">
+        <span className="shrink-0 rounded bg-noorix-bg-muted px-2.5 py-1 text-[12px] font-bold text-noorix-muted">
           {t('reportAmountBasisGrossShort')}
         </span>
       </div>
@@ -272,7 +272,7 @@ export function DashboardOverviewWeeklySalesPanel({
         ) : (
           <SimpleTable<DashboardWeeklySalesComparisonRow>
             compact
-            tableClassName="table-fixed overflow-hidden rounded-lg border border-noorix-border text-[10px]"
+            tableClassName="table-fixed overflow-hidden rounded-lg border border-noorix-border text-[13px]"
             frameClassName="border-0"
             cellPadding="6px 8px"
             columns={columns}

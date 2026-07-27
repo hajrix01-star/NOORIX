@@ -127,7 +127,7 @@ export function BackupSheetsAndModals({
           label={t('backupImportStrictAllocations')}
           containerClassName="nx-checkbox text-[13px] text-noorix-text mb-1 leading-[1.5]"
         />
-        <p className="text-[10px] text-noorix-muted m-0 mb-4 leading-snug">{t('backupImportStrictAllocationsHint')}</p>
+        <p className="text-[12px] text-noorix-muted m-0 mb-4 leading-snug">{t('backupImportStrictAllocationsHint')}</p>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           <Button

@@ -219,7 +219,7 @@ body.noorix-page-smart-chat .app-main__content {
 
 .noorix-chat-chev {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 11px;
   opacity: 0.85;
 }
 
@@ -819,7 +819,7 @@ body.noorix-page-smart-chat .app-main__content {
 
   .noorix-chat-commands-group-label {
     padding: 6px 12px;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   /* شبكة أوامر — عمودان على الجوال */

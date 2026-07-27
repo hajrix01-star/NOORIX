@@ -144,13 +144,13 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
         {activeModules.slice(0, 5).map((m) => (
           <span
             key={m.key}
-            className="rounded-xl font-semibold py-px px-2 text-[10px] whitespace-nowrap bg-[var(--noorix-blue-10)] text-noorix-blue"
+            className="rounded-xl font-semibold py-px px-2 text-[11px] whitespace-nowrap bg-[var(--noorix-blue-10)] text-noorix-blue"
           >
             {m.icon} {isAr ? m.labelAr : m.labelEn}
           </span>
         ))}
         {activeModules.length > 5 && (
-          <span className="text-noorix-muted text-[10px]">
+          <span className="text-noorix-muted text-[11px]">
             +{activeModules.length - 5}
           </span>
         )}
@@ -220,7 +220,7 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
                       {role.nameAr || role.name}
                     </span>
                     {role.isSystem && (
-                      <span className="rounded-lg font-bold py-px px-2 text-[9px] text-white bg-noorix-muted">
+                      <span className="rounded-lg font-bold py-px px-2 text-[11px] text-white bg-noorix-muted">
                         {isAr ? 'نظام' : 'System'}
                       </span>
                     )}

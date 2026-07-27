@@ -90,7 +90,7 @@ function AmountValue({
       )}
     >
       <FmtNum n={value} />
-      <span className="nx-sar text-[10px]">SR</span>
+      <span className="nx-sar text-[11px]">SR</span>
     </span>
   );
 }
@@ -176,7 +176,7 @@ function RevenueShiftSummary({
                 {row.label}
               </span>
               <span dir="ltr" className="shrink-0 text-[13px] font-extrabold text-nx-sales nx-font-numbers">
-                <FmtNum n={row.value.amount} /> <span className="nx-sar text-[9px]">SR</span>
+                <FmtNum n={row.value.amount} /> <span className="nx-sar text-[11px]">SR</span>
               </span>
               <span dir="ltr" className="w-12 shrink-0 text-end text-[12px] font-extrabold text-noorix-blue nx-font-numbers">
                 {row.value.sharePct != null ? `${formatSalesShiftSharePercent(row.value.sharePct)}%` : '0%'}

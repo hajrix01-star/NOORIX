@@ -148,7 +148,7 @@ export default function AppHeader({
           <span className="hidden sm:flex items-center gap-1.5">
             <span className="text-[15px] font-extrabold text-noorix-navy tracking-tight">Noorix</span>
             {appVersionLabel ? (
-              <span className="rounded-full border border-noorix-border bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-black text-noorix-muted ltr">
+              <span className="rounded-full border border-noorix-border bg-noorix-bg-muted px-1.5 py-0.5 text-[11px] font-black text-noorix-muted ltr">
                 {appVersionLabel}
               </span>
             ) : null}

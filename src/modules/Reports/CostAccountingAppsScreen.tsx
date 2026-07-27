@@ -110,7 +110,7 @@ export default function CostAccountingAppsScreen() {
           </div>
           {companyName ? (
             <div className="shrink-0 rounded-xl border border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3 text-center sm:text-end">
-              <p className="m-0 text-[10px] font-semibold uppercase tracking-wider text-noorix-muted">{t('reportCostAppsCompanyLabel')}</p>
+              <p className="m-0 text-[12px] font-semibold uppercase tracking-wider text-noorix-muted">{t('reportCostAppsCompanyLabel')}</p>
               <p className="m-0 mt-1 max-w-[200px] truncate text-sm font-bold text-noorix-text sm:max-w-[240px]" title={companyName}>
                 {companyName}
               </p>
@@ -124,7 +124,7 @@ export default function CostAccountingAppsScreen() {
         <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:col-span-5 print:order-1">
           <div className="noorix-print-hidden flex items-center gap-2 border-b border-noorix-border pb-2 print:hidden">
             <span className="h-1 w-8 shrink-0 rounded-full bg-noorix-blue/80" aria-hidden />
-            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-noorix-muted">{t('reportCostAppsColumnInputs')}</span>
+            <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-noorix-muted">{t('reportCostAppsColumnInputs')}</span>
           </div>
 
           <Card
@@ -568,7 +568,7 @@ export default function CostAccountingAppsScreen() {
         <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:col-span-7 lg:sticky lg:top-4 lg:z-[1] lg:self-start print:order-2">
           <div className="noorix-print-hidden flex items-center gap-2 border-b border-noorix-border pb-2 print:hidden">
             <span className="h-1 w-8 shrink-0 rounded-full bg-noorix-green/90" aria-hidden />
-            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-noorix-muted">{t('reportCostAppsColumnResults')}</span>
+            <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-noorix-muted">{t('reportCostAppsColumnResults')}</span>
           </div>
 
           <CostAppsKpiCards t={t} fmt2={fmt2} plWith={plWith} plWithout={plWithout} />

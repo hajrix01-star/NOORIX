@@ -18,7 +18,7 @@ export function SmartChatMobileToolsBody({
   return (
     <div className="flex flex-col gap-3 pt-1 min-w-0" dir={isAr ? 'rtl' : 'ltr'}>
       <section className="min-w-0 space-y-1.5">
-        <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-noorix-muted">
+        <div className="text-[12px] font-bold uppercase tracking-[0.06em] text-noorix-muted">
           {t('chatFilterByDate')}
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -76,7 +76,7 @@ export function SmartChatMobileToolsBody({
             if (!qs.length) return null;
             return (
               <div key={sec.id} className="min-w-0">
-                <div className={`px-1 pt-2 pb-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-noorix-muted ${isAr ? 'text-right' : 'text-left'}`}>
+                <div className={`px-1 pt-2 pb-0.5 text-[12px] font-bold uppercase tracking-[0.06em] text-noorix-muted ${isAr ? 'text-right' : 'text-left'}`}>
                   {isAr ? sec.labelAr : sec.labelEn}
                 </div>
                 <div className="flex flex-col gap-1">

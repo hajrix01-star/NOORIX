@@ -527,7 +527,7 @@
    5. Badge — شارات الحالة
    ??????????????????????????????????????????????????????????? */
 .nx-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; font-family: var(--noorix-font-primary); letter-spacing: 0.02em; white-space: nowrap; line-height: 1.5; }
-.nx-badge--sm { padding: 1px 7px; font-size: 10px; }
+.nx-badge--sm { padding: 1px 7px; font-size: 11px; }
 .nx-badge__dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
 
@@ -938,7 +938,7 @@
 /* خلية إحصاء: تسمية + قيمة في عمود واحد بمحاذاة متسقة (وسط) */
 .nx-mc__grid > div { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-width: 0; }
 
-.nx-mc__stat-label { font-size: 10px; color: var(--noorix-text-muted); margin-bottom: 2px; width: 100%; text-align: center; }
+.nx-mc__stat-label { font-size: 11px; color: var(--noorix-text-muted); margin-bottom: 2px; width: 100%; text-align: center; }
 .nx-mc__stat-value { font-size: 14px; font-weight: 700; font-family: var(--noorix-font-numbers); direction: ltr; unicode-bidi: isolate; width: 100%; text-align: center; }
 
 .nx-mc__actions { display: flex; justify-content: flex-end; }
@@ -1255,7 +1255,7 @@
 .nx-h-320 { height: 320px; }
 .nx-leading-none { line-height: 1; }
 .nx-leading-135 { line-height: 1.35; }
-.nx-text-10 { font-size: 10px; }
+.nx-text-10 { font-size: 11px; }
 .nx-text-17 { font-size: 17px; }
 .nx-text-22 { font-size: 22px; }
 .nx-text-28 { font-size: 28px; }
@@ -1454,7 +1454,7 @@
   border-radius: 50%;
   width: 18px;
   height: 18px;
-  font-size: 10px;
+  font-size: 11px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

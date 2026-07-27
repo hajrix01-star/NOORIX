@@ -195,7 +195,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
           >
             {display}
             {soon && (
-              <span className="me-1.5 text-[10px] py-px px-1.5 rounded bg-noorix-amber/20">
+              <span className="me-1.5 text-[11px] py-px px-1.5 rounded bg-noorix-amber/20">
                 {t('residencyExpiringSoon')}
               </span>
             )}

@@ -72,7 +72,7 @@ export function CatalogProductTable({
                 </Badge>
               ))}
               {secs.length > 2 ? (
-                <span className="text-[10px] text-noorix-muted">+{secs.length - 2}</span>
+                <span className="text-[11px] text-noorix-muted">+{secs.length - 2}</span>
               ) : null}
             </div>
           ) : null}

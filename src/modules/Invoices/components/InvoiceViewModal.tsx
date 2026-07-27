@@ -47,7 +47,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 function InvoiceViewInfoTile({ field }: { field: InvoiceViewField }) {
   return (
     <div className="rounded-lg border border-noorix-border bg-white px-3 py-2.5">
-      <div className="mb-1 text-[10px] font-bold text-noorix-muted">
+      <div className="mb-1 text-[12px] font-bold text-noorix-muted">
         {field.label}
       </div>
       <div className={`text-[13px] font-bold nx-font-numbers ${fieldToneClass(field)}`}>

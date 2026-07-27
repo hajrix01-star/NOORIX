@@ -110,7 +110,7 @@ export default function RoleEditorOverlay({
             {title}
           </h2>
           {isSystem && (
-            <span className="rounded-lg bg-noorix-bg-muted text-noorix-muted font-bold py-px px-2 text-[10px]">
+            <span className="rounded-lg bg-noorix-bg-muted text-noorix-muted font-bold py-px px-2 text-[11px]">
               {isAr ? 'دور نظام' : 'System role'}
             </span>
           )}

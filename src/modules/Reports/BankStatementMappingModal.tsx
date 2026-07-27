@@ -379,7 +379,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
                     <th key={header.index} className="py-2 px-1.5 text-start align-top min-w-[100px]">
                       <div className="font-semibold">{header.label}</div>
                       {badge ? (
-                        <div className={`mt-1 text-[10px] font-bold py-px px-1.5 rounded inline-block ${badge.badgeClass}`}>
+                        <div className={`mt-1 text-[11px] font-bold py-px px-1.5 rounded inline-block ${badge.badgeClass}`}>
                           {t(badge.labelKey)}
                         </div>
                       ) : null}

@@ -234,11 +234,11 @@ export default function VaultTransactionsModal({
       ) : null}
       <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted py-2 px-[10px]">
         <div>
-          <div className="text-noorix-muted mb-1 text-[10px]">{t('debit')}</div>
+          <div className="text-noorix-muted mb-1 text-[12px]">{t('debit')}</div>
           <div className="text-[14px] font-bold text-noorix-green nx-font-numbers">{row.debit != null ? fmt(row.debit) : '-'}</div>
         </div>
         <div>
-          <div className="text-noorix-muted mb-1 text-[10px]">{t('credit')}</div>
+          <div className="text-noorix-muted mb-1 text-[12px]">{t('credit')}</div>
           <div className="text-[14px] font-bold text-noorix-red nx-font-numbers">{row.credit != null ? fmt(row.credit) : '-'}</div>
         </div>
       </div>

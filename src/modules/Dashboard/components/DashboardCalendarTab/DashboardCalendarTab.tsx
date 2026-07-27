@@ -70,7 +70,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         />
 
         {m.isSelectionMode && (
-          <div className="mb-2 text-[10px] text-noorix-blue">
+          <div className="mb-2 text-[12px] text-noorix-blue">
             {m.t('dashboardSelectDaysHint')}
           </div>
         )}

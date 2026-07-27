@@ -72,7 +72,7 @@ function PosProductCard({
         </Button>
       )}
       {selected && (
-        <span className="absolute top-1 start-1 bg-noorix-blue text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none">
+        <span className="absolute top-1 start-1 bg-noorix-blue text-white text-[11px] font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none">
           {qtyInList}
         </span>
       )}

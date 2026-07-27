@@ -120,7 +120,7 @@ export function StaffSaleItemsTable({
               <div className="max-w-[140px] text-start sm:max-w-none">
                 <div className="font-medium text-noorix-text break-words leading-snug">{name}</div>
                 {variant ? (
-                  <div className="text-[10px] text-noorix-muted ltr mt-0.5 truncate" title={variant}>{variant}</div>
+                  <div className="text-[11px] text-noorix-muted ltr mt-0.5 truncate" title={variant}>{variant}</div>
                 ) : null}
               </div>
             );
@@ -270,11 +270,11 @@ export function StaffSentOrderRow({
                   </div>
                   <div className="shrink-0 text-end flex flex-col gap-0.5 items-end">
                     {it.size || it.packaging ? (
-                      <span className="text-[10px] text-noorix-muted ltr">
+                      <span className="text-[11px] text-noorix-muted ltr">
                         {formatVariantLabel(it.size, it.packaging, it.unit)}
                       </span>
                     ) : it.unit ? (
-                      <span className="text-[10px] text-noorix-muted capitalize">{it.unit}</span>
+                      <span className="text-[11px] text-noorix-muted capitalize">{it.unit}</span>
                     ) : null}
                     <span className="font-semibold nx-font-numbers ltr">
                       {fmt(it.quantity, 0)}

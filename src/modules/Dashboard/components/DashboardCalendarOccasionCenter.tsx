@@ -362,7 +362,7 @@ export function DashboardCalendarOccasionCenter({ companyId, year, onApplied }: 
                               <span className="min-w-0 flex-1">
                                 <span className="flex flex-wrap items-center gap-1.5">
                                   <span className="text-[13px] font-bold text-noorix-text">{eventLabel(event, uiLang)}</span>
-                                  <span className="rounded bg-noorix-bg-muted px-1.5 py-px text-[10px] text-noorix-muted">
+                                  <span className="rounded bg-noorix-bg-muted px-1.5 py-px text-[11px] text-noorix-muted">
                                     {sourceLabel(event, uiLang)}
                                   </span>
                                 </span>

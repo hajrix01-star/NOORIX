@@ -71,7 +71,7 @@ function SectionCard({
                     <div key={i} className="flex justify-between gap-2 text-[13px]">
                       <div className="min-w-0">
                         <span>{itemName(it)}</span>
-                        {variant ? <div className="text-[10px] text-noorix-muted ltr">{variant}</div> : null}
+                        {variant ? <div className="text-[11px] text-noorix-muted ltr">{variant}</div> : null}
                       </div>
                       <span className="font-bold nx-font-numbers shrink-0 ltr text-end">
                         {fmt(it.quantity, 0)}

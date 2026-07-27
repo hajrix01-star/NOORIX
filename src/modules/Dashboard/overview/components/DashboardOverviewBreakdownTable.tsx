@@ -32,7 +32,7 @@ const GRID_4 = 'grid-cols-4';
 const thClass = (compact: boolean) =>
   cn(
     'text-center font-semibold text-noorix-muted',
-    compact ? 'px-1 py-1 text-[9px]' : 'px-2 py-1.5 text-[10px]',
+    compact ? 'px-1.5 py-1 text-[11px]' : 'px-2 py-1.5 text-[12px]',
   );
 
 const tdClass = (compact: boolean) =>
@@ -71,7 +71,7 @@ export function DashboardOverviewBreakdownTable({
           <span
             className={cn(
               'font-semibold text-noorix-muted',
-              compact ? 'text-[9px]' : 'text-[10px]',
+              compact ? 'text-[11px]' : 'text-[12px]',
             )}
           >
             {title}
@@ -112,7 +112,7 @@ export function DashboardOverviewBreakdownTable({
                 <span
                   className={cn(
                     'truncate font-semibold text-noorix-text',
-                    compact ? 'text-[10px]' : 'text-[11px]',
+                    compact ? 'text-[12px]' : 'text-[13px]',
                   )}
                   title={row.label}
                 >
@@ -125,7 +125,7 @@ export function DashboardOverviewBreakdownTable({
                 dir="ltr"
                 className={cn(
                   'inline-flex items-center justify-center gap-0.5 nx-font-numbers font-bold text-nx-sales',
-                  compact ? 'text-[10px]' : 'text-[12px]',
+                  compact ? 'text-[12px]' : 'text-[14px]',
                 )}
               >
                 <FmtNum n={row.amount} />
@@ -137,7 +137,7 @@ export function DashboardOverviewBreakdownTable({
                 dir="ltr"
                 className={cn(
                   'inline-block nx-font-numbers font-bold',
-                  compact ? 'text-[10px] text-noorix-blue' : 'text-[12px] text-nx-sales',
+                  compact ? 'text-[12px] text-noorix-blue' : 'text-[14px] text-nx-sales',
                 )}
               >
                 {row.pct}%
@@ -149,7 +149,7 @@ export function DashboardOverviewBreakdownTable({
                   dir="ltr"
                   className={cn(
                     'inline-block nx-font-numbers font-medium text-noorix-text',
-                    compact ? 'text-[10px]' : 'text-[11px]',
+                    compact ? 'text-[12px]' : 'text-[13px]',
                   )}
                 >
                   <FmtNum n={row.customers ?? 0} />

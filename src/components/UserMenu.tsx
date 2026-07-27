@@ -224,7 +224,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }: U
         {/* الاسم — يظهر من الشاشة المتوسطة فصاعداً */}
         <span className="hidden md:flex flex-col items-start leading-none gap-0.5 max-w-[120px]">
           <span className="text-[12px] font-semibold text-noorix-text truncate w-full">{displayName}</span>
-          <span className="text-[10px] truncate w-full um-role-label">{roleLabel}</span>
+          <span className="text-[11px] truncate w-full um-role-label">{roleLabel}</span>
         </span>
         <svg
           className={`um-chevron hidden sm:block${open ? ' um-chevron--open' : ''}`}

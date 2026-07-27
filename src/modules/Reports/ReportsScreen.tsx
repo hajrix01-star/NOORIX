@@ -410,7 +410,7 @@ function profitLossUnifiedPrintCss() {
   border-color: rgba(255,255,255,.22);
   padding: 8px 7px;
   text-align: center;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 900;
   line-height: 1.25;
 }
@@ -459,12 +459,12 @@ function profitLossUnifiedPrintCss() {
   display: block;
   margin-top: 2px;
   color: #64748b;
-  font-size: 8.7px;
+  font-size: 11px;
   font-weight: 800;
 }
 .pl-print-percent-only {
   color: #64748b !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 850 !important;
 }
 @media print {

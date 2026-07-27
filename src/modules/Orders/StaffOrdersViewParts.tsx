@@ -72,7 +72,7 @@ export function StaffBasketTable({
               <td className="py-1.5 px-2 align-middle text-start max-w-[9rem] sm:max-w-none">
                 <div className="font-medium text-noorix-text leading-tight truncate" title={name}>{name}</div>
                 {variant ? (
-                  <div className="text-[10px] text-noorix-muted ltr truncate" title={variant}>{variant}</div>
+                  <div className="text-[11px] text-noorix-muted ltr truncate" title={variant}>{variant}</div>
                 ) : null}
               </td>
               <td className="py-1.5 px-1 align-middle">
@@ -206,7 +206,7 @@ export function ProductCard({
           <div className="text-[11px] text-noorix-muted mt-0.5 capitalize">{product.unit}</div>
         )}
         {freqCount > 0 && !selected && (
-          <div className="text-[10px] text-noorix-blue/70 mt-0.5">×{freqCount}</div>
+          <div className="text-[11px] text-noorix-blue/70 mt-0.5">×{freqCount}</div>
         )}
       </div>
     </div>

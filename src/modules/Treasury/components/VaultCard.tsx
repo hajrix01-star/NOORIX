@@ -166,7 +166,7 @@ const VaultCard = memo(function VaultCard(props: VaultCardProps) {
       {/* وارد / صادر */}
       <MetricCard.Section className="grid grid-cols-2 gap-2 py-3">
         <div>
-          <div className="flex items-center gap-4 text-noorix-muted text-[10px] mb-[3px]">
+          <div className="flex items-center gap-4 text-noorix-muted text-[12px] mb-[3px]">
             <svg viewBox="0 0 12 12" fill="none" stroke="#16a34a" strokeWidth="2" width="10" height="10">
               <path d="M6 10V2M2 6l4-4 4 4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -177,7 +177,7 @@ const VaultCard = memo(function VaultCard(props: VaultCardProps) {
           </div>
         </div>
         <div className="text-left pr-2 border-r border-noorix-border">
-          <div className="flex items-center gap-4 text-noorix-muted text-[10px] mb-[3px] justify-end">
+          <div className="flex items-center gap-4 text-noorix-muted text-[12px] mb-[3px] justify-end">
             {t('outbound')}
             <svg viewBox="0 0 12 12" fill="none" stroke="var(--noorix-accent-red)" strokeWidth="2" width="10" height="10">
               <path d="M6 2v8M2 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>

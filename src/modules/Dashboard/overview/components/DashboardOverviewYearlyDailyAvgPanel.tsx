@@ -16,8 +16,8 @@ const COL_AVG = '32%';
 const COL_DELTA = '18%';
 
 const TH_CELL =
-  'border border-noorix-border bg-noorix-bg-muted py-1 text-[9px] font-bold leading-tight text-noorix-text';
-const TD_CELL = 'border border-noorix-border py-1 align-middle text-[10px] leading-tight';
+  'border border-noorix-border bg-noorix-bg-muted py-1.5 text-[12px] font-bold leading-tight text-noorix-text';
+const TD_CELL = 'border border-noorix-border py-1.5 align-middle text-[13px] leading-tight';
 
 function formatDeltaPct(n: number): string {
   const rounded = Math.round(n * 10) / 10;
@@ -50,7 +50,7 @@ function rowHighlightClass(row: YearMonthlyDailyAvgRow, isSelected: boolean): st
 function MonthCell({ row, t }: { row: YearMonthlyDailyAvgRow; t: (key: string) => string }) {
   return (
     <div className="flex min-w-0 items-center justify-center gap-1">
-      <span className="whitespace-nowrap text-[10px] font-semibold text-noorix-text" title={row.monthLabel}>
+      <span className="whitespace-nowrap text-[13px] font-semibold text-noorix-text" title={row.monthLabel}>
         {row.monthLabel}
       </span>
       {row.isCurrentMonth ? (
@@ -60,7 +60,7 @@ function MonthCell({ row, t }: { row: YearMonthlyDailyAvgRow; t: (key: string) =
             title={t('dashboardYearlyDailyAvgCurrentBadge')}
             aria-label={t('dashboardYearlyDailyAvgCurrentBadge')}
           />
-          <span className="hidden shrink-0 rounded bg-[color-mix(in_srgb,var(--color-nx-sales)_14%,transparent)] px-1 py-px text-[8px] font-bold leading-none text-noorix-blue sm:inline">
+          <span className="hidden shrink-0 rounded bg-[color-mix(in_srgb,var(--color-nx-sales)_14%,transparent)] px-1.5 py-px text-[11px] font-bold leading-none text-noorix-blue sm:inline">
             {t('dashboardYearlyDailyAvgCurrentBadge')}
           </span>
         </>
@@ -165,7 +165,7 @@ function YearlyDailyAvgTable({
           },
         ]}
         data={rows}
-        tableClassName="w-full table-fixed border-collapse text-[10px]"
+        tableClassName="w-full table-fixed border-collapse text-[13px]"
         frameClassName="border-0 bg-transparent shadow-none"
         cellPadding="0"
         getRowClassName={(row) => rowHighlightClass(row, selectedMonth != null && selectedMonth === row.month)}
@@ -183,10 +183,10 @@ export function DashboardOverviewYearlyDailyAvgPanel({ year, rows, selectedMonth
     <section className="noorix-surface-card min-w-0 overflow-hidden p-0" aria-label={t('dashboardYearlyDailyAvgTitle')}>
       <div className="flex flex-wrap items-center gap-2 border-b border-noorix-border bg-noorix-bg-muted/40 px-2 py-2.5 sm:gap-3 sm:px-3 sm:py-3">
         <span className="h-7 w-1 shrink-0 rounded-full bg-noorix-blue sm:h-8" aria-hidden />
-        <h2 className="m-0 min-w-0 flex-1 text-[12px] font-bold leading-snug text-noorix-text sm:text-[13px]">
+        <h2 className="m-0 min-w-0 flex-1 text-[15px] font-bold leading-snug text-noorix-text sm:text-[16px]">
           {t('dashboardYearlyDailyAvgTitle')} - {year}
         </h2>
-        <span className="shrink-0 rounded bg-noorix-bg-muted px-2 py-1 text-[10px] font-bold text-noorix-muted">
+        <span className="shrink-0 rounded bg-noorix-bg-muted px-2.5 py-1 text-[12px] font-bold text-noorix-muted">
           {t('reportAmountBasisGrossShort')}
         </span>
       </div>

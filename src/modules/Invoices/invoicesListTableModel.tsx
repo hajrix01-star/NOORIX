@@ -382,7 +382,7 @@ export function createInvoiceListMobileCardRenderer({
         ) : null}
       </div>
       <div className="mb-2">
-        <div className="text-[10px] font-bold text-noorix-muted mb-1 text-end">{t('invoiceVaultColumn')}</div>
+        <div className="text-[12px] font-bold text-noorix-muted mb-1 text-end">{t('invoiceVaultColumn')}</div>
         {renderMobileVaults(row, lang, (value) => String(value))}
       </div>
       <div className="nx-mc__grid nx-mc__grid--3">

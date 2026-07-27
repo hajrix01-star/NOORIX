@@ -54,9 +54,9 @@ function metricValueText(value: number | null, variant: 'currency' | 'count', t:
         <FmtNum n={value} />
       </span>
       {variant === 'currency' ? (
-        <span className="nx-sar text-[10px]">SR</span>
+        <span className="nx-sar text-[11px]">SR</span>
       ) : (
-        <span className="text-[10px] font-medium text-noorix-muted">
+        <span className="text-[11px] font-medium text-noorix-muted">
           {t('dashboardSalesCustomerDailyAvgUnit')}
         </span>
       )}

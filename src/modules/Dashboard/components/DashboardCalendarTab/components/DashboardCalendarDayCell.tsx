@@ -67,26 +67,26 @@ export default function DashboardCalendarDayCell({
       onKeyDown={(e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') onDayClick(item, e.shiftKey);
       }}
-      className="aspect-square rounded-md flex flex-col items-center justify-center p-px min-h-10 sm:min-h-12 cursor-pointer relative max-md:text-[10px]"
+      className="aspect-square rounded-md flex flex-col items-center justify-center p-px min-h-10 sm:min-h-12 cursor-pointer relative max-md:text-[11px]"
       background={bg}
       border={cellBorder}
       title={`${dateStr}: ${fmt(amount)} SR${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
     >
-      <span className="text-[12px] max-md:text-[10px] font-bold text-noorix-text leading-none">{day}</span>
+      <span className="text-[12px] max-md:text-[11px] font-bold text-noorix-text leading-none">{day}</span>
       <span
-        className={`text-[11px] max-md:text-[9px] nx-font-numbers leading-tight ${amountClass}`}
+        className={`text-[12px] max-md:text-[11px] nx-font-numbers leading-tight ${amountClass}`}
       >
         {fmt(amount, 0)}
       </span>
       {achieved && (
         <span
-          className={`text-[8px] ${achievedClass}`}
+          className={`text-[11px] leading-none ${achievedClass}`}
         >
           ✓
         </span>
       )}
       {hasNote && (
-        <span className="text-[8px] w-[6px] h-[6px] rounded-full inline-block bg-noorix-blue text-noorix-blue" />
+        <span className="w-[6px] h-[6px] rounded-full inline-block bg-noorix-blue text-noorix-blue" />
       )}
       {special && specialColor && (
         <ColorSwatch className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-md" color={specialColor} />

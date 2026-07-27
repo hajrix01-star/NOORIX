@@ -613,7 +613,7 @@ export default function GeneralReportV2Screen() {
 .gr-v2-print-summary span {
   display: block;
   color: #64748b;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
 }
 .gr-v2-print-summary strong {
@@ -670,7 +670,7 @@ export default function GeneralReportV2Screen() {
   margin-top: 12px;
   text-align: center;
   color: #64748b;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
 @media print {

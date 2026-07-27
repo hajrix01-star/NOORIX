@@ -181,7 +181,7 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
                         className="w-5 rounded-t-sm bg-noorix-blue/70 transition-all"
                         heightPx={Math.max(4, (d.qty / maxQty) * 56)}
                       />
-                      <div className="text-[9px] text-noorix-muted">{d.date.slice(5)}</div>
+                      <div className="text-[11px] text-noorix-muted">{d.date.slice(5)}</div>
                     </div>
                   ));
                 })()}
