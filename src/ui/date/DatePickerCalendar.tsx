@@ -46,12 +46,10 @@ export default function DatePickerCalendar({
   const daysCount = lastDayOfMonth(year, month);
   const firstWeekday = new Date(year, month - 1, 1).getDay();
   const weekCount = Math.ceil((firstWeekday + daysCount) / 7);
-  const weeks = Array.from({ length: weekCount }, (_, weekIndex) =>
-    Array.from({ length: 7 }, (_, weekdayIndex) => {
-      const day = weekIndex * 7 + weekdayIndex - firstWeekday + 1;
-      return day >= 1 && day <= daysCount ? day : null;
-    }),
-  );
+  const calendarSlots = Array.from({ length: weekCount * 7 }, (_, slotIndex) => {
+    const day = slotIndex - firstWeekday + 1;
+    return day >= 1 && day <= daysCount ? day : null;
+  });
   const rtl = language === 'ar';
   const yearIndex = years.findIndex((option) => option.value === year);
   const previousYear = yearIndex > 0 ? years[yearIndex - 1]?.value : null;
@@ -177,38 +175,36 @@ export default function DatePickerCalendar({
       </div>
 
       <div
-        className={styles.weeks}
+        className={styles.daysGrid}
         dir={rtl ? 'rtl' : 'ltr'}
-        role="grid"
+        role="group"
         aria-label={language === 'en' ? 'Calendar' : 'التقويم'}
+        data-calendar-grid
       >
-        {weeks.map((week, weekIndex) => (
-          <div key={`week-${weekIndex}`} className={styles.week} role="row" data-calendar-week>
-            {week.map((day, weekdayIndex) => {
-              if (day === null) {
-                return <span key={`blank-${weekIndex}-${weekdayIndex}`} className={styles.cell} role="gridcell" aria-hidden="true" />;
-              }
-              const date = ymd(year, month, day);
-              const active = date === value;
-              const blocked = isBlocked(date, min, max);
-              return (
-                <span key={date} className={styles.cell} role="gridcell" aria-selected={active}>
-                  <button
-                    type="button"
-                    disabled={blocked}
-                    className={`${styles.day}${active ? ` ${styles.active}` : ''}${blocked ? ` ${styles.disabled}` : ''}`}
-                    aria-label={date}
-                    data-calendar-date={date}
-                    onKeyDown={(event) => handleDayKeyDown(event, day)}
-                    onClick={() => onSelectDay(day)}
-                  >
-                    <span className={styles.dayLabel}>{day}</span>
-                  </button>
-                </span>
-              );
-            })}
-          </div>
-        ))}
+        {calendarSlots.map((day, slotIndex) => {
+          if (day === null) {
+            return <span key={`blank-${slotIndex}`} className={styles.blankDay} aria-hidden="true" data-calendar-slot />;
+          }
+          const date = ymd(year, month, day);
+          const active = date === value;
+          const blocked = isBlocked(date, min, max);
+          return (
+            <button
+              type="button"
+              disabled={blocked}
+              className={`${styles.day}${active ? ` ${styles.active}` : ''}${blocked ? ` ${styles.disabled}` : ''}`}
+              aria-label={date}
+              aria-current={active ? 'date' : undefined}
+              data-calendar-date={date}
+              data-calendar-slot
+              onKeyDown={(event) => handleDayKeyDown(event, day)}
+              onClick={() => onSelectDay(day)}
+              key={date}
+            >
+              {day}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

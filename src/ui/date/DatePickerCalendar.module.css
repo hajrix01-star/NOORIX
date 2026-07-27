@@ -203,8 +203,7 @@
   color: var(--noorix-accent-blue);
 }
 
-.weekdays,
-.week {
+.weekdays {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   width: 100%;
@@ -231,24 +230,25 @@
   white-space: nowrap;
 }
 
-.weeks {
+.daysGrid {
   display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  box-sizing: border-box;
+  column-gap: 4px;
   row-gap: 4px;
 }
 
-.cell {
+.blankDay,
+.day {
   display: block;
   width: 100%;
   min-width: 0;
   max-width: 100%;
   height: 40px;
-  overflow: hidden;
   box-sizing: border-box;
-  position: relative;
 }
 
 .day {
@@ -262,8 +262,7 @@
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  height: 100%;
-  overflow: hidden;
+  height: 40px;
   box-sizing: border-box;
   border: 1px solid #d8e2ef;
   border-radius: 8px;
@@ -277,8 +276,7 @@
   -webkit-text-fill-color: currentColor;
 }
 
-.controlGlyph,
-.dayLabel {
+.controlGlyph {
   position: relative;
   z-index: 1;
   display: block;
@@ -327,8 +325,8 @@
   .header { grid-template-columns: 36px minmax(0, 1fr) 36px; gap: 4px; }
   .nav { width: 36px; height: 38px; }
   .periodTrigger { height: 38px; padding: 0 6px; font-size: 12px; }
-  .weekdays, .week { column-gap: 3px; }
-  .weeks { row-gap: 3px; }
-  .cell { height: 38px; }
+  .weekdays, .daysGrid { column-gap: 3px; }
+  .daysGrid { row-gap: 3px; }
+  .blankDay, .day { height: 38px; }
   .day { border-radius: 7px; font-size: 12px; }
 }

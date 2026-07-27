@@ -101,7 +101,8 @@ describe('Noorix date fields', () => {
 
     const calendar = screen.getByTestId('date-picker-calendar');
     expect(calendar.querySelectorAll('[role="columnheader"]')).toHaveLength(7);
-    expect(calendar.querySelectorAll('[data-calendar-week]')).toHaveLength(5);
+    expect(calendar.querySelectorAll('[data-calendar-grid]')).toHaveLength(1);
+    expect(calendar.querySelectorAll('[data-calendar-slot]')).toHaveLength(35);
     expect(calendar.querySelectorAll('button[aria-label^="2026-07-"]')).toHaveLength(31);
     expect(calendar.querySelector('table')).toBeNull();
     expect(screen.getByRole('button', { name: '2026-07-27' }).className).not.toContain('inline-flex');
