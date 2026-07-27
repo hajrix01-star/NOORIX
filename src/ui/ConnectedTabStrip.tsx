@@ -59,13 +59,12 @@ export default function ConnectedTabStrip({
       <div
         className={cn(
           'flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-between sm:gap-0',
-          !embedded && 'border-b border-noorix-border',
-          hasEnd && 'bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
+          !embedded && 'nx-connected-tabs-head',
         )}
       >
         <div
           className={cn(
-            'nx-connected-tab-strip isolate flex min-w-0 flex-nowrap items-stretch text-[14px]',
+            'nx-connected-tab-strip isolate flex min-w-0 flex-nowrap items-center text-[14px]',
             equalTabs
               ? cn(
                   'w-full overflow-x-hidden',
@@ -75,7 +74,7 @@ export default function ConnectedTabStrip({
                   'nx-connected-tab-strip--scroll overflow-x-auto [-webkit-overflow-scrolling:touch]',
                   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
                 ),
-            hasEnd ? 'min-w-0 max-w-full shrink bg-transparent' : 'min-w-0 flex-1 bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
+            hasEnd ? 'min-w-0 max-w-full shrink' : 'min-w-0 flex-1',
             stripClassName,
           )}
           role="tablist"
@@ -93,13 +92,12 @@ export default function ConnectedTabStrip({
                 aria-selected={active}
                 data-active={active ? 'true' : 'false'}
                 className={cn(
-                  '!grid !h-full min-h-[39px] grid-cols-1 grid-rows-[minmax(36px,1fr)_3px] sm:grid-rows-[minmax(38px,1fr)_3px] self-stretch rounded-none',
-                  compactAll && 'min-h-[34px] sm:min-h-[36px] sm:grid-rows-[minmax(32px,1fr)_3px]',
+                  'nx-connected-tab-btn',
+                  compactAll && 'nx-connected-tab-btn--compact',
                   equalTabs && 'min-w-0 flex-1 basis-0 shrink',
                   compactMobile && !compactAll && 'max-sm:min-h-[34px] max-sm:min-w-0 max-sm:flex-1 max-sm:basis-0 max-sm:shrink',
                   compactMobile && !compactAll && denseMobile && 'max-sm:min-h-[40px]',
                   !equalTabs && 'shrink-0',
-                  'border-0 border-e border-noorix-border-strong last:border-e-0',
                   equalTabs
                     ? cn(
                         'leading-snug sm:leading-normal',
@@ -113,10 +111,7 @@ export default function ConnectedTabStrip({
                             ),
                       )
                     : 'text-[14px] leading-normal whitespace-nowrap',
-                  'transition-[background-color,color,box-shadow] duration-200 ease-out',
-                  active
-                    ? 'relative z-[1] bg-noorix-surface text-noorix-text shadow-[0_6px_18px_-4px_rgba(10,31,68,0.14)]'
-                    : 'z-0 bg-noorix-bg-muted/90 text-noorix-muted shadow-none hover:bg-noorix-surface hover:text-noorix-text hover:shadow-[0_3px_10px_-2px_rgba(10,31,68,0.1)]',
+                  active ? 'nx-connected-tab-btn--active' : 'nx-connected-tab-btn--idle',
                 )}
                 onClick={() => {
                   if (item.id !== value) onChange(item.id);
@@ -156,13 +151,6 @@ export default function ConnectedTabStrip({
                     {item.label}
                   </span>
                 </span>
-                <span
-                  className={cn(
-                    'block h-[3px] w-full shrink-0 transition-opacity duration-200',
-                    active ? 'nx-connected-tab-sparkline' : 'bg-transparent',
-                  )}
-                  aria-hidden
-                />
               </Button>
             );
           })}
