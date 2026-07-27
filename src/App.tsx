@@ -379,10 +379,11 @@ export default function App() {
             appVersionLabel={deployVersionGuard.localVersion ? formatAppVersion(deployVersionGuard.localVersion) : ''}
           />
           <AppUpdateNotice update={deployVersionGuard.update} onRefresh={deployVersionGuard.refreshNow} />
-        <main className="app-main__content">
-          <React.Suspense fallback={<LoadingFallback />}>
-            <PermissionGuard userRole={user?.role} userPermissions={user?.permissions} isUserLoading={isUserLoading}>
-              <Routes>
+          <div className="nx-page-scroll">
+            <main className="app-main__content">
+              <React.Suspense fallback={<LoadingFallback />}>
+                <PermissionGuard userRole={user?.role} userPermissions={user?.permissions} isUserLoading={isUserLoading}>
+                  <Routes>
                 <Route path="/purchasing" element={<Navigate to="/purchases" replace />} />
                 <Route
                   path="/theme-preview"
@@ -432,10 +433,11 @@ export default function App() {
                 <Route path="/dashboard-studio" element={<Navigate to="/" replace />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />
-              </Routes>
-            </PermissionGuard>
-          </React.Suspense>
-        </main>
+                  </Routes>
+                </PermissionGuard>
+              </React.Suspense>
+            </main>
+          </div>
         </div>
     </div>
       )}

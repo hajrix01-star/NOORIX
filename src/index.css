@@ -564,8 +564,9 @@ a { color: inherit; text-decoration: none; }
 .app-sidebar-select { width: 100%; height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.25); color: rgba(255,255,255,0.85); font-size: 13px; cursor: pointer; font-family: var(--noorix-font-primary); }
 
 /* ========== محتوى رئيسي — flex-1 w-full overflow-hidden ========== */
-.app-main { flex: 1; display: flex; flex-direction: column; padding: 16px clamp(12px, 2.5vw, 24px) clamp(16px, 3vw, 24px); gap: 14px; min-height: 0; height: 100vh; min-width: 0; width: 100%; overflow-x: hidden; overflow-y: scroll; background: var(--noorix-bg-page); box-sizing: border-box; }
-.app-main__content { flex: 1; min-width: 0; max-width: 1560px; width: 100%; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+.app-main { flex: 1; display: flex; flex-direction: column; padding: 16px clamp(12px, 2.5vw, 24px) clamp(16px, 3vw, 24px); gap: 14px; min-height: 0; height: 100vh; min-width: 0; width: 100%; overflow: hidden; background: var(--noorix-bg-page); box-sizing: border-box; }
+.nx-page-scroll { flex: 1; min-height: 0; min-width: 0; width: 100%; overflow-x: hidden; overflow-y: scroll; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+.app-main__content { flex: 1; min-height: 100%; min-width: 0; max-width: 1560px; width: 100%; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
 [dir='rtl'] .app-main__content { margin-right: 0; margin-left: auto; }
 [dir='ltr'] .app-main__content { margin-left: 0; margin-right: auto; }
 .app-main__content:has(.nx-screen-shell--data), .app-main__content:has(.nx-screen-shell--report) { max-width: none; }
@@ -4982,6 +4983,9 @@ select option {
     width: 100% !important;
     max-width: 100% !important;
   }
+  .nx-page-scroll {
+    overflow: visible;
+  }
   /* إزالة الظلال والخلفيات الملونة */
   .noorix-surface-card,
   .noorix-table-frame,
@@ -5039,6 +5043,13 @@ body.noorix-page-smart-chat .app-main__content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+body.noorix-page-smart-chat .nx-page-scroll {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
