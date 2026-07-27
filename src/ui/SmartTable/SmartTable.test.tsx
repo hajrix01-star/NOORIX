@@ -99,6 +99,38 @@ describe('SmartTable', () => {
     expect(panel?.querySelectorAll('.nx-col-vis-item')).toHaveLength(2);
   });
 
+  it('resizes only the adjacent column pair without changing the remaining columns', () => {
+    const resizeColumns: SmartTableColumn[] = [
+      { key: 'first', label: 'First' },
+      { key: 'second', label: 'Second' },
+      { key: 'third', label: 'Third' },
+    ];
+    const { container } = render(
+      <SmartTable
+        tableId="resize-pair-test"
+        columns={resizeColumns}
+        data={[{ id: '1', first: 'A', second: 'B', third: 'C' }]}
+        total={1}
+      />,
+    );
+
+    const headers = Array.from(container.querySelectorAll('thead th')) as HTMLElement[];
+    Object.defineProperty(headers[0], 'offsetWidth', { configurable: true, value: 120 });
+    Object.defineProperty(headers[1], 'offsetWidth', { configurable: true, value: 80 });
+
+    const handle = headers[0].querySelector('.nx-col-resize-handle') as HTMLElement;
+    expect(handle).toBeTruthy();
+    fireEvent.pointerDown(handle, { clientX: 100 });
+    fireEvent.pointerMove(document, { clientX: 80 });
+    fireEvent.pointerUp(document);
+
+    const cols = Array.from(container.querySelectorAll('col')) as HTMLTableColElement[];
+    expect(cols[0].style.width).toBe('140px');
+    expect(cols[1].style.width).toBe('60px');
+    expect(cols[2].style.width).toBe('');
+    expect(localStorage.getItem('nx-col-widths:v2:resize-pair-test')).toBe('{"first":140,"second":60}');
+  });
+
   it('renders pagination when total exceeds pageSize', () => {
     render(
       <SmartTable

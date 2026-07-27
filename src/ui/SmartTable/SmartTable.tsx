@@ -273,14 +273,20 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
                 {showRowNumbers && (
                   <th className="nx-row-number-th nx-smart-row-number-cell nx-smart-header-cell-vars" style={rowNumberHeaderStyle}>#</th>
                 )}
-                {visibleColumns.map((col) => {
+                {visibleColumns.map((col, columnIndex) => {
                   const columnState = tableEngine.getColumnState(col.key);
                   const shrink = col.shrink === true;
                   const actionSticky = col.key === 'actions' && stickyActionColumn;
                   // Keep truncation on table cells display-safe; inner ellipsis spans can be block.
                   // only apply it in fixed layout (where width is enforced) or when col.maxWidth bounds it
                   const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
-                  const resizableCol = Boolean(tableId && col.key !== 'actions');
+                  const nextResizableCol = visibleColumns[columnIndex + 1];
+                  const resizableCol = Boolean(
+                    tableId
+                    && col.key !== 'actions'
+                    && nextResizableCol
+                    && nextResizableCol.key !== 'actions',
+                  );
                   const effectiveWidth = columnEffectiveWidth(col);
                   return (
                     <th
@@ -311,8 +317,15 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
                           className="nx-col-resize-handle"
                           onPointerDown={(e: React.PointerEvent<HTMLDivElement>) => {
                             const th = e.currentTarget.parentElement;
-                            if (!th) return;
-                            handleResizeStart(e, col.key, th.offsetWidth);
+                            const nextTh = th?.nextElementSibling;
+                            if (!th || !nextTh || !nextResizableCol) return;
+                            handleResizeStart(
+                              e,
+                              col.key,
+                              th.offsetWidth,
+                              nextResizableCol.key,
+                              (nextTh as HTMLElement).offsetWidth,
+                            );
                           }}
                         />
                       )}

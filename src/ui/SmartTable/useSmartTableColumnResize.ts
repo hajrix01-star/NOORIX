@@ -3,9 +3,13 @@ import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent }
 const COLUMN_WIDTH_STORAGE_VERSION = 'v2';
 
 type ResizeState = {
-  colKey: string;
+  primaryKey: string;
+  secondaryKey: string;
   startX: number;
-  startW: number;
+  primaryStartW: number;
+  secondaryStartW: number;
+  primaryMinW: number;
+  secondaryMinW: number;
 };
 
 function columnWidthStorageKey(tableId: string) {
@@ -30,19 +34,44 @@ export function useSmartTableColumnResize({
     }
   });
 
-  const handleResizeStart = useCallback((e: ReactPointerEvent, colKey: string, startW: number) => {
+  const handleResizeStart = useCallback((
+    e: ReactPointerEvent,
+    primaryKey: string,
+    primaryStartW: number,
+    secondaryKey: string,
+    secondaryStartW: number,
+    primaryMinW = 40,
+    secondaryMinW = 40,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     const dirMult = dir === 'rtl' ? -1 : 1;
-    resizingRef.current = { colKey, startX: e.clientX, startW };
+    resizingRef.current = {
+      primaryKey,
+      secondaryKey,
+      startX: e.clientX,
+      primaryStartW,
+      secondaryStartW,
+      primaryMinW,
+      secondaryMinW,
+    };
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
 
     const onMove = (ev: PointerEvent) => {
       if (!resizingRef.current) return;
-      const delta = (ev.clientX - resizingRef.current.startX) * dirMult;
-      const newW = Math.max(40, resizingRef.current.startW + delta);
-      setColWidths((prev) => ({ ...prev, [colKey]: Math.round(newW) }));
+      const state = resizingRef.current;
+      const delta = (ev.clientX - state.startX) * dirMult;
+      const minDelta = state.primaryMinW - state.primaryStartW;
+      const maxDelta = state.secondaryStartW - state.secondaryMinW;
+      const clampedDelta = Math.min(Math.max(delta, minDelta), maxDelta);
+      const primaryWidth = Math.round(state.primaryStartW + clampedDelta);
+      const secondaryWidth = Math.round(state.secondaryStartW - clampedDelta);
+      setColWidths((prev) => ({
+        ...prev,
+        [state.primaryKey]: primaryWidth,
+        [state.secondaryKey]: secondaryWidth,
+      }));
     };
 
     const onUp = () => {
