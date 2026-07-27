@@ -7,7 +7,6 @@ import React, { type ReactNode } from 'react';
 import { cn, ScreenTabs } from '../../../ui';
 import { type ScreenTabItem } from '../../../ui/ScreenTabs';
 import {
-  HR_SEGMENTED_BAR_CLASS,
   HR_SUBTAB_INLINE_CLASS,
   HR_SUBTAB_SHELL_CLASS,
   HR_WORKSPACE_GUTTER_X,
@@ -45,20 +44,22 @@ export function HrSegmentedControl({
       items={items}
       value={value}
       onChange={onChange}
-      variant="segmented"
-      segmentedFlat
+      variant={isFilter ? 'segmented' : 'connected'}
+      segmentedFlat={isFilter}
+      compactAll={!isFilter}
+      embedded={!isFilter}
       animateContent={false}
       barClassName={cn(
-        isFilter
-          ? 'nx-segmented-tab-bar nx-hr-filter-pills'
-          : HR_SEGMENTED_BAR_CLASS,
+        isFilter && 'nx-segmented-tab-bar nx-hr-filter-pills',
       )}
-      getTabClassName={(_, active) =>
-        cn(
-          'nx-hr-segment-pill',
-          isFilter ? 'nx-hr-segment-pill--filter' : 'nx-hr-segment-pill--section',
-          active && 'nx-hr-segment-pill--active',
-        )
+      getTabClassName={
+        isFilter
+          ? (_, active) =>
+              cn(
+                'nx-hr-segment-pill nx-hr-segment-pill--filter',
+                active && 'nx-hr-segment-pill--active',
+              )
+          : undefined
       }
       shellClassName={cn(
         isFilter

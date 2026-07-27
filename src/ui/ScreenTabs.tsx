@@ -34,6 +34,10 @@ export type ScreenTabsProps = {
   tabBarEnd?: ReactNode;
   /** segmented: بدون كرت ثانٍ — شريط داخل حاوية أب (مثل HR) */
   segmentedFlat?: boolean;
+  /** connected: توزيع متساوٍ مضغوط لكل التبويبات. */
+  compactAll?: boolean;
+  /** connected: داخل حاوية أب بدون كرت مستقل. */
+  embedded?: boolean;
 };
 
 export default function ScreenTabs({
@@ -55,6 +59,8 @@ export default function ScreenTabs({
   animateContent = true,
   tabBarEnd,
   segmentedFlat = false,
+  compactAll = false,
+  embedded = false,
 }: ScreenTabsProps) {
   const uiDir = useUiDir();
   /** توزيع متساوٍ على الجوال بدون تمرير — مناسب لمعظم شاشات الأقسام (≤8 تبويبات) */
@@ -71,6 +77,8 @@ export default function ScreenTabs({
         shellClassName={cn(className, shellClassName)}
         stripClassName={stripClassName}
         compactMobile={resolvedCompactMobile}
+        compactAll={compactAll}
+        embedded={embedded}
         tabBarEnd={tabBarEnd}
       >
         {children}

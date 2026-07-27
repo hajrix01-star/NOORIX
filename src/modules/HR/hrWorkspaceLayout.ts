@@ -50,10 +50,6 @@ export const HR_SUBTAB_SHELL_CLASS = cn(
   'nx-hr-subtab-shell w-full',
 );
 
-/** شريط pills فرعي HR — fill + track */
-export const HR_SECTION_SEGMENTED_BAR_CLASS =
-  'nx-segmented-tab-bar nx-segmented-tab-bar--track nx-segmented-tab-bar--hr';
-
 /** داخل جسم المحتوى — شريط connected مسطح (بدون إطار كرت) */
 export const HR_SUBTAB_INLINE_CLASS = cn(
   'nx-hr-subtab-inline w-full min-w-0 overflow-hidden',
@@ -80,9 +76,6 @@ export const HR_SEGMENTED_SHELL_FLAT_CLASS = 'nx-segmented-shell--flat';
 
 /** @deprecated */
 export const HR_SEGMENTED_SHELL_INSET_CLASS = HR_SUBTAB_SHELL_CLASS;
-
-/** @deprecated استخدم HR_SECTION_SEGMENTED_BAR_CLASS */
-export const HR_SEGMENTED_BAR_CLASS = HR_SECTION_SEGMENTED_BAR_CLASS;
 
 /** @deprecated */
 export const HR_SEGMENTED_INLINE_CLASS = HR_SUBTAB_INLINE_CLASS;
