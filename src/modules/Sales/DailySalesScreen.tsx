@@ -122,14 +122,6 @@ export default function DailySalesScreen() {
             >
               {compactSummaryNumberText(row)}
             </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="h-6 shrink-0 px-2 text-[11px]"
-              onClick={(event) => handleSummaryEditClick(event, row)}
-            >
-              {t('edit')}
-            </Button>
           </div>
           <span className="nx-cell-muted-sm nx-font-numbers">{formatSaudiDate(row.transactionDate)}</span>
           {dayContextLabel(row) ? (
@@ -176,14 +168,6 @@ export default function DailySalesScreen() {
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-[14px] font-bold text-noorix-blue ltr" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
-          <Button
-            variant="default"
-            size="sm"
-            className="h-6 shrink-0 px-2 text-[11px]"
-            onClick={(event) => handleSummaryEditClick(event, row)}
-          >
-            {t('edit')}
-          </Button>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
