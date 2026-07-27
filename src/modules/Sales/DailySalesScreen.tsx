@@ -99,19 +99,38 @@ export default function DailySalesScreen() {
     [],
   );
 
+  const openSummaryEdit = useCallback((row: DailySalesTableRow) => {
+    setEditingSummary(row);
+  }, [setEditingSummary]);
+
+  const handleSummaryEditClick = useCallback((event: React.MouseEvent, row: DailySalesTableRow) => {
+    event.stopPropagation();
+    openSummaryEdit(row);
+  }, [openSummaryEdit]);
+
   const columns = useMemo(() => [
     { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '16ch',
       render: (_: unknown, row: DailySalesTableRow) => (
         <div className="flex flex-col items-start gap-1">
-          <Button
-            variant="raw"
-            size="auto"
-            className="!h-auto rounded-md px-2 py-1 text-start nx-cell-num nx-cell-accent hover:bg-noorix-blue/10 hover:underline focus-visible:ring-2 focus-visible:ring-noorix-blue"
-            title={summaryNumberText(row)}
-            onClick={() => setEditingSummary(row)}
-          >
-            {compactSummaryNumberText(row)}
-          </Button>
+          <div className="flex max-w-full items-center gap-1.5">
+            <Button
+              variant="raw"
+              size="auto"
+              className="!h-auto min-w-0 rounded-md px-2 py-1 text-start nx-cell-num nx-cell-accent hover:bg-noorix-blue/10 hover:underline focus-visible:ring-2 focus-visible:ring-noorix-blue"
+              title={summaryNumberText(row)}
+              onClick={(event) => handleSummaryEditClick(event, row)}
+            >
+              {compactSummaryNumberText(row)}
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              className="h-6 shrink-0 px-2 text-[11px]"
+              onClick={(event) => handleSummaryEditClick(event, row)}
+            >
+              {t('edit')}
+            </Button>
+          </div>
           <span className="nx-cell-muted-sm nx-font-numbers">{formatSaudiDate(row.transactionDate)}</span>
           {dayContextLabel(row) ? (
             <span className="inline-flex max-w-full items-center truncate rounded-md bg-noorix-blue/10 px-1.5 py-0.5 text-[10px] font-semibold text-noorix-blue">
@@ -134,7 +153,7 @@ export default function DailySalesScreen() {
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', kind: 'status', label: t('statusLabel'), width: '9ch',
       render: (v: unknown) => <Badge {...Badge.fromStatus(v as string, STATUS_MAP)} size="sm" /> },
-  ] as SmartTableColumn[], [t, STATUS_MAP, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
+  ] as SmartTableColumn[], [t, STATUS_MAP, lang, handleSummaryEditClick, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
 
   const footerCells = (
     <>
@@ -155,7 +174,17 @@ export default function DailySalesScreen() {
   const renderMobileCard = useCallback((row: DailySalesTableRow) => (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-noorix-blue ltr" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-[14px] font-bold text-noorix-blue ltr" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
+          <Button
+            variant="default"
+            size="sm"
+            className="h-6 shrink-0 px-2 text-[11px]"
+            onClick={(event) => handleSummaryEditClick(event, row)}
+          >
+            {t('edit')}
+          </Button>
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
           {dayContextLabel(row) ? (
@@ -188,10 +217,10 @@ export default function DailySalesScreen() {
         </div>
       </div>
     </div>
-  ), [STATUS_MAP, t, lang, setEditingSummary, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
+  ), [STATUS_MAP, t, lang, handleSummaryEditClick, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
 
   const renderCompactRow = useCallback((row: DailySalesTableRow) => (
-    <div className="cursor-pointer" onClick={() => setEditingSummary(row)}>
+    <div className="cursor-pointer" onClick={() => openSummaryEdit(row)}>
       <div className="nx-cr__line1">
         <span className="nx-cr__id" title={summaryNumberText(row)}>#{compactSummaryNumberText(row)}</span>
         <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
@@ -208,7 +237,7 @@ export default function DailySalesScreen() {
         </div>
       </div>
     </div>
-  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
+  ), [STATUS_MAP, t, handleDeleteSummary, openSummaryEdit, compactSummaryNumberText, summaryNumberText, dayContextLabel]);
 
   return (
     <ScreenShell>
