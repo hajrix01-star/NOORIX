@@ -470,6 +470,7 @@
 /* ========== قاعدة — Typography Scale ========== */
 html {
   font-size: 16px;
+  scrollbar-gutter: stable;
 }
 html, body, #root {
   margin: 0;
