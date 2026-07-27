@@ -61,6 +61,13 @@ export type InvoiceViewLabels = {
   tax: string;
   total: string;
   invoiceVaultMultiple: string;
+  invoiceKindHrExpense: string;
+  invoiceKindUnknown: string;
+  kindExpense: string;
+  kindPurchase: string;
+  kindSale: string;
+  statusActive: string;
+  statusCancelled: string;
 };
 
 export function getInvoiceViewEmptyValue() {
@@ -81,6 +88,22 @@ export function formatInvoiceViewDate(value?: string | Date | null) {
 
 export function formatInvoiceViewMoney(value: unknown, fmt: (value: number) => string) {
   return hasInvoiceNumericValue(value) ? `${fmt(toInvoiceFiniteNumber(value))} SR` : EMPTY_INVOICE_VIEW_VALUE;
+}
+
+export function formatInvoiceViewKind(kind: string | null | undefined, labels: InvoiceViewLabels) {
+  const normalizedKind = String(kind || '').trim().toLowerCase();
+  if (normalizedKind === 'sale') return labels.kindSale;
+  if (normalizedKind === 'purchase') return labels.kindPurchase;
+  if (normalizedKind === 'expense' || normalizedKind === 'fixed_expense') return labels.kindExpense;
+  if (normalizedKind === 'hr_expense' || normalizedKind === 'residency') return labels.invoiceKindHrExpense;
+  return String(kind || '').trim() || labels.invoiceKindUnknown || EMPTY_INVOICE_VIEW_VALUE;
+}
+
+export function formatInvoiceViewStatus(status: string | null | undefined, labels: InvoiceViewLabels) {
+  const normalizedStatus = String(status || '').trim().toLowerCase();
+  if (normalizedStatus === 'active') return labels.statusActive;
+  if (normalizedStatus === 'cancelled' || normalizedStatus === 'canceled') return labels.statusCancelled;
+  return String(status || '').trim() || EMPTY_INVOICE_VIEW_VALUE;
 }
 
 export function getInvoiceViewDocumentNumber(invoice: InvoiceViewSource) {
@@ -120,13 +143,13 @@ export function buildInvoiceViewFields(input: {
     },
     {
       label: labels.type,
-      value: invoice.kind || EMPTY_INVOICE_VIEW_VALUE,
+      value: formatInvoiceViewKind(invoice.kind, labels),
       tone: 'neutral',
       bold: false,
     },
     {
       label: labels.status,
-      value: invoice.status || EMPTY_INVOICE_VIEW_VALUE,
+      value: formatInvoiceViewStatus(invoice.status, labels),
       tone: 'neutral',
       bold: false,
     },

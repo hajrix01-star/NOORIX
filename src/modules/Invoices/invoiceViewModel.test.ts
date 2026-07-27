@@ -19,6 +19,13 @@ const labels = {
   tax: 'Tax',
   total: 'Total',
   invoiceVaultMultiple: 'Multiple vaults',
+  invoiceKindHrExpense: 'HR expense',
+  invoiceKindUnknown: 'Other',
+  kindExpense: 'Expense',
+  kindPurchase: 'Purchase',
+  kindSale: 'Sales',
+  statusActive: 'Active',
+  statusCancelled: 'Cancelled',
 };
 
 const fmt = (value: number) => value.toFixed(2);
@@ -52,6 +59,8 @@ describe('invoiceViewModel', () => {
     });
 
     expect(fields.map((field) => field.value)).toContain('Supplier');
+    expect(fields.map((field) => field.value)).toContain('Purchase');
+    expect(fields.map((field) => field.value)).toContain('Active');
     expect(fields.find((field) => field.label === 'Total')).toMatchObject({
       value: '115.00 SR',
       tone: 'blue',
