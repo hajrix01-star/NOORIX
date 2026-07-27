@@ -117,7 +117,7 @@ export default function PurchasesBatchScreen() {
           })),
         footerRows: [[
           { value: t('totalSum', data.summary.count), colSpan: 4 },
-          { value: `${data.summary.total.toNumber().toLocaleString('en', { maximumFractionDigits: 2 })} SR` },
+          { value: `${data.summary.total.toNumber().toLocaleString('en', { maximumFractionDigits: 0 })} SR` },
           { value: '' },
           { value: '' },
         ]],

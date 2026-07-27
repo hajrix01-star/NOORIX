@@ -309,7 +309,7 @@ export default function CostAccountingAppsScreen() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-noorix-muted">{t('reportCostAppsGrossTotal')}:</span>
                       <strong className="tabular-nums text-noorix-text" dir="ltr">
-                        {fmt(parseMoneyInput(reverseGrossStr).toNumber(), 2)}
+                          {fmt(parseMoneyInput(reverseGrossStr).toNumber())}
                       </strong>
                     </div>
                     <Button type="button" variant="primary" size="sm" className="w-full shrink-0 sm:w-auto" onClick={handleApplyReverse}>

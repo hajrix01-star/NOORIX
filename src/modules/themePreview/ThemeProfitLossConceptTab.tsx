@@ -129,7 +129,7 @@ function yearTotal(row: PlRow) {
 
 function formatMoney(value: number) {
   const sign = value < 0 ? '-' : '';
-  return `${sign}${Math.abs(value).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${sign}${Math.abs(value).toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function percent(current: number, previous: number) {

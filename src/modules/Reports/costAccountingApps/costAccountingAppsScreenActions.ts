@@ -9,7 +9,7 @@ import { parseMoneyInput, type FixedLine } from './costAccountingAppsScreenUtils
 type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
 
 function fmt2(d: Decimal): string {
-  return fmt(d.toNumber(), 2);
+  return fmt(d.toNumber());
 }
 
 export function buildCostAppsPrintBody(params: {
@@ -44,12 +44,12 @@ export function buildCostAppsPrintBody(params: {
   const fixedLineRows: Array<[string, string, string]> = [
     [
       t('reportCostAppsPayrollLineLabel'),
-      fmt(parseMoneyInput(salaryStr).toNumber(), 2),
-      fmt(parseMoneyInput(salaryStr).mul(12).toNumber(), 2),
+      fmt(parseMoneyInput(salaryStr).toNumber()),
+      fmt(parseMoneyInput(salaryStr).mul(12).toNumber()),
     ],
     ...fixedLines.map((line): [string, string, string] => {
       const monthly = parseMoneyInput(line.amount);
-      return [line.label || '-', fmt(monthly.toNumber(), 2), fmt(monthly.mul(12).toNumber(), 2)];
+      return [line.label || '-', fmt(monthly.toNumber()), fmt(monthly.mul(12).toNumber())];
     }),
   ];
 

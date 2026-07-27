@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { sumObjectValues } from '@noorix/finance-core';
-import { Button, AdaptiveSheet, DialogActions, TransactionDatePicker, Input } from '../../../ui';
+import { Button, AdaptiveSheet, DialogActions, TransactionDatePicker, Input, FmtNum } from '../../../ui';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { DailySalesEditBody, DailySalesTableRow } from '../hooks/useDailySalesScreen';
@@ -163,7 +163,7 @@ export function SalesDayEditModal({
           />
         </label>
         <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2 text-[12px] text-noorix-muted">
-          {summaries.length} شفت · الإجمالي الحالي: <span dir="ltr">{dayTotal.toFixed(2)} SR</span>
+          {summaries.length} شفت · الإجمالي الحالي: <span dir="ltr"><FmtNum n={dayTotal.toNumber()} /> SR</span>
         </div>
       </div>
 

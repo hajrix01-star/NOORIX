@@ -215,10 +215,10 @@ export default function HajriTaxRegistryList({
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers">{row.year}</td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end font-medium">Q{row.quarter}</td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers whitespace-nowrap">
-                        {fmt(sales, 2)} <span className="nx-sar">SR</span>
+                        {fmt(sales)} <span className="nx-sar">SR</span>
                       </td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers whitespace-nowrap">
-                        {fmt(purchases, 2)} <span className="nx-sar">SR</span>
+                        {fmt(purchases)} <span className="nx-sar">SR</span>
                       </td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers whitespace-nowrap">
                         {fmtTax(outVat)} <span className="nx-sar">SR</span>

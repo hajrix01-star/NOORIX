@@ -65,7 +65,6 @@ function MoneyCell({ value }: { value: number | null }) {
     <span dir="ltr">
       <FmtNum
         n={value}
-        maxDecimals={2}
         className="font-semibold tabular-nums nx-font-numbers text-noorix-text"
       />
     </span>

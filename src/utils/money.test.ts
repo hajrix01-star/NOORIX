@@ -15,6 +15,7 @@ describe('money formatters (Latin digits)', () => {
     const s = formatMoney(9999.4, 'ar');
     expect(ARABIC_INDIC_DIGIT.test(s)).toBe(false);
     expect(s).toMatch(/\d/);
+    expect(s).toBe('9,999');
   });
 
   it('formatPercent(ar) uses ASCII digits', () => {

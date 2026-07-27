@@ -28,7 +28,7 @@ function formatWithLatinDigits(n: number, minimumFractionDigits: number, maximum
  * تنسيق مبلغ (أرقام فقط) — يُزوَّج عادة مع <span className="nx-sar">SR</span>
  */
 export function formatMoney(value: unknown, lang?: MoneyLang): string {
-  return formatNumber(value, lang, { maxFractionDigits: 1, minFractionDigits: 0 });
+  return formatNumber(value, lang, { maxFractionDigits: 0, minFractionDigits: 0 });
 }
 
 /**

@@ -15,7 +15,7 @@ type NumericDisplayValue = number | string | null | undefined | { toNumber: () =
  */
 export function FmtNum({
   n,
-  maxDecimals = 1,
+  maxDecimals = 0,
   tax = false,
   className = '',
 }: {

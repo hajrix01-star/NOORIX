@@ -280,7 +280,7 @@ export function useCostAccountingAppsScreen() {
     appSharePctStr,
   ]);
 
-  const fmt2 = (d: Decimal) => fmt(d.toNumber(), 2);
+  const fmt2 = (d: Decimal) => fmt(d.toNumber());
 
   const applyScenarioRestore = useCallback((restore: CostAppsScenarioRestore) => {
     if (restore.grossAppStr !== undefined) setGrossAppStr(restore.grossAppStr);

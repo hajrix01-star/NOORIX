@@ -131,7 +131,7 @@ export function useCostAccountingAppsImports(params: {
       if (salRes.success) {
         setSalaryStr(payrollOk ? amt.toFixed(2) : '');
       }
-      const payrollMonthly = payrollOk ? fmt(amt.toNumber(), 2) : '—';
+      const payrollMonthly = payrollOk ? fmt(amt.toNumber()) : '—';
       showToast(t('reportCostAppsExpensesImportOk', { expenseCount: mapped.length, payrollMonthly }), 'success');
     } catch (e: unknown) {
       showToast(errorMessage(e), 'error');

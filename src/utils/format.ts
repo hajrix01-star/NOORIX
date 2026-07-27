@@ -17,7 +17,7 @@ export { sumAmounts } from './math-engine';
  */
 type FormatNumberInput = unknown;
 
-export function fmt(n: FormatNumberInput, maxDecimals: number = 1) {
+export function fmt(n: FormatNumberInput, maxDecimals: number = 0) {
   const raw = n instanceof Decimal ? n.toNumber() : Number(n ?? 0);
   const num = Number.isFinite(raw) ? raw : 0;
   return num.toLocaleString('en', {
@@ -34,7 +34,7 @@ export function fmtTax(n: FormatNumberInput) {
   const num = Number.isFinite(raw) ? raw : 0;
   return num.toLocaleString('en', {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
+    maximumFractionDigits: 0,
   });
 }
 
