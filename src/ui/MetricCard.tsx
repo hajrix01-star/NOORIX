@@ -39,10 +39,8 @@ export type MetricCardRootProps = {
 };
 
 /* ══ Root ═══════════════════════════════════════════════════════════ */
-function MetricCard({ color, isArchived = false, onClick, className, children }: MetricCardRootProps) {
-  const barColor = isArchived ? 'var(--noorix-border)' : (color || 'var(--noorix-accent-blue)');
+function MetricCard({ isArchived = false, onClick, className, children }: MetricCardRootProps) {
   const cardStyle = {
-    '--metric-card-bar': barColor,
     '--metric-card-opacity': isArchived ? 0.65 : 1,
   } as React.CSSProperties;
   return (
@@ -55,11 +53,6 @@ function MetricCard({ color, isArchived = false, onClick, className, children }:
       style={cardStyle}
       onClick={onClick}
     >
-      {/* الشريط العلوي الملوّن — تغييره هنا يطال جميع الكروت */}
-      <div
-        className="metric-card-bar h-1 shrink-0 rounded-t-[var(--noorix-card-radius)]"
-        aria-hidden
-      />
       {children}
     </div>
   );

@@ -1517,9 +1517,6 @@
 .metric-card-root {
   opacity: var(--metric-card-opacity, 1);
 }
-.metric-card-bar {
-  background: var(--metric-card-bar, var(--noorix-accent-blue));
-}
 
 .nx-asset-warranty-trigger {
   position: relative;
