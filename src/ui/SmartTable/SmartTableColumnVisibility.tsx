@@ -94,8 +94,8 @@ function SmartTableColumnVisibilityInner<TRow extends SmartTableRow = SmartTable
 
   const panelStyle: SmartTableColumnVisibilityCssVars | undefined = panelPos
     ? {
-        '--nx-col-vis-panel-top': cssLength(panelPos.top),
-        '--nx-col-vis-panel-left': cssLength(panelPos.left),
+        top: cssLength(panelPos.top),
+        left: cssLength(panelPos.left),
       }
     : undefined;
 

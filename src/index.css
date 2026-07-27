@@ -2498,11 +2498,7 @@ html[data-card-style="10"] .noorix-stat-card {
   box-shadow: 0 8px 24px rgba(10,31,68,0.12), 0 2px 6px rgba(10,31,68,0.06);
   animation: nx-fade-in 0.12s ease;
 }
-.nx-col-vis-panel--viewport {
-  position: fixed;
-  inset: auto;
-  margin: 0;
-}
+.nx-col-vis-panel--viewport { position: fixed; inset: auto; margin: 0; }
 .nx-col-vis-panel--measuring {
   visibility: hidden;
   pointer-events: none;
