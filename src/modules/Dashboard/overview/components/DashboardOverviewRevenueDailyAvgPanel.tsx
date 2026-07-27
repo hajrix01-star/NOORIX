@@ -49,14 +49,14 @@ function resolveTone(current: number | null, prev: number | null, deltaPct: numb
 function metricValueText(value: number | null, variant: 'currency' | 'count', t: (key: string) => string) {
   if (value == null) return <span className="text-noorix-muted">-</span>;
   return (
-    <span dir="ltr" className="inline-flex items-baseline justify-center gap-1 text-[13px] nx-font-numbers">
+    <span dir="ltr" className="inline-flex items-baseline justify-center gap-1 text-[15px] nx-font-numbers">
       <span className="font-extrabold">
         <FmtNum n={value} />
       </span>
       {variant === 'currency' ? (
-        <span className="nx-sar text-[11px]">SR</span>
+        <span className="nx-sar text-[12px]">SR</span>
       ) : (
-        <span className="text-[11px] font-medium text-noorix-muted">
+        <span className="text-[12px] font-medium text-noorix-muted">
           {t('dashboardSalesCustomerDailyAvgUnit')}
         </span>
       )}
@@ -67,7 +67,7 @@ function metricValueText(value: number | null, variant: 'currency' | 'count', t:
 function deltaValueText(deltaPct: number | null) {
   if (deltaPct == null) return <span className="text-noorix-muted">-</span>;
   return (
-    <span dir="ltr" className="text-[12px] nx-font-numbers font-extrabold">
+    <span dir="ltr" className="text-[13px] nx-font-numbers font-extrabold">
       {deltaPct > 0 ? '+' : ''}
       {formatDeltaPct(deltaPct)}%
     </span>
@@ -122,7 +122,7 @@ export function DashboardOverviewRevenueDailyAvgPanel({
 
   return (
     <div
-      className="mx-4 mt-3 overflow-hidden rounded-xl border border-noorix-border bg-noorix-bg-muted/25 text-center text-[12px]"
+      className="mx-4 mt-3 overflow-hidden rounded-xl border border-noorix-border bg-noorix-bg-muted/25 text-center text-[13px]"
       role="table"
       aria-label={t('dashboardSalesDailyAvgActiveDays')}
     >

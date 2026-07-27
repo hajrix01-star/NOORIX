@@ -89,7 +89,7 @@ MetricCard.Header = function MetricCardHeader({
           {icon && <div className="shrink-0">{icon}</div>}
           <div className="min-w-0">
             <div className="font-bold text-[14px] text-noorix-text truncate">{label}</div>
-            {subLabel && <div className="text-[11px] text-noorix-muted mt-px truncate">{subLabel}</div>}
+            {subLabel && <div className="text-[12px] text-noorix-muted mt-px truncate">{subLabel}</div>}
           </div>
         </div>
         {actions && <div className="shrink-0">{actions}</div>}
@@ -99,7 +99,7 @@ MetricCard.Header = function MetricCardHeader({
   return (
     <div className={cn('px-4 pt-4', className)}>
       <div className="text-[12px] font-medium text-noorix-muted">{label}</div>
-      {subLabel && <div className="text-[11px] text-noorix-muted mt-0.5">{subLabel}</div>}
+      {subLabel && <div className="text-[12px] text-noorix-muted mt-0.5">{subLabel}</div>}
     </div>
   );
 };
@@ -154,7 +154,11 @@ MetricCard.Value = function MetricCardValue({
         dir="ltr"
         className={cn(
           'metric-card-value nx-font-numbers leading-tight tracking-[-0.5px] text-start inline-flex items-baseline gap-x-1 flex-wrap',
-          size === 'lg' ? 'text-[26px] font-extrabold' : 'text-[22px] font-bold',
+          size === 'executive'
+            ? 'text-[36px] font-bold leading-[1.05] tracking-[-0.045em] sm:text-[48px]'
+            : size === 'lg'
+              ? 'text-[26px] font-extrabold'
+              : 'text-[22px] font-bold',
           align === 'center' && 'justify-center w-full',
         )}
         style={valueStyle}

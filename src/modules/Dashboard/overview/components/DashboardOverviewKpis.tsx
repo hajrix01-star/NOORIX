@@ -83,14 +83,14 @@ function AmountValue({
     <span
       dir="ltr"
       className={cn(
-        'inline-flex items-baseline justify-center gap-1 text-[14px] font-extrabold nx-font-numbers',
+        'inline-flex items-baseline justify-center gap-1 text-[16px] font-extrabold nx-font-numbers',
         tone === 'profit' && value >= 0 ? 'text-noorix-green' : null,
         tone === 'profit' && value < 0 ? 'text-[color:var(--noorix-accent-red)]' : null,
         tone === 'cost' ? 'text-noorix-text' : null,
       )}
     >
       <FmtNum n={value} />
-      <span className="nx-sar text-[11px]">SR</span>
+      <span className="nx-sar text-[12px]">SR</span>
     </span>
   );
 }
@@ -123,7 +123,7 @@ function ExecutiveRows({
   return (
     <MetricCard.Section className="mt-4 px-4">
       <div className="overflow-hidden rounded-xl border border-noorix-border bg-noorix-bg-muted/25">
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,auto)_minmax(5rem,auto)] border-b border-noorix-border px-4 py-2.5 text-center text-[12px] font-bold text-noorix-muted">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,auto)_minmax(5rem,auto)] border-b border-noorix-border px-4 py-2.5 text-center text-[13px] font-bold text-noorix-muted">
           <span className="text-start">{itemLabel}</span>
           <span>{'SR'}</span>
           <span>{'%'}</span>
@@ -134,7 +134,7 @@ function ExecutiveRows({
               key={row.key}
               className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,auto)_minmax(5rem,auto)] items-center gap-3 px-4 py-2.5 text-center"
             >
-              <span className="min-w-0 truncate text-start text-[13px] font-semibold text-noorix-muted">
+              <span className="min-w-0 truncate text-start text-[14px] font-semibold text-noorix-muted">
                 {row.label}
               </span>
               <AmountValue metric={row.metric} tone={tone} />
@@ -166,17 +166,17 @@ function RevenueShiftSummary({
   return (
     <MetricCard.Section className="mt-3 px-4 pb-1">
       <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/25 px-4 py-3">
-        <div className="mb-2 text-[12px] font-bold text-noorix-muted">
+        <div className="mb-2 text-[13px] font-bold text-noorix-muted">
           {t('dashboardSalesByShift')}
         </div>
         <div className="flex flex-col divide-y divide-noorix-border/80">
           {rows.map((row) => (
             <div key={row.key} className="flex items-center justify-between gap-3 py-2">
-              <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-noorix-muted">
+              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-noorix-muted">
                 {row.label}
               </span>
-              <span dir="ltr" className="shrink-0 text-[13px] font-extrabold text-nx-sales nx-font-numbers">
-                <FmtNum n={row.value.amount} /> <span className="nx-sar text-[11px]">SR</span>
+              <span dir="ltr" className="shrink-0 text-[15px] font-extrabold text-nx-sales nx-font-numbers">
+                <FmtNum n={row.value.amount} /> <span className="nx-sar text-[12px]">SR</span>
               </span>
               <span dir="ltr" className="w-12 shrink-0 text-end text-[12px] font-extrabold text-noorix-blue nx-font-numbers">
                 {row.value.sharePct != null ? `${formatSalesShiftSharePercent(row.value.sharePct)}%` : '0%'}
@@ -224,7 +224,7 @@ export function DashboardOverviewKpis({
   return (
     <div className="nx-kpi-container">
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-        <MetricCard color={metricColor('sales')} className="flex min-h-[260px] flex-col">
+        <MetricCard color={metricColor('sales')} className="flex min-h-[300px] flex-col">
           <MetricCard.Header
             label={t('revenueGroup')}
             subLabel={t('reportAmountBasisGrossShort')}
@@ -232,7 +232,8 @@ export function DashboardOverviewKpis({
           <MetricCard.Value
             value={amountText(sales?.value ?? 0)}
             currency="SR"
-            className="pb-1"
+            size="executive"
+            className="pt-5 pb-2"
           />
           <DashboardOverviewRevenueDailyAvgPanel
             revenueCurrent={revenueDailyAvgCalendar}
@@ -248,7 +249,7 @@ export function DashboardOverviewKpis({
           <FooterPeriod label={periodLabel} />
         </MetricCard>
 
-        <MetricCard color={metricColor('expenses')} className="flex min-h-[260px] flex-col">
+        <MetricCard color={metricColor('expenses')} className="flex min-h-[300px] flex-col">
           <MetricCard.Header
             label={`${t('purchasesGroup')} + ${t('expensesGroup')}`}
             subLabel={t('reportAmountBasisGrossShort')}
@@ -257,7 +258,8 @@ export function DashboardOverviewKpis({
             value={amountText(outflow.value)}
             currency="SR"
             color="var(--noorix-accent-red)"
-            className="pb-1"
+            size="executive"
+            className="pt-5 pb-2"
           />
           <ExecutiveRows
             itemLabel={t('reportItem')}
@@ -280,7 +282,7 @@ export function DashboardOverviewKpis({
           <FooterPeriod label={periodLabel} />
         </MetricCard>
 
-        <MetricCard color={metricColor('netProfit')} className="flex min-h-[260px] flex-col">
+        <MetricCard color={metricColor('netProfit')} className="flex min-h-[300px] flex-col">
           <MetricCard.Header
             label={t('annualNetProfit')}
             subLabel={`${t('annualGrossProfit')} / ${t('annualNetProfit')}`}
@@ -289,7 +291,8 @@ export function DashboardOverviewKpis({
             value={amountText(netProfit?.value ?? 0)}
             currency="SR"
             color={mainValueColor(netProfit, 'netProfit')}
-            className="pb-1"
+            size="executive"
+            className="pt-5 pb-2"
           />
           <ExecutiveRows
             itemLabel={t('reportItem')}
