@@ -1,9 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import moment from 'moment-timezone';
+import { toYmd } from '../common/utils/to-ymd.util';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ReportsService } from '../reports/reports.service';
 import type { GeneralProfitLossModel } from '../reports/reports-general-profit-loss-model.util';
+import {
+  periodDailyAverage,
+  selectedMonthAverageEndDay,
+  type DashboardDailyMetricRow,
+} from '../sales/sales-dashboard-metrics.util';
 import { buildOwnerAdminDashboardExecutiveSnapshot, type OwnerExecutiveDailySalesSource, type OwnerExecutiveSalesChannelSource } from './owner-admin-dashboard-executive-snapshot.util';
 
 type MetricKey = 'sales' | 'purchases' | 'expenses';
@@ -19,6 +25,11 @@ type AdminDashboardPrisma = {
 };
 
 type ExecutiveDailySalesRow = { amount: string; date: Date | string };
+type ExecutiveCustomerRow = {
+  customerCount: number;
+  date: Date | string;
+  shift: string;
+};
 type ExecutiveSalesChannelRow = {
   amount: string;
   id: string;
@@ -71,6 +82,12 @@ function periodValue(value: string, metricName: MetricKey): number {
   const amount = new Decimal(value);
   if (!amount.isFinite()) throw new Error(`Invalid ${metricName} period amount`);
   return amount.toNumber();
+}
+
+function roundedAverage(value: number | null): number | null {
+  return value === null
+    ? null
+    : new Decimal(value).toDecimalPlaces(2).toNumber();
 }
 
 @Injectable()
@@ -138,6 +155,43 @@ export class OwnerAdminDashboardService {
     `;
   }
 
+  private async loadCustomerDailyMetrics(
+    companyId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<DashboardDailyMetricRow[]> {
+    const rows = await this.prisma.$queryRaw<ExecutiveCustomerRow[]>`
+      SELECT
+        dss.transaction_date::date AS date,
+        dss.shift AS shift,
+        SUM(dss.customer_count)::int AS "customerCount"
+      FROM daily_sales_summaries dss
+      WHERE dss.company_id = ${companyId}
+        AND dss.status = 'active'
+        AND dss.transaction_date BETWEEN ${startDate} AND ${endDate}
+      GROUP BY dss.transaction_date::date, dss.shift
+      ORDER BY dss.transaction_date::date ASC, dss.shift ASC
+    `;
+
+    return rows.map((row) => {
+      const date = toYmd(row.date);
+      const customerCount = Number(row.customerCount);
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(date)
+        || !Number.isInteger(customerCount)
+        || customerCount < 0
+      ) {
+        throw new Error('Invalid customer daily metric');
+      }
+      return {
+        customerCount,
+        transactionDate: date,
+        shift: row.shift,
+        totalAmount: '0',
+      };
+    });
+  }
+
   async getSnapshot(tenantId: string) {
     const companyIds = allowedCompanyIds();
     if (companyIds.length === 0) throw new Error('ADMIN_DASHBOARD_COMPANY_IDS is not configured');
@@ -164,7 +218,15 @@ export class OwnerAdminDashboardService {
 
     const companyData = await Promise.all(
       companies.map(async (company) => {
-        const [reports, currentPeriodAnalytics, previousPeriodAnalytics, executiveDailySales, executiveSalesChannels] = await Promise.all([
+        const [
+          reports,
+          currentPeriodAnalytics,
+          previousPeriodAnalytics,
+          executiveDailySales,
+          executiveSalesChannels,
+          currentCustomerDailyMetrics,
+          previousCustomerDailyMetrics,
+        ] = await Promise.all([
           Promise.all(
             reportYears.map(async (year) => ({
               year,
@@ -175,6 +237,16 @@ export class OwnerAdminDashboardService {
           this.reportsService.getGeneralProfitLossPeriodTotals(company.id, previousStart.format('YYYY-MM-DD'), previousComparableEnd.format('YYYY-MM-DD')),
           this.loadExecutiveDailySales(company.id, utcDateBoundary(executiveSalesDataStart), utcDateBoundary(latestCompleteDay, true)),
           this.loadExecutiveSalesChannels(company.id, utcDateBoundary(executiveMonthStart), utcDateBoundary(latestCompleteDay, true)),
+          this.loadCustomerDailyMetrics(
+            company.id,
+            utcDateBoundary(currentStart),
+            utcDateBoundary(now, true),
+          ),
+          this.loadCustomerDailyMetrics(
+            company.id,
+            utcDateBoundary(previousStart),
+            utcDateBoundary(previousComparableEnd, true),
+          ),
         ]);
         const reportByYear = new Map(reports.map((entry) => [entry.year, entry.report]));
         const currentRef = monthReference(now);
@@ -194,6 +266,14 @@ export class OwnerAdminDashboardService {
           expenses: periodValue(previousPeriodAnalytics.expenses, 'expenses'),
         };
         const previousComparableDailySalesAverage = new Decimal(previousValues.sales).div(comparableDayCount).toDecimalPlaces(2).toNumber();
+        const currentCustomerDailyAverage = periodDailyAverage(
+          currentCustomerDailyMetrics,
+          selectedMonthAverageEndDay(currentCustomerDailyMetrics),
+        ).customerAvgDaily;
+        const previousCustomerDailyAverage = periodDailyAverage(
+          previousCustomerDailyMetrics,
+          comparableDayCount,
+        ).customerAvgDaily;
 
         return {
           companyId: company.id,
@@ -206,6 +286,10 @@ export class OwnerAdminDashboardService {
             currentMonthToDate: new Decimal(currentValues.sales).div(now.date()).toDecimalPlaces(2).toNumber(),
             previousComparablePeriod: previousComparableDailySalesAverage,
             previousFullMonth: previousComparableDailySalesAverage,
+          },
+          customerDailyAverage: {
+            currentMonthToDate: roundedAverage(currentCustomerDailyAverage),
+            previousComparablePeriod: roundedAverage(previousCustomerDailyAverage),
           },
           executiveSnapshot: buildOwnerAdminDashboardExecutiveSnapshot({
             dailySales: executiveDailySales,

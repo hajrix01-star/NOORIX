@@ -69,8 +69,25 @@ describe('OwnerAdminDashboardService', () => {
   it('returns independent source values and computes daily averages inside NOORIX', async () => {
     const rawCalls: unknown[][] = [];
     const prisma = {
-      $queryRaw: async <T>(_query: TemplateStringsArray, ...values: unknown[]) => {
+      $queryRaw: async <T>(query: TemplateStringsArray, ...values: unknown[]) => {
         rawCalls.push(values);
+        if (query.join(' ').includes('customer_count')) {
+          const startDate = values[1] as Date;
+          const currentPeriod = startDate.toISOString().startsWith('2026-07');
+          return [
+            currentPeriod
+              ? {
+                  customerCount: 360,
+                  date: new Date('2026-07-18T00:00:00.000Z'),
+                  shift: 'all',
+                }
+              : {
+                  customerCount: 285,
+                  date: new Date('2026-06-19T00:00:00.000Z'),
+                  shift: 'all',
+                },
+          ] as T;
+        }
         return [] as T;
       },
       company: {
@@ -93,6 +110,10 @@ describe('OwnerAdminDashboardService', () => {
       currentMonthToDate: 10,
       previousComparablePeriod: 8.95,
       previousFullMonth: 8.95,
+    });
+    expect(snapshot.companies[0]?.customerDailyAverage).toEqual({
+      currentMonthToDate: 20,
+      previousComparablePeriod: 15,
     });
     expect(snapshot.companies[0]?.sales).toMatchObject({
       current: 190,
