@@ -173,7 +173,7 @@ function pctOfSales(key: string, value: number, sales: number): number | null {
 
 function kpiTone(key: string, pct: number | null): DashboardKpiCardMetric['tone'] {
   if (pct == null || key === 'sales') return 'neutral';
-  if (key === 'purchases' || key === 'expenses') return 'cost';
+  if (key === 'purchases' || key === 'expenses' || key === 'outflow') return 'cost';
   if (pct > 0) return 'positive';
   if (pct < 0) return 'negative';
   return 'neutral';
@@ -194,7 +194,8 @@ function buildKpiCards(params: {
         const expenses = periodKindTotal(periodData, ['expense', 'fixed_expense', 'hr_expense']);
         const grossProfit = sales - purchases;
         const netProfit = grossProfit - expenses;
-        return { sales, purchases, grossProfit, expenses, netProfit };
+        const outflow = purchases + expenses;
+        return { sales, purchases, grossProfit, expenses, netProfit, outflow };
       })()
     : {
         sales: reportCardValue(report, 'sales', selectedMonth),
@@ -202,9 +203,12 @@ function buildKpiCards(params: {
         grossProfit: reportCardValue(report, 'grossProfit', selectedMonth),
         expenses: reportCardValue(report, 'expenses', selectedMonth),
         netProfit: reportCardValue(report, 'netProfit', selectedMonth),
+        outflow:
+          reportCardValue(report, 'purchases', selectedMonth) +
+          reportCardValue(report, 'expenses', selectedMonth),
       };
 
-  return (['sales', 'purchases', 'grossProfit', 'expenses', 'netProfit'] as const).map((key) => {
+  return (['sales', 'purchases', 'expenses', 'outflow', 'grossProfit', 'netProfit'] as const).map((key) => {
     const value = values[key];
     const pct = pctOfSales(key, value, values.sales);
     return { key, value, pct, tone: kpiTone(key, pct) };

@@ -17,7 +17,6 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 lg:gap-5">
       <DashboardOverviewKpis
-        cards={m.cards}
         kpiCardsByKey={m.kpiCardsByKey}
         filter={m.filter}
         year={m.year}

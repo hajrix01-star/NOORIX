@@ -74,6 +74,12 @@ function deltaValueText(deltaPct: number | null) {
   );
 }
 
+function gridColumns(metricCount: number): React.CSSProperties {
+  return {
+    gridTemplateColumns: `minmax(4.75rem, 0.72fr) repeat(${metricCount}, minmax(0, 1fr))`,
+  };
+}
+
 export function DashboardOverviewRevenueDailyAvgPanel({
   revenueCurrent,
   revenuePrev,
@@ -112,60 +118,74 @@ export function DashboardOverviewRevenueDailyAvgPanel({
   ];
   const metrics = allMetrics.filter((metric) => metric.current != null || metric.prev != null);
   if (metrics.length === 0) return null;
+  const columns = gridColumns(metrics.length);
 
   return (
-    <div className="mx-4 mt-2 overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
-      <table className="w-full table-fixed border-collapse text-center text-[10px]">
-        <thead>
-          <tr className="border-b border-noorix-border text-noorix-muted">
-            <th className="w-[23%] px-2 py-2 font-semibold">{t('dashboardMetricPeriod')}</th>
-            {metrics.map((metric) => (
-              <th key={metric.key} className="px-1.5 py-2 font-semibold">
-                {t(metric.labelKey)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-noorix-border/80">
-          <tr>
-            <td className="px-2 py-2 text-noorix-muted">{t('dashboardCurrentMonth')}</td>
-            {metrics.map((metric) => (
-              <td key={metric.key} className="px-1.5 py-2 text-noorix-text">
-                {metricValueText(metric.current, metric.variant, t)}
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td className="px-2 py-2 text-noorix-muted">{t('dashboardKpiFooterTrailingAvg')}</td>
-            {metrics.map((metric) => (
-              <td key={metric.key} className="px-1.5 py-2 text-noorix-muted">
-                {metricValueText(metric.prev, metric.variant, t)}
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td className="px-2 py-2 text-noorix-muted">{t('dashboardMetricChange')}</td>
-            {metrics.map((metric) => {
-              const tone = resolveTone(metric.current, metric.prev, metric.deltaPct);
-              return (
-                <td
-                  key={metric.key}
-                  className={cn(
-                    'px-1.5 py-2',
-                    tone === 'up'
-                      ? 'text-noorix-blue'
-                      : tone === 'down'
-                        ? 'text-noorix-red'
-                        : 'text-noorix-muted',
-                  )}
-                >
-                  {deltaValueText(metric.deltaPct)}
-                </td>
-              );
-            })}
-          </tr>
-        </tbody>
-      </table>
+    <div
+      className="mx-4 mt-2 overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25 text-center text-[10px]"
+      role="table"
+      aria-label={t('dashboardSalesDailyAvgActiveDays')}
+    >
+      <div
+        className="grid border-b border-noorix-border text-noorix-muted"
+        role="row"
+        style={columns}
+      >
+        <div className="px-2 py-2 font-semibold" role="columnheader">
+          {t('dashboardMetricPeriod')}
+        </div>
+        {metrics.map((metric) => (
+          <div key={metric.key} className="px-1.5 py-2 font-semibold" role="columnheader">
+            {t(metric.labelKey)}
+          </div>
+        ))}
+      </div>
+      <div className="divide-y divide-noorix-border/80" role="rowgroup">
+        <div className="grid" role="row" style={columns}>
+          <div className="px-2 py-2 text-noorix-muted" role="cell">
+            {t('dashboardCurrentMonth')}
+          </div>
+          {metrics.map((metric) => (
+            <div key={metric.key} className="px-1.5 py-2 text-noorix-text" role="cell">
+              {metricValueText(metric.current, metric.variant, t)}
+            </div>
+          ))}
+        </div>
+        <div className="grid" role="row" style={columns}>
+          <div className="px-2 py-2 text-noorix-muted" role="cell">
+            {t('dashboardKpiFooterTrailingAvg')}
+          </div>
+          {metrics.map((metric) => (
+            <div key={metric.key} className="px-1.5 py-2 text-noorix-muted" role="cell">
+              {metricValueText(metric.prev, metric.variant, t)}
+            </div>
+          ))}
+        </div>
+        <div className="grid" role="row" style={columns}>
+          <div className="px-2 py-2 text-noorix-muted" role="cell">
+            {t('dashboardMetricChange')}
+          </div>
+          {metrics.map((metric) => {
+            const tone = resolveTone(metric.current, metric.prev, metric.deltaPct);
+            return (
+              <div
+                key={metric.key}
+                className={cn(
+                  'px-1.5 py-2',
+                  tone === 'up'
+                    ? 'text-noorix-blue'
+                    : tone === 'down'
+                      ? 'text-noorix-red'
+                      : 'text-noorix-muted',
+                )}
+                role="cell"
+              >
+                {deltaValueText(metric.deltaPct)}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
