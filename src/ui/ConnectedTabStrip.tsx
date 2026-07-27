@@ -44,7 +44,8 @@ export default function ConnectedTabStrip({
   const uiDir = useUiDir();
   const hasEnd = tabBarEnd != null && tabBarEnd !== false;
   const denseMobile = compactMobile && items.length > 4;
-  const equalTabs = compactAll || compactMobile;
+  const mobileEqualTabs = compactMobile && !compactAll;
+  const equalTabs = compactAll;
   const hasContent = children != null;
 
   return (
@@ -68,10 +69,11 @@ export default function ConnectedTabStrip({
             equalTabs
               ? cn(
                   'w-full overflow-x-hidden',
-                  compactAll ? 'text-[12px] sm:text-[13px]' : 'max-sm:overflow-x-hidden max-sm:text-[11px]',
+                  'text-[12px] sm:text-[13px]',
                 )
               : cn(
                   'nx-connected-tab-strip--scroll overflow-x-auto [-webkit-overflow-scrolling:touch]',
+                  mobileEqualTabs && 'max-sm:overflow-x-hidden max-sm:text-[11px]',
                   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
                 ),
             hasEnd ? 'min-w-0 max-w-full shrink' : 'min-w-0 flex-1',
@@ -95,8 +97,8 @@ export default function ConnectedTabStrip({
                   'nx-connected-tab-btn',
                   compactAll && 'nx-connected-tab-btn--compact',
                   equalTabs && 'min-w-0 flex-1 basis-0 shrink',
-                  compactMobile && !compactAll && 'max-sm:min-h-[34px] max-sm:min-w-0 max-sm:flex-1 max-sm:basis-0 max-sm:shrink',
-                  compactMobile && !compactAll && denseMobile && 'max-sm:min-h-[40px]',
+                  mobileEqualTabs && 'max-sm:min-h-[34px] max-sm:min-w-0 max-sm:flex-1 max-sm:basis-0 max-sm:shrink',
+                  mobileEqualTabs && denseMobile && 'max-sm:min-h-[40px]',
                   !equalTabs && 'shrink-0',
                   equalTabs
                     ? cn(
@@ -120,10 +122,10 @@ export default function ConnectedTabStrip({
                 <span
                   className={cn(
                     'grid h-full min-h-0 w-full min-w-0 place-items-center py-0',
-                    equalTabs ? 'px-1 sm:px-2' : compactMobile ? 'px-1 max-sm:px-1 sm:px-3' : 'px-3',
+                    equalTabs ? 'px-1 sm:px-2' : mobileEqualTabs ? 'px-1 max-sm:px-1 sm:px-3' : 'px-3',
                   )}
                 >
-                  {!equalTabs && !compactMobile && (
+                  {!equalTabs && !mobileEqualTabs && (
                     <span
                       aria-hidden
                       className="invisible col-start-1 row-start-1 font-bold leading-normal whitespace-nowrap"
@@ -136,7 +138,7 @@ export default function ConnectedTabStrip({
                       'col-start-1 row-start-1 flex min-h-0 w-full min-w-0 items-center justify-center text-center',
                       equalTabs
                         ? 'truncate whitespace-nowrap px-0.5 leading-snug sm:leading-normal'
-                        : compactMobile
+                        : mobileEqualTabs
                           ? cn(
                               denseMobile
                                 ? 'max-sm:line-clamp-2 max-sm:whitespace-normal max-sm:leading-tight max-sm:px-0.5'
