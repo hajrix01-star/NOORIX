@@ -63,8 +63,8 @@ export default function ScreenTabs({
   embedded = false,
 }: ScreenTabsProps) {
   const uiDir = useUiDir();
-  /** توزيع متساوٍ على الجوال بدون تمرير — مناسب لمعظم شاشات الأقسام (≤8 تبويبات) */
-  const resolvedCompactMobile = compactMobile ?? (items.length > 0 && items.length <= 8);
+  /** توزيع متساوٍ على الجوال بدون تمرير — مناسب فقط للمجموعات القصيرة (≤4 تبويبات) */
+  const resolvedCompactMobile = compactMobile ?? (items.length > 0 && items.length <= 4);
 
   if (variant === 'connected') {
     return (
