@@ -33,6 +33,7 @@ export function useSmartTableColumnResize({
       return {};
     }
   });
+  const hasCustomColumnWidths = Object.keys(colWidths).length > 0;
 
   const handleResizeStart = useCallback((
     e: ReactPointerEvent,
@@ -94,8 +95,17 @@ export function useSmartTableColumnResize({
     document.addEventListener('pointercancel', onUp);
   }, [dir, tableId]);
 
+  const resetColumnWidths = useCallback(() => {
+    setColWidths({});
+    if (tableId) {
+      try { localStorage.removeItem(columnWidthStorageKey(tableId)); } catch { /* noop */ }
+    }
+  }, [tableId]);
+
   return {
     colWidths,
+    hasCustomColumnWidths,
     handleResizeStart,
+    resetColumnWidths,
   };
 }

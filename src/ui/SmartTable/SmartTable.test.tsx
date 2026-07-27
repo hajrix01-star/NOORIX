@@ -129,6 +129,13 @@ describe('SmartTable', () => {
     expect(cols[1].style.width).toBe('60px');
     expect(cols[2].style.width).toBe('');
     expect(localStorage.getItem('nx-col-widths:v2:resize-pair-test')).toBe('{"first":140,"second":60}');
+
+    fireEvent.click(container.querySelector('.nx-col-vis-btn') as HTMLButtonElement);
+    fireEvent.click(document.body.querySelector('.nx-col-vis-reset-widths') as HTMLButtonElement);
+    expect(cols[0].style.width).toBe('');
+    expect(cols[1].style.width).toBe('');
+    expect(cols[2].style.width).toBe('');
+    expect(localStorage.getItem('nx-col-widths:v2:resize-pair-test')).toBeNull();
   });
 
   it('renders pagination when total exceeds pageSize', () => {

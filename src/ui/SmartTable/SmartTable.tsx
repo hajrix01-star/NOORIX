@@ -112,7 +112,12 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
   const dir = useUiDir();
   const normalizedColumns = useMemo(() => columns.map((col) => normalizeSmartColumn(col)), [columns]);
 
-  const { colWidths, handleResizeStart } = useSmartTableColumnResize({ dir, tableId });
+  const {
+    colWidths,
+    hasCustomColumnWidths,
+    handleResizeStart,
+    resetColumnWidths,
+  } = useSmartTableColumnResize({ dir, tableId });
   const {
     hiddenCols,
     visibleColumns,
@@ -202,8 +207,10 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
           showColumnVisibility={!showCards}
           hideableCols={hideableCols}
           hiddenCols={hiddenCols}
+          hasCustomColumnWidths={hasCustomColumnWidths}
           onToggleColumn={toggleColVis}
           onResetColumns={resetColVis}
+          onResetColumnWidths={resetColumnWidths}
           t={t}
         />
       )}

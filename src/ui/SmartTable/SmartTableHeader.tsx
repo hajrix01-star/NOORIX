@@ -14,8 +14,10 @@ export type SmartTableHeaderProps<TRow extends SmartTableRow = SmartTableRow> = 
   showColumnVisibility: boolean;
   hideableCols: SmartTableColumn<TRow>[];
   hiddenCols: Set<string>;
+  hasCustomColumnWidths: boolean;
   onToggleColumn: (key: string) => void;
   onResetColumns: () => void;
+  onResetColumnWidths: () => void;
   t: (key: string, ...args: unknown[]) => string;
 };
 
@@ -29,8 +31,10 @@ function SmartTableHeaderInner<TRow extends SmartTableRow = SmartTableRow>({
   showColumnVisibility,
   hideableCols,
   hiddenCols,
+  hasCustomColumnWidths,
   onToggleColumn,
   onResetColumns,
+  onResetColumnWidths,
   t,
 }: SmartTableHeaderProps<TRow>) {
   return (
@@ -55,8 +59,10 @@ function SmartTableHeaderInner<TRow extends SmartTableRow = SmartTableRow>({
           <SmartTableColumnVisibility
             columns={hideableCols}
             hiddenCols={hiddenCols}
+            hasCustomColumnWidths={hasCustomColumnWidths}
             onToggleColumn={onToggleColumn}
             onResetColumns={onResetColumns}
+            onResetColumnWidths={onResetColumnWidths}
           />
         )}
       </div>

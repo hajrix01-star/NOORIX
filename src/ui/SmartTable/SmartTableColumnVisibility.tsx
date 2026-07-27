@@ -14,8 +14,10 @@ type SmartTableColumnVisibilityCssVars = React.CSSProperties & Record<`--${strin
 export type SmartTableColumnVisibilityProps<TRow extends SmartTableRow = SmartTableRow> = {
   columns: SmartTableColumn<TRow>[];
   hiddenCols: Set<string>;
+  hasCustomColumnWidths: boolean;
   onToggleColumn: (key: string) => void;
   onResetColumns: () => void;
+  onResetColumnWidths: () => void;
 };
 
 function cssLength(value: number | string | undefined): string | undefined {
@@ -43,8 +45,10 @@ export function placeColVisPanel(btn: HTMLElement, panel: HTMLElement): { top: n
 function SmartTableColumnVisibilityInner<TRow extends SmartTableRow = SmartTableRow>({
   columns,
   hiddenCols,
+  hasCustomColumnWidths,
   onToggleColumn,
   onResetColumns,
+  onResetColumnWidths,
 }: SmartTableColumnVisibilityProps<TRow>) {
   const [showPanel, setShowPanel] = useState(false);
   const [panelPos, setPanelPos] = useState<{ top: number; left: number } | null>(null);
@@ -72,7 +76,7 @@ function SmartTableColumnVisibilityInner<TRow extends SmartTableRow = SmartTable
       window.removeEventListener('resize', onReflow);
       window.removeEventListener('scroll', onReflow, true);
     };
-  }, [hiddenCols.size, showPanel, syncPanelPosition]);
+  }, [hiddenCols.size, hasCustomColumnWidths, showPanel, syncPanelPosition]);
 
   useEffect(() => {
     if (!showPanel) return;
@@ -123,8 +127,15 @@ function SmartTableColumnVisibilityInner<TRow extends SmartTableRow = SmartTable
         >
           <div className="nx-col-vis-panel__header">
             <span>الأعمدة</span>
-            {hiddenCols.size > 0 && (
-              <button type="button" className="nx-col-vis-reset" onClick={onResetColumns}>إعادة تعيين</button>
+            {(hiddenCols.size > 0 || hasCustomColumnWidths) && (
+              <div className="flex items-center justify-end gap-2 flex-wrap">
+                {hasCustomColumnWidths && (
+                  <button type="button" className="nx-col-vis-reset nx-col-vis-reset-widths" onClick={onResetColumnWidths}>إعادة ضبط العرض</button>
+                )}
+                {hiddenCols.size > 0 && (
+                  <button type="button" className="nx-col-vis-reset" onClick={onResetColumns}>إعادة تعيين الأعمدة</button>
+                )}
+              </div>
             )}
           </div>
           {columns.map((col) => (
