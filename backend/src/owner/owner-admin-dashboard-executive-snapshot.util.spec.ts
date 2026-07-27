@@ -19,6 +19,15 @@ describe('buildOwnerAdminDashboardExecutiveSnapshot', () => {
     });
 
     expect(snapshot.dailySales).toHaveLength(14);
+    expect(snapshot.currentMonthDailySales).toHaveLength(18);
+    expect(snapshot.currentMonthDailySales[0]).toMatchObject({
+      date: '2026-07-01',
+      amount: 0,
+    });
+    expect(snapshot.currentMonthDailySales[17]).toMatchObject({
+      date: '2026-07-18',
+      amount: 125,
+    });
     expect(snapshot.dailySales[0]).toEqual({
       date: '2026-07-05',
       amount: 10,
@@ -71,6 +80,12 @@ describe('buildOwnerAdminDashboardExecutiveSnapshot', () => {
     });
 
     expect(snapshot.dailySales).toHaveLength(14);
+    expect(snapshot.currentMonthDailySales).toHaveLength(25);
+    expect(snapshot.currentMonthDailySales[0]?.date).toBe('2026-07-01');
+    expect(snapshot.currentMonthDailySales[24]).toMatchObject({
+      date: '2026-07-25',
+      amount: 30,
+    });
     expect(snapshot.dailySales[0]?.date).toBe('2026-07-12');
     expect(snapshot.dailySales[13]).toMatchObject({ date: '2026-07-25', amount: 30 });
     expect(snapshot.monthEndForecast).toBe(446.4);

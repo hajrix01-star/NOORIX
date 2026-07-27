@@ -16,6 +16,14 @@ type Direction = 'up' | 'down' | 'stable';
 
 type OwnerExecutiveSnapshot = {
   coverage: { currentDays: number; previousDays: number };
+  currentMonthDailySales: Array<{
+    amount: number;
+    changeAmount: number;
+    changePercent: number;
+    date: string;
+    direction: Direction;
+    previousDaySales: number;
+  }>;
   dailySales: Array<{
     amount: number;
     changeAmount: number;
@@ -80,6 +88,22 @@ function change(current: number, previous: number): {
   return { changeAmount, changePercent, direction };
 }
 
+function dailySalesPoint(
+  date: string,
+  salesByDay: ReadonlyMap<string, Decimal>,
+) {
+  const dailyAmount = amount(salesByDay.get(date) ?? new Decimal(0));
+  const previousDaySales = amount(
+    salesByDay.get(addDays(date, -1)) ?? new Decimal(0),
+  );
+  return {
+    amount: dailyAmount,
+    date,
+    previousDaySales,
+    ...change(dailyAmount, previousDaySales),
+  };
+}
+
 /**
  * Builds a source-owned executive view from the official P&L daily totals and
  * DailySalesSummary channel allocations. Empty calendar days are explicit zero
@@ -100,29 +124,23 @@ export function buildOwnerAdminDashboardExecutiveSnapshot(input: {
   }
 
   const firstDailyDate = addDays(latestCompleteDate, -13);
-  const dailySales = Array.from({ length: 14 }, (_, index) => {
-    const date = addDays(firstDailyDate, index);
-    const dailyAmount = amount(salesByDay.get(date) ?? new Decimal(0));
-    const previousDaySales = amount(
-      salesByDay.get(addDays(date, -1)) ?? new Decimal(0),
-    );
-    return {
-      amount: dailyAmount,
-      date,
-      previousDaySales,
-      ...change(dailyAmount, previousDaySales),
-    };
-  });
+  const dailySales = Array.from({ length: 14 }, (_, index) =>
+    dailySalesPoint(addDays(firstDailyDate, index), salesByDay),
+  );
   const sales = dailySales[13]!.amount;
   const previousDaySales = dailySales[12]!.amount;
   const coverageCurrentDays = Number(latestCompleteDate.slice(8, 10));
+  const monthStart = `${latestCompleteDate.slice(0, 7)}-01`;
+  const currentMonthDailySales = Array.from(
+    { length: coverageCurrentDays },
+    (_, index) => dailySalesPoint(addDays(monthStart, index), salesByDay),
+  );
   const previousMonthLastDate = new Date(`${latestCompleteDate}T00:00:00.000Z`);
   previousMonthLastDate.setUTCMonth(previousMonthLastDate.getUTCMonth() - 1, 1);
   const coveragePreviousDays = Math.min(
     coverageCurrentDays,
     dayCountInMonth(previousMonthLastDate.toISOString().slice(0, 10)),
   );
-  const monthStart = `${latestCompleteDate.slice(0, 7)}-01`;
   const currentMonthSales = [...salesByDay.entries()]
     .filter(([date]) => date >= monthStart && date <= latestCompleteDate)
     .reduce((total, [, value]) => total.plus(value), new Decimal(0));
@@ -164,6 +182,7 @@ export function buildOwnerAdminDashboardExecutiveSnapshot(input: {
 
   return {
     coverage: { currentDays: coverageCurrentDays, previousDays: coveragePreviousDays },
+    currentMonthDailySales,
     dailySales,
     latestCompleteDay: {
       date: latestCompleteDate,
