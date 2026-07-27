@@ -1,5 +1,5 @@
 /**
- * شريط تبويبات فرعية HR — pills (segmented) بدون sparkline.
+ * شريط تبويبات فرعية HR — يستخدم نفس محرك التبويبات الرئيسية.
  * المستوى 2: tone="section" — تنقل بين تبويبات القسم.
  * المستوى 3: tone="filter" — فلاتر داخل الشاشة (نشطون | مفصولين | …).
  */
@@ -44,23 +44,11 @@ export function HrSegmentedControl({
       items={items}
       value={value}
       onChange={onChange}
-      variant={isFilter ? 'segmented' : 'connected'}
-      segmentedFlat={isFilter}
-      compactAll={!isFilter}
-      embedded={!isFilter}
+      variant="connected"
+      compactMobile={false}
+      compactAll={false}
+      embedded
       animateContent={false}
-      barClassName={cn(
-        isFilter && 'nx-segmented-tab-bar nx-hr-filter-pills',
-      )}
-      getTabClassName={
-        isFilter
-          ? (_, active) =>
-              cn(
-                'nx-hr-segment-pill nx-hr-segment-pill--filter',
-                active && 'nx-hr-segment-pill--active',
-              )
-          : undefined
-      }
       shellClassName={cn(
         isFilter
           ? 'nx-hr-filter-shell w-full min-w-0'
