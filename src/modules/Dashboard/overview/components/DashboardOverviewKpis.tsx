@@ -65,8 +65,8 @@ function mainValueColor(metric: DashboardKpiCardMetric | undefined, key: MetricK
 
 function FooterPeriod({ label }: { label: string }) {
   return (
-    <MetricCard.Footer className="mt-auto border-t border-noorix-border py-3">
-      <span className="text-[10px] font-medium text-noorix-muted">{label}</span>
+    <MetricCard.Footer className="mt-auto border-t border-noorix-border py-3.5">
+      <span className="text-[11px] font-medium text-noorix-muted">{label}</span>
     </MetricCard.Footer>
   );
 }
@@ -83,24 +83,24 @@ function AmountValue({
     <span
       dir="ltr"
       className={cn(
-        'inline-flex items-baseline justify-center gap-1 text-[12px] font-bold nx-font-numbers',
+        'inline-flex items-baseline justify-center gap-1 text-[14px] font-extrabold nx-font-numbers',
         tone === 'profit' && value >= 0 ? 'text-noorix-green' : null,
         tone === 'profit' && value < 0 ? 'text-[color:var(--noorix-accent-red)]' : null,
         tone === 'cost' ? 'text-noorix-text' : null,
       )}
     >
       <FmtNum n={value} />
-      <span className="nx-sar text-[9px]">SR</span>
+      <span className="nx-sar text-[10px]">SR</span>
     </span>
   );
 }
 
 function RatioValue({ row }: { row: KpiFooterRow | null | undefined }) {
-  if (!row) return <span className="text-[11px] font-medium text-noorix-muted">-</span>;
+  if (!row) return <span className="text-[12px] font-medium text-noorix-muted">-</span>;
   return (
     <span
       className={cn(
-        'text-[11px] font-bold leading-tight nx-font-numbers ltr',
+        'text-[12px] font-extrabold leading-tight nx-font-numbers ltr',
         kpiFooterRowColorClass(row.color),
       )}
       title={row.tooltip}
@@ -121,9 +121,9 @@ function ExecutiveRows({
 }) {
   if (rows.length === 0) return null;
   return (
-    <MetricCard.Section className="mt-3 px-4">
-      <div className="overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(5.5rem,auto)_minmax(4.5rem,auto)] border-b border-noorix-border px-3 py-2 text-center text-[10px] font-semibold text-noorix-muted">
+    <MetricCard.Section className="mt-4 px-4">
+      <div className="overflow-hidden rounded-xl border border-noorix-border bg-noorix-bg-muted/25">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,auto)_minmax(5rem,auto)] border-b border-noorix-border px-4 py-2.5 text-center text-[12px] font-bold text-noorix-muted">
           <span className="text-start">{itemLabel}</span>
           <span>{'SR'}</span>
           <span>{'%'}</span>
@@ -132,9 +132,9 @@ function ExecutiveRows({
           {rows.map((row) => (
             <div
               key={row.key}
-              className="grid grid-cols-[minmax(0,1fr)_minmax(5.5rem,auto)_minmax(4.5rem,auto)] items-center gap-2 px-3 py-2 text-center"
+              className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,auto)_minmax(5rem,auto)] items-center gap-3 px-4 py-2.5 text-center"
             >
-              <span className="min-w-0 truncate text-start text-[11px] font-semibold text-noorix-muted">
+              <span className="min-w-0 truncate text-start text-[13px] font-semibold text-noorix-muted">
                 {row.label}
               </span>
               <AmountValue metric={row.metric} tone={tone} />
@@ -164,21 +164,21 @@ function RevenueShiftSummary({
   if (rows.length === 0) return null;
 
   return (
-    <MetricCard.Section className="mt-2 px-4 pb-1">
-      <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/25 px-2.5 py-2">
-        <div className="mb-1.5 text-[10px] font-semibold text-noorix-muted">
+    <MetricCard.Section className="mt-3 px-4 pb-1">
+      <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/25 px-4 py-3">
+        <div className="mb-2 text-[12px] font-bold text-noorix-muted">
           {t('dashboardSalesByShift')}
         </div>
         <div className="flex flex-col divide-y divide-noorix-border/80">
           {rows.map((row) => (
-            <div key={row.key} className="flex items-center justify-between gap-2 py-1.5">
-              <span className="min-w-0 flex-1 truncate text-[10px] font-medium text-noorix-muted">
+            <div key={row.key} className="flex items-center justify-between gap-3 py-2">
+              <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-noorix-muted">
                 {row.label}
               </span>
-              <span dir="ltr" className="shrink-0 text-[11px] font-bold text-nx-sales nx-font-numbers">
-                <FmtNum n={row.value.amount} /> <span className="nx-sar text-[8px]">SR</span>
+              <span dir="ltr" className="shrink-0 text-[13px] font-extrabold text-nx-sales nx-font-numbers">
+                <FmtNum n={row.value.amount} /> <span className="nx-sar text-[9px]">SR</span>
               </span>
-              <span dir="ltr" className="w-10 shrink-0 text-end text-[10px] font-bold text-noorix-blue nx-font-numbers">
+              <span dir="ltr" className="w-12 shrink-0 text-end text-[12px] font-extrabold text-noorix-blue nx-font-numbers">
                 {row.value.sharePct != null ? `${formatSalesShiftSharePercent(row.value.sharePct)}%` : '0%'}
               </span>
             </div>
@@ -223,8 +223,8 @@ export function DashboardOverviewKpis({
 
   return (
     <div className="nx-kpi-container">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <MetricCard color={metricColor('sales')} className="flex h-full min-h-0 flex-col">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+        <MetricCard color={metricColor('sales')} className="flex min-h-[260px] flex-col">
           <MetricCard.Header
             label={t('revenueGroup')}
             subLabel={t('reportAmountBasisGrossShort')}
@@ -248,7 +248,7 @@ export function DashboardOverviewKpis({
           <FooterPeriod label={periodLabel} />
         </MetricCard>
 
-        <MetricCard color={metricColor('expenses')} className="flex h-full min-h-0 flex-col">
+        <MetricCard color={metricColor('expenses')} className="flex min-h-[260px] flex-col">
           <MetricCard.Header
             label={`${t('purchasesGroup')} + ${t('expensesGroup')}`}
             subLabel={t('reportAmountBasisGrossShort')}
@@ -280,7 +280,7 @@ export function DashboardOverviewKpis({
           <FooterPeriod label={periodLabel} />
         </MetricCard>
 
-        <MetricCard color={metricColor('netProfit')} className="flex h-full min-h-0 flex-col">
+        <MetricCard color={metricColor('netProfit')} className="flex min-h-[260px] flex-col">
           <MetricCard.Header
             label={t('annualNetProfit')}
             subLabel={`${t('annualGrossProfit')} / ${t('annualNetProfit')}`}

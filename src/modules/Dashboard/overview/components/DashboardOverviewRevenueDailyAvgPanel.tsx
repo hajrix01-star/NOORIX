@@ -49,14 +49,14 @@ function resolveTone(current: number | null, prev: number | null, deltaPct: numb
 function metricValueText(value: number | null, variant: 'currency' | 'count', t: (key: string) => string) {
   if (value == null) return <span className="text-noorix-muted">-</span>;
   return (
-    <span dir="ltr" className="inline-flex items-baseline justify-center gap-1 nx-font-numbers">
-      <span className="font-bold">
+    <span dir="ltr" className="inline-flex items-baseline justify-center gap-1 text-[13px] nx-font-numbers">
+      <span className="font-extrabold">
         <FmtNum n={value} />
       </span>
       {variant === 'currency' ? (
-        <span className="nx-sar text-[9px]">SR</span>
+        <span className="nx-sar text-[10px]">SR</span>
       ) : (
-        <span className="text-[9px] font-medium text-noorix-muted">
+        <span className="text-[10px] font-medium text-noorix-muted">
           {t('dashboardSalesCustomerDailyAvgUnit')}
         </span>
       )}
@@ -67,7 +67,7 @@ function metricValueText(value: number | null, variant: 'currency' | 'count', t:
 function deltaValueText(deltaPct: number | null) {
   if (deltaPct == null) return <span className="text-noorix-muted">-</span>;
   return (
-    <span dir="ltr" className="nx-font-numbers font-bold">
+    <span dir="ltr" className="text-[12px] nx-font-numbers font-extrabold">
       {deltaPct > 0 ? '+' : ''}
       {formatDeltaPct(deltaPct)}%
     </span>
@@ -76,7 +76,7 @@ function deltaValueText(deltaPct: number | null) {
 
 function gridColumns(metricCount: number): React.CSSProperties {
   return {
-    gridTemplateColumns: `minmax(4.75rem, 0.72fr) repeat(${metricCount}, minmax(0, 1fr))`,
+    gridTemplateColumns: `minmax(5.75rem, 0.72fr) repeat(${metricCount}, minmax(0, 1fr))`,
   };
 }
 
@@ -122,7 +122,7 @@ export function DashboardOverviewRevenueDailyAvgPanel({
 
   return (
     <div
-      className="mx-4 mt-2 overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25 text-center text-[10px]"
+      className="mx-4 mt-3 overflow-hidden rounded-xl border border-noorix-border bg-noorix-bg-muted/25 text-center text-[12px]"
       role="table"
       aria-label={t('dashboardSalesDailyAvgActiveDays')}
     >
@@ -131,38 +131,38 @@ export function DashboardOverviewRevenueDailyAvgPanel({
         role="row"
         style={columns}
       >
-        <div className="px-2 py-2 font-semibold" role="columnheader">
+        <div className="px-3 py-2.5 font-bold" role="columnheader">
           {t('dashboardMetricPeriod')}
         </div>
         {metrics.map((metric) => (
-          <div key={metric.key} className="px-1.5 py-2 font-semibold" role="columnheader">
+          <div key={metric.key} className="px-2.5 py-2.5 font-bold" role="columnheader">
             {t(metric.labelKey)}
           </div>
         ))}
       </div>
       <div className="divide-y divide-noorix-border/80" role="rowgroup">
         <div className="grid" role="row" style={columns}>
-          <div className="px-2 py-2 text-noorix-muted" role="cell">
+          <div className="px-3 py-2.5 font-semibold text-noorix-muted" role="cell">
             {t('dashboardCurrentMonth')}
           </div>
           {metrics.map((metric) => (
-            <div key={metric.key} className="px-1.5 py-2 text-noorix-text" role="cell">
+            <div key={metric.key} className="px-2.5 py-2.5 text-noorix-text" role="cell">
               {metricValueText(metric.current, metric.variant, t)}
             </div>
           ))}
         </div>
         <div className="grid" role="row" style={columns}>
-          <div className="px-2 py-2 text-noorix-muted" role="cell">
+          <div className="px-3 py-2.5 font-semibold text-noorix-muted" role="cell">
             {t('dashboardKpiFooterTrailingAvg')}
           </div>
           {metrics.map((metric) => (
-            <div key={metric.key} className="px-1.5 py-2 text-noorix-muted" role="cell">
+            <div key={metric.key} className="px-2.5 py-2.5 text-noorix-muted" role="cell">
               {metricValueText(metric.prev, metric.variant, t)}
             </div>
           ))}
         </div>
         <div className="grid" role="row" style={columns}>
-          <div className="px-2 py-2 text-noorix-muted" role="cell">
+          <div className="px-3 py-2.5 font-semibold text-noorix-muted" role="cell">
             {t('dashboardMetricChange')}
           </div>
           {metrics.map((metric) => {
@@ -171,7 +171,7 @@ export function DashboardOverviewRevenueDailyAvgPanel({
               <div
                 key={metric.key}
                 className={cn(
-                  'px-1.5 py-2',
+                  'px-2.5 py-2.5',
                   tone === 'up'
                     ? 'text-noorix-blue'
                     : tone === 'down'
