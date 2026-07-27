@@ -6,7 +6,7 @@ import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useEmployees } from '../../hooks/useEmployees';
-import { useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
@@ -177,6 +177,11 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
       };
     },
     enabled: !!companyId,
+    placeholderData: (previousData, previousQuery) => {
+      const previousCompanyId = previousQuery?.queryKey?.[1];
+      if (previousCompanyId !== companyId) return undefined;
+      return previousData;
+    },
     fallbackMessage: t('employeesLoadFailed'),
   });
 
@@ -192,6 +197,7 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     queryKey: hrKeys.compensationSnapshots(companyId, pagedEmployeeIds),
     queryFn: () => getEmployeeCompensationSnapshots(companyId, pagedEmployeeIds),
     enabled: !!companyId && pagedEmployeeIds.length > 0,
+    placeholderData: keepPreviousData,
     fallbackMessage: t('employeesLoadFailed'),
   });
 
