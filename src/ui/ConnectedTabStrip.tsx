@@ -147,7 +147,7 @@ export default function ConnectedTabStrip({
                             )
                           : 'leading-normal whitespace-nowrap',
                       'transition-[color] duration-200 ease-out',
-                      active ? 'font-bold' : 'font-semibold',
+                      'font-bold',
                     )}
                   >
                     {item.label}
