@@ -1,6 +1,7 @@
 ﻿/* Noorix Theme */
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+@import "@fontsource-variable/noto-sans-arabic";
+@import "@fontsource-variable/ibm-plex-sans";
 
 @theme {
   /* ألوان نووريكس الأساسية */
@@ -56,9 +57,8 @@
   --color-nx-expenses:   #A32D2D;   /* مصاريف · سحوبات             */
   --color-nx-app:        #c2410c;   /* خزينة تطبيق · رقمي         */
 
-  /* خط Cairo */
-  --font-cairo: 'Cairo', system-ui, sans-serif;
-  --font-sans:  'Cairo', system-ui, sans-serif;
+  --font-cairo: 'Noto Sans Arabic Variable', system-ui, sans-serif;
+  --font-sans:  'Noto Sans Arabic Variable', 'IBM Plex Sans Variable', system-ui, sans-serif;
 
   /* حدود دائرية */
   --radius-xs: 6px;
@@ -327,9 +327,9 @@
   --btn-danger-hover:   #b91c1c;
   --btn-warning-bg:     #d97706;
   --btn-warning-hover:  #b45309;
-  /* خط Cairo احترافي */
-  --noorix-font-primary: 'Cairo',system-ui,sans-serif;
-  --noorix-font-numbers: 'Cairo',system-ui,sans-serif;
+  /* خطوط نوركس المركزية */
+  --noorix-font-primary: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',system-ui,sans-serif;
+  --noorix-font-numbers: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',system-ui,sans-serif;
   --noorix-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(10,31,68,0.07);
   --noorix-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --noorix-shadow-md: 0 4px 20px var(--noorix-navy-10);
@@ -339,7 +339,7 @@
   --noorix-radius-md: 12px;
   --noorix-radius-lg: 16px;
   --noorix-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
-  /* Typography Scale — Cairo */
+  /* Typography Scale */
   --noorix-text-base: 14px;
   --noorix-text-h1: 24px;
   --noorix-text-h2: 18px;
@@ -4948,7 +4948,7 @@ select option {
    عند الطباعة (@media print):
    1. إخفاء: السايدبار، التوببار، أزرار إضافة/تعديل، أيقونات داخل الجداول
    2. الحاوية الرئيسية: عرض 100%، إزالة الظلال والخلفيات الملونة
-   3. خط Cairo: 12pt نصوص، 16pt عناوين
+   3. خط النظام: 12pt نصوص، 16pt عناوين
    4. صفحة A4 واحدة قدر الإمكان
    5. ترويسة: اسم الشركة، نوع التقرير، التاريخ (عبر .noorix-print-header)
    6. الجداول: page-break-inside: avoid
@@ -4982,7 +4982,7 @@ select option {
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
-    font-family: 'Cairo', Arial, sans-serif !important;
+    font-family: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',system-ui,sans-serif !important;
     font-size: 12pt !important;
     line-height: 1.5 !important;
     color: #1a1a1a !important;
@@ -5017,7 +5017,7 @@ select option {
     padding-bottom: 12px;
     margin-bottom: 12px;
     border-bottom: 2px solid #333;
-    font-family: 'Cairo', Arial, sans-serif !important;
+    font-family: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',system-ui,sans-serif !important;
   }
   .noorix-print-header-screen {
     display: none !important;
@@ -5034,7 +5034,7 @@ select option {
   }
   th, td {
     font-size: 12pt !important;
-    font-family: 'Cairo', Arial, sans-serif !important;
+    font-family: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',system-ui,sans-serif !important;
   }
   th {
     font-size: 12pt !important;

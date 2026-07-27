@@ -107,7 +107,7 @@ export const EMPLOYEE_DOC_EXTRA_CSS = `
   .hr-doc-cell-center{text-align:center!important}
   .hr-doc-cell-num{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;text-align:center!important;white-space:nowrap}
   .hr-doc-table[dir="rtl"] .hr-doc-cell-num{text-align:center!important}
-  .num{font-family:'Cairo',Arial,sans-serif}
+  .num{font-family:'Noto Sans Arabic','IBM Plex Sans',Arial,sans-serif}
   .footer{padding:10px 14px}
   .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
   .sig{padding-top:24px;border-top:1px solid #cbd5e1;font-size:10px}

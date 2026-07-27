@@ -32,7 +32,7 @@ function buildBaseCss(landscape: boolean, opts: PrintPageOpts = {}) {
     ? `
   @bottom-center {
     content: "صفحة " counter(page) " من " counter(pages);
-    font-family: 'Cairo', Arial, sans-serif;
+    font-family: 'Noto Sans Arabic', 'IBM Plex Sans', Arial, sans-serif;
     font-size: 10px;
     color: #555;
   }`
@@ -45,7 +45,7 @@ ${pageCounterBlock}
 }
 *, *::before, *::after { box-sizing: border-box; }
 body {
-  font-family: 'Cairo', Arial, sans-serif;
+  font-family: 'Noto Sans Arabic', 'IBM Plex Sans', Arial, sans-serif;
   margin: 0;
   padding: ${landscape ? '16px' : '24px'};
   color: #1a1a1a;
@@ -191,7 +191,7 @@ export function buildPrintDocumentHtml({
 <head>
 <meta charset="utf-8">
 <title>${escHtml(title || companyName)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 ${buildBaseCss(landscape, { showPageCounter, marginMm: pageMarginMm })}
 ${extraCss ? `\n/* — CSS خاص بالوثيقة — */\n${extraCss}` : ''}

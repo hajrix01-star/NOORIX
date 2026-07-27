@@ -67,6 +67,8 @@
     "audit:large-files": "node scripts/audit-large-files.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "@fontsource-variable/noto-sans-arabic": "^5.3.0",
     "@noorix/finance-core": "file:packages/finance-core",
     "@noorix/permissions-core": "file:packages/permissions-core",
     "@tailwindcss/vite": "^4.2.2",

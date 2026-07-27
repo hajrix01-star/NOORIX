@@ -29,7 +29,7 @@ import type {
 } from './hrPrintDocumentsTabDrafts';
 
 const HR_PRINT_PREVIEW_FONT_HREF =
-  'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap';
+  'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap';
 
 export type HrPrintComposeResult = {
   inner: string | null;

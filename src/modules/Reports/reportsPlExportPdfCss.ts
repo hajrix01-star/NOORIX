@@ -37,7 +37,7 @@ table.pl-pdf-export-table tbody td:first-child {
 table.pl-pdf-export-table tbody td:not(:first-child) {
   text-align: center !important;
   font-variant-numeric: tabular-nums;
-  font-family: 'Tajawal', 'Cairo', ui-monospace, monospace;
+  font-family: 'Noto Sans Arabic', 'IBM Plex Sans', ui-monospace, monospace;
 }
 table.pl-pdf-export-table tbody tr.pl-pdf-row-group td {
   font-weight: 800;

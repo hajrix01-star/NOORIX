@@ -110,7 +110,7 @@ export function buildSalaryCalcPrintHtml(model: SalaryCalcPrintModel): string {
     .row-hl{background:#f0fdf4;border-radius:6px;padding:5px 8px;margin-top:4px}
     .row-hl span:last-child{color:#15803d;font-weight:700}
     .en{direction:ltr;text-align:left}
-    .num{font-family:'Cairo',Arial,sans-serif;font-weight:600}
+    .num{font-family:'Noto Sans Arabic','IBM Plex Sans',Arial,sans-serif;font-weight:600}
     .muted{color:#6b7280}
     .amber{color:#b45309}
     table{width:100%;border-collapse:collapse}

@@ -61,7 +61,7 @@ function buildLogoInner(logoUrl: unknown) {
 }
 
 const SLIP_PRINT_CSS = `
-body { font-family: 'Cairo', 'Tajawal', Tahoma, sans-serif; }
+body { font-family: 'Noto Sans Arabic', 'IBM Plex Sans', Tahoma, sans-serif; }
 .ps-wrap { direction: rtl; color: #1a2a3a; }
 .ps-slip {
   max-width: 210mm;

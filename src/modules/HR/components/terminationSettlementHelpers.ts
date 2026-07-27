@@ -134,7 +134,7 @@ export function buildTerminationSettlementPrintHtml(input: {
   });
 
   const body = `
-    <div style="font-family:Cairo,Tahoma,sans-serif;direction:rtl;padding:16px;max-width:720px;margin:0 auto">
+    <div style="font-family:'Noto Sans Arabic','IBM Plex Sans',Tahoma,sans-serif;direction:rtl;padding:16px;max-width:720px;margin:0 auto">
       <h1 style="font-size:18px;margin:0 0 8px">${esc(t('terminationSettlementTitle'))}</h1>
       <p style="font-size:12px;color:#64748b;margin:0 0 16px">${esc(t('terminationSettlementDisclaimer'))}</p>
       ${settlementTable}

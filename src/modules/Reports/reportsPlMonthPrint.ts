@@ -180,7 +180,7 @@ export function plMonthStatementPrintCss(): string {
   font-size: 13px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  font-family: 'Tajawal', 'Cairo', ui-monospace, monospace;
+  font-family: 'Noto Sans Arabic', 'IBM Plex Sans', ui-monospace, monospace;
   color: #0f172a;
   line-height: 1.15;
 }
@@ -231,7 +231,7 @@ table.pl-grid tbody td.pl-col-desc {
 table.pl-grid tbody td.pl-col-num {
   text-align: end !important;
   font-variant-numeric: tabular-nums;
-  font-family: 'Tajawal', 'Cairo', ui-monospace, monospace;
+  font-family: 'Noto Sans Arabic', 'IBM Plex Sans', ui-monospace, monospace;
   white-space: nowrap;
 }
 table.pl-grid tbody tr.pl-gap td {

@@ -161,7 +161,7 @@ export default function EOSCalcTab() {
           tbody tr:nth-child(even) td{background:#f8fafc}
           .td-ar{text-align:right;direction:rtl}
           .td-en{text-align:left;direction:ltr}
-          .td-num{text-align:center;font-weight:600;font-family:'Cairo',Arial,sans-serif}
+          .td-num{text-align:center;font-weight:600;font-family:'Noto Sans Arabic','IBM Plex Sans',Arial,sans-serif}
           /* ── تذييل ── */
           .foot{padding:12px 24px;border-top:1px solid #dbe1e8;background:#f8fafc;text-align:center;font-size:11px;color:#94a3b8}
           @media print{.doc{box-shadow:none;border:none}}

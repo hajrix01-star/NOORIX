@@ -61,7 +61,7 @@ export const HR_SHEET_LEGAL_EN =
 
 export const HR_GEN_PRINT_CSS = `
 .hr-sheet.gen-print{--doc-primary:#1a3c5e;--doc-accent:#c9a227;--doc-light:#dce6f1;--doc-gray:#f5f7fa;--doc-border:#d0d8e4;--gen-amt:#1a3c5e}
-.hr-sheet.gen-print{font-family:'Tajawal','Cairo',Tahoma,sans-serif}
+.hr-sheet.gen-print{font-family:'Noto Sans Arabic','IBM Plex Sans',Tahoma,sans-serif}
 .hr-sheet .legal-ref{font-size:6.5pt;line-height:1.35;color:#64748b;text-align:center;padding:4px 8px 8px;border-bottom:1px dotted #cbd5e1;margin:0}
 .hr-sheet .legal-ref-en{margin-top:2px;font-size:6pt;color:#64748b}
 .hr-sheet.gen-print .document{width:100%;max-width:210mm;margin:0 auto;background:#fff;border-radius:4px;direction:rtl;color:#1a2a3a;display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;border:1px solid #e2e8f0}
@@ -70,10 +70,10 @@ export const HR_GEN_PRINT_CSS = `
 .hr-sheet.gen-print .doc-header-logo img{max-width:100%;max-height:100%;object-fit:contain}
 .hr-sheet.gen-print .gen-logo-placeholder{font-size:10px;color:#94a3b8;text-align:center;line-height:1.35}
 .hr-sheet.gen-print .doc-header-center{flex:1;text-align:center;min-width:0}
-.hr-sheet.gen-print .doc-company-ar{font-size:17px;font-weight:800;color:var(--doc-accent);font-family:'Cairo',sans-serif;line-height:1.2}
+.hr-sheet.gen-print .doc-company-ar{font-size:17px;font-weight:800;color:var(--doc-accent);font-family:'Noto Sans Arabic',sans-serif;line-height:1.2}
 .hr-sheet.gen-print .doc-company-en{font-size:12px;color:#c8d8e8;margin-top:4px;font-weight:500}
 .hr-sheet.gen-print .doc-divider{border:none;border-top:1px solid rgba(201,162,39,.45);margin:8px auto;width:82%;max-width:280px}
-.hr-sheet.gen-print .doc-title-ar{font-size:16px;font-weight:700;color:#fff;font-family:'Cairo',sans-serif;line-height:1.25;margin-top:2px}
+.hr-sheet.gen-print .doc-title-ar{font-size:16px;font-weight:700;color:#fff;font-family:'Noto Sans Arabic',sans-serif;line-height:1.25;margin-top:2px}
 .hr-sheet.gen-print .doc-title-en{font-size:11px;color:#aac4de;margin-top:4px;font-weight:500}
 .hr-sheet.gen-print .doc-header-sub{font-size:10px;color:#c8dce8;margin-top:6px;font-weight:600}
 .hr-sheet.gen-print .doc-header-sub-en{font-size:10px;color:#aac4de;margin-top:2px}
