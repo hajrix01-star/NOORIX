@@ -52,7 +52,7 @@ export const HR_SUBTAB_SHELL_CLASS = cn(
 
 /** شريط pills فرعي HR — fill + track */
 export const HR_SECTION_SEGMENTED_BAR_CLASS =
-  'nx-segmented-tab-bar nx-segmented-tab-bar--fill nx-segmented-tab-bar--track nx-segmented-tab-bar--hr';
+  'nx-segmented-tab-bar nx-segmented-tab-bar--track nx-segmented-tab-bar--hr';
 
 /** داخل جسم المحتوى — شريط connected مسطح (بدون إطار كرت) */
 export const HR_SUBTAB_INLINE_CLASS = cn(

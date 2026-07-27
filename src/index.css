@@ -6082,6 +6082,19 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     border: 1px solid var(--noorix-border);
     box-sizing: border-box;
   }
+  .nx-segmented-tab-bar--hr {
+    width: max-content;
+    min-width: 0;
+    max-width: 100%;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+  .nx-segmented-tab-bar--hr .nx-tab-btn.nx-tab-btn--segmented {
+    min-height: 30px;
+    padding: 0.32rem 0.8rem;
+    font-size: 12px;
+    font-weight: 700;
+  }
   .nx-segmented-shell--flat .nx-segmented-tab-bar--track,
   .nx-hr-segmented-inline .nx-segmented-tab-bar--track { border-color: color-mix(in srgb, var(--noorix-border) 65%, transparent); background: color-mix(in srgb, var(--noorix-bg-muted) 88%, var(--noorix-bg-surface)); }
   /* HR: الحشو عبر Tailwind في HrSegmentedControl — لا نفرض padding ضيقاً هنا */

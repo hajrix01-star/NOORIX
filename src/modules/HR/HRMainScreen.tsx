@@ -92,6 +92,7 @@ export default function HRMainScreen() {
         value={activeSection}
         onChange={(id) => setSection(id as HrSectionId)}
         contentClassName={HR_WORKSPACE_CONTENT_CLASS}
+        compactMobile={false}
         animateContent={false}
       >
         <HrSectionSubTabs
