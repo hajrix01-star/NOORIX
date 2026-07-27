@@ -8,7 +8,9 @@ export const ACHIEVEMENT_BG = {
   blue: 'color-mix(in srgb, var(--color-nx-sales) 32%, transparent)',
 };
 
-export function achievementBandFromRatio(ratio: number) {
+export type AchievementBand = keyof typeof ACHIEVEMENT_BG;
+
+export function achievementBandFromRatio(ratio: number): AchievementBand {
   if (ratio >= 1.2) return 'blue';
   if (ratio >= 1) return 'green';
   if (ratio >= 0.8) return 'yellow';
@@ -37,4 +39,28 @@ export function achievementBgForPrint(band: string) {
     default:
       return hexToRgba(KPI_RECHARTS_COLORS.expenses, a);
   }
+}
+
+export function calendarSalesHeatBg(amount: number, dayTarget: number | null, maxAmount: number) {
+  if (amount <= 0) return 'var(--noorix-bg-muted)';
+  if (dayTarget != null && dayTarget > 0) {
+    return ACHIEVEMENT_BG[achievementBandFromRatio(amount / dayTarget)];
+  }
+  const safeMax = Math.max(1, maxAmount);
+  const intensity = Math.min(1, amount / safeMax);
+  return `color-mix(in srgb, var(--color-nx-profit) ${Math.round(16 + intensity * 26)}%, transparent)`;
+}
+
+export function calendarSalesHeatBgForPrint(amount: number, dayTarget: number | null, maxAmount: number) {
+  if (amount <= 0) return '#f8fafc';
+  if (dayTarget != null && dayTarget > 0) {
+    return achievementBgForPrint(achievementBandFromRatio(amount / dayTarget));
+  }
+  const safeMax = Math.max(1, maxAmount);
+  const intensity = Math.min(1, amount / safeMax);
+  return hexToRgba(KPI_RECHARTS_COLORS.grossProfit, 0.2 + intensity * 0.28);
+}
+
+export function calendarSpecialIdleBg(specialColor: string | null) {
+  return specialColor ? hexToRgba(specialColor, 0.16) : 'var(--noorix-bg-muted)';
 }

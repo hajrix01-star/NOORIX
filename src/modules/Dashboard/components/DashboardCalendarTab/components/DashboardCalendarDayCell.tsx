@@ -2,7 +2,7 @@ import React from 'react';
 import { ColorSwatch, RuntimeStyleBox } from '../../../../../ui';
 import { fmt } from '../../../../../utils/format';
 import type { DashboardCalendarDay } from '../../../../../types/api/domains/dashboard';
-import { ACHIEVEMENT_BG, achievementBandFromRatio } from '../utils/calendarAchievementUtils';
+import { calendarSalesHeatBg, calendarSpecialIdleBg } from '../utils/calendarAchievementUtils';
 
 export interface DashboardCalendarDayCellProps {
   item: DashboardCalendarDay;
@@ -28,29 +28,9 @@ export default function DashboardCalendarDayCell({
   const { day, dateStr, amount, dayTarget, special } = item;
   const isSelected = isSelectionMode && selectedDates.has(dateStr);
   const specialColor = special ? special.color || '#8b5cf6' : null;
-  let bg = 'var(--noorix-bg-muted)';
-  if (amount > 0) {
-    if (special) {
-      const hex = (specialColor || '#8b5cf6').replace('#', '');
-      const r = parseInt(hex.slice(0, 2), 16);
-      const g = parseInt(hex.slice(2, 4), 16);
-      const b = parseInt(hex.slice(4, 6), 16);
-      bg = `rgba(${r},${g},${b},0.35)`;
-    } else if (dayTarget != null && dayTarget > 0) {
-      const ratio = amount / dayTarget;
-      const band = achievementBandFromRatio(ratio);
-      bg = ACHIEVEMENT_BG[band as keyof typeof ACHIEVEMENT_BG];
-    } else {
-      const intensity = Math.min(1, amount / maxAmount);
-      bg = `color-mix(in srgb, var(--color-nx-profit) ${Math.round(16 + intensity * 26)}%, transparent)`;
-    }
-  } else if (special && specialColor) {
-    const hex = specialColor.replace('#', '');
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    bg = `rgba(${r},${g},${b},0.2)`;
-  }
+  const bg = amount > 0
+    ? calendarSalesHeatBg(amount, dayTarget, maxAmount)
+    : calendarSpecialIdleBg(specialColor);
   const achieved = dayTarget != null && amount >= dayTarget;
   const ratioVsTarget = dayTarget != null && dayTarget > 0 ? amount / dayTarget : null;
   let cellBorder = '1px solid var(--noorix-border)';
@@ -65,9 +45,7 @@ export default function DashboardCalendarDayCell({
   const amountClass =
     amount <= 0
       ? 'text-noorix-muted'
-      : special
-        ? 'text-noorix-text'
-        : ratioVsTarget != null && ratioVsTarget >= 1.2
+      : ratioVsTarget != null && ratioVsTarget >= 1.2
           ? 'text-[var(--color-nx-sales)]'
           : ratioVsTarget != null && ratioVsTarget >= 1
             ? 'text-[var(--color-nx-profit)]'

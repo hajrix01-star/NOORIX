@@ -25,11 +25,8 @@ import {
   dateInRange,
 } from '../utils/calendarDateUtils';
 import {
-  achievementBandFromRatio,
-  hexToRgba,
-  achievementBgForPrint,
+  calendarSalesHeatBgForPrint,
 } from '../utils/calendarAchievementUtils';
-import { KPI_RECHARTS_COLORS } from '../../../../../constants/kpiCardTheme';
 import { DEFAULT_COLORS, DOW_LABELS, DOW_LABELS_AR, MONTH_LABELS_EN } from '../constants';
 import type { DashboardCalendarTabProps } from '../types';
 
@@ -320,27 +317,12 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
   const handlePrintCalendar = useCallback(() => {
     const cells: PrintCalendarCell[] = daysInMonth.map((item) => {
       const { day, amount, dayTarget, special } = item;
-      const ratio = dayTarget != null && dayTarget > 0 ? amount / dayTarget : 0;
       const achieved = dayTarget != null && amount >= dayTarget;
-      let bg = '#f8fafc';
-      if (amount > 0) {
-        if (special) {
-          const hex = (special.color || '#8b5cf6').replace('#', '');
-          const red = parseInt(hex.slice(0, 2), 16);
-          const green = parseInt(hex.slice(2, 4), 16);
-          const blue = parseInt(hex.slice(4, 6), 16);
-          bg = `rgba(${red},${green},${blue},0.35)`;
-        } else if (dayTarget != null && dayTarget > 0) {
-          const band = achievementBandFromRatio(ratio);
-          bg = achievementBgForPrint(band);
-        } else {
-          const intensity = Math.min(1, amount / maxAmount);
-          bg = hexToRgba(KPI_RECHARTS_COLORS.grossProfit, 0.2 + intensity * 0.28);
-        }
-      }
+      const bg = calendarSalesHeatBgForPrint(amount, dayTarget, maxAmount);
+      const specialBorder = special?.color ? `;border-bottom:3px solid ${special.color}` : '';
       return {
         html: `${day}<br><span style="font-weight:700">${fmt(amount, 0)}</span>${achieved ? ' ✓' : ''}`,
-        style: `padding:6px;text-align:center;border:1px solid #ddd;background:${bg}`,
+        style: `padding:6px;text-align:center;border:1px solid #ddd;background:${bg}${specialBorder}`,
       };
     });
     const firstDow = new Date(year, month - 1, 1).getDay();
