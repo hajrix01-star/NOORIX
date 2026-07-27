@@ -57,8 +57,8 @@
   --color-nx-expenses:   #A32D2D;   /* مصاريف · سحوبات             */
   --color-nx-app:        #c2410c;   /* خزينة تطبيق · رقمي         */
 
-  --font-cairo: 'Noto Sans Arabic Variable', system-ui, sans-serif;
-  --font-sans:  'Noto Sans Arabic Variable', 'IBM Plex Sans Variable', system-ui, sans-serif;
+  --font-cairo: 'Noto Sans Arabic Variable', sans-serif;
+  --font-sans:  'Noto Sans Arabic Variable', 'IBM Plex Sans Variable', sans-serif;
 
   /* حدود دائرية */
   --radius-xs: 6px;
@@ -328,8 +328,8 @@
   --btn-warning-bg:     #d97706;
   --btn-warning-hover:  #b45309;
   /* خطوط نوركس المركزية */
-  --noorix-font-primary: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',system-ui,sans-serif;
-  --noorix-font-numbers: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',system-ui,sans-serif;
+  --noorix-font-primary: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',sans-serif;
+  --noorix-font-numbers: 'Noto Sans Arabic Variable','IBM Plex Sans Variable',sans-serif;
   --noorix-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(10,31,68,0.07);
   --noorix-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --noorix-shadow-md: 0 4px 20px var(--noorix-navy-10);
@@ -340,13 +340,13 @@
   --noorix-radius-lg: 16px;
   --noorix-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
   /* Typography Scale */
-  --noorix-text-base: 14px;
-  --noorix-text-h1: 24px;
-  --noorix-text-h2: 18px;
-  --noorix-text-card: 16px;
-  --noorix-text-th: 13px;
-  --noorix-text-amount: 14px;
-  --noorix-line-height: 1.6;
+  --noorix-text-base: 15px;
+  --noorix-text-h1: 26px;
+  --noorix-text-h2: 20px;
+  --noorix-text-card: 17px;
+  --noorix-text-th: 14px;
+  --noorix-text-amount: 15px;
+  --noorix-line-height: 1.55;
 }
 
 /* Dark mode محذوف — يُضاف مستقبلاً بـ Tailwind dark: prefix */
@@ -493,8 +493,8 @@ html, body, #root {
 }
 body {
   font-family: var(--noorix-font-primary);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: var(--noorix-text-base);
+  line-height: 1.55;
   background-color: var(--noorix-bg-page);
   color: var(--noorix-text);
 }
@@ -652,7 +652,7 @@ a { color: inherit; text-decoration: none; }
   font-size: 15px;
   font-weight: 800;
   color: var(--noorix-topbar-text);
-  letter-spacing: -0.3px;
+  letter-spacing: 0;
   flex-shrink: 0;
   opacity: 0.85;
 }
@@ -2673,8 +2673,8 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-stat-card--purple .noorix-stat-card__stripe { background: var(--noorix-accent-violet); }
 .noorix-stat-card--slate  .noorix-stat-card__stripe { background: var(--noorix-text-muted); }
 .noorix-stat-card__body { padding: 12px 16px; }
-.noorix-stat-card__label { font-size: 11px; font-weight: 600; color: var(--noorix-text-muted); letter-spacing: 0.04em; margin-bottom: 5px; text-transform: uppercase; }
-.noorix-stat-card__value { font-size: 22px; font-weight: 800; color: var(--noorix-text); font-family: var(--noorix-font-numbers); letter-spacing: -0.3px; line-height: 1.2; }
+.noorix-stat-card__label { font-size: 12px; font-weight: 700; color: var(--noorix-text-muted); letter-spacing: 0; margin-bottom: 5px; }
+.noorix-stat-card__value { font-size: 24px; font-weight: 800; color: var(--noorix-text); font-family: var(--noorix-font-numbers); letter-spacing: 0; line-height: 1.15; }
 .noorix-stat-card__sub { font-size: 11px; color: var(--noorix-text-muted); margin-top: 3px; }
 /* Amber warning variant: tinted background */
 .noorix-stat-card--amber .noorix-stat-card__body  { background: rgba(245,158,11,0.04); }
@@ -2903,7 +2903,7 @@ html[data-card-style="10"] .noorix-stat-card {
   font-weight: 800;
   color: var(--noorix-text);
   font-family: var(--noorix-font-numbers);
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
   line-height: 1.2;
   word-break: break-word;
 }

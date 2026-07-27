@@ -67,7 +67,7 @@ body.noorix-page-smart-chat .app-main__content {
   font-weight: 800;
   line-height: 1.2;
   color: var(--noorix-text);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -111,7 +111,7 @@ body.noorix-page-smart-chat .app-main__content {
   font-weight: 800;
   line-height: 1.2;
   color: var(--noorix-text);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -538,7 +538,7 @@ body.noorix-page-smart-chat .app-main__content {
   font-size: 0.9375rem;
   font-weight: 700;
   color: var(--noorix-text);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   line-height: 1.45;
 }
 

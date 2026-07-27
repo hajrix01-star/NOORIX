@@ -146,9 +146,9 @@ MetricCard.Value = function MetricCardValue({
       <div
         dir="ltr"
         className={cn(
-          'metric-card-value nx-font-numbers leading-tight tracking-[-0.5px] text-start inline-flex items-baseline gap-x-1 flex-wrap',
+          'metric-card-value nx-font-numbers leading-tight tracking-normal text-start inline-flex items-baseline gap-x-1 flex-wrap',
           size === 'executive'
-            ? 'text-[36px] font-bold leading-[1.05] tracking-[-0.045em] sm:text-[48px]'
+            ? 'text-[36px] font-bold leading-[1.05] tracking-normal sm:text-[48px]'
             : size === 'lg'
               ? 'text-[26px] font-extrabold'
               : 'text-[22px] font-bold',
