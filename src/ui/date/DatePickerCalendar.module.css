@@ -20,6 +20,25 @@
   box-sizing: border-box;
 }
 
+.calendarButton {
+  all: unset;
+  box-sizing: border-box;
+  font-family: var(--noorix-font-primary);
+  -webkit-text-fill-color: currentColor;
+}
+
+/*
+ * Calendar controls live inside forms and dialogs. This selector is
+ * intentionally stronger than generic mobile form-button rules so those
+ * rules cannot stretch one date across multiple seven-column grid cells.
+ */
+.root .calendarButton {
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+
 .header {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) 40px;
@@ -242,13 +261,15 @@
 }
 
 .blankDay,
-.day {
+.dayCell {
   display: block;
   width: 100%;
   min-width: 0;
   max-width: 100%;
   height: 40px;
   box-sizing: border-box;
+  overflow: hidden;
+  contain: layout paint;
 }
 
 .day {
@@ -280,6 +301,18 @@
   position: relative;
   z-index: 1;
   display: block;
+  color: inherit;
+  line-height: 1;
+  -webkit-text-fill-color: currentColor;
+  pointer-events: none;
+}
+
+.dayLabel {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
   color: inherit;
   line-height: 1;
   -webkit-text-fill-color: currentColor;
@@ -327,6 +360,6 @@
   .periodTrigger { height: 38px; padding: 0 6px; font-size: 12px; }
   .weekdays, .daysGrid { column-gap: 3px; }
   .daysGrid { row-gap: 3px; }
-  .blankDay, .day { height: 38px; }
+  .blankDay, .dayCell, .day { height: 38px; }
   .day { border-radius: 7px; font-size: 12px; }
 }

@@ -72,7 +72,7 @@ export default function DialogActions({
   if (visibleActions.length === 0) return null;
 
   return (
-    <div className={cn('flex flex-wrap items-center justify-end gap-2', className)}>
+    <div className={cn('nx-dialog-actions flex flex-wrap items-center justify-end gap-2', className)}>
       {visibleActions.map((action) => (
         <Button
           key={action.key}

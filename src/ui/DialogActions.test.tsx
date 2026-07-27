@@ -22,6 +22,7 @@ describe('DialogActions', () => {
     const buttons = screen.getAllByRole('button').map((button) => button.textContent);
     expect(buttons).toEqual(['Close', 'Delete', 'Save']);
     expect(screen.queryByText('Hidden')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Save' }).parentElement?.classList.contains('nx-dialog-actions')).toBe(true);
   });
 
   it('keeps click handling centralized without changing callbacks', () => {

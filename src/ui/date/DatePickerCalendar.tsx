@@ -90,7 +90,8 @@ export default function DatePickerCalendar({
       <div className={styles.header} dir="ltr">
         <button
           type="button"
-          className={styles.nav}
+          className={`${styles.calendarButton} ${styles.nav}`}
+          data-calendar-control
           aria-label={language === 'en' ? 'Previous month' : 'الشهر السابق'}
           disabled={previousMonthBlocked}
           onClick={() => onShiftMonth(-1)}
@@ -99,7 +100,8 @@ export default function DatePickerCalendar({
         </button>
         <button
           type="button"
-          className={styles.periodTrigger}
+          className={`${styles.calendarButton} ${styles.periodTrigger}`}
+          data-calendar-control
           dir={rtl ? 'rtl' : 'ltr'}
           aria-label={language === 'en' ? 'Choose month and year' : 'اختيار الشهر والسنة'}
           aria-expanded={periodOpen}
@@ -110,7 +112,8 @@ export default function DatePickerCalendar({
         </button>
         <button
           type="button"
-          className={styles.nav}
+          className={`${styles.calendarButton} ${styles.nav}`}
+          data-calendar-control
           aria-label={language === 'en' ? 'Next month' : 'الشهر التالي'}
           disabled={nextMonthBlocked}
           onClick={() => onShiftMonth(1)}
@@ -124,7 +127,8 @@ export default function DatePickerCalendar({
           <div className={styles.yearNav} dir="ltr">
             <button
               type="button"
-              className={styles.yearButton}
+              className={`${styles.calendarButton} ${styles.yearButton}`}
+              data-calendar-control
               disabled={previousYear === null}
               aria-label={language === 'en' ? 'Previous year' : 'السنة السابقة'}
               onClick={() => previousYear !== null && onYearChange(previousYear)}
@@ -134,7 +138,8 @@ export default function DatePickerCalendar({
             <strong>{year}</strong>
             <button
               type="button"
-              className={styles.yearButton}
+              className={`${styles.calendarButton} ${styles.yearButton}`}
+              data-calendar-control
               disabled={nextYear === null}
               aria-label={language === 'en' ? 'Next year' : 'السنة التالية'}
               onClick={() => nextYear !== null && onYearChange(nextYear)}
@@ -150,7 +155,8 @@ export default function DatePickerCalendar({
                 <button
                   type="button"
                   key={name}
-                  className={`${styles.monthButton}${monthValue === month ? ` ${styles.monthButtonActive}` : ''}`}
+                  className={`${styles.calendarButton} ${styles.monthButton}${monthValue === month ? ` ${styles.monthButtonActive}` : ''}`}
+                  data-calendar-control
                   aria-label={`${name} ${year}`}
                   disabled={blocked}
                   onClick={() => {
@@ -177,32 +183,40 @@ export default function DatePickerCalendar({
       <div
         className={styles.daysGrid}
         dir={rtl ? 'rtl' : 'ltr'}
-        role="group"
+        role="grid"
         aria-label={language === 'en' ? 'Calendar' : 'التقويم'}
         data-calendar-grid
       >
         {calendarSlots.map((day, slotIndex) => {
           if (day === null) {
-            return <span key={`blank-${slotIndex}`} className={styles.blankDay} aria-hidden="true" data-calendar-slot />;
+            return (
+              <span
+                key={`blank-${slotIndex}`}
+                className={`${styles.dayCell} ${styles.blankDay}`}
+                aria-hidden="true"
+                data-calendar-slot
+              />
+            );
           }
           const date = ymd(year, month, day);
           const active = date === value;
           const blocked = isBlocked(date, min, max);
           return (
-            <button
-              type="button"
-              disabled={blocked}
-              className={`${styles.day}${active ? ` ${styles.active}` : ''}${blocked ? ` ${styles.disabled}` : ''}`}
-              aria-label={date}
-              aria-current={active ? 'date' : undefined}
-              data-calendar-date={date}
-              data-calendar-slot
-              onKeyDown={(event) => handleDayKeyDown(event, day)}
-              onClick={() => onSelectDay(day)}
-              key={date}
-            >
-              {day}
-            </button>
+            <span className={styles.dayCell} role="gridcell" data-calendar-slot key={date}>
+              <button
+                type="button"
+                disabled={blocked}
+                className={`${styles.calendarButton} ${styles.day}${active ? ` ${styles.active}` : ''}${blocked ? ` ${styles.disabled}` : ''}`}
+                aria-label={date}
+                aria-current={active ? 'date' : undefined}
+                data-calendar-control
+                data-calendar-date={date}
+                onKeyDown={(event) => handleDayKeyDown(event, day)}
+                onClick={() => onSelectDay(day)}
+              >
+                <span className={styles.dayLabel}>{day}</span>
+              </button>
+            </span>
           );
         })}
       </div>

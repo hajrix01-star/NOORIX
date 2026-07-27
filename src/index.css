@@ -5331,8 +5331,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     flex-wrap: wrap !important;
     gap: 8px !important;
   }
-  [role="dialog"] form button,
-  .modal-overlay form button {
+  [role="dialog"] form .nx-dialog-actions > .nx-btn,
+  .modal-overlay form .nx-dialog-actions > .nx-btn {
     min-height: 40px;
     flex: 1 1 auto;
     min-width: 100px;
