@@ -142,10 +142,10 @@
     );
   }
 }
-.nx-connected-tab-btn { min-height: 36px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; color: #5f574d; font-size: 14px; font-weight: 700; line-height: 1.35; box-shadow: none; transition: background-color 180ms cubic-bezier(0.4, 0, 0.2, 1), color 180ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1); }
-.nx-connected-tab-btn--compact { min-height: 34px; padding-inline: 12px; font-size: 13px; }
+.nx-connected-tab-btn { min-height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: #5f574d; font-size: 13px; font-weight: 700; line-height: 1.35; box-shadow: none; transition: background-color 180ms cubic-bezier(0.4, 0, 0.2, 1), color 180ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1); }
+.nx-connected-tab-btn--compact { min-height: 30px; padding-inline: 10px; font-size: 12px; }
 .nx-connected-tab-btn--idle:hover { background: #f5f0e7; color: #26221d; }
-.nx-connected-tab-btn--active, .nx-connected-tab-btn--active:hover { background: #147044; color: #fff; box-shadow: 0 8px 18px rgba(20, 112, 68, 0.18); }
+.nx-connected-tab-btn--active, .nx-connected-tab-btn--active:hover { background: #147044; color: #fff; box-shadow: 0 4px 12px rgba(20, 112, 68, 0.14); }
 .nx-connected-tab-content-swap {
   animation: fadeSlideDown 0.22s cubic-bezier(0.34, 1.1, 0.64, 1) both;
 }
@@ -6033,7 +6033,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     flex-wrap: nowrap;
     align-items: stretch;
     /* مسافة أوضح بين الحبات — يمنع انطباع «سطر نص واحد» */
-    gap: 8px;
+    gap: 6px;
     min-width: 100%;
     width: max-content;
     overflow-x: auto;
@@ -6048,13 +6048,13 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   .nx-segmented-tab-bar::-webkit-scrollbar { display: none; }
   .nx-tab-btn.nx-tab-btn--segmented {
     border-bottom: none;
-    border-radius: 0.55rem;
+    border-radius: 0.5rem;
     margin: 0;
     border: 1px solid transparent;
     /* حشو أفقي أوفر للعربي — الحروف تتجاوز صندوق الإيمو أحياناً فتُقصّ مع الزوايا */
-    padding: 0.5rem 1rem;
-    min-height: 2.35rem;
-    font-size: 13px;
+    padding: 0.38rem 0.85rem;
+    min-height: 2rem;
+    font-size: 12px;
     line-height: 1.45;
     overflow: visible;
     box-sizing: border-box;
@@ -6062,8 +6062,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   /* غير نشط: سطح أبيض + حد واضح + ظل — يبرز فوق شريط الخلفية المموّه */
   .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) { border-color: var(--noorix-border); background: var(--btn-default-bg); color: var(--noorix-text-muted); box-shadow: 0 1px 2px rgba(65, 52, 31, 0.07); }
   .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) { color: var(--noorix-text); background: var(--noorix-bg-surface); border-color: var(--noorix-accent-blue); box-shadow: 0 2px 6px rgba(20, 112, 68, 0.12); }
-  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: var(--noorix-accent-green); background: var(--noorix-accent-green); color: #fff; font-weight: 800; box-shadow: 0 2px 8px rgba(20, 112, 68, 0.28); }
-  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: #fff; background: var(--noorix-accent-green); filter: brightness(1.03); box-shadow: 0 3px 10px rgba(20, 112, 68, 0.32); }
+  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: var(--noorix-accent-green); background: var(--noorix-accent-green); color: #fff; font-weight: 800; box-shadow: 0 4px 12px rgba(20, 112, 68, 0.14); }
+  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: #fff; background: var(--noorix-accent-green); filter: brightness(1.03); box-shadow: 0 4px 12px rgba(20, 112, 68, 0.16); }
 
   /* توزيع متساوٍ على عرض السطر — تبويبات فرعية HR (2–4 حبات) */
   .nx-segmented-tab-bar--fill {
@@ -6078,7 +6078,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   .nx-segmented-tab-bar--track {
     background: var(--noorix-bg-muted);
     border-radius: 12px;
-    padding: 6px;
+    padding: 5px;
     border: 1px solid var(--noorix-border);
     box-sizing: border-box;
   }
@@ -6112,21 +6112,21 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   @media (min-width: 641px) {
     .nx-segmented-tab-bar--fill:not(.nx-segmented-tab-bar--hr) .nx-tab-btn.nx-tab-btn--segmented {
       font-size: 13px;
-      padding: 0.6rem 0.75rem;
+      padding: 0.45rem 0.65rem;
     }
   }
   .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) { border-color: transparent; background: transparent; color: var(--noorix-text); box-shadow: none; }
   .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) { color: var(--noorix-text); background: #f5f0e7; border-color: transparent; box-shadow: none; }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: var(--noorix-accent-green); background: var(--noorix-accent-green); color: #fff; font-weight: 800; box-shadow: 0 8px 18px rgba(20, 112, 68, 0.18); }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: #fff; background: var(--noorix-accent-green); filter: none; box-shadow: 0 8px 18px rgba(20, 112, 68, 0.18); }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: var(--noorix-accent-green); background: var(--noorix-accent-green); color: #fff; font-weight: 800; box-shadow: 0 4px 12px rgba(20, 112, 68, 0.14); }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: #fff; background: var(--noorix-accent-green); filter: none; box-shadow: 0 4px 12px rgba(20, 112, 68, 0.14); }
 
   /* مساحة عمل HR — كرت واحد (تبويبات رئيسية) + pills فرعية + محتوى */
   .nx-hr-workspace { display: flex; flex-direction: column; min-width: 0; width: 100%; padding: 0; }
   /* تبويبات فرعية — pills تحت الرئيسي (بدون sparkline، خط واحد أسفل الشريط) */
   .nx-hr-subtab-section > .nx-segmented-shell--flat {
     border-block: 1px solid var(--noorix-border);
-    padding-bottom: 0.625rem;
-    padding-top: 0.625rem;
+    padding-bottom: 0.45rem;
+    padding-top: 0.45rem;
     margin-bottom: 0;
   }
   .nx-hr-subtab-section .nx-segmented-tab-bar--track { border-color: #e8e1d3; background: #fff; }
