@@ -14,6 +14,7 @@ import DashboardCalendarSelectionBar from './components/DashboardCalendarSelecti
 import DashboardCalendarLegend from './components/DashboardCalendarLegend';
 import DashboardCalendarSideDetail from './components/DashboardCalendarSideDetail';
 import DashboardCalendarAddSpecialModal from './components/DashboardCalendarAddSpecialModal';
+import DashboardCalendarSpecialDaysStrip from './components/DashboardCalendarSpecialDaysStrip';
 
 export default function DashboardCalendarTab({ companyId, year, selectedMonth, filter: _filter }: DashboardCalendarTabProps) {
   void _filter;
@@ -73,6 +74,12 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             {m.t('dashboardSelectDaysHint')}
           </div>
         )}
+
+        <DashboardCalendarSpecialDaysStrip
+          specialDays={m.specialDaysList}
+          lang={m.lang}
+          t={m.t}
+        />
 
         <DashboardCalendarGrid
           year={m.year}
