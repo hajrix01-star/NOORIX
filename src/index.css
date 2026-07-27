@@ -204,7 +204,7 @@
   --noorix-table-header-fg: #ffffff;
   --noorix-table-header-border: rgba(255,255,255,0.2);
   --noorix-table-header-hover-bg: color-mix(in srgb, var(--color-nx-sales) 86%, #0a1f44);
-  --noorix-table-row-number-bg: var(--color-nx-sales);
+  --noorix-table-row-number-bg: #f8fafc;
   --noorix-table-row-even: #fafbfd;
   /* ألوان تمييز */
   --noorix-accent-green:  #16a34a;
@@ -6587,8 +6587,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .noorix-table .nx-row-number-th,
 .noorix-table .nx-row-number-td {
   background: var(--noorix-table-row-number-bg) !important;
-  color: var(--noorix-table-header-fg) !important;
-  border-color: var(--noorix-table-header-border) !important;
+  color: var(--noorix-text) !important;
+  border-color: var(--noorix-border) !important;
   text-align: center !important;
   direction: ltr;
   font-variant-numeric: tabular-nums;
@@ -6641,7 +6641,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 .noorix-table tbody tr:nth-child(even) .nx-row-number-td {
   background: var(--noorix-table-row-number-bg) !important;
-  color: var(--noorix-table-header-fg) !important;
+  color: var(--noorix-text) !important;
 }
 .noorix-table tbody tr:hover .nx-row-number-td {
   background: var(--nx-table-row-hover) !important;
