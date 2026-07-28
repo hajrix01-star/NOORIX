@@ -165,10 +165,10 @@ export const SuppliersTab = memo(function SuppliersTab({
             </Button>
           )}
           <Button
-            variant={showForm ? 'default' : 'primary'}
-            onClick={() => setShowForm((visible) => !visible)}
+            variant="primary"
+            onClick={() => setShowForm(true)}
           >
-            {showForm ? t('cancel') : t('addSupplier')}
+            {t('addSupplier')}
           </Button>
         </div>
       </div>

@@ -6,7 +6,7 @@ import React, { useState, useMemo, memo, type ChangeEvent, type FormEvent } from
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from '../i18n/useTranslation';
 import { useToast } from '../context/ToastContext';
-import { Button, Input, Card, Badge, FormRow, SmartTable, SearchableOptionsPicker } from '../ui';
+import { AdaptiveSheet, Button, Input, Badge, FormRow, SmartTable, SearchableOptionsPicker } from '../ui';
 
 const TYPE_MAP = {
   purchase: { labelKey: 'categoryTypes' },
@@ -324,74 +324,78 @@ export const CategoriesManager = memo(function CategoriesManager({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex items-center justify-end">
-        <Button variant={showForm ? 'default' : 'primary'} onClick={() => (showForm ? resetForm() : setShowForm(true))}>
-          {showForm ? t('cancel') : t('addCategory')}
+      <div className="flex items-center justify-end">
+        <Button variant="primary" onClick={() => setShowForm(true)}>
+          {t('addCategory')}
         </Button>
       </div>
-      {showForm && (
-        <Card>
-          <h4 className="text-[14px] m-0 mb-4">{editing ? t('editCategory') : t('newCategory')}</h4>
-          <form onSubmit={handleSave}>
-            <FormRow cols={2} className="mb-3.5">
-              <Input
-                type="text"
-                label={`${t('nameAr')} *`}
-                value={form.nameAr}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
-              />
-              <Input
-                type="text"
-                label={t('nameEnCol')}
-                value={form.nameEn}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameEn: e.target.value }))}
-              />
-              <Input
-                type="select"
-                label={t('type')}
-                value={form.type}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => setForm((p) => ({ ...p, type: e.target.value as CategoryKind }))}
-              >
-                <option value="purchase">{t('categoryTypes')}</option>
-                <option value="expense">{t('categoryTypeExpense')}</option>
-                <option value="sale">{t('categoryTypeSale')}</option>
-              </Input>
-              <Input
-                type="text"
-                label={t('icon')}
-                value={form.icon}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, icon: e.target.value }))}
-                placeholder=""
-              />
-            </FormRow>
-            <div className="mb-[14px]">
-              <SearchableOptionsPicker
-                label={t('parentCategory')}
-                allowEmpty
-                emptyValue=""
-                emptyLabel={lang === 'en' ? '— Main category —' : '— تصنيف رئيسي —'}
-                value={form.parentId}
-                onChange={handleParentChange}
-                options={parentPickerOptions}
-                aria-label={t('parentCategory')}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={create.isPending || update.isPending}
-                loading={create.isPending || update.isPending}
-              >
-                {create.isPending || update.isPending ? t('saving') : t('save')}
-              </Button>
-              <Button type="button" onClick={resetForm}>
-                {t('cancel')}
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
+      <AdaptiveSheet
+        open={showForm}
+        onClose={resetForm}
+        title={editing ? t('editCategory') : t('newCategory')}
+        size="md"
+        side="start"
+        className="category-form-drawer"
+      >
+        <form onSubmit={handleSave}>
+          <FormRow cols={2} className="mb-3.5">
+            <Input
+              type="text"
+              label={`${t('nameAr')} *`}
+              value={form.nameAr}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
+            />
+            <Input
+              type="text"
+              label={t('nameEnCol')}
+              value={form.nameEn}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameEn: e.target.value }))}
+            />
+            <Input
+              type="select"
+              label={t('type')}
+              value={form.type}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setForm((p) => ({ ...p, type: e.target.value as CategoryKind }))}
+            >
+              <option value="purchase">{t('categoryTypes')}</option>
+              <option value="expense">{t('categoryTypeExpense')}</option>
+              <option value="sale">{t('categoryTypeSale')}</option>
+            </Input>
+            <Input
+              type="text"
+              label={t('icon')}
+              value={form.icon}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, icon: e.target.value }))}
+              placeholder=""
+            />
+          </FormRow>
+          <div className="mb-[14px]">
+            <SearchableOptionsPicker
+              label={t('parentCategory')}
+              allowEmpty
+              emptyValue=""
+              emptyLabel={lang === 'en' ? '— Main category —' : '— تصنيف رئيسي —'}
+              value={form.parentId}
+              onChange={handleParentChange}
+              options={parentPickerOptions}
+              aria-label={t('parentCategory')}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={create.isPending || update.isPending}
+              loading={create.isPending || update.isPending}
+            >
+              {create.isPending || update.isPending ? t('saving') : t('save')}
+            </Button>
+            <Button type="button" onClick={resetForm}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </form>
+      </AdaptiveSheet>
       <div className="text-end mb-2">
         <h3 className="text-[16px] font-bold m-0">{t(titleKey)}</h3>
       </div>

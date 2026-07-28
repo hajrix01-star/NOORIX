@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Checkbox, Input, Card, FormRow, SearchableOptionsPicker } from '../../../ui';
+import { AdaptiveSheet, Button, Checkbox, Input, FormRow, SearchableOptionsPicker } from '../../../ui';
 import type {
   SupplierCategoryRecord,
   SupplierCreatePayload,
@@ -52,8 +52,14 @@ export const SupplierForm = memo(function SupplierForm({
   }
 
   return (
-    <Card>
-      <h4 className="text-[14px] mt-0 mb-4">{t('newSupplier')}</h4>
+    <AdaptiveSheet
+      open
+      onClose={onCancel}
+      title={t('newSupplier')}
+      size="md"
+      side="start"
+      className="supplier-create-drawer"
+    >
       <form onSubmit={handleSubmit}>
         <FormRow cols={2}>
           <Input
@@ -122,7 +128,7 @@ export const SupplierForm = memo(function SupplierForm({
           <Button type="button" size="sm" onClick={onCancel}>{t('cancel')}</Button>
         </div>
       </form>
-    </Card>
+    </AdaptiveSheet>
   );
 });
 
