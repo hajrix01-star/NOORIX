@@ -3034,7 +3034,7 @@ html[data-card-style="10"] .noorix-stat-card {
   align-items: center;
   gap: 10px;
   min-width: 0;
-  justify-content: flex-end;
+  justify-content: flex-start;
   direction: rtl;
   align-self: start;
 }
