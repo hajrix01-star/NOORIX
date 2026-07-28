@@ -165,6 +165,7 @@ export function useCreateOrderMutation(companyId?: string) {
     invalidateQueries: [
       orderKeys.listRoot(),
       orderKeys.summaryRoot(),
+      orderKeys.rangeSummaryRoot(),
       ...(companyId ? [orderKeys.products(companyId)] : [orderKeys.productsRoot()]),
     ],
     showErrorToast: false,
@@ -177,6 +178,7 @@ export function useUpdateOrderMutation(companyId: string) {
     invalidateQueries: [
       orderKeys.listRoot(),
       orderKeys.summaryRoot(),
+      orderKeys.rangeSummaryRoot(),
       ...(companyId ? [orderKeys.products(companyId)] : []),
     ],
     showErrorToast: false,
@@ -186,7 +188,7 @@ export function useUpdateOrderMutation(companyId: string) {
 export function useCancelOrderMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (id: string) => cancelOrder(id, companyId),
-    invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot()],
+    invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot(), orderKeys.rangeSummaryRoot()],
     showErrorToast: false,
   });
 }
@@ -508,6 +510,7 @@ export function useSendStaffDigestMutation(companyId: string) {
       orderKeys.staffMyRoot(),
       orderKeys.listRoot(),
       orderKeys.summaryRoot(),
+      orderKeys.rangeSummaryRoot(),
     ],
     showErrorToast: false,
   });

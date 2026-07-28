@@ -1,7 +1,7 @@
 ﻿/** ملخص الطلبات — كرت واحد: عهدة المندوب + نقد المحل (جداول داخلية) */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { FmtNum, SimpleTable } from '../../../ui';
+import { Button, FmtNum, SimpleTable } from '../../../ui';
 import type { MoneyLike } from '../../../types/api';
 
 export type OrdersSummaryMetrics = {
@@ -92,10 +92,14 @@ export function OrdersSummaryCard({
   summary = {} as OrdersSummaryMetrics,
   cashSalesTotal = 0,
   isLoading,
+  errorMessage,
+  onRetry,
 }: {
   summary?: OrdersSummaryMetrics;
   cashSalesTotal?: MoneyLike;
   isLoading?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
 }) {
   const { t } = useTranslation();
   const pettyCash = Number(summary.pettyCashTotal ?? 0);
@@ -112,6 +116,22 @@ export function OrdersSummaryCard({
     return (
       <div className="nx-orders-summary-card rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-4 text-center text-[13px] text-noorix-muted">
         {t('loading')}
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div
+        className="nx-orders-summary-card flex flex-col items-center gap-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-4 text-center"
+        role="alert"
+      >
+        <p className="m-0 text-[13px] text-noorix-red">{errorMessage}</p>
+        {onRetry ? (
+          <Button size="sm" variant="primary" onClick={onRetry}>
+            {t('retry')}
+          </Button>
+        ) : null}
       </div>
     );
   }

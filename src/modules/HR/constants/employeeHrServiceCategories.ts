@@ -8,6 +8,7 @@ export const HR_SERVICE_CATEGORIES = [
   'exit_reentry_visa',
   'flight_ticket',
   'medical_insurance',
+  'health_certificate',
 ];
 
 /** ترتيب أزرار الإضافة السريعة (الأكثر استخداماً أولاً) */
@@ -17,6 +18,7 @@ export const HR_SERVICE_QUICK_ADD = [
   'exit_reentry_visa',
   'flight_ticket',
   'medical_insurance',
+  'health_certificate',
   'iqama_new',
 ];
 
@@ -27,6 +29,7 @@ export const HR_SERVICE_CATEGORY_LABEL_KEYS: Record<string, string> = {
   exit_reentry_visa: 'hrServiceExitReentry',
   flight_ticket: 'hrServiceFlightTicket',
   medical_insurance: 'hrServiceMedicalInsurance',
+  health_certificate: 'hrServiceHealthCertificate',
 };
 
 export function requiresIqamaNumber(category: string | null | undefined) {
@@ -34,7 +37,11 @@ export function requiresIqamaNumber(category: string | null | undefined) {
 }
 
 export function showsReferenceLabel(category: string | null | undefined) {
-  return ['flight_ticket', 'medical_insurance'].includes(String(category || ''));
+  return ['flight_ticket', 'medical_insurance', 'health_certificate'].includes(String(category || ''));
+}
+
+export function requiresReferenceLabel(category: string | null | undefined) {
+  return category === 'health_certificate';
 }
 
 export {
@@ -61,9 +68,14 @@ export function usesCompanyAsSponsor(category: string | null | undefined) {
 export function referenceLabelKey(category: string | null | undefined) {
   if (category === 'flight_ticket') return 'hrServiceRouteLabel';
   if (category === 'medical_insurance') return 'hrServiceProviderLabel';
+  if (category === 'health_certificate') return 'hrServiceCertificateNumber';
   if (category === 'sponsorship_transfer') return 'hrServiceTransferSponsorCompany';
   if (category === 'exit_reentry_visa') return 'hrServiceVisaDurationLabel';
   return 'referenceLabel';
+}
+
+export function isHealthCertificate(category: string | null | undefined) {
+  return category === 'health_certificate';
 }
 
 export function companyDisplayName(

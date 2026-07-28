@@ -5,7 +5,7 @@ import { TenantContext } from '../common/tenant-context';
 import { utcBoundsForGregorianMonth } from './orders-month-range.util';
 import { mapDtoItemsToOrderLines, orderLinesToLastPriceInputs } from './orders-lines.util';
 import { orderGregorianDateToNumberPrefix, buildOrderNumberFromPrefix } from './orders-order-number.util';
-import { aggregateOrdersMonthSummary, aggregateOrdersRangeSummary } from './orders-month-summary.util';
+import { aggregateOrdersMonthSummary, aggregateOrdersRangeSummaryGroups } from './orders-month-summary.util';
 import { aggregateOrderItemsByProductForReport } from './orders-items-report-aggregate.util';
 import {
   enrichProductWithSectionIds,
@@ -196,24 +196,27 @@ export class OrdersService {
   async getRangeSummary(companyId: string, startDate: string, endDate: string) {
     const start = new Date(`${startDate}T00:00:00.000Z`);
     const end = new Date(`${endDate}T23:59:59.999Z`);
-    const [orders, cashSales] = await Promise.all([
-      this.prisma.order.findMany({
+    const [orderGroups, cashSales] = await Promise.all([
+      this.prisma.order.groupBy({
+        by: ['orderType'],
         where: { companyId, status: 'active', orderDate: { gte: start, lte: end } },
-        select: { orderType: true, pettyCashAmount: true, totalAmount: true },
+        _sum: { pettyCashAmount: true, totalAmount: true },
       }),
-      this.prisma.dailySalesChannel.aggregate({
-        _sum: { amount: true },
-        where: {
-          vault: { type: 'cash' },
-          summary: {
-            companyId,
-            status: 'active',
-            transactionDate: { gte: start, lte: end },
-          },
-        },
-      }),
+      this.prisma.$queryRaw<Array<{ total: Prisma.Decimal | null }>>(Prisma.sql`
+        SELECT COALESCE(SUM(channel.amount), 0) AS total
+        FROM daily_sales_summaries AS summary
+        INNER JOIN daily_sales_channels AS channel
+          ON channel.summary_id = summary.id
+        INNER JOIN vaults AS vault
+          ON vault.id = channel.vault_id
+        WHERE summary.company_id = ${companyId}
+          AND summary.status = 'active'
+          AND summary.transaction_date >= ${start}
+          AND summary.transaction_date <= ${end}
+          AND vault.type = 'cash'
+      `),
     ]);
-    return aggregateOrdersRangeSummary(orders, cashSales._sum.amount ?? 0);
+    return aggregateOrdersRangeSummaryGroups(orderGroups, cashSales[0]?.total ?? 0);
   }
 
   async getItemsReport(companyId: string, year: number, month: number) {

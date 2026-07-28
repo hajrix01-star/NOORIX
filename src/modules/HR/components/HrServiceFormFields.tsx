@@ -8,7 +8,9 @@ import {
   showsIssueDate,
   showsVisaDurationMonths,
   showsReferenceLabel,
+  requiresReferenceLabel,
   usesCompanyAsSponsor,
+  isHealthCertificate,
   referenceLabelKey,
   VISA_DURATION_MONTHS,
   visaDurationLabel,
@@ -61,6 +63,8 @@ export function HrServiceFormFields({
   const showIssue = showsIssueDate(serviceCategory);
   const showVisaMonths = showsVisaDurationMonths(serviceCategory);
   const showRef = showsReferenceLabel(serviceCategory);
+  const requireRef = requiresReferenceLabel(serviceCategory);
+  const healthCertificate = isHealthCertificate(serviceCategory);
   const refLabelKey = referenceLabelKey(serviceCategory);
 
   return (
@@ -104,7 +108,15 @@ export function HrServiceFormFields({
           value={referenceLabel}
           onChange={(e: InputChangeEvent) => setReferenceLabel(e.target.value)}
           placeholder={t(refLabelKey)}
+          required={requireRef}
         />
+      )}
+
+      {healthCertificate && (
+        <div className="mb-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/60 px-3 py-2.5">
+          <div className="mb-1 text-[12px] text-noorix-muted">{t('hrServiceIssuingAuthority')}</div>
+          <div className="text-[14px] font-semibold text-noorix-text">{t('hrServiceMunicipalitiesMinistry')}</div>
+        </div>
       )}
 
       <DateField

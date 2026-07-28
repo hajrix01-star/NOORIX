@@ -17,6 +17,7 @@ import {
   usesCompanyAsSponsor,
   companySponsorNameFromRecord,
   requiresExpiryDate,
+  requiresReferenceLabel,
   requiresVisaDurationMonths,
   formatVisaDurationReferenceAr,
 } from './constants/employee-hr-service-categories';
@@ -49,13 +50,16 @@ export class HrResidencyService {
 
   private validateServicePayload(
     category: string,
-    dto: { iqamaNumber?: string; expiryDate?: string; visaDurationMonths?: number },
+    dto: { iqamaNumber?: string; referenceLabel?: string; expiryDate?: string; visaDurationMonths?: number },
   ) {
     if (requiresIqamaNumber(category) && !dto.iqamaNumber?.trim()) {
       throw new BadRequestException('رقم الإقامة مطلوب لهذا النوع من الخدمة.');
     }
     if (requiresExpiryDate(category) && !dto.expiryDate) {
       throw new BadRequestException('تاريخ الانتهاء مطلوب لهذا النوع من الخدمة.');
+    }
+    if (requiresReferenceLabel(category) && !dto.referenceLabel?.trim()) {
+      throw new BadRequestException('رقم الشهادة الصحية مطلوب.');
     }
     if (requiresVisaDurationMonths(category)) {
       const m = dto.visaDurationMonths;
@@ -66,7 +70,7 @@ export class HrResidencyService {
   }
 
   private showsIssueDate(category: string): boolean {
-    return ['iqama_new', 'iqama_renewal', 'medical_insurance'].includes(category);
+    return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(category);
   }
 
   private async prepareCategoryFields(
@@ -217,6 +221,7 @@ export class HrResidencyService {
 
     this.validateServicePayload(category, {
       iqamaNumber: dto.iqamaNumber ?? existing.iqamaNumber ?? undefined,
+      referenceLabel: dto.referenceLabel ?? existing.referenceLabel ?? undefined,
       expiryDate: dto.expiryDate ?? existing.expiryDate?.toISOString(),
       visaDurationMonths: mergedVisaMonths,
     });

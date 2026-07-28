@@ -18,6 +18,7 @@ import {
   HR_SERVICE_CATEGORY_LABEL_KEYS,
   requiresIqamaNumber,
   requiresExpiryDate,
+  requiresReferenceLabel,
   requiresVisaDurationMonths,
   parseVisaDurationMonths,
   companyDisplayName,
@@ -205,10 +206,10 @@ export function ResidencyFormModal({
     } else if (requiresExpiryDate(serviceCategory) && expiryDate) {
       body.expiryDate = `${expiryDate}T00:00:00.000Z`;
     }
-    if (['iqama_new', 'iqama_renewal', 'medical_insurance'].includes(serviceCategory) && issueDate) {
+    if (['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(serviceCategory) && issueDate) {
       body.issueDate = `${issueDate}T00:00:00.000Z`;
     }
-    if (['flight_ticket', 'medical_insurance'].includes(serviceCategory) && referenceLabel.trim()) {
+    if (['flight_ticket', 'medical_insurance', 'health_certificate'].includes(serviceCategory) && referenceLabel.trim()) {
       body.referenceLabel = referenceLabel.trim();
     }
     if (isEdit) body.status = status;
@@ -227,6 +228,10 @@ export function ResidencyFormModal({
       return;
     }
     if (requiresExpiryDate(serviceCategory) && !expiryDate) {
+      setError(t('requiredFields'));
+      return;
+    }
+    if (requiresReferenceLabel(serviceCategory) && !referenceLabel.trim()) {
       setError(t('requiredFields'));
       return;
     }

@@ -71,7 +71,13 @@ export function OrdersTab({
   const createOrder = useCreateOrderMutation(companyId);
   const updateOrder = useUpdateOrderMutation(companyId);
   const cancelOrder = useCancelOrderMutation(companyId);
-  const { data: summary, isLoading: summaryLoading } = useOrdersRangeSummary(companyId, startDate, endDate);
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    isError: summaryError,
+    error: summaryLoadError,
+    refetch: refetchSummary,
+  } = useOrdersRangeSummary(companyId, startDate, endDate);
 
   const dateFilteredOrders = useMemo(() => filterOrdersByDate(orders, startDate, endDate), [orders, startDate, endDate]);
 
@@ -366,7 +372,13 @@ export function OrdersTab({
         <DateFilterBar filter={dateFilter} />
       </FilterToolbar>
 
-      <OrdersSummaryCard summary={summary} cashSalesTotal={summary?.cashSalesTotal} isLoading={isLoading || summaryLoading || !summary} />
+      <OrdersSummaryCard
+        summary={summary}
+        cashSalesTotal={summary?.cashSalesTotal}
+        isLoading={summaryLoading}
+        errorMessage={summaryError ? summaryLoadError?.message || t('loadingError') : undefined}
+        onRetry={() => void refetchSummary()}
+      />
 
       <SmartTable
         compact={false}

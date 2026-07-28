@@ -1,5 +1,9 @@
 import { Prisma } from '@prisma/client';
-import { aggregateOrdersMonthSummary, aggregateOrdersRangeSummary } from './orders-month-summary.util';
+import {
+  aggregateOrdersMonthSummary,
+  aggregateOrdersRangeSummary,
+  aggregateOrdersRangeSummaryGroups,
+} from './orders-month-summary.util';
 
 describe('orders summary aggregation', () => {
   it('aggregates delegate and local order totals with Decimal-safe math', () => {
@@ -30,6 +34,38 @@ describe('orders summary aggregation', () => {
       cashSalesTotal: '150',
       cashRemaining: '110',
       filteredTotal: '55',
+    });
+  });
+
+  it('aggregates grouped database totals without loading every order row', () => {
+    expect(
+      aggregateOrdersRangeSummaryGroups(
+        [
+          {
+            orderType: 'external',
+            _sum: {
+              pettyCashAmount: new Prisma.Decimal('120'),
+              totalAmount: new Prisma.Decimal('75'),
+            },
+          },
+          {
+            orderType: 'internal',
+            _sum: {
+              pettyCashAmount: null,
+              totalAmount: new Prisma.Decimal('40'),
+            },
+          },
+        ],
+        new Prisma.Decimal('150'),
+      ),
+    ).toEqual({
+      pettyCashTotal: '120',
+      delegatePurchasesTotal: '75',
+      localPurchasesTotal: '40',
+      delegateBalance: '45',
+      cashSalesTotal: '150',
+      cashRemaining: '110',
+      filteredTotal: '115',
     });
   });
 });

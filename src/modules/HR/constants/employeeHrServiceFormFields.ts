@@ -14,11 +14,11 @@ type HrServiceRow = {
 };
 
 export function requiresExpiryDate(category: string | null | undefined) {
-  return ['iqama_new', 'iqama_renewal', 'medical_insurance'].includes(String(category || ''));
+  return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(String(category || ''));
 }
 
 export function showsIssueDate(category: string | null | undefined) {
-  return ['iqama_new', 'iqama_renewal', 'medical_insurance'].includes(String(category || ''));
+  return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(String(category || ''));
 }
 
 export function showsVisaDurationMonths(category: string | null | undefined) {
@@ -57,6 +57,10 @@ export function formatHrServiceDetail(row: HrServiceRow | null | undefined, t: T
   }
   if (cat === 'sponsorship_transfer') {
     return row?.referenceLabel || '—';
+  }
+  if (cat === 'health_certificate') {
+    const certificateNumber = row?.referenceLabel || '—';
+    return `${certificateNumber} — ${t('hrServiceMunicipalitiesMinistry')}`;
   }
   if (cat === 'flight_ticket' || cat === 'medical_insurance') {
     return row?.referenceLabel || '—';

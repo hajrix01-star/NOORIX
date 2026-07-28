@@ -1,6 +1,32 @@
 import { Prisma } from '@prisma/client';
 
 type OrderRow = { orderType: string; pettyCashAmount: Prisma.Decimal | null; totalAmount: Prisma.Decimal };
+type OrderSummaryGroup = {
+  orderType: string;
+  _sum: {
+    pettyCashAmount: Prisma.Decimal | null;
+    totalAmount: Prisma.Decimal | null;
+  };
+};
+
+function buildOrdersRangeSummary(
+  pettyCashTotal: Prisma.Decimal,
+  delegatePurchasesTotal: Prisma.Decimal,
+  localPurchasesTotal: Prisma.Decimal,
+  filteredTotal: Prisma.Decimal,
+  cashSalesTotalInput?: Prisma.Decimal.Value,
+) {
+  const cashSalesTotal = new Prisma.Decimal(cashSalesTotalInput ?? 0);
+  return {
+    pettyCashTotal: pettyCashTotal.toString(),
+    delegatePurchasesTotal: delegatePurchasesTotal.toString(),
+    localPurchasesTotal: localPurchasesTotal.toString(),
+    delegateBalance: pettyCashTotal.minus(delegatePurchasesTotal).toString(),
+    cashSalesTotal: cashSalesTotal.toString(),
+    cashRemaining: cashSalesTotal.minus(localPurchasesTotal).toString(),
+    filteredTotal: filteredTotal.toString(),
+  };
+}
 
 export function aggregateOrdersMonthSummary(orders: OrderRow[]) {
   return aggregateOrdersRangeSummary(orders);
@@ -20,14 +46,40 @@ export function aggregateOrdersRangeSummary(orders: OrderRow[], cashSalesTotalIn
       localPurchasesTotal = localPurchasesTotal.plus(o.totalAmount);
     }
   }
-  const cashSalesTotal = new Prisma.Decimal(cashSalesTotalInput ?? 0);
-  return {
-    pettyCashTotal: pettyCashTotal.toString(),
-    delegatePurchasesTotal: delegatePurchasesTotal.toString(),
-    localPurchasesTotal: localPurchasesTotal.toString(),
-    delegateBalance: pettyCashTotal.minus(delegatePurchasesTotal).toString(),
-    cashSalesTotal: cashSalesTotal.toString(),
-    cashRemaining: cashSalesTotal.minus(localPurchasesTotal).toString(),
-    filteredTotal: filteredTotal.toString(),
-  };
+  return buildOrdersRangeSummary(
+    pettyCashTotal,
+    delegatePurchasesTotal,
+    localPurchasesTotal,
+    filteredTotal,
+    cashSalesTotalInput,
+  );
+}
+
+export function aggregateOrdersRangeSummaryGroups(
+  groups: OrderSummaryGroup[],
+  cashSalesTotalInput?: Prisma.Decimal.Value,
+) {
+  let pettyCashTotal = new Prisma.Decimal(0);
+  let delegatePurchasesTotal = new Prisma.Decimal(0);
+  let localPurchasesTotal = new Prisma.Decimal(0);
+  let filteredTotal = new Prisma.Decimal(0);
+
+  for (const group of groups) {
+    const totalAmount = group._sum.totalAmount ?? new Prisma.Decimal(0);
+    filteredTotal = filteredTotal.plus(totalAmount);
+    if (group.orderType === 'external') {
+      pettyCashTotal = pettyCashTotal.plus(group._sum.pettyCashAmount ?? 0);
+      delegatePurchasesTotal = delegatePurchasesTotal.plus(totalAmount);
+    } else {
+      localPurchasesTotal = localPurchasesTotal.plus(totalAmount);
+    }
+  }
+
+  return buildOrdersRangeSummary(
+    pettyCashTotal,
+    delegatePurchasesTotal,
+    localPurchasesTotal,
+    filteredTotal,
+    cashSalesTotalInput,
+  );
 }

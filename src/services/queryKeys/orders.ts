@@ -6,6 +6,8 @@ export const orderKeys = {
   listRoot: () => ['orders'] as const,
   /** بادئة إبطال ملخص الطلبات */
   summaryRoot: () => ['orders-summary'] as const,
+  /** بادئة إبطال ملخص الطلبات بحسب نطاق التاريخ */
+  rangeSummaryRoot: () => ['orders-range-summary'] as const,
   itemsReportRoot: () => ['orders-items-report'] as const,
   productsRoot: () => ['order-products'] as const,
   categoriesRoot: () => ['order-categories'] as const,

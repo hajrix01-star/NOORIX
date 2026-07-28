@@ -5,6 +5,7 @@ export const EMPLOYEE_HR_SERVICE_CATEGORIES = [
   'exit_reentry_visa',
   'flight_ticket',
   'medical_insurance',
+  'health_certificate',
 ] as const;
 
 export type EmployeeHrServiceCategory = (typeof EMPLOYEE_HR_SERVICE_CATEGORIES)[number];
@@ -33,7 +34,11 @@ export function companySponsorNameFromRecord(company: {
 }
 
 export function requiresExpiryDate(category: string): boolean {
-  return ['iqama_new', 'iqama_renewal', 'medical_insurance'].includes(category);
+  return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(category);
+}
+
+export function requiresReferenceLabel(category: string): boolean {
+  return category === 'health_certificate';
 }
 
 export function requiresVisaDurationMonths(category: string): boolean {
@@ -54,6 +59,7 @@ export function serviceCategoryLabelAr(category: string): string {
     exit_reentry_visa: 'تأشيرة خروج وعودة',
     flight_ticket: 'تذكرة سفر',
     medical_insurance: 'تأمين طبي',
+    health_certificate: 'شهادة صحية',
   };
   return map[category] ?? category;
 }
