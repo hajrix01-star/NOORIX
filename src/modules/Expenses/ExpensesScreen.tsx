@@ -117,6 +117,7 @@ export default function ExpensesScreen() {
         value={activeTab}
         onChange={setActiveTab}
         contentClassName="nx-tab-content min-h-[200px]"
+        compactMobile={false}
       >
         {activeTab === 'lines' ? (
           !companyId ? (
