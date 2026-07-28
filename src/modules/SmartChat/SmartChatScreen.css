@@ -590,10 +590,6 @@ body.noorix-page-smart-chat .app-main__content {
   border-bottom: none;
 }
 
-.noorix-chat-report-table tbody tr:nth-child(even) td {
-  background: color-mix(in srgb, var(--noorix-bg-muted) 22%, transparent);
-}
-
 .noorix-chat-report-card--month-compare .noorix-chat-report-table th:first-child,
 .noorix-chat-report-card--month-compare .noorix-chat-report-table td:first-child {
   width: 38%;
