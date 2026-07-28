@@ -3082,7 +3082,7 @@ html[data-card-style="10"] .noorix-stat-card {
 .nx-invoice-summary-card__total-number {
   color: var(--noorix-text);
   font-family: var(--noorix-font-numbers);
-  font-size: clamp(22px, 2.4vw, 28px);
+  font-size: clamp(36px, 3.2vw, 48px);
   font-weight: 900;
   line-height: 1.05;
 }
