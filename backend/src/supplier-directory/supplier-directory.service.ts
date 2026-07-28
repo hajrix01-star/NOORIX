@@ -11,7 +11,7 @@ import {
   isShamiTaxWorkspace,
   matchesDirectorySearch,
   normalizeDirectoryText,
-  directoryTextSimilarity,
+  directoryIdentitySimilarity,
 } from './supplier-directory-search.util';
 import { SUPPLIER_DIRECTORY_SEEDS } from './supplier-directory.seed';
 
@@ -87,6 +87,7 @@ function supplierSearchValues(supplier: SupplierMatchRow): string[] {
 }
 
 function supplierMatchScore(entry: DirectoryEntryRow, supplier: SupplierMatchRow): number {
+  if (supplier.directoryEntryId && supplier.directoryEntryId !== entry.id) return 0;
   const entryValues = entrySearchValues(entry).map(normalizeDirectoryText).filter(Boolean);
   const supplierValues = supplierSearchValues(supplier).map(normalizeDirectoryText).filter(Boolean);
   if (supplier.directoryEntryId === entry.id) return 1;
@@ -95,7 +96,7 @@ function supplierMatchScore(entry: DirectoryEntryRow, supplier: SupplierMatchRow
   let best = 0;
   for (const supplierValue of supplierValues) {
     for (const entryValue of entryValues) {
-      best = Math.max(best, directoryTextSimilarity(supplierValue, entryValue));
+      best = Math.max(best, directoryIdentitySimilarity(supplierValue, entryValue));
     }
   }
   return best;

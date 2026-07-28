@@ -1,4 +1,5 @@
 import {
+  directoryIdentitySimilarity,
   directoryTextSimilarity,
   isShamiTaxWorkspace,
   matchesDirectorySearch,
@@ -27,6 +28,30 @@ describe('supplier directory search', () => {
   it('keeps similarity bounded', () => {
     expect(directoryTextSimilarity('السعودية للكهرباء', 'الشركة السعودية للكهرباء')).toBeGreaterThan(0.6);
     expect(directoryTextSimilarity('الجوازات', 'شركة المياه الوطنية')).toBeLessThan(0.48);
+  });
+
+  it('does not confuse the Ministry of Labor alias with the Ministry of Justice', () => {
+    expect(directoryTextSimilarity('وزارة العمل', 'وزارة العدل')).toBeGreaterThan(0.68);
+    expect(directoryIdentitySimilarity('وزارة العمل', 'وزارة العدل')).toBe(0);
+  });
+
+  it('allows identity matching when a distinctive entity word is shared or misspelled', () => {
+    expect(
+      directoryIdentitySimilarity(
+        'السعودية للكهرباء',
+        'الشركة السعودية للكهرباء',
+      ),
+    ).toBeGreaterThan(0.68);
+    expect(
+      directoryIdentitySimilarity(
+        'وزارة العدل',
+        'وزاره العدل',
+      ),
+    ).toBe(1);
+  });
+
+  it('does not confuse short brand names with similar government platform words', () => {
+    expect(directoryIdentitySimilarity('سلام', 'سلامة')).toBe(0);
   });
 
   it('protects SHAMI TAX regardless of spacing or case', () => {

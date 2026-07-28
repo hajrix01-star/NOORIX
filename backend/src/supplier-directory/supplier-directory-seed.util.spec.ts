@@ -1,4 +1,5 @@
 import { SUPPLIER_DIRECTORY_SEEDS } from './supplier-directory.seed';
+import { directoryIdentitySimilarity } from './supplier-directory-search.util';
 
 describe('supplier directory seed governance', () => {
   it('uses stable unique codes and deterministic sort orders', () => {
@@ -39,6 +40,25 @@ describe('supplier directory seed governance', () => {
       .toLocaleLowerCase();
     expect(catalog).not.toContain('مستشفى');
     expect(catalog).not.toContain('شحن');
-    expect(catalog).not.toContain('insurance');
+    expect(SUPPLIER_DIRECTORY_SEEDS.map((entry) => entry.entityType)).not.toContain('insurance');
+  });
+
+  it('does not auto-match aliases belonging to different directory entities', () => {
+    const unsafePairs: string[] = [];
+    for (const left of SUPPLIER_DIRECTORY_SEEDS) {
+      const leftValues = [left.nameAr, left.nameEn, ...left.aliases];
+      for (const right of SUPPLIER_DIRECTORY_SEEDS) {
+        if (left.code >= right.code) continue;
+        const rightValues = [right.nameAr, right.nameEn, ...right.aliases];
+        for (const leftValue of leftValues) {
+          for (const rightValue of rightValues) {
+            if (directoryIdentitySimilarity(leftValue, rightValue) >= 0.68) {
+              unsafePairs.push(`${left.code}:${leftValue} -> ${right.code}:${rightValue}`);
+            }
+          }
+        }
+      }
+    }
+    expect(unsafePairs).toEqual([]);
   });
 });

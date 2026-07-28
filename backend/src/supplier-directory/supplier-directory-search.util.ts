@@ -1,5 +1,35 @@
 const ARABIC_DIACRITICS = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g;
 
+const DIRECTORY_IDENTITY_STOP_WORDS = new Set([
+  'الوزاره',
+  'وزاره',
+  'الهييه',
+  'هييه',
+  'الشركه',
+  'شركه',
+  'الموسسه',
+  'موسسه',
+  'المديريه',
+  'مديريه',
+  'المركز',
+  'مركز',
+  'العامه',
+  'عامه',
+  'السعوديه',
+  'الوطنيه',
+  'وطنيه',
+  'الاتصالات',
+  'general',
+  'ministry',
+  'authority',
+  'company',
+  'national',
+  'saudi',
+  'telecom',
+  'telecommunication',
+  'telecommunications',
+]);
+
 export function normalizeDirectoryText(value: unknown): string {
   return String(value ?? '')
     .toLocaleLowerCase('ar')
@@ -31,6 +61,46 @@ export function directoryTextSimilarity(left: string, right: string): number {
   let overlap = 0;
   for (const pair of a) if (b.has(pair)) overlap += 1;
   return (2 * overlap) / (a.size + b.size);
+}
+
+function distinctiveIdentityTokens(value: string): string[] {
+  return normalizeDirectoryText(value)
+    .split(' ')
+    .filter((token) => token.length > 1 && !DIRECTORY_IDENTITY_STOP_WORDS.has(token));
+}
+
+/**
+ * Stricter than directory search: supplier identity matching must share a
+ * distinctive word (or a very close spelling of one). This prevents generic
+ * organization words such as "وزارة" from linking unrelated legal entities.
+ */
+export function directoryIdentitySimilarity(left: string, right: string): number {
+  const normalizedLeft = normalizeDirectoryText(left);
+  const normalizedRight = normalizeDirectoryText(right);
+  if (!normalizedLeft || !normalizedRight) return 0;
+  if (normalizedLeft === normalizedRight) return 1;
+
+  const leftTokens = distinctiveIdentityTokens(normalizedLeft);
+  const rightTokens = distinctiveIdentityTokens(normalizedRight);
+  if (!leftTokens.length || !rightTokens.length) return 0;
+
+  let hasExactDistinctiveToken = false;
+  let hasSafeFuzzyDistinctiveToken = false;
+  for (const leftToken of leftTokens) {
+    for (const rightToken of rightTokens) {
+      if (leftToken === rightToken) {
+        hasExactDistinctiveToken = true;
+        continue;
+      }
+      const tokenScore = directoryTextSimilarity(leftToken, rightToken);
+      if (Math.min(leftToken.length, rightToken.length) >= 6 && tokenScore >= 0.86) {
+        hasSafeFuzzyDistinctiveToken = true;
+      }
+    }
+  }
+
+  if (!hasExactDistinctiveToken && !hasSafeFuzzyDistinctiveToken) return 0;
+  return directoryTextSimilarity(normalizedLeft, normalizedRight);
 }
 
 export function matchesDirectorySearch(
