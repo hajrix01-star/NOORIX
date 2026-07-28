@@ -6276,15 +6276,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .nx-expense-line-cell-sar {
   font-size: 0.85em;
 }
-.nx-expense-line-table-wrap .noorix-table tbody tr.nx-expense-line-tr:hover td {
-  background: color-mix(in srgb, var(--color-nx-expenses, #a32d2d) 6%, var(--noorix-bg-surface)) !important;
-}
-.nx-expense-line-table-wrap .noorix-table tbody tr.nx-expense-line-tr td.noorix-numeric-cell {
-  background: color-mix(in srgb, var(--color-nx-expenses, #a32d2d) 3%, transparent);
-}
-.nx-expense-line-table-wrap .noorix-table tbody tr.nx-expense-line-tr:hover td.noorix-numeric-cell {
-  background: color-mix(in srgb, var(--color-nx-expenses, #a32d2d) 8%, var(--noorix-bg-surface)) !important;
-}
 .nx-expense-line-table-wrap .noorix-table .nx-expense-line-name-cell {
   text-align: start;
 }
@@ -6522,12 +6513,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .noorix-table td.noorix-table-cell-truncate > * {
   min-width: 0;
   max-width: 100%;
-}
-.noorix-invoices-table-frame .noorix-table tbody tr:nth-child(even) td {
-  background: color-mix(in srgb, var(--noorix-bg-muted) 34%, #fff);
-}
-.noorix-invoices-table-frame .noorix-table tbody tr:hover td {
-  background: var(--nx-table-row-hover);
 }
 .noorix-invoices-table-frame .noorix-table td[data-column-kind="text"] {
   white-space: nowrap;
