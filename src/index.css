@@ -6345,7 +6345,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   font-size: var(--noorix-text-base);
   font-weight: 500;
   line-height: var(--noorix-line-height);
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 .noorix-table thead th {
   height: 38px;
@@ -6354,6 +6354,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border-inline-start: 1px solid var(--nx-table-col-line) !important;
   border-inline-end: 0 !important;
   color: var(--noorix-table-header-fg) !important;
+  font-size: 14px;
   line-height: 1.35;
   text-align: center !important;
 }
@@ -6363,6 +6364,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border-bottom: 1px solid var(--nx-table-line-soft) !important;
   border-inline-start: 1px solid var(--nx-table-body-col-line) !important;
   border-inline-end: 0 !important;
+  font-size: 14px;
   line-height: 1.45;
   vertical-align: middle;
 }
@@ -6371,6 +6373,15 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border: 0;
   box-shadow: none;
   padding-inline: 0;
+}
+.noorix-table tbody td :is(.text-\[10px\], .text-\[11px\]) {
+  font-size: 12.5px;
+}
+.noorix-table tbody td :is(.text-\[12px\], .nx-cell-muted-sm, .nx-cr__meta, .nx-sar) {
+  font-size: 13px;
+}
+.noorix-table tbody td :is(.nx-cell-muted, .nx-cr__name, .nx-cr__id, .nx-cr__amount) {
+  font-size: 14px;
 }
 .noorix-table thead th:first-child,
 .noorix-table tbody td:first-child {

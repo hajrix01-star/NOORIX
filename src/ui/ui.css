@@ -911,7 +911,7 @@
 .nx-cell-bold   { font-weight: 700; }
 .nx-cell-accent { font-weight: 700; color: var(--noorix-accent-blue); }
 .nx-cell-muted  { color: var(--noorix-text-muted); font-size: 13px; }
-.nx-cell-muted-sm { color: var(--noorix-text-muted); font-size: 12px; white-space: nowrap; }
+.nx-cell-muted-sm { color: var(--noorix-text-muted); font-size: 12.5px; white-space: nowrap; }
 
 /* تذييل الجدول */
 .nx-tfoot-label { font-size: 13px !important; font-weight: 700; color: var(--noorix-text); text-align: center; }
@@ -976,10 +976,10 @@
    13. Pill Badge — شارة مضمّنة خفيفة (للاستخدام في الجداول)
    ??????????????????????????????????????????????????????????? */
 
-.nx-pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.nx-pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 4px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
 
 .nx-pill--blue { background: color-mix(in srgb, var(--noorix-accent-blue) 10%, transparent); color: var(--noorix-accent-blue); }
-.nx-pill--sm   { font-size: 11px; padding: 2px 8px; }
+.nx-pill--sm   { font-size: 12px; padding: 2px 8px; }
 
 /* Modal flush — يُزيل الـ padding من داخل الـ Modal لمحتوى يملأ كامل العرض */
 .nx-modal--flush .nx-modal__body {

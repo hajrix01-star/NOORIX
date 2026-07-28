@@ -65,7 +65,7 @@ export function buildRowNumberHeaderStyle({
 }): SmartTableCssVars {
   return {
     '--nx-smart-cell-padding': SMART_TABLE_ROW_NUMBER_PADDING,
-    '--nx-smart-cell-font-size': cssLength(compact ? 11 : 12),
+    '--nx-smart-cell-font-size': cssLength(compact ? 13 : 14),
     '--nx-smart-cell-height': cssLength(SMART_TABLE_HEADER_HEIGHT),
     '--nx-smart-row-number-width': cssLength(rowNumW),
   };
@@ -104,7 +104,7 @@ export function buildHeaderCellStyle<TRow extends SmartTableRow = SmartTableRow>
 }): SmartTableCssVars {
   return {
     '--nx-smart-cell-padding': cellPad.th,
-    '--nx-smart-cell-font-size': cssLength(compact ? 12 : 13),
+    '--nx-smart-cell-font-size': cssLength(14),
     '--nx-smart-cell-height': cssLength(SMART_TABLE_HEADER_HEIGHT),
     '--nx-smart-cell-position': resizableCol ? 'relative' : undefined,
     '--nx-smart-cell-width': cssLength(effectiveWidth),
