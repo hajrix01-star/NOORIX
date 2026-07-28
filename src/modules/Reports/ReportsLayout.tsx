@@ -3,14 +3,14 @@
  * يعرض: التقرير العام | الضريبي | تحليل كشف الحسابات
  */
 import React, { useMemo } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
 import {
   REPORT_TAB_SEQUENCE,
   hasAnyOfPermissions,
 } from '../../constants/permissions';
-import { ScreenShell, ScreenTitle, cn } from '../../ui';
+import { ScreenShell, ScreenTitle, ScreenTabs, cn } from '../../ui';
 
 const REPORT_TAB_LABELS: Record<string, string> = {
   '/reports/general': 'reportGeneralReport',
@@ -24,6 +24,7 @@ export default function ReportsLayout() {
   const { t } = useTranslation();
   const { user } = useApp();
   const location = useLocation();
+  const navigate = useNavigate();
   const isGeneralReport = location.pathname === '/reports/general' || location.pathname === '/reports/general-v2';
 
   const visibleLinks = useMemo(
@@ -33,6 +34,18 @@ export default function ReportsLayout() {
       ),
     [user?.role, user?.permissions],
   );
+  const activePath =
+    visibleLinks.find(({ path }) => location.pathname === path || location.pathname.startsWith(`${path}/`))?.path ??
+    visibleLinks[0]?.path ??
+    '';
+  const tabItems = useMemo(
+    () =>
+      visibleLinks.map(({ path }) => ({
+        id: path,
+        label: t(REPORT_TAB_LABELS[path] || 'reports'),
+      })),
+    [t, visibleLinks],
+  );
 
   return (
     <ScreenShell variant="report">
@@ -40,30 +53,23 @@ export default function ReportsLayout() {
         <ScreenTitle>{t('reports')}</ScreenTitle>
       </div>
 
-      <div className={cn('nx-reports-frame', !isGeneralReport && 'noorix-surface-card')}>
-        {visibleLinks.length > 0 && (
-          <div className="nx-reports-tab-bar">
-            {visibleLinks.map((link) => (
-              <NavLink
-                key={link.path}
-                to={link.path}
-                className={({ isActive }: { isActive: boolean }) =>
-                  cn(
-                    'nx-reports-tab',
-                    isActive
-                      ? 'nx-reports-tab--active'
-                      : 'nx-reports-tab--idle',
-                  )
-                }
-              >
-                {t(REPORT_TAB_LABELS[link.path] || 'reports')}
-              </NavLink>
-            ))}
+      <div className="nx-reports-frame">
+        {tabItems.length > 0 ? (
+          <ScreenTabs
+            items={tabItems}
+            value={activePath}
+            onChange={(path) => navigate(path)}
+            compactMobile={false}
+            animateContent={false}
+            contentClassName={cn('nx-reports-content', isGeneralReport && 'nx-reports-content--general')}
+          >
+            <Outlet />
+          </ScreenTabs>
+        ) : (
+          <div className={cn('nx-reports-content', isGeneralReport && 'nx-reports-content--general')}>
+            <Outlet />
           </div>
         )}
-        <div className={cn('nx-reports-content', isGeneralReport && 'nx-reports-content--general')}>
-          <Outlet />
-        </div>
       </div>
     </ScreenShell>
   );

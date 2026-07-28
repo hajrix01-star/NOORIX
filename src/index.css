@@ -1653,60 +1653,6 @@ html[data-card-style="10"] .noorix-stat-card {
   overflow: visible;
 }
 
-.nx-reports-frame.noorix-surface-card {
-  overflow: hidden;
-  padding: 0;
-}
-
-.nx-reports-tab-bar {
-  display: flex;
-  gap: 6px;
-  width: 100%;
-  overflow-x: auto;
-  border: 1px solid color-mix(in srgb, var(--noorix-border) 84%, transparent);
-  border-radius: 8px;
-  background: var(--noorix-bg-surface);
-  padding: 6px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
-  -webkit-overflow-scrolling: touch;
-}
-
-.noorix-surface-card > .nx-reports-tab-bar {
-  border-width: 0 0 1px 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.nx-reports-tab {
-  display: inline-flex;
-  min-height: 38px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 8px 16px;
-  color: var(--noorix-muted);
-  font-size: 13px;
-  font-weight: 750;
-  line-height: 1.2;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.nx-reports-tab--idle:hover {
-  background: var(--noorix-bg-muted);
-  color: var(--noorix-text);
-}
-
-.nx-reports-tab--active {
-  border-color: color-mix(in srgb, var(--noorix-accent-blue) 28%, var(--noorix-border));
-  background: color-mix(in srgb, var(--noorix-accent-blue) 9%, var(--noorix-bg-surface));
-  color: var(--noorix-accent-blue);
-  box-shadow: inset 0 -2px 0 var(--noorix-accent-blue);
-}
-
 .nx-reports-content {
   padding: 24px;
 }
@@ -2214,18 +2160,6 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 
 @media (max-width: 700px) {
-  .nx-reports-tab-bar {
-    margin-inline: -2px;
-    border-radius: 8px;
-    padding: 5px;
-  }
-
-  .nx-reports-tab {
-    min-height: 36px;
-    padding: 7px 12px;
-    font-size: 12px;
-  }
-
   .nx-reports-content {
     padding: 14px 0 0;
   }
