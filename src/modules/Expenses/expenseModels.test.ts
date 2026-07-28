@@ -51,7 +51,7 @@ describe('expenseModels', () => {
       expenseLineId: fixedLine.id,
       totalAmount: '1200',
       primaryVaultId: 'vault-1',
-      supplierInvoiceNumber: 'SUP-1',
+      supplierInvoiceNumber: '',
       expenseCoverageYear: 2026,
       expenseCoverageQuarter: 2,
     };
@@ -66,6 +66,7 @@ describe('expenseModels', () => {
       vaultId: 'vault-1',
       expenseCoverageYear: 2026,
       expenseCoverageQuarter: 2,
+      supplierInvoiceNumber: '',
     });
   });
 

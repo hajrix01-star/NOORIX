@@ -1,3 +1,4 @@
+import { isSupplierInvoiceNumberRequired } from '@noorix/finance-core';
 import type { ExpenseLineRecord, ExpenseSupplierRef } from '../../../types/api';
 
 export function supplierAppliesVat(supplier: ExpenseSupplierRef | null | undefined): boolean {
@@ -22,4 +23,17 @@ export function canExemptThisExpensePayment(
   if (!line) return false;
   if (line.category?.account?.taxExempt) return false;
   return supplierAppliesVat(line.supplier);
+}
+
+export function isExpenseSupplierInvoiceNumberRequired(
+  line: Pick<ExpenseLineRecord, 'id' | 'kind' | 'supplierId'> | null | undefined,
+  isTaxable: boolean,
+): boolean {
+  if (!line) return false;
+  return isSupplierInvoiceNumberRequired({
+    kind: line.kind,
+    supplierId: line.supplierId,
+    expenseLineId: line.id,
+    isTaxable,
+  });
 }

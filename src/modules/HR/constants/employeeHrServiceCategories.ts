@@ -40,8 +40,8 @@ export function showsReferenceLabel(category: string | null | undefined) {
   return ['flight_ticket', 'medical_insurance', 'health_certificate'].includes(String(category || ''));
 }
 
-export function requiresReferenceLabel(category: string | null | undefined) {
-  return category === 'health_certificate';
+export function requiresReferenceLabel(_category: string | null | undefined) {
+  return false;
 }
 
 export {

@@ -65,6 +65,28 @@ function numericAmount(row: PurchaseBatchLineLike): number {
   return amount.isFinite() ? amount.toNumber() : 0;
 }
 
+/**
+ * Supplier invoice references are only mandatory for taxable purchases and
+ * variable expenses. Fixed expenses and government/HR expenses may be
+ * recorded without an external invoice number.
+ */
+export function isSupplierInvoiceNumberRequired(
+  row: Pick<
+    PurchaseBatchLineLike,
+    'kind' | 'supplierId' | 'expenseLineId' | 'isTaxable'
+  >,
+): boolean {
+  const kind = trimToUndefined(row.kind) ?? 'purchase';
+  const hasSupplierContext = Boolean(
+    trimToUndefined(row.supplierId) || trimToUndefined(row.expenseLineId),
+  );
+  return (
+    hasSupplierContext &&
+    row.isTaxable !== false &&
+    (kind === 'purchase' || kind === 'expense')
+  );
+}
+
 export function normalizePurchaseBatchLine(row: PurchaseBatchLineLike): NormalizedPurchaseBatchLine {
   const invoiceNumber = trimToUndefined(row.invoiceNumber);
   const supplierInvoiceNumber = trimToUndefined(row.supplierInvoiceNumber) ?? invoiceNumber;
@@ -95,7 +117,7 @@ export function isPurchaseBatchLineValid(
     if (new Decimal(normalized.totalAmount || 0).lte(0)) return false;
 
     if (normalized.supplierId) {
-      if (normalized.isTaxable !== false) {
+      if (isSupplierInvoiceNumberRequired(normalized)) {
         return !!(normalized.supplierInvoiceNumber || normalized.invoiceNumber);
       }
       return true;

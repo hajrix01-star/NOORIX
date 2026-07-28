@@ -19,6 +19,7 @@ import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { localizedDisplayName } from '../../utils/displayName';
 import {
   canExemptThisExpensePayment,
+  isExpenseSupplierInvoiceNumberRequired,
   isExpensePaymentTaxable,
 } from './utils/expenseTax';
 
@@ -306,7 +307,10 @@ export function validateExpensePaymentForm(params: {
   const total = parseOptionalMoney(form.totalAmount);
   if (total == null || total <= 0) return 'amountPositiveRequired';
   if (!selectedLine) return 'expenseLineInvalid';
-  if (params.isTaxable && !form.supplierInvoiceNumber.trim()) return 'expenseSupplierInvoiceRequired';
+  if (
+    isExpenseSupplierInvoiceNumberRequired(selectedLine, params.isTaxable) &&
+    !form.supplierInvoiceNumber.trim()
+  ) return 'expenseSupplierInvoiceRequired';
   if (!form.primaryVaultId.trim()) return 'selectVault';
   if (isExpensePaymentAmountLocked(selectedLine)) {
     const referenceAmount = parseOptionalMoney(String(selectedLine.referenceAmount ?? ''));
@@ -383,7 +387,10 @@ export function validExpenseBatchRows(rows: ExpenseBatchRow[], expenseLines: Exp
     if (!row.expenseLineId || amount == null || amount <= 0) return false;
     const line = expenseLines.find((item) => item.id === row.expenseLineId);
     const taxable = isExpensePaymentTaxable(line, row.exemptThisPayment);
-    if (taxable && !row.supplierInvoiceNumber.trim()) return false;
+    if (
+      isExpenseSupplierInvoiceNumberRequired(line, taxable) &&
+      !row.supplierInvoiceNumber.trim()
+    ) return false;
     return Boolean(line);
   });
 }

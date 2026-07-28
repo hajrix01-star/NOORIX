@@ -11,8 +11,8 @@ describe('health certificate employee service contract', () => {
     expect(serviceCategoryLabelAr('health_certificate')).toBe('شهادة صحية');
   });
 
-  it('requires a certificate number and expiry date', () => {
-    expect(requiresReferenceLabel('health_certificate')).toBe(true);
+  it('keeps the certificate number optional and requires an expiry date', () => {
+    expect(requiresReferenceLabel('health_certificate')).toBe(false);
     expect(requiresExpiryDate('health_certificate')).toBe(true);
   });
 });

@@ -37,8 +37,8 @@ export function requiresExpiryDate(category: string): boolean {
   return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(category);
 }
 
-export function requiresReferenceLabel(category: string): boolean {
-  return category === 'health_certificate';
+export function requiresReferenceLabel(_category: string): boolean {
+  return false;
 }
 
 export function requiresVisaDurationMonths(category: string): boolean {

@@ -12,6 +12,7 @@ import { useApp } from '../../../context/AppContext';
 import { Button, AdaptiveSheet, Checkbox, DialogActions, TransactionDatePicker, FileTrigger, Input, SearchableOptionsPicker } from '../../../ui';
 import {
   canExemptThisExpensePayment,
+  isExpenseSupplierInvoiceNumberRequired,
   isExpensePaymentTaxable,
   supplierAppliesVat,
 } from '../utils/expenseTax';
@@ -74,6 +75,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
   const { paymentVaults: activeVaults = [] } = useVaults({ companyId });
   const selectedLine = expenseLines.find((line) => line.id === form.expenseLineId);
   const isTaxable = isExpensePaymentTaxable(selectedLine, exemptThisPayment);
+  const supplierInvoiceNumberRequired = isExpenseSupplierInvoiceNumberRequired(selectedLine, isTaxable);
   const amountLocked = isExpensePaymentAmountLocked(selectedLine);
   const taxPreview = splitExpenseTaxDraft(form.totalAmount, isTaxable, vatRateDecimal);
   const hasTaxPreview = Number(form.totalAmount) > 0;
@@ -208,7 +210,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
 
         <Input
           type="text"
-          label={`${t('supplierInvoiceNumber')}${isTaxable ? ' *' : ''}`}
+          label={`${t('supplierInvoiceNumber')}${supplierInvoiceNumberRequired ? ' *' : ''}`}
           value={form.supplierInvoiceNumber}
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('supplierInvoiceNumber', event.target.value)}
           placeholder={t('supplierInvoiceNumber')}

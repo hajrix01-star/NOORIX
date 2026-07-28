@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { isSupplierInvoiceNumberRequired } from '@noorix/finance-core';
 import type { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
 
@@ -6,10 +7,7 @@ import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
  * رقم فاتورة المورد مطلوب عند مورد/بند + أنواع معينة + خاضع للضريبة.
  */
 export function assertCreateInvoiceSupplierInvoiceNumberIfRequired(dto: CreateInvoiceDto): void {
-  const needsSupplierNumber =
-    (dto.supplierId || dto.expenseLineId) &&
-    ['purchase', 'expense', 'fixed_expense'].includes(dto.kind) &&
-    dto.isTaxable !== false;
+  const needsSupplierNumber = isSupplierInvoiceNumberRequired(dto);
   if (needsSupplierNumber && !dto.supplierInvoiceNumber?.trim()) {
     throw new BadRequestException('رقم فاتورة المورد مطلوب عند وجود مورد وفاتورة خاضعة للضريبة');
   }

@@ -1,5 +1,8 @@
 import { describe, expect, it } from '@jest/globals';
-import { computeCreateInvoiceOutflowNetAndTax } from './invoice-create-outflow-prep.util';
+import {
+  assertCreateInvoiceSupplierInvoiceNumberIfRequired,
+  computeCreateInvoiceOutflowNetAndTax,
+} from './invoice-create-outflow-prep.util';
 import type { CreateInvoiceDto } from './dto/create-invoice.dto';
 
 type CreateInvoiceDtoWithClientTotals = CreateInvoiceDto & {
@@ -34,5 +37,35 @@ describe('computeCreateInvoiceOutflowNetAndTax', () => {
     };
     const { net, tax } = computeCreateInvoiceOutflowNetAndTax(dto, 15);
     expect(Number(net) + Number(tax)).toBeCloseTo(1000, 4);
+  });
+});
+
+describe('assertCreateInvoiceSupplierInvoiceNumberIfRequired', () => {
+  const base = {
+    companyId: 'company-1',
+    kind: 'expense',
+    supplierId: 'supplier-1',
+    expenseLineId: 'line-1',
+    totalAmount: 100,
+    transactionDate: '2026-07-28',
+    isTaxable: true,
+  } as const;
+
+  it('keeps the number required for taxable variable expenses', () => {
+    expect(() => assertCreateInvoiceSupplierInvoiceNumberIfRequired(base)).toThrow();
+  });
+
+  it('allows fixed expenses without a supplier invoice number', () => {
+    expect(() => assertCreateInvoiceSupplierInvoiceNumberIfRequired({
+      ...base,
+      kind: 'fixed_expense',
+    })).not.toThrow();
+  });
+
+  it('allows government non-taxable expenses without a supplier invoice number', () => {
+    expect(() => assertCreateInvoiceSupplierInvoiceNumberIfRequired({
+      ...base,
+      isTaxable: false,
+    })).not.toThrow();
   });
 });

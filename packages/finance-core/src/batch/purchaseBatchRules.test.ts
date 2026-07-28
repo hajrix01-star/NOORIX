@@ -51,6 +51,25 @@ describe('purchaseBatchRules', () => {
     }, 'municipality fee')).toBe(true);
   });
 
+  it('accepts taxable fixed_expense with supplier and no invoice number', () => {
+    expect(isPurchaseBatchLineValid({
+      kind: 'fixed_expense',
+      supplierId: 'supplier-1',
+      expenseLineId: 'line-1',
+      totalInclusive: 80,
+      isTaxable: true,
+    }, '')).toBe(true);
+  });
+
+  it('accepts government/HR expense with supplier and no invoice number', () => {
+    expect(isPurchaseBatchLineValid({
+      kind: 'hr_expense',
+      supplierId: 'municipality',
+      totalInclusive: 100,
+      isTaxable: false,
+    }, '')).toBe(true);
+  });
+
   it('rejects row amount <= 0', () => {
     expect(isPurchaseBatchLineValid({
       kind: 'expense',

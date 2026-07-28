@@ -23,7 +23,7 @@ describe('health certificate employee service contract', () => {
   it('requires its official lifecycle fields', () => {
     expect(isHealthCertificate('health_certificate')).toBe(true);
     expect(showsReferenceLabel('health_certificate')).toBe(true);
-    expect(requiresReferenceLabel('health_certificate')).toBe(true);
+    expect(requiresReferenceLabel('health_certificate')).toBe(false);
     expect(referenceLabelKey('health_certificate')).toBe('hrServiceCertificateNumber');
     expect(showsIssueDate('health_certificate')).toBe(true);
     expect(requiresExpiryDate('health_certificate')).toBe(true);
