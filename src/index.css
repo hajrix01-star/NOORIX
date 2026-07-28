@@ -3006,25 +3006,17 @@ html[data-card-style="10"] .noorix-stat-card {
   background: var(--noorix-accent-blue);
 }
 .nx-invoice-summary-card__body {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(160px, 0.9fr);
-  grid-template-areas:
-    "head metrics"
-    "total metrics"
-    "breakdown metrics";
-  gap: 10px 16px;
-  align-items: center;
-  padding: 14px 16px;
-}
-.nx-invoice-summary-card__body--vault {
   display: flex;
+  min-height: 190px;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
+  gap: 12px;
+  padding: 16px 18px 14px;
+}
+.nx-invoice-summary-card__body--vault {
   height: 100%;
 }
 .nx-invoice-summary-card__head {
-  grid-area: head;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -3070,12 +3062,12 @@ html[data-card-style="10"] .noorix-stat-card {
   white-space: nowrap;
 }
 .nx-invoice-summary-card__total {
-  grid-area: total;
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
+  margin-block: 4px 2px;
   text-align: center;
   direction: ltr;
 }
@@ -3087,16 +3079,17 @@ html[data-card-style="10"] .noorix-stat-card {
   line-height: 1.05;
 }
 .nx-invoice-summary-card__breakdown {
-  grid-area: breakdown;
   min-width: 0;
 }
 .nx-invoice-summary-card__metrics {
-  grid-area: metrics;
   display: grid;
   grid-template-columns: 1fr;
   gap: 0;
-  align-self: stretch;
-  border-inline-start: 1px solid var(--noorix-border);
+  margin-top: auto;
+  overflow: hidden;
+  border: 1px solid var(--noorix-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--noorix-bg-muted) 34%, var(--noorix-bg-surface));
 }
 .nx-invoice-summary-metric {
   display: flex;
@@ -3104,7 +3097,7 @@ html[data-card-style="10"] .noorix-stat-card {
   justify-content: space-between;
   gap: 12px;
   min-width: 0;
-  padding: 7px 0 7px 14px;
+  padding: 9px 12px;
   border-bottom: 1px solid var(--noorix-border);
 }
 .nx-invoice-summary-metric:last-child {
@@ -3145,27 +3138,45 @@ html[data-card-style="10"] .noorix-stat-card {
   gap: 8px;
 }
 .nx-invoice-summary-splits .nx-invoice-summary-metric {
-  padding: 7px 10px;
+  padding: 9px 12px;
   border: 1px solid var(--noorix-border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--noorix-bg-muted) 62%, var(--noorix-bg-surface));
+  border-radius: 10px;
+  background: var(--noorix-bg-surface);
 }
 .nx-invoice-vault-flow__grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 7px;
+  gap: 0;
   min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--noorix-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--noorix-bg-muted) 34%, var(--noorix-bg-surface));
+}
+.nx-invoice-vault-flow__header {
+  display: grid;
+  grid-template-columns: minmax(56px, 0.95fr) repeat(3, minmax(54px, 1fr));
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--noorix-border);
+  color: var(--noorix-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: end;
 }
 .nx-invoice-vault-flow__item {
   display: grid;
-  grid-template-columns: minmax(46px, 0.8fr) repeat(3, minmax(50px, 1fr));
-  gap: 6px;
+  grid-template-columns: minmax(56px, 0.95fr) repeat(3, minmax(54px, 1fr));
+  gap: 8px;
   align-items: center;
   min-width: 0;
-  padding: 7px 9px;
-  border: 1px solid var(--noorix-border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--noorix-bg-muted) 56%, var(--noorix-bg-surface));
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--noorix-border);
+}
+.nx-invoice-vault-flow__item:last-child {
+  border-bottom: 0;
 }
 .nx-invoice-vault-flow__name {
   min-width: 0;
@@ -3203,20 +3214,7 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 @media (max-width: 760px) {
   .nx-invoice-summary-card__body {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "head"
-      "total"
-      "breakdown"
-      "metrics";
-  }
-  .nx-invoice-summary-card__metrics {
-    border-inline-start: 0;
-    border-top: 1px solid var(--noorix-border);
-    padding-top: 4px;
-  }
-  .nx-invoice-summary-metric {
-    padding-inline: 0;
+    min-height: 0;
   }
   .nx-invoice-summary-splits {
     grid-template-columns: 1fr;

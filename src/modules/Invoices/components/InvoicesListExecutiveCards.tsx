@@ -175,20 +175,28 @@ function VaultFlowCard({ t, inflowByVault, vaultRowLabel }: VaultFlowCardProps) 
           {rows.length === 0 ? (
             <div className="nx-invoice-vault-flow__empty">{getInvoiceExecutiveEmptyValue()}</div>
           ) : (
-            rows.map((row) => (
-              <div key={row.key} className="nx-invoice-vault-flow__item">
-                <span className="nx-invoice-vault-flow__name">{row.label}</span>
-                <span className="nx-invoice-vault-flow__amount text-nx-profit">
-                  <FmtNum n={row.inflow} /> <span className="nx-sar">SR</span>
-                </span>
-                <span className="nx-invoice-vault-flow__amount text-nx-expenses">
-                  <FmtNum n={row.outflow} /> <span className="nx-sar">SR</span>
-                </span>
-                <span className={cn('nx-invoice-vault-flow__amount', row.remainderToneClass)}>
-                  <FmtNum n={row.remainder} /> <span className="nx-sar">SR</span>
-                </span>
+            <>
+              <div className="nx-invoice-vault-flow__header">
+                <span />
+                <span>{t('invoicesVaultFlowInAbbr')}</span>
+                <span>{t('invoicesVaultFlowOutAbbr')}</span>
+                <span>{t('invoicesVaultFlowRemainAbbr')}</span>
               </div>
-            ))
+              {rows.map((row) => (
+                <div key={row.key} className="nx-invoice-vault-flow__item">
+                  <span className="nx-invoice-vault-flow__name">{row.label}</span>
+                  <span className="nx-invoice-vault-flow__amount text-nx-profit">
+                    <FmtNum n={row.inflow} /> <span className="nx-sar">SR</span>
+                  </span>
+                  <span className="nx-invoice-vault-flow__amount text-nx-expenses">
+                    <FmtNum n={row.outflow} /> <span className="nx-sar">SR</span>
+                  </span>
+                  <span className={cn('nx-invoice-vault-flow__amount', row.remainderToneClass)}>
+                    <FmtNum n={row.remainder} /> <span className="nx-sar">SR</span>
+                  </span>
+                </div>
+              ))}
+            </>
           )}
         </div>
       </div>
