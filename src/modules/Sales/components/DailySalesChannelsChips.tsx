@@ -28,7 +28,7 @@ export function DailySalesChannelsChips({ channels, lang }: DailySalesChannelsCh
     return <span className="text-[12px] text-noorix-muted">—</span>;
   }
   return (
-    <div className="flex flex-wrap gap-1.5 justify-end">
+    <div className="flex flex-wrap justify-end gap-x-3 gap-y-1">
       {list.map((ch, i) => {
         const vid = ch.vaultId ?? ch.vault?.id ?? i;
         const label = vaultDisplayName(ch.vault, lang);
@@ -36,8 +36,8 @@ export function DailySalesChannelsChips({ channels, lang }: DailySalesChannelsCh
           <div
             key={vid}
             className={cn(
-              'inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-noorix-border',
-              'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
+              'inline-flex max-w-full min-w-0 items-baseline gap-1.5',
+              'px-0 py-0',
             )}
             title={label}
           >

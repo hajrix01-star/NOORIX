@@ -125,11 +125,11 @@ export default function DailySalesScreen() {
           </div>
           <span className="nx-cell-muted-sm nx-font-numbers">{formatSaudiDate(row.transactionDate)}</span>
           {dayContextLabel(row) ? (
-            <span className="inline-flex max-w-full items-center truncate rounded-md bg-noorix-blue/10 px-1.5 py-0.5 text-[11px] font-semibold text-noorix-blue">
+            <span className="inline-flex max-w-full items-center truncate px-0 py-0 text-[11px] font-semibold text-noorix-green">
               {dayContextLabel(row)}
             </span>
           ) : null}
-          <span className="inline-flex items-center rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-noorix-muted">
+          <span className="inline-flex items-center px-0 py-0 text-[11px] font-semibold text-noorix-muted">
             {row.shiftsText || getSalesShiftLabel(row.shift, t)}
           </span>
           {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
@@ -172,11 +172,11 @@ export default function DailySalesScreen() {
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
           {dayContextLabel(row) ? (
-            <span className="rounded-md bg-noorix-blue/10 px-1.5 py-0.5 text-[11px] font-semibold text-noorix-blue">
+            <span className="px-0 py-0 text-[11px] font-semibold text-noorix-green">
               {dayContextLabel(row)}
             </span>
           ) : null}
-          <span className="rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-noorix-muted">
+          <span className="px-0 py-0 text-[11px] font-semibold text-noorix-muted">
             {row.shiftsText || getSalesShiftLabel(row.shift, t)}
           </span>
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
