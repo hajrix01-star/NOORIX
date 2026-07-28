@@ -3009,7 +3009,7 @@ html[data-card-style="10"] .noorix-stat-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 0.74fr);
   grid-template-areas:
-    "metrics head"
+    "head head"
     "metrics total"
     "breakdown total";
   grid-template-rows: auto 1fr auto;
