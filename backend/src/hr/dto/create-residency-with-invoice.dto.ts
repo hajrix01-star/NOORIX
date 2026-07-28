@@ -9,6 +9,10 @@ export class ResidencyIssueInvoiceInlineDto {
 
   @IsString()
   vaultId: string;
+
+  @IsOptional()
+  @IsString()
+  supplierId?: string;
 }
 
 export class CreateResidencyWithInvoiceDto extends CreateResidencyDto {

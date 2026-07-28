@@ -5,6 +5,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useVaults } from '../../../hooks/useVaults';
+import { useSuppliers } from '../../../hooks/useSuppliers';
 import { getEmployees, createResidency, updateResidency, throwIfApiFailed } from '../../../services/api';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys } from '../../../services/queryKeys';
@@ -19,6 +20,7 @@ import {
   requiresIqamaNumber,
   requiresExpiryDate,
   requiresReferenceLabel,
+  requiresInvoiceSupplierSelection,
   requiresVisaDurationMonths,
   parseVisaDurationMonths,
   companyDisplayName,
@@ -26,6 +28,7 @@ import {
 } from '../constants/employeeHrServiceCategories';
 import { HrServiceFormFields } from './HrServiceFormFields';
 import type { HrEmployee } from '../../../types/api';
+import type { SupplierRecord } from '../../Suppliers/supplierTypes';
 
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'statusActive' },
@@ -127,11 +130,14 @@ export function ResidencyFormModal({
   const [createInvoiceForService, setCreateInvoiceForService] = useState(false);
   const [invoiceAmount, setInvoiceAmount] = useState('');
   const [vaultId, setVaultId] = useState('');
+  const [supplierId, setSupplierId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const { paymentVaults = [] } = useVaults({ companyId: cid });
   const vaults = paymentVaults as VaultOption[];
+  const { suppliers = [] } = useSuppliers(requiresInvoiceSupplierSelection(serviceCategory) ? cid : '');
+  const requiresInvoiceSupplier = requiresInvoiceSupplierSelection(serviceCategory);
 
   const { data: employees = [] } = useApiListQuery<HrEmployee>({
     queryKey: employeeKeys.list(cid, false),
@@ -198,12 +204,14 @@ export function ResidencyFormModal({
       setCreateInvoiceForService(false);
       setInvoiceAmount('');
       setVaultId('');
+      setSupplierId('');
       setError('');
     }
   }, [isEdit, residency?.id, defaultCategory, defaultEmployeeId]);
 
   const handleServiceCategoryChange = (category: string) => {
     setServiceCategory(category);
+    setSupplierId('');
     if (!isEdit && category === 'health_certificate') {
       setExpiryDate(addOneCalendarYearYmd(issueDate || getSaudiToday()));
       expiryDateManuallyEdited.current = false;
@@ -274,6 +282,10 @@ export function ResidencyFormModal({
         setError(t('requiredFields'));
         return;
       }
+      if (requiresInvoiceSupplier && !supplierId) {
+        setError(t('requiredFields'));
+        return;
+      }
     }
     setSubmitting(true);
     try {
@@ -290,6 +302,7 @@ export function ResidencyFormModal({
           payload.issueInvoice = {
             amount: parseFloat(invoiceAmount),
             vaultId,
+            ...(requiresInvoiceSupplier ? { supplierId } : {}),
           };
         }
         const res = await createResidency(payload);
@@ -436,6 +449,24 @@ export function ResidencyFormModal({
                     <option key={v.id || ''} value={v.id || ''}>{vaultDisplayName(v, lang)}</option>
                   ))}
                 </Input>
+                {requiresInvoiceSupplier && (
+                  <Input
+                    type="select"
+                    label={t('supplier')}
+                    value={supplierId}
+                    onChange={(e: ResidencyInputChange) => setSupplierId(e.target.value)}
+                    required
+                  >
+                    <option value="">{t('selectSupplierPlaceholder')}</option>
+                    {(suppliers as SupplierRecord[]).map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>
+                        {lang === 'en'
+                          ? (supplier.nameEn || supplier.nameAr)
+                          : (supplier.nameAr || supplier.nameEn)}
+                      </option>
+                    ))}
+                  </Input>
+                )}
               </div>
             )}
           </>

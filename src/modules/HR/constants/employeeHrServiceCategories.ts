@@ -44,6 +44,10 @@ export function requiresReferenceLabel(_category: string | null | undefined) {
   return false;
 }
 
+export function requiresInvoiceSupplierSelection(category: string | null | undefined) {
+  return category === 'flight_ticket';
+}
+
 export {
   requiresExpiryDate,
   showsIssueDate,

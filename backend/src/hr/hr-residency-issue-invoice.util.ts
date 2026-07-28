@@ -9,6 +9,7 @@ import { saudiDateYmd } from './utils/hr-saudi-dates.util';
 import { buildHrServiceInvoiceNotes } from './constants/employee-hr-service-categories';
 import { employeeDisplayNameForNotes } from './utils/employee-display-name.util';
 import { SupplierDirectoryService } from '../supplier-directory/supplier-directory.service';
+import { hrServiceRequiresSelectedSupplier } from '../supplier-directory/supplier-directory-hr.util';
 
 type ResidencyForInvoice = {
   id: string;
@@ -30,7 +31,7 @@ export async function issueResidencyServiceInvoiceCore(
   },
   residency: ResidencyForInvoice,
   userId: string,
-  options: { amount: number; vaultId: string; transactionDate?: string },
+  options: { amount: number; vaultId: string; supplierId?: string; transactionDate?: string },
 ): Promise<{ invoiceId: string; invoiceNumber: string }> {
   if (residency.invoiceId) {
     throw new BadRequestException('يوجد فاتورة مرتبطة بهذا السجل مسبقاً.');
@@ -60,11 +61,29 @@ export async function issueResidencyServiceInvoiceCore(
     residency.companyId,
     residency.serviceCategory,
   );
+  let supplierId = directoryLink?.supplier?.id;
+  if (hrServiceRequiresSelectedSupplier(residency.serviceCategory)) {
+    if (!options.supplierId?.trim()) {
+      throw new BadRequestException('يجب اختيار مورد تذكرة السفر.');
+    }
+    const selectedSupplier = await deps.prisma.supplier.findFirst({
+      where: {
+        id: options.supplierId.trim(),
+        companyId: residency.companyId,
+        isDeleted: false,
+      },
+      select: { id: true },
+    });
+    if (!selectedSupplier) {
+      throw new BadRequestException('مورد تذكرة السفر غير موجود أو لا ينتمي لهذه الشركة.');
+    }
+    supplierId = selectedSupplier.id;
+  }
 
   const { invoice } = await deps.accountingCore.postHrServiceExpense(
     {
       companyId: residency.companyId,
-      supplierId: directoryLink?.supplier.id,
+      supplierId,
       employeeId: residency.employeeId,
       categoryId: directoryLink?.category.id,
       kind: 'hr_expense',

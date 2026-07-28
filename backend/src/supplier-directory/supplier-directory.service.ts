@@ -6,7 +6,9 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { TenantContext } from '../common/tenant-context';
 import {
   isShamiTaxWorkspace,
   matchesDirectorySearch,
@@ -14,6 +16,11 @@ import {
   directoryIdentitySimilarity,
 } from './supplier-directory-search.util';
 import { SUPPLIER_DIRECTORY_SEEDS } from './supplier-directory.seed';
+import {
+  HR_DEFAULT_DIRECTORY_CODES,
+  HR_SERVICE_CATEGORY_CODES,
+  HR_SERVICE_DIRECTORY_CODES,
+} from './supplier-directory-hr.util';
 
 type DirectoryEntryRow = {
   id: string;
@@ -63,14 +70,18 @@ const CANONICAL_CATEGORY_FALLBACKS: Record<string, {
     nameEn: 'Health Certificates & Employee Permits',
     sortOrder: 10,
   },
-};
-
-const HR_SERVICE_DIRECTORY_CODES: Record<string, string> = {
-  iqama_new: 'GOV-PASSPORTS',
-  iqama_renewal: 'GOV-PASSPORTS',
-  sponsorship_transfer: 'GOV-HRSD',
-  exit_reentry_visa: 'GOV-PASSPORTS',
-  health_certificate: 'GOV-MOMAH',
+  'E4-1': {
+    parentCode: 'EXP-004',
+    nameAr: 'تذاكر سفر الموظفين',
+    nameEn: 'Employee Travel Tickets',
+    sortOrder: 0,
+  },
+  'E4-2': {
+    parentCode: 'EXP-004',
+    nameAr: 'التأمين الطبي للموظفين',
+    nameEn: 'Employee Medical Insurance',
+    sortOrder: 1,
+  },
 };
 
 function aliasesFromJson(value: Prisma.JsonValue): string[] {
@@ -106,10 +117,14 @@ function supplierMatchScore(entry: DirectoryEntryRow, supplier: SupplierMatchRow
 export class SupplierDirectoryService implements OnModuleInit {
   private readonly logger = new Logger(SupplierDirectoryService.name);
 
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly adminPrisma: PrismaService,
+  ) {}
 
   async onModuleInit(): Promise<void> {
     await this.seedDirectory();
+    await this.syncHrSuppliersForOperatingCompanies();
   }
 
   async seedDirectory(): Promise<void> {
@@ -147,6 +162,61 @@ export class SupplierDirectoryService implements OnModuleInit {
       });
     }
     this.logger.log(`Ready supplier directory synchronized (${SUPPLIER_DIRECTORY_SEEDS.length} entries)`);
+  }
+
+  private runInTenant<T>(tenantId: string, task: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      TenantContext.run(tenantId, null, () => {
+        task().then(resolve, reject);
+      });
+    });
+  }
+
+  async syncHrSuppliersForOperatingCompanies(): Promise<void> {
+    const [companies, existingLinks] = await Promise.all([
+      this.adminPrisma.company.findMany({
+        select: { id: true, tenantId: true, nameAr: true, nameEn: true },
+      }),
+      this.adminPrisma.supplier.findMany({
+        where: {
+          directoryEntryId: { in: HR_DEFAULT_DIRECTORY_CODES },
+          isDeleted: false,
+        },
+        select: { companyId: true, directoryEntryId: true },
+      }),
+    ]);
+    const existingLinkKeys = new Set(
+      existingLinks.map((row) => `${row.companyId}:${row.directoryEntryId}`),
+    );
+    let linked = 0;
+    let alreadyLinked = 0;
+    let skipped = 0;
+
+    for (const company of companies) {
+      if (isShamiTaxWorkspace(company)) {
+        skipped++;
+        continue;
+      }
+      for (const code of HR_DEFAULT_DIRECTORY_CODES) {
+        if (existingLinkKeys.has(`${company.id}:${code}`)) {
+          alreadyLinked++;
+          continue;
+        }
+        try {
+          await this.runInTenant(company.tenantId, () => this.addToCompany(company.id, code));
+          linked++;
+        } catch (error) {
+          this.logger.error(
+            `تعذر ربط ${code} بالشركة ${company.id}; تُركت البيانات القائمة دون تغيير`,
+            error instanceof Error ? error.stack : String(error),
+          );
+        }
+      }
+    }
+
+    this.logger.log(
+      `HR supplier links synchronized (${linked} added or linked, ${alreadyLinked} already linked, ${skipped} protected workspaces skipped)`,
+    );
   }
 
   private async requireOperatingCompany(companyId: string) {
@@ -346,23 +416,28 @@ export class SupplierDirectoryService implements OnModuleInit {
   }
 
   async ensureForHrService(companyId: string, serviceCategory: string) {
-    const code = HR_SERVICE_DIRECTORY_CODES[serviceCategory];
-    if (!code) return null;
+    const categoryCode = HR_SERVICE_CATEGORY_CODES[serviceCategory];
+    if (!categoryCode) return null;
     const company = await this.prisma.company.findFirst({
       where: { id: companyId },
-      select: { nameAr: true, nameEn: true },
+      select: { id: true, tenantId: true, nameAr: true, nameEn: true },
     });
     if (!company || isShamiTaxWorkspace(company)) return null;
-    const link = await this.addToCompany(companyId, code);
-    if (serviceCategory !== 'health_certificate') return link;
-
-    const operatingCompany = await this.requireOperatingCompany(companyId);
-    const healthCertificateCategory = await this.prisma.withTenant((tx) =>
-      this.ensureCategory(tx, operatingCompany, 'E2-11'),
+    const category = await this.prisma.withTenant((tx) =>
+      this.ensureCategory(tx, company, categoryCode),
     );
+    const code = HR_SERVICE_DIRECTORY_CODES[serviceCategory];
+    if (!code) {
+      return {
+        action: 'category_only' as const,
+        supplier: null,
+        category,
+      };
+    }
+    const link = await this.addToCompany(companyId, code);
     return {
       ...link,
-      category: healthCertificateCategory,
+      category,
     };
   }
 }

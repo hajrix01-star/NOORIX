@@ -4,11 +4,16 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useVaults } from '../../../hooks/useVaults';
+import { useSuppliers } from '../../../hooks/useSuppliers';
 import { issueResidencyInvoice, throwIfApiFailed } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, Modal } from '../../../ui';
-import { HR_SERVICE_CATEGORY_LABEL_KEYS } from '../constants/employeeHrServiceCategories';
+import {
+  HR_SERVICE_CATEGORY_LABEL_KEYS,
+  requiresInvoiceSupplierSelection,
+} from '../constants/employeeHrServiceCategories';
+import type { SupplierRecord } from '../../Suppliers/supplierTypes';
 
 type IssueResidencyInvoiceModalProps = {
   row: {
@@ -35,11 +40,14 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
   const { t, lang } = useTranslation();
   const [amount, setAmount] = useState(row?.residencyInvoiceAmount ? String(row.residencyInvoiceAmount) : '');
   const [vaultId, setVaultId] = useState('');
+  const [supplierId, setSupplierId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const { paymentVaults = [] } = useVaults({ companyId });
   const category = row?.serviceCategory || 'iqama_renewal';
+  const requiresSupplier = requiresInvoiceSupplierSelection(category);
+  const { suppliers = [] } = useSuppliers(requiresSupplier ? companyId : '');
   const categoryLabel = t(HR_SERVICE_CATEGORY_LABEL_KEYS[category] || 'residencyServiceType');
 
   const handleSubmit = async () => {
@@ -53,11 +61,16 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
       setError(t('requiredFields'));
       return;
     }
+    if (requiresSupplier && !supplierId) {
+      setError(t('requiredFields'));
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await issueResidencyInvoice(row.id, companyId, {
         amount: amt,
         vaultId,
+        ...(requiresSupplier ? { supplierId } : {}),
         transactionDate: getSaudiToday(),
       });
       throwIfApiFailed(res, t('saveFailed'));
@@ -97,6 +110,24 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
             <option key={v.id || ''} value={v.id || ''}>{vaultDisplayName(v, lang)}</option>
           ))}
         </Input>
+        {requiresSupplier && (
+          <Input
+            type="select"
+            label={t('supplier')}
+            value={supplierId}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setSupplierId(e.target.value)}
+            required
+          >
+            <option value="">{t('selectSupplierPlaceholder')}</option>
+            {(suppliers as SupplierRecord[]).map((supplier) => (
+              <option key={supplier.id} value={supplier.id}>
+                {lang === 'en'
+                  ? (supplier.nameEn || supplier.nameAr)
+                  : (supplier.nameAr || supplier.nameEn)}
+              </option>
+            ))}
+          </Input>
+        )}
         {error && (
           <div className="rounded-lg text-[13px] p-[10px] bg-noorix-red/10 text-noorix-red">{error}</div>
         )}

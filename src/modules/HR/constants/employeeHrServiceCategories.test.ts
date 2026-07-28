@@ -8,6 +8,7 @@ import {
   isHealthCertificate,
   referenceLabelKey,
   requiresExpiryDate,
+  requiresInvoiceSupplierSelection,
   requiresReferenceLabel,
   showsIssueDate,
   showsReferenceLabel,
@@ -41,5 +42,11 @@ describe('health certificate employee service contract', () => {
     expect(addOneCalendarYearYmd('2026-07-28')).toBe('2027-07-28');
     expect(addOneCalendarYearYmd('2028-02-29')).toBe('2029-02-28');
     expect(addOneCalendarYearYmd('invalid')).toBe('');
+  });
+
+  it('requires a supplier only for flight tickets', () => {
+    expect(requiresInvoiceSupplierSelection('flight_ticket')).toBe(true);
+    expect(requiresInvoiceSupplierSelection('medical_insurance')).toBe(false);
+    expect(requiresInvoiceSupplierSelection('iqama_renewal')).toBe(false);
   });
 });

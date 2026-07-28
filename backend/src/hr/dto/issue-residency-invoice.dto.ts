@@ -13,5 +13,9 @@ export class IssueResidencyInvoiceDto {
 
   @IsOptional()
   @IsString()
+  supplierId?: string;
+
+  @IsOptional()
+  @IsString()
   transactionDate?: string;
 }

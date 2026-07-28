@@ -194,6 +194,7 @@ export class HrResidencyService {
         {
           amount: issueInvoice.amount,
           vaultId: issueInvoice.vaultId,
+          supplierId: issueInvoice.supplierId,
           transactionDate: dto.transactionDate,
         },
       );
@@ -297,6 +298,7 @@ export class HrResidencyService {
       {
         amount: dto.amount,
         vaultId: dto.vaultId,
+        supplierId: dto.supplierId,
         transactionDate: dto.transactionDate,
       },
     );

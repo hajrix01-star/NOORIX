@@ -78,4 +78,128 @@ describe('issueResidencyServiceInvoiceCore', () => {
     expect(accountingCore.postHrServiceExpense.mock.calls[0][0])
       .not.toHaveProperty('supplierInvoiceNumber');
   });
+
+  it('requires and validates the selected airline or travel supplier for a flight ticket', async () => {
+    const prisma = Object.assign(Object.create(TenantPrismaService.prototype), {
+      vault: {
+        findMany: jest.fn().mockResolvedValue([{
+          id: 'vault-1',
+          nameAr: 'البنك',
+          isActive: true,
+          showAsPaymentMethod: true,
+          isArchived: false,
+        }]),
+      },
+      supplier: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'airline-supplier' }),
+      },
+      employeeResidency: { update: jest.fn().mockResolvedValue({}) },
+      employeeMovement: { create: jest.fn().mockResolvedValue({}) },
+    }) as TenantPrismaService & {
+      supplier: { findFirst: jest.Mock };
+    };
+    const accountingCore = Object.assign(Object.create(AccountingCoreService.prototype), {
+      postHrServiceExpense: jest.fn().mockResolvedValue({
+        invoice: { id: 'invoice-2', invoiceNumber: 'HR-002' },
+      }),
+    }) as AccountingCoreService & {
+      postHrServiceExpense: jest.Mock;
+    };
+    const supplierDirectory = Object.assign(Object.create(SupplierDirectoryService.prototype), {
+      ensureForHrService: jest.fn().mockResolvedValue({
+        supplier: null,
+        category: { id: 'e4-1-category', code: 'E4-1' },
+      }),
+    }) as SupplierDirectoryService;
+
+    await inTenant(() => issueResidencyServiceInvoiceCore(
+      { prisma, accountingCore, supplierDirectory },
+      {
+        id: 'residency-2',
+        companyId: 'company-1',
+        employeeId: 'employee-1',
+        serviceCategory: 'flight_ticket',
+        iqamaNumber: null,
+        referenceLabel: 'RUH — DOH',
+        invoiceId: null,
+        employee: { name: 'مكرم', nameEn: null },
+      },
+      'user-1',
+      {
+        amount: 900,
+        vaultId: 'vault-1',
+        supplierId: 'airline-supplier',
+        transactionDate: '2026-07-28',
+      },
+    ));
+
+    expect(prisma.supplier.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'airline-supplier',
+        companyId: 'company-1',
+        isDeleted: false,
+      },
+      select: { id: true },
+    });
+    expect(accountingCore.postHrServiceExpense).toHaveBeenCalledWith(
+      expect.objectContaining({
+        supplierId: 'airline-supplier',
+        categoryId: 'e4-1-category',
+      }),
+      'user-1',
+    );
+  });
+
+  it('classifies medical insurance separately and leaves its variable supplier empty', async () => {
+    const prisma = Object.assign(Object.create(TenantPrismaService.prototype), {
+      vault: {
+        findMany: jest.fn().mockResolvedValue([{
+          id: 'vault-1',
+          nameAr: 'البنك',
+          isActive: true,
+          showAsPaymentMethod: true,
+          isArchived: false,
+        }]),
+      },
+      employeeResidency: { update: jest.fn().mockResolvedValue({}) },
+      employeeMovement: { create: jest.fn().mockResolvedValue({}) },
+    }) as TenantPrismaService;
+    const accountingCore = Object.assign(Object.create(AccountingCoreService.prototype), {
+      postHrServiceExpense: jest.fn().mockResolvedValue({
+        invoice: { id: 'invoice-3', invoiceNumber: 'HR-003' },
+      }),
+    }) as AccountingCoreService & {
+      postHrServiceExpense: jest.Mock;
+    };
+    const supplierDirectory = Object.assign(Object.create(SupplierDirectoryService.prototype), {
+      ensureForHrService: jest.fn().mockResolvedValue({
+        supplier: null,
+        category: { id: 'e4-2-category', code: 'E4-2' },
+      }),
+    }) as SupplierDirectoryService;
+
+    await inTenant(() => issueResidencyServiceInvoiceCore(
+      { prisma, accountingCore, supplierDirectory },
+      {
+        id: 'residency-3',
+        companyId: 'company-1',
+        employeeId: 'employee-1',
+        serviceCategory: 'medical_insurance',
+        iqamaNumber: null,
+        referenceLabel: null,
+        invoiceId: null,
+        employee: { name: 'مكرم', nameEn: null },
+      },
+      'user-1',
+      { amount: 1200, vaultId: 'vault-1', transactionDate: '2026-07-28' },
+    ));
+
+    expect(accountingCore.postHrServiceExpense).toHaveBeenCalledWith(
+      expect.objectContaining({
+        supplierId: undefined,
+        categoryId: 'e4-2-category',
+      }),
+      'user-1',
+    );
+  });
 });

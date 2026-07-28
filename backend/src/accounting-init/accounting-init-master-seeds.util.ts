@@ -125,6 +125,9 @@ export const MASTER_SUBCATEGORIES: SubCategorySeed[] = [
   // E2-9 محجوز للتصنيفات التاريخية المختلفة بين الشركات، ولا يُزرع مستقبلاً.
   { parentAccountCode: 'EXP-002', code: 'E2-10', nameAr: 'رسوم منصات حكومية', nameEn: 'Government Platform Fees', sortOrder: 9 },
   { parentAccountCode: 'EXP-002', code: 'E2-11', nameAr: 'شهادات صحية وتصاريح موظفين', nameEn: 'Health Certificates & Employee Permits', sortOrder: 10 },
+  // تحت EXP-004 — رواتب وأجور (خدمات ومزايا الموظفين)
+  { parentAccountCode: 'EXP-004', code: 'E4-1', nameAr: 'تذاكر سفر الموظفين', nameEn: 'Employee Travel Tickets', sortOrder: 0 },
+  { parentAccountCode: 'EXP-004', code: 'E4-2', nameAr: 'التأمين الطبي للموظفين', nameEn: 'Employee Medical Insurance', sortOrder: 1 },
   // تحت EXP-007 — مصروفات مالية  (بادئة E7)
   { parentAccountCode: 'EXP-007', code: 'E7-1', nameAr: 'رسوم تحويل',        nameEn: 'Transfer Fees',             sortOrder: 0 },
   { parentAccountCode: 'EXP-007', code: 'E7-2', nameAr: 'رسوم سحب',          nameEn: 'Withdrawal Fees',           sortOrder: 1 },
