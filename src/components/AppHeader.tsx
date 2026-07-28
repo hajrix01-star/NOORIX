@@ -155,8 +155,8 @@ export default function AppHeader({
           </span>
         </div>
 
-        {/* ── وسط: مبدّل الشركة ── */}
-        <div className="flex-1 flex justify-center min-w-0 px-2">
+        {/* ── يسار: مبدّل الشركة بجانب قائمة المستخدم ── */}
+        <div className="ms-auto flex min-w-0 justify-start px-2">
           {coName ? (
             <div className="relative">
               <Button
