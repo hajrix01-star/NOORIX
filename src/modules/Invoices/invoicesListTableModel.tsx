@@ -102,8 +102,7 @@ function renderVaultChips(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (va
         <div
           key={chip.key}
           className={cn(
-            'inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-noorix-border',
-            'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
+            'inline-flex shrink-0 items-center gap-1.5 px-1 py-0.5',
           )}
           title={chip.title}
         >
@@ -138,8 +137,7 @@ function renderMobileVaults(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (
           <div
             key={chip.key}
             className={cn(
-              'inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-noorix-border',
-              'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
+              'inline-flex max-w-full min-w-0 items-center gap-1.5 px-1 py-0.5',
             )}
           >
             <span className="min-w-0 truncate text-[11px] font-semibold text-noorix-text">{chip.label}</span>

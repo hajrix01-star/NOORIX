@@ -6401,6 +6401,12 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   line-height: 1.45;
   vertical-align: middle;
 }
+.noorix-table tbody td .nx-badge {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding-inline: 0;
+}
 .noorix-table thead th:first-child,
 .noorix-table tbody td:first-child {
   border-inline-start: 0 !important;
