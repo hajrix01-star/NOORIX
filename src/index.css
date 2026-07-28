@@ -3012,6 +3012,7 @@ html[data-card-style="10"] .noorix-stat-card {
     "metrics head"
     "metrics total"
     "breakdown total";
+  grid-template-rows: 1fr auto 1fr;
   min-height: 190px;
   gap: 12px 18px;
   align-items: center;
@@ -3035,6 +3036,7 @@ html[data-card-style="10"] .noorix-stat-card {
   min-width: 0;
   justify-content: flex-end;
   direction: rtl;
+  align-self: end;
 }
 .nx-invoice-summary-card__icon {
   display: inline-flex;
@@ -3085,6 +3087,7 @@ html[data-card-style="10"] .noorix-stat-card {
   margin-block: 4px 2px;
   text-align: center;
   direction: ltr;
+  align-self: start;
 }
 .nx-invoice-summary-card__total-number {
   color: var(--noorix-text);
@@ -3097,6 +3100,7 @@ html[data-card-style="10"] .noorix-stat-card {
   grid-area: breakdown;
   min-width: 0;
   direction: rtl;
+  align-self: start;
 }
 .nx-invoice-summary-card__metrics {
   grid-area: metrics;
@@ -3104,9 +3108,8 @@ html[data-card-style="10"] .noorix-stat-card {
   grid-template-columns: 1fr;
   gap: 0;
   overflow: hidden;
-  border-inline-end: 1px solid var(--noorix-border);
-  padding-inline-end: 16px;
   direction: rtl;
+  align-self: end;
 }
 .nx-invoice-summary-metric {
   display: flex;

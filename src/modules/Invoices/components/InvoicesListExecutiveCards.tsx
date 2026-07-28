@@ -79,6 +79,10 @@ function Money({ value, className }: MoneyProps) {
   );
 }
 
+function withoutDirectionIcon(label: string) {
+  return label.replace(/^[\s\u2b06\u2b07]+/u, '').trim() || label;
+}
+
 function SummaryCard({
   title,
   total,
@@ -164,10 +168,7 @@ function VaultFlowCard({ t, inflowByVault, vaultRowLabel }: VaultFlowCardProps) 
             <VaultIcon />
           </div>
           <div className="min-w-0">
-            <div className="nx-invoice-summary-card__title">{t('invoicesVaultChannelFlowTitle')}</div>
-            <div className="nx-invoice-summary-card__subtitle">
-              {t('invoicesVaultFlowInAbbr')} / {t('invoicesVaultFlowOutAbbr')} / {t('invoicesVaultFlowRemainAbbr')}
-            </div>
+            <div className="nx-invoice-summary-card__title">{t('vaults')}</div>
           </div>
         </div>
 
@@ -224,7 +225,7 @@ export function InvoicesListExecutiveCards({
     <section className="nx-invoice-summary">
       <div className="nx-invoice-summary__cards">
         <SummaryCard
-          title={`${t('inbound')} \u2014 ${t('categoryTypeSale')}`}
+          title={t('categoryTypeSale')}
           total={serverInflow.total}
           count={serverInflow.count}
           net={serverInflow.net}
@@ -237,7 +238,7 @@ export function InvoicesListExecutiveCards({
         />
 
         <SummaryCard
-          title={`${t('outbound')} \u2014 ${t('purchases')} / ${t('categoryTypeExpense')}`}
+          title={withoutDirectionIcon(t('outbound'))}
           total={serverOutflow.total}
           count={serverOutflow.count}
           net={serverOutflow.net}
