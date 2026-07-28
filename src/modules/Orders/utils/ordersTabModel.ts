@@ -1,4 +1,5 @@
 import { fmt } from '../../../utils/format';
+import { normalizeDateSpan, toYmdOnly } from '../../../utils/datePeriod';
 import { buildPrintTableHtml } from '../../../utils/printTableHtml';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import type { OrderProduct, OrderRecord } from '../../../types/api';
@@ -27,13 +28,16 @@ export function resolveOrdersDateRange({
   propStartDate?: string;
   propEndDate?: string;
 }): { startDate: string; endDate: string } {
-  const startDate = propStartDate || `${year}-${String(month).padStart(2, '0')}-01`;
-  if (propEndDate) return { startDate, endDate: propEndDate };
+  const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month, 0).getDate();
-  return {
-    startDate,
-    endDate: `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
-  };
+  const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  const normalizedStart = toYmdOnly(propStartDate);
+  const normalizedEnd = toYmdOnly(propEndDate);
+  return normalizeDateSpan(
+    datePattern.test(normalizedStart) ? normalizedStart : monthStart,
+    datePattern.test(normalizedEnd) ? normalizedEnd : monthEnd,
+  );
 }
 
 function ymdOnly(value: string | null | undefined): string {

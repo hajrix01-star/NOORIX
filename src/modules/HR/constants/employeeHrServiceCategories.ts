@@ -78,6 +78,16 @@ export function isHealthCertificate(category: string | null | undefined) {
   return category === 'health_certificate';
 }
 
+export function addOneCalendarYearYmd(value: string | null | undefined) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+  if (!match) return '';
+  const year = Number(match[1]) + 1;
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return `${year}-${String(month).padStart(2, '0')}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
+}
+
 export function companyDisplayName(
   company: { nameAr?: string | null; nameEn?: string | null; name?: string | null } | null | undefined,
   lang = 'ar',

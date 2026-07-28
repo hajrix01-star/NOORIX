@@ -204,11 +204,13 @@ export function useOrdersSummary(companyId: string, year: string | number, month
 }
 
 export function useOrdersRangeSummary(companyId: string, startDate: string, endDate: string) {
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  const hasValidRange = datePattern.test(startDate) && datePattern.test(endDate) && startDate <= endDate;
   return useApiQuery<OrderRangeSummary>({
     queryKey: orderKeys.rangeSummary(companyId, startDate, endDate),
     queryFn: () => getOrdersRangeSummary(companyId, startDate, endDate),
     fallbackMessage: 'Failed to load orders range summary',
-    enabled: !!companyId && !!startDate && !!endDate,
+    enabled: !!companyId && hasValidRange,
   });
 }
 

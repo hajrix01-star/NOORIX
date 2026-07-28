@@ -3,6 +3,7 @@ import {
   HR_SERVICE_CATEGORIES,
   HR_SERVICE_QUICK_ADD,
   HR_SERVICE_CATEGORY_LABEL_KEYS,
+  addOneCalendarYearYmd,
   formatHrServiceDetail,
   isHealthCertificate,
   referenceLabelKey,
@@ -34,5 +35,11 @@ describe('health certificate employee service contract', () => {
       serviceCategory: 'health_certificate',
       referenceLabel: 'HC-2026-001',
     }, t)).toBe('HC-2026-001 — وزارة البلديات والإسكان');
+  });
+
+  it('defaults health-certificate expiry to one editable calendar year', () => {
+    expect(addOneCalendarYearYmd('2026-07-28')).toBe('2027-07-28');
+    expect(addOneCalendarYearYmd('2028-02-29')).toBe('2029-02-28');
+    expect(addOneCalendarYearYmd('invalid')).toBe('');
   });
 });

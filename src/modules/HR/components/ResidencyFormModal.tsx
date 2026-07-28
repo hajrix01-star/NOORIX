@@ -1,7 +1,7 @@
 ﻿/**
  * ResidencyFormModal — إضافة/تعديل خدمة موظف (حقول مختلفة حسب النوع)
  */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useVaults } from '../../../hooks/useVaults';
@@ -22,6 +22,7 @@ import {
   requiresVisaDurationMonths,
   parseVisaDurationMonths,
   companyDisplayName,
+  addOneCalendarYearYmd,
 } from '../constants/employeeHrServiceCategories';
 import { HrServiceFormFields } from './HrServiceFormFields';
 import type { HrEmployee } from '../../../types/api';
@@ -61,12 +62,18 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-function buildServiceDateDefaults(residency: ResidencyRecord | null | undefined, isNew: boolean) {
+function buildServiceDateDefaults(
+  residency: ResidencyRecord | null | undefined,
+  isNew: boolean,
+  category: string,
+) {
   const today = getSaudiToday();
+  const issueDate = toDateInputYmd(residency?.issueDate) || (isNew ? today : '');
+  const storedExpiryDate = toDateInputYmd(residency?.expiryDate);
   return {
     transactionDate: toDateInputYmd(residency?.transactionDate) || today,
-    issueDate: toDateInputYmd(residency?.issueDate) || (isNew ? today : ''),
-    expiryDate: toDateInputYmd(residency?.expiryDate) || '',
+    issueDate,
+    expiryDate: storedExpiryDate || (isNew && category === 'health_certificate' ? addOneCalendarYearYmd(issueDate) : ''),
   };
 }
 
@@ -110,9 +117,10 @@ export function ResidencyFormModal({
   const [iqamaNumber, setIqamaNumber] = useState(residency?.iqamaNumber || '');
   const [referenceLabel, setReferenceLabel] = useState(residency?.referenceLabel || '');
   const [visaDurationMonths, setVisaDurationMonths] = useState(() => parseVisaDurationMonths(residency));
-  const initialDates = buildServiceDateDefaults(residency, !isEdit);
+  const initialDates = buildServiceDateDefaults(residency, !isEdit, residency?.serviceCategory || defaultCategory);
   const [issueDate, setIssueDate] = useState(initialDates.issueDate);
   const [expiryDate, setExpiryDate] = useState(initialDates.expiryDate);
+  const expiryDateManuallyEdited = useRef(false);
   const [transactionDate, setTransactionDate] = useState(initialDates.transactionDate);
   const [status, setStatus] = useState(residency?.status || 'active');
   const [notes, setNotes] = useState(residency?.notes || '');
@@ -159,7 +167,7 @@ export function ResidencyFormModal({
 
   useEffect(() => {
     if (isEdit && residency) {
-      const dates = buildServiceDateDefaults(residency, false);
+      const dates = buildServiceDateDefaults(residency, false, residency.serviceCategory || defaultCategory);
       setEmployeeId(residency.employeeId || '');
       setServiceCategory(residency.serviceCategory || defaultCategory);
       setIqamaNumber(residency.iqamaNumber || '');
@@ -167,6 +175,7 @@ export function ResidencyFormModal({
       setVisaDurationMonths(parseVisaDurationMonths(residency));
       setIssueDate(dates.issueDate);
       setExpiryDate(dates.expiryDate);
+      expiryDateManuallyEdited.current = true;
       setTransactionDate(dates.transactionDate);
       setStatus(residency.status || 'active');
       setNotes(residency.notes || '');
@@ -174,7 +183,7 @@ export function ResidencyFormModal({
       return;
     }
     if (!isEdit) {
-      const dates = buildServiceDateDefaults(null, true);
+      const dates = buildServiceDateDefaults(null, true, defaultCategory);
       setEmployeeId(defaultEmployeeId || '');
       setServiceCategory(defaultCategory);
       setIqamaNumber('');
@@ -182,6 +191,7 @@ export function ResidencyFormModal({
       setVisaDurationMonths('');
       setIssueDate(dates.issueDate);
       setExpiryDate(dates.expiryDate);
+      expiryDateManuallyEdited.current = false;
       setTransactionDate(dates.transactionDate);
       setStatus('active');
       setNotes('');
@@ -191,6 +201,26 @@ export function ResidencyFormModal({
       setError('');
     }
   }, [isEdit, residency?.id, defaultCategory, defaultEmployeeId]);
+
+  const handleServiceCategoryChange = (category: string) => {
+    setServiceCategory(category);
+    if (!isEdit && category === 'health_certificate') {
+      setExpiryDate(addOneCalendarYearYmd(issueDate || getSaudiToday()));
+      expiryDateManuallyEdited.current = false;
+    }
+  };
+
+  const handleIssueDateChange = (value: string) => {
+    setIssueDate(value);
+    if (!isEdit && serviceCategory === 'health_certificate' && !expiryDateManuallyEdited.current) {
+      setExpiryDate(addOneCalendarYearYmd(value));
+    }
+  };
+
+  const handleExpiryDateChange = (value: string) => {
+    setExpiryDate(value);
+    expiryDateManuallyEdited.current = true;
+  };
 
   const buildPayload = () => {
     const body: Record<string, unknown> = {
@@ -329,7 +359,7 @@ export function ResidencyFormModal({
           type="select"
           label={t('hrServiceCategory')}
           value={serviceCategory}
-          onChange={(e: ResidencyInputChange) => setServiceCategory(e.target.value)}
+          onChange={(e: ResidencyInputChange) => handleServiceCategoryChange(e.target.value)}
           disabled={isEdit}
         >
           {HR_SERVICE_CATEGORIES.map((cat) => (
@@ -368,9 +398,9 @@ export function ResidencyFormModal({
           visaDurationMonths={visaDurationMonths}
           setVisaDurationMonths={setVisaDurationMonths}
           issueDate={issueDate}
-          setIssueDate={setIssueDate}
+          setIssueDate={handleIssueDateChange}
           expiryDate={expiryDate}
-          setExpiryDate={setExpiryDate}
+          setExpiryDate={handleExpiryDateChange}
           transactionDate={transactionDate}
           setTransactionDate={setTransactionDate}
           showIqama={showIqama}

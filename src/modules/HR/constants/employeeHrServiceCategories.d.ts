@@ -31,4 +31,5 @@ export function isSponsorshipTransfer(category: HrServiceCategory | string): boo
 export function usesCompanyAsSponsor(category: HrServiceCategory | string): boolean;
 export function referenceLabelKey(category: HrServiceCategory | string): string;
 export function isHealthCertificate(category: HrServiceCategory | string): boolean;
+export function addOneCalendarYearYmd(value: string | null | undefined): string;
 export function companyDisplayName(company: unknown, lang?: string): string;

@@ -47,6 +47,18 @@ describe('ordersTabModel', () => {
     expect(filterOrdersByDate(orders, '2026-02-01', '2026-02-28').map((row) => row.id)).toEqual(['a']);
   });
 
+  it('normalizes date-filter timestamps before calling strict range APIs', () => {
+    expect(resolveOrdersDateRange({
+      year: 2026,
+      month: 7,
+      propStartDate: '2026-07-01T00:00:00+03:00',
+      propEndDate: '2026-07-31T23:59:59+03:00',
+    })).toEqual({
+      startDate: '2026-07-01',
+      endDate: '2026-07-31',
+    });
+  });
+
   it('tracks cumulative external delegate remaining by order id', () => {
     const map = computeCumulativeRemainingByOrderId([
       order({ id: 'b', orderType: 'external', orderDate: '2026-06-02', pettyCashAmount: 50, totalAmount: 75 }),
