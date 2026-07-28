@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { OrdersModule } from '../orders/orders.module';
 import { ReportsModule } from '../reports/reports.module';
 import { SalesModule } from '../sales/sales.module';
 import { OwnerController } from './owner.controller';
@@ -9,7 +10,7 @@ import { OwnerService } from './owner.service';
 import { AdminDashboardTokenGuard } from './admin-dashboard-token.guard';
 
 @Module({
-  imports: [AuthModule, ReportsModule, SalesModule],
+  imports: [AuthModule, OrdersModule, ReportsModule, SalesModule],
   controllers: [OwnerController, OwnerAdminDashboardController],
   providers: [OwnerService, OwnerAdminDashboardService, AdminDashboardTokenGuard],
 })
