@@ -14,6 +14,7 @@ export type SupplierDirectorySeed = {
   entityType: SupplierDirectoryEntityType;
   defaultCategoryCode: string;
   isTaxRegistered: boolean;
+  taxNumber?: string | null;
   supplierInvoiceNumberRequired: boolean;
   sortOrder: number;
 };
@@ -185,6 +186,17 @@ const rows: SupplierDirectorySeed[] = [
     sortOrder: 200,
   },
   {
+    code: 'PLT-ABSHER-BUSINESS',
+    nameAr: 'منصة أبشر أعمال',
+    nameEn: 'Absher Business',
+    aliases: ['أبشر أعمال', 'أبشر', 'Absher Business', 'Absher'],
+    entityType: 'government_platform',
+    defaultCategoryCode: 'E2-10',
+    isTaxRegistered: false,
+    supplierInvoiceNumberRequired: false,
+    sortOrder: 205,
+  },
+  {
     code: 'PLT-MUDAD',
     nameAr: 'منصة مدد',
     nameEn: 'Mudad Platform',
@@ -225,6 +237,7 @@ const rows: SupplierDirectorySeed[] = [
     entityType: 'utility',
     defaultCategoryCode: 'E3-2',
     isTaxRegistered: true,
+    taxNumber: '300002471100003',
     supplierInvoiceNumberRequired: true,
     sortOrder: 300,
   },
@@ -247,6 +260,7 @@ const rows: SupplierDirectorySeed[] = [
     entityType: 'telecom',
     defaultCategoryCode: 'E3-3',
     isTaxRegistered: true,
+    taxNumber: '300000157210003',
     supplierInvoiceNumberRequired: true,
     sortOrder: 400,
   },
@@ -293,3 +307,26 @@ export const SUPPLIER_DIRECTORY_SEEDS = rows.map((row) => ({
 export const SUPPLIER_DIRECTORY_CODES = new Set(
   SUPPLIER_DIRECTORY_SEEDS.map((row) => row.code),
 );
+
+/**
+ * General public-service and compliance suppliers installed for every new
+ * Saudi operating company. Activity-specific entities remain opt-in.
+ */
+export const DEFAULT_COMPANY_SUPPLIER_DIRECTORY_CODES = [
+  'UTL-SA-ENERGY',
+  'TEL-STC',
+  'GOV-GOSI',
+  'GOV-ZATCA',
+  'GOV-MOC',
+  'GOV-SBC',
+  'GOV-MOMAH',
+  'GOV-HRSD',
+  'GOV-PASSPORTS',
+  'GOV-CIVIL-DEFENSE',
+  'GOV-FSC',
+  'PLT-QIWA',
+  'PLT-ABSHER-BUSINESS',
+  'PLT-MUDAD',
+  'PLT-MUQEEM',
+  'PLT-BALADY',
+] as const;

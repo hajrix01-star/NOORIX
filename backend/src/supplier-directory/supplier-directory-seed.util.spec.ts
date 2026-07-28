@@ -1,4 +1,8 @@
-import { SUPPLIER_DIRECTORY_SEEDS } from './supplier-directory.seed';
+import {
+  DEFAULT_COMPANY_SUPPLIER_DIRECTORY_CODES,
+  SUPPLIER_DIRECTORY_CODES,
+  SUPPLIER_DIRECTORY_SEEDS,
+} from './supplier-directory.seed';
 import { directoryIdentitySimilarity } from './supplier-directory-search.util';
 
 describe('supplier directory seed governance', () => {
@@ -7,7 +11,7 @@ describe('supplier directory seed governance', () => {
     const sortOrders = SUPPLIER_DIRECTORY_SEEDS.map((entry) => entry.sortOrder);
     expect(new Set(codes).size).toBe(codes.length);
     expect(new Set(sortOrders).size).toBe(sortOrders.length);
-    expect(SUPPLIER_DIRECTORY_SEEDS).toHaveLength(24);
+    expect(SUPPLIER_DIRECTORY_SEEDS).toHaveLength(25);
   });
 
   it('keeps the approved accounting mappings', () => {
@@ -16,6 +20,7 @@ describe('supplier directory seed governance', () => {
     );
     expect(categoryByCode.get('GOV-GOSI')).toBe('E2-8');
     expect(categoryByCode.get('GOV-MOMAH')).toBe('E2-2');
+    expect(categoryByCode.get('PLT-ABSHER-BUSINESS')).toBe('E2-10');
     expect(categoryByCode.get('PLT-QIWA')).toBe('E2-10');
     expect(categoryByCode.get('UTL-NWC')).toBe('E3-4');
     expect(categoryByCode.get('TEL-STC')).toBe('E3-3');
@@ -60,5 +65,13 @@ describe('supplier directory seed governance', () => {
       }
     }
     expect(unsafePairs).toEqual([]);
+  });
+
+  it('keeps every default company supplier inside the central directory', () => {
+    expect(new Set(DEFAULT_COMPANY_SUPPLIER_DIRECTORY_CODES).size)
+      .toBe(DEFAULT_COMPANY_SUPPLIER_DIRECTORY_CODES.length);
+    for (const code of DEFAULT_COMPANY_SUPPLIER_DIRECTORY_CODES) {
+      expect(SUPPLIER_DIRECTORY_CODES.has(code)).toBe(true);
+    }
   });
 });

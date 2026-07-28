@@ -167,7 +167,7 @@ export class AccountingInitService {
           taxNumber: sup.taxNumber,
           supplierCategoryId: categoryId,
           categoryId: 'expenses',
-          isTaxRegistered: true,
+          isTaxRegistered: sup.isTaxRegistered,
           isDeleted: false,
         },
       });

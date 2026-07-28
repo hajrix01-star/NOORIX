@@ -1,3 +1,8 @@
+import {
+  DEFAULT_COMPANY_SUPPLIER_DIRECTORY_CODES,
+  SUPPLIER_DIRECTORY_SEEDS,
+} from '../supplier-directory/supplier-directory.seed';
+
 /** بيانات البذر الافتراضي لدليل الحسابات (COA) */
 export interface MasterAccountSeed {
   code: string;
@@ -143,23 +148,36 @@ export interface MasterSupplierSeed {
   nameAr: string;
   nameEn: string;
   taxNumber: string | null;
+  isTaxRegistered: boolean;
 }
-export const MASTER_SUPPLIERS: MasterSupplierSeed[] = [
-  {
-    parentAccountCode: 'EXP-003',
-    subCategoryNameAr: 'كهرباء',
-    directoryCode: 'UTL-SA-ENERGY',
-    nameAr: 'السعودية للطاقة',
-    nameEn: 'Saudi Energy',
-    taxNumber: '300002471100003',
-  },
-  {
-    parentAccountCode: 'EXP-003',
-    subCategoryNameAr: 'اتصالات',
-    directoryCode: 'TEL-STC',
-    nameAr: 'شركة الاتصالات السعودية (stc)',
-    nameEn: 'Saudi Telecom Company (stc)',
-    taxNumber: '300000157210003',
-  },
-];
+
+const directorySeedByCode = new Map(
+  SUPPLIER_DIRECTORY_SEEDS.map((entry) => [entry.code, entry]),
+);
+const subcategorySeedByCode = new Map(
+  MASTER_SUBCATEGORIES.map((entry) => [entry.code, entry]),
+);
+
+export const MASTER_SUPPLIERS: MasterSupplierSeed[] =
+  DEFAULT_COMPANY_SUPPLIER_DIRECTORY_CODES.map((directoryCode) => {
+    const directoryEntry = directorySeedByCode.get(directoryCode);
+    if (!directoryEntry) {
+      throw new Error(`Missing supplier directory seed: ${directoryCode}`);
+    }
+    const subcategory = subcategorySeedByCode.get(directoryEntry.defaultCategoryCode);
+    if (!subcategory) {
+      throw new Error(
+        `Missing supplier category ${directoryEntry.defaultCategoryCode} for ${directoryCode}`,
+      );
+    }
+    return {
+      parentAccountCode: subcategory.parentAccountCode,
+      subCategoryNameAr: subcategory.nameAr,
+      directoryCode,
+      nameAr: directoryEntry.nameAr,
+      nameEn: directoryEntry.nameEn,
+      taxNumber: directoryEntry.taxNumber ?? null,
+      isTaxRegistered: directoryEntry.isTaxRegistered,
+    };
+  });
 

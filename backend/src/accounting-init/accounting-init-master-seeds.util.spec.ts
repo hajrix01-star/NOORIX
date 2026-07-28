@@ -2,6 +2,10 @@ import {
   MASTER_SUBCATEGORIES,
   MASTER_SUPPLIERS,
 } from './accounting-init-master-seeds.util';
+import {
+  DEFAULT_COMPANY_SUPPLIER_DIRECTORY_CODES,
+  SUPPLIER_DIRECTORY_SEEDS,
+} from '../supplier-directory/supplier-directory.seed';
 
 describe('accounting initialization master seeds', () => {
   it('seeds the approved government categories without taking over E2-9', () => {
@@ -12,10 +16,58 @@ describe('accounting initialization master seeds', () => {
     expect(byCode.has('E2-9')).toBe(false);
   });
 
-  it('links default service suppliers to stable directory codes', () => {
-    expect(MASTER_SUPPLIERS).toEqual(expect.arrayContaining([
-      expect.objectContaining({ directoryCode: 'UTL-SA-ENERGY' }),
-      expect.objectContaining({ directoryCode: 'TEL-STC' }),
-    ]));
+  it('seeds the approved general service, residency, municipal, and commerce suppliers', () => {
+    expect(MASTER_SUPPLIERS.map((entry) => entry.directoryCode)).toEqual(
+      DEFAULT_COMPANY_SUPPLIER_DIRECTORY_CODES,
+    );
+    expect(MASTER_SUPPLIERS).toHaveLength(16);
+    expect(MASTER_SUPPLIERS.map((entry) => entry.directoryCode)).toEqual(
+      expect.arrayContaining([
+        'UTL-SA-ENERGY',
+        'TEL-STC',
+        'GOV-GOSI',
+        'GOV-ZATCA',
+        'GOV-MOC',
+        'GOV-SBC',
+        'GOV-MOMAH',
+        'GOV-HRSD',
+        'GOV-PASSPORTS',
+        'GOV-CIVIL-DEFENSE',
+        'GOV-FSC',
+        'PLT-QIWA',
+        'PLT-ABSHER-BUSINESS',
+        'PLT-MUDAD',
+        'PLT-MUQEEM',
+        'PLT-BALADY',
+      ]),
+    );
+  });
+
+  it('derives every default supplier and category from the central directory', () => {
+    const directoryByCode = new Map(
+      SUPPLIER_DIRECTORY_SEEDS.map((entry) => [entry.code, entry]),
+    );
+    const categoryByCode = new Map(
+      MASTER_SUBCATEGORIES.map((entry) => [entry.code, entry]),
+    );
+    expect(new Set(MASTER_SUPPLIERS.map((entry) => entry.directoryCode)).size)
+      .toBe(MASTER_SUPPLIERS.length);
+
+    for (const supplier of MASTER_SUPPLIERS) {
+      const directoryEntry = directoryByCode.get(supplier.directoryCode);
+      expect(directoryEntry).toBeDefined();
+      expect(supplier.nameAr).toBe(directoryEntry?.nameAr);
+      expect(supplier.isTaxRegistered).toBe(directoryEntry?.isTaxRegistered);
+      expect(categoryByCode.get(directoryEntry?.defaultCategoryCode ?? '')?.nameAr)
+        .toBe(supplier.subCategoryNameAr);
+    }
+  });
+
+  it('keeps activity-specific entities optional', () => {
+    const defaults = new Set(MASTER_SUPPLIERS.map((entry) => entry.directoryCode));
+    expect(defaults.has('GOV-MISA')).toBe(false);
+    expect(defaults.has('GOV-SFDA')).toBe(false);
+    expect(defaults.has('GOV-SASO')).toBe(false);
+    expect(defaults.has('GOV-SAIP')).toBe(false);
   });
 });
