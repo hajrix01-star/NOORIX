@@ -373,6 +373,7 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
                     const actionSticky = col.key === 'actions' && stickyActionColumn;
                     const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
                     const tdEffectiveWidth = columnEffectiveWidth(col);
+                    const renderedValue = col.render ? col.render(value, row, i) : renderRawCellValue(value);
                     return (
                       <td
                         key={col.key}
@@ -397,7 +398,9 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
                         data-column-kind={col.kind}
                         data-column-size={col.size}
                       >
-                        {col.render ? col.render(value, row, i) : renderRawCellValue(value)}
+                        {col.numeric ? (
+                          <div className="nx-smart-numeric-content">{renderedValue}</div>
+                        ) : renderedValue}
                       </td>
                     );
                   })}

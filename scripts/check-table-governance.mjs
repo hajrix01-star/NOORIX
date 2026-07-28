@@ -109,6 +109,42 @@ for (const file of cssFiles) {
   }
 }
 
+const centralTableCssPath = 'src/index.css';
+const centralTableCss = read(centralTableCssPath);
+const smartTableSourcePath = 'src/ui/SmartTable/SmartTable.tsx';
+const smartTableSource = read(smartTableSourcePath);
+const cellDirectionSelectors = [
+  '.noorix-table td[data-column-kind="money"]',
+  '.noorix-table td[data-column-kind="number"]',
+  '.noorix-table .noorix-numeric-cell',
+  '.noorix-table td[data-numeric="true"]',
+  '.noorix-table td[data-column-size="money-sm"]',
+  '.noorix-table td[data-column-size="money-md"]',
+  '.noorix-table td[data-column-size="money-lg"]',
+  '.noorix-table td[data-column-size="tax"]',
+  '.noorix-table .nx-row-number-td',
+];
+const cssRulePattern = /([^{}]+)\{([^{}]*)\}/g;
+for (const match of centralTableCss.matchAll(cssRulePattern)) {
+  const [, selector, declarations] = match;
+  if (
+    cellDirectionSelectors.some((cellSelector) => selector.includes(cellSelector))
+    && /\bdirection\s*:\s*ltr\b/.test(declarations)
+  ) {
+    fail(
+      centralTableCssPath,
+      centralTableCss.slice(0, match.index).split(/\r?\n/).length,
+      'table cells must inherit the table direction; isolate LTR values inside .nx-smart-numeric-content',
+    );
+  }
+}
+if (!/\.noorix-table\s+\.nx-smart-numeric-content\s*\{[^}]*\bdirection\s*:\s*ltr\b[^}]*\bunicode-bidi\s*:\s*isolate\b/s.test(centralTableCss)) {
+  fail(centralTableCssPath, null, 'missing the central LTR isolation contract for numeric cell content');
+}
+if (!smartTableSource.includes('className="nx-smart-numeric-content"')) {
+  fail(smartTableSourcePath, null, 'numeric SmartTable values must use the central numeric-content wrapper');
+}
+
 const sourceFiles = walk('src', (file) => /\.(tsx|ts|jsx|js)$/.test(file));
 const weakHeaderTextPattern =
   /bg-\[var\(--noorix-table-header-bg\)\].*(text-noorix-muted|text-noorix-text)|(text-noorix-muted|text-noorix-text).*bg-\[var\(--noorix-table-header-bg\)\]/;

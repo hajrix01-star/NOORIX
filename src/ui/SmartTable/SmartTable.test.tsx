@@ -271,6 +271,16 @@ describe('SmartTable', () => {
     expect(container.querySelector('td[data-column-kind="money"]')).toBeTruthy();
   });
 
+  it('isolates numeric content without changing the table cell direction', () => {
+    const { container } = render(<SmartTable columns={columns} data={rows} total={2} />);
+    const moneyCell = container.querySelector('td[data-column-kind="money"]') as HTMLTableCellElement;
+    const numericContent = moneyCell.querySelector('.nx-smart-numeric-content');
+
+    expect(moneyCell.style.direction).toBe('');
+    expect(numericContent).toBeTruthy();
+    expect(numericContent?.textContent).toBe('100');
+  });
+
   it('keeps truncation classes display-safe on table cells', () => {
     const { container } = render(<SmartTable columns={columns} data={rows} total={2} />);
 
@@ -404,6 +414,37 @@ describe('SmartTable', () => {
     expect(container.querySelectorAll('thead th')).toHaveLength(1);
     expect(container.querySelectorAll('tbody tr:first-child td')).toHaveLength(1);
     localStorage.removeItem('nx-col-vis:hidden-layout-test');
+  });
+
+  it('keeps the first visible numeric column on the central numeric-content contract', () => {
+    localStorage.setItem('nx-col-vis:hidden-numeric-boundary-test', JSON.stringify(['netAmount', 'taxAmount']));
+    const { container } = render(
+      <SmartTable
+        tableId="hidden-numeric-boundary-test"
+        columns={[
+          { key: 'vault', label: 'Vault' },
+          { key: 'netAmount', label: 'Net', kind: 'money' },
+          { key: 'taxAmount', label: 'Tax', kind: 'money' },
+          { key: 'totalAmount', label: 'Total', kind: 'money' },
+          { key: 'status', label: 'Status', kind: 'status' },
+        ]}
+        data={[{
+          id: '1',
+          vault: 'Bank',
+          netAmount: 100,
+          taxAmount: 15,
+          totalAmount: 115,
+          status: 'active',
+        }]}
+        total={1}
+      />,
+    );
+
+    const visibleCells = Array.from(container.querySelectorAll('tbody tr:first-child td'));
+    expect(visibleCells.map((cell) => cell.getAttribute('data-column-kind'))).toEqual(['text', 'money', 'status']);
+    expect(visibleCells[1].querySelector('.nx-smart-numeric-content')?.textContent).toBe('115');
+    expect((visibleCells[1] as HTMLElement).style.direction).toBe('');
+    localStorage.removeItem('nx-col-vis:hidden-numeric-boundary-test');
   });
 
   it('builds footerRow colspans against visible columns only', () => {

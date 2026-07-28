@@ -2293,6 +2293,7 @@ html[data-card-style="10"] .noorix-stat-card {
 /* Noorix Data Grid System — column-kind driven alignment and containment */
 .noorix-table th[data-column-kind],
 .noorix-table td[data-column-kind] {
+  direction: inherit;
   vertical-align: middle;
 }
 .noorix-table td[data-column-kind="text"] {
@@ -2322,8 +2323,9 @@ html[data-card-style="10"] .noorix-stat-card {
   font-family: var(--noorix-font-numbers) !important;
   font-variant-numeric: tabular-nums;
 }
-.noorix-table td[data-column-kind="money"],
-.noorix-table td[data-column-kind="number"] {
+.noorix-table .nx-smart-numeric-content {
+  display: inline-flex;
+  max-width: 100%;
   direction: ltr;
   unicode-bidi: isolate;
 }
@@ -3524,8 +3526,6 @@ select option {
 .noorix-table .noorix-numeric-cell,
 .noorix-table td[data-numeric="true"] {
   text-align: var(--nx-smart-cell-align, center) !important;
-  direction: ltr;
-  unicode-bidi: isolate;
   font-family: var(--noorix-font-numbers) !important;
   font-size: var(--noorix-text-amount) !important;
   font-weight: 500 !important;
@@ -6440,8 +6440,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .noorix-table td[data-column-size="money-lg"],
 .noorix-table td[data-column-size="tax"] {
   text-align: var(--nx-smart-cell-align, center) !important;
-  direction: ltr;
-  unicode-bidi: isolate;
 }
 .noorix-table th[data-column-kind="money"],
 .noorix-table td[data-column-kind="money"],
@@ -6498,7 +6496,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   color: var(--noorix-text) !important;
   border-color: var(--noorix-border) !important;
   text-align: center !important;
-  direction: ltr;
   font-variant-numeric: tabular-nums;
 }
 .noorix-table thead th.nx-smart-header-cell-vars {
