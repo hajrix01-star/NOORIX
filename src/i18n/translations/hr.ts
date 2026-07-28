@@ -315,6 +315,7 @@ export default {
   hrServiceQuickAdd: { ar: 'إضافة سريعة', en: 'Quick add' },
   editHrService: { ar: 'تعديل خدمة الموظف', en: 'Edit employee service' },
   hrServiceCategory: { ar: 'نوع الخدمة', en: 'Service type' },
+  hrServiceEntitySupplier: { ar: 'الجهة / المورد', en: 'Entity / supplier' },
   hrServiceFilterAll: { ar: 'كل الأنواع', en: 'All types' },
   hrServiceIqamaNew: { ar: 'إقامة جديدة', en: 'New iqama' },
   hrServiceIqamaRenewal: { ar: 'تجديد إقامة', en: 'Iqama renewal' },

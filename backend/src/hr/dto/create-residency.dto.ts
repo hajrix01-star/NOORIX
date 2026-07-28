@@ -28,6 +28,10 @@ export class CreateResidencyDto {
   @IsIn(EMPLOYEE_HR_SERVICE_CATEGORIES)
   serviceCategory?: string;
 
+  @IsOptional()
+  @IsString()
+  supplierId?: string | null;
+
   @ValidateIf((o) => requiresIqamaNumber(o.serviceCategory ?? 'iqama_renewal'))
   @IsString()
   @Matches(/^\d{10}$/, { message: 'رقم الإقامة يجب أن يكون 10 أرقام' })

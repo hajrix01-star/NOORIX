@@ -17,12 +17,22 @@ const hrCategoriesRollbackPath = resolve(
   process.cwd(),
   'prisma/rollback/20260728230000_add_employee_service_categories.sql',
 );
+const hrSupplierLinkMigrationPath = resolve(
+  process.cwd(),
+  'prisma/migrations/20260728234500_link_employee_services_to_suppliers/migration.sql',
+);
+const hrSupplierLinkRollbackPath = resolve(
+  process.cwd(),
+  'prisma/rollback/20260728234500_link_employee_services_to_suppliers.sql',
+);
 
 describe('supplier directory migration safety', () => {
   const migration = readFileSync(migrationPath, 'utf8');
   const rollback = readFileSync(rollbackPath, 'utf8');
   const hrCategoriesMigration = readFileSync(hrCategoriesMigrationPath, 'utf8');
   const hrCategoriesRollback = readFileSync(hrCategoriesRollbackPath, 'utf8');
+  const hrSupplierLinkMigration = readFileSync(hrSupplierLinkMigrationPath, 'utf8');
+  const hrSupplierLinkRollback = readFileSync(hrSupplierLinkRollbackPath, 'utf8');
 
   it('is additive for historical suppliers and invoices', () => {
     expect(migration).not.toMatch(/\bUPDATE\s+"suppliers"/i);
@@ -61,5 +71,22 @@ describe('supplier directory migration safety', () => {
     expect(hrCategoriesRollback).toContain('"expense_lines"');
     expect(hrCategoriesRollback).toContain('"invoices"');
     expect(hrCategoriesRollback).toContain('"parent_id"');
+  });
+
+  it('adds a nullable service supplier link and backfills only same-company canonical entities', () => {
+    expect(hrSupplierLinkMigration).toContain('ADD COLUMN "supplier_id" TEXT');
+    expect(hrSupplierLinkMigration).toContain('s."company_id" = er."company_id"');
+    expect(hrSupplierLinkMigration).toContain("'GOV-PASSPORTS'");
+    expect(hrSupplierLinkMigration).toContain("'GOV-HRSD'");
+    expect(hrSupplierLinkMigration).toContain("'GOV-MOMAH'");
+    expect(hrSupplierLinkMigration).not.toMatch(/\bUPDATE\s+"invoices"/i);
+    expect(hrSupplierLinkMigration).not.toMatch(/\bDELETE\s+FROM/i);
+  });
+
+  it('rolls back only the new employee-service supplier link', () => {
+    expect(hrSupplierLinkRollback).toContain('DROP CONSTRAINT IF EXISTS');
+    expect(hrSupplierLinkRollback).toContain('DROP COLUMN IF EXISTS "supplier_id"');
+    expect(hrSupplierLinkRollback).not.toMatch(/\bDELETE\s+FROM/i);
+    expect(hrSupplierLinkRollback).not.toMatch(/\bDROP\s+TABLE/i);
   });
 });

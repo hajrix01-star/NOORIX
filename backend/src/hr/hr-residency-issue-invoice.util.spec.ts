@@ -26,6 +26,9 @@ describe('issueResidencyServiceInvoiceCore', () => {
       },
       employeeResidency: { update: jest.fn().mockResolvedValue({}) },
       employeeMovement: { create: jest.fn().mockResolvedValue({}) },
+      supplier: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'municipality-supplier' }),
+      },
     }) as TenantPrismaService;
     const accountingCore = Object.assign(Object.create(AccountingCoreService.prototype), {
       postHrServiceExpense: jest.fn().mockResolvedValue({
@@ -77,6 +80,11 @@ describe('issueResidencyServiceInvoiceCore', () => {
     );
     expect(accountingCore.postHrServiceExpense.mock.calls[0][0])
       .not.toHaveProperty('supplierInvoiceNumber');
+    expect(prisma.employeeResidency.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ supplierId: 'municipality-supplier' }),
+      }),
+    );
   });
 
   it('requires and validates the selected airline or travel supplier for a flight ticket', async () => {

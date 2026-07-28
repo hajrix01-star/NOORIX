@@ -4,11 +4,13 @@ import {
   HR_SERVICE_QUICK_ADD,
   HR_SERVICE_CATEGORY_LABEL_KEYS,
   addOneCalendarYearYmd,
+  defaultHrServiceSupplierId,
   formatHrServiceDetail,
   isHealthCertificate,
   referenceLabelKey,
   requiresExpiryDate,
   requiresInvoiceSupplierSelection,
+  requiresHrServiceSupplier,
   requiresReferenceLabel,
   showsIssueDate,
   showsReferenceLabel,
@@ -48,5 +50,24 @@ describe('health certificate employee service contract', () => {
     expect(requiresInvoiceSupplierSelection('flight_ticket')).toBe(true);
     expect(requiresInvoiceSupplierSelection('medical_insurance')).toBe(false);
     expect(requiresInvoiceSupplierSelection('iqama_renewal')).toBe(false);
+  });
+
+  it('shows a required, changeable entity for every service except medical insurance', () => {
+    expect(requiresHrServiceSupplier('iqama_renewal')).toBe(true);
+    expect(requiresHrServiceSupplier('health_certificate')).toBe(true);
+    expect(requiresHrServiceSupplier('flight_ticket')).toBe(true);
+    expect(requiresHrServiceSupplier('medical_insurance')).toBe(false);
+  });
+
+  it('selects the canonical entity from the company supplier list', () => {
+    const suppliers = [
+      { id: 'passports', directoryEntryId: 'GOV-PASSPORTS' },
+      { id: 'hrsd', directoryEntryId: 'GOV-HRSD' },
+      { id: 'municipality', directoryEntryId: 'GOV-MOMAH' },
+    ];
+    expect(defaultHrServiceSupplierId('iqama_renewal', suppliers)).toBe('hrsd');
+    expect(defaultHrServiceSupplierId('iqama_new', suppliers)).toBe('passports');
+    expect(defaultHrServiceSupplierId('health_certificate', suppliers)).toBe('municipality');
+    expect(defaultHrServiceSupplierId('medical_insurance', suppliers)).toBe('');
   });
 });

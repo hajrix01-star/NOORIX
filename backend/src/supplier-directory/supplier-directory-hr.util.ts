@@ -20,6 +20,7 @@ export const HR_DEFAULT_DIRECTORY_CODES = [
   ...new Set(Object.values(HR_SERVICE_DIRECTORY_CODES)),
 ];
 
-export function hrServiceRequiresSelectedSupplier(serviceCategory: string): boolean {
-  return serviceCategory === 'flight_ticket';
+export function hrServiceRequiresSupplier(serviceCategory: string): boolean {
+  return serviceCategory !== 'medical_insurance'
+    && Object.prototype.hasOwnProperty.call(HR_SERVICE_CATEGORY_CODES, serviceCategory);
 }

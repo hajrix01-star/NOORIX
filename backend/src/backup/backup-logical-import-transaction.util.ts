@@ -729,17 +729,27 @@ export async function runBackupLogicalImportInTransaction(
           const eid = employeeMap.get(String(row.employeeId));
           if (!eid) continue;
           const invId = row.invoiceId ? invoiceMap.get(String(row.invoiceId)) : undefined;
+          const supplierId = row.supplierId
+            ? supplierMap.get(String(row.supplierId))
+            : undefined;
           await tx.employeeResidency.create({
             data: {
               id: nid(),
               tenantId,
               companyId: newCompanyId,
               employeeId: eid,
-              iqamaNumber: String(row.iqamaNumber),
+              serviceCategory: String(row.serviceCategory ?? 'iqama_renewal'),
+              iqamaNumber: row.iqamaNumber != null ? String(row.iqamaNumber) : null,
+              referenceLabel: (row.referenceLabel as string | null) ?? null,
               issueDate: row.issueDate ? ddate(row.issueDate) : null,
-              expiryDate: ddate(row.expiryDate),
+              expiryDate: row.expiryDate ? ddate(row.expiryDate) : null,
+              transactionDate: row.transactionDate ? ddate(row.transactionDate) : null,
               status: String(row.status ?? 'active'),
               notes: (row.notes as string | null) ?? null,
+              metadata: row.metadata != null
+                ? row.metadata as Prisma.InputJsonValue
+                : undefined,
+              supplierId: supplierId ?? null,
               invoiceId: invId ?? null,
               residencyInvoiceAmount:
                 row.residencyInvoiceAmount != null ? dec(row.residencyInvoiceAmount) : null,

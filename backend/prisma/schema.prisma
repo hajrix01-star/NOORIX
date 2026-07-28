@@ -661,6 +661,7 @@ model EmployeeResidency {
   status                 String    @default("active")      // active | expired | renewed
   notes                  String?
   metadata               Json?
+  supplierId             String?   @map("supplier_id")
   invoiceId              String?   @unique @map("invoice_id")
   residencyInvoiceAmount Decimal?  @map("residency_invoice_amount") @db.Decimal(18, 4)
   createdAt              DateTime  @default(now()) @map("created_at")
@@ -668,6 +669,7 @@ model EmployeeResidency {
 
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   invoice  Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
@@ -675,6 +677,7 @@ model EmployeeResidency {
   @@index([companyId, employeeId])
   @@index([companyId, expiryDate])
   @@index([companyId, serviceCategory])
+  @@index([companyId, supplierId])
   @@map("employee_residencies")
 }
 
@@ -819,6 +822,7 @@ model Supplier {
   invoices         Invoice[]
   expenseLines     ExpenseLine[]
   companyAssets    CompanyAsset[]
+  employeeResidencies EmployeeResidency[]
   @@unique([companyId, directoryEntryId])
   @@index([tenantId])
   @@index([companyId])

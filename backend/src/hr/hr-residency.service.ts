@@ -24,9 +24,11 @@ import {
 import { issueResidencyServiceInvoiceCore } from './hr-residency-issue-invoice.util';
 import { voidResidencyServiceInvoiceCore } from './hr-residency-void-invoice.util';
 import { SupplierDirectoryService } from '../supplier-directory/supplier-directory.service';
+import { hrServiceRequiresSupplier } from '../supplier-directory/supplier-directory-hr.util';
 
 const residencyInclude = {
   employee: true,
+  supplier: { select: { id: true, nameAr: true, nameEn: true, directoryEntryId: true } },
   invoice: { select: { id: true, invoiceNumber: true, status: true, totalAmount: true } },
 } as const;
 
@@ -123,6 +125,30 @@ export class HrResidencyService {
     };
   }
 
+  private async resolveServiceSupplierId(
+    companyId: string,
+    category: string,
+    requestedSupplierId: string | null | undefined,
+  ): Promise<string | null> {
+    const supplierId = requestedSupplierId?.trim();
+    if (supplierId) {
+      const supplier = await this.prisma.supplier.findFirst({
+        where: { id: supplierId, companyId, isDeleted: false },
+        select: { id: true },
+      });
+      if (!supplier) {
+        throw new BadRequestException('الجهة أو المورد غير موجود أو لا ينتمي لهذه الشركة.');
+      }
+      return supplier.id;
+    }
+    const directoryLink = await this.supplierDirectory.ensureForHrService(companyId, category);
+    const defaultSupplierId = directoryLink?.supplier?.id ?? null;
+    if (hrServiceRequiresSupplier(category) && !defaultSupplierId) {
+      throw new BadRequestException('يجب اختيار الجهة أو المورد لهذه الخدمة.');
+    }
+    return defaultSupplierId;
+  }
+
   /** نقل الكفالة — الكفيل الجديد = اسم الشركة التي يعمل بها الموظف */
   private async resolveReferenceLabel(
     companyId: string,
@@ -154,6 +180,11 @@ export class HrResidencyService {
       issueDate: dates.issueDate,
       expiryDate: dates.expiryDate,
     });
+    const supplierId = await this.resolveServiceSupplierId(
+      dto.companyId,
+      category,
+      dto.supplierId,
+    );
 
     const residency = await this.prisma.employeeResidency.create({
       data: {
@@ -164,6 +195,7 @@ export class HrResidencyService {
         iqamaNumber: dto.iqamaNumber?.trim() || null,
         referenceLabel: prepared.referenceLabel,
         metadata: prepared.metadata ?? undefined,
+        supplierId,
         issueDate: prepared.issueDate,
         expiryDate: prepared.expiryDate,
         transactionDate: dates.transactionDate,
@@ -179,7 +211,11 @@ export class HrResidencyService {
       action: 'create',
       entity: 'employee_residency',
       entityId: residency.id,
-      newValue: { serviceCategory: category, iqamaNumber: residency.iqamaNumber },
+      newValue: {
+        serviceCategory: category,
+        iqamaNumber: residency.iqamaNumber,
+        supplierId: residency.supplierId,
+      },
     });
 
     if (issueInvoice) {
@@ -246,6 +282,11 @@ export class HrResidencyService {
       issueDate: dto.issueDate !== undefined ? dates.issueDate : existing.issueDate,
       expiryDate: dto.expiryDate !== undefined ? dates.expiryDate : existing.expiryDate,
     });
+    const supplierId = (
+      dto.supplierId !== undefined || category !== existing.serviceCategory
+    )
+      ? await this.resolveServiceSupplierId(companyId, category, dto.supplierId)
+      : existing.supplierId;
 
     const updated = await this.prisma.employeeResidency.update({
       where: { id },
@@ -254,6 +295,7 @@ export class HrResidencyService {
         ...(dto.iqamaNumber !== undefined && { iqamaNumber: dto.iqamaNumber?.trim() || null }),
         referenceLabel: prepared.referenceLabel,
         metadata: prepared.metadata ?? undefined,
+        supplierId,
         issueDate: prepared.issueDate,
         expiryDate: prepared.expiryDate,
         ...(dto.transactionDate !== undefined && { transactionDate: dates.transactionDate }),

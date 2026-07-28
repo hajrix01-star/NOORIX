@@ -32,6 +32,14 @@ export const HR_SERVICE_CATEGORY_LABEL_KEYS: Record<string, string> = {
   health_certificate: 'hrServiceHealthCertificate',
 };
 
+export const HR_SERVICE_DEFAULT_DIRECTORY_CODES: Readonly<Record<string, string>> = {
+  iqama_new: 'GOV-PASSPORTS',
+  iqama_renewal: 'GOV-HRSD',
+  sponsorship_transfer: 'GOV-HRSD',
+  exit_reentry_visa: 'GOV-PASSPORTS',
+  health_certificate: 'GOV-MOMAH',
+};
+
 export function requiresIqamaNumber(category: string | null | undefined) {
   return ['iqama_new', 'iqama_renewal', 'sponsorship_transfer'].includes(String(category || ''));
 }
@@ -46,6 +54,20 @@ export function requiresReferenceLabel(_category: string | null | undefined) {
 
 export function requiresInvoiceSupplierSelection(category: string | null | undefined) {
   return category === 'flight_ticket';
+}
+
+export function requiresHrServiceSupplier(category: string | null | undefined) {
+  return category !== 'medical_insurance'
+    && HR_SERVICE_CATEGORIES.includes(String(category || ''));
+}
+
+export function defaultHrServiceSupplierId(
+  category: string | null | undefined,
+  suppliers: Array<{ id: string; directoryEntryId?: string | null }>,
+) {
+  const directoryCode = HR_SERVICE_DEFAULT_DIRECTORY_CODES[String(category || '')];
+  if (!directoryCode) return '';
+  return suppliers.find((supplier) => supplier.directoryEntryId === directoryCode)?.id ?? '';
 }
 
 export {

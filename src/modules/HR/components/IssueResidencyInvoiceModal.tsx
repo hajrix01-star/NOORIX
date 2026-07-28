@@ -1,7 +1,7 @@
 /**
  * IssueResidencyInvoiceModal — إصدار فاتورة hr_expense لسجل خدمة موظف
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useVaults } from '../../../hooks/useVaults';
 import { useSuppliers } from '../../../hooks/useSuppliers';
@@ -12,6 +12,8 @@ import { Button, Input, Modal } from '../../../ui';
 import {
   HR_SERVICE_CATEGORY_LABEL_KEYS,
   requiresInvoiceSupplierSelection,
+  requiresHrServiceSupplier,
+  defaultHrServiceSupplierId,
 } from '../constants/employeeHrServiceCategories';
 import type { SupplierRecord } from '../../Suppliers/supplierTypes';
 
@@ -21,6 +23,8 @@ type IssueResidencyInvoiceModalProps = {
     serviceCategory?: string | null;
     employeeName?: string | null;
     residencyInvoiceAmount?: number | string | null;
+    supplierId?: string | null;
+    supplier?: { id?: string | null } | null;
   };
   companyId: string;
   onSuccess?: () => void;
@@ -40,15 +44,22 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
   const { t, lang } = useTranslation();
   const [amount, setAmount] = useState(row?.residencyInvoiceAmount ? String(row.residencyInvoiceAmount) : '');
   const [vaultId, setVaultId] = useState('');
-  const [supplierId, setSupplierId] = useState('');
+  const [supplierId, setSupplierId] = useState(row?.supplierId || row?.supplier?.id || '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const { paymentVaults = [] } = useVaults({ companyId });
   const category = row?.serviceCategory || 'iqama_renewal';
   const requiresSupplier = requiresInvoiceSupplierSelection(category);
-  const { suppliers = [] } = useSuppliers(requiresSupplier ? companyId : '');
+  const requiresServiceSupplier = requiresHrServiceSupplier(category);
+  const { suppliers = [] } = useSuppliers(companyId);
   const categoryLabel = t(HR_SERVICE_CATEGORY_LABEL_KEYS[category] || 'residencyServiceType');
+
+  useEffect(() => {
+    if (supplierId) return;
+    const defaultSupplierId = defaultHrServiceSupplierId(category, suppliers);
+    if (defaultSupplierId) setSupplierId(defaultSupplierId);
+  }, [category, supplierId, suppliers]);
 
   const handleSubmit = async () => {
     setError('');
@@ -61,7 +72,7 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
       setError(t('requiredFields'));
       return;
     }
-    if (requiresSupplier && !supplierId) {
+    if ((requiresSupplier || requiresServiceSupplier) && !supplierId) {
       setError(t('requiredFields'));
       return;
     }
@@ -70,7 +81,7 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
       const res = await issueResidencyInvoice(row.id, companyId, {
         amount: amt,
         vaultId,
-        ...(requiresSupplier ? { supplierId } : {}),
+        ...(supplierId ? { supplierId } : {}),
         transactionDate: getSaudiToday(),
       });
       throwIfApiFailed(res, t('saveFailed'));
@@ -110,24 +121,22 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
             <option key={v.id || ''} value={v.id || ''}>{vaultDisplayName(v, lang)}</option>
           ))}
         </Input>
-        {requiresSupplier && (
-          <Input
-            type="select"
-            label={t('supplier')}
-            value={supplierId}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setSupplierId(e.target.value)}
-            required
-          >
-            <option value="">{t('selectSupplierPlaceholder')}</option>
-            {(suppliers as SupplierRecord[]).map((supplier) => (
-              <option key={supplier.id} value={supplier.id}>
-                {lang === 'en'
-                  ? (supplier.nameEn || supplier.nameAr)
-                  : (supplier.nameAr || supplier.nameEn)}
-              </option>
-            ))}
-          </Input>
-        )}
+        <Input
+          type="select"
+          label={t('hrServiceEntitySupplier')}
+          value={supplierId}
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setSupplierId(e.target.value)}
+          required={requiresServiceSupplier}
+        >
+          <option value="">{t('selectSupplierPlaceholder')}</option>
+          {(suppliers as SupplierRecord[]).map((supplier) => (
+            <option key={supplier.id} value={supplier.id}>
+              {lang === 'en'
+                ? (supplier.nameEn || supplier.nameAr)
+                : (supplier.nameAr || supplier.nameEn)}
+            </option>
+          ))}
+        </Input>
         {error && (
           <div className="rounded-lg text-[13px] p-[10px] bg-noorix-red/10 text-noorix-red">{error}</div>
         )}

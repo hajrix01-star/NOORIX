@@ -9,7 +9,7 @@ import { saudiDateYmd } from './utils/hr-saudi-dates.util';
 import { buildHrServiceInvoiceNotes } from './constants/employee-hr-service-categories';
 import { employeeDisplayNameForNotes } from './utils/employee-display-name.util';
 import { SupplierDirectoryService } from '../supplier-directory/supplier-directory.service';
-import { hrServiceRequiresSelectedSupplier } from '../supplier-directory/supplier-directory-hr.util';
+import { hrServiceRequiresSupplier } from '../supplier-directory/supplier-directory-hr.util';
 
 type ResidencyForInvoice = {
   id: string;
@@ -19,6 +19,7 @@ type ResidencyForInvoice = {
   iqamaNumber: string | null;
   referenceLabel: string | null;
   invoiceId: string | null;
+  supplierId?: string | null;
   transactionDate?: Date | null;
   employee?: { name?: string | null; nameEn?: string | null } | null;
 };
@@ -61,23 +62,27 @@ export async function issueResidencyServiceInvoiceCore(
     residency.companyId,
     residency.serviceCategory,
   );
-  let supplierId = directoryLink?.supplier?.id;
-  if (hrServiceRequiresSelectedSupplier(residency.serviceCategory)) {
-    if (!options.supplierId?.trim()) {
-      throw new BadRequestException('يجب اختيار مورد تذكرة السفر.');
-    }
+  const requestedSupplierId = options.supplierId?.trim()
+    || residency.supplierId
+    || directoryLink?.supplier?.id
+    || null;
+  let supplierId: string | undefined;
+  if (requestedSupplierId) {
     const selectedSupplier = await deps.prisma.supplier.findFirst({
       where: {
-        id: options.supplierId.trim(),
+        id: requestedSupplierId,
         companyId: residency.companyId,
         isDeleted: false,
       },
       select: { id: true },
     });
     if (!selectedSupplier) {
-      throw new BadRequestException('مورد تذكرة السفر غير موجود أو لا ينتمي لهذه الشركة.');
+      throw new BadRequestException('الجهة أو المورد غير موجود أو لا ينتمي لهذه الشركة.');
     }
     supplierId = selectedSupplier.id;
+  }
+  if (hrServiceRequiresSupplier(residency.serviceCategory) && !supplierId) {
+    throw new BadRequestException('يجب اختيار الجهة أو المورد لهذه الخدمة.');
   }
 
   const { invoice } = await deps.accountingCore.postHrServiceExpense(
@@ -103,6 +108,7 @@ export async function issueResidencyServiceInvoiceCore(
     data: {
       invoiceId: invoice.id,
       residencyInvoiceAmount: new Prisma.Decimal(amountStr),
+      supplierId: supplierId ?? null,
       transactionDate: residency.transactionDate ?? new Date(`${txDate}T00:00:00.000Z`),
     },
   });

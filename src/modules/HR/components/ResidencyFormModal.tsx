@@ -21,6 +21,8 @@ import {
   requiresExpiryDate,
   requiresReferenceLabel,
   requiresInvoiceSupplierSelection,
+  requiresHrServiceSupplier,
+  defaultHrServiceSupplierId,
   requiresVisaDurationMonths,
   parseVisaDurationMonths,
   companyDisplayName,
@@ -50,6 +52,8 @@ type ResidencyRecord = Record<string, unknown> & {
   notes?: string | null;
   invoiceId?: string | null;
   invoice?: { invoiceNumber?: string | number | null } | null;
+  supplierId?: string | null;
+  supplier?: { id?: string | null; nameAr?: string | null; nameEn?: string | null } | null;
   residencyInvoiceAmount?: number | string | null;
   metadata?: Record<string, unknown> | null;
 };
@@ -130,14 +134,18 @@ export function ResidencyFormModal({
   const [createInvoiceForService, setCreateInvoiceForService] = useState(false);
   const [invoiceAmount, setInvoiceAmount] = useState('');
   const [vaultId, setVaultId] = useState('');
-  const [supplierId, setSupplierId] = useState('');
+  const [supplierId, setSupplierId] = useState(
+    residency?.supplierId || residency?.supplier?.id || '',
+  );
+  const supplierSelectionManuallyEdited = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const { paymentVaults = [] } = useVaults({ companyId: cid });
   const vaults = paymentVaults as VaultOption[];
-  const { suppliers = [] } = useSuppliers(requiresInvoiceSupplierSelection(serviceCategory) ? cid : '');
+  const { suppliers = [] } = useSuppliers(cid);
   const requiresInvoiceSupplier = requiresInvoiceSupplierSelection(serviceCategory);
+  const requiresServiceSupplier = requiresHrServiceSupplier(serviceCategory);
 
   const { data: employees = [] } = useApiListQuery<HrEmployee>({
     queryKey: employeeKeys.list(cid, false),
@@ -172,6 +180,12 @@ export function ResidencyFormModal({
   }, [transactionDate]);
 
   useEffect(() => {
+    if (supplierSelectionManuallyEdited.current || supplierId) return;
+    const defaultSupplierId = defaultHrServiceSupplierId(serviceCategory, suppliers);
+    if (defaultSupplierId) setSupplierId(defaultSupplierId);
+  }, [serviceCategory, supplierId, suppliers]);
+
+  useEffect(() => {
     if (isEdit && residency) {
       const dates = buildServiceDateDefaults(residency, false, residency.serviceCategory || defaultCategory);
       setEmployeeId(residency.employeeId || '');
@@ -185,6 +199,8 @@ export function ResidencyFormModal({
       setTransactionDate(dates.transactionDate);
       setStatus(residency.status || 'active');
       setNotes(residency.notes || '');
+      setSupplierId(residency.supplierId || residency.supplier?.id || '');
+      supplierSelectionManuallyEdited.current = false;
       setError('');
       return;
     }
@@ -205,13 +221,15 @@ export function ResidencyFormModal({
       setInvoiceAmount('');
       setVaultId('');
       setSupplierId('');
+      supplierSelectionManuallyEdited.current = false;
       setError('');
     }
   }, [isEdit, residency?.id, defaultCategory, defaultEmployeeId]);
 
   const handleServiceCategoryChange = (category: string) => {
     setServiceCategory(category);
-    setSupplierId('');
+    setSupplierId(defaultHrServiceSupplierId(category, suppliers));
+    supplierSelectionManuallyEdited.current = false;
     if (!isEdit && category === 'health_certificate') {
       setExpiryDate(addOneCalendarYearYmd(issueDate || getSaudiToday()));
       expiryDateManuallyEdited.current = false;
@@ -251,6 +269,11 @@ export function ResidencyFormModal({
       body.referenceLabel = referenceLabel.trim();
     }
     if (isEdit) body.status = status;
+    if (supplierId) {
+      body.supplierId = supplierId;
+    } else if (isEdit) {
+      body.supplierId = null;
+    }
     return body;
   };
 
@@ -275,6 +298,10 @@ export function ResidencyFormModal({
     }
     if (requiresVisaDurationMonths(serviceCategory) && !visaDurationMonths) {
       setError(t('hrServiceVisaDurationRequired'));
+      return;
+    }
+    if (requiresServiceSupplier && !supplierId && !defaultHrServiceSupplierId(serviceCategory, suppliers)) {
+      setError(t('requiredFields'));
       return;
     }
     if (!isEdit && createInvoiceForService) {
@@ -418,6 +445,26 @@ export function ResidencyFormModal({
           setTransactionDate={setTransactionDate}
           showIqama={showIqama}
         />
+
+        <Input
+          type="select"
+          label={t('hrServiceEntitySupplier')}
+          value={supplierId}
+          onChange={(e: ResidencyInputChange) => {
+            supplierSelectionManuallyEdited.current = true;
+            setSupplierId(e.target.value);
+          }}
+          required={requiresServiceSupplier}
+        >
+          <option value="">{t('selectSupplierPlaceholder')}</option>
+          {(suppliers as SupplierRecord[]).map((supplier) => (
+            <option key={supplier.id} value={supplier.id}>
+              {lang === 'en'
+                ? (supplier.nameEn || supplier.nameAr)
+                : (supplier.nameAr || supplier.nameEn)}
+            </option>
+          ))}
+        </Input>
 
         {!isEdit && (
           <>

@@ -190,6 +190,7 @@ export class SupplierDirectoryService implements OnModuleInit {
     );
     let linked = 0;
     let alreadyLinked = 0;
+    let serviceRecordsBackfilled = 0;
     let skipped = 0;
 
     for (const company of companies) {
@@ -212,11 +213,47 @@ export class SupplierDirectoryService implements OnModuleInit {
           );
         }
       }
+      try {
+        serviceRecordsBackfilled += await this.runInTenant(
+          company.tenantId,
+          () => this.backfillHrServiceSupplierLinksForCompany(company.id),
+        );
+      } catch (error) {
+        this.logger.error(
+          `تعذر استكمال روابط خدمات الموظفين للشركة ${company.id}; تُركت السجلات دون حذف أو استبدال`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
     }
 
     this.logger.log(
-      `HR supplier links synchronized (${linked} added or linked, ${alreadyLinked} already linked, ${skipped} protected workspaces skipped)`,
+      `HR supplier links synchronized (${linked} added or linked, ${alreadyLinked} already linked, ${serviceRecordsBackfilled} service records backfilled, ${skipped} protected workspaces skipped)`,
     );
+  }
+
+  async backfillHrServiceSupplierLinksForCompany(companyId: string): Promise<number> {
+    const suppliers = await this.prisma.supplier.findMany({
+      where: {
+        companyId,
+        isDeleted: false,
+        directoryEntryId: { in: HR_DEFAULT_DIRECTORY_CODES },
+      },
+      select: { id: true, directoryEntryId: true },
+    });
+    const supplierByDirectoryCode = new Map(
+      suppliers.map((supplier) => [supplier.directoryEntryId, supplier.id]),
+    );
+    let updated = 0;
+    for (const [serviceCategory, directoryCode] of Object.entries(HR_SERVICE_DIRECTORY_CODES)) {
+      const supplierId = supplierByDirectoryCode.get(directoryCode);
+      if (!supplierId) continue;
+      const result = await this.prisma.employeeResidency.updateMany({
+        where: { companyId, serviceCategory, supplierId: null },
+        data: { supplierId },
+      });
+      updated += result.count;
+    }
+    return updated;
   }
 
   private async requireOperatingCompany(companyId: string) {
