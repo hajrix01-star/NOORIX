@@ -13,7 +13,6 @@ export const CategoriesTab = memo(function CategoriesTab({
   return (
     <CategoriesManager
       companyId={companyId}
-      titleKey="categoriesTab"
       openCreateSignal={openCreateSignal}
     />
   );

@@ -59,7 +59,6 @@ type FormState = {
 
 type CategoriesManagerProps = {
   companyId?: string | null;
-  titleKey?: string;
   openCreateSignal?: number;
 };
 
@@ -85,7 +84,6 @@ function CodeBadge({ row }: { row: CategoryRow }) {
 
 export const CategoriesManager = memo(function CategoriesManager({
   companyId,
-  titleKey = 'categoriesTab',
   openCreateSignal,
 }: CategoriesManagerProps) {
   const { t, lang } = useTranslation();
@@ -421,9 +419,6 @@ export const CategoriesManager = memo(function CategoriesManager({
           </div>
         </form>
       </AdaptiveSheet>
-      <div className="text-end mb-2">
-        <h3 className="text-[16px] font-bold m-0">{t(titleKey)}</h3>
-      </div>
       <SmartTable
         columns={columns}
         data={rows}
