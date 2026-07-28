@@ -224,6 +224,9 @@ export const CategoriesManager = memo(function CategoriesManager({
       {
         key: 'nameAr',
         label: t('nameAr'),
+        kind: 'text' as const,
+        size: 'name' as const,
+        minWidth: '20ch',
         align: 'right' as const,
         render: (v: unknown, row: CategoryRow) => (
           <span
@@ -239,10 +242,18 @@ export const CategoriesManager = memo(function CategoriesManager({
           </span>
         ),
       },
-      { key: 'code', label: codeColumnLabel, render: (_: unknown, row: CategoryRow) => <CodeBadge row={row} /> },
+      {
+        key: 'code',
+        label: codeColumnLabel,
+        kind: 'id' as const,
+        size: 'code-sm' as const,
+        render: (_: unknown, row: CategoryRow) => <CodeBadge row={row} />,
+      },
       {
         key: 'nameEn',
         label: t('nameEnCol'),
+        kind: 'text' as const,
+        minWidth: '18ch',
         render: (v: unknown, row: CategoryRow) => (
           <span
             className={
@@ -256,6 +267,8 @@ export const CategoriesManager = memo(function CategoriesManager({
       {
         key: 'type',
         label: t('type'),
+        kind: 'status' as const,
+        minWidth: '10ch',
         render: (v: unknown) => {
           const key = String(v ?? '');
           return (
@@ -268,6 +281,8 @@ export const CategoriesManager = memo(function CategoriesManager({
       {
         key: 'parent',
         label: t('parentCategory'),
+        kind: 'text' as const,
+        minWidth: '20ch',
         render: (_: unknown, row: CategoryRow) => (
           <span className="text-[12px] text-noorix-muted">
             {row._parentName ? (
@@ -286,8 +301,12 @@ export const CategoriesManager = memo(function CategoriesManager({
       {
         key: 'actions',
         label: t('actions'),
+        kind: 'actions' as const,
+        width: '132px',
+        minWidth: '132px',
+        maxWidth: '148px',
         render: (_: unknown, row: CategoryRow) => (
-          <span className="inline-flex gap-1.5">
+          <span className="noorix-actions-row">
             <Button size="sm" onClick={() => openEdit(row)}>
               {t('edit')}
             </Button>
@@ -385,6 +404,7 @@ export const CategoriesManager = memo(function CategoriesManager({
         showRowNumbers
         isLoading={isLoading}
         emptyMessage={t('noCategories')}
+        tableMinWidth={920}
       />
     </div>
   );
