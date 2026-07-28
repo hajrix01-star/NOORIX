@@ -6,6 +6,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController }    from './app.controller';
 import { AppService }       from './app.service';
 import { AccountingInitModule } from './accounting-init/accounting-init.module';
+import { SupplierDirectoryModule } from './supplier-directory/supplier-directory.module';
 import { AccountsModule }   from './accounts/accounts.module';
 import { AuditModule }      from './audit/audit.module';
 import { AuthModule }       from './auth/auth.module';
@@ -61,6 +62,7 @@ import { getJwtSecret }        from './config/jwt.config';
     PermissionCacheModule,
     DatabaseModule,
     AccountingInitModule,
+    SupplierDirectoryModule,
     AccountsModule,
     AuditModule,
     AuthModule,

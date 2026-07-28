@@ -5,4 +5,10 @@ export const supplierKeys = {
   byCompany: (companyId: string) => ['suppliers', companyId] as const,
 
   root: () => ['suppliers'] as const,
+
+  directory: (companyId: string, q: string) =>
+    ['supplier-directory', companyId, q] as const,
+
+  directoryByCompany: (companyId: string) =>
+    ['supplier-directory', companyId] as const,
 };

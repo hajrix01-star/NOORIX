@@ -13,6 +13,41 @@ export type SupplierRecord = {
   isTaxRegistered?: boolean | null;
   isBookmarked?: boolean | null;
   isDeleted?: boolean | null;
+  directoryEntryId?: string | null;
+  directoryManaged?: boolean | null;
+  directoryEntry?: SupplierDirectoryEntryRecord | null;
+};
+
+export type SupplierDirectoryStatus = 'available' | 'existing' | 'linked' | 'ambiguous';
+
+export type SupplierDirectoryEntryRecord = {
+  code: string;
+  nameAr: string;
+  nameEn?: string | null;
+  aliases: string[];
+  entityType: string;
+  defaultCategoryCode: string;
+  isTaxRegistered: boolean;
+  supplierInvoiceNumberRequired: boolean;
+  category?: Pick<SupplierCategoryRecord, 'id' | 'code' | 'nameAr' | 'nameEn'> | null;
+  status: SupplierDirectoryStatus;
+  existingSupplier?: Pick<
+    SupplierRecord,
+    'id' | 'nameAr' | 'nameEn' | 'directoryEntryId' | 'supplierCategoryId'
+  > | null;
+  matchScore?: number | null;
+};
+
+export type SupplierDirectoryResult = {
+  available: boolean;
+  reason?: string | null;
+  items: SupplierDirectoryEntryRecord[];
+};
+
+export type SupplierDirectoryAddResult = {
+  action: 'created' | 'linked' | 'already_linked';
+  supplier: SupplierRecord;
+  category: SupplierCategoryRecord;
 };
 
 export type SupplierCategoryRecord = {

@@ -805,6 +805,8 @@ model Supplier {
   taxNumber          String?  @map("tax_number")
   categoryId         String?  @map("category_id")           // ظ…ط´طھط±ظٹط§طھ | ظ…طµط±ظˆظپط§طھ (legacy)
   supplierCategoryId String?  @map("supplier_category_id")  // FK â†’ Category
+  directoryEntryId   String?  @map("directory_entry_id")
+  directoryManaged   Boolean  @default(false) @map("directory_managed")
   isBookmarked       Boolean  @default(false) @map("is_bookmarked")
   isTaxRegistered    Boolean  @default(true)  @map("is_tax_registered")
   isDeleted          Boolean  @default(false) @map("is_deleted")
@@ -813,13 +815,40 @@ model Supplier {
 
   company          Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   supplierCategory Category?    @relation(fields: [supplierCategoryId], references: [id], onDelete: SetNull)
+  directoryEntry   SupplierDirectoryEntry? @relation(fields: [directoryEntryId], references: [id], onDelete: SetNull)
   invoices         Invoice[]
   expenseLines     ExpenseLine[]
   companyAssets    CompanyAsset[]
+  @@unique([companyId, directoryEntryId])
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, isDeleted])
+  @@index([directoryEntryId])
   @@map("suppliers")
+}
+
+model SupplierDirectoryEntry {
+  id                            String   @id
+  code                          String   @unique
+  nameAr                        String   @map("name_ar")
+  nameEn                        String?  @map("name_en")
+  aliases                       Json
+  searchText                    String   @map("search_text")
+  entityType                    String   @map("entity_type")
+  defaultCategoryCode           String   @map("default_category_code")
+  isTaxRegistered               Boolean  @default(false) @map("is_tax_registered")
+  taxNumber                     String?  @map("tax_number")
+  supplierInvoiceNumberRequired Boolean  @default(false) @map("supplier_invoice_number_required")
+  isActive                      Boolean  @default(true) @map("is_active")
+  sortOrder                     Int      @default(0) @map("sort_order")
+  createdAt                     DateTime @default(now()) @map("created_at")
+  updatedAt                     DateTime @updatedAt @map("updated_at")
+
+  suppliers Supplier[]
+
+  @@index([entityType, sortOrder])
+  @@index([defaultCategoryCode])
+  @@map("supplier_directory_entries")
 }
 
 // ط¨ظ†ط¯ ظ…طµط±ظˆظپ â€” ظ‡ط§طھظپ 1طŒ ظƒظ‡ط±ط¨ 1طŒ ط¥ظٹط¬ط§ط± ظ…ط­ظ„ â€” ظ„ظƒظ„ ط¨ظ†ط¯ ط³ط¬ظ„ ظ…ط¯ظپظˆط¹ط§طھ ط®ط§طµ

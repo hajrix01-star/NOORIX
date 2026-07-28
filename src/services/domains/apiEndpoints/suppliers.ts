@@ -1,6 +1,8 @@
 import type { ApiParsedResult } from '../../../types/api';
 import type {
   SupplierCreatePayload,
+  SupplierDirectoryAddResult,
+  SupplierDirectoryResult,
   SupplierRecord,
   SupplierUpdatePayload,
 } from '../../../modules/Suppliers/supplierTypes';
@@ -40,4 +42,18 @@ export async function setSupplierBookmark(
   isBookmarked: boolean,
 ): Promise<ApiParsedResult<SupplierRecord>> {
   return apiPatch(`/api/v1/suppliers/${id}/bookmark`, { isBookmarked });
+}
+
+export async function getSupplierDirectory(
+  companyId: string,
+  q?: string,
+): Promise<ApiParsedResult<SupplierDirectoryResult>> {
+  return apiGet('/api/v1/supplier-directory', { companyId, q });
+}
+
+export async function addSupplierDirectoryEntry(
+  companyId: string,
+  code: string,
+): Promise<ApiParsedResult<SupplierDirectoryAddResult>> {
+  return apiPost(`/api/v1/supplier-directory/${code}/add`, { companyId });
 }

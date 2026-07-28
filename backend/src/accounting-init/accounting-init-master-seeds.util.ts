@@ -116,6 +116,10 @@ export const MASTER_SUBCATEGORIES: SubCategorySeed[] = [
   { parentAccountCode: 'EXP-002', code: 'E2-5', nameAr: 'زيارات',            nameEn: 'Visit Visas',               sortOrder: 4 },
   { parentAccountCode: 'EXP-002', code: 'E2-6', nameAr: 'غرامات',            nameEn: 'Fines & Penalties',         sortOrder: 5 },
   { parentAccountCode: 'EXP-002', code: 'E2-7', nameAr: 'ضرائب ورسوم أخرى', nameEn: 'Other Taxes & Fees',        sortOrder: 6 },
+  { parentAccountCode: 'EXP-002', code: 'E2-8', nameAr: 'GOSI',              nameEn: 'GOSI',                      sortOrder: 7 },
+  // E2-9 محجوز للتصنيفات التاريخية المختلفة بين الشركات، ولا يُزرع مستقبلاً.
+  { parentAccountCode: 'EXP-002', code: 'E2-10', nameAr: 'رسوم منصات حكومية', nameEn: 'Government Platform Fees', sortOrder: 9 },
+  { parentAccountCode: 'EXP-002', code: 'E2-11', nameAr: 'شهادات صحية وتصاريح موظفين', nameEn: 'Health Certificates & Employee Permits', sortOrder: 10 },
   // تحت EXP-007 — مصروفات مالية  (بادئة E7)
   { parentAccountCode: 'EXP-007', code: 'E7-1', nameAr: 'رسوم تحويل',        nameEn: 'Transfer Fees',             sortOrder: 0 },
   { parentAccountCode: 'EXP-007', code: 'E7-2', nameAr: 'رسوم سحب',          nameEn: 'Withdrawal Fees',           sortOrder: 1 },
@@ -135,6 +139,7 @@ export const MASTER_SUBCATEGORIES: SubCategorySeed[] = [
 export interface MasterSupplierSeed {
   parentAccountCode: string;
   subCategoryNameAr: string;
+  directoryCode: string;
   nameAr: string;
   nameEn: string;
   taxNumber: string | null;
@@ -143,15 +148,17 @@ export const MASTER_SUPPLIERS: MasterSupplierSeed[] = [
   {
     parentAccountCode: 'EXP-003',
     subCategoryNameAr: 'كهرباء',
-    nameAr: 'الشركة السعودية للكهرباء',
-    nameEn: 'Saudi Electricity Company (SEC)',
+    directoryCode: 'UTL-SA-ENERGY',
+    nameAr: 'السعودية للطاقة',
+    nameEn: 'Saudi Energy',
     taxNumber: '300002471100003',
   },
   {
     parentAccountCode: 'EXP-003',
     subCategoryNameAr: 'اتصالات',
-    nameAr: 'الاتصالات السعودية (STC)',
-    nameEn: 'Saudi Telecom Company (STC)',
+    directoryCode: 'TEL-STC',
+    nameAr: 'شركة الاتصالات السعودية (stc)',
+    nameEn: 'Saudi Telecom Company (stc)',
     taxNumber: '300000157210003',
   },
 ];

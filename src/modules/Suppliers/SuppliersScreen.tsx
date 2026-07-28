@@ -16,10 +16,15 @@ type SupplierTabId = (typeof TABS)[number]['id'];
 const SUPPLIER_TAB_IDS: SupplierTabId[] = TABS.map((tab) => tab.id);
 
 export default function SuppliersScreen() {
-  const { activeCompanyId } = useApp();
+  const { activeCompanyId, companies } = useApp();
   const { t } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const [activeTab, setActiveTab] = useTabSearchParam(SUPPLIER_TAB_IDS, 'suppliers');
+  const activeCompany = companies.find((company) => company.id === companyId);
+  const readyDirectoryAvailable = [activeCompany?.nameAr, activeCompany?.nameEn]
+    .filter(Boolean)
+    .map((name) => String(name).toLocaleLowerCase().replace(/[^a-z0-9]+/g, ''))
+    .every((name) => name !== 'shamitax');
 
   const supplierTabItems = useMemo(
     () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
@@ -45,7 +50,12 @@ export default function SuppliersScreen() {
           onChange={setActiveTab}
           contentClassName="nx-tab-content"
         >
-          {activeTab === 'suppliers' && <SuppliersTab companyId={companyId} />}
+          {activeTab === 'suppliers' && (
+            <SuppliersTab
+              companyId={companyId}
+              readyDirectoryAvailable={readyDirectoryAvailable}
+            />
+          )}
           {activeTab === 'categories' && <CategoriesTab companyId={companyId} />}
         </ScreenTabs>
       )}

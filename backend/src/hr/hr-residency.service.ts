@@ -23,6 +23,7 @@ import {
 } from './constants/employee-hr-service-categories';
 import { issueResidencyServiceInvoiceCore } from './hr-residency-issue-invoice.util';
 import { voidResidencyServiceInvoiceCore } from './hr-residency-void-invoice.util';
+import { SupplierDirectoryService } from '../supplier-directory/supplier-directory.service';
 
 const residencyInclude = {
   employee: true,
@@ -35,6 +36,7 @@ export class HrResidencyService {
     private readonly prisma: TenantPrismaService,
     private readonly audit: AuditLogService,
     private readonly accountingCore: AccountingCoreService,
+    private readonly supplierDirectory: SupplierDirectoryService,
   ) {}
 
   async findResidencies(companyId: string, employeeId?: string, serviceCategory?: string) {
@@ -182,7 +184,11 @@ export class HrResidencyService {
 
     if (issueInvoice) {
       await issueResidencyServiceInvoiceCore(
-        { prisma: this.prisma, accountingCore: this.accountingCore },
+        {
+          prisma: this.prisma,
+          accountingCore: this.accountingCore,
+          supplierDirectory: this.supplierDirectory,
+        },
         residency,
         userId ?? '',
         {
@@ -281,7 +287,11 @@ export class HrResidencyService {
     if (!residency) throw new NotFoundException(`السجل ${id} غير موجود.`);
 
     const result = await issueResidencyServiceInvoiceCore(
-      { prisma: this.prisma, accountingCore: this.accountingCore },
+      {
+        prisma: this.prisma,
+        accountingCore: this.accountingCore,
+        supplierDirectory: this.supplierDirectory,
+      },
       residency,
       userId ?? '',
       {

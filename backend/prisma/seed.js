@@ -75,6 +75,10 @@ const MASTER_SUBCATEGORIES = [
   { parentAccountCode: 'EXP-002', code: 'E2-5', nameAr: 'زيارات',            nameEn: 'Visit Visas',               sortOrder: 4 },
   { parentAccountCode: 'EXP-002', code: 'E2-6', nameAr: 'غرامات',            nameEn: 'Fines & Penalties',         sortOrder: 5 },
   { parentAccountCode: 'EXP-002', code: 'E2-7', nameAr: 'ضرائب ورسوم أخرى', nameEn: 'Other Taxes & Fees',        sortOrder: 6 },
+  { parentAccountCode: 'EXP-002', code: 'E2-8', nameAr: 'GOSI',              nameEn: 'GOSI',                      sortOrder: 7 },
+  // E2-9 محجوز للتصنيفات التاريخية المختلفة بين الشركات، ولا يُزرع مستقبلاً.
+  { parentAccountCode: 'EXP-002', code: 'E2-10', nameAr: 'رسوم منصات حكومية', nameEn: 'Government Platform Fees', sortOrder: 9 },
+  { parentAccountCode: 'EXP-002', code: 'E2-11', nameAr: 'شهادات صحية وتصاريح موظفين', nameEn: 'Health Certificates & Employee Permits', sortOrder: 10 },
   { parentAccountCode: 'EXP-007', code: 'E7-1', nameAr: 'رسوم تحويل',        nameEn: 'Transfer Fees',             sortOrder: 0 },
   { parentAccountCode: 'EXP-007', code: 'E7-2', nameAr: 'رسوم سحب',          nameEn: 'Withdrawal Fees',           sortOrder: 1 },
   { parentAccountCode: 'EXP-007', code: 'E7-3', nameAr: 'رسوم إدارة حساب',   nameEn: 'Account Management Fees',   sortOrder: 2 },

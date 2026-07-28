@@ -9,9 +9,10 @@
  *
  * القاعدة الذهبية: tenantId مُحقون في كل سجل لضمان الأمان (RLS).
  */
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { DEFAULT_BANK_TREE_CATEGORY_SEEDS } from '../bank-statements/default-bank-tree-categories.seed';
+import { isShamiTaxWorkspace } from '../supplier-directory/supplier-directory-search.util';
 import {
   MASTER_ACCOUNTS,
   MASTER_VAULTS,
@@ -159,10 +160,14 @@ export class AccountingInitService {
         data: {
           tenantId,
           companyId,
+          directoryEntryId: sup.directoryCode,
+          directoryManaged: true,
           nameAr: sup.nameAr,
           nameEn: sup.nameEn,
           taxNumber: sup.taxNumber,
           supplierCategoryId: categoryId,
+          categoryId: 'expenses',
+          isTaxRegistered: true,
           isDeleted: false,
         },
       });
@@ -195,6 +200,14 @@ export class AccountingInitService {
     deleted: { categories: number; oldAccounts: number };
     created: { categories: number };
   }> {
+    const protectedCompany = await this.prisma.company.findFirst({
+      where: { id: companyId, tenantId },
+      select: { nameAr: true, nameEn: true },
+    });
+    if (protectedCompany && isShamiTaxWorkspace(protectedCompany)) {
+      throw new BadRequestException('SHAMI TAX محمية من إعادة بناء التصنيفات');
+    }
+
     const masterCodes = new Set(MASTER_ACCOUNTS.map((a) => a.code));
 
     // ① فصل الموردين عن الفئات (supplierCategoryId nullable → null آمن)
@@ -313,6 +326,14 @@ export class AccountingInitService {
    * آمنة تماماً على الشركات التي لديها فئات مخصصة.
    */
   async patchMissingSubcategories(tenantId: string, companyId: string): Promise<{ added: number; updated: number; skipped: number }> {
+    const company = await this.prisma.company.findFirst({
+      where: { id: companyId, tenantId },
+      select: { nameAr: true, nameEn: true },
+    });
+    if (!company || isShamiTaxWorkspace(company)) {
+      return { added: 0, updated: 0, skipped: MASTER_SUBCATEGORIES.length };
+    }
+
     let added = 0;
     let updated = 0;
     let skipped = 0;
@@ -393,6 +414,7 @@ export class AccountingInitService {
     const companies = await this.prisma.company.findMany({ where: { tenantId } });
     const details: Array<{ companyId: string; result: Awaited<ReturnType<typeof this.resetAndReinitializeCategories>> }> = [];
     for (const company of companies) {
+      if (isShamiTaxWorkspace(company)) continue;
       const result = await this.resetAndReinitializeCategories(tenantId, company.id);
       details.push({ companyId: company.id, result });
     }

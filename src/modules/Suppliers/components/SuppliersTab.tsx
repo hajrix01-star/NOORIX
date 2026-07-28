@@ -9,6 +9,7 @@ import { SupplierTable } from './SupplierTable';
 import { SupplierEditModal } from './SupplierEditModal';
 import { SupplierProfileModal } from './SupplierProfileModal';
 import SupplierImportExport from './SupplierImportExport';
+import ReadyEntitiesModal from './ReadyEntitiesModal';
 import { Button, Input, ScreenShell } from '../../../ui';
 import type {
   SupplierCategoryRecord,
@@ -17,7 +18,10 @@ import type {
   SupplierUpdatePayload,
 } from '../supplierTypes';
 
-export type SuppliersTabProps = { companyId: string };
+export type SuppliersTabProps = {
+  companyId: string;
+  readyDirectoryAvailable?: boolean;
+};
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -31,13 +35,17 @@ function toSupplierCategories(categories: unknown[]) {
   );
 }
 
-export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersTabProps) {
+export const SuppliersTab = memo(function SuppliersTab({
+  companyId,
+  readyDirectoryAvailable = true,
+}: SuppliersTabProps) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
   const debouncedQ = useDebouncedValue(search.trim(), 300);
   const [editingSupplier, setEditingSupplier] = useState<SupplierRecord | null>(null);
   const [profileSupplier, setProfileSupplier] = useState<SupplierRecord | null>(null);
+  const [showReadyEntities, setShowReadyEntities] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { showToast } = useToast();
 
@@ -147,12 +155,22 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
           onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
           placeholder={t('searchByNameOrTax')}
         />
-        <Button
-          variant={showForm ? 'default' : 'primary'}
-          onClick={() => setShowForm((visible) => !visible)}
-        >
-          {showForm ? t('cancel') : t('addSupplier')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {readyDirectoryAvailable && (
+            <Button
+              variant="default"
+              onClick={() => setShowReadyEntities(true)}
+            >
+              {t('readyEntitiesButton')}
+            </Button>
+          )}
+          <Button
+            variant={showForm ? 'default' : 'primary'}
+            onClick={() => setShowForm((visible) => !visible)}
+          >
+            {showForm ? t('cancel') : t('addSupplier')}
+          </Button>
+        </div>
       </div>
 
       <SupplierImportExport
@@ -211,6 +229,11 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
           onDelete={handleDelete}
         />
       )}
+      <ReadyEntitiesModal
+        companyId={companyId}
+        open={showReadyEntities}
+        onClose={() => setShowReadyEntities(false)}
+      />
     </ScreenShell>
   );
 });

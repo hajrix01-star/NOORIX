@@ -83,10 +83,18 @@ export async function runBackupLogicalImportInTransaction(
         }
 
         const supplierMap = new Map<string, string>();
+        const directoryCodes = new Set(
+          (await tx.supplierDirectoryEntry.findMany({ select: { id: true } }))
+            .map((entry) => entry.id),
+        );
         for (const s of arr<Record<string, unknown>>(data.suppliers)) {
           const id = nid();
           supplierMap.set(String(s.id), id);
           const sc = s.supplierCategoryId ? categoryMap.get(String(s.supplierCategoryId)) : undefined;
+          const directoryEntryId = typeof s.directoryEntryId === 'string'
+            && directoryCodes.has(s.directoryEntryId)
+            ? s.directoryEntryId
+            : null;
           await tx.supplier.create({
             data: {
               id,
@@ -98,6 +106,10 @@ export async function runBackupLogicalImportInTransaction(
               taxNumber: (s.taxNumber as string | null) ?? null,
               categoryId: (s.categoryId as string | null) ?? null,
               supplierCategoryId: sc ?? null,
+              directoryEntryId,
+              directoryManaged: directoryEntryId ? Boolean(s.directoryManaged) : false,
+              isTaxRegistered: s.isTaxRegistered !== false,
+              isBookmarked: Boolean(s.isBookmarked),
               isDeleted: Boolean(s.isDeleted),
               createdAt: ddate(s.createdAt),
               updatedAt: ddate(s.updatedAt),

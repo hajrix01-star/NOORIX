@@ -4,6 +4,8 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }     from '../common/tenant-context';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
+import { SUPPLIER_DIRECTORY_SEEDS } from '../supplier-directory/supplier-directory.seed';
+import { matchesDirectorySearch } from '../supplier-directory/supplier-directory-search.util';
 
 @Injectable()
 export class SuppliersService {
@@ -11,6 +13,15 @@ export class SuppliersService {
 
   async findAll(companyId: string, page = 1, pageSize = 50, q?: string) {
     const needle = (q || '').trim().slice(0, 120);
+    const matchingDirectoryIds = needle
+      ? SUPPLIER_DIRECTORY_SEEDS
+          .filter((entry) => matchesDirectorySearch(needle, [
+            entry.nameAr,
+            entry.nameEn ?? '',
+            ...entry.aliases,
+          ]))
+          .map((entry) => entry.code)
+      : [];
     const searchFilter: Prisma.SupplierWhereInput =
       needle.length > 0
         ? {
@@ -19,6 +30,9 @@ export class SuppliersService {
               { nameEn: { contains: needle, mode: 'insensitive' } },
               { taxNumber: { contains: needle, mode: 'insensitive' } },
               { phone: { contains: needle, mode: 'insensitive' } },
+              ...(matchingDirectoryIds.length > 0
+                ? [{ directoryEntryId: { in: matchingDirectoryIds } }]
+                : []),
             ],
           }
         : {};
@@ -31,7 +45,10 @@ export class SuppliersService {
         orderBy: { nameAr: 'asc' },
         skip: (p - 1) * size,
         take: size,
-        include: { supplierCategory: { include: { account: true } } },
+        include: {
+          supplierCategory: { include: { account: true } },
+          directoryEntry: true,
+        },
       }),
       this.prisma.supplier.count({ where }),
     ]);
@@ -62,6 +79,10 @@ export class SuppliersService {
         phone:              (dto.phone ?? '').trim() || null,
         isTaxRegistered:    dto.isTaxRegistered ?? true,
       },
+      include: {
+        supplierCategory: { include: { account: true } },
+        directoryEntry: true,
+      },
     });
   }
 
@@ -91,7 +112,10 @@ export class SuppliersService {
     return this.prisma.supplier.update({
       where: { id },
       data,
-      include: { supplierCategory: { include: { account: true } } },
+      include: {
+        supplierCategory: { include: { account: true } },
+        directoryEntry: true,
+      },
     });
   }
 
@@ -103,7 +127,10 @@ export class SuppliersService {
     return this.prisma.supplier.update({
       where: { id },
       data: { isBookmarked: value },
-      include: { supplierCategory: { include: { account: true } } },
+      include: {
+        supplierCategory: { include: { account: true } },
+        directoryEntry: true,
+      },
     });
   }
 

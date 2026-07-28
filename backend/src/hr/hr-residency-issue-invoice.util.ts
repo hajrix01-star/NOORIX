@@ -8,6 +8,7 @@ import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-paymen
 import { saudiDateYmd } from './utils/hr-saudi-dates.util';
 import { buildHrServiceInvoiceNotes } from './constants/employee-hr-service-categories';
 import { employeeDisplayNameForNotes } from './utils/employee-display-name.util';
+import { SupplierDirectoryService } from '../supplier-directory/supplier-directory.service';
 
 type ResidencyForInvoice = {
   id: string;
@@ -22,7 +23,11 @@ type ResidencyForInvoice = {
 };
 
 export async function issueResidencyServiceInvoiceCore(
-  deps: { prisma: TenantPrismaService; accountingCore: AccountingCoreService },
+  deps: {
+    prisma: TenantPrismaService;
+    accountingCore: AccountingCoreService;
+    supplierDirectory: SupplierDirectoryService;
+  },
   residency: ResidencyForInvoice,
   userId: string,
   options: { amount: number; vaultId: string; transactionDate?: string },
@@ -51,11 +56,17 @@ export async function issueResidencyServiceInvoiceCore(
     iqamaNumber: residency.iqamaNumber,
     referenceLabel: residency.referenceLabel,
   });
+  const directoryLink = await deps.supplierDirectory.ensureForHrService(
+    residency.companyId,
+    residency.serviceCategory,
+  );
 
   const { invoice } = await deps.accountingCore.postHrServiceExpense(
     {
       companyId: residency.companyId,
+      supplierId: directoryLink?.supplier.id,
       employeeId: residency.employeeId,
+      categoryId: directoryLink?.category.id,
       kind: 'hr_expense',
       totalAmount: amountStr,
       netAmount: amountStr,
