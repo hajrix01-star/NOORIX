@@ -3006,21 +3006,35 @@ html[data-card-style="10"] .noorix-stat-card {
   background: var(--noorix-accent-blue);
 }
 .nx-invoice-summary-card__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.74fr);
+  grid-template-areas:
+    "metrics head"
+    "metrics total"
+    "breakdown total";
+  min-height: 190px;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 16px 18px 14px;
+  direction: ltr;
+}
+.nx-invoice-summary-card__body--vault {
   display: flex;
   min-height: 190px;
   flex-direction: column;
   align-items: stretch;
   gap: 12px;
-  padding: 16px 18px 14px;
-}
-.nx-invoice-summary-card__body--vault {
   height: 100%;
+  direction: rtl;
 }
 .nx-invoice-summary-card__head {
+  grid-area: head;
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
+  justify-content: flex-end;
+  direction: rtl;
 }
 .nx-invoice-summary-card__icon {
   display: inline-flex;
@@ -3062,6 +3076,7 @@ html[data-card-style="10"] .noorix-stat-card {
   white-space: nowrap;
 }
 .nx-invoice-summary-card__total {
+  grid-area: total;
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -3079,17 +3094,19 @@ html[data-card-style="10"] .noorix-stat-card {
   line-height: 1.05;
 }
 .nx-invoice-summary-card__breakdown {
+  grid-area: breakdown;
   min-width: 0;
+  direction: rtl;
 }
 .nx-invoice-summary-card__metrics {
+  grid-area: metrics;
   display: grid;
   grid-template-columns: 1fr;
   gap: 0;
-  margin-top: auto;
   overflow: hidden;
-  border: 1px solid var(--noorix-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--noorix-bg-muted) 34%, var(--noorix-bg-surface));
+  border-inline-end: 1px solid var(--noorix-border);
+  padding-inline-end: 16px;
+  direction: rtl;
 }
 .nx-invoice-summary-metric {
   display: flex;
@@ -3139,9 +3156,10 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 .nx-invoice-summary-splits .nx-invoice-summary-metric {
   padding: 9px 12px;
-  border: 1px solid var(--noorix-border);
+  border: 0;
+  border-bottom: 1px solid var(--noorix-border);
   border-radius: 10px;
-  background: var(--noorix-bg-surface);
+  background: transparent;
 }
 .nx-invoice-vault-flow__grid {
   display: grid;
@@ -3214,7 +3232,19 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 @media (max-width: 760px) {
   .nx-invoice-summary-card__body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "head"
+      "total"
+      "breakdown"
+      "metrics";
     min-height: 0;
+  }
+  .nx-invoice-summary-card__metrics {
+    border-inline-end: 0;
+    border-top: 1px solid var(--noorix-border);
+    padding-inline-end: 0;
+    padding-top: 4px;
   }
   .nx-invoice-summary-splits {
     grid-template-columns: 1fr;
