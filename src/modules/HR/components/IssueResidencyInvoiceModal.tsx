@@ -9,6 +9,7 @@ import { issueResidencyInvoice, throwIfApiFailed } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, Modal } from '../../../ui';
+import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import {
   HR_SERVICE_CATEGORY_LABEL_KEYS,
   requiresInvoiceSupplierSelection,
@@ -121,22 +122,18 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
             <option key={v.id || ''} value={v.id || ''}>{vaultDisplayName(v, lang)}</option>
           ))}
         </Input>
-        <Input
-          type="select"
-          label={t('hrServiceEntitySupplier')}
-          value={supplierId}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setSupplierId(e.target.value)}
-          required={requiresServiceSupplier}
-        >
-          <option value="">{t('selectSupplierPlaceholder')}</option>
-          {(suppliers as SupplierRecord[]).map((supplier) => (
-            <option key={supplier.id} value={supplier.id}>
-              {lang === 'en'
-                ? (supplier.nameEn || supplier.nameAr)
-                : (supplier.nameAr || supplier.nameEn)}
-            </option>
-          ))}
-        </Input>
+        <div>
+          <label className="block text-[12px] font-semibold mb-1" htmlFor="hr-service-invoice-supplier">
+            {t('hrServiceEntitySupplier')}{requiresServiceSupplier ? ' *' : ''}
+          </label>
+          <SupplierSelect
+            id="hr-service-invoice-supplier"
+            suppliers={suppliers as SupplierRecord[]}
+            value={supplierId}
+            onChange={setSupplierId}
+            placeholder={t('selectSupplierPlaceholder')}
+          />
+        </div>
         {error && (
           <div className="rounded-lg text-[13px] p-[10px] bg-noorix-red/10 text-noorix-red">{error}</div>
         )}

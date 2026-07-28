@@ -14,6 +14,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { fmt } from '../../../utils/format';
 import { Checkbox, DialogActions, Input, AdaptiveSheet } from '../../../ui';
+import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import {
   HR_SERVICE_CATEGORIES,
   HR_SERVICE_CATEGORY_LABEL_KEYS,
@@ -180,12 +181,6 @@ export function ResidencyFormModal({
   }, [transactionDate]);
 
   useEffect(() => {
-    if (supplierSelectionManuallyEdited.current || supplierId) return;
-    const defaultSupplierId = defaultHrServiceSupplierId(serviceCategory, suppliers);
-    if (defaultSupplierId) setSupplierId(defaultSupplierId);
-  }, [serviceCategory, supplierId, suppliers]);
-
-  useEffect(() => {
     if (isEdit && residency) {
       const dates = buildServiceDateDefaults(residency, false, residency.serviceCategory || defaultCategory);
       setEmployeeId(residency.employeeId || '');
@@ -225,6 +220,12 @@ export function ResidencyFormModal({
       setError('');
     }
   }, [isEdit, residency?.id, defaultCategory, defaultEmployeeId]);
+
+  useEffect(() => {
+    if (supplierSelectionManuallyEdited.current || supplierId) return;
+    const defaultSupplierId = defaultHrServiceSupplierId(serviceCategory, suppliers);
+    if (defaultSupplierId) setSupplierId(defaultSupplierId);
+  }, [serviceCategory, supplierId, suppliers]);
 
   const handleServiceCategoryChange = (category: string) => {
     setServiceCategory(category);
@@ -446,25 +447,21 @@ export function ResidencyFormModal({
           showIqama={showIqama}
         />
 
-        <Input
-          type="select"
-          label={t('hrServiceEntitySupplier')}
-          value={supplierId}
-          onChange={(e: ResidencyInputChange) => {
-            supplierSelectionManuallyEdited.current = true;
-            setSupplierId(e.target.value);
-          }}
-          required={requiresServiceSupplier}
-        >
-          <option value="">{t('selectSupplierPlaceholder')}</option>
-          {(suppliers as SupplierRecord[]).map((supplier) => (
-            <option key={supplier.id} value={supplier.id}>
-              {lang === 'en'
-                ? (supplier.nameEn || supplier.nameAr)
-                : (supplier.nameAr || supplier.nameEn)}
-            </option>
-          ))}
-        </Input>
+        <div>
+          <label className="block text-[12px] font-semibold mb-1" htmlFor="hr-service-supplier">
+            {t('hrServiceEntitySupplier')}{requiresServiceSupplier ? ' *' : ''}
+          </label>
+          <SupplierSelect
+            id="hr-service-supplier"
+            suppliers={suppliers as SupplierRecord[]}
+            value={supplierId}
+            onChange={(value: string) => {
+              supplierSelectionManuallyEdited.current = true;
+              setSupplierId(value);
+            }}
+            placeholder={t('selectSupplierPlaceholder')}
+          />
+        </div>
 
         {!isEdit && (
           <>
@@ -496,24 +493,6 @@ export function ResidencyFormModal({
                     <option key={v.id || ''} value={v.id || ''}>{vaultDisplayName(v, lang)}</option>
                   ))}
                 </Input>
-                {requiresInvoiceSupplier && (
-                  <Input
-                    type="select"
-                    label={t('supplier')}
-                    value={supplierId}
-                    onChange={(e: ResidencyInputChange) => setSupplierId(e.target.value)}
-                    required
-                  >
-                    <option value="">{t('selectSupplierPlaceholder')}</option>
-                    {(suppliers as SupplierRecord[]).map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {lang === 'en'
-                          ? (supplier.nameEn || supplier.nameAr)
-                          : (supplier.nameAr || supplier.nameEn)}
-                      </option>
-                    ))}
-                  </Input>
-                )}
               </div>
             )}
           </>
