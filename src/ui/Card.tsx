@@ -7,15 +7,6 @@ import { cn } from './cn';
 
 const PAD = { none: '', sm: 'p-3', md: 'p-4 lg:p-5', lg: 'p-5 lg:p-6' };
 
-/** شريط علوي h-1 — نفس كروت لوحة التحكم */
-const STRIPE_TOP = {
-  blue:   'bg-noorix-blue',
-  green:  'bg-noorix-green',
-  red:    'bg-noorix-red',
-  amber:  'bg-noorix-amber',
-  violet: 'bg-noorix-violet',
-};
-
 const STAT_COLOR = {
   blue:   { accent: 'var(--noorix-accent-blue)', bg: 'var(--noorix-blue-8)'  },
   green:  { accent: 'var(--noorix-accent-green)', bg: 'var(--noorix-green-8)'  },
@@ -50,7 +41,7 @@ export function SurfaceCard({ padding = 'md', className = '', children, onClick,
 }
 
 export type ExecCardProps = {
-  stripe?: keyof typeof STRIPE_TOP | string;
+  stripe?: string;
   title?: ReactNode;
   subtitle?: ReactNode;
   value?: ReactNode;
@@ -61,6 +52,7 @@ export type ExecCardProps = {
 } & Record<string, unknown>;
 
 export function ExecCard({ stripe = 'blue', title, subtitle, value, icon, footer, className = '', children, ...rest }: ExecCardProps) {
+  void stripe;
   return (
     <div
       className={cn(
@@ -69,13 +61,6 @@ export function ExecCard({ stripe = 'blue', title, subtitle, value, icon, footer
       )}
       {...rest}
     >
-      <span
-        className={cn(
-          'pointer-events-none absolute inset-x-0 top-0 z-[1] h-1',
-          STRIPE_TOP[stripe as keyof typeof STRIPE_TOP] ?? STRIPE_TOP.blue,
-        )}
-        aria-hidden
-      />
       <div className="flex items-center gap-2.5 p-3.5 pb-2">
         {icon && <span className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-noorix-bg-muted" aria-hidden="true">{icon}</span>}
         <div className="min-w-0">

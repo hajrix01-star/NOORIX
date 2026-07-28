@@ -179,7 +179,7 @@ export function buildRowStyle<TRow extends SmartTableRow = SmartTableRow>({
   getRowStyle?: SmartTableProps<TRow>['getRowStyle'];
 }): SmartTableCssVars {
   return {
-    '--nx-smart-row-bg': index % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent',
+    '--nx-smart-row-bg': 'var(--noorix-bg-surface)',
     ...(typeof getRowStyle === 'function' ? getRowStyle(row, index) : null),
   };
 }

@@ -191,7 +191,7 @@
   --noorix-table-header-border: #e1d8c8;
   --noorix-table-header-hover-bg: #ece4d6;
   --noorix-table-row-number-bg: #f7f3eb;
-  --noorix-table-row-even: #fbfaf7;
+  --noorix-table-row-even: var(--noorix-bg-surface);
   /* ألوان تمييز */
   --noorix-accent-green:  #147044;
   /* أسماء قصيرة مستخدمة في مكوّنات قديمة — تُشير لنفس التوكنات المعيارية */
@@ -2643,7 +2643,7 @@ html[data-card-style="10"] .noorix-stat-card {
 /* ?? Stat Card: كرت إحصائية مفردة (مثل عدد الموظفين) ??????? */
 .noorix-stat-card { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: var(--noorix-card-radius); overflow: hidden; box-shadow: var(--noorix-card-shadow); display: flex; flex-direction: column; min-width: 130px; transition: box-shadow var(--noorix-transition), transform var(--noorix-transition); }
 .noorix-stat-card:hover { box-shadow: var(--noorix-card-shadow-hover); transform: translateY(-2px); }
-.noorix-stat-card__stripe { height: 4px; }
+.noorix-stat-card__stripe { display: none; height: 0; }
 .noorix-stat-card--blue   .noorix-stat-card__stripe { background: var(--noorix-accent-blue); }
 .noorix-stat-card--green  .noorix-stat-card__stripe { background: var(--noorix-accent-green); }
 .noorix-stat-card--amber  .noorix-stat-card__stripe { background: var(--noorix-accent-amber); }
@@ -2761,7 +2761,7 @@ html[data-card-style="10"] .noorix-stat-card {
   overflow: hidden;
   background: var(--noorix-bg-surface);
 }
-.noorix-result-panel__stripe { height: 3px; background: var(--noorix-accent-blue); }
+.noorix-result-panel__stripe { display: none; height: 0; background: var(--noorix-accent-blue); }
 .noorix-result-panel--green .noorix-result-panel__stripe { background: var(--noorix-accent-green); }
 .noorix-result-panel--amber .noorix-result-panel__stripe { background: var(--noorix-accent-amber); }
 .noorix-result-panel__body  { padding: 4px 0; }
@@ -2835,7 +2835,8 @@ html[data-card-style="10"] .noorix-stat-card {
 
 /* الشريط اللوني العلوي — نفس طريقة VaultCard */
 .noorix-exec-card__stripe {
-  height: 4px;
+  display: none;
+  height: 0;
   width: 100%;
   flex-shrink: 0;
 }
@@ -2991,7 +2992,8 @@ html[data-card-style="10"] .noorix-stat-card {
   box-shadow: var(--noorix-card-shadow);
 }
 .nx-invoice-summary-card__stripe {
-  height: 4px;
+  display: none;
+  height: 0;
   background: var(--noorix-accent-blue);
 }
 .nx-invoice-summary-card--inbound .nx-invoice-summary-card__stripe {
@@ -6391,6 +6393,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   text-align: center !important;
 }
 .noorix-table tbody td {
+  background: var(--nx-smart-row-bg, var(--noorix-bg-surface)) !important;
   height: 42px;
   border-bottom: 1px solid var(--nx-table-line-soft) !important;
   border-inline-start: 1px solid var(--nx-table-body-col-line) !important;

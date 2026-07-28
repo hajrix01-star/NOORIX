@@ -26,7 +26,6 @@
  */
 import React, { type MouseEventHandler, type ReactNode } from 'react';
 import { cn } from './cn';
-import SparkLine from './SparkLine';
 import { fmt } from '../utils/format';
 import { FmtNum } from './FmtNum';
 
@@ -168,11 +167,11 @@ MetricCard.Value = function MetricCardValue({
  * grow: true في كروت KPI لدفع التذييل للأسفل (flex-1)
  ════════════════════════════════════════════════════════════════════ */
 MetricCard.Spark = function MetricCardSpark({
-  data = [],
-  color,
-  height = 36,
-  grow = false,
-  className = '',
+  data: _data = [],
+  color: _color,
+  height: _height = 36,
+  grow: _grow = false,
+  className: _className = '',
 }: {
   /** نقاط السباركلاين — `v` أو `value` أو رقم خام */
   data?: Array<number | string | null | undefined>;
@@ -181,11 +180,12 @@ MetricCard.Spark = function MetricCardSpark({
   grow?: boolean;
   className?: string;
 }) {
-  return (
-    <div className={cn('w-full px-4 mt-3', grow ? 'min-h-[36px] flex-1' : 'pb-3', className)}>
-      <SparkLine data={data} color={color} height={height} />
-    </div>
-  );
+  void _data;
+  void _color;
+  void _height;
+  void _grow;
+  void _className;
+  return null;
 };
 
 /* ══ Divider ══════════════════════════════════════════════════════════ */
