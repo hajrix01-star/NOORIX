@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useState, type ChangeEvent } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useDebouncedValue } from '../../../ui';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useCategories } from '../../../hooks/useCategories';
@@ -21,6 +21,7 @@ import type {
 export type SuppliersTabProps = {
   companyId: string;
   readyDirectoryAvailable?: boolean;
+  openCreateSignal?: number;
 };
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -38,6 +39,7 @@ function toSupplierCategories(categories: unknown[]) {
 export const SuppliersTab = memo(function SuppliersTab({
   companyId,
   readyDirectoryAvailable = true,
+  openCreateSignal,
 }: SuppliersTabProps) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
@@ -47,6 +49,7 @@ export const SuppliersTab = memo(function SuppliersTab({
   const [profileSupplier, setProfileSupplier] = useState<SupplierRecord | null>(null);
   const [showReadyEntities, setShowReadyEntities] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const lastOpenCreateSignal = useRef(openCreateSignal);
   const { showToast } = useToast();
 
   const { suppliers, isLoading, isError, error, create, update, remove } = useSuppliers(companyId, {
@@ -144,6 +147,12 @@ export const SuppliersTab = memo(function SuppliersTab({
     return create.mutateAsync(body);
   }
 
+  useEffect(() => {
+    if (openCreateSignal == null || openCreateSignal === lastOpenCreateSignal.current) return;
+    lastOpenCreateSignal.current = openCreateSignal;
+    setShowForm(true);
+  }, [openCreateSignal]);
+
   return (
     <ScreenShell variant="data">
       <div className="nx-page-header">
@@ -164,12 +173,6 @@ export const SuppliersTab = memo(function SuppliersTab({
               {t('readyEntitiesButton')}
             </Button>
           )}
-          <Button
-            variant="primary"
-            onClick={() => setShowForm(true)}
-          >
-            {t('addSupplier')}
-          </Button>
         </div>
       </div>
 

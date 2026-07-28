@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
-import { ScreenTabs, ScreenShell } from '../../ui';
+import { Button, ScreenTabs, ScreenShell } from '../../ui';
 import { SuppliersTab } from './components/SuppliersTab';
 import { CategoriesTab } from './components/CategoriesTab';
 
@@ -20,6 +20,8 @@ export default function SuppliersScreen() {
   const { t } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const [activeTab, setActiveTab] = useTabSearchParam(SUPPLIER_TAB_IDS, 'suppliers');
+  const [openSupplierCreateSignal, setOpenSupplierCreateSignal] = React.useState(0);
+  const [openCategoryCreateSignal, setOpenCategoryCreateSignal] = React.useState(0);
   const activeCompany = companies.find((company) => company.id === companyId);
   const readyDirectoryAvailable = [activeCompany?.nameAr, activeCompany?.nameEn]
     .filter(Boolean)
@@ -30,6 +32,14 @@ export default function SuppliersScreen() {
     () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
     [t],
   );
+  const createButtonLabel = activeTab === 'categories' ? t('addCategory') : t('addSupplier');
+  const handleOpenCreate = () => {
+    if (activeTab === 'categories') {
+      setOpenCategoryCreateSignal((value) => value + 1);
+      return;
+    }
+    setOpenSupplierCreateSignal((value) => value + 1);
+  };
 
   return (
     <ScreenShell variant="data">
@@ -49,14 +59,25 @@ export default function SuppliersScreen() {
           value={activeTab}
           onChange={setActiveTab}
           contentClassName="nx-tab-content"
+          tabBarEnd={(
+            <Button size="sm" variant="primary" onClick={handleOpenCreate}>
+              {createButtonLabel}
+            </Button>
+          )}
         >
           {activeTab === 'suppliers' && (
             <SuppliersTab
               companyId={companyId}
               readyDirectoryAvailable={readyDirectoryAvailable}
+              openCreateSignal={openSupplierCreateSignal}
             />
           )}
-          {activeTab === 'categories' && <CategoriesTab companyId={companyId} />}
+          {activeTab === 'categories' && (
+            <CategoriesTab
+              companyId={companyId}
+              openCreateSignal={openCategoryCreateSignal}
+            />
+          )}
         </ScreenTabs>
       )}
     </ScreenShell>

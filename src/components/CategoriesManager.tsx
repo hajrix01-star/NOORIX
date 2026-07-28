@@ -2,7 +2,16 @@
  * CategoriesManager — مكون مشترك لإدارة التصنيفات (فئات الحسابات)
  * يُستخدم في: Suppliers/CategoriesTab (الموردين والتصنيفات)
  */
-import React, { useState, useMemo, memo, type ChangeEvent, type FormEvent } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  memo,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from '../i18n/useTranslation';
 import { useToast } from '../context/ToastContext';
@@ -48,7 +57,11 @@ type FormState = {
   parentId: string;
 };
 
-type CategoriesManagerProps = { companyId?: string | null; titleKey?: string };
+type CategoriesManagerProps = {
+  companyId?: string | null;
+  titleKey?: string;
+  openCreateSignal?: number;
+};
 
 /** عرض الكود التحليلي مع لون يختلف حسب المستوى */
 function CodeBadge({ row }: { row: CategoryRow }) {
@@ -73,10 +86,12 @@ function CodeBadge({ row }: { row: CategoryRow }) {
 export const CategoriesManager = memo(function CategoriesManager({
   companyId,
   titleKey = 'categoriesTab',
+  openCreateSignal,
 }: CategoriesManagerProps) {
   const { t, lang } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<CategoryRow | null>(null);
+  const lastOpenCreateSignal = useRef(openCreateSignal);
   const { showToast } = useToast();
   const [form, setForm] = useState<FormState>({
     nameAr: '',
@@ -140,11 +155,20 @@ export const CategoriesManager = memo(function CategoriesManager({
     [t],
   );
 
-  function resetForm() {
+  const resetFormState = useCallback(() => {
     setForm({ nameAr: '', nameEn: '', type: 'purchase', icon: '', parentId: '' });
     setEditing(null);
+  }, []);
+
+  function resetForm() {
+    resetFormState();
     setShowForm(false);
   }
+
+  const openCreate = useCallback(() => {
+    resetFormState();
+    setShowForm(true);
+  }, [resetFormState]);
 
   function openEdit(cat: CategoryRow) {
     setEditing(cat);
@@ -157,6 +181,12 @@ export const CategoriesManager = memo(function CategoriesManager({
     });
     setShowForm(true);
   }
+
+  useEffect(() => {
+    if (openCreateSignal == null || openCreateSignal === lastOpenCreateSignal.current) return;
+    lastOpenCreateSignal.current = openCreateSignal;
+    openCreate();
+  }, [openCreate, openCreateSignal]);
 
   function handleSave(e: FormEvent) {
     e.preventDefault();
@@ -324,11 +354,6 @@ export const CategoriesManager = memo(function CategoriesManager({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-end">
-        <Button variant="primary" onClick={() => setShowForm(true)}>
-          {t('addCategory')}
-        </Button>
-      </div>
       <AdaptiveSheet
         open={showForm}
         onClose={resetForm}
