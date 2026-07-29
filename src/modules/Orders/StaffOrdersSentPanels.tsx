@@ -3,7 +3,7 @@ import Decimal from 'decimal.js';
 import { useTranslation } from '../../i18n/useTranslation';
 import { fmt } from '../../utils/format';
 import { formatSaudiDate } from '../../utils/saudiDate';
-import { Button, Badge, SimpleTable, cn } from '../../ui';
+import { Button, Badge, cn } from '../../ui';
 import {
   resolveStaffItemUnitPrice,
   staffItemLineAmount,
@@ -13,6 +13,7 @@ import {
   staffSaleAvgPerOrder,
 } from './utils/staffOrderBasketUtils';
 import type { OrderProduct, StaffOrder, StaffOrderItem } from '../../types/api';
+import { StaffSaleItemsTable } from './components/StaffSaleItemsTable';
 export function StatusBadge({ status }: { status?: string | null }) {
   const { t } = useTranslation();
   return (
@@ -88,86 +89,6 @@ export function StaffSaleLogMetrics({
     )}>
       {parts}
     </div>
-  );
-}
-
-/** جدول أصناف العملية — قراءة فقط داخل كرت السجل */
-export function StaffSaleItemsTable({
-  items,
-  lang,
-  t,
-}: {
-  items: StaffOrderItem[];
-  lang: string;
-  t: (key: string, ...args: unknown[]) => string;
-}) {
-  if (!items?.length) return null;
-  return (
-    <SimpleTable
-      data={items}
-      tableMinWidth={280}
-      getRowClassName={() => 'hover:bg-noorix-bg-muted/30'}
-      columns={[
-        {
-          key: 'product',
-          label: t('product'),
-          align: 'start',
-          render: (_: unknown, it: StaffOrderItem) => {
-            const p = it.product;
-            const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
-            const variant = formatVariantLabel(it.size, it.packaging, it.unit);
-            return (
-              <div className="max-w-[140px] text-start sm:max-w-none">
-                <div className="font-medium text-noorix-text break-words leading-snug">{name}</div>
-                {variant ? (
-                  <div className="text-[11px] text-noorix-muted ltr mt-0.5 truncate" title={variant}>{variant}</div>
-                ) : null}
-              </div>
-            );
-          },
-        },
-        {
-          key: 'quantity',
-          label: t('quantity'),
-          numeric: true,
-          width: '3.5rem',
-          render: (_value: unknown, item: StaffOrderItem) => <span className="font-semibold">{fmt(item.quantity, 0)}</span>,
-        },
-        {
-          key: 'unitPrice',
-          label: t('unitPrice'),
-          numeric: true,
-          width: '4rem',
-          render: (_: unknown, it: StaffOrderItem) => {
-            const p = it.product;
-            const amountItem = { ...it, product: p };
-            const unitPrice = resolveStaffItemUnitPrice(amountItem);
-            return unitPrice.gt(0) ? (
-              <>{fmt(unitPrice.toNumber())} <span className="nx-sar">SR</span></>
-            ) : (
-              <span className="text-noorix-muted">—</span>
-            );
-          },
-        },
-        {
-          key: 'lineAmount',
-          label: t('staffSaleGrandTotal'),
-          numeric: true,
-          width: '4.5rem',
-          cellClassName: 'font-bold text-noorix-green',
-          render: (_: unknown, it: StaffOrderItem) => {
-            const p = it.product;
-            const amountItem = { ...it, product: p };
-            const lineAmt = staffItemLineAmount(amountItem);
-            return lineAmt.gt(0) ? (
-              <>{fmt(lineAmt.toNumber())} <span className="nx-sar">SR</span></>
-            ) : (
-              <span className="text-noorix-muted">—</span>
-            );
-          },
-        },
-      ]}
-    />
   );
 }
 
