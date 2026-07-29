@@ -25,6 +25,7 @@ export type HrTabToolbarProps = {
   onResetFilters?: () => void;
   primaryAction?: { label: string; onClick: () => void; hidden?: boolean };
   menuItems?: HrTabToolbarMenuItem[];
+  mobileMenuItemsAsButtons?: boolean;
   menuAriaLabel?: string;
   /** أزرار إضافية على سطح المكتب بجانب الفلاتر */
   desktopActions?: ReactNode;
@@ -38,6 +39,7 @@ export function HrTabToolbar({
   onResetFilters,
   primaryAction,
   menuItems,
+  mobileMenuItemsAsButtons = false,
   menuAriaLabel,
   desktopActions,
 }: HrTabToolbarProps) {
@@ -47,9 +49,11 @@ export function HrTabToolbar({
 
   const hasFilters = filters != null;
   const hasMenu = menuItems != null && menuItems.length > 0;
-  const showMenu = hasMenu && (isMobile || !desktopActions);
+  const visibleMenuItems = (menuItems || []).filter((item) => !item.hidden);
+  const showInlineMobileMenu = hasMenu && isMobile && mobileMenuItemsAsButtons;
+  const showMenu = hasMenu && !showInlineMobileMenu && (isMobile || !desktopActions);
   const showPrimary = primaryAction && !primaryAction.hidden;
-  const hasActionsRow = hasFilters || showMenu || showPrimary || desktopActions;
+  const hasActionsRow = hasFilters || showInlineMobileMenu || showMenu || showPrimary || desktopActions;
 
   return (
     <>
@@ -84,6 +88,23 @@ export function HrTabToolbar({
             ) : null}
 
             {!isMobile && desktopActions}
+
+            {showInlineMobileMenu ? (
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                {visibleMenuItems.map((item) => (
+                  <Button
+                    key={item.key}
+                    size="sm"
+                    variant="default"
+                    className="min-h-[44px] shrink-0 whitespace-nowrap"
+                    style={item.style}
+                    onClick={item.onClick}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
 
             {showMenu ? (
               <KebabMenu

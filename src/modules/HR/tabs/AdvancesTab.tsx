@@ -279,7 +279,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     };
   });
 
-  const { columns, renderMobileCard, renderCompactRow } = useAdvanceTableModel({
+  const { columns } = useAdvanceTableModel({
     t,
     settlementMap,
     onOpenEmployee: setSelectedAdvanceGroup,
@@ -333,6 +333,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
               onClick: () => exportToExcel(exportData, 'advances.xlsx'),
             },
           ]}
+          mobileMenuItemsAsButtons
           primaryAction={{
             label: t('payAdvance'),
             onClick: () => setShowAdvance(true),
@@ -368,9 +369,8 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
           }}
           footerRow={footerRow}
           emptyMessage={t('noDataInPeriod')}
-          renderCompactRow={renderCompactRow}
-          renderMobileCard={renderMobileCard}
-          stripeMobileCards
+          mobileMode="table"
+          tableMinWidth={860}
         />
       )}
     >
