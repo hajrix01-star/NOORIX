@@ -6,7 +6,6 @@ import { FmtNum } from '../../../ui';
 import { fmt } from '../../../utils/format';
 import type { SalesShiftValue } from '../constants/salesShift';
 import { getSalesShiftLabel } from '../constants/salesShift';
-import { buildDayShiftReportFromEntryRows, type EntryShiftRow } from '../utils/salesDayShiftReport';
 
 type ShiftRow = {
   shift: SalesShiftValue;
@@ -41,10 +40,6 @@ export function buildDualShiftPreviewRows(
 }
 
 /** تحويل صفوف المعاينة إلى DayShiftReport لنص واتساب */
-export function previewRowsToDayShiftReport(rows: ShiftRow[]) {
-  return buildDayShiftReportFromEntryRows(rows as EntryShiftRow[]);
-}
-
 export function SalesDualShiftEntryReport({ rows, grandTotal, grandCustomers, t }: Props) {
   return (
     <div className="noorix-surface-card flex flex-col gap-0 overflow-hidden p-0">

@@ -35,15 +35,10 @@ export const HR_WORKSPACE_BODY_FLAT_LIST_CLASS = cn(
   'max-md:px-0 md:px-4',
 );
 
-/** @deprecated */ export const HR_WORKSPACE_BODY_STAFF_LIST_CLASS = HR_WORKSPACE_BODY_FLAT_LIST_CLASS;
-/** @deprecated */ export const HR_STAFF_TEXT_INSET_VAR_CLASS = HR_FLAT_TEXT_INSET_VAR_CLASS;
-
 /** أزرار + فلاتر + بحث — هامش أفقي على الجوال فقط */
 export const HR_TAB_CONTROLS_CLASS = cn(
   'nx-hr-tab-controls flex min-w-0 w-full flex-col gap-3 max-md:px-4',
 );
-
-/** @deprecated */ export const HR_STAFF_CONTROLS_CLASS = HR_TAB_CONTROLS_CLASS;
 
 /** غلاف التبويبات الفرعية — pills تحت التبويبات الرئيسية (خط واحد أسفل الشريط) */
 export const HR_SUBTAB_SHELL_CLASS = cn(
@@ -66,19 +61,6 @@ export const HR_FLAT_TABLE_FRAME_CLASS = cn(
 
 /** غلاف قائمة flat — صفوف بعرض كرت HR */
 export const HR_FLAT_LIST_CLASS = 'nx-hr-flat-list w-full min-w-0 max-md:min-h-0';
-
-/** @deprecated */ export const HR_STAFF_LIST_CLASS = HR_FLAT_LIST_CLASS;
-
-/** @deprecated */ export const HR_STAFF_ROW_INNER_PAD_CLASS = 'max-md:px-5 py-3';
-
-/** @deprecated استخدم HR_SUBTAB_SHELL_CLASS */
-export const HR_SEGMENTED_SHELL_FLAT_CLASS = 'nx-segmented-shell--flat';
-
-/** @deprecated */
-export const HR_SEGMENTED_SHELL_INSET_CLASS = HR_SUBTAB_SHELL_CLASS;
-
-/** @deprecated */
-export const HR_SEGMENTED_INLINE_CLASS = HR_SUBTAB_INLINE_CLASS;
 
 /** جذر تبويبات الأدوات داخل مساحة HR */
 export const HR_TOOLS_ROOT_CLASS = HR_EMBEDDED_SHELL_CLASS;

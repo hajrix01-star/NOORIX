@@ -174,12 +174,6 @@ export function resolveDayCloseCompanyName(input: {
   return localizedDisplayName(company, input.lang, '');
 }
 
-export function formatDayCloseMonthStartLabel(monthStartYmd?: unknown) {
-  return typeof monthStartYmd === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(monthStartYmd)
-    ? formatSaudiDateISO(`${monthStartYmd}T12:00:00.000Z`)
-    : EMPTY_REPORT_VALUE;
-}
-
 export function calculateDayCloseCashKpis(cash?: DayCloseCashSource): DayCloseCashKpis {
   const lifetime = toInvoiceFiniteNumber(cash?.balanceLifetimeCashVaultsEod ?? cash?.balanceEndOfDayCashVaults);
   const raw = cash?.availableCashMonthScoped;

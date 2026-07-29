@@ -1725,20 +1725,6 @@ html[data-card-style="10"] .noorix-stat-card {
   gap: 8px;
 }
 
-.nx-pl-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.nx-pl-compare-filter {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .nx-pl-period-inline,
 .nx-pl-period-inline__setup,
 .nx-pl-period-inline__row,
@@ -1903,17 +1889,6 @@ html[data-card-style="10"] .noorix-stat-card {
   margin-inline: auto;
 }
 
-.nx-pl-compare-months {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  border-bottom: 1px solid var(--noorix-border);
-  background: color-mix(in srgb, var(--noorix-bg-muted) 64%, var(--noorix-bg-surface));
-  padding: 10px 12px;
-}
-
 .nx-pl-statement-head {
   display: flex;
   align-items: flex-end;
@@ -1947,20 +1922,9 @@ html[data-card-style="10"] .noorix-stat-card {
   max-width: 240px;
 }
 
-.nx-pl-mobile-period {
-  border-bottom: 1px solid var(--noorix-border);
-  background: var(--noorix-bg-surface);
-}
-
 .nx-pl-report-card {
   border-color: color-mix(in srgb, var(--noorix-border) 82%, transparent);
   box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08);
-}
-
-.nx-pl-table-toolbar {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--noorix-accent-blue) 4%, transparent), transparent 78%),
-    var(--noorix-bg-surface);
 }
 
 .nx-pl-table-scroll {
@@ -2114,21 +2078,6 @@ html[data-card-style="10"] .noorix-stat-card {
 .nx-pl-indent-88 { padding-inline-start: 88px; }
 .nx-pl-indent-108 { padding-inline-start: 108px; }
 
-.nx-pl-table__toggle {
-  display: inline-grid;
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--noorix-border) 80%, transparent);
-  border-radius: 5px;
-  background: var(--noorix-bg-surface);
-  color: currentColor;
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1;
-}
-
 @media (max-width: 700px) {
   .nx-reports-content {
     padding: 14px 0 0;
@@ -2151,15 +2100,12 @@ html[data-card-style="10"] .noorix-stat-card {
   }
 
   .nx-pl-command-center__controls,
-  .nx-pl-compare-filter,
-  .nx-pl-statement-tools,
-  .nx-pl-actions {
+  .nx-pl-statement-tools {
     justify-content: stretch;
   }
 
   .nx-pl-command-center__controls > *,
-  .nx-pl-statement-tools > *,
-  .nx-pl-actions > * {
+  .nx-pl-statement-tools > * {
     max-width: 100%;
   }
 
@@ -2404,11 +2350,6 @@ html[data-card-style="10"] .noorix-stat-card {
   .batch-purchases-table .noorix-table { min-width: 900px; }
 }
 
-/* جدول المبيعات — تنسيق احترافي */
-.noorix-sales-table-wrapper .noorix-table-frame {
-  box-shadow: 0 2px 8px rgba(10,31,68,0.06);
-}
-
 /* ???????????????????????????????????????????????????????????????
    نظام كروت موحّد — نفس ثيم VaultCard في كل النظام
    ??????????????????????????????????????????????????????????????? */
@@ -2448,18 +2389,6 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-summary-bar__value--amber  { color: var(--noorix-accent-amber); }
 .noorix-summary-bar__value--purple { color: var(--noorix-accent-violet); }
 
-/* Sales Entry Modal — Bottom Sheet على الجوال */
-@media (max-width: 767px) {
-  .sales-entry-modal-overlay {
-    align-items: flex-end !important;
-    padding: 0 !important;
-  }
-  .noorix-sales-entry-modal {
-    border-radius: 16px 16px 0 0 !important;
-    max-height: 90vh !important;
-    animation: slideUp 0.25s ease-out;
-  }
-}
 /* قنوات البيع — شبكة مرنة ملمومة (~6 أرقام لكل حقل) */
 .sales-channels-grid {
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
@@ -2469,11 +2398,6 @@ html[data-card-style="10"] .noorix-stat-card {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 }
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0.9; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
 .reports-detail-modal {
   min-width: 0;
 }
@@ -4159,24 +4083,6 @@ select option {
 .nx-page-header.nx-page-header--filter-row { align-items: flex-end; justify-content: flex-start; gap: 12px; }
 .nx-page-header.nx-page-header--filter-row > .nx-toolbar { margin-inline-start: auto; flex-shrink: 0; }
 
-/* تبويبات شاشة الطلبات (بدون أنماط مضمّنة) */
-.orders-screen-tab-strip { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0; border-bottom: 2px solid var(--noorix-border); }
-.orders-screen-tab.nx-btn {
-  border-radius: 0;
-  border: none;
-  margin: 0;
-  box-shadow: none;
-  min-height: 40px;
-  padding: 10px 18px;
-  font-size: 13px;
-  font-weight: 500;
-  background: transparent;
-  color: var(--noorix-text-muted);
-  border-bottom: 2px solid transparent;
-}
-.orders-screen-tab.nx-btn:hover:not(:disabled) { background: var(--noorix-bg-muted); color: var(--noorix-text); }
-.orders-screen-tab--active.nx-btn { font-weight: 700; color: var(--noorix-accent-green); background: rgba(22, 163, 74, 0.07); border-bottom-color: var(--noorix-accent-green); }
-
 /* بحث الموردين — عرض محدود، ارتفاع عادي (size sm من المكوّن) */
 .suppliers-tab-search.nx-input { flex: 1 1 200px; max-width: 320px; min-width: 160px; }
 
@@ -4210,14 +4116,6 @@ select option {
   flex-wrap: wrap;
   gap: 8px;
 }
-.batch-purchases-shortcut-chip.nx-btn {
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  min-height: 32px;
-}
-
 /* Employee profile: executive shell + focused tab sections */
 .employee-profile-shell {
   width: 100%;
@@ -6001,44 +5899,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     padding: clamp(12px, 3vw, 24px);
   }
 }
-/* ?? Compare Modal ?? */
-.compare-modal-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-@media (max-width: 640px) {
-  .compare-modal-grid { grid-template-columns: 1fr; }
-}
-.compare-invoice-card {
-  padding: 16px;
-  border-radius: 10px;
-  border: 1px solid var(--noorix-border);
-  background: var(--noorix-bg-muted);
-}
-.compare-invoice-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--noorix-text-muted);
-  margin-bottom: 10px;
-  letter-spacing: 0.2px;
-}
-.compare-invoice-img {
-  width: 100%;
-  border-radius: 8px;
-  max-height: 200px;
-  object-fit: contain;
-  background: var(--noorix-bg-surface);
-  margin-bottom: 10px;
-}
-.compare-invoice-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--noorix-text);
-}
-
 /* ?? أصناف المصاريف — جدول موحّد (سطح مكتب + جوال بتمرير أفقي) ?? */
 .nx-expense-line-table-wrap {
   min-width: 0;
@@ -6773,35 +6633,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .employee-doc-preview-drawer .hr-doc-date-sm { color: #64748b; font-size: 10px; text-align: center; }
 .employee-doc-preview-drawer .hr-doc-footer { padding: 18px 22px; }
 .employee-doc-preview-drawer .hr-doc-footer-compact { padding: 10px 14px; }
-.batch-print-actions {
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--noorix-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: -20px -20px 20px;
-}
-.batch-print-title { font-size: 14px; font-weight: 700; }
-.batch-print-header { margin-bottom: 16px; text-align: center; }
-.batch-print-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 800;
-}
-.batch-print-subtitle { margin: 4px 0 0; font-size: 13px; color: #374151; }
-.batch-print-table-frame { overflow-x: auto; margin-bottom: 16px; }
-.batch-print-table { min-width: 500px; }
-.batch-print-table-head-row { text-align: center; }
-.batch-print-row-number { width: 40px; text-align: center; }
-.batch-print-w-80 { width: 80px; }
-.batch-print-w-90 { width: 90px; }
-.batch-print-w-100 { width: 100px; }
-.batch-print-w-110 { width: 110px; }
-.batch-print-min-100 { min-width: 100px; }
-.batch-print-min-140 { min-width: 140px; }
-.batch-print-num { font-family: var(--noorix-font-numbers); text-align: left; }
-.batch-print-muted { color: var(--noorix-text-muted); }
-.batch-print-date-cell { font-size: 12px; }
 .nx-toggle-panel {
   padding: 14px;
   border-radius: 10px;
@@ -7572,14 +7403,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .nx-vault-card-icon--cash { background: color-mix(in srgb, var(--color-nx-profit) 10%, transparent); color: var(--color-nx-profit); }
 .nx-vault-card-icon--bank { background: color-mix(in srgb, var(--color-nx-sales) 10%, transparent); color: var(--color-nx-sales); }
 .nx-vault-card-icon--app { background: color-mix(in srgb, var(--color-nx-app) 10%, transparent); color: var(--color-nx-app); }
-.nx-sales-channel-card--cash { border: 1px solid color-mix(in srgb, var(--noorix-accent-green) 27%, transparent); background: var(--noorix-green-8); }
-.nx-sales-channel-card--bank { border: 1px solid color-mix(in srgb, var(--noorix-accent-blue) 27%, transparent); background: var(--noorix-blue-8); }
-.nx-sales-channel-card--app { border: 1px solid color-mix(in srgb, var(--noorix-accent-violet) 27%, transparent); background: var(--noorix-violet-8); }
-.nx-sales-channel-input { color: var(--noorix-text); background: var(--noorix-bg-surface); }
-.nx-sales-channel-input--cash { border-color: color-mix(in srgb, var(--noorix-accent-green) 33%, transparent); }
-.nx-sales-channel-input--bank { border-color: color-mix(in srgb, var(--noorix-accent-blue) 33%, transparent); }
-.nx-sales-channel-input--app { border-color: color-mix(in srgb, var(--noorix-accent-violet) 33%, transparent); }
-.nx-sales-channel-input--legacy { background: var(--noorix-bg-muted); }
 .nx-touch-scroll { -webkit-overflow-scrolling: touch; }
 .nx-analysis-color-0 { background: var(--noorix-accent-blue); }
 .nx-analysis-color-1 { background: var(--noorix-accent-green); }

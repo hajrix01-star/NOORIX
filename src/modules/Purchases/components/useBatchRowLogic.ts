@@ -11,7 +11,7 @@ import type {
   PurchaseBatchUpdateRow,
 } from '../batch/purchaseBatchTypes';
 
-export const BATCH_ROW_INPUT_BASE: CSSProperties = {
+const BATCH_ROW_INPUT_BASE: CSSProperties = {
   width: '100%',
   padding: '8px 10px',
   borderRadius: 6,
