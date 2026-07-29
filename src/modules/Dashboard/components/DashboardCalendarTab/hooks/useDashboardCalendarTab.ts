@@ -4,11 +4,8 @@ import { useApp } from '../../../../../context/AppContext';
 import { useToast } from '../../../../../context/ToastContext';
 import { useDashboardSalesPack } from '../../../../../hooks/useDashboardSalesPack';
 import { useDashboardCalendarData } from '../../../../../hooks/useDashboardCalendarData';
-import { fmt } from '../../../../../utils/format';
-import { buildPrintHtmlTable, buildPrintTableHtml } from '../../../../../utils/printTableHtml';
 import { usePrintPreview } from '../../../../../ui';
 import { getSaudiNow, toYmd } from '../../../../../utils/saudiDate';
-import { vaultDisplayName } from '../../../../../utils/vaultDisplay';
 import type {
   DashboardCalendarDay,
   DashboardCalendarTargets,
@@ -25,25 +22,17 @@ import {
   dateInRange,
 } from '../utils/calendarDateUtils';
 import {
-  calendarSalesHeatBgForPrint,
-} from '../utils/calendarAchievementUtils';
-import { DEFAULT_COLORS, DOW_LABELS, DOW_LABELS_AR, MONTH_LABELS_EN } from '../constants';
+  buildDashboardCalendarDayDetailsPrintBody,
+  buildDashboardCalendarMonthPrintBody,
+} from '../print/dashboardCalendarPrintModel';
+import { DEFAULT_COLORS, MONTH_LABELS_EN } from '../constants';
 import type { DashboardCalendarTabProps } from '../types';
-
-type PrintCalendarCell = {
-  html: string;
-  style: string;
-};
 
 function normalizeTargets(targets: DashboardCalendarTargets): DashboardCalendarTargets {
   return {
     overall: targets.overall ?? null,
     byDow: targets.byDow ?? {},
   };
-}
-
-function totalSummaryAmount(summary: DashboardSalesSummary): number {
-  return toDashboardNumber(summary.totalAmount);
 }
 
 export function useDashboardCalendarTab({ companyId, year, selectedMonth }: DashboardCalendarTabProps) {
@@ -275,38 +264,20 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
       totalAmount: number,
       achieved: boolean,
     ) => {
-      const printRows = daySummaries.map((summary) => ({
-        summaryNumber: summary.summaryNumber || '-',
-        channels: (summary.channels ?? [])
-          .map((channel) => `${vaultDisplayName(channel.vault, lang)}: ${fmt(channel.amount || 0)}`)
-          .join(' | ') || '-',
-        customers: summary.customerCount ?? 0,
-        total: fmt(totalSummaryAmount(summary)),
-      }));
-      const targetInfo = `<div style="background:#eff6ff;padding:12px;border-radius:8px;margin:12px 0;font-size:13px">
-      <strong>${t('dashboardSalesTarget')}:</strong> ${dayTarget != null ? fmt(dayTarget) : '-'} SR &nbsp;|&nbsp;
-      <strong>${t('total')}:</strong> <span style="color:${achieved ? '#16a34a' : 'inherit'}">${fmt(totalAmount)} SR${achieved ? ' ✓' : ''}</span>
-    </div>`;
-      const tableHtml = buildPrintTableHtml({
-        columns: [
-          { key: 'summaryNumber', header: t('summaryNumber') },
-          { key: 'channels', header: t('salesChannels') },
-          { key: 'customers', header: t('customers'), align: 'end' },
-          { key: 'total', header: t('total'), align: 'end' },
-        ],
-        rows: printRows,
-        emptyMessage: t('noDataInPeriod'),
-        footerRows: [[
-          { value: t('total'), colSpan: 3 },
-          { value: `${fmt(totalAmount)} SR`, align: 'end' },
-        ]],
+      const body = buildDashboardCalendarDayDetailsPrintBody({
+        dayTarget,
+        daySummaries,
+        totalAmount,
+        achieved,
+        t,
+        lang,
       });
       openPrintDocumentPreview({
         title: `${t('transactions')} - ${dateStr}`,
         companyName,
         logoUrl: companyLogoUrl,
         subtitle: `${t('dashboardCalendar')} - ${dateStr}`,
-        body: `${targetInfo}${tableHtml}`,
+        body,
       });
     },
     [t, companyName, companyLogoUrl, lang, openPrintDocumentPreview],
@@ -315,37 +286,12 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
   const monthLabel = MONTH_LABELS_EN[month - 1];
 
   const handlePrintCalendar = useCallback(() => {
-    const cells: PrintCalendarCell[] = daysInMonth.map((item) => {
-      const { day, amount, dayTarget, special } = item;
-      const achieved = dayTarget != null && amount >= dayTarget;
-      const bg = calendarSalesHeatBgForPrint(amount, dayTarget, maxAmount);
-      const specialBorder = special?.color ? `;border-bottom:3px solid ${special.color}` : '';
-      return {
-        html: `${day}<br><span style="font-weight:700">${fmt(amount, 0)}</span>${achieved ? ' ✓' : ''}`,
-        style: `padding:6px;text-align:center;border:1px solid #ddd;background:${bg}${specialBorder}`,
-      };
-    });
-    const firstDow = new Date(year, month - 1, 1).getDay();
-    const rows: Array<{ cells: Array<{ value?: string; html?: string; style?: string }> }> = [];
-    let row: Array<{ value?: string; html?: string; style?: string }> = Array(firstDow).fill(null).map(() => ({ value: '' }));
-    cells.forEach((cell, index) => {
-      row.push(cell);
-      if ((firstDow + index + 1) % 7 === 0) {
-        rows.push({ cells: row });
-        row = [];
-      }
-    });
-    if (row.length) rows.push({ cells: row });
-    const dowHeader = lang === 'ar' ? DOW_LABELS_AR : DOW_LABELS;
-    const dowOrder = [0, 1, 2, 3, 4, 5, 6] as const;
-    const tableHtml = buildPrintHtmlTable({
-      tableClassName: 'dashboard-calendar-print-table',
-      wrapperClassName: null,
-      headerRows: [{
-        cells: dowOrder.map((day) => ({ value: dowHeader[day] })),
-      }],
-      bodyRows: rows,
-      emptyColSpan: 7,
+    const tableHtml = buildDashboardCalendarMonthPrintBody({
+      daysInMonth,
+      maxAmount,
+      year,
+      month,
+      lang,
     });
     openPrintDocumentPreview({
       title: t('dashboardCalendar'),

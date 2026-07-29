@@ -9,6 +9,7 @@ const dashboardRoot = path.join(root, 'src', 'modules', 'Dashboard');
 const allowedRawTableFiles = new Set([]);
 const allowedPrintHtmlFiles = new Set([
   path.join(dashboardRoot, 'components', 'DashboardCalendarTab', 'hooks', 'useDashboardCalendarTab.ts'),
+  path.join(dashboardRoot, 'components', 'DashboardCalendarTab', 'print', 'dashboardCalendarPrintModel.ts'),
 ]);
 
 const violations = [];
