@@ -62,7 +62,7 @@
       "decision": "leave",
       "reason": "category management table includes selection checkboxes and inline editing."
     },
-    "src/modules/Orders/components/OrderFormModal.tsx": {
+    "src/modules/Orders/components/OrderFormModalPieces.tsx": {
       "category": "editable-grid",
       "decision": "leave",
       "reason": "order form item table includes product inputs and editable quantities/prices."
