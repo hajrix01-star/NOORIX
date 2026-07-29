@@ -21,10 +21,12 @@ import {
   MSG_NO_REPORTS_AR,
   MSG_NO_REPORTS_EN,
   buildAnswer,
+} from './dashboard-insights-answer.util';
+import {
   buildExtendedInsightsExplanationPackage,
   queryLooksArabic,
   validateInsightsLlmAnswer,
-} from './dashboard-insights-answer.util';
+} from './dashboard-insights-llm-package.util';
 
 export {
   buildDashboardInsightsDateRangeForMonth,
@@ -39,12 +41,12 @@ export {
   resolveEffectiveDashboardInsightsFocus,
 } from './dashboard-insights-focus.util';
 
+export { buildDashboardInsightsDeterministicAnswer } from './dashboard-insights-answer.util';
 export {
-  buildDashboardInsightsDeterministicAnswer,
   buildExtendedInsightsExplanationPackage,
   buildInsightsExplanationPackage,
   validateInsightsLlmAnswer,
-} from './dashboard-insights-answer.util';
+} from './dashboard-insights-llm-package.util';
 export const dashboardInsightsHandler: ChatHandler = {
   priority: 5,
   intent: 'dashboard_insights',
