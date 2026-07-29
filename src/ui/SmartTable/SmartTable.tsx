@@ -98,6 +98,7 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
     getRowStyle,
     isRowExpanded,
     renderExpandedRow,
+    mobileMode = 'auto',
     renderMobileCard,
     /** صفوف متناوبة الخلفية في عرض بطاقات الجوال — افتراضي مفعّل؛ عطّل بـ false */
     stripeMobileCards = true,
@@ -129,8 +130,9 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
   /** محاذاة مع @media (max-width: 768px) — تجنّب جدول عريض + فراغ أبيض على تابلت/جوال */
   const isNarrow = useIsNarrow768();
 
-  const showCompact  = isNarrow && typeof renderCompactRow === 'function';
-  const showCards    = isNarrow && !showCompact && typeof renderMobileCard === 'function';
+  const allowMobileAlternateRows = mobileMode !== 'table';
+  const showCompact  = allowMobileAlternateRows && isNarrow && typeof renderCompactRow === 'function';
+  const showCards    = allowMobileAlternateRows && isNarrow && !showCompact && typeof renderMobileCard === 'function';
   const effectiveSortingMode = sortingMode ?? dataMode;
   const effectivePaginationMode = paginationMode ?? dataMode;
   const effectiveFilteringMode = filteringMode ?? dataMode;
@@ -189,7 +191,7 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
     <div
       className={cn(
         'noorix-table-frame nx-smart-frame-vars min-w-0 max-w-full',
-        (renderCompactRow || renderMobileCard) && 'max-md:overflow-x-hidden',
+        allowMobileAlternateRows && (renderCompactRow || renderMobileCard) && 'max-md:overflow-x-hidden',
         showCards && 'noorix-table-frame--mobile-list',
         frameClassName,
       )}

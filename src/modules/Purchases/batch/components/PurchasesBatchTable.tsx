@@ -338,6 +338,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       emptyMessage={t('noBatchesInPeriod')}
       renderCompactRow={renderCompactRow}
       renderMobileCard={renderBatchMobileCard}
+      mobileMode="table"
       stripeMobileCards
       stickyActionColumn={false}
     />

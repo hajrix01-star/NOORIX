@@ -76,6 +76,7 @@ export type SmartTableProps<TRow extends SmartTableRow = SmartTableRow> = {
   getRowStyle?: (row: TRow, index: number) => CSSProperties | undefined;
   isRowExpanded?: (row: TRow, index: number) => boolean;
   renderExpandedRow?: (row: TRow, index: number) => ReactNode;
+  mobileMode?: 'auto' | 'table';
   renderMobileCard?: (row: TRow, index: number) => ReactNode;
   stripeMobileCards?: boolean;
   renderCompactRow?: (row: TRow, index: number) => ReactNode;

@@ -171,6 +171,7 @@ export default function InvoicesListScreen() {
             emptyMessage={s.t('noInvoicesInPeriod')}
             renderCompactRow={s.renderCompactRow}
             renderMobileCard={s.renderMobileCard}
+            mobileMode="table"
             stripeMobileCards
           />
         </>

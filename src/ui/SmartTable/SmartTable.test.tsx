@@ -515,4 +515,23 @@ describe('SmartTable', () => {
     expect(screen.getByText('0:Alpha')).toBeTruthy();
     expect(screen.getByText('1:Beta')).toBeTruthy();
   });
+
+  it('keeps the real table on narrow screens when mobileMode is table', () => {
+    mediaState.isNarrow = true;
+    const { container } = render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        total={2}
+        mobileMode="table"
+        renderCompactRow={(row) => <span>Compact {row.name}</span>}
+        renderMobileCard={(row) => <span>Card {row.name}</span>}
+      />,
+    );
+
+    expect(screen.queryByText('Compact Alpha')).toBeNull();
+    expect(screen.queryByText('Card Alpha')).toBeNull();
+    expect(container.querySelector('table')).toBeTruthy();
+    expect(screen.getByText('Alpha')).toBeTruthy();
+  });
 });
