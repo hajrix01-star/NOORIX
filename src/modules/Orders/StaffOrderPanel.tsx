@@ -13,6 +13,7 @@ import {
 } from './utils/staffOrderBasketUtils';
 import {
   buildProductsById,
+  createDraftLineId,
   buildStaffOrderFrequencyMap,
   buildStaffOrderPayload,
   buildStaffQtyMap,
@@ -23,20 +24,15 @@ import {
   summarizeSentSales,
   upsertPlainStaffBasketLine,
 } from './utils/staffOrderPanelModel';
+import { resolveItemSection } from './StaffOrdersViewParts';
 import {
-  ProductCard,
-  StaffBasketTable,
-  VariantPickModal,
-  resolveItemSection,
-} from './StaffOrdersViewParts';
-import {
-  StaffSaleLogMetrics,
-  StaffSentOrderRow,
-  StaffSentSaleGroup,
-} from './StaffOrdersSentPanels';
-import { StaffQtyModal, StaffWhatsAppPromptModal } from './StaffOrderPanelModals';
+  StaffBasketSummary,
+  StaffOrderPanelDialogs,
+  StaffProductPicker,
+  StaffSectionFilter,
+  StaffSentOrdersSection,
+} from './StaffOrderPanelSections';
 import { StaffOrdersPendingPanel } from './StaffOrdersPendingPanel';
-import { OrderConfirmModal } from './components/OrderConfirmModal';
 import {
   useMyStaffOrders,
   useStaffSaleNextLogRef,
@@ -47,15 +43,8 @@ import {
   useOrderProducts,
   useOrderSections,
 } from '../../hooks/useOrders';
-import { Badge, Button, TransactionDatePicker, Input, cn } from '../../ui';
-import type { OrderProduct, OrderSection, StaffOrder } from '../../types/api';
+import type { OrderProduct, StaffOrder } from '../../types/api';
 
-function createDraftLineId(productId: string): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return `${productId}-${crypto.randomUUID()}`;
-  }
-  return `${productId}-${performance.now().toString(36)}`;
-}
 export function StaffOrderPanel({
   companyId,
   productType,
@@ -77,7 +66,6 @@ export function StaffOrderPanel({
   const resendSale = useResendStaffSaleMutation(companyId);
 
   const isSale = productType === 'sale';
-  /** Filter item sections only; not required for submit. */
   const [sectionFilter, setSectionFilter] = useState('');
   const [saleDate, setSaleDate] = useState(() => getSaudiToday());
   const [notes, setNotes] = useState('');
@@ -91,17 +79,12 @@ export function StaffOrderPanel({
   const [variantModal, setVariantModal] = useState<ReturnType<typeof defaultVariantModalState> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StaffOrder | null>(null);
 
-  // Repeat orders
   const freqMap = useMemo(
     () => buildStaffOrderFrequencyMap(myOrders, productType),
     [myOrders, productType],
   );
 
   const productsById = useMemo(() => buildProductsById(allProducts), [allProducts]);
-
-  function sectionLabel(s: OrderSection) {
-    return lang === 'en' ? (s.nameEn || s.nameAr) : (s.nameAr || s.nameEn);
-  }
 
   const products = useMemo(
     () => filterStaffOrderProducts({ allProducts, sectionFilter, search, freqMap, lang: displayLang }),
@@ -110,7 +93,6 @@ export function StaffOrderPanel({
 
   const qtyMap = useMemo(() => buildStaffQtyMap(basketLines), [basketLines]);
 
-  // Orders of this type only
   const myTypedOrders = useMemo(
     () => filterStaffOrdersByType(myOrders, productType),
     [myOrders, productType],
@@ -132,7 +114,6 @@ export function StaffOrderPanel({
   const { data: nextLogRef } = useStaffSaleNextLogRef(companyId, saleDate, previewNextLogRef);
   const basketLogRef = isSale ? (editingOrder?.logRef || nextLogRef || null) : null;
 
-  // Card touch handling
   function tapProduct(product: OrderProduct) {
     if (productHasVariants(product)) {
       setVariantModal(defaultVariantModalState(product));
@@ -314,157 +295,72 @@ export function StaffOrderPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <OrderConfirmModal
-        open={!!deleteTarget}
-        title={t('confirmDelete')}
-        message={t(isSale ? 'staffSaleDeleteConfirm' : 'staffOrderDeleteConfirm')}
-        confirmLabel={t('delete')}
-        cancelLabel={t('cancel')}
-        busy={deleteOrder.isPending}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
+      <StaffOrderPanelDialogs
+        deleteTarget={deleteTarget}
+        isSale={isSale}
+        t={t}
+        lang={lang}
+        deleteBusy={deleteOrder.isPending}
+        sendWhatsAppPrompt={sendWhatsAppPrompt}
+        qtyModal={qtyModal}
+        variantModal={variantModal}
+        setDeleteTarget={setDeleteTarget}
+        confirmDelete={confirmDelete}
+        setSendWhatsAppPrompt={setSendWhatsAppPrompt}
+        openWhatsApp={openWhatsApp}
+        showToast={showToast}
+        setQtyModal={setQtyModal}
+        confirmQtyModal={confirmQtyModal}
+        setVariantModal={setVariantModal}
+        confirmVariantModal={confirmVariantModal}
       />
-      {/* Section buttons */}
-      <div className="flex flex-wrap gap-2">
-        {sections.map((s) => {
-          const active = sectionFilter === s.nameAr;
-          return (
-            <Button
-              key={s.id}
-              type="button"
-              variant="raw"
-              size="auto"
-              onClick={() => {
-                setSectionFilter(active ? '' : s.nameAr);
-                setSearch('');
-              }}
-              className={`px-4 py-2 rounded-xl text-[13px] font-semibold border transition-all
-                ${active
-                  ? 'bg-noorix-blue text-white border-noorix-blue shadow-sm'
-                  : 'bg-noorix-surface text-noorix-text border-noorix-border hover:border-noorix-blue/50 hover:text-noorix-blue'
-                }`}
-            >
-              {sectionLabel(s)}
-            </Button>
-          );
-        })}
-      </div>
+      <StaffSectionFilter
+        sections={sections}
+        sectionFilter={sectionFilter}
+        lang={lang}
+        setSectionFilter={setSectionFilter}
+        setSearch={setSearch}
+      />
 
-      {/* Search */}
-      <div className="relative">
-        <svg className="absolute start-3 top-1/2 -translate-y-1/2 text-noorix-muted" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-        <Input
-          type="search"
-          containerClassName="contents"
-          className="w-full h-9 rounded-xl border border-noorix-border bg-noorix-surface ps-9 pe-3 text-[13px] text-noorix-text placeholder:text-noorix-muted focus:outline-none focus:ring-1 focus:ring-noorix-blue"
-          placeholder={t('staffOrderSearchProduct')}
-          value={search}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-        />
-      </div>
+      <StaffProductPicker
+        products={products}
+        lang={lang}
+        t={t}
+        search={search}
+        sectionFilter={sectionFilter}
+        qtyMap={qtyMap}
+        freqMap={freqMap}
+        setSearch={setSearch}
+        tapProduct={tapProduct}
+        removeProduct={removeProduct}
+      />
 
-      {/* Product grid */}
-      {products.length > 0 ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-          {products.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              lang={lang}
-              qty={qtyMap.get(p.id) ?? 0}
-              freqCount={freqMap.get(p.id) ?? 0}
-              onTap={() => tapProduct(p)}
-              onRemove={() => removeProduct(p.id)}
-            />
-          ))}
-        </div>
-      ) : (
-        sectionFilter && (
-          <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[13px]">
-            {t('staffOrderNoProducts')}
-          </div>
-        )
-      )}
-
-      {/* Previous sales load error */}
       {ordersError && (
         <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-4 py-3 text-[13px] text-noorix-red">
           {t('staffOrdersLoadError')}
         </div>
       )}
 
-      {/* Order summary */}
-      {basketLines.length > 0 && (
-        <div className="flex flex-col gap-3 border-t border-noorix-border pt-4">
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <div className="flex items-center gap-2 min-w-0">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue shrink-0">
-                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-              </svg>
-              <span className="text-[14px] font-bold">
-                {isSale ? t('staffSaleBasket') : t('staffOrderBasket')} ({basketLines.length})
-              </span>
-            </div>
-            {isSale && basketLogRef ? (
-              <span className="text-[11px] text-noorix-muted whitespace-nowrap">
-                {t('staffSaleLogRef')}:{' '}
-                <span className="font-bold text-noorix-blue ltr">{basketLogRef}</span>
-              </span>
-            ) : null}
-          </div>
-          <div className="overflow-x-auto -mx-0.5 px-0.5">
-            <StaffBasketTable
-              basketLines={basketLines}
-              productsById={productsById}
-              lang={lang}
-              t={t}
-              showPrices={isSale}
-              editingQtyId={editingQtyId}
-              setEditingQtyId={setEditingQtyId}
-              setLineQty={setLineQty}
-              removeLine={removeLine}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            {isSale && (
-              <TransactionDatePicker
-                label={t('staffSaleDate')}
-                value={saleDate}
-                onValueChange={setSaleDate}
-              />
-            )}
-            <Input label={t('notes')} value={notes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)} placeholder={t('optional')} />
-          </div>
-          <div className={cn('gap-2', isSale ? 'flex flex-col' : 'grid grid-cols-2')}>
-            {!isSale && (
-              <Button variant="ghost" size="md" onClick={resetForm} disabled={submitting}>{t('cancel')}</Button>
-            )}
-            <Button
-              variant={isSale ? 'success' : 'primary'}
-              size="md"
-              className={isSale ? 'min-h-[44px] w-full' : undefined}
-              onClick={handleSubmit}
-              disabled={submitting}
-            >
-              {submitting
-                ? (isSale ? t('staffSaleSaving') : t('saving'))
-                : isSale
-                  ? t('staffSaleSave')
-                  : editingId
-                    ? t('staffOrderUpdate')
-                    : t('staffOrderSubmit')}
-            </Button>
-            {isSale && (
-              <Button variant="ghost" size="sm" className="w-full" onClick={resetForm} disabled={submitting}>
-                {t('cancel')}
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
+      <StaffBasketSummary
+        basketLines={basketLines}
+        productsById={productsById}
+        lang={lang}
+        t={t}
+        isSale={isSale}
+        basketLogRef={basketLogRef}
+        editingQtyId={editingQtyId}
+        saleDate={saleDate}
+        notes={notes}
+        submitting={submitting}
+        editingId={editingId}
+        setEditingQtyId={setEditingQtyId}
+        setLineQty={setLineQty}
+        removeLine={removeLine}
+        setSaleDate={setSaleDate}
+        setNotes={setNotes}
+        resetForm={resetForm}
+        handleSubmit={handleSubmit}
+      />
 
       {!isSale && (
         <StaffOrdersPendingPanel
@@ -476,87 +372,22 @@ export function StaffOrderPanel({
         />
       )}
 
-      {/* Sender */}
-      {sentOrders.length > 0 && (
-        <section className="flex flex-col gap-3 pt-4 border-t border-noorix-border">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-[14px] font-bold text-noorix-text">
-              {isSale ? t('staffSaleMySent') : t('staffOrderMySent')}
-            </span>
-            <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
-          </div>
-          {isSale && sentSaleGroups.length > 1 && (sentSalesSummary.totalQty > 0 || sentSalesSummary.totalAmount.gt(0)) ? (
-            <StaffSaleLogMetrics
-              totalQty={sentSalesSummary.totalQty}
-              totalAmount={sentSalesSummary.totalAmount}
-              avgPerOrder={sentSalesSummary.avgPerOrder}
-              t={t}
-              showDivider={false}
-            />
-          ) : null}
-          {isSale ? (
-            <div className="noorix-surface-card overflow-hidden divide-y divide-noorix-border">
-              {sentSaleGroups.map((group) => (
-                <StaffSentSaleGroup
-                  key={group[0].logRef || group[0].id}
-                  orders={group}
-                  lang={lang}
-                  t={t}
-                  onResend={handleResendSale}
-                  onEdit={loadForEdit}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
-          ) : sentOrders.map((o) => (
-                <StaffSentOrderRow
-                  key={o.id}
-                  order={o}
-                  isSale={isSale}
-                  lang={lang}
-                  t={t}
-                  onResend={undefined}
-                  onEdit={loadForEdit}
-                  onDelete={handleDelete}
-                />
-              ))}
-        </section>
-      )}
+      <StaffSentOrdersSection
+        isSale={isSale}
+        sentOrders={sentOrders}
+        sentSaleGroups={sentSaleGroups}
+        sentSalesSummary={sentSalesSummary}
+        lang={lang}
+        t={t}
+        handleResendSale={handleResendSale}
+        loadForEdit={loadForEdit}
+        handleDelete={handleDelete}
+      />
 
       {!isLoading && myTypedOrders.length === 0 && basketLines.length === 0 && (
         <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
           {isSale ? t('staffSaleNoRecords') : t('staffOrderNoOrders')}
         </div>
-      )}
-
-      <StaffWhatsAppPromptModal
-        text={sendWhatsAppPrompt}
-        t={t}
-        onClose={() => setSendWhatsAppPrompt(null)}
-        onConfirm={(text) => {
-          openWhatsApp(text);
-          setSendWhatsAppPrompt(null);
-          showToast(t('staffSaleResent'), 'success');
-        }}
-      />
-
-      <StaffQtyModal
-        qtyModal={qtyModal}
-        lang={lang}
-        t={t}
-        onChange={setQtyModal}
-        onClose={() => setQtyModal(null)}
-        onConfirm={confirmQtyModal}
-      />
-      {variantModal && (
-        <VariantPickModal
-          variantModal={variantModal}
-          lang={lang}
-          t={t}
-          onClose={() => setVariantModal(null)}
-          onChange={setVariantModal}
-          onConfirm={confirmVariantModal}
-        />
       )}
     </div>
   );

@@ -8,6 +8,13 @@ import {
 import { resolveItemSection } from '../StaffOrdersViewParts';
 import type { DisplayLanguage, OrderProduct, StaffOrder, StaffOrderPayload } from '../../../types/api';
 
+export function createDraftLineId(productId: string): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `${productId}-${crypto.randomUUID()}`;
+  }
+  return `${productId}-${performance.now().toString(36)}`;
+}
+
 export function buildStaffOrderFrequencyMap(myOrders: StaffOrder[], productType: 'order' | 'sale'): Map<string, number> {
   const map = new Map<string, number>();
   for (const order of (myOrders ?? []).filter((o) => (o.orderType || 'order') === productType)) {
