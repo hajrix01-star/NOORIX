@@ -78,6 +78,7 @@ export function SalesDayEditModal({
     summaries.length > 1
       ? 'grid grid-cols-1 lg:grid-cols-2 gap-3 items-start'
       : 'grid grid-cols-1 gap-3 items-start mx-auto w-full max-w-[520px]';
+  const sheetSize = summaries.length > 1 ? 'xl' : 'md';
 
   async function handleSave() {
     setError('');
@@ -110,7 +111,7 @@ export function SalesDayEditModal({
       open={true}
       onClose={onClose}
       title={`تعديل يوم المبيعات — ${toDateInputYmd(day.transactionDate)}`}
-      size="xl"
+      size={sheetSize}
       side="start"
       footer={
         <DialogActions
