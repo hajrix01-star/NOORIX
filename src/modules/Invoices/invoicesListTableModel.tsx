@@ -161,14 +161,6 @@ export function buildInvoiceListColumns({
       render: (value: unknown) => renderTextCell(value),
     },
     {
-      key: 'notesOrEmployee',
-      kind: 'text',
-      label: t('invoiceNotesColumn') || 'Notes',
-      align: 'center',
-      width: '18ch',
-      render: (_: unknown, row: InvoiceTableRow) => renderTextCell(row.notes),
-    },
-    {
       key: 'kind',
       kind: 'status',
       label: t('type'),
@@ -221,6 +213,14 @@ export function buildInvoiceListColumns({
       render: (value: unknown) => <FmtNum n={asInvoiceTableNumber(value)} className="nx-cell-num nx-cell-bold" />,
     },
     {
+      key: 'notesOrEmployee',
+      kind: 'text',
+      label: t('invoiceNotesColumn') || 'Notes',
+      align: 'center',
+      width: '18ch',
+      render: (_: unknown, row: InvoiceTableRow) => renderTextCell(row.notes),
+    },
+    {
       key: 'status',
       kind: 'status',
       label: t('statusLabel'),
@@ -235,7 +235,7 @@ export function buildInvoiceListColumns({
 export function buildInvoiceListFooterRow({ t, serverAll, total }: InvoiceFooterParams) {
   return [
     {
-      keys: ['invoiceNumber', 'supplierInvoiceNumber', 'supplierName', 'createdByDisplayName', 'notesOrEmployee', 'kind', 'vaultLabel'],
+      keys: ['invoiceNumber', 'supplierInvoiceNumber', 'supplierName', 'createdByDisplayName', 'kind', 'vaultLabel'],
       className: 'nx-tfoot-label text-[12px] text-center',
       content: (
         <>
@@ -263,6 +263,11 @@ export function buildInvoiceListFooterRow({ t, serverAll, total }: InvoiceFooter
       keys: ['totalAmount'],
       className: 'nx-tfoot-num nx-cell-num--violet text-center',
       content: <FmtNum n={asInvoiceTableNumber(serverAll.total)} />,
+    },
+    {
+      keys: ['notesOrEmployee', 'status'],
+      className: 'nx-tfoot-label text-[12px] text-center',
+      content: '',
     },
   ];
 }

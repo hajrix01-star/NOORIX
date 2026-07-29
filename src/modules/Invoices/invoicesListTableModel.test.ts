@@ -28,12 +28,12 @@ describe('invoicesListTableModel', () => {
       'supplierInvoiceNumber',
       'supplierName',
       'createdByDisplayName',
-      'notesOrEmployee',
       'kind',
       'vaultLabel',
       'netAmount',
       'taxAmount',
       'totalAmount',
+      'notesOrEmployee',
       'status',
     ]);
     expect(cols.find((column) => column.key === 'invoiceNumber')?.size).toBe('document');
@@ -42,14 +42,15 @@ describe('invoicesListTableModel', () => {
     expect(cols.find((column) => column.key === 'totalAmount')?.size).toBe('money-md');
   });
 
-  it('buildInvoiceListFooterRow returns four row segments', () => {
+  it('buildInvoiceListFooterRow returns five row segments', () => {
     const foot = buildInvoiceListFooterRow({
       t,
       serverAll: { count: 3, net: 1, tax: 2, total: 3 },
       total: 100,
     });
-    expect(foot).toHaveLength(4);
+    expect(foot).toHaveLength(5);
     expect(foot[0].keys).toContain('invoiceNumber');
+    expect(foot[4].keys).toEqual(['notesOrEmployee', 'status']);
   });
 
   it('createInvoiceListMobileCardRenderer returns a function', () => {
