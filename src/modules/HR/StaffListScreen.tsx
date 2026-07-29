@@ -19,9 +19,10 @@ import {
   getEmployeesPaged,
   getEmployeesBulk,
 } from '../../services/api';
-import { Badge, Button, Input, ScreenShell, FmtNum, SmartTable } from '../../ui';
+import { Button, Input, ScreenShell, SmartTable } from '../../ui';
 import { StaffListMobileRow } from './components/StaffListMobileRow';
 import { StaffListModals } from './components/StaffListModals';
+import { buildStaffListColumns, type HrStaffTableRow } from './staffListColumns';
 import {
   buildCentralEmployeeExportRows,
   getCreatedEmployeeId,
@@ -29,7 +30,6 @@ import {
   type HrStaffSavePayload,
 } from './staffListDataOps';
 import { parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
-import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
 import { normalizeEmployeesPagedQueryInput } from '../../services/domains/apiEndpoints/hr-query';
@@ -58,13 +58,6 @@ type HrCompanyRef = {
   name?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
-};
-
-type HrStaffTableRow = HrEmployee & {
-  totalSalary?: number | null;
-  terminationReason?: string;
-  terminationClause?: string;
-  terminationDate?: string;
 };
 
 type HrEmployeesPagedView = {
@@ -238,49 +231,10 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     setListPage(1);
   }, []);
 
-  const columns = useMemo(() => [
-    { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120,
-      render: (v: unknown) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={String(v || '')}>{String(v || '—')}</span> },
-    { key: 'name', label: t('employeeName'), sortable: true, width: 200,
-      render: (_: unknown, row: HrStaffTableRow) => (
-        <Button
-          variant="raw"
-          size="auto"
-          className="nx-cell-bold text-[13px] text-noorix-blue hover:underline cursor-pointer p-0 bg-transparent text-start"
-          onClick={() => navigate(`/hr/employee/${row.id}`)}
-        >
-          {employeeDisplayName(row, lang)}
-        </Button>
-      ) },
-    { key: 'jobTitle', label: t('jobTitle'), sortable: true, width: 170, align: 'center',
-      render: (v: unknown) => <span className="nx-cell-muted block text-center">{String(v || '—')}</span> },
-    { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125,
-      render: (v: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(v || ''))}</span> },
-    { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140, align: 'center',
-      render: (_: unknown, row: HrStaffTableRow) => (
-        Number.isFinite(Number(row.totalSalary))
-          ? <FmtNum n={Number(row.totalSalary)} className="nx-cell-num block text-center text-[13px]" />
-          : <span className="nx-cell-muted">—</span>
-      ) },
-    { key: 'status', label: t('status'), width: 110,
-      render: (v: unknown) => <Badge {...Badge.fromStatus(String(v || ''), STATUS_MAP)} size="sm" /> },
-    ...(viewMode === 'terminated' || viewMode === 'archived'
-      ? [
-          {
-            key: 'terminationReason',
-            label: t('terminationReason'),
-            width: 190,
-            render: (v: unknown) => <span className="nx-cell-muted">{String(v || '—')}</span>,
-          },
-          {
-            key: 'terminationClause',
-            label: t('terminationClause'),
-            width: 140,
-            render: (v: unknown) => <span className="nx-cell-muted">{String(v || '—')}</span>,
-          },
-        ]
-      : []),
-  ], [t, lang, STATUS_MAP, viewMode, navigate]);
+  const columns = useMemo(
+    () => buildStaffListColumns({ t, lang, statusMap: STATUS_MAP, viewMode, navigate }),
+    [t, lang, STATUS_MAP, viewMode, navigate],
+  );
 
   async function handleExportExcel() {
     if (!companyId) return;
