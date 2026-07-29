@@ -38,7 +38,7 @@ export default {
   reportInvoiceNumber: { ar: 'رقم الفاتورة', en: 'Invoice number' },
   reportSupplier: { ar: 'المورد', en: 'Supplier' },
   reportNetAmount: { ar: 'الصافي', en: 'Net amount' },
-  reportTaxAmount: { ar: 'الضريبة', en: 'Tax amount' },
+  reportTaxAmount: { ar: 'VAT', en: 'VAT' },
   reportTotalAmount: { ar: 'الإجمالي', en: 'Total amount' },
   reportSource: { ar: 'المصدر', en: 'Source' },
   reportChannels: { ar: 'قنوات البيع', en: 'Sales channels' },
