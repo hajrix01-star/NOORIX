@@ -1,13 +1,6 @@
-/**
- * EmployeesService — إدارة الموظفين (CRUD)
- *
- * جميع العمليات تمر عبر TenantContext لضمان RLS.
- * الصرف المالي (راتب/سلفية) يمر عبر FinancialCoreService — لا منطق مالي هنا.
- */
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { existsSync } from 'fs';
-import { unlink } from 'fs/promises';
 import type { Response } from 'express';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }   from '../common/tenant-context';
@@ -17,15 +10,14 @@ import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { CreateBatchEmployeesDto } from './dto/create-batch-employees.dto';
 import { toMoneyDecimal2 } from '../common/utils/money-decimal';
-
-const DEFAULT_PREFIX = 'EMP';
-const EMPLOYEE_PHOTO_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-
-async function removeStoredEmployeePhoto(photoPath: string | null | undefined): Promise<void> {
-  if (!photoPath || !photoPath.includes('employee-photos')) return;
-  if (!existsSync(photoPath)) return;
-  await unlink(photoPath).catch(() => undefined);
-}
+import {
+  buildEmployeeOrderBy,
+  buildEmployeeTabWhere,
+  employeeListSelect,
+  type EmployeeListTab,
+} from './employee-list-query-contract.util';
+import { isEmployeePhotoMime, removeStoredEmployeePhoto } from './employee-photo-storage.util';
+import { generateEmployeeSerial } from './employee-serial.util';
 
 @Injectable()
 export class EmployeesService {
@@ -34,42 +26,6 @@ export class EmployeesService {
     private readonly audit:  AuditLogService,
   ) {}
 
-  /** توليد الرقم الوظيفي الفريد حسب الشركة (مثل MS-ST-001 أو EMP-ST-001) */
-  private async generateEmployeeSerial(companyId: string): Promise<string> {
-    const company = await this.prisma.company.findUnique({
-      where: { id: companyId },
-      select: { nameAr: true, nameEn: true },
-    });
-    const raw = (company?.nameEn || company?.nameAr || '').replace(/\s+/g, '');
-    const prefix = raw.length >= 2
-      ? raw.slice(0, 2).toUpperCase().replace(/[^A-Z0-9]/g, '')
-      : '';
-    const safePrefix = prefix.length >= 2 ? prefix : DEFAULT_PREFIX;
-
-    const last = await this.prisma.employee.findFirst({
-      where: { companyId },
-      orderBy: { createdAt: 'desc' },
-      select: { employeeSerial: true },
-    });
-
-    let seq = 1;
-    if (last?.employeeSerial) {
-      const match = last.employeeSerial.match(/-(\d+)$/);
-      if (match) seq = parseInt(match[1], 10) + 1;
-    }
-    return `${safePrefix}-ST-${String(seq).padStart(3, '0')}`;
-  }
-
-  private employeeListSelect = {
-    id: true, employeeSerial: true, name: true, nameEn: true, jobTitle: true,
-    basicSalary: true, housingAllowance: true, transportAllowance: true, otherAllowance: true,
-    workHours: true, workSchedule: true,
-    iqamaNumber: true, joinDate: true, status: true, notes: true,
-    photoPath: true, photoMime: true, photoOriginalName: true,
-    createdAt: true,
-  } as const;
-
-  /** قائمة كاملة (حد أقصى) — للتوافق مع العملاء القدامى والقوائم المنسدلة */
   async findAllLegacy(companyId: string, includeTerminated = false, maxRows = 5000) {
     const where: Prisma.EmployeeWhereInput = {
       companyId,
@@ -79,66 +35,23 @@ export class EmployeesService {
       where,
       orderBy: { name: 'asc' },
       take:    maxRows,
-      select:  this.employeeListSelect,
+      select:  employeeListSelect,
     });
   }
 
-  private whereForTab(
-    companyId: string,
-    tab: 'active' | 'terminated' | 'archived',
-    q?: string,
-  ): Prisma.EmployeeWhereInput {
-    const where: Prisma.EmployeeWhereInput = { companyId };
-    if (tab === 'active') {
-      where.status = { notIn: ['terminated', 'archived'] };
-    } else if (tab === 'terminated') {
-      where.status = 'terminated';
-    } else {
-      where.status = 'archived';
-    }
-    const needle = (q || '').trim();
-    if (needle.length > 0) {
-      where.OR = [
-        { name: { contains: needle, mode: 'insensitive' } },
-        { nameEn: { contains: needle, mode: 'insensitive' } },
-        { employeeSerial: { contains: needle, mode: 'insensitive' } },
-        { jobTitle: { contains: needle, mode: 'insensitive' } },
-      ];
-    }
-    return where;
-  }
-
-  private orderByFor(
-    sortBy?: string,
-    sortDir?: string,
-  ): Prisma.EmployeeOrderByWithRelationInput {
-    const dir = sortDir === 'asc' ? 'asc' : 'desc';
-    switch (sortBy) {
-      case 'employeeSerial': return { employeeSerial: dir };
-      case 'name':           return { name: dir };
-      case 'jobTitle':       return { jobTitle: dir };
-      case 'joinDate':       return { joinDate: dir };
-      case 'totalSalary':
-      case 'basicSalary':    return { basicSalary: dir };
-      case 'status':         return { status: dir };
-      default:               return { joinDate: 'desc' };
-    }
-  }
-
-  /** تصدير / تحميل مجمّع حسب التبويب (حد أقصى) */
-  async findAllBulk(companyId: string, tab: 'active' | 'terminated' | 'archived', maxRows = 10000) {
-    const where = this.whereForTab(companyId, tab);
+  async findAllBulk(companyId: string, tab: EmployeeListTab, maxRows = 10000) {
+    const where = buildEmployeeTabWhere(companyId, tab);
     return this.prisma.employee.findMany({
       where,
-      orderBy: this.orderByFor('name', 'asc'),
+      orderBy: buildEmployeeOrderBy('name', 'asc'),
       take:    maxRows,
-      select:  this.employeeListSelect,
+      select:  employeeListSelect,
     });
   }
 
   async findPaged(
     companyId: string,
-    tab: 'active' | 'terminated' | 'archived',
+    tab: EmployeeListTab,
     page = 1,
     pageSize = 50,
     q?: string,
@@ -147,16 +60,16 @@ export class EmployeesService {
   ) {
     const size = Math.min(200, Math.max(1, pageSize));
     const p = Math.max(1, page);
-    const where = this.whereForTab(companyId, tab, q);
+    const where = buildEmployeeTabWhere(companyId, tab, q);
     const skip = (p - 1) * size;
-    const orderBy = this.orderByFor(sortBy, sortDir);
+    const orderBy = buildEmployeeOrderBy(sortBy, sortDir);
     const [items, total] = await Promise.all([
       this.prisma.employee.findMany({
         where,
         orderBy,
         skip,
         take:   size,
-        select: this.employeeListSelect,
+        select: employeeListSelect,
       }),
       this.prisma.employee.count({ where }),
     ]);
@@ -218,7 +131,7 @@ export class EmployeesService {
       throw new NotFoundException(`Ø§Ù„Ù…ÙˆØ¸Ù ${id} ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.`);
     }
     if (!file?.path) throw new BadRequestException('ØµÙˆØ±Ø© Ø§Ù„Ù…ÙˆØ¸Ù Ù…Ø·Ù„ÙˆØ¨Ø©.');
-    if (!EMPLOYEE_PHOTO_MIMES.has(file.mimetype || '')) {
+    if (!isEmployeePhotoMime(file.mimetype)) {
       await removeStoredEmployeePhoto(file.path);
       throw new BadRequestException('Ù†ÙˆØ¹ Ø§Ù„ØµÙˆØ±Ø© ØºÙŠØ± Ù…Ø³Ù…ÙˆØ­. Ø§Ø³ØªØ®Ø¯Ù… JPG Ø£Ùˆ PNG Ø£Ùˆ WEBP Ø£Ùˆ GIF.');
     }
@@ -281,7 +194,7 @@ export class EmployeesService {
       if (dup) throw new BadRequestException(`رقم الإقامة ${dto.iqamaNumber} مسجل مسبقاً.`);
     }
 
-    const employeeSerial = await this.generateEmployeeSerial(dto.companyId);
+    const employeeSerial = await generateEmployeeSerial(this.prisma, dto.companyId);
 
     const basicVal = dto.basicSalary ?? 0;
     const joinRaw = dto.joinDate?.trim();

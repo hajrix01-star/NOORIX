@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import type { EmployeeListQueryDto } from './dto/employee-list-query.dto';
 
 const EMPLOYEE_SEARCH_MAX_LENGTH = 120;
@@ -16,6 +17,28 @@ export type EmployeeListQueryContract = {
   bulk: boolean;
   isPaged: boolean;
 };
+
+export const employeeListSelect = {
+  id: true,
+  employeeSerial: true,
+  name: true,
+  nameEn: true,
+  jobTitle: true,
+  basicSalary: true,
+  housingAllowance: true,
+  transportAllowance: true,
+  otherAllowance: true,
+  workHours: true,
+  workSchedule: true,
+  iqamaNumber: true,
+  joinDate: true,
+  status: true,
+  notes: true,
+  photoPath: true,
+  photoMime: true,
+  photoOriginalName: true,
+  createdAt: true,
+} satisfies Prisma.EmployeeSelect;
 
 export function normalizeEmployeeListQuery(
   companyId: string,
@@ -37,6 +60,48 @@ export function normalizeEmployeeListQuery(
 
 export function normalizeEmployeeTab(value: unknown): EmployeeListTab {
   return value === 'terminated' || value === 'archived' ? value : 'active';
+}
+
+export function buildEmployeeTabWhere(
+  companyId: string,
+  tab: EmployeeListTab,
+  q?: string,
+): Prisma.EmployeeWhereInput {
+  const where: Prisma.EmployeeWhereInput = { companyId };
+  if (tab === 'active') {
+    where.status = { notIn: ['terminated', 'archived'] };
+  } else if (tab === 'terminated') {
+    where.status = 'terminated';
+  } else {
+    where.status = 'archived';
+  }
+  const needle = (q || '').trim();
+  if (needle.length > 0) {
+    where.OR = [
+      { name: { contains: needle, mode: 'insensitive' } },
+      { nameEn: { contains: needle, mode: 'insensitive' } },
+      { employeeSerial: { contains: needle, mode: 'insensitive' } },
+      { jobTitle: { contains: needle, mode: 'insensitive' } },
+    ];
+  }
+  return where;
+}
+
+export function buildEmployeeOrderBy(
+  sortBy?: string,
+  sortDir?: string,
+): Prisma.EmployeeOrderByWithRelationInput {
+  const dir = sortDir === 'asc' ? 'asc' : 'desc';
+  switch (sortBy) {
+    case 'employeeSerial': return { employeeSerial: dir };
+    case 'name': return { name: dir };
+    case 'jobTitle': return { jobTitle: dir };
+    case 'joinDate': return { joinDate: dir };
+    case 'totalSalary':
+    case 'basicSalary': return { basicSalary: dir };
+    case 'status': return { status: dir };
+    default: return { joinDate: 'desc' };
+  }
 }
 
 function optionalString(value: unknown): string | undefined {
