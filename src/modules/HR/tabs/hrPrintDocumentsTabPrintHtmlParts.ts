@@ -1,0 +1,230 @@
+import { esc } from './hrPrintDocumentsTabFormat';
+import {
+  LABEL_PAYROLL_EN,
+  LABEL_EOS_EN,
+  LABEL_LETTER_EN,
+  HR_SHEET_LEGAL_AR,
+  HR_SHEET_LEGAL_EN,
+  HR_GEN_PRINT_CSS,
+} from './hrPrintDocumentsTabConstants';
+import { HR_PRINT_AR, HR_PRINT_EMPTY_FIELD } from './hrPrintDocumentsTabLabelsAr';
+import type {
+  HrAnnualDraftState,
+  HrEosDraftState,
+  HrPayrollDraftState,
+  HrPrintDocKind,
+} from './hrPrintDocumentsTabDrafts';
+
+const HR_PRINT_PREVIEW_FONT_HREF =
+  'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap';
+
+export type HrPrintComposeResult = {
+  inner: string | null;
+  err: null | 'annual_empty';
+  title: string;
+};
+
+export type ComposeHrPrintDocumentInput = {
+  docKind: HrPrintDocKind;
+  payrollFormat: HrPayrollDraftState['payrollFormat'];
+  logoUrl: string;
+  lang: string;
+  payroll: HrPayrollDraftState;
+  annual: HrAnnualDraftState;
+  eos: HrEosDraftState;
+  companyNameArDefault: string;
+  companyNameEnDefault: string;
+  payrollTotal: number;
+  annualSum: number;
+  eosWageTotal: number;
+  t: (key: string) => string;
+};
+
+type GenHeaderProps = {
+  logoUrl: string;
+  companyAr: string;
+  companyEn: string;
+  titleAr: string;
+  titleEn: string;
+  subtitleAr?: string;
+  subtitleEn?: string;
+};
+
+export type ContractGridRow = {
+  labelAr: string;
+  labelEn: string;
+  value: string;
+  ltr: boolean;
+};
+
+export function wrapHrPrintBody(innerHtml: string, landscape: boolean): string {
+  const cls = landscape ? 'hr-sheet gen-print hr-sheet--landscape' : 'hr-sheet gen-print hr-sheet--portrait';
+  return `
+<div class="${cls}">
+  <div class="legal-ref">
+    <div dir="rtl">${esc(HR_SHEET_LEGAL_AR)}</div>
+    <div class="legal-ref-en" dir="ltr">${esc(HR_SHEET_LEGAL_EN)}</div>
+  </div>
+${innerHtml}
+</div>`;
+}
+
+export function buildHrPrintPreviewSrcDoc(innerHtml: string, landscape: boolean): string {
+  const wrapped = wrapHrPrintBody(innerHtml, landscape);
+  return `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"/><link href="${HR_PRINT_PREVIEW_FONT_HREF}" rel="stylesheet"><style>${HR_GEN_PRINT_CSS}</style></head><body style="margin:0;background:#e8eef5;padding:8px 6px">${wrapped}</body></html>`;
+}
+
+function safeImgSrc(url: string): string {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  return u.replace(/"/g, '%22').replace(/'/g, '%27');
+}
+
+function buildGenLogoInner(logoUrl: string): string {
+  const u = safeImgSrc(logoUrl);
+  if (u.startsWith('http') || u.startsWith('data:image'))
+    return `<img src="${u}" alt="" />`;
+  return `<div class="gen-logo-placeholder">${esc(HR_PRINT_AR.logoPlaceholder)}<br/><span style="font-size:9px">Logo</span></div>`;
+}
+
+export function buildGenHeader({
+  logoUrl,
+  companyAr,
+  companyEn,
+  titleAr,
+  titleEn,
+  subtitleAr,
+  subtitleEn,
+}: GenHeaderProps): string {
+  const enLine =
+    companyEn && String(companyEn).trim()
+      ? `<div class="doc-company-en" dir="ltr">${esc(companyEn)}</div>`
+      : '';
+  const tEn = titleEn ? `<div class="doc-title-en" dir="ltr">${esc(titleEn)}</div>` : '';
+  const sub = subtitleAr ? `<div class="doc-header-sub" dir="rtl">${esc(subtitleAr)}</div>` : '';
+  const subE = subtitleEn ? `<div class="doc-header-sub doc-header-sub-en" dir="ltr">${esc(subtitleEn)}</div>` : '';
+  return `<header class="doc-header">
+    <div class="doc-header-logo">${buildGenLogoInner(logoUrl)}</div>
+    <div class="doc-header-center">
+      <div class="doc-company-ar" dir="rtl">${esc(companyAr)}</div>
+      ${enLine}
+      <hr class="doc-divider" />
+      <div class="doc-title-ar" dir="rtl">${esc(titleAr)}</div>
+      ${tEn}
+      ${sub}${subE}
+    </div>
+    <div class="doc-header-space" aria-hidden="true"></div>
+  </header>`;
+}
+
+export function buildGenEmployeeStrip(displayName: string, iqama: string, jobTitle: string): string {
+  const nameCell = esc(String(displayName || '').trim() || HR_PRINT_EMPTY_FIELD);
+  const i = esc(String(iqama || '').trim() || HR_PRINT_EMPTY_FIELD);
+  const j = esc(String(jobTitle || '').trim() || HR_PRINT_EMPTY_FIELD);
+  return `
+  <div class="doc-section-title"><span>${esc(HR_PRINT_AR.employeeSection)}</span><span class="doc-section-title-en">${esc(LABEL_PAYROLL_EN.employee)}</span></div>
+  <div class="doc-emp-strip">
+    <div class="doc-emp-cell"><span class="doc-emp-lbl">${esc(HR_PRINT_AR.empName)}</span><span class="doc-emp-val">${nameCell}</span></div>
+    <div class="doc-emp-cell"><span class="doc-emp-lbl">${esc(HR_PRINT_AR.empIqama)}</span><span class="doc-emp-val">${i}</span></div>
+    <div class="doc-emp-cell"><span class="doc-emp-lbl">${esc(HR_PRINT_AR.empJobTitle)}</span><span class="doc-emp-val">${j}</span></div>
+  </div>`;
+}
+
+function buildGenContractGrid(rows: ContractGridRow[]): string {
+  const cells = rows
+    .map(
+      (r) => `<div class="doc-info-cell">
+      <span class="doc-info-label">${esc(r.labelAr)}<br/><span style="font-size:9px;font-weight:600;color:#94a3b8">${esc(r.labelEn)}</span></span>
+      <span class="doc-info-value ${r.ltr ? 'v-ltr' : ''}" ${r.ltr ? 'dir="ltr"' : 'dir="rtl"'}>${esc(r.value)}</span>
+    </div>`,
+    )
+    .join('');
+  return `<div class="doc-info-grid">${cells}</div>`;
+}
+
+export function buildGenContractBlock(titleAr: string, titleEn: string, rows: ContractGridRow[]): string {
+  return `
+  <div class="doc-section-title"><span>${esc(titleAr)}</span><span class="doc-section-title-en">${esc(titleEn)}</span></div>
+  ${buildGenContractGrid(rows)}`;
+}
+
+export function buildGenDeclarationBlock(arText: string, enText: string): string {
+  const a = String(arText || '').trim();
+  const e = String(enText || '').trim();
+  if (!a && !e) return '';
+  return `
+  <div class="doc-section-title"><span>${esc(HR_PRINT_AR.declarationHeading)}</span><span class="doc-section-title-en">${esc(LABEL_LETTER_EN.declarationSection)}</span></div>
+  <div class="doc-declaration">
+    ${a ? `<p dir="rtl">${esc(a)}</p>` : ''}
+    ${e ? `<p class="dec-en" dir="ltr">${esc(e)}</p>` : ''}
+  </div>`;
+}
+
+/** Bilingual EOS settlement declaration (Arabic + English, equal prominence). */
+export function buildGenSettlementDeclarationBlock(arText: string, enText: string): string {
+  const a = String(arText || '').trim();
+  const e = String(enText || '').trim();
+  if (!a && !e) return '';
+  const arBlock = a
+    ? `<div class="doc-decl-lang" dir="rtl">
+      <div class="doc-decl-lang-lbl"><span>${esc(HR_PRINT_AR.langArabic)}</span><span class="doc-decl-lang-lbl-en">Arabic</span></div>
+      <p class="doc-decl-lang-body">${esc(a)}</p>
+    </div>`
+    : '';
+  const sep = a && e ? '<hr class="doc-declaration-unified-sep" />' : '';
+  const enBlock = e
+    ? `<div class="doc-decl-lang doc-decl-lang--ltr" dir="ltr">
+      <div class="doc-decl-lang-lbl" dir="ltr"><span>English</span><span class="doc-decl-lang-lbl-en">${esc(HR_PRINT_AR.langEnglish)}</span></div>
+      <p class="doc-decl-lang-body doc-decl-lang-body--en">${esc(e)}</p>
+    </div>`
+    : '';
+  return `
+  <div class="doc-section-title"><span>${esc(HR_PRINT_AR.declarationHeading)}</span><span class="doc-section-title-en">${esc(LABEL_LETTER_EN.declarationSection)}</span></div>
+  <div class="doc-declaration doc-declaration--eos-unified">
+    ${arBlock}${sep}${enBlock}
+  </div>`;
+}
+
+export function buildGenSignaturesBlock(empName: string, companyAr: string): string {
+  const e = esc(String(empName || '').trim() || HR_PRINT_EMPTY_FIELD);
+  const c = esc(String(companyAr || '').trim() || HR_PRINT_EMPTY_FIELD);
+  return `
+  <div class="doc-section-title"><span>${esc(HR_PRINT_AR.signaturesHeading)}</span><span class="doc-section-title-en">${esc(LABEL_LETTER_EN.signaturesSection)}</span></div>
+  <div class="doc-sig-grid">
+    <div class="doc-sig-box">
+      <div class="doc-sig-header">
+        <div class="doc-sig-title-ar">${esc(HR_PRINT_AR.sigEmployeeTitle)}</div>
+        <div class="doc-sig-title-en">Employee signature</div>
+      </div>
+      <div class="doc-sig-space"></div>
+      <div class="doc-sig-footer"><strong>${e}</strong>${esc(HR_PRINT_AR.sigDateLineSuffix)}</div>
+    </div>
+    <div class="doc-sig-box">
+      <div class="doc-sig-header">
+        <div class="doc-sig-title-ar">${esc(HR_PRINT_AR.sigEmployerTitle)}</div>
+        <div class="doc-sig-title-en">${esc(LABEL_LETTER_EN.stampSignatory)}</div>
+      </div>
+      <div class="doc-sig-space"></div>
+      <div class="doc-sig-footer"><strong>${c}</strong>${esc(HR_PRINT_AR.sigDateLineSuffix)}</div>
+    </div>
+  </div>`;
+}
+
+export function buildGenFooter(issueDateStr: string, langIsAr: boolean): string {
+  const left = langIsAr
+    ? HR_PRINT_AR.footerLegalAr
+    : 'Signature document under Saudi Labor Law (Royal Decree M/51).';
+  const dlab = langIsAr ? HR_PRINT_AR.issueDateLabel : 'Issue date';
+  return `<footer class="doc-footer">
+    <span class="doc-footer-text" dir="${langIsAr ? 'rtl' : 'ltr'}">${esc(left)}</span>
+    <span class="doc-footer-date">${esc(dlab)}: ${esc(issueDateStr)}</span>
+  </footer>`;
+}
+
+export function formatIssueDateEnglish(): string {
+  return new Date().toLocaleDateString('en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
