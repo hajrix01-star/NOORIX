@@ -28,7 +28,7 @@ jobs:
 
       - run: npm run check:workflow-governance
 
-      - run: npm run check:table-governance
+      - run: npm run check:system-governance-consolidated
 
       - run: npm run check:css-governance
 
