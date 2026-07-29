@@ -1,45 +1,10 @@
-/**
- * EmployeeProfileScreen — صفحة ملف الموظف (المنطق والتنسيق في مكوّنات employeeProfile/*)
- */
-import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { useApiMutation } from '../../hooks/useApiMutation';
-import { useApiListQuery, useApiQuery } from '../../hooks/useApiQuery';
-import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
-import { useEmployee, useEmployees } from '../../hooks/useEmployees';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { getSaudiToday } from '../../utils/saudiDate';
-import {
-  getLeaves,
-  getResidencies,
-  getDocuments,
-  getInvoices,
-  getDeductions,
-  getMovements,
-  getEmployeeCompensationSnapshot,
-  throwIfApiFailed,
-  uploadDocumentFile,
-  downloadDocument,
-  deleteEmployee,
-  deleteResidency,
-  deleteRaiseMovement,
-  deleteEmployeePhoto,
-  getEmployeePhotoObjectUrl,
-  unwrapApiList,
-  uploadEmployeePhoto,
-} from '../../services/api';
 import { ScreenShell } from '../../ui';
-import { employeeDisplayName } from '../../utils/employeeDisplayName';
-import {
-  buildAdvanceSettlementStatusMap,
-  buildLeaveRequestStatusMap,
-  buildResidencyRecordStatusMap,
-  buildPayrollRunStatusMap,
-} from '../../constants/badgeMaps';
 import {
   EmployeeProfileCentralDataError,
   EmployeeProfileLoading,
@@ -52,21 +17,9 @@ import {
   type EmployeeProfileTabId,
 } from './components/employeeProfile/EmployeeProfileTabsPanel';
 import { EmployeeProfileModals } from './components/employeeProfile/EmployeeProfileModals';
-import { employeeKeys, hrKeys, invoiceKeys } from '../../services/queryKeys';
 import { EmployeeProfileSummary } from './components/employeeProfile/EmployeeProfileSummary';
-import { syncCustomAllowanceRows, type HrStaffSavePayload } from './staffListDataOps';
-import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
-import {
-  buildEmployeeProfileSummary,
-  buildCareerTableRows,
-  buildFinancialRecords,
-  buildSalaryRows,
-  type AdvanceProfileRow,
-  type PayrollProfileItem,
-  type ProfileRecord,
-} from './components/employeeProfile/employeeProfileModel';
-import { normalizeAdvances } from './utils/advanceBalance';
-import type { HrCompensationSnapshot, HrEmployee } from '../../types/api';
+import { useEmployeeProfileActions } from './components/employeeProfile/useEmployeeProfileActions';
+import { useEmployeeProfileData } from './components/employeeProfile/useEmployeeProfileData';
 
 type HrProfileCompanyRef = {
   id?: string | null;
@@ -75,27 +28,19 @@ type HrProfileCompanyRef = {
   logoUrl?: string | null;
 };
 
-type HrProfileCompensationSnapshot = HrCompensationSnapshot & {
-  advances?: { items?: ProfileRecord[] };
-  payrollItems?: PayrollProfileItem[];
-  customAllowances?: HrCompensationSnapshot['customAllowances'];
-};
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
-}
-
 export default function EmployeeProfileScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { activeCompanyId, companies, userPermissions } = useApp();
   const { t, lang } = useTranslation();
+  const { showToast } = useToast();
   const [activeProfileTab, setActiveProfileTab] = useTabSearchParam(
     EMPLOYEE_PROFILE_TAB_IDS,
     'overview',
     'employeeProfileTab',
     'tab',
   );
+
   const companyId = activeCompanyId ?? '';
   const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
   const canEditEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_WRITE');
@@ -108,388 +53,176 @@ export default function EmployeeProfileScreen() {
   const activeCompany = companyRefs.find((c) => c.id === companyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
-  const [showAdvance, setShowAdvance] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<HrEmployee | null>(null);
-  const [terminatingEmployee, setTerminatingEmployee] = useState<HrEmployee | null>(null);
-  const [terminationSettlementEmp, setTerminationSettlementEmp] = useState<HrEmployee | null>(null);
-  const [terminationForm, setTerminationForm] = useState({
-    reason: '',
-    clause: '',
-    date: getSaudiToday(),
-  });
-  const [careerModal, setCareerModal] = useState<'movement' | 'promotion' | 'raise' | null>(null);
-  const [editRaiseMovement, setEditRaiseMovement] = useState<ProfileRecord | null>(null);
-  const [docModal, setDocModal] = useState<'salary' | 'contract' | 'settlement' | null>(null);
-  const { showToast } = useToast();
-  const [uploading, setUploading] = useState(false);
-  const [employeePhotoUrl, setEmployeePhotoUrl] = useState('');
-  const [photoLoading, setPhotoLoading] = useState(false);
-  const [editProfileLeave, setEditProfileLeave] = useState<ProfileRecord | null>(null);
-  const [editProfileResidency, setEditProfileResidency] = useState<ProfileRecord | null>(null);
-  const [profileServiceAdd, setProfileServiceAdd] = useState<{ category: string } | null>(null);
-  const docFileRef = React.useRef<HTMLInputElement | null>(null);
 
-  const { data: employee, isLoading, error } = useEmployee(id, companyId);
-  const { update, createAdvance } = useEmployees(companyId, { includeTerminated: true });
+  const profileData = useEmployeeProfileData({ employeeId: id, companyId, t });
   const {
-    data: compensationSnapshot,
-    isLoading: isCompensationSnapshotLoading,
-    error: compensationSnapshotError,
-  } = useApiQuery<HrProfileCompensationSnapshot>({
-    queryKey: hrKeys.compensationSnapshot(companyId, id),
-    queryFn: async () => {
-      if (!id) throw new Error('Employee id is required.');
-      return getEmployeeCompensationSnapshot(companyId, id);
-    },
-    enabled: !!companyId && !!id,
-    fallbackMessage: 'فشل تحميل بيانات HR المركزية',
-  });
-
-  const leaveProfileStatusMap = useMemo(() => buildLeaveRequestStatusMap(t), [t]);
-  const residencyProfileStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
-  const payrollRunStatusMap = useMemo(() => buildPayrollRunStatusMap(t), [t]);
-
-  const { data: leaves = [], error: leavesError } = useApiListQuery<ProfileRecord>({
-    queryKey: hrKeys.leavesByEmployee(companyId, id),
-    queryFn: () => getLeaves(companyId, id),
-    fallbackMessage: 'فشل تحميل إجازات الموظف',
-    enabled: !!companyId && !!id,
-  });
-
-  const { data: residencies = [], error: residenciesError } = useApiListQuery<ProfileRecord>({
-    queryKey: hrKeys.residenciesByEmployee(companyId, id),
-    queryFn: () => getResidencies(companyId, id),
-    fallbackMessage: 'فشل تحميل خدمات الموظف',
-    enabled: !!companyId && !!id,
-  });
-
-  const { data: documents = [], error: documentsError } = useApiListQuery<ProfileRecord, ProfileRecord[]>({
-    queryKey: hrKeys.documents(companyId, id),
-    queryFn: () => getDocuments(companyId, id),
-    fallbackMessage: 'فشل تحميل مستندات الموظف',
-    select: (items) =>
-      [...items].sort((a, b) => {
-        const ad = new Date(a.updatedAt || a.createdAt || 0).getTime();
-        const bd = new Date(b.updatedAt || b.createdAt || 0).getTime();
-        return bd - ad;
-      }),
-    enabled: !!companyId && !!id,
-  });
-
-  const { data: hrInvoicesData, error: hrInvoicesError } = useApiQuery<{ items: ProfileRecord[] }>({
-    queryKey: invoiceKeys.hrAllForEmployee(companyId, id),
-    queryFn: async () => {
-      const [advRes, hrRes, salRes] = await Promise.all([
-        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'advance', undefined, undefined, undefined, undefined, undefined, undefined, undefined, false),
-        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'hr_expense', undefined, undefined, undefined, undefined, undefined, undefined, undefined, false),
-        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'salary', undefined, undefined, undefined, undefined, undefined, undefined, undefined, false),
-      ]);
-      const items: ProfileRecord[] = [];
-      items.push(
-        ...unwrapApiList<ProfileRecord>(advRes, 'فشل تحميل سلف الموظف').filter((i) => i.kind === 'advance' && i.status !== 'cancelled'),
-        ...unwrapApiList<ProfileRecord>(hrRes, 'فشل تحميل مصروفات HR للموظف').filter((i) => i.kind === 'hr_expense' && i.status !== 'cancelled'),
-        ...unwrapApiList<ProfileRecord>(salRes, 'فشل تحميل رواتب الموظف').filter((i) => i.kind === 'salary' && i.status !== 'cancelled'),
-      );
-      return { success: true, data: { items } };
-    },
-    enabled: !!companyId && !!id,
-    fallbackMessage: 'فشل تحميل فواتير الموظف',
-  });
-
-  const { data: deductions = [], error: deductionsError } = useApiListQuery<ProfileRecord>({
-    queryKey: hrKeys.deductions(companyId, id),
-    queryFn: () => getDeductions(companyId, id),
-    fallbackMessage: 'فشل تحميل خصومات الموظف',
-    enabled: !!companyId && !!id,
-  });
-
-  const { data: movements = [], error: movementsError } = useApiListQuery<ProfileRecord>({
-    queryKey: hrKeys.movementsByEmployee(companyId, id),
-    queryFn: () => getMovements(companyId, id),
-    fallbackMessage: 'فشل تحميل حركات الموظف',
-    enabled: !!companyId && !!id,
-  });
-
-  const careerTableRows = useMemo(() => buildCareerTableRows(movements, t), [movements, t]);
-  const advanceStatusMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
-
-  const financialRecords = useMemo(
-    () => buildFinancialRecords(hrInvoicesData, deductions, t, residencies),
-    [hrInvoicesData, deductions, t, residencies],
-  );
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (!employee?.id || !companyId || !employee.photoPath) {
-      setEmployeePhotoUrl('');
-      setPhotoLoading(false);
-      return undefined;
-    }
-    let alive = true;
-    let objectUrl = '';
-    setPhotoLoading(true);
-    getEmployeePhotoObjectUrl(employee.id, companyId)
-      .then((url) => {
-        objectUrl = url;
-        if (alive) setEmployeePhotoUrl(url);
-        else URL.revokeObjectURL(url);
-      })
-      .catch(() => {
-        if (alive) setEmployeePhotoUrl('');
-      })
-      .finally(() => {
-        if (alive) setPhotoLoading(false);
-      });
-    return () => {
-      alive = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [companyId, employee?.id, employee?.photoPath]);
-
-  const invalidateEmployeeProfile = () => {
-    if (!employee?.id || !companyId) return;
-    queryClient.invalidateQueries({ queryKey: employeeKeys.detail(employee.id, companyId) });
-    queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
-    queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
-  };
-
-  const uploadEmployeePhotoMutation = useApiMutation({
-    mutationFn: (file: File) => {
-      if (!employee?.id) throw new Error(t('saveFailed'));
-      return uploadEmployeePhoto(employee.id, companyId, file);
-    },
-    successToast: () => (lang === 'ar' ? 'تم تحديث صورة الموظف' : 'Employee photo updated'),
-    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
-    onSuccess: invalidateEmployeeProfile,
-  });
-
-  const deleteEmployeePhotoMutation = useApiMutation({
-    mutationFn: () => {
-      if (!employee?.id) throw new Error(t('saveFailed'));
-      return deleteEmployeePhoto(employee.id, companyId);
-    },
-    successToast: () => (lang === 'ar' ? 'تم حذف صورة الموظف' : 'Employee photo removed'),
-    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
-    onSuccess: () => {
-      setEmployeePhotoUrl('');
-      invalidateEmployeeProfile();
-    },
-  });
-
-  const handleEmployeePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    if (!file || !employee?.id || !companyId) return;
-    uploadEmployeePhotoMutation.mutate(file, {
-      onSettled: () => {
-        input.value = '';
-      },
-    });
-  };
-
-  const deleteServiceMutation = useApiMutation({
-    mutationFn: ({ serviceId, voidInvoice }: { serviceId: string; voidInvoice?: boolean }) =>
-      deleteResidency(serviceId, companyId, !!voidInvoice),
-    successToast: () => t('hrServiceDeleted'),
-    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
-    onSuccess: () => {
-      setEditProfileResidency(null);
-      invalidateAll();
-    },
-  });
-
-  const handleDeleteService = (row: ProfileRecord) => {
-    if (!row.id) return;
-    const msg = row.invoiceId
-      ? t('deleteHrServiceWithInvoice')
-      : t('deleteHrServiceConfirm');
-    if (!window.confirm(msg)) return;
-    deleteServiceMutation.mutate({ serviceId: row.id, voidInvoice: !!row.invoiceId });
-  };
-
-  const openProfileResidency = (rowOrId: string | ProfileRecord) => {
-    const target = typeof rowOrId === 'string'
-      ? residencies.find((r) => r.id === rowOrId)
-      : rowOrId;
-    if (target) setEditProfileResidency(target);
-  };
-
-  const permanentDeleteEmployeeMut = useApiMutation({
-    mutationFn: ({ empId }: { empId: string }) => deleteEmployee(empId, companyId),
-    successToast: () => t('employeeDeletedPermanent'),
-    errorToast: (e: unknown) => getErrorMessage(e, t('updateFailed')),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(id, companyId) });
-      queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
-      queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
-      invalidateOnFinancialMutation(queryClient);
-      navigate('/hr');
-    },
-  });
-
-  function handlePermanentDeleteFromProfile() {
-    if (!employee?.id || !companyId) return;
-    if (!window.confirm(t('deleteEmployeePermanentConfirm', employeeDisplayName(employee, lang, '') || '')))
-      return;
-    if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
-    permanentDeleteEmployeeMut.mutate({ empId: employee.id });
-  }
-
-  function handleSaveProfileEmployee(payload: HrStaffSavePayload | Record<string, unknown>) {
-    if (!editingEmployee?.id || !companyId) return;
-    const { employeeBody, customAllowances: customRows = [] } = payload && 'employeeBody' in payload
-      ? payload as HrStaffSavePayload
-      : { employeeBody: payload, customAllowances: [] };
-    update.mutate(
-      { id: editingEmployee.id, body: employeeBody },
-      {
-        onSuccess: async () => {
-          try {
-            await syncCustomAllowanceRows({ companyId, employeeId: editingEmployee.id, desiredRows: customRows, queryClient, t });
-            showToast(t('employeeUpdated'), 'success');
-            setEditingEmployee(null);
-            invalidateAll();
-            invalidateEmployeeProfile();
-          } catch (e: unknown) {
-            showToast(getErrorMessage(e, t('saveFailed')), 'error');
-          }
-        },
-        onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
-      },
-    );
-  }
-
-  function handleArchiveEmployeeFromProfile() {
-    if (!employee?.id || !companyId) return;
-    const parsed = parseEmployeeNotesMeta(employee.notes);
-    update.mutate(
-      {
-        id: employee.id,
-        body: { status: 'archived', notes: composeEmployeeNotes(parsed.notesText, parsed.meta) },
-      },
-      {
-        onSuccess: () => {
-          showToast(t('employeeArchived'), 'success');
-          invalidateAll();
-          invalidateEmployeeProfile();
-        },
-        onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
-      },
-    );
-  }
-
-  function handleRestoreEmployeeFromProfile() {
-    if (!employee?.id || !companyId) return;
-    const parsed = parseEmployeeNotesMeta(employee.notes);
-    update.mutate(
-      {
-        id: employee.id,
-        body: { status: 'active', notes: composeEmployeeNotes(parsed.notesText, parsed.meta) },
-      },
-      {
-        onSuccess: () => {
-          showToast(t('employeeRestored'), 'success');
-          invalidateAll();
-          invalidateEmployeeProfile();
-        },
-        onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
-      },
-    );
-  }
-
-  const invalidateAll = () => {
-    queryClient.invalidateQueries({ queryKey: employeeKeys.detailPartial(id) });
-    queryClient.invalidateQueries({ queryKey: hrKeys.customAllowances(companyId, String(id)) });
-    queryClient.invalidateQueries({ queryKey: hrKeys.leavesByEmployee(companyId, id) });
-    queryClient.invalidateQueries({ queryKey: hrKeys.leaveSalarySettlements(companyId) });
-    queryClient.invalidateQueries({ queryKey: hrKeys.residenciesByEmployee(companyId, id) });
-    queryClient.invalidateQueries({ queryKey: hrKeys.documents(companyId, id) });
-    queryClient.invalidateQueries({ queryKey: hrKeys.movementsByEmployee(companyId, id) });
-    queryClient.invalidateQueries({ queryKey: hrKeys.compensationSnapshot(companyId, id) });
-    invalidateOnFinancialMutation(queryClient);
-    queryClient.invalidateQueries({ queryKey: hrKeys.payrollRunItems(companyId, id) });
-  };
-
-  const deleteRaiseMut = useApiMutation({
-    mutationFn: (movementId: string) => deleteRaiseMovement(movementId, companyId),
-    successToast: () => t('careerRaiseDeleted'),
-    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
-    onSuccess: () => {
-      setEditRaiseMovement(null);
-      invalidateAll();
-    },
-  });
-
-  const handleEditRaise = (row: { id?: string }) => {
-    const movement = movements.find((m) => m.id === row.id);
-    if (movement?.movementType === 'raise') setEditRaiseMovement(movement);
-  };
-
-  const handleDeleteRaise = (row: { id?: string }) => {
-    if (!row.id || !window.confirm(t('deleteRaiseConfirm'))) return;
-    deleteRaiseMut.mutate(row.id);
-  };
-
-  const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !id || !companyId) return;
-    setUploading(true);
-    try {
-      const res = await uploadDocumentFile({
-        companyId,
-        employeeId: id,
-        documentType: 'other',
-        file,
-      });
-      throwIfApiFailed(res, t('saveFailed'));
-      invalidateAll();
-      showToast(t('documentUploaded'), 'success');
-    } catch (err: unknown) {
-      showToast(getErrorMessage(err, t('saveFailed')), 'error');
-    } finally {
-      setUploading(false);
-      if (docFileRef.current) docFileRef.current.value = '';
-    }
-  };
-
-  const handleDownloadDoc = async (docId: string) => {
-    try {
-      await downloadDocument(docId, companyId);
-    } catch (err: unknown) {
-      showToast(getErrorMessage(err, 'فشل التحميل'), 'error');
-    }
-  };
+    employee,
+    isLoading,
+    error,
+    compensationSnapshot,
+    isCompensationSnapshotLoading,
+    compensationSnapshotError,
+    profileSectionError,
+    leaveProfileStatusMap,
+    residencyProfileStatusMap,
+    payrollRunStatusMap,
+    leaves,
+    residencies,
+    documents,
+    movements,
+    careerTableRows,
+    advanceStatusMap,
+    financialRecords,
+    employeePhotoUrl,
+    setEmployeePhotoUrl,
+    photoLoading,
+    salaryRows,
+    advances,
+    payrollItems,
+    profileSummary,
+  } = profileData;
 
   const isCompanySelectionPending = !companyId || (companyRefs.length > 0 && !activeCompany);
   const isEmployeeProfileBootstrapping = !!id && isCompanySelectionPending;
+  const handleBack = () => navigate('/hr');
 
   if (isEmployeeProfileBootstrapping || isLoading || isCompensationSnapshotLoading) {
     return <EmployeeProfileLoading t={t} />;
   }
   if (error || !employee) {
-    return <EmployeeProfileNotFound t={t} onBack={() => navigate('/hr')} />;
+    return <EmployeeProfileNotFound t={t} onBack={handleBack} />;
   }
-  if (compensationSnapshotError || !compensationSnapshot) {
+  if (compensationSnapshotError || !compensationSnapshot || !profileSummary) {
     return (
       <EmployeeProfileCentralDataError
         t={t}
-        onBack={() => navigate('/hr')}
+        onBack={handleBack}
         message={compensationSnapshotError instanceof Error ? compensationSnapshotError.message : undefined}
       />
     );
   }
-  const profileSectionError =
-    leavesError || residenciesError || documentsError || hrInvoicesError || deductionsError || movementsError;
   if (profileSectionError) {
     return (
       <EmployeeProfileCentralDataError
         t={t}
-        onBack={() => navigate('/hr')}
+        onBack={handleBack}
         message={profileSectionError instanceof Error ? profileSectionError.message : undefined}
       />
     );
   }
 
+  return (
+    <EmployeeProfileResolvedScreen
+      id={id}
+      companyId={companyId}
+      companyName={companyName}
+      companyLogo={companyLogo}
+      employee={employee}
+      compensationSnapshot={compensationSnapshot}
+      lang={lang}
+      t={t}
+      showToast={showToast}
+      canDeleteEmployee={canDeleteEmployee}
+      canEditEmployee={canEditEmployee}
+      canEditHrLeave={canEditHrLeave}
+      canRecordCareer={canRecordCareer}
+      activeProfileTab={activeProfileTab}
+      onTabChange={setActiveProfileTab}
+      onBack={handleBack}
+      profileData={{
+        leaveProfileStatusMap,
+        residencyProfileStatusMap,
+        payrollRunStatusMap,
+        leaves,
+        residencies,
+        documents,
+        movements,
+        careerTableRows,
+        advanceStatusMap,
+        financialRecords,
+        employeePhotoUrl,
+        setEmployeePhotoUrl,
+        photoLoading,
+        salaryRows,
+        advances,
+        payrollItems,
+        profileSummary,
+      }}
+    />
+  );
+}
+
+type EmployeeProfileResolvedScreenProps = {
+  id?: string;
+  companyId: string;
+  companyName: string;
+  companyLogo: string;
+  employee: NonNullable<ReturnType<typeof useEmployeeProfileData>['employee']>;
+  compensationSnapshot: NonNullable<ReturnType<typeof useEmployeeProfileData>['compensationSnapshot']>;
+  lang: string;
+  t: (key: string, ...args: unknown[]) => string;
+  showToast: ReturnType<typeof useToast>['showToast'];
+  canDeleteEmployee: boolean;
+  canEditEmployee: boolean;
+  canEditHrLeave: boolean;
+  canRecordCareer: boolean;
+  activeProfileTab: string;
+  onTabChange: (tab: EmployeeProfileTabId) => void;
+  onBack: () => void;
+  profileData: Omit<Pick<
+    ReturnType<typeof useEmployeeProfileData>,
+    | 'leaveProfileStatusMap'
+    | 'residencyProfileStatusMap'
+    | 'payrollRunStatusMap'
+    | 'leaves'
+    | 'residencies'
+    | 'documents'
+    | 'movements'
+    | 'careerTableRows'
+    | 'advanceStatusMap'
+    | 'financialRecords'
+    | 'employeePhotoUrl'
+    | 'setEmployeePhotoUrl'
+    | 'photoLoading'
+    | 'salaryRows'
+    | 'advances'
+    | 'payrollItems'
+    | 'profileSummary'
+  >, 'profileSummary'> & {
+    profileSummary: NonNullable<ReturnType<typeof useEmployeeProfileData>['profileSummary']>;
+  };
+};
+
+function EmployeeProfileResolvedScreen({
+  id,
+  companyId,
+  companyName,
+  companyLogo,
+  employee,
+  compensationSnapshot,
+  lang,
+  t,
+  showToast,
+  canDeleteEmployee,
+  canEditEmployee,
+  canEditHrLeave,
+  canRecordCareer,
+  activeProfileTab,
+  onTabChange,
+  onBack,
+  profileData,
+}: EmployeeProfileResolvedScreenProps) {
+  const actions = useEmployeeProfileActions({
+    employee,
+    employeeId: id,
+    companyId,
+    lang,
+    t,
+    residencies: profileData.residencies,
+    movements: profileData.movements,
+    setEmployeePhotoUrl: profileData.setEmployeePhotoUrl,
+    showToast,
+  });
   const empStatusMap = {
     active: { color: 'green', label: t('statusActive') },
     terminated: { color: 'red', label: t('statusTerminated') },
@@ -498,20 +231,6 @@ export default function EmployeeProfileScreen() {
   };
   const employeeStatus = String(employee.status ?? '');
   const canShowCareerActions = canRecordCareer && ['active', 'on_leave'].includes(employeeStatus);
-
-  const total = compensationSnapshot.salaryPackage.total;
-  const salaryRows = buildSalaryRows(compensationSnapshot, t);
-  const advances = normalizeAdvances(compensationSnapshot.advances?.items ?? []);
-  const payrollItems = compensationSnapshot.payrollItems ?? [];
-  const profileSummary = buildEmployeeProfileSummary({
-    compensationSnapshot,
-    advances,
-    payrollItems,
-    leaves,
-    residencies,
-    documents,
-    careerTableRows,
-  });
   const normalizedActiveProfileTab: EmployeeProfileTabId = EMPLOYEE_PROFILE_TAB_IDS.includes(activeProfileTab as EmployeeProfileTabId)
     ? (activeProfileTab as EmployeeProfileTabId)
     : 'overview';
@@ -520,19 +239,19 @@ export default function EmployeeProfileScreen() {
     <ScreenShell variant="form">
       <EmployeeProfileHeaderBar
         t={t}
-        onBack={() => navigate('/hr')}
-        onSalaryCert={() => setDocModal('salary')}
-        onContract={() => setDocModal('contract')}
-        onSettlement={() => setDocModal('settlement')}
-        onPayAdvance={() => setShowAdvance(true)}
-        onEdit={() => setEditingEmployee(employee)}
+        onBack={onBack}
+        onSalaryCert={() => actions.setDocModal('salary')}
+        onContract={() => actions.setDocModal('contract')}
+        onSettlement={() => actions.setDocModal('settlement')}
+        onPayAdvance={() => actions.setShowAdvance(true)}
+        onEdit={() => actions.setEditingEmployee(employee)}
         onTerminate={() => {
-          setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
-          setTerminatingEmployee(employee);
+          actions.setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
+          actions.setTerminatingEmployee(employee);
         }}
-        onArchive={handleArchiveEmployeeFromProfile}
-        onRestore={handleRestoreEmployeeFromProfile}
-        onPermanentDelete={handlePermanentDeleteFromProfile}
+        onArchive={actions.handleArchiveEmployeeFromProfile}
+        onRestore={actions.handleRestoreEmployeeFromProfile}
+        onPermanentDelete={actions.handlePermanentDeleteFromProfile}
         canEdit={canEditEmployee}
         canTerminate={canEditEmployee && employee.status !== 'terminated' && employee.status !== 'archived'}
         canArchive={canEditEmployee && employee.status !== 'archived'}
@@ -546,51 +265,51 @@ export default function EmployeeProfileScreen() {
           employee={employee}
           lang={lang}
           t={t}
-          summary={profileSummary}
+          summary={profileData.profileSummary}
           empStatusMap={empStatusMap}
-          photoUrl={employeePhotoUrl}
-          photoLoading={photoLoading}
+          photoUrl={profileData.employeePhotoUrl}
+          photoLoading={profileData.photoLoading}
           canEditPhoto={canEditEmployee}
-          photoBusy={uploadEmployeePhotoMutation.isPending || deleteEmployeePhotoMutation.isPending}
-          onPhotoChange={handleEmployeePhotoChange}
-          onDeletePhoto={() => deleteEmployeePhotoMutation.mutate()}
+          photoBusy={actions.uploadEmployeePhotoMutation.isPending || actions.deleteEmployeePhotoMutation.isPending}
+          onPhotoChange={actions.handleEmployeePhotoChange}
+          onDeletePhoto={() => actions.deleteEmployeePhotoMutation.mutate()}
         />
         <EmployeeProfileTabsPanel
           t={t}
           lang={lang}
           activeProfileTab={normalizedActiveProfileTab}
-          onTabChange={setActiveProfileTab}
+          onTabChange={onTabChange}
           employee={employee}
           empStatusMap={empStatusMap}
-          salaryRows={salaryRows}
-          total={total}
-          financialRecords={financialRecords}
+          salaryRows={profileData.salaryRows}
+          total={compensationSnapshot.salaryPackage.total}
+          financialRecords={profileData.financialRecords}
           canEditHrLeave={canEditHrLeave}
-          onOpenResidency={openProfileResidency}
-          advances={advances}
-          advanceStatusMap={advanceStatusMap}
-          payrollItems={payrollItems}
-          payrollRunStatusMap={payrollRunStatusMap}
-          leaves={leaves}
-          leaveProfileStatusMap={leaveProfileStatusMap}
-          onEditLeave={setEditProfileLeave}
-          residencies={residencies}
-          residencyProfileStatusMap={residencyProfileStatusMap}
-          onQuickAddService={(category: string) => setProfileServiceAdd({ category })}
-          onDeleteService={handleDeleteService}
-          documents={documents}
-          uploading={uploading}
-          fileInputRef={docFileRef}
-          onUploadDocument={handleUploadDoc}
-          onPickDocument={() => docFileRef.current?.click()}
-          onDownloadDocument={handleDownloadDoc}
-          careerTableRows={careerTableRows}
+          onOpenResidency={actions.openProfileResidency}
+          advances={profileData.advances}
+          advanceStatusMap={profileData.advanceStatusMap}
+          payrollItems={profileData.payrollItems}
+          payrollRunStatusMap={profileData.payrollRunStatusMap}
+          leaves={profileData.leaves}
+          leaveProfileStatusMap={profileData.leaveProfileStatusMap}
+          onEditLeave={actions.setEditProfileLeave}
+          residencies={profileData.residencies}
+          residencyProfileStatusMap={profileData.residencyProfileStatusMap}
+          onQuickAddService={(category: string) => actions.setProfileServiceAdd({ category })}
+          onDeleteService={actions.handleDeleteService}
+          documents={profileData.documents}
+          uploading={actions.uploading}
+          fileInputRef={actions.docFileRef}
+          onUploadDocument={actions.handleUploadDoc}
+          onPickDocument={() => actions.docFileRef.current?.click()}
+          onDownloadDocument={actions.handleDownloadDoc}
+          careerTableRows={profileData.careerTableRows}
           canShowCareerActions={canShowCareerActions}
           canRecordCareer={canRecordCareer}
-          onOpenPromotion={() => setCareerModal('promotion')}
-          onOpenRaise={() => setCareerModal('raise')}
-          onEditRaise={handleEditRaise}
-          onDeleteRaise={handleDeleteRaise}
+          onOpenPromotion={() => actions.setCareerModal('promotion')}
+          onOpenRaise={() => actions.setCareerModal('raise')}
+          onEditRaise={actions.handleEditRaise}
+          onDeleteRaise={actions.handleDeleteRaise}
         />
       </div>
 
@@ -602,71 +321,71 @@ export default function EmployeeProfileScreen() {
         companyName={companyName}
         companyLogo={companyLogo}
         compensationSnapshot={compensationSnapshot}
-        docModal={docModal}
-        onCloseDocModal={() => setDocModal(null)}
+        docModal={actions.docModal}
+        onCloseDocModal={() => actions.setDocModal(null)}
         onDocumentSaved={() => {
-          invalidateAll();
+          actions.invalidateAll();
           showToast(t('documentUploaded'), 'success');
         }}
-        showAdvance={showAdvance}
-        createAdvance={createAdvance}
-        onCloseAdvance={() => setShowAdvance(false)}
+        showAdvance={actions.showAdvance}
+        createAdvance={actions.createAdvance}
+        onCloseAdvance={() => actions.setShowAdvance(false)}
         onAdvanceSaved={() => {
-          invalidateOnFinancialMutation(queryClient);
+          actions.invalidateAll();
           showToast(t('advancePaid'), 'success');
         }}
-        careerModal={careerModal}
-        editRaiseMovement={editRaiseMovement}
+        careerModal={actions.careerModal}
+        editRaiseMovement={actions.editRaiseMovement}
         onCloseCareerModal={() => {
-          setCareerModal(null);
-          setEditRaiseMovement(null);
+          actions.setCareerModal(null);
+          actions.setEditRaiseMovement(null);
         }}
         onCareerSaved={(isEditRaise) => {
-          invalidateAll();
+          actions.invalidateAll();
           showToast(isEditRaise ? t('careerRaiseUpdated') : t('careerMovementSaved'), 'success');
         }}
-        editProfileLeave={editProfileLeave}
+        editProfileLeave={actions.editProfileLeave}
         onLeaveSaved={() => {
-          invalidateAll();
+          actions.invalidateAll();
           showToast(t('leaveUpdated'), 'success');
         }}
-        onCloseProfileLeave={() => setEditProfileLeave(null)}
-        profileServiceAdd={profileServiceAdd}
+        onCloseProfileLeave={() => actions.setEditProfileLeave(null)}
+        profileServiceAdd={actions.profileServiceAdd}
         onServiceAdded={() => {
-          invalidateAll();
+          actions.invalidateAll();
           showToast(t('hrServiceAdded'), 'success');
-          setProfileServiceAdd(null);
+          actions.setProfileServiceAdd(null);
         }}
-        onCloseServiceAdd={() => setProfileServiceAdd(null)}
-        editProfileResidency={editProfileResidency}
+        onCloseServiceAdd={() => actions.setProfileServiceAdd(null)}
+        editProfileResidency={actions.editProfileResidency}
         onServiceUpdated={() => {
-          invalidateAll();
+          actions.invalidateAll();
           showToast(t('hrServiceUpdated'), 'success');
-          setEditProfileResidency(null);
+          actions.setEditProfileResidency(null);
         }}
-        onCloseProfileResidency={() => setEditProfileResidency(null)}
-        onDeleteService={handleDeleteService}
+        onCloseProfileResidency={() => actions.setEditProfileResidency(null)}
+        onDeleteService={actions.handleDeleteService}
         staffListModalsProps={{
           t,
           companyId,
           companyName,
           showForm: false,
           setShowForm: () => undefined,
-          editingEmployee,
-          setEditingEmployee,
+          editingEmployee: actions.editingEmployee,
+          setEditingEmployee: actions.setEditingEmployee,
           advanceEmployee: null,
           setAdvanceEmployee: () => undefined,
-          terminatingEmployee,
-          setTerminatingEmployee,
-          terminationSettlementEmp,
-          setTerminationSettlementEmp,
-          terminationForm,
-          setTerminationForm,
-          handleSave: handleSaveProfileEmployee,
+          terminatingEmployee: actions.terminatingEmployee,
+          setTerminatingEmployee: actions.setTerminatingEmployee,
+          terminationSettlementEmp: actions.terminationSettlementEmp,
+          setTerminationSettlementEmp: actions.setTerminationSettlementEmp,
+          terminationForm: actions.terminationForm,
+          setTerminationForm: actions.setTerminationForm,
+          handleSave: actions.handleSaveProfileEmployee,
           create: { isPending: false },
-          update,
-          createAdvance,
-          queryClient,
+          update: actions.update,
+          createAdvance: actions.createAdvance,
+          queryClient: actions.queryClient,
           showToast,
         }}
       />

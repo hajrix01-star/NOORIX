@@ -9,6 +9,7 @@ const failures = [];
 const allowedUrlSearchParamsFiles = new Map([
   ['src/App.tsx', 'app shell one-time route migration'],
   ['src/hooks/useTabSearchParam.ts', 'central tab search-param hook'],
+  ['src/modules/HajriTax/hajriTaxNavigationModel.ts', 'central HajriTax detail navigation model'],
   ['src/modules/HajriTax/useHajriTaxScreen.ts', 'protected detail deep-link cleanup until moved to a URL model'],
   ['src/modules/HR/hrScreenNavigation.ts', 'central HR screen navigation model'],
   ['src/modules/HR/utils/payrollSalaryInvoiceHref.ts', 'salary invoice link model'],
