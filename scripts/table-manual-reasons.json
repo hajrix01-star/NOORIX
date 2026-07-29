@@ -97,10 +97,10 @@
       "decision": "leave",
       "reason": "P&L matrix table with hierarchy, sticky/grouping, and print behavior."
     },
-    "src/modules/Reports/GeneralReportV2Screen.tsx": {
+    "src/modules/Reports/generalReportV2PrintModel.ts": {
       "category": "financial-report",
       "decision": "leave",
-      "reason": "general report v2 contains the live financial hierarchy matrix; printable HTML moved to generalReportV2Model."
+      "reason": "general report v2 printable financial hierarchy matrix; kept outside the screen in a dedicated print model."
     },
     "src/modules/Reports/TaxReportTab.tsx": {
       "category": "tax-protected",

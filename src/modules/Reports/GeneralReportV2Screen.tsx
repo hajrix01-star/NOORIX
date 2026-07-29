@@ -3,7 +3,6 @@ import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
-import { buildPrintDocumentHtml } from '../../utils/printUtils';
 import ReportsDetailModal from './ReportsDetailModal';
 import { Badge, Button, FilterToolbar, Input, MetricCard, PrintPreviewModal, SimpleTable } from '../../ui';
 import type { SimpleTableColumn } from '../../ui';
@@ -17,110 +16,26 @@ import {
   filterVisibleRowsByLabel,
   type PlDisplayLevel,
 } from './reportHelpers';
-import { MONTH_NAMES_AR, MONTH_NAMES_EN, getProfitLossCardRawValue, type ProfitLossKpiKey } from './profitLossPresentationModel';
-import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState } from './reportTypes';
+import { MONTH_NAMES_AR, MONTH_NAMES_EN } from './profitLossPresentationModel';
+import type { PlDisplayRow, ReportDetailState } from './reportTypes';
 import {
   buildStatementRowsForV2 as buildStatementRowsForV2Model,
   buildV2ExportRows as buildV2ExportRowsModel,
   displayV2RowLabel as displayV2RowLabelModel,
   groupToneClass as groupToneClassModel,
 } from './generalReportV2Model';
-import type { DatePeriodState } from '../../utils/datePeriod';
-
-type ComparablePeriod = {
-  mode: 'all' | 'month' | 'months' | 'quarter' | 'year' | 'range';
-  year: number;
-  month: number | null;
-  monthStart: number;
-  monthEnd: number;
-  months?: number[];
-};
-
-function parseYearMonth(value: string, fallbackYear: number, fallbackMonth: number) {
-  const [year, month] = String(value || '').split('-').map(Number);
-  return {
-    year: Number.isFinite(year) && year > 0 ? year : fallbackYear,
-    month: Number.isFinite(month) && month >= 1 && month <= 12 ? month : fallbackMonth,
-  };
-}
-
-function deriveComparablePeriod(state: DatePeriodState): ComparablePeriod {
-  if (state.mode === 'all') {
-    return { mode: 'all', year: state.selYear, month: null, monthStart: 1, monthEnd: 12 };
-  }
-  if (state.mode === 'year') {
-    return { mode: 'year', year: state.selYear, month: null, monthStart: 1, monthEnd: 12 };
-  }
-  if (state.mode === 'quarter') {
-    const start = (state.selQuarter - 1) * 3 + 1;
-    return { mode: 'quarter', year: state.selYear, month: null, monthStart: start, monthEnd: start + 2 };
-  }
-  if (state.mode === 'month' || state.mode === 'months') {
-    const sameMonth =
-      state.monthRangeStartYear === state.monthRangeEndYear &&
-      state.monthRangeStartMonth === state.monthRangeEndMonth;
-    return {
-      mode: sameMonth ? 'month' : 'months',
-      year: state.monthRangeStartYear || state.selYear,
-      month: sameMonth ? state.monthRangeStartMonth : null,
-      monthStart: Math.min(state.monthRangeStartMonth, state.monthRangeEndMonth),
-      monthEnd: Math.max(state.monthRangeStartMonth, state.monthRangeEndMonth),
-    };
-  }
-  if (state.mode === 'range') {
-    const start = parseYearMonth(state.rangeStart, state.selYear, state.selMonth);
-    const end = parseYearMonth(state.rangeEnd, start.year, start.month);
-    const sameMonth = start.year === end.year && start.month === end.month;
-    return {
-      mode: sameMonth ? 'month' : 'range',
-      year: start.year,
-      month: sameMonth ? start.month : null,
-      monthStart: Math.min(start.month, end.month),
-      monthEnd: Math.max(start.month, end.month),
-    };
-  }
-  return { mode: 'month', year: state.selYear, month: state.selMonth, monthStart: state.selMonth, monthEnd: state.selMonth };
-}
-
-function numericAmount(value: unknown) {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : 0;
-}
-
-function periodAmount(row: PlDisplayRow, period: ComparablePeriod) {
-  if (period.mode === 'year' || period.mode === 'all') return numericAmount(row.total);
-  if (period.mode === 'month' && period.month) return numericAmount(row.months?.[period.month - 1]);
-  if (period.months?.length) {
-    return period.months.reduce((total, month) => total + numericAmount(row.months?.[month - 1]), 0);
-  }
-  let total = 0;
-  for (let month = period.monthStart; month <= period.monthEnd; month++) {
-    total += numericAmount(row.months?.[month - 1]);
-  }
-  return total;
-}
-
-function cardAmount(report: GeneralProfitLossReport | null | undefined, key: ProfitLossKpiKey, period: ComparablePeriod) {
-  if (period.mode === 'year' || period.mode === 'all') return getProfitLossCardRawValue(report, key, null);
-  if (period.mode === 'month' && period.month) return getProfitLossCardRawValue(report, key, period.month);
-  const row = [
-    ...(report?.groups || []),
-    ...(report?.summaryRows || []),
-  ].find((item) => item.key === key);
-  if (!row) return 0;
-  if (period.months?.length) {
-    return period.months.reduce((total, month) => total + numericAmount(row.months?.[month - 1]), 0);
-  }
-  let total = 0;
-  for (let month = period.monthStart; month <= period.monthEnd; month++) {
-    total += numericAmount(row.months?.[month - 1]);
-  }
-  return total;
-}
-
-function escHtml(value: unknown) {
-  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+import {
+  applyCustomCompareMonths,
+  buildCompareColumnPeriods,
+  buildRowMap,
+  cardAmount,
+  deriveComparablePeriod,
+  numericAmount,
+  periodAmount,
+  rowIdentity,
+  type ComparablePeriod,
+} from './reportsComparablePeriodModel';
+import { buildGeneralReportV2PrintHtml } from './generalReportV2PrintModel';
 
 export default function GeneralReportV2Screen() {
   const { activeCompanyId, companies } = useApp();
@@ -136,16 +51,8 @@ export default function GeneralReportV2Screen() {
     [compareSelectedMonths],
   );
   const comparePeriod = useMemo<ComparablePeriod>(() => {
-    if (!canCustomizeCompareMonths || compareMonthSet.length === 0) return comparePeriodBase;
-    return {
-      ...comparePeriodBase,
-      mode: compareMonthSet.length === 1 ? 'month' : 'months',
-      month: compareMonthSet.length === 1 ? compareMonthSet[0] : null,
-      monthStart: compareMonthSet[0],
-      monthEnd: compareMonthSet[compareMonthSet.length - 1],
-      months: compareMonthSet,
-    };
-  }, [canCustomizeCompareMonths, compareMonthSet, comparePeriodBase]);
+    return applyCustomCompareMonths(comparePeriodBase, compareMonthSet);
+  }, [compareMonthSet, comparePeriodBase]);
   const compareEnabled = comparePeriod.mode !== 'all';
   const showCompareMonthPicker = compareEnabled && canCustomizeCompareMonths;
   const year = currentPeriod.year;
@@ -167,28 +74,10 @@ export default function GeneralReportV2Screen() {
   const comparePeriodLabel = comparePeriod.months?.length
     ? comparePeriod.months.map((month) => monthNames[month - 1]).join(' + ')
     : compareFilter.label;
-  const compareColumnPeriods = useMemo(() => {
-    if (!compareEnabled) return [];
-    if (comparePeriod.months?.length) {
-      return comparePeriod.months.map((month) => ({
-        key: `compare-${comparePeriod.year}-${month}`,
-        label: `${monthNames[month - 1]} ${comparePeriod.year}`,
-        period: {
-          ...comparePeriod,
-          mode: 'month' as const,
-          month,
-          monthStart: month,
-          monthEnd: month,
-          months: undefined,
-        },
-      }));
-    }
-    return [{
-      key: `compare-${comparePeriod.year}-${comparePeriod.mode}-${comparePeriod.monthStart}-${comparePeriod.monthEnd}`,
-      label: `${comparePeriod.year} ${comparePeriodLabel}`,
-      period: comparePeriod,
-    }];
-  }, [compareEnabled, comparePeriod, comparePeriodLabel, monthNames]);
+  const compareColumnPeriods = useMemo(
+    () => compareEnabled ? buildCompareColumnPeriods(comparePeriod, monthNames, comparePeriodLabel) : [],
+    [compareEnabled, comparePeriod, comparePeriodLabel, monthNames],
+  );
 
   const { data: report, isLoading, error, isFetching, isPlaceholderData } = useReportsGeneralProfitLoss({
     companyId: activeCompanyId,
@@ -213,11 +102,7 @@ export default function GeneralReportV2Screen() {
 
   const compareFlatRows = useMemo(() => buildFlatRows(compareReport, collapsedGroups), [collapsedGroups, compareReport]);
   const compareRows = useMemo(() => {
-    const map = new Map<string, PlDisplayRow>();
-    for (const row of buildStatementRowsForV2Model(buildVisibleRows(compareFlatRows, collapsedGroups))) {
-      map.set(`${row.groupKey || ''}:${row.itemKey || row.key || ''}:${row.rowType || ''}:${row.depth || 0}`, row);
-    }
-    return map;
+    return buildRowMap(buildStatementRowsForV2Model(buildVisibleRows(compareFlatRows, collapsedGroups)));
   }, [collapsedGroups, compareFlatRows]);
 
   const currentSales = cardAmount(report, 'sales', currentPeriod);
@@ -234,8 +119,6 @@ export default function GeneralReportV2Screen() {
     year,
     monthLabels: report?.months?.map((month) => month.label) || monthNames,
   }), [lang, monthLabel, monthNames, report?.months, selectedMonthNumber, t, visibleRows, year]);
-
-  const rowKey = (row: PlDisplayRow) => `${row.groupKey || ''}:${row.itemKey || row.key || ''}:${row.rowType || ''}:${row.depth || 0}`;
 
   function toggleCompareMonth(month: number) {
     setCompareSelectedMonths((prev) => (
@@ -352,7 +235,7 @@ export default function GeneralReportV2Screen() {
         headerClassName: 'text-center',
         cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
         render: (_value, row) => {
-          const compareRow = compareRows.get(rowKey(row));
+          const compareRow = compareRows.get(rowIdentity(row));
           const previous = compareRow ? periodAmount(compareRow, compareColumn.period) : 0;
           return <span className={`inline-block min-w-[116px] text-end font-black ${valueClass(previous, row)}`} dir="ltr">{compareRow ? amountText(previous) : '-'}</span>;
         },
@@ -373,7 +256,7 @@ export default function GeneralReportV2Screen() {
         headerClassName: 'text-center',
         cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
         render: (_value, row) => {
-          const compareRow = compareRows.get(rowKey(row));
+          const compareRow = compareRows.get(rowIdentity(row));
           const current = periodAmount(row, currentPeriod);
           const previous = compareRow
             ? compareColumnPeriods.reduce((total, item) => total + periodAmount(compareRow, item.period), 0)
@@ -479,219 +362,24 @@ export default function GeneralReportV2Screen() {
   }
 
   function buildFilteredPrintHtml() {
-    const isArabic = lang !== 'en';
-    const isYear = currentPeriod.mode === 'year';
-    const periodTitle = dateFilter.label;
-    const compareTitle = compareEnabled ? comparePeriodLabel : '';
-    const headerCells = isYear
-      ? [
-          t('reportItem'),
-          ...(report?.months || []).map((month) => month.label),
-          t('reportAnnualTotal'),
-          '%',
-        ]
-      : [
-          t('reportItem'),
-          `${year} ${periodTitle}`,
-          ...(compareEnabled ? [...compareColumnPeriods.map((item) => item.label), '%'] : []),
-        ];
-    const rowsHtml = visibleRows.map((row) => {
-      const tone = groupToneClassModel(row);
-      const rowKind = row.rowType === 'summary' || row.rowType === 'groupTotal' ? ' total-row' : tone ? ` ${tone}` : '';
-      const depth = row.rowType === 'summary' || row.rowType === 'groupTotal' ? 0 : Math.max(0, Math.min(3, Number(row.depth || 0)));
-      const label = escHtml(displayV2RowLabelModel(row, lang));
-      const cells = isYear
-        ? [
-            ...(report?.months || []).map((month) => amountText(row.months?.[month.index - 1])),
-            amountText(row.total),
-            percentText(row.percentOfSalesYear),
-          ]
-        : (() => {
-            const current = periodAmount(row, currentPeriod);
-            if (!compareEnabled) return [amountText(current)];
-            const compareRow = compareRows.get(rowKey(row));
-            const previousValues = compareColumnPeriods.map((item) => (
-              compareRow ? periodAmount(compareRow, item.period) : 0
-            ));
-            const previousTotal = previousValues.reduce((total, value) => total + value, 0);
-            return [
-              amountText(current),
-              ...previousValues.map((value) => compareRow ? amountText(value) : '-'),
-              compareRow ? formatChange(current, previousTotal) : '-',
-            ];
-          })();
-      return `<tr class="${rowKind.trim()}"><td class="label" style="padding-inline-start:${12 + depth * 22}px">${label}</td>${cells.map((cell) => `<td class="num">${escHtml(cell)}</td>`).join('')}</tr>`;
-    }).join('');
-    const printBody = `
-<main class="gr-v2-print-sheet">
-  <section class="gr-v2-print-title">
-    <div>
-      <h1>${escHtml(t('reportGeneralV2'))}</h1>
-      <div class="gr-v2-print-meta">
-        <span>${escHtml(periodTitle)}</span>
-        ${compareEnabled ? `<span>${escHtml(isArabic ? 'مقارنة مع' : 'Compared with')} ${escHtml(compareTitle)}</span>` : ''}
-        <span>${escHtml(t('reportAmountBasisGrossShort'))}</span>
-      </div>
-    </div>
-  </section>
-  <section class="gr-v2-print-summary">
-    <div><span>${escHtml(t('annualNetProfit'))}</span><strong>${escHtml(amountText(currentNetProfit))} SR</strong></div>
-    <div><span>${escHtml(t('annualGrossProfit'))}</span><strong>${escHtml(amountText(currentGrossProfit))} SR</strong></div>
-    <div><span>${escHtml(isArabic ? 'هامش الربح' : 'Profit margin')}</span><strong>${escHtml(percentText(currentMargin))}</strong></div>
-  </section>
-  <table class="gr-v2-print-table">
-    <thead><tr>${headerCells.map((cell) => `<th>${escHtml(cell)}</th>`).join('')}</tr></thead>
-    <tbody>${rowsHtml}</tbody>
-  </table>
-  <div class="gr-v2-print-note">${escHtml(periodTitle)}${compareEnabled ? ` | ${escHtml(compareTitle)}` : ''}</div>
-</main>`;
-    const printCss = `
-.print-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  text-align: start;
-  border-bottom-width: 3px;
-}
-.print-header img {
-  margin: 0;
-  width: 54px;
-  height: 54px;
-  object-fit: contain;
-  border: 1px solid #d8e2ef;
-  border-radius: 10px;
-  padding: 5px;
-}
-.print-header h1 { font-size: 18px; color: #0f172a; }
-.gr-v2-print-sheet {
-  width: ${isYear ? '276mm' : '190mm'};
-  max-width: 100%;
-  margin: 0 auto;
-}
-.gr-v2-print-title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-.gr-v2-print-title h1 {
-  margin: 0;
-  color: #0f172a;
-  font-size: 22px;
-  line-height: 1.2;
-  font-weight: 900;
-}
-.gr-v2-print-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-}
-.gr-v2-print-meta span {
-  border: 1px solid #d8e2ef;
-  background: #f8fafc;
-  border-radius: 999px;
-  padding: 4px 10px;
-  color: #334155;
-  font-size: 11px;
-  font-weight: 800;
-}
-.gr-v2-print-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.gr-v2-print-summary div {
-  border: 1px solid #d8e2ef;
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 10px;
-}
-.gr-v2-print-summary span {
-  display: block;
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 900;
-}
-.gr-v2-print-summary strong {
-  display: block;
-  margin-top: 4px;
-  direction: ltr;
-  text-align: center;
-  color: #0f172a;
-  font-size: 15px;
-  font-weight: 900;
-}
-.gr-v2-print-table {
-  border-collapse: separate;
-  border-spacing: 0;
-  overflow: hidden;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-}
-.gr-v2-print-table thead { display: table-header-group; }
-.gr-v2-print-table th {
-  background: #1d5fa7;
-  color: #fff;
-  border-color: rgba(255,255,255,.2);
-  padding: 9px 8px;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 900;
-}
-.gr-v2-print-table td {
-  border-color: #dbe5f0;
-  padding: 8px;
-  font-size: 11.5px;
-  font-weight: 800;
-  page-break-inside: avoid;
-}
-.gr-v2-print-table tr:nth-child(even) td { background: #f8fafc; }
-.gr-v2-print-table td.label {
-  text-align: start;
-  color: #172033;
-}
-.gr-v2-print-table td.num {
-  direction: ltr;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.gr-v2-print-table tr.total-row td,
-.gr-v2-print-table tr.is-group-total td,
-.gr-v2-print-table tr.is-summary td {
-  background: #e2e8f0 !important;
-  color: #0f172a;
-  font-weight: 900;
-}
-.gr-v2-print-note {
-  margin-top: 12px;
-  text-align: center;
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 800;
-}
-@media print {
-  .gr-v2-print-sheet {
-    width: auto;
-    max-width: none;
-  }
-}
-`;
-    return buildPrintDocumentHtml({
-      title: t('reportGeneralV2'),
-      companyName: companyName || t('reports'),
-      subtitle: compareEnabled ? `${periodTitle} | ${compareTitle}` : periodTitle,
-      logoUrl: companyLogoUrl,
-      landscape: isYear,
-      body: printBody,
-      extraCss: printCss,
-      htmlDir: isArabic ? 'rtl' : 'ltr',
-      htmlLang: isArabic ? 'ar' : 'en',
-      autoPrint: true,
-      pageMarginMm: 10,
+    return buildGeneralReportV2PrintHtml({
+      report,
+      visibleRows,
+      compareRows,
+      compareColumnPeriods,
+      currentPeriod,
+      compareEnabled,
+      periodTitle: dateFilter.label,
+      compareTitle: comparePeriodLabel,
+      year,
+      lang,
+      t,
+      companyName,
+      companyLogoUrl,
+      currentNetProfit,
+      currentGrossProfit,
+      currentMargin,
+      formatChange,
     });
   }
 

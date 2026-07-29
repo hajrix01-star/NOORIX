@@ -1,4 +1,5 @@
 import type { DatePeriodState } from '../../utils/datePeriod';
+import { getProfitLossCardRawValue, type ProfitLossKpiKey } from './profitLossPresentationModel';
 import type { GeneralProfitLossReport, PlDisplayRow } from './reportTypes';
 
 export type ComparablePeriod = {
@@ -90,7 +91,7 @@ export function buildCompareColumnPeriods(
   }
   return [{
     key: `compare-${period.year}-${period.mode}-${period.monthStart}-${period.monthEnd}`,
-    label: `${periodLabel} ${period.year}`,
+    label: `${period.year} ${periodLabel}`,
     period,
   }];
 }
@@ -113,6 +114,22 @@ export function numericAmount(value: unknown) {
 export function periodAmount(row: PlDisplayRow, period: ComparablePeriod) {
   if (period.mode === 'year' || period.mode === 'all') return numericAmount(row.total);
   if (period.mode === 'month' && period.month) return numericAmount(row.months?.[period.month - 1]);
+  const months = period.months?.length ? period.months : monthRange(period.monthStart, period.monthEnd);
+  return months.reduce((total, month) => total + numericAmount(row.months?.[month - 1]), 0);
+}
+
+export function cardAmount(
+  report: GeneralProfitLossReport | null | undefined,
+  key: ProfitLossKpiKey,
+  period: ComparablePeriod,
+) {
+  if (period.mode === 'year' || period.mode === 'all') return getProfitLossCardRawValue(report, key, null);
+  if (period.mode === 'month' && period.month) return getProfitLossCardRawValue(report, key, period.month);
+  const row = [
+    ...(report?.groups || []),
+    ...(report?.summaryRows || []),
+  ].find((item) => item.key === key);
+  if (!row) return 0;
   const months = period.months?.length ? period.months : monthRange(period.monthStart, period.monthEnd);
   return months.reduce((total, month) => total + numericAmount(row.months?.[month - 1]), 0);
 }
