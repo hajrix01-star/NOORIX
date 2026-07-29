@@ -1,7 +1,6 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13,15 +12,13 @@ import { resolveExternalUploadOpts } from './backup-external-upload-opts.util';
 import { runVerifyDatabaseFullJob } from './backup-verify-database-full-job.util';
 import { runResolveSystemFullJobDownloadPath } from './backup-system-full-job-download.util';
 import {
-  assertSnapshotBelongsToTenant,
-  readGzippedJsonByBackupRelativePath,
-} from './backup-company-logical-snapshot-read.util';
-import {
-  buildCompanyLogicalRestoreReport,
-  buildNonLogicalBackupRestoreReport,
-  resolveLocalBackupFileOrThrow,
-} from './backup-restore-report.util';
-import { runManualCompanyLogicalJobVerify } from './backup-company-logical-verify-manual.util';
+  getBackupJob,
+  getBackupRestoreReport,
+  listBackupJobs,
+  loadParsedLogicalSnapshotForImport,
+  resolveBackupJobDownloadPath,
+  verifyCompanyLogicalBackupJob,
+} from './backup-job-access.util';
 import { ingestUploadedSystemFullArchive as runIngestUploadedSystemFullArchive } from './backup-ingest-system-full-archive.util';
 import { runCompanyLogicalBackup } from './backup-company-logical-execute.util';
 import { runSystemFullArchiveJob } from './backup-system-full-archive-run.util';
@@ -212,45 +209,15 @@ export class BackupService {
   }
 
   async listJobs(tenantId: string, allowedCompanyIds: string[] | undefined, limit = 40) {
-    const take = Math.min(Math.max(limit, 1), 100);
-    const or: Array<Record<string, unknown>> = [{ tenantId }];
-    if (allowedCompanyIds?.length) {
-      or.push({ companyId: { in: allowedCompanyIds } });
-    }
-    return this.prisma.backupJob.findMany({
-      where: { OR: or },
-      orderBy: { createdAt: 'desc' },
-      take,
-      include: {
-        company: { select: { id: true, nameAr: true, nameEn: true } },
-      },
-    });
+    return listBackupJobs(this.prisma, tenantId, allowedCompanyIds, limit);
   }
 
   async getJob(tenantId: string, jobId: string, allowedCompanyIds: string[] | undefined) {
-    const job = await this.prisma.backupJob.findFirst({
-      where: {
-        id: jobId,
-        OR: [{ tenantId }, ...(allowedCompanyIds?.length ? [{ companyId: { in: allowedCompanyIds } }] : [])],
-      },
-      include: {
-        company: { select: { id: true, nameAr: true, nameEn: true } },
-      },
-    });
-    if (!job) throw new NotFoundException('النسخة غير موجودة');
-    return job;
+    return getBackupJob(this.prisma, tenantId, jobId, allowedCompanyIds);
   }
 
   async getRestoreReport(tenantId: string, jobId: string, allowedCompanyIds: string[] | undefined) {
-    const job = await this.getJob(tenantId, jobId, allowedCompanyIds);
-    if (job.scope !== 'company_logical' || !job.localRelativePath) {
-      return buildNonLogicalBackupRestoreReport(job);
-    }
-    try {
-      return await buildCompanyLogicalRestoreReport(job);
-    } catch {
-      throw new BadRequestException('تعذّر قراءة ملف النسخة');
-    }
+    return getBackupRestoreReport(this.prisma, tenantId, jobId, allowedCompanyIds);
   }
 
   async retryExternalUpload(tenantId: string, jobId: string, allowedCompanyIds: string[] | undefined) {
@@ -283,13 +250,7 @@ export class BackupService {
     jobId: string,
     allowedCompanyIds: string[] | undefined,
   ): Promise<Record<string, unknown>> {
-    const job = await this.getJob(tenantId, jobId, allowedCompanyIds);
-    if (job.scope !== 'company_logical' || !job.localRelativePath) {
-      throw new BadRequestException('الاستيراد متاح لنسخ «شركة منطقية» فقط');
-    }
-    const parsed = await readGzippedJsonByBackupRelativePath(job.localRelativePath);
-    assertSnapshotBelongsToTenant(parsed, tenantId);
-    return parsed;
+    return loadParsedLogicalSnapshotForImport(this.prisma, tenantId, jobId, allowedCompanyIds);
   }
 
   async resolveJobDownloadPath(
@@ -297,9 +258,7 @@ export class BackupService {
     jobId: string,
     allowedCompanyIds: string[] | undefined,
   ): Promise<{ absolutePath: string; filename: string }> {
-    const job = await this.getJob(tenantId, jobId, allowedCompanyIds);
-    if (!job.localRelativePath) throw new BadRequestException('لا يوجد ملف للتنزيل');
-    return resolveLocalBackupFileOrThrow(job.localRelativePath, `noorix-backup-${job.scope}-${job.id}.json.gz`);
+    return resolveBackupJobDownloadPath(this.prisma, tenantId, jobId, allowedCompanyIds);
   }
 
   async getSystemBackupConfig() {
@@ -397,25 +356,9 @@ export class BackupService {
     jobId: string,
     allowedCompanyIds: string[] | undefined,
   ) {
-    const job = await this.getJob(tenantId, jobId, allowedCompanyIds);
-    if (job.scope !== 'company_logical' || !job.localRelativePath) {
-      throw new BadRequestException('التحقق متاح لنسخ الشركة المكتملة فقط');
-    }
-    if (job.status !== 'completed') {
-      throw new BadRequestException('التحقق متاح للنسخ المكتملة فقط');
-    }
-    const abs = path.join(getBackupRoot(), job.localRelativePath);
-    try {
-      await fs.access(abs);
-    } catch {
-      throw new NotFoundException('الملف غير موجود على الخادم');
-    }
-    return runManualCompanyLogicalJobVerify(this.prisma, { id: job.id }, abs);
+    return verifyCompanyLogicalBackupJob(this.prisma, tenantId, jobId, allowedCompanyIds);
   }
 
-  /**
-   * تنزيل ملف نسخة قاعدة كاملة (pg_dump مضغوط gzip) — لمالك النظام فقط من الـ controller.
-   */
   async resolveSystemFullJobDownloadPath(jobId: string): Promise<{ absolutePath: string; filename: string }> {
     return runResolveSystemFullJobDownloadPath(this.prisma, jobId);
   }
