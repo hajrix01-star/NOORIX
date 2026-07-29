@@ -28,7 +28,7 @@ describe('invoiceTableRowModel', () => {
         lang: 'en',
         fmt,
       }),
-    ).toEqual([{ key: 'a1', label: 'Cash', amount: 15, title: 'Cash \u2014 15.00 SR' }]);
+    ).toEqual([{ key: 'a1', label: 'Cash', amount: 15, title: 'Cash \u2014 15.00' }]);
   });
 
   it('resolves fallback vault and amount tone', () => {

@@ -104,7 +104,7 @@ export function mapInvoiceTableVaultChips(input: {
       key: allocation.id || `vault-allocation-${index}`,
       label,
       amount,
-      title: label !== EMPTY_INVOICE_TABLE_VALUE ? `${label} \u2014 ${input.fmt(amount)} SR` : '',
+      title: label !== EMPTY_INVOICE_TABLE_VALUE ? `${label} \u2014 ${input.fmt(amount)}` : '',
     };
   });
 }

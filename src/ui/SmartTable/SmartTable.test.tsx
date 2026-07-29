@@ -493,6 +493,38 @@ describe('SmartTable', () => {
     localStorage.removeItem('nx-col-vis:hidden-numeric-boundary-test');
   });
 
+  it('omits visible SR currency suffixes from desktop table cells', () => {
+    const { container } = render(
+      <SmartTable
+        columns={[
+          {
+            key: 'amount',
+            label: 'Amount',
+            kind: 'money',
+            numeric: true,
+            render: (value) => (
+              <>
+                {value}
+                {' '}
+                <span className="nx-sar">SR</span>
+              </>
+            ),
+          },
+          {
+            key: 'note',
+            label: 'Note',
+            render: () => '100 SR',
+          },
+        ]}
+        data={[{ id: '1', amount: 100, note: '100 SR' }]}
+        total={1}
+      />,
+    );
+
+    expect(container.querySelector('tbody')?.textContent).toBe('100 100');
+    expect(container.querySelector('tbody')?.textContent).not.toContain('SR');
+  });
+
   it('builds footerRow colspans against visible columns only', () => {
     localStorage.setItem('nx-col-vis:footer-layout-test', JSON.stringify(['amount']));
     const { container } = render(

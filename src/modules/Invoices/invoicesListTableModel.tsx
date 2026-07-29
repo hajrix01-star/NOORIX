@@ -84,7 +84,7 @@ function renderDocumentCell(row: InvoiceTableRow, onView: InvoiceRowSetter) {
 function renderVaultChips(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (value: number) => string) {
   const chips = mapInvoiceTableVaultChips({ row, lang, fmt });
   return (
-    <div className="flex flex-nowrap gap-1.5 justify-center overflow-hidden">
+    <div className="flex flex-nowrap gap-2 justify-center overflow-hidden">
       {chips.map((chip) => (
         <div
           key={chip.key}
@@ -93,11 +93,11 @@ function renderVaultChips(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (va
           )}
           title={chip.title}
         >
-          <span className="truncate text-[11px] font-semibold text-noorix-text max-w-[60px]">
+          <span className="truncate text-[12px] font-semibold text-noorix-text max-w-[11ch]">
             {chip.label}
           </span>
           <span dir="ltr" className="shrink-0 whitespace-nowrap text-[12px] font-bold tabular-nums text-nx-sales">
-            <FmtNum n={chip.amount} /> <span className="nx-sar">SR</span>
+            <FmtNum n={chip.amount} />
           </span>
         </div>
       ))}
@@ -109,7 +109,7 @@ function renderVaultCell(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (val
   if (hasInvoiceTableVaultChips(row)) return renderVaultChips(row, lang, fmt);
   const vaultName = getInvoiceTableVaultName(row, lang);
   return (
-    <span className="nx-cell-ellipsis text-[12px] text-center" title={vaultName}>
+    <span className="nx-cell-ellipsis text-[13px] text-center" title={vaultName}>
       {vaultName}
     </span>
   );
@@ -118,8 +118,8 @@ function renderVaultCell(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (val
 function renderUserStatusCell(row: InvoiceTableRow, statusMap: StatusMap) {
   const userName = asInvoiceTableText(row.createdByDisplayName);
   return (
-    <div className="mx-auto flex min-w-0 flex-nowrap items-center justify-center gap-2 text-center">
-      <span className="nx-cell-ellipsis max-w-[9ch]" title={userName}>
+    <div className="mx-auto flex min-w-0 flex-nowrap items-center justify-center gap-1.5 text-center">
+      <span className="nx-cell-ellipsis max-w-[7ch]" title={userName}>
         {userName}
       </span>
       <Badge {...Badge.fromStatus(row.status, statusMap)} size="sm" />
@@ -178,7 +178,9 @@ export function buildInvoiceListColumns({
       kind: 'text',
       label: t('invoiceVaultColumn'),
       align: 'center',
-      width: '18ch',
+      width: '26ch',
+      minWidth: '22ch',
+      maxWidth: '38ch',
       render: (_: unknown, row: InvoiceTableRow) => renderVaultCell(row, lang, fmt),
     },
     {
@@ -229,7 +231,9 @@ export function buildInvoiceListColumns({
       kind: 'text',
       label: `${t('invoiceUserColumn')} / ${t('statusLabel')}`,
       align: 'center',
-      width: '16ch',
+      width: '12ch',
+      minWidth: '10ch',
+      maxWidth: '14ch',
       render: (_value: unknown, row: InvoiceTableRow) => renderUserStatusCell(row, STATUS_MAP),
     },
   ];

@@ -7,6 +7,29 @@ import { buildBodyCellStyle, buildRowStyle } from './smartTableStyles';
 import type { SmartTableColumn, SmartTableProps, SmartTableRow } from './types';
 import type { SmartTableEngineRow } from './tableEngine';
 
+type CurrencyElementProps = {
+  className?: unknown;
+  children?: React.ReactNode;
+};
+
+function hasCurrencyClass(className: unknown): boolean {
+  if (typeof className === 'string') return className.split(/\s+/).includes('nx-sar');
+  return false;
+}
+
+function stripTableCurrencySuffix(node: React.ReactNode): React.ReactNode {
+  if (node == null || typeof node === 'boolean') return node;
+  if (typeof node === 'string') return node.trim() === 'SR' ? '' : node.replace(/\s+SR$/u, '');
+  if (typeof node === 'number' || typeof node === 'bigint') return node;
+  if (Array.isArray(node)) return node.map(stripTableCurrencySuffix);
+  if (!React.isValidElement<CurrencyElementProps>(node)) return node;
+
+  if (hasCurrencyClass(node.props.className)) return null;
+  if (node.props.children === undefined) return node;
+
+  return React.cloneElement(node, undefined, stripTableCurrencySuffix(node.props.children));
+}
+
 type SmartTableDesktopRowsProps<TRow extends SmartTableRow> = {
   rows: SmartTableEngineRow<TRow>[];
   visibleColumns: SmartTableColumn<TRow>[];
@@ -87,7 +110,7 @@ export function SmartTableDesktopRows<TRow extends SmartTableRow>({
               const actionSticky = col.key === 'actions' && stickyActionColumn;
               const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
               const tdEffectiveWidth = columnEffectiveWidth(col);
-              const renderedValue = col.render ? col.render(value, row, i) : renderRawCellValue(value);
+              const renderedValue = stripTableCurrencySuffix(col.render ? col.render(value, row, i) : renderRawCellValue(value));
               return (
                 <td
                   key={col.key}
