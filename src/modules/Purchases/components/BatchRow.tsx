@@ -4,8 +4,8 @@
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Card, Checkbox, TransactionDatePicker, FileTrigger, FormRow, SearchableOptionsPicker, cn } from '../../../ui';
-import { useBatchRowLogic, useBatchRowFieldIds } from './useBatchRowLogic';
+import { Input, Button, Checkbox, TransactionDatePicker, FileTrigger, SearchableOptionsPicker, cn } from '../../../ui';
+import { useBatchRowLogic } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
   BatchSupplierBookmarkButton,
@@ -14,37 +14,13 @@ import {
 } from './BatchRowParts';
 import { isWarrantyFollowUpKind } from '../utils/batchRowModel';
 import { purchaseBatchCategoryLabel } from '../batch/purchaseBatchDisplayModel';
-import type {
-  PurchaseBatchEntryRow,
-  PurchaseBatchKind,
-  PurchaseBatchSupplier,
-  PurchaseBatchSupplierCategory,
-  PurchaseBatchUpdateRow,
-} from '../batch/purchaseBatchTypes';
-
-function dateErrorClass(maxInvoiceDate: string | undefined, invoiceDate: string) {
-  return maxInvoiceDate && invoiceDate > maxInvoiceDate ? 'nx-batch-row-date-error' : '';
-}
-
-function toPurchaseBatchKind(value: string): PurchaseBatchKind {
-  if (value === 'expense' || value === 'fixed_expense') return value;
-  return 'purchase';
-}
-
-type BatchRowSharedProps = {
-  row: PurchaseBatchEntryRow;
-  index: number;
-  suppliers: PurchaseBatchSupplier[];
-  categories: PurchaseBatchSupplierCategory[];
-  bookmarkedIds: string[];
-  onUpdate: PurchaseBatchUpdateRow;
-  onRemove: (index: number) => void;
-  onBookmark: (id: string) => void;
-  maxInvoiceDate?: string;
-  vatRateDecimal?: number;
-};
-
-const BATCH_ATTACHMENT_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp';
+import { BatchRowStack } from './BatchRowStack';
+import {
+  BATCH_ATTACHMENT_ACCEPT,
+  dateErrorClass,
+  toPurchaseBatchKind,
+  type BatchRowSharedProps,
+} from './BatchRowShared';
 
 function BatchRowTable(props: BatchRowSharedProps) {
   const {
@@ -255,216 +231,6 @@ function BatchRowTable(props: BatchRowSharedProps) {
         </Button>
       </td>
     </tr>
-  );
-}
-
-function BatchRowStack(props: BatchRowSharedProps) {
-  const {
-    row, index, suppliers, categories, bookmarkedIds, onUpdate, onRemove, onBookmark,
-    maxInvoiceDate, vatRateDecimal,
-  } = props;
-  const ids = useBatchRowFieldIds();
-  const {
-    t, lang, net, tax, categoryOptions, handleCategoryChange, handleSupplierChange,
-  } = useBatchRowLogic({
-    row, index, suppliers, categories, onUpdate, maxInvoiceDate, vatRateDecimal,
-  });
-
-  const dateTitle = useMemo(
-    () => (maxInvoiceDate ? `${t('date')} - <= ${maxInvoiceDate}` : undefined),
-    [maxInvoiceDate, t],
-  );
-  const kindOptions = useMemo(
-    () => [
-      { value: 'purchase', label: t('purchaseType') },
-      { value: 'expense', label: t('expenseType') },
-      { value: 'fixed_expense', label: t('fixedExpenseType') },
-    ],
-    [t],
-  );
-  const categoryPickerOptions = useMemo(
-    () =>
-      categoryOptions.map((c) => ({
-        value: c.id || '',
-        label: purchaseBatchCategoryLabel(c, lang),
-      })).filter((option) => option.value),
-    [categoryOptions, lang],
-  );
-
-  return (
-    <Card
-      padding="sm"
-      className="min-w-0"
-      aria-label={t('batchRowLineAriaLabel', index + 1)}
-    >
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <span className="text-[13px] font-bold text-noorix-text">
-          #{index + 1}
-        </span>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <BatchSupplierBookmarkButton
-            row={row}
-            bookmarkedIds={bookmarkedIds}
-            onBookmark={onBookmark}
-            t={t}
-            size="touch"
-          />
-          <Button
-            type="button"
-            variant="danger"
-            size="sm"
-            onClick={() => onRemove(index)}
-            className="min-h-[40px] min-w-[40px]"
-            title={t('delete')}
-            aria-label={t('delete')}
-          >
-            ×
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <div>
-          <label htmlFor={ids.supplier} className="text-[11px] font-semibold text-noorix-muted mb-1 block">
-            {t('supplier')}
-          </label>
-          <BatchSupplierPickInner
-            suppliers={suppliers}
-            row={row}
-            bookmarkedIds={bookmarkedIds}
-            onBookmark={onBookmark}
-            handleSupplierChange={handleSupplierChange}
-            t={t}
-            bookmarkSize="none"
-            supplierInputId={ids.supplier}
-          />
-        </div>
-
-        <FormRow cols={1} gap="sm">
-          <Input
-            id={ids.invoiceNumber}
-            label={t('supplierInvoiceNumber')}
-            size="sm"
-            value={row.invoiceNumber}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'invoiceNumber', e.target.value)}
-            placeholder={t('invoiceNumberPlaceholder')}
-            className="w-full"
-          />
-          <Input
-            id={ids.totalInclusive}
-            label={t('total')}
-            type="number"
-            min="0"
-            step="0.1"
-            size="sm"
-            value={row.totalInclusive}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'totalInclusive', e.target.value)}
-            placeholder={t('amountPlaceholderZero')}
-            className="font-bold w-full nx-font-numbers"
-          />
-        </FormRow>
-
-        <BatchNetTaxReadonly net={net} tax={tax} variant="stack" t={t} />
-
-        <TransactionDatePicker
-          id={ids.invoiceDate}
-          label={t('date')}
-          size="sm"
-          value={row.invoiceDate}
-          max={maxInvoiceDate || undefined}
-          onValueChange={(v) => {
-            if (maxInvoiceDate && v > maxInvoiceDate) {
-              onUpdate(index, 'invoiceDate', maxInvoiceDate);
-            } else {
-              onUpdate(index, 'invoiceDate', v);
-            }
-          }}
-          className={cn('w-full', dateErrorClass(maxInvoiceDate, row.invoiceDate))}
-          title={dateTitle}
-        />
-
-        <SearchableOptionsPicker
-          id={ids.kind}
-          label={t('type')}
-          mode="single"
-          value={row.kind}
-          onChange={(value: string) => {
-            const kind = toPurchaseBatchKind(value);
-            onUpdate(index, {
-              kind,
-              categoryId: '',
-              debitAccountId: '',
-              warrantyFollowUp: isWarrantyFollowUpKind(kind) ? !!row.warrantyFollowUp : false,
-            });
-          }}
-          options={kindOptions}
-          size="sm"
-        />
-
-        {isWarrantyFollowUpKind(row.kind) ? (
-          <Checkbox
-            checked={!!row.warrantyFollowUp}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
-            className="h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
-            label={t('warrantyFollowUpStack')}
-            containerClassName="flex items-center gap-2 min-h-[44px] text-[13px] font-semibold text-noorix-text cursor-pointer"
-          />
-        ) : null}
-
-        <SearchableOptionsPicker
-          id={ids.category}
-          label={t('category')}
-          mode="single"
-          value={row.categoryId || ''}
-          onChange={(value: string) => {
-            const cat = categoryOptions.find((c) => c.id === value);
-            handleCategoryChange(cat || null);
-          }}
-          options={categoryPickerOptions}
-          allowEmpty
-          emptyValue=""
-          emptyLabel={t('categoryPlaceholder')}
-          size="sm"
-        />
-
-        <BatchTaxToggleButton row={row} index={index} onUpdate={onUpdate} t={t} density="stack" />
-
-        <Input
-          id={ids.notes}
-          label={t('notes')}
-          size="sm"
-          value={row.notes || ''}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'notes', e.target.value)}
-          placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? t('batchNotesPlaceholderServiceName') : t('batchNotesPlaceholderEllipsis')}
-          className="w-full"
-          title={!row.supplierId ? (t('notesRequiredForNoSupplier') || '') : ''}
-        />
-
-        <div className="rounded-lg border border-noorix-border px-2 py-2 bg-noorix-bg-page">
-          <div className="text-[11px] font-semibold text-noorix-muted mb-1">{t('invoiceReceiptAttachment')}</div>
-          <FileTrigger
-            accept={BATCH_ATTACHMENT_ACCEPT}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
-            label={row.attachmentFile ? (t('fileSelected') || t('invoiceReceiptCol')) : t('invoiceReceiptChooseFile')}
-            buttonProps={{
-              variant: row.attachmentFile ? 'secondary' : 'ghost',
-              size: 'sm',
-              className: cn(
-                'max-w-full truncate border font-bold',
-                row.attachmentFile
-                  ? 'border-noorix-green bg-[var(--noorix-green-8)] text-noorix-green'
-                  : 'border-noorix-border bg-noorix-bg-page text-noorix-blue',
-              ),
-            }}
-          />
-          {row.attachmentFile ? (
-            <span className="text-[11px] text-noorix-muted truncate block mt-1" title={row.attachmentFile.name}>
-              {row.attachmentFile.name}
-            </span>
-          ) : null}
-        </div>
-      </div>
-    </Card>
   );
 }
 
