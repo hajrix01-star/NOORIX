@@ -10,12 +10,8 @@ import { getEmployees, createResidency, updateResidency, throwIfApiFailed } from
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys } from '../../../services/queryKeys';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
-import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Input, AdaptiveSheet } from '../../../ui';
-import { SupplierSelect } from '../../../components/common/SupplierSelect';
+import { AdaptiveSheet } from '../../../ui';
 import {
-  HR_SERVICE_CATEGORIES,
-  HR_SERVICE_CATEGORY_LABEL_KEYS,
   requiresIqamaNumber,
   requiresExpiryDate,
   requiresReferenceLabel,
@@ -27,47 +23,16 @@ import {
   companyDisplayName,
   addOneCalendarYearYmd,
 } from '../constants/employeeHrServiceCategories';
-import { HrServiceFormFields } from './HrServiceFormFields';
 import {
   ResidencyFormActions,
-  ResidencyInvoiceCreationFields,
-  ResidencyInvoiceSummary,
+  ResidencyServiceFormBody,
 } from './ResidencyFormModalParts';
 import type { HrEmployee } from '../../../types/api';
 import type { SupplierRecord } from '../../Suppliers/supplierTypes';
-
-const STATUS_OPTIONS = [
-  { value: 'active', labelKey: 'statusActive' },
-  { value: 'expired', labelKey: 'statusExpired' },
-  { value: 'renewed', labelKey: 'statusRenewed' },
-];
+import type { ResidencyRecord, VaultOption } from './ResidencyFormModalTypes';
 
 const RESIDENCY_FORM_ID = 'residency-service-form';
-export type ResidencyRecord = Record<string, unknown> & {
-  id?: string | null;
-  employeeId?: string | null;
-  serviceCategory?: string | null;
-  iqamaNumber?: string | null;
-  referenceLabel?: string | null;
-  issueDate?: string | Date | null;
-  expiryDate?: string | Date | null;
-  transactionDate?: string | Date | null;
-  status?: string | null;
-  notes?: string | null;
-  invoiceId?: string | null;
-  invoice?: { invoiceNumber?: string | number | null } | null;
-  supplierId?: string | null;
-  supplier?: { id?: string | null; nameAr?: string | null; nameEn?: string | null } | null;
-  residencyInvoiceAmount?: number | string | null;
-  metadata?: Record<string, unknown> | null;
-};
-export type VaultOption = {
-  id?: string | null;
-  name?: string | null;
-  nameAr?: string | null;
-  nameEn?: string | null;
-};
-type ResidencyInputChange = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
+export type { ResidencyRecord, VaultOption } from './ResidencyFormModalTypes';
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -377,111 +342,50 @@ export function ResidencyFormModal({
             {error}
           </div>
         )}
-        <Input
-          type="select"
-          label={t('hrServiceCategory')}
-          value={serviceCategory}
-          onChange={(e: ResidencyInputChange) => handleServiceCategoryChange(e.target.value)}
-          disabled={isEdit}
-        >
-          {HR_SERVICE_CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>{t(HR_SERVICE_CATEGORY_LABEL_KEYS[cat])}</option>
-          ))}
-        </Input>
-
-        <Input
-          type="select"
-          label={t('selectEmployee')}
-          value={employeeId}
-          onChange={(e: ResidencyInputChange) => onEmployeeChange(e.target.value)}
-          required
-          disabled={isEdit || lockEmployee}
-        >
-          <option value="">—</option>
-          {activeEmployees.map((emp) => (
-            <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
-          ))}
-        </Input>
-        {lockEmployee && selectedEmployee && (
-          <p className="text-[12px] text-noorix-muted -mt-2 mb-2">
-            {employeeDisplayName(selectedEmployee, lang)}
-          </p>
-        )}
-
-        <HrServiceFormFields
+        <ResidencyServiceFormBody
           t={t}
           lang={lang}
+          isEdit={isEdit}
+          lockEmployee={lockEmployee}
+          activeEmployees={activeEmployees}
+          selectedEmployee={selectedEmployee}
           serviceCategory={serviceCategory}
+          employeeId={employeeId}
           companySponsorName={companySponsorName}
           iqamaNumber={iqamaNumber}
-          setIqamaNumber={setIqamaNumber}
           referenceLabel={referenceLabel}
-          setReferenceLabel={setReferenceLabel}
           visaDurationMonths={visaDurationMonths}
-          setVisaDurationMonths={setVisaDurationMonths}
           issueDate={issueDate}
-          setIssueDate={handleIssueDateChange}
           expiryDate={expiryDate}
-          setExpiryDate={handleExpiryDateChange}
           transactionDate={transactionDate}
-          setTransactionDate={setTransactionDate}
           showIqama={showIqama}
-        />
-
-        <div>
-          <label className="block text-[12px] font-semibold mb-1" htmlFor="hr-service-supplier">
-            {t('hrServiceEntitySupplier')}{requiresServiceSupplier ? ' *' : ''}
-          </label>
-          <SupplierSelect
-            id="hr-service-supplier"
-            suppliers={suppliers as SupplierRecord[]}
-            value={supplierId}
-            onChange={(value: string) => {
+          supplierId={supplierId}
+          suppliers={suppliers as SupplierRecord[]}
+          requiresServiceSupplier={requiresServiceSupplier}
+          createInvoiceForService={createInvoiceForService}
+          invoiceAmount={invoiceAmount}
+          vaultId={vaultId}
+          vaults={vaults}
+          status={status}
+          residency={residency}
+          notes={notes}
+          onServiceCategoryChange={handleServiceCategoryChange}
+          onEmployeeChange={onEmployeeChange}
+          onIqamaNumberChange={setIqamaNumber}
+          onReferenceLabelChange={setReferenceLabel}
+          onVisaDurationMonthsChange={setVisaDurationMonths}
+          onIssueDateChange={handleIssueDateChange}
+          onExpiryDateChange={handleExpiryDateChange}
+          onTransactionDateChange={setTransactionDate}
+          onSupplierChange={(value: string) => {
               supplierSelectionManuallyEdited.current = true;
               setSupplierId(value);
-            }}
-            placeholder={t('selectSupplierPlaceholder')}
-          />
-        </div>
-
-        {!isEdit && (
-          <ResidencyInvoiceCreationFields
-            t={t}
-            lang={lang}
-            createInvoiceForService={createInvoiceForService}
-            invoiceAmount={invoiceAmount}
-            vaultId={vaultId}
-            vaults={vaults}
-            onCreateInvoiceChange={setCreateInvoiceForService}
-            onInvoiceAmountChange={setInvoiceAmount}
-            onVaultChange={setVaultId}
-          />
-        )}
-
-        {isEdit && (
-          <Input
-            type="select"
-            label={t('status')}
-            value={status}
-            onChange={(e: ResidencyInputChange) => setStatus(e.target.value)}
-          >
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
-            ))}
-          </Input>
-        )}
-
-        <ResidencyInvoiceSummary
-          t={t}
-          invoiceNumber={residency?.invoice?.invoiceNumber}
-          amount={residency?.residencyInvoiceAmount}
-        />
-
-        <Input
-          label={t('notes')}
-          value={notes}
-          onChange={(e: ResidencyInputChange) => setNotes(e.target.value)}
-          placeholder={t('notes')}
+          }}
+          onCreateInvoiceChange={setCreateInvoiceForService}
+          onInvoiceAmountChange={setInvoiceAmount}
+          onVaultChange={setVaultId}
+          onStatusChange={setStatus}
+          onNotesChange={setNotes}
         />
 
       </form>
