@@ -19,7 +19,7 @@
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": 1,
     "src/modules/Purchases/components/BatchEditPanel.tsx": 1,
     "src/modules/Reports/BankStatementMappingModal.tsx": 1,
-    "src/modules/Reports/CostAccountingAppsScreen.tsx": 1,
+    "src/modules/Reports/costAccountingApps/CostAccountingAppsFixedLinesPanel.tsx": 1,
     "src/modules/Reports/GeneralPlTable.tsx": 1,
     "src/modules/Reports/generalReportV2PrintModel.ts": 1,
     "src/modules/Reports/TaxReportTab.tsx": 1,

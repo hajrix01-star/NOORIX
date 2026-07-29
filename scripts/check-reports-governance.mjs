@@ -39,7 +39,7 @@ const allowedRawTableFiles = new Set([
   path.join(reportsRoot, 'ReportsDetailModal.tsx'),
   path.join(reportsRoot, 'TaxReportTab.tsx'),
   path.join(reportsRoot, 'taxReportTabModel.ts'),
-  path.join(reportsRoot, 'CostAccountingAppsScreen.tsx'),
+  path.join(reportsRoot, 'costAccountingApps', 'CostAccountingAppsFixedLinesPanel.tsx'),
   path.join(reportsRoot, 'costAccountingApps', 'CostAccountingAppsResultPanels.tsx'),
   path.join(reportsRoot, 'costAccountingApps', 'costAccountingAppsScreenActions.ts'),
   path.join(reportsRoot, 'BankStatementMappingModal.tsx'),

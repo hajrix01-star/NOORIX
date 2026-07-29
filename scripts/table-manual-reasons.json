@@ -87,7 +87,7 @@
       "decision": "leave",
       "reason": "bank statement mapping preview; protected bank workflow."
     },
-    "src/modules/Reports/CostAccountingAppsScreen.tsx": {
+    "src/modules/Reports/costAccountingApps/CostAccountingAppsFixedLinesPanel.tsx": {
       "category": "financial-report",
       "decision": "leave",
       "reason": "cost accounting report table; protected financial analysis scope."
