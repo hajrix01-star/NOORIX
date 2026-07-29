@@ -34,7 +34,6 @@ describe('invoicesListTableModel', () => {
       'taxAmount',
       'totalAmount',
       'notesOrEmployee',
-      'status',
     ]);
     expect(cols.find((column) => column.key === 'invoiceNumber')?.size).toBe('document');
     expect(cols.find((column) => column.key === 'taxAmount')?.size).toBe('tax');
@@ -50,7 +49,7 @@ describe('invoicesListTableModel', () => {
     });
     expect(foot).toHaveLength(5);
     expect(foot[0].keys).toContain('invoiceNumber');
-    expect(foot[4].keys).toEqual(['notesOrEmployee', 'status']);
+    expect(foot[4].keys).toEqual(['notesOrEmployee']);
   });
 
   it('createInvoiceListMobileCardRenderer returns a function', () => {

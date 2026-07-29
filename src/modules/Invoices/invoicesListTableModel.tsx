@@ -115,6 +115,18 @@ function renderVaultCell(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (val
   );
 }
 
+function renderUserStatusCell(row: InvoiceTableRow, statusMap: StatusMap) {
+  const userName = asInvoiceTableText(row.createdByDisplayName);
+  return (
+    <div className="mx-auto flex min-w-0 flex-col items-center justify-center gap-1 text-center">
+      <span className="nx-cell-ellipsis max-w-full" title={userName}>
+        {userName}
+      </span>
+      <Badge {...Badge.fromStatus(row.status, statusMap)} size="sm" />
+    </div>
+  );
+}
+
 export function buildInvoiceListColumns({
   t,
   lang,
@@ -155,10 +167,10 @@ export function buildInvoiceListColumns({
     {
       key: 'createdByDisplayName',
       kind: 'text',
-      label: t('invoiceUserColumn'),
+      label: `${t('invoiceUserColumn')} / ${t('statusLabel')}`,
       align: 'center',
-      width: '14ch',
-      render: (value: unknown) => renderTextCell(value),
+      width: '13ch',
+      render: (_value: unknown, row: InvoiceTableRow) => renderUserStatusCell(row, STATUS_MAP),
     },
     {
       key: 'kind',
@@ -220,15 +232,6 @@ export function buildInvoiceListColumns({
       width: '18ch',
       render: (_: unknown, row: InvoiceTableRow) => renderTextCell(row.notes),
     },
-    {
-      key: 'status',
-      kind: 'status',
-      label: t('statusLabel'),
-      align: 'center',
-      shrink: true,
-      width: '9ch',
-      render: (value: unknown) => <Badge {...Badge.fromStatus(value, STATUS_MAP)} size="sm" />,
-    },
   ];
 }
 
@@ -265,7 +268,7 @@ export function buildInvoiceListFooterRow({ t, serverAll, total }: InvoiceFooter
       content: <FmtNum n={asInvoiceTableNumber(serverAll.total)} />,
     },
     {
-      keys: ['notesOrEmployee', 'status'],
+      keys: ['notesOrEmployee'],
       className: 'nx-tfoot-label text-[12px] text-center',
       content: '',
     },

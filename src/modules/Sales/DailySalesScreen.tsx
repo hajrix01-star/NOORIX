@@ -109,39 +109,41 @@ export default function DailySalesScreen() {
   }, [openSummaryEdit]);
 
   const columns = useMemo(() => [
-    { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '16ch',
+    { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '25ch',
       render: (_: unknown, row: DailySalesTableRow) => (
-        <div className="flex flex-col items-start gap-1">
-          <div className="flex max-w-full items-center gap-1.5">
+        <div className="flex min-w-0 flex-col items-center gap-1 text-center">
+          <div className="flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
             <Button
               variant="raw"
               size="auto"
-              className="!h-auto min-w-0 rounded-md px-2 py-1 text-start nx-cell-num nx-cell-accent hover:bg-noorix-blue/10 hover:underline focus-visible:ring-2 focus-visible:ring-noorix-blue"
+              className="!h-auto min-w-0 rounded-md px-2 py-1 text-center nx-cell-num nx-cell-accent hover:bg-noorix-blue/10 hover:underline focus-visible:ring-2 focus-visible:ring-noorix-blue"
               title={summaryNumberText(row)}
               onClick={(event) => handleSummaryEditClick(event, row)}
             >
               {compactSummaryNumberText(row)}
             </Button>
+            <span className="nx-cell-muted-sm nx-font-numbers whitespace-nowrap">{formatSaudiDate(row.transactionDate)}</span>
           </div>
-          <span className="nx-cell-muted-sm nx-font-numbers">{formatSaudiDate(row.transactionDate)}</span>
-          {dayContextLabel(row) ? (
-            <span className="inline-flex max-w-full items-center truncate px-0 py-0 text-[11px] font-semibold text-noorix-green">
-              {dayContextLabel(row)}
+          <div className="flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[11px] font-semibold">
+            {dayContextLabel(row) ? (
+              <span className="max-w-[18ch] truncate text-noorix-green" title={dayContextLabel(row)}>
+                {dayContextLabel(row)}
+              </span>
+            ) : null}
+            <span className="whitespace-nowrap text-noorix-muted">
+              {row.shiftsText || getSalesShiftLabel(row.shift, t)}
             </span>
-          ) : null}
-          <span className="inline-flex items-center px-0 py-0 text-[11px] font-semibold text-noorix-muted">
-            {row.shiftsText || getSalesShiftLabel(row.shift, t)}
-          </span>
-          {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
+            {row.summaries.length > 1 ? <span className="nx-cell-muted-sm whitespace-nowrap">{row.summaries.length} شفت</span> : null}
+          </div>
         </div>
       ) },
     { key: 'channelsText', kind: 'text', size: 'name', label: t('salesChannels'), sortable: false,
       render: (_: unknown, row: DailySalesTableRow) => <DailySalesChannelsChips channels={row.channels} lang={lang} /> },
-    { key: 'customerCount', kind: 'number', label: t('customers'), numeric: true, sortable: true, width: '8ch',
+    { key: 'customerCount', kind: 'number', label: t('customers'), numeric: true, sortable: true, shrink: true, width: '6ch',
       render: (v: unknown) => <span className="nx-cell-num nx-cell-num--blue">{(v as number) ?? 0}</span> },
-    { key: 'totalAmount', kind: 'money', label: t('total'), numeric: true, sortable: true, width: '12ch',
+    { key: 'totalAmount', kind: 'money', label: t('total'), numeric: true, sortable: true, shrink: true, width: '10ch',
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--green nx-cell-bold" /> },
-    { key: 'avgPerCustomer', kind: 'money', label: t('avgPerOrder'), numeric: true, sortable: false, width: '12ch',
+    { key: 'avgPerCustomer', kind: 'money', label: t('avgPerOrder'), numeric: true, sortable: false, shrink: true, width: '8ch',
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', kind: 'status', label: t('statusLabel'), width: '9ch',
       render: (v: unknown) => <Badge {...Badge.fromStatus(v as string, STATUS_MAP)} size="sm" /> },
