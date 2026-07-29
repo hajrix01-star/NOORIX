@@ -32,7 +32,7 @@ export default function HajriTaxLayout() {
                 cn(
                   'm-0 shrink-0 whitespace-nowrap rounded-none border-0 border-b-2 px-[18px] py-3 text-[14px] no-underline transition-colors',
                   isActive
-                    ? 'border-b-noorix-blue bg-[var(--noorix-blue-7)] font-bold text-noorix-blue'
+                    ? 'border-b-transparent bg-transparent font-extrabold text-noorix-green'
                     : 'border-b-transparent bg-transparent font-medium text-noorix-muted hover:text-noorix-text',
                 )
               }

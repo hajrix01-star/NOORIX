@@ -913,10 +913,11 @@ a { color: inherit; text-decoration: none; }
   color: var(--noorix-text);
 }
 .noorix-bank-tab--active {
-  background: var(--noorix-bg-surface);
-  color: var(--noorix-accent-blue);
-  border-color: var(--noorix-border);
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.06);
+  background: transparent;
+  color: var(--noorix-accent-green);
+  border-color: transparent;
+  box-shadow: none;
+  font-weight: 800;
 }
 
 /* تفاصيل كشف بنك — شريط تبويبات موحّد (كان inline styles) */
@@ -945,8 +946,10 @@ a { color: inherit; text-decoration: none; }
   font-weight: 500;
 }
 .noorix-bank-detail-tab-row .noorix-bank-detail-tab.nx-tab-btn--active {
-  background: var(--noorix-blue-8);
-  font-weight: 700;
+  background: transparent;
+  color: var(--noorix-accent-green);
+  border-bottom-color: transparent;
+  font-weight: 800;
 }
 .noorix-bank-detail-tab__count {
   margin-inline-start: 6px;
@@ -960,8 +963,8 @@ a { color: inherit; text-decoration: none; }
   color: var(--noorix-text-muted);
 }
 .noorix-bank-detail-tab__count--active {
-  background: var(--noorix-accent-blue);
-  color: #fff;
+  background: var(--noorix-green-10);
+  color: var(--noorix-accent-green);
 }
 
 .noorix-bank-filter {
@@ -1648,13 +1651,6 @@ html[data-card-style="10"] .noorix-stat-card {
   overflow: visible;
   position: relative;
   z-index: 30;
-}
-
-.nx-pl-command-center::before {
-  content: "";
-  display: block;
-  height: 3px;
-  background: linear-gradient(90deg, var(--noorix-accent-blue), #167a55, #b45309);
 }
 
 .nx-pl-command-center__main {
@@ -5736,7 +5732,12 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     margin: 0;
   }
   .nx-tab-btn:hover { color: var(--noorix-accent-blue); background: var(--noorix-blue-4); }
-  .nx-tab-btn--active { color: var(--noorix-accent-blue); border-bottom-color: var(--noorix-accent-blue); background: var(--noorix-blue-8); font-weight: 700; }
+  .nx-tab-btn--active {
+    color: var(--noorix-accent-green);
+    border-bottom-color: transparent;
+    background: transparent;
+    font-weight: 800;
+  }
 
   /* شريط تبويبات segmented (حبات داخل كرت — مثل الموارد البشرية) */
   .nx-segmented-tab-bar {

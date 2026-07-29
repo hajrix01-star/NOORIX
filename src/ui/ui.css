@@ -955,9 +955,10 @@
 
 .nx-connected-tab-btn--active,
 .nx-connected-tab-btn--active:hover {
-  background: var(--noorix-accent-green);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(20, 112, 68, 0.14);
+  background: transparent;
+  color: var(--noorix-accent-green);
+  box-shadow: none;
+  font-weight: 800;
 }
 
 .nx-connected-tab-content-swap {
