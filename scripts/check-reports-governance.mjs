@@ -31,7 +31,7 @@ const requiredFiles = [
 
 const allowedRawTableFiles = new Set([
   path.join(reportsRoot, 'GeneralPlTable.tsx'),
-  path.join(reportsRoot, 'GeneralReportV2Screen.tsx'),
+  path.join(reportsRoot, 'generalReportV2PrintModel.ts'),
   path.join(reportsRoot, 'generalReportV2Model.ts'),
   path.join(reportsRoot, 'ReportsScreen.tsx'),
   path.join(reportsRoot, 'reportsPlMonthPrint.ts'),

@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { fmt } from '../../utils/format';
-import { buildPrintHtmlTable } from '../../utils/printTableHtml';
 import { percentText, truncateText, isEmptyMetric, metricCardAmountValue } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button, AdaptiveSheet, MetricCard, ScreenTabs, SmartTable, usePrintPreview } from '../../ui';
@@ -23,70 +22,31 @@ import {
 } from 'recharts';
 import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 import { toYmd } from '../../utils/saudiDate';
-import { dailyAverage } from '../../shared/reporting/plDisplaySelectors';
+import {
+  DETAIL_INVOICES_PAGE_SIZE,
+  buildReportsDetailTabs,
+  buildTrendChartRows,
+  computeMonthlyAverageAmount,
+  findPeakTrendPoint,
+  findSelectedTrendPoint,
+  isReportsDetailTabId,
+  reportDetailChannelNames,
+  reportDetailItemLabel,
+  reportDetailSourceName,
+  resolveDisplayAnnualAmount,
+  resolveDisplayContextAmount,
+  resolveDisplayContextPercent,
+  type ReportDetailCompanyRef,
+  type ReportDetailItem,
+  type ReportTrendData,
+  type ReportsDetailTabId,
+  type ReportsDetailData,
+  type ReportsDetailState,
+  type TooltipProps,
+  type TranslateFn,
+} from './reportsDetailModel';
+import { buildReportsDetailPrintDocument } from './reportsDetailPrintModel';
 
-/** حل وسط: عرض أكثر من 8 دون إغراق النافذة؛ التصفح على البيانات المحمّلة (حتى 500 من الخادم). */
-const DETAIL_INVOICES_PAGE_SIZE = 15;
-
-type TranslateFn = (key: string, vars?: Record<string, unknown> | string) => string;
-type ReportsDetailState = {
-  month?: number | null;
-  groupKey?: string | null;
-  itemKey?: string | null;
-  showTrend?: boolean;
-};
-type TrendPoint = {
-  month: number;
-  label: string;
-  amount?: string | number | null;
-  percentOfSales?: string | number | null;
-};
-type TrendChartRow = {
-  key: string;
-  name: string;
-  amount: number;
-  rawAmount: number;
-  pctStr: string;
-  isSelected: boolean;
-};
-type ReportDetailItem = {
-  key?: string;
-  id?: string;
-  labelAr?: string | null;
-  labelEn?: string | null;
-  amount?: string | number | null;
-  transactionDate?: string | Date | null;
-  summaryNumber?: string | null;
-  invoiceNumber?: string | null;
-  supplierNameAr?: string | null;
-  supplierNameEn?: string | null;
-  itemLabelAr?: string | null;
-  itemLabelEn?: string | null;
-  totalAmount?: string | number | null;
-  netAmount?: string | number | null;
-  taxAmount?: string | number | null;
-  notes?: string | null;
-  percentOfSales?: string | number | null;
-  percentOfTotal?: string | number | null;
-  channelNames?: Array<{ nameAr?: string | null; nameEn?: string | null }>;
-};
-type ReportsDetailData = {
-  kind: 'invoices' | 'derived';
-  titleAr?: string;
-  titleEn?: string;
-  month?: number | null;
-  monthLabel?: string | null;
-  contextAmount?: string | number | null;
-  annualAmount?: string | number | null;
-  contextPercentOfSales?: string | number | null;
-  invoiceCount?: string | number | null;
-  items?: ReportDetailItem[];
-};
-type ReportTrendData = {
-  points?: TrendPoint[];
-  total?: string | number | null;
-  percentOfSalesYear?: string | number | null;
-};
 type ReportsDetailModalProps = {
   state: ReportsDetailState | null;
   onClose: () => void;
@@ -95,20 +55,12 @@ type ReportsDetailModalProps = {
   t: TranslateFn;
   lang: string;
 };
-type ReportDetailCompanyRef = {
-  id?: string;
-  nameAr?: string | null;
-  nameEn?: string | null;
-  logoUrl?: string | null;
-};
-type TooltipPayload = { payload?: TrendChartRow };
-type TooltipProps = { active?: boolean; payload?: readonly TooltipPayload[] };
 
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }: ReportsDetailModalProps) {
   const navigate = useNavigate();
   const { companies = [] } = useApp();
   const [invoiceListPage, setInvoiceListPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('summary');
+  const [activeTab, setActiveTab] = useState<ReportsDetailTabId>('summary');
   const safeYear = year ?? 0;
   const safeMonth = state?.month ?? 0;
   const safeGroupKey = state?.groupKey ?? '';
@@ -154,63 +106,32 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
   }, [state, year]);
 
   const trendChartData = useMemo(() => {
-    if (!trend?.points?.length) return [];
-    return (trend as ReportTrendData).points?.map((point) => {
-      const raw = Number(point.amount || 0);
-      return {
-        key: String(point.month),
-        name: point.label,
-        amount: Math.abs(raw),
-        rawAmount: raw,
-        pctStr: percentText(point.percentOfSales),
-        isSelected: state?.month === point.month,
-      };
-    }) ?? [];
+    return buildTrendChartRows(trend as ReportTrendData | undefined, state?.month, percentText);
   }, [trend?.points, state?.month]);
 
   const peakPoint = useMemo(() => {
-    const points = (trend as ReportTrendData | undefined)?.points || [];
-    if (!points.length) return null;
-    return points.reduce((best, point) => (Number(point.amount || 0) > Number(best.amount || 0) ? point : best), points[0]);
+    return findPeakTrendPoint(trend as ReportTrendData | undefined);
   }, [trend]);
 
   const trendPointForSelectedMonth = useMemo(() => {
-    if (state?.month == null || !trend?.points?.length) return null;
-    return (trend as ReportTrendData).points?.find((point) => point.month === state.month) ?? null;
+    return findSelectedTrendPoint(trend as ReportTrendData | undefined, state?.month);
   }, [state?.month, trend?.points]);
 
   /** يتطابق مع الخادم؛ احتياط إذا تأخّر أحد الطلبين */
   const displayContextAmount = useMemo(() => {
-    if (!data) return null;
-    if (!isEmptyMetric(data.contextAmount)) return data.contextAmount;
-    if (trendPointForSelectedMonth != null && !isEmptyMetric(trendPointForSelectedMonth.amount)) {
-      return String(trendPointForSelectedMonth.amount);
-    }
-    return data.contextAmount;
+    return resolveDisplayContextAmount(data as ReportsDetailData | undefined, trendPointForSelectedMonth);
   }, [data, trendPointForSelectedMonth]);
 
   const displayAnnualAmount = useMemo(() => {
-    if (!data) return null;
-    if (!isEmptyMetric(data.annualAmount)) return data.annualAmount;
-    if (trend != null && !isEmptyMetric(trend.total)) return String(trend.total);
-    return data.annualAmount;
+    return resolveDisplayAnnualAmount(data as ReportsDetailData | undefined, trend as ReportTrendData | undefined);
   }, [data, trend]);
 
   const displayContextPercent = useMemo(() => {
-    if (!data) return null;
-    if (!isEmptyMetric(data.contextPercentOfSales)) return data.contextPercentOfSales;
-    if (trendPointForSelectedMonth != null && !isEmptyMetric(trendPointForSelectedMonth.percentOfSales)) {
-      return String(trendPointForSelectedMonth.percentOfSales);
-    }
-    return data.contextPercentOfSales;
+    return resolveDisplayContextPercent(data as ReportsDetailData | undefined, trendPointForSelectedMonth);
   }, [data, trendPointForSelectedMonth]);
 
   const tabItems = useMemo(() => {
-    const out = [{ id: 'summary', label: t('reportTabSummary') }];
-    if (state?.showTrend) out.push({ id: 'trend', label: t('reportTabTrend') });
-    if (data?.kind === 'invoices') out.push({ id: 'documents', label: t('reportTabDocuments') });
-    if (data?.kind === 'derived') out.push({ id: 'breakdown', label: t('reportTabBreakdown') });
-    return out;
+    return buildReportsDetailTabs(t, state, data as ReportsDetailData | undefined);
   }, [state?.showTrend, data?.kind, t]);
 
   useEffect(() => {
@@ -231,12 +152,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
   }, [invoiceRows, invoiceListPage]);
 
   const averageAmount = useMemo(() => {
-    const points = (trend as ReportTrendData | undefined)?.points || [];
-    if (!points.length) return '0';
-    const withData = points.filter((point) => !isEmptyMetric(point.amount));
-    const slice = withData.length ? withData : points;
-    const total = slice.reduce((sum, point) => sum + Number(point.amount || 0), 0);
-    return String(dailyAverage(total, slice.length) ?? 0);
+    return computeMonthlyAverageAmount(trend as ReportTrendData | undefined);
   }, [trend]);
 
   const modalTitle = data
@@ -245,75 +161,14 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
 
   function handlePrintDetails() {
     if (!data) return;
-    const htmlDir = lang === 'en' ? 'ltr' : 'rtl';
-    const htmlLang = lang === 'en' ? 'en' : 'ar';
-    const title = lang === 'en' ? data.titleEn : data.titleAr;
-    const subtitleParts = [String(year), data.monthLabel, t('reportAmountBasisGross')].filter(Boolean);
-    let body = '';
-
-    const detailItems = (data.items || []) as ReportDetailItem[];
-    if (data.kind === 'derived') {
-      body = buildPrintHtmlTable({
-        wrapperClassName: null,
-        headerRows: [{
-          cells: [
-            { value: t('reportItem') },
-            { value: t('reportAmountInclTax'), align: 'end' },
-          ],
-        }],
-        bodyRows: detailItems.map((item) => ({
-          cells: [
-            { value: lang === 'en' ? item.labelEn : item.labelAr },
-            { value: fmt(Number(item.amount)), align: 'end' },
-          ],
-        })),
-      });
-    } else {
-      body = buildPrintHtmlTable({
-        wrapperClassName: null,
-        headerRows: [{
-          cells: [
-            { value: t('transactionDate') },
-            { value: t('reportInvoiceNumber') },
-            { value: t('reportSourceOrSupplier') },
-            { value: t('reportAmountInclTax'), align: 'end' },
-            { value: t('reportNetAmount'), align: 'end' },
-            { value: t('reportTaxAmount'), align: 'end' },
-            { value: t('notes') },
-          ],
-        }],
-        bodyRows: detailItems.map((item) => {
-          const source =
-            (lang === 'en' ? item.supplierNameEn : item.supplierNameAr) ||
-            item.supplierNameAr ||
-            item.supplierNameEn ||
-            (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) ||
-            '—';
-          return {
-            cells: [
-              { value: toYmd(item.transactionDate) },
-              { value: item.summaryNumber || item.invoiceNumber || '—' },
-              { value: source },
-              { value: item.totalAmount, align: 'end' },
-              { value: item.netAmount, align: 'end' },
-              { value: item.taxAmount, align: 'end' },
-              { value: item.notes || '—' },
-            ],
-          };
-        }),
-      });
-    }
-
-    openPrintDocumentPreview({
-      title: t('reportDetails'),
-      companyName: companyName || t('reports'),
-      logoUrl: companyLogoUrl,
-      subtitle: `${title} · ${subtitleParts.join(' · ')}`,
-      body,
-      landscape: data.kind === 'invoices',
-      htmlDir,
-      htmlLang,
-    });
+    openPrintDocumentPreview(buildReportsDetailPrintDocument({
+      data: data as ReportsDetailData,
+      year,
+      t,
+      lang,
+      companyName,
+      companyLogoUrl,
+    }));
   }
 
   const footerContent = (
@@ -358,7 +213,9 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
         <ScreenTabs
           items={tabItems}
           value={activeTab}
-          onChange={setActiveTab}
+          onChange={(id) => {
+            if (isReportsDetailTabId(id)) setActiveTab(id);
+          }}
           contentClassName="nx-tab-content px-0 pt-3 pb-1 min-h-[160px]"
           animateContent={false}
         >
@@ -519,7 +376,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   key={item.key}
                   className="reports-detail-derived-item flex items-center justify-between border border-noorix-border rounded-xl px-3 py-2"
                 >
-                  <div className="font-bold">{lang === 'en' ? item.labelEn : item.labelAr}</div>
+                  <div className="font-bold">{reportDetailItemLabel(item, lang)}</div>
                   <div className="nx-font-numbers font-extrabold inline-flex items-baseline gap-x-1">
                     <span>{fmt(Number(item.amount))}</span>
                     <span className="nx-sar">SR</span>
@@ -565,12 +422,12 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     { key: 'supplier', label: t('reportSourceOrSupplier'),
                       render: (_value: unknown, item: ReportDetailItem) => (
                         <div>
-                          <div className="font-semibold truncate" title={(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}>
-                            {(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}
+                          <div className="font-semibold truncate" title={reportDetailSourceName(item, lang)}>
+                            {reportDetailSourceName(item, lang)}
                           </div>
-                          {(item.channelNames ?? []).length > 0 && (
+                          {reportDetailChannelNames(item, lang) && (
                             <div className="text-[11px] text-noorix-muted mt-1">
-                              {(item.channelNames ?? []).slice(0, 2).map((channel) => lang === 'en' ? (channel.nameEn || channel.nameAr) : (channel.nameAr || channel.nameEn)).join(' | ')}
+                              {reportDetailChannelNames(item, lang)}
                             </div>
                           )}
                         </div>
