@@ -1,40 +1,27 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+﻿import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
-import { OrdersService } from './orders.service';
-import { mapDtoItemsToOrderLines } from './orders-lines.util';
-import { resolveStaffItemVariant, staffLineAggregateKey } from './orders-staff-pricing.util';
+import { resolveStaffItemVariant } from './orders-staff-pricing.util';
 import {
   buildStaffSaleLogRef,
   staffSaleLogRefPrefix,
 } from './orders-staff-log-ref.util';
-import {
-  buildSalesReportSince,
-  buildSalesReportPeriodFromDays,
-  buildSalesReportPeriodFromYmd,
-  staffSaleMatchesReportPeriod,
-  staffSaleMatchesReportWindow,
-  type StaffSalesReportPeriod,
-} from './orders-staff-sales-report.util';
-import { buildSalesWhatsAppTextCombined, buildStaffPurchaseWhatsAppText } from './orders-staff-whatsapp.util';
+import { buildSalesReportSince } from './orders-staff-sales-report.util';
+import { buildSalesWhatsAppTextCombined } from './orders-staff-whatsapp.util';
 import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 import { parseSaleDateYmd } from './orders-staff-date.util';
 import { resolveProductSection } from './orders-staff-sections.util';
-import { buildStaffSalesReportModel } from './orders-staff-sales-report-builder.util';
 import { CreateStaffOrderDto, SendStaffDigestOptions, StaffOrderItemInput } from './orders-staff.types';
-
-type StaffOrderWithItems = Prisma.StaffOrderGetPayload<{
-  include: {
-    items: { include: { product: true } };
-  };
-}>;
+import { OrdersStaffDigestService } from './orders-staff-digest.service';
+import { OrdersStaffReportService } from './orders-staff-report.service';
 
 @Injectable()
 export class OrdersStaffService {
   constructor(
     private readonly prisma: TenantPrismaService,
-    private readonly ordersService: OrdersService,
+    private readonly digest: OrdersStaffDigestService,
+    private readonly report: OrdersStaffReportService,
   ) {}
 
   private async countStaffSaleOperationsForDay(companyId: string, saleDate: Date): Promise<number> {
@@ -52,7 +39,7 @@ export class OrdersStaffService {
     return buildStaffSaleLogRef(saleDate, nextSeq);
   }
 
-  /** معاينة الرقم التالي في سلة التسجيل — لا يحجز */
+  /** Ù…Ø¹Ø§ÙŠÙ†Ø© Ø§Ù„Ø±Ù‚Ù… Ø§Ù„ØªØ§Ù„ÙŠ ÙÙŠ Ø³Ù„Ø© Ø§Ù„ØªØ³Ø¬ÙŠÙ„ â€” Ù„Ø§ ÙŠØ­Ø¬Ø² */
   async peekNextStaffSaleLogRef(companyId: string, saleDateYmd: string): Promise<{ logRef: string }> {
     const saleDate = parseSaleDateYmd(saleDateYmd);
     const nextSeq = (await this.countStaffSaleOperationsForDay(companyId, saleDate)) + 1;
@@ -92,7 +79,7 @@ export class OrdersStaffService {
   private validateItemQuantities(items: StaffOrderItemInput[]): number[] {
     return items.map((it) => {
       const q = parseFloat(it.quantity);
-      if (!it.productId || isNaN(q) || q <= 0) throw new BadRequestException('بيانات الصنف غير صحيحة');
+      if (!it.productId || isNaN(q) || q <= 0) throw new BadRequestException('Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ØµÙ†Ù ØºÙŠØ± ØµØ­ÙŠØ­Ø©');
       return q;
     });
   }
@@ -105,7 +92,7 @@ export class OrdersStaffService {
     const pmap = new Map(products.map((p) => [p.id, p]));
     const missing = productIds.filter((id) => !pmap.has(id));
     if (missing.length) {
-      throw new BadRequestException('صنف غير موجود أو لا ينتمي لهذه الشركة');
+      throw new BadRequestException('ØµÙ†Ù ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯ Ø£Ùˆ Ù„Ø§ ÙŠÙ†ØªÙ…ÙŠ Ù„Ù‡Ø°Ù‡ Ø§Ù„Ø´Ø±ÙƒØ©');
     }
     const qty = this.validateItemQuantities(items);
     return items.map((it, i) => {
@@ -160,8 +147,8 @@ export class OrdersStaffService {
   async createStaffOrder(userId: string, dto: CreateStaffOrderDto) {
     const tenantId = TenantContext.getTenantId();
     const companyId = String(dto.companyId ?? '').trim();
-    if (!companyId) throw new BadRequestException('companyId مطلوب');
-    if (!dto.items?.length) throw new BadRequestException('يجب إضافة صنف واحد على الأقل');
+    if (!companyId) throw new BadRequestException('companyId Ù…Ø·Ù„ÙˆØ¨');
+    if (!dto.items?.length) throw new BadRequestException('ÙŠØ¬Ø¨ Ø¥Ø¶Ø§ÙØ© ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„');
 
     const orderType = dto.orderType === 'sale' ? 'sale' : 'order';
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
@@ -198,7 +185,7 @@ export class OrdersStaffService {
   }
 
   async getMyStaffOrders(companyId: string, userId: string, days = 30) {
-    // نفس نافذة تقرير المبيعات — createdAt أو saleDate داخل الفترة
+    // Ù†ÙØ³ Ù†Ø§ÙØ°Ø© ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª â€” createdAt Ø£Ùˆ saleDate Ø¯Ø§Ø®Ù„ Ø§Ù„ÙØªØ±Ø©
     const since = buildSalesReportSince(days);
     const tenantId = TenantContext.tryGetTenantId();
     const where: Prisma.StaffOrderWhereInput = {
@@ -227,12 +214,12 @@ export class OrdersStaffService {
     },
   ) {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
-    if (!order) throw new NotFoundException('الطلب غير موجود');
-    if (order.userId !== userId) throw new ForbiddenException('لا يمكن تعديل طلب موظف آخر');
+    if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
+    if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† ØªØ¹Ø¯ÙŠÙ„ Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
 
     const isSale = order.orderType === 'sale';
     if (!isSale && order.status !== 'pending') {
-      throw new BadRequestException('لا يمكن تعديل طلب تم إرساله');
+      throw new BadRequestException('Ù„Ø§ ÙŠÙ…ÙƒÙ† ØªØ¹Ø¯ÙŠÙ„ Ø·Ù„Ø¨ ØªÙ… Ø¥Ø±Ø³Ø§Ù„Ù‡');
     }
 
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
@@ -247,7 +234,7 @@ export class OrdersStaffService {
       const grouped = await this.groupItemsBySection(companyId, dto.items, dto.sectionName);
       if (grouped.size > 1) {
         throw new BadRequestException(
-          'لا يمكن دمج أقسام متعددة في سجل مبيعات واحد — عدّل كل قسم من قائمة المبيعات',
+          'Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¯Ù…Ø¬ Ø£Ù‚Ø³Ø§Ù… Ù…ØªØ¹Ø¯Ø¯Ø© ÙÙŠ Ø³Ø¬Ù„ Ù…Ø¨ÙŠØ¹Ø§Øª ÙˆØ§Ø­Ø¯ â€” Ø¹Ø¯Ù‘Ù„ ÙƒÙ„ Ù‚Ø³Ù… Ù…Ù† Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª',
         );
       }
       const [[sectionName, sectionItems]] = grouped.entries();
@@ -275,7 +262,7 @@ export class OrdersStaffService {
     return { ...updated, whatsAppText };
   }
 
-  /** إعادة فتح واتساب لمبيعات مُسجّلة دون تعديل */
+  /** Ø¥Ø¹Ø§Ø¯Ø© ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨ Ù„Ù…Ø¨ÙŠØ¹Ø§Øª Ù…ÙØ³Ø¬Ù‘Ù„Ø© Ø¯ÙˆÙ† ØªØ¹Ø¯ÙŠÙ„ */
   async resendStaffSale(id: string, companyId: string, userId: string, lang: 'ar' | 'en' = 'ar') {
     const order = await this.prisma.staffOrder.findFirst({
       where: { id, companyId, orderType: 'sale' },
@@ -284,8 +271,8 @@ export class OrdersStaffService {
         user: { select: { nameAr: true, nameEn: true } },
       },
     });
-    if (!order) throw new NotFoundException('المبيعات غير موجودة');
-    if (order.userId !== userId) throw new ForbiddenException('لا يمكن إعادة إرسال مبيعات موظف آخر');
+    if (!order) throw new NotFoundException('Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©');
+    if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„ Ù…Ø¨ÙŠØ¹Ø§Øª Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
     const saleDay = order.saleDate ?? order.createdAt;
     const orders = order.logRef
       ? await this.prisma.staffOrder.findMany({
@@ -303,294 +290,32 @@ export class OrdersStaffService {
 
   async deleteStaffOrder(id: string, companyId: string, userId: string) {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
-    if (!order) throw new NotFoundException('الطلب غير موجود');
-    if (order.userId !== userId) throw new ForbiddenException('لا يمكن حذف طلب موظف آخر');
+    if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
+    if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
     if (order.orderType !== 'sale' && order.status !== 'pending') {
-      throw new BadRequestException('لا يمكن حذف طلب تم إرساله');
+      throw new BadRequestException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ ØªÙ… Ø¥Ø±Ø³Ø§Ù„Ù‡');
     }
     await this.prisma.staffOrder.delete({ where: { id } });
     return { deleted: true };
   }
 
-  /** الكاشير: تاريخ الإرسالات — آخر 30 يوماً مجمّعة بتاريخ الإرسال */
+  /** Ø§Ù„ÙƒØ§Ø´ÙŠØ±: ØªØ§Ø±ÙŠØ® Ø§Ù„Ø¥Ø±Ø³Ø§Ù„Ø§Øª â€” Ø¢Ø®Ø± 30 ÙŠÙˆÙ…Ø§Ù‹ Ù…Ø¬Ù…Ù‘Ø¹Ø© Ø¨ØªØ§Ø±ÙŠØ® Ø§Ù„Ø¥Ø±Ø³Ø§Ù„ */
   async getDigestHistory(companyId: string, days = 30) {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
-
-    const orders = await this.prisma.staffOrder.findMany({
-      where: { companyId, orderType: 'order', status: 'sent', sentAt: { gte: since } },
-      orderBy: [{ sentAt: 'desc' }, { sectionName: 'asc' }],
-      include: {
-        items: { include: { product: true } },
-        user: { select: { id: true, nameAr: true, nameEn: true } },
-      },
-    });
-
-    // تجميع بتاريخ اليوم (YYYY-MM-DD بناءً على sentAt)
-    type DigestHistoryOrder = (typeof orders)[number];
-    const byDate: Record<string, { date: string; sentAt: Date; sections: Record<string, DigestHistoryOrder[]> }> = {};
-    for (const o of orders) {
-      const d = o.sentAt ?? o.updatedAt;
-      const key = d.toISOString().slice(0, 10);
-      if (!byDate[key]) byDate[key] = { date: key, sentAt: d, sections: {} };
-      const sec = o.sectionName;
-      if (!byDate[key].sections[sec]) byDate[key].sections[sec] = [];
-      byDate[key].sections[sec].push(o);
-    }
-
-    return Object.values(byDate).map((day) => ({
-      date: day.date,
-      sentAt: day.sentAt,
-      sections: Object.entries(day.sections).map(([sectionName, sOrders]) => {
-        // دمج الأصناف المتشابهة لكل قسم
-        const itemMap: Record<string, { nameAr: string; nameEn: string | null; qty: number; unit: string }> = {};
-        for (const o of sOrders) {
-          for (const it of o.items) {
-            const key = `${it.productId}|${it.unit || ''}`;
-            if (!itemMap[key]) {
-              itemMap[key] = {
-                nameAr: it.product?.nameAr || '—',
-                nameEn: it.product?.nameEn || null,
-                qty: 0,
-                unit: it.unit || '',
-              };
-            }
-            itemMap[key].qty += Number(it.quantity);
-          }
-        }
-        return {
-          sectionName,
-          ordersCount: sOrders.length,
-          items: Object.values(itemMap),
-        };
-      }),
-    }));
+    return this.digest.getDigestHistory(companyId, days);
   }
 
-  /** المدير/الكاشير: يجلب الطلبات المعلّقة مجمّعة بالقسم */
   async getDigest(companyId: string) {
-    const orders = await this.prisma.staffOrder.findMany({
-      where: { companyId, orderType: 'order', status: 'pending' },
-      orderBy: [{ sectionName: 'asc' }, { createdAt: 'asc' }],
-      include: {
-        items: { include: { product: true } },
-        user: { select: { id: true, nameAr: true, nameEn: true } },
-      },
-    });
-
-    // تجميع بالقسم
-    const grouped: Record<string, { orders: typeof orders; totalItems: number }> = {};
-    for (const o of orders) {
-      if (!grouped[o.sectionName]) grouped[o.sectionName] = { orders: [], totalItems: 0 };
-      grouped[o.sectionName].orders.push(o);
-      grouped[o.sectionName].totalItems += o.items.length;
-    }
-
-    return {
-      sections: Object.entries(grouped).map(([section, { orders: sOrders, totalItems }]) => ({
-        sectionName: section,
-        totalItems,
-        orders: sOrders,
-      })),
-      totalOrders: orders.length,
-      pendingCount: orders.length,
-    };
+    return this.digest.getDigest(companyId);
   }
 
-  /** تجميع بنود الطلبات المعلّقة لطلب مشتريات واحد */
-  private aggregateStaffOrdersToPurchaseLines(orders: readonly StaffOrderWithItems[]) {
-    type Agg = {
-      productId: string;
-      name: string;
-      size: string | null;
-      packaging: string | null;
-      unit: string | null;
-      unitPrice: Prisma.Decimal;
-      quantity: Prisma.Decimal;
-    };
-    const map = new Map<string, Agg>();
-    for (const order of orders) {
-      for (const it of order.items || []) {
-        const v = resolveStaffItemVariant(it.product, {
-          size: it.size,
-          packaging: it.packaging,
-          unit: it.unit,
-          unitPrice: it.unitPrice != null ? String(it.unitPrice) : undefined,
-        });
-        const key = staffLineAggregateKey(it.productId, v.size, v.packaging, v.unit, v.unitPrice);
-        const name = it.product?.nameAr || it.product?.nameEn || '—';
-        const q = new Prisma.Decimal(it.quantity || 0);
-        const cur = map.get(key);
-        if (cur) {
-          cur.quantity = cur.quantity.plus(q);
-        } else {
-          map.set(key, {
-            productId: it.productId,
-            name,
-            size: v.size,
-            packaging: v.packaging,
-            unit: v.unit,
-            unitPrice: v.unitPrice,
-            quantity: q,
-          });
-        }
-      }
-    }
-    return [...map.values()];
-  }
-
-  /** الكاشير: يرسل الملخص — يعلّم الطلبات، ينشئ طلب مشتريات، ويعيد نص واتساب */
   async sendDigest(companyId: string, orderIds?: string[], opts: SendStaffDigestOptions = {}) {
-    const lang = opts.lang === 'en' ? 'en' : 'ar';
-    const createPurchaseOrder = opts.createPurchaseOrder !== false;
-    const orderType = opts.orderType === 'internal' ? 'internal' : 'external';
-
-    const where: Prisma.StaffOrderWhereInput = { companyId, orderType: 'order', status: 'pending' };
-    if (orderIds?.length) where.id = { in: orderIds };
-
-    const orders = await this.prisma.staffOrder.findMany({
-      where,
-      include: { items: { include: { product: true } } },
-    });
-
-    if (!orders.length) throw new BadRequestException('لا توجد طلبات معلّقة');
-
-    const ids = orders.map((o) => o.id);
-    const sentAt = new Date();
-    const grouped: Record<string, typeof orders> = {};
-    for (const o of orders) {
-      if (!grouped[o.sectionName]) grouped[o.sectionName] = [];
-      grouped[o.sectionName].push(o);
-    }
-
-    const aggLines = this.aggregateStaffOrdersToPurchaseLines(orders);
-    const purchaseDtoItems = aggLines.map((row) => ({
-      productId: row.productId,
-      size: row.size || undefined,
-      packaging: row.packaging || undefined,
-      unit: row.unit || undefined,
-      quantity: row.quantity.toString(),
-      unitPrice: row.unitPrice.toString(),
-    }));
-    const mappedOrderLines = mapDtoItemsToOrderLines(purchaseDtoItems);
-    const grandTotal = mappedOrderLines.reduce((s, i) => s.plus(i.amount), new Prisma.Decimal(0));
-
-    const now = new Date();
-    const dateStr = opts.orderDate?.trim()
-      || `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
-    const orderDateYmd = opts.orderDate?.trim()
-      || now.toISOString().slice(0, 10);
-
-    const sections = Object.entries(grouped).map(([sectionName, sOrders]) => ({ sectionName, orders: sOrders }));
-    const whatsAppText = buildStaffPurchaseWhatsAppText(sections, dateStr, lang, grandTotal);
-
-    await this.prisma.staffOrder.updateMany({
-      where: { id: { in: ids } },
-      data: { status: 'sent', sentAt },
-    });
-
-    let purchaseOrder: Awaited<ReturnType<OrdersService['create']>> | null = null;
-    if (createPurchaseOrder && purchaseDtoItems.length > 0) {
-      try {
-        purchaseOrder = await this.ordersService.create(companyId, {
-          orderDate: orderDateYmd,
-          orderType,
-          pettyCashAmount: orderType === 'external' ? opts.pettyCashAmount : undefined,
-          notes: lang === 'en'
-            ? `Consolidated from ${ids.length} section order(s)`
-            : `مجمّع من ${ids.length} طلب قسم`,
-          items: purchaseDtoItems,
-        });
-        await this.prisma.order.update({
-          where: { id: purchaseOrder.id },
-          data: { sourceStaffOrderIds: ids },
-        });
-        await this.prisma.staffOrder.updateMany({
-          where: { id: { in: ids } },
-          data: { purchaseOrderId: purchaseOrder.id },
-        });
-      } catch (e) {
-        await this.prisma.staffOrder.updateMany({
-          where: { id: { in: ids } },
-          data: { status: 'pending', sentAt: null, purchaseOrderId: null },
-        });
-        throw e;
-      }
-    }
-
-    return {
-      sent: orders.length,
-      whatsAppText,
-      purchaseOrder: purchaseOrder
-        ? {
-            id: purchaseOrder.id,
-            orderNumber: purchaseOrder.orderNumber,
-            totalAmount: purchaseOrder.totalAmount,
-            orderType: purchaseOrder.orderType,
-          }
-        : null,
-      grandTotal: grandTotal.toString(),
-    };
+    return this.digest.sendDigest(companyId, orderIds, opts);
   }
 
-  /** تقرير المبيعات — orderType = 'sale' */
   async getSalesReport(
     companyId: string,
     periodInput: number | { startDate: string; endDate: string } = 30,
   ) {
-    const period: StaffSalesReportPeriod = typeof periodInput === 'number'
-      ? buildSalesReportPeriodFromDays(periodInput)
-      : buildSalesReportPeriodFromYmd(periodInput.startDate, periodInput.endDate);
-    const tenantId = TenantContext.tryGetTenantId();
-    const where: Prisma.StaffOrderWhereInput = { companyId, orderType: 'sale' };
-    if (tenantId) where.tenantId = tenantId;
-
-    // Avoid nullable DATE filters/orderBy and select only fields needed for the report.
-    // This keeps old rows with unrelated nullable columns (for example unit_price) from
-    // breaking the report while the repair migration backfills them.
-    const allSaleOrders = await this.prisma.staffOrder.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        logRef: true,
-        userId: true,
-        sectionName: true,
-        saleDate: true,
-        createdAt: true,
-        items: {
-          select: {
-            productId: true,
-            quantity: true,
-            unit: true,
-            size: true,
-            packaging: true,
-            unitPrice: true,
-          },
-        },
-      },
-    });
-    const orders = allSaleOrders.filter((o) => staffSaleMatchesReportPeriod(o, period));
-
-    // جلب بيانات المستخدمين بـ query منفصل (تجنب join قد يسبب مشكلة RLS)
-    const userIds = [...new Set(orders.map((o) => o.userId))];
-    const users = userIds.length
-      ? await this.prisma.user.findMany({
-          where: { ...(tenantId ? { tenantId } : {}), id: { in: userIds } },
-          select: { id: true, nameAr: true, nameEn: true },
-        })
-      : [];
-    const userMap = new Map(users.map((u) => [u.id, u]));
-
-    const productIds = [...new Set(orders.flatMap((o) => o.items.map((it) => it.productId)).filter(Boolean))];
-    const products = productIds.length
-      ? await this.prisma.orderProduct.findMany({
-          where: { companyId, ...(tenantId ? { tenantId } : {}), id: { in: productIds } },
-          select: { id: true, nameAr: true, nameEn: true, unit: true, lastPrice: true, variants: true },
-        })
-      : [];
-    const productMap = new Map(products.map((p) => [p.id, p]));
-
-    return buildStaffSalesReportModel({ orders, users, products });
+    return this.report.getSalesReport(companyId, periodInput);
   }
 }
