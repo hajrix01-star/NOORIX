@@ -22,7 +22,7 @@ import { MODE_META } from './constants';
 import type { HrQuickEntryMode, HrQuickEntrySheetProps } from './types';
 import type { HrCompensationSnapshot, HrCompensationSnapshotsResult } from '../../../../types/api';
 
-export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, variant: _variant }: HrQuickEntrySheetProps) {
+export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, variant: _variant, initialEmployeeId }: HrQuickEntrySheetProps) {
   const { t, lang } = useTranslation();
   const isAr = lang === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
@@ -31,6 +31,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   onCloseRef.current = onClose;
 
   const st = useHrQuickEntryState(mode as HrQuickEntryMode, companyId);
+
+  React.useEffect(() => {
+    if (mode === 'deduction' && initialEmployeeId && !st.ddEmp) {
+      st.setDdEmp(initialEmployeeId);
+    }
+  }, [initialEmployeeId, mode, st.ddEmp, st.setDdEmp]);
 
   const quickEntryEmployees = st.employees.map((employee) => ({
     ...employee,

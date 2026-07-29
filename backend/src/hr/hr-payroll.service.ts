@@ -93,4 +93,8 @@ export class HrPayrollService {
   createDeduction(...args: Parameters<HrPayrollAncillaryService['createDeduction']>) {
     return this.ancillary.createDeduction(...args);
   }
+
+  deleteDeduction(...args: Parameters<HrPayrollAncillaryService['deleteDeduction']>) {
+    return this.ancillary.deleteDeduction(...args);
+  }
 }

@@ -8,6 +8,7 @@ export type HrQuickEntrySheetProps = {
   onClose: () => void;
   onRecorded?: (o: HrQuickEntryRecordedPayload) => void;
   variant?: string;
+  initialEmployeeId?: string;
 };
 
 export type EmployeeOption = {

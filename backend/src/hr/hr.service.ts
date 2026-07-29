@@ -124,6 +124,10 @@ export class HRService {
     return this.payroll.createDeduction(...args);
   }
 
+  deleteDeduction(...args: Parameters<HrPayrollService['deleteDeduction']>) {
+    return this.payroll.deleteDeduction(...args);
+  }
+
   // ── Leave ──
 
   findLeaves(...args: Parameters<HrLeaveService['findLeaves']>) {

@@ -7,7 +7,7 @@ import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation'
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getDeductions, getHrAdvances, updateInvoice, throwIfApiFailed } from '../../../services/api';
+import { deleteDeduction, getDeductions, getHrAdvances, updateInvoice, throwIfApiFailed } from '../../../services/api';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { formatSaudiDate } from '../../../utils/saudiDate';
@@ -18,6 +18,7 @@ import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { AdvanceEditModal } from '../components/AdvanceEditModal';
 import { AdvanceSettlementModal } from '../components/AdvanceSettlementModal';
 import { AdvanceDetailsModal } from '../components/AdvanceDetailsModal';
+import { HrQuickEntrySheet } from '../components/HrQuickEntrySheet';
 import { useAdvanceTableModel } from '../components/useAdvanceTableModel';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Input, SmartTable } from '../../../ui';
@@ -63,6 +64,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const [editingAdvance, setEditingAdvance] = useState<AdvanceEditableRow | null>(null);
   const [settlingAdvance, setSettlingAdvance] = useState<AdvanceEditableRow | null>(null);
   const [selectedAdvanceGroup, setSelectedAdvanceGroup] = useState<AdvanceGroupRow | null>(null);
+  const [deductionEmployeeId, setDeductionEmployeeId] = useState<string | null>(null);
   const { showToast } = useToast();
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
@@ -193,6 +195,40 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const openSettleAdvance = useCallback((row: AdvanceRow) => {
     if (isEditableAdvance(row)) setSettlingAdvance(row);
   }, []);
+
+  const openDeductionEntry = useCallback((group: AdvanceGroupRow) => {
+    setSelectedAdvanceGroup(null);
+    setDeductionEmployeeId(group.employeeId || null);
+  }, []);
+
+  const handleDeleteDeduction = useCallback((row: AdvanceRow) => {
+    const id = typeof row.id === 'string' ? row.id : '';
+    if (!id) return;
+    if (!window.confirm(t('deletePayrollCutConfirm'))) return;
+    deleteDeduction(id, companyId).then((res: unknown) => {
+      try {
+        throwIfApiFailed(res, t('saveFailed'));
+        invalidateOnFinancialMutation(queryClient);
+        queryClient.invalidateQueries({ queryKey: hrKeys.deductionsRoot() });
+        queryClient.invalidateQueries({ queryKey: hrKeys.payrollRunsRoot() });
+        showToast(t('payrollCutDeleted'), 'success');
+        setSelectedAdvanceGroup((current) => {
+          if (!current) return current;
+          const nextRows = current.advances.filter((item) => item.id !== id);
+          if (nextRows.length === current.advances.length) return current;
+          const deletedAmount = Number(row.totalAmountNum ?? row.totalAmount ?? 0);
+          return {
+            ...current,
+            advances: nextRows,
+            deductionCount: Math.max(0, current.deductionCount - 1),
+            manualDeductionAmount: Math.max(0, current.manualDeductionAmount - deletedAmount),
+          };
+        });
+      } catch (e: unknown) {
+        showToast(e instanceof Error ? e.message : t('saveFailed'), 'error');
+      }
+    });
+  }, [companyId, queryClient, showToast, t]);
 
   const groupedRows = useMemo(
     () => buildGroupedAdvanceRows(allFilteredData, sortKey, sortDir, lang === 'ar' ? 'ar' : 'en'),
@@ -343,10 +379,25 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
         onClose={() => setSelectedAdvanceGroup(null)}
         t={t}
         settlementMap={settlementMap}
+        onAddDeduction={openDeductionEntry}
         onEditAdvance={openEditAdvance}
         onSettleAdvance={openSettleAdvance}
         onDeleteAdvance={handleDeleteAdvance}
+        onDeleteDeduction={handleDeleteDeduction}
       />
+      {deductionEmployeeId && (
+        <HrQuickEntrySheet
+          mode="deduction"
+          companyId={companyId}
+          initialEmployeeId={deductionEmployeeId}
+          onClose={() => setDeductionEmployeeId(null)}
+          onRecorded={() => {
+            invalidateOnFinancialMutation(queryClient);
+            queryClient.invalidateQueries({ queryKey: hrKeys.deductionsRoot() });
+            setDeductionEmployeeId(null);
+          }}
+        />
+      )}
       {showAdvance && (
         <AdvanceQuickModal
           employee={null}

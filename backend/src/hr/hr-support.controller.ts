@@ -216,6 +216,16 @@ export class HrSupportController {
     return this.hrService.createDeduction(dto, user.sub);
   }
 
+  @Delete('deductions/:id')
+  @RequirePermission('HR_DELETE')
+  deleteDeduction(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.hrService.deleteDeduction(id, companyId, user.sub);
+  }
+
   @Get('dashboard-summary')
   @RequirePermission('HR_READ')
   getHrDashboardSummary(@CompanyId() companyId: string) {

@@ -302,3 +302,6 @@ export async function getDeductions(companyId: string, employeeId?: string): Pro
 export async function createDeduction(body: unknown): Promise<ApiParsedResult<HrApiRecord>> {
   return apiPost('/api/v1/hr/deductions', body);
 }
+export async function deleteDeduction(id: string, companyId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
+  return apiDelete(withHrApiQuery(`/api/v1/hr/deductions/${encodeURIComponent(id)}`, companyQuery(companyId)));
+}

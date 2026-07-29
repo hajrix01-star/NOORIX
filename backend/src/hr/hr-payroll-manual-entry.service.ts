@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AuditLogService } from '../audit/audit-log.service';
 import { TenantContext } from '../common/tenant-context';
@@ -105,5 +105,33 @@ export class HrPayrollManualEntryService {
     });
 
     return deduction;
+  }
+
+  async deleteDeduction(id: string, companyId: string, userId?: string) {
+    const existing = await this.prisma.employeeDeduction.findFirst({
+      where: { id, companyId },
+    });
+    if (!existing) throw new NotFoundException(`Deduction ${id} was not found.`);
+    if (existing.deductionType === 'advance') {
+      throw new BadRequestException('Advance settlement deductions must be managed from the advance settlement workflow.');
+    }
+
+    await this.prisma.employeeDeduction.delete({ where: { id } });
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'delete',
+      entity: 'employee_deduction',
+      entityId: id,
+      oldValue: {
+        deductionType: existing.deductionType,
+        amount: String(existing.amount),
+        employeeId: existing.employeeId,
+        transactionDate: existing.transactionDate.toISOString(),
+      },
+    });
+
+    return { deleted: true, id };
   }
 }

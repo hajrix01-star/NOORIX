@@ -11,9 +11,11 @@ type AdvanceDetailsModalProps = {
   onClose: () => void;
   t: TranslationFn;
   settlementMap: BadgeStatusMap;
+  onAddDeduction: (group: AdvanceGroupRow) => void;
   onEditAdvance: (row: AdvanceRow) => void;
   onSettleAdvance: (row: AdvanceRow) => void;
   onDeleteAdvance: (row: AdvanceRow) => void;
+  onDeleteDeduction: (row: AdvanceRow) => void;
 };
 
 const isDeductionRow = (row: AdvanceRow) => row.recordType === 'deduction';
@@ -124,9 +126,11 @@ export function AdvanceDetailsModal({
   onClose,
   t,
   settlementMap,
+  onAddDeduction,
   onEditAdvance,
   onSettleAdvance,
   onDeleteAdvance,
+  onDeleteDeduction,
 }: AdvanceDetailsModalProps) {
   const rows = group?.advances ?? [];
   const deductionAmount = group?.manualDeductionAmount ?? 0;
@@ -221,7 +225,7 @@ export function AdvanceDetailsModal({
       align: 'center',
       render: (_: unknown, row: AdvanceLedgerRow) => (
         row.source === 'cut' ? (
-          <span className="text-[12px] font-bold text-noorix-muted">-</span>
+          <Button size="sm" className="h-7 px-2" variant="danger" onClick={() => onDeleteDeduction(row.original)}>{t('delete')}</Button>
         ) : (
           <div className="flex flex-wrap items-center justify-center gap-1">
             <Button size="sm" className="h-7 px-2" variant="ghost" onClick={() => onEditAdvance(row.original)}>{t('edit')}</Button>
@@ -240,7 +244,7 @@ export function AdvanceDetailsModal({
       open={!!group}
       onClose={onClose}
       title={group ? `${t('advanceLedgerTitle')} - ${group.employeeName}` : t('advanceLedgerTitle')}
-      size="2xl"
+      size="full"
       footer={(
         <DialogActions
           actions={[
@@ -251,6 +255,12 @@ export function AdvanceDetailsModal({
     >
       {group ? (
         <div className="grid gap-4">
+          <div className="flex justify-end">
+            <Button size="sm" variant="success" onClick={() => onAddDeduction(group)}>
+              {t('recordPayrollCut')}
+            </Button>
+          </div>
+
           <div className="grid gap-2.5 md:grid-cols-4">
             <DetailMetric label={t('advanceTotalAmount')} value={hrFmt(group.totalAmount)} />
             <DetailMetric label={t('advanceRepayment')} value={hrFmt(group.settledAmountNum)} tone="green" />
@@ -262,7 +272,7 @@ export function AdvanceDetailsModal({
             columns={ledgerColumns}
             data={ledgerRows}
             emptyMessage={t('noDataInPeriod')}
-            tableMinWidth={900}
+            tableMinWidth={1020}
             cellPadding="8px 10px"
             frameClassName="shadow-sm"
           />
