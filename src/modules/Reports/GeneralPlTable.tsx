@@ -256,7 +256,7 @@ export default function GeneralPlTable({
                           })
                         }
                       >
-                        <div className={cn('nx-pl-table__amount', isGroup || isSummary ? 'text-[13px]' : 'text-xs')}>
+                        <div className="nx-pl-table__amount">
                           {tableAmountText(value)}
                         </div>
                         <div className="nx-pl-table__percent">
@@ -273,7 +273,7 @@ export default function GeneralPlTable({
                       plAmountColorClass(row, rowTone, isSummary, row.total),
                     )}
                   >
-                    <div className={cn('nx-pl-table__amount', isGroup || isSummary ? 'text-sm' : 'text-[13px]')}>
+                    <div className="nx-pl-table__amount">
                       {tableAmountText(row.total)}
                     </div>
                     <div className="nx-pl-table__percent">

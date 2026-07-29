@@ -1941,7 +1941,7 @@ html[data-card-style="10"] .noorix-stat-card {
   --nx-pl-total-bg: color-mix(in srgb, var(--noorix-accent-blue) 4%, var(--noorix-bg-surface));
   --nx-pl-hover: color-mix(in srgb, var(--noorix-accent-blue) 5%, var(--noorix-bg-surface));
   color: var(--noorix-text);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .nx-pl-table--fit {
@@ -1954,7 +1954,7 @@ html[data-card-style="10"] .noorix-stat-card {
   border-bottom: 1px solid var(--nx-pl-line-strong);
   border-inline-start: 1px solid var(--nx-pl-line);
   background: var(--nx-pl-head-bg);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   line-height: 1.2;
   vertical-align: middle;
@@ -2002,7 +2002,7 @@ html[data-card-style="10"] .noorix-stat-card {
   padding-inline: 16px;
   background: var(--noorix-bg-surface);
   box-shadow: -1px 0 0 var(--nx-pl-line);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 [dir="ltr"] .nx-pl-table__cell--item {
@@ -2053,6 +2053,8 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 
 .nx-pl-table__amount {
+  font-size: 14px;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
   letter-spacing: 0;
@@ -2060,11 +2062,17 @@ html[data-card-style="10"] .noorix-stat-card {
 
 .nx-pl-table__percent {
   margin-top: 3px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   line-height: 1;
   opacity: 0.9;
   color: var(--noorix-muted);
+}
+
+.nx-pl-table__row--group .nx-pl-table__amount,
+.nx-pl-table__row--summary .nx-pl-table__amount {
+  font-size: 15px;
+  font-weight: 900;
 }
 
 .nx-pl-indent-0 { padding-inline-start: 0; }
@@ -2126,13 +2134,13 @@ html[data-card-style="10"] .noorix-stat-card {
   }
 
   .nx-pl-table {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .nx-pl-table__th {
     height: 40px;
     padding: 8px 6px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .nx-pl-table__th--item,
@@ -2146,11 +2154,11 @@ html[data-card-style="10"] .noorix-stat-card {
   }
 
   .nx-pl-table__amount {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .nx-pl-table__percent {
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 
