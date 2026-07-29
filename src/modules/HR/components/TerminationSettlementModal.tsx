@@ -1,8 +1,7 @@
 /**
- * بعد إنهاء الخدمة — ملخص راتب متناسب مع الشهر، طباعة، رفع مستند، وإصدار فاتورة راتب مربوطة بآخر يوم دوام.
+ * بعد إنهاء الخدمة - ملخص راتب متناسب مع الشهر، طباعة، رفع مستند، وإصدار فاتورة راتب مرتبطة بآخر يوم دوام.
  */
 import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -13,11 +12,13 @@ import {
   createInvoice,
   createMovement,
   getEmployeeCompensationSnapshot,
-  getInvoices,
-  throwIfApiFailed,
+  getInvoices,
+
+  throwIfApiFailed,
+
   uploadDocumentFile,
 } from '../../../services/api';
-import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
+import { toYmd } from '../../../utils/saudiDate';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { getAdvanceTotals } from '../utils/advanceBalance';
 import {
@@ -26,11 +27,14 @@ import {
 } from '../utils/hrCalculations/termination';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
-import { Button, DateField, DialogActions, FileTrigger, Modal, FmtNum, Input, usePrintPreview } from '../../../ui';
+import { DialogActions, Modal, usePrintPreview } from '../../../ui';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
+import {
+  TerminationSettlementModalContent,
+  type TerminationSettlementVault,
+} from './TerminationSettlementModalContent';
 
 type HrAny = ReturnType<typeof JSON.parse>;
 import {
@@ -44,7 +48,7 @@ import {
 export default function TerminationSettlementModal({
   open,
   onClose,
-  /** موظف بحقول الراتب + notes تتضمن ميتا إنهاء الخدمة + status terminated */
+  /** موظف بحقوق الراتب وملاحظات تتضمن بيانات إنهاء الخدمة وحالة terminated */
   employee,
   companyId,
   companyName = '',
@@ -235,7 +239,7 @@ export default function TerminationSettlementModal({
       const nameAr = employeeDisplayName(employee, 'ar', '');
       const lw = lastWorkYmd || terminationYmd;
       const baseNotes =
-        `راتب إنهاء خدمة — ${nameAr} — آخر يوم دوام ${lw} — شهر ${toYmd(monthFirst).slice(0, 7)} ` +
+        `راتب إنهاء خدمة - ${nameAr} - آخر يوم دوام ${lw} - شهر ${toYmd(monthFirst).slice(0, 7)} ` +
         `(متناسب تقديري ${hrFmt(preview.grossProrated)}، سلف معلقة ${hrFmt(advancesRemaining)})`;
       const tag = termSalaryTag;
       let bodyNotes = baseNotes.trim();
@@ -275,7 +279,7 @@ export default function TerminationSettlementModal({
               movementType: 'other',
               amount: amt,
               effectiveDate: `${txDay}T12:00:00.000Z`,
-              notes: `صرف راتب إنهاء خدمة — ${invoiceNumber} — آخر يوم دوام ${lw}`.slice(0, 2000),
+              notes: `صرف راتب إنهاء خدمة - ${invoiceNumber} - آخر يوم دوام ${lw}`.slice(0, 2000),
             });
             throwIfApiFailed(movRes, t('saveFailed'));
             movementOk = true;
@@ -291,14 +295,14 @@ export default function TerminationSettlementModal({
       setIssuedInvoice({ invoiceNumber, invoiceId });
       const baseMsg = `${t('terminationSettlementInvoiceCreated')}: ${invoiceNumber}`;
       if (movementErrMsg) {
-        showToast(`${baseMsg} — ${movementErrMsg}`, 'error');
+        showToast(`${baseMsg} - ${movementErrMsg}`, 'error');
       } else if (movementSkippedDuplicate) {
-        showToast(`${baseMsg} — ${t('terminationSettlementReplayNoNewMovement')}`, 'success');
+        showToast(`${baseMsg} - ${t('terminationSettlementReplayNoNewMovement')}`, 'success');
       } else if (movementOk) {
-        showToast(`${baseMsg} — ${t('terminationSettlementMovementRecorded')}`, 'success');
+        showToast(`${baseMsg} - ${t('terminationSettlementMovementRecorded')}`, 'success');
       } else {
         showToast(
-          canCreateMovement ? baseMsg : `${baseMsg} — ${t('terminationSettlementMovementSkipped')}`,
+          canCreateMovement ? baseMsg : `${baseMsg} - ${t('terminationSettlementMovementSkipped')}`,
           'success',
         );
       }
@@ -313,6 +317,7 @@ export default function TerminationSettlementModal({
   if (!open || !employee) return null;
 
   const meta = parseEmployeeNotesMeta(employee.notes).meta || {};
+  const terminationReason = meta.terminationReason == null ? '' : String(meta.terminationReason);
   const invoiceListHref =
     issuedInvoice?.invoiceNumber != null
       ? `/invoices?kind=salary&q=${encodeURIComponent(String(issuedInvoice.invoiceNumber))}`
@@ -339,147 +344,40 @@ export default function TerminationSettlementModal({
     >
       {printPreviewModal}
       <p className="m-0 mb-3 text-[13px] text-noorix-muted">{t('terminationSettlementSubtitle')}</p>
-      {compensationSnapshotLoading ? (
-        <p className="m-0 text-[13px] text-noorix-muted">{t('loading')}</p>
-      ) : compensationSnapshotError || !compensationSnapshot ? (
-        <p className="m-0 text-[13px] text-noorix-red">
-          {compensationSnapshotError instanceof Error ? compensationSnapshotError.message : t('loadingError')}
-        </p>
-      ) : !hasMonthlyPackageTotal ? (
-        <p className="m-0 text-[13px] text-noorix-red">{t('loadingError')}</p>
-      ) : !monthFirst || !preview ? (
-        <p className="m-0 text-[13px] text-noorix-red">{t('terminationSettlementMissingDate')}</p>
-      ) : (
-        <div className="space-y-3 text-[13px]">
-          <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 p-3 space-y-2">
-            <div className="flex justify-between gap-2">
-              <span className="text-noorix-muted">{t('employeeName')}</span>
-              <span className="font-semibold">{employeeDisplayName(employee, lang)}</span>
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-noorix-muted">{t('terminationDate')}</span>
-              <span>{formatSaudiDate(terminationYmd)}</span>
-            </div>
-            {meta.terminationReason ? (
-              <div className="flex justify-between gap-2">
-                <span className="text-noorix-muted">{t('terminationReason')}</span>
-                <span className="text-end">{meta.terminationReason}</span>
-              </div>
-            ) : null}
-            <div className="flex justify-between gap-2">
-              <span className="text-noorix-muted">{t('payrollMonth')}</span>
-              <span>{formatSaudiDate(monthFirst)}</span>
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-noorix-muted">{t('terminationSettlementEffectiveEnd')}</span>
-              <span className="font-medium nx-font-numbers">{lastWorkYmd ? formatSaudiDate(lastWorkYmd) : '—'}</span>
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-noorix-muted">{t('terminationSettlementMonthlyTotal')}</span>
-              <FmtNum n={preview.fullMonthly} className="font-semibold nx-font-numbers" />
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-noorix-muted">{t('terminationSettlementEmployedDays')}</span>
-              <span className="nx-font-numbers">{preview.pr.employedDays} / {preview.pr.daysInMonth}</span>
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-noorix-muted">{t('terminationSettlementProratedGross')}</span>
-              <FmtNum n={preview.grossProrated} className="font-bold text-noorix-blue nx-font-numbers" />
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-noorix-muted">{t('terminationSettlementAdvancesOutstanding')}</span>
-              <FmtNum n={advancesRemaining} className="nx-font-numbers" />
-            </div>
-            <div className="flex justify-between gap-2 border-t border-noorix-border pt-2 mt-1">
-              <span className="font-semibold">{t('terminationSettlementSuggestedNet')}</span>
-              <FmtNum n={preview.netSuggested} className="font-black text-noorix-green nx-font-numbers" />
-            </div>
-          </div>
-
-          {canIssueInvoice && preview.netSuggested >= 0.01 ? (
-            <div className="rounded-lg border border-noorix-border p-3 space-y-3">
-              <p className="m-0 font-semibold text-[13px]">{t('terminationSettlementIssueSection')}</p>
-              {hasTerminationSalaryThisMonth ? (
-                <p className="m-0 text-[12px] text-noorix-red leading-snug">{t('terminationSettlementDuplicateMonth')}</p>
-              ) : null}
-              <Input
-                type="select"
-                label={t('terminationSettlementSelectVault')}
-                value={vaultId}
-                onChange={(e: HrAny) => setVaultId(e.target.value)}
-              >
-                <option value="">—</option>
-                {paymentVaults.map((v: HrAny) => (
-                  <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
-                ))}
-              </Input>
-              <DateField
-                label={t('terminationSettlementTransactionDate')}
-                value={toYmd(txDateStr)}
-                onValueChange={setTxDateStr}
-              />
-              <Input
-                type="number"
-                step="0.01"
-                min="0.01"
-                label={t('terminationSettlementPayoutAmount')}
-                value={payoutAmountStr}
-                onChange={(e: HrAny) => setPayoutAmountStr(e.target.value)}
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="primary"
-                disabled={
-                  issuing ||
-                  !vaultId ||
-                  hasTerminationSalaryThisMonth ||
-                  checkingTerminationSalaryInvoice
-                }
-                onClick={handleIssueInvoice}
-              >
-                {issuing ? '…' : t('terminationSettlementIssueInvoice')}
-              </Button>
-              {issuedInvoice?.invoiceNumber ? (
-                <div className="flex flex-col gap-1.5 pt-1 border-t border-noorix-border">
-                  <Link
-                    to={invoiceListHref}
-                    className="text-[12px] text-noorix-blue underline nx-font-numbers"
-                  >
-                    {t('terminationSettlementOpenInvoiceList')} ({issuedInvoice.invoiceNumber})
-                  </Link>
-                  <Link
-                    to={`/hr/employee/${empId}`}
-                    className="text-[12px] text-noorix-blue underline"
-                  >
-                    {t('terminationSettlementOpenEmployeeFile')}
-                  </Link>
-                </div>
-              ) : null}
-            </div>
-          ) : canIssueInvoice && preview.netSuggested < 0.01 ? (
-            <p className="m-0 text-[12px] text-noorix-muted">{t('terminationSettlementZeroPayout')}</p>
-          ) : (
-            <p className="m-0 text-[12px] text-noorix-muted">{t('terminationSettlementNeedInvoicePermission')}</p>
-          )}
-
-          <p className="m-0 text-[11px] text-noorix-muted leading-snug">{t('terminationSettlementDisclaimer')}</p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Button type="button" size="sm" onClick={handlePrint}>{t('terminationSettlementPrint')}</Button>
-            <Button type="button" size="sm" variant="default" disabled={uploading} onClick={() => fileRef.current?.click()}>
-              {uploading ? '…' : t('terminationSettlementUploadDoc')}
-            </Button>
-            <FileTrigger
-              ref={fileRef}
-              accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
-              onChange={handleFile}
-              label=""
-              buttonProps={{ className: 'hidden', 'aria-hidden': true, tabIndex: -1 }}
-            />
-          </div>
-          <p className="m-0 text-[11px] text-noorix-muted">{t('terminationSettlementUploadHint')}</p>
-        </div>
-      )}
+      <TerminationSettlementModalContent
+        t={t}
+        lang={lang}
+        employee={employee}
+        empId={empId}
+        terminationYmd={terminationYmd}
+        terminationReason={terminationReason}
+        monthFirst={monthFirst || ''}
+        lastWorkYmd={lastWorkYmd}
+        preview={preview}
+        advancesRemaining={advancesRemaining}
+        compensationSnapshotLoading={compensationSnapshotLoading}
+        compensationSnapshotError={compensationSnapshotError}
+        hasCompensationSnapshot={!!compensationSnapshot}
+        hasMonthlyPackageTotal={hasMonthlyPackageTotal}
+        canIssueInvoice={canIssueInvoice}
+        hasTerminationSalaryThisMonth={hasTerminationSalaryThisMonth}
+        checkingTerminationSalaryInvoice={checkingTerminationSalaryInvoice}
+        paymentVaults={paymentVaults as TerminationSettlementVault[]}
+        vaultId={vaultId}
+        payoutAmountStr={payoutAmountStr}
+        txDateStr={txDateStr}
+        issuing={issuing}
+        uploading={uploading}
+        issuedInvoice={issuedInvoice}
+        invoiceListHref={invoiceListHref}
+        fileRef={fileRef}
+        onVaultIdChange={setVaultId}
+        onTxDateChange={setTxDateStr}
+        onPayoutAmountChange={setPayoutAmountStr}
+        onIssueInvoice={handleIssueInvoice}
+        onPrint={handlePrint}
+        onFileChange={handleFile}
+      />
     </Modal>
   );
 }
