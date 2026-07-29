@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
   importSnapshotArr as arr,
@@ -16,10 +15,12 @@ export async function importBackupLogicalInvoicesAndAssets(
     supplierMap: Map<string, string>;
     vaultMap: Map<string, string>;
     expenseLineMap: Map<string, string>;
+    employeeMap: Map<string, string>;
+    dailySalesSummaryMap: Map<string, string>;
   },
 ): Promise<{ invoiceMap: Map<string, string> }> {
-  const { tenantId, newCompanyId, data, importingUserId, nid } = p;
-  const { categoryMap, supplierMap, vaultMap, expenseLineMap } = maps;
+  const { tenantId, newCompanyId, data, nid } = p;
+  const { categoryMap, supplierMap, vaultMap, expenseLineMap, employeeMap, dailySalesSummaryMap } = maps;
   const invoiceMap = new Map<string, string>();
   for (const inv of arr<Record<string, unknown>>(data.invoices)) {
     const id = nid();
@@ -143,6 +144,7 @@ export async function importBackupLogicalInvoicesAndAssets(
         updatedAt: ddate(row.updatedAt),
       },
     });
+  }
 
   return { invoiceMap };
 }

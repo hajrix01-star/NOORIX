@@ -17,10 +17,10 @@
       "decision": "leave",
       "reason": "P&L row and sticky backgrounds are runtime hierarchy tones in a protected financial matrix."
     },
-    "src/modules/Reports/ReportsDetailModal.tsx": {
+    "src/modules/Reports/ReportsDetailTrendPanel.tsx": {
       "category": "chart-payload-style",
       "decision": "leave",
-      "reason": "report detail chart cell styling is derived from selected chart payload data."
+      "reason": "Recharts LabelList text styling is applied through the chart label style API."
     },
     "src/modules/Reports/bank/BankCategoryCardRow.tsx": {
       "category": "bank-category-color",

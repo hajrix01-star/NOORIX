@@ -329,3 +329,7 @@ export function buildDashboardTimelineDailyRows(
       purchases: 0,
       expenses: 0,
       customers: current.customers,
+      avgInvoice: current.customers > 0 ? current.sales / current.customers : 0,
+    };
+  });
+}

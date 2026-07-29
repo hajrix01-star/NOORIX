@@ -9,6 +9,8 @@ const failures = [];
 const allowedOfficialNumberFiles = new Map([
   ['src/hooks/useBatchCalculation.ts', 'central purchase batch draft summary hook'],
   ['src/modules/Expenses/expenseModels.ts', 'expense draft/display model'],
+  ['src/modules/Expenses/expenseBatchModels.ts', 'expense batch draft/display model'],
+  ['src/modules/Expenses/expenseExportModels.ts', 'expense export display model'],
   ['src/modules/Invoices/invoiceEditModel.ts', 'invoice edit draft model'],
   ['src/modules/Purchases/components/BatchEditInvoiceLine.tsx', 'purchase edit draft row preview'],
   ['src/modules/Purchases/components/BatchEditPanel.tsx', 'purchase edit drawer active-row display total'],

@@ -178,6 +178,7 @@ export function buildMoneyOverviewAnswer(
   merged: CombinedInsightWarning[],
   year: number,
   selectedMonth: number,
+  noAlertMessages: { noAlertAr: string; noAlertEn: string },
 ): { answerAr: string; answerEn: string } {
   const payload = extended.dashboardInsights;
   const periodAr = formatInsightsPeriodLabelAr(year, selectedMonth);

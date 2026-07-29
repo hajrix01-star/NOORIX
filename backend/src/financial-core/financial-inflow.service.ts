@@ -227,7 +227,7 @@ export class FinancialInflowService {
         summaryId: summary.id,
         summaryNumber,
         totalAmount,
-        customerCount: dto.customerCount,
+        customerCount: dto.customerCount ?? 0,
         shift,
         activeChannels,
       });

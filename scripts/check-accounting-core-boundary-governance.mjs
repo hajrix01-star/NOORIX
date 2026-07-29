@@ -8,6 +8,7 @@ const failures = [];
 
 const allowedMutationFiles = new Map([
   ['backend/src/financial-core/financial-inflow.service.ts', 'official sales inflow source of truth'],
+  ['backend/src/financial-core/financial-inflow-invoice.util.ts', 'official sales inflow invoice/allocation writer'],
   ['backend/src/financial-core/financial-inflow-ledger.util.ts', 'official sales ledger writer'],
   ['backend/src/financial-core/financial-outflow.service.ts', 'official outflow ledger rebuild/sync writer'],
   ['backend/src/financial-core/financial-outflow-persist.util.ts', 'official outflow invoice/ledger/allocation writer'],
@@ -22,6 +23,7 @@ const allowedMutationFiles = new Map([
   ['backend/src/company-assets/company-assets.service.ts', 'asset completion marks warranty follow-up metadata only'],
 
   ['backend/src/backup/backup-logical-import-transaction.util.ts', 'protected logical backup restore/import exception'],
+  ['backend/src/backup/backup-logical-import-invoices-assets.util.ts', 'protected logical backup restore invoice/assets exception'],
 ]);
 
 const requiredPackageScript =

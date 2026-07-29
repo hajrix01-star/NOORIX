@@ -23,7 +23,7 @@ export async function runBackupLogicalImportInTransaction(
   let allocationWarnings: string[] = [];
   const { accountMap, categoryMap, supplierMap, vaultMap, expenseLineMap, employeeMap } =
     await importBackupLogicalCoreEntities(tx, p);
-  const { dailySalesSummaryMap, orderCategoryMap, orderProductMap, orderMap, bscatMap, bankStatementMap } =
+  const { dailySalesSummaryMap } =
     await importBackupLogicalOperationalRecords(tx, p, { categoryMap, supplierMap, vaultMap });
 
   const { invoiceMap } = await importBackupLogicalInvoicesAndAssets(tx, p, {
@@ -31,8 +31,9 @@ export async function runBackupLogicalImportInTransaction(
     supplierMap,
     vaultMap,
     expenseLineMap,
+    employeeMap,
+    dailySalesSummaryMap,
   });
-        }
 
         // استثناء مقصود: استيراد لقطة منطقية — إعادة قيود من النسخة الاحتياطية (لا يمر بـ processOutflow/processInflow).
         for (const le of arr<Record<string, unknown>>(data.ledgerEntries)) {

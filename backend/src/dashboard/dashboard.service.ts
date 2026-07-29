@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtUser } from '../auth/decorators/current-user.decorator';
 import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
-import { toYmd } from '../common/utils/to-ymd.util';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ReportsService } from '../reports/reports.service';
 import { SalesService } from '../sales/sales.service';
@@ -14,14 +13,8 @@ import {
   buildDashboardTimelineMonthlyRows,
   buildKpiCards,
   percentChangeNullable,
-  type DashboardDailyMetricRow,
   type DashboardProfitLossReport,
 } from './dashboard-overview-model.util';
-
-      avgInvoice: current.customers > 0 ? current.sales / current.customers : 0,
-    };
-  });
-}
 
 @Injectable()
 export class DashboardService {
