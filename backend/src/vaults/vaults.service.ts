@@ -1,8 +1,4 @@
-/**
- * VaultsService — إدارة الخزائن
- * ✅ findAll: استعلام groupBy واحد بدلاً من N+1
- *    قبل: 10 خزائن = 21 استعلام | بعد: 10 خزائن = 3 استعلامات ثابتة
- */
+
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -23,11 +19,7 @@ export class VaultsService {
     private readonly financialCore: FinancialCoreService,
   ) {}
 
-  /**
-   * جلب جميع الخزائن مع الداخل/الخارج/الرصيد.
-   * ✅ بدلاً من N+1: استعلامان groupBy يجلبان أرصدة جميع الخزائن دفعة واحدة.
-   * عند تمرير startDate/endDate يتم الفلترة على الفترة المحددة.
-   */
+
   async findAll(
     companyId: string,
     includeArchived = false,
@@ -48,7 +40,7 @@ export class VaultsService {
     // ── 2. جمع accountIds لجميع الخزائن ─────────────────────
     const accountIds = vaults.map((v) => v.accountId);
 
-    /** مطابقة `buildInvoiceTransactionDateFilter`: يوم كامل UTC وليس `Date('YYYY-MM-DD')` كحد علوي (= منتصف ليل بداية اليوم فقط). */
+
     const dateFilter =
       startDate || endDate
         ? {
@@ -83,10 +75,7 @@ export class VaultsService {
     return attachVaultLedgerBalances(vaults, debitMap, creditMap);
   }
 
-  /**
-   * تحويل نقد بين خزينتين — قيد محاسبي واحد (transfer) عبر FinancialCoreService.
-   * لا يُنشئ فاتورة ولا يؤثر على P&L.
-   */
+
   async transfer(dto: VaultTransferBody, userId?: string) {
     const payload: TransferDto = {
       companyId:       dto.companyId,
@@ -130,10 +119,7 @@ export class VaultsService {
     return vaults;
   }
 
-  /**
-   * أرصدة الخزائن حتى نهاية يوم محدد (شامل) — مجموع القيود الفعّالة حتى 23:59:59 UTC لذلك اليوم.
-   * يُستخدم في تقرير نهاية اليوم لعرض «الرصيد في نهاية اليوم» وليس الرصيد اللحظي الحالي.
-   */
+
   async getBalancesAsOf(companyId: string, endDate: string, includeArchived = false) {
     const d = toYmd(endDate);
     const end = new Date(`${d}T23:59:59.999Z`);
@@ -170,9 +156,7 @@ export class VaultsService {
     return attachVaultLedgerBalances(vaults, debitMap, creditMap);
   }
 
-  /**
-   * جلب خزنة واحدة مع حركاتها المفلترة بالتاريخ.
-   */
+
   findOneWithTransactions(
     id: string,
     companyId: string,
@@ -184,9 +168,7 @@ export class VaultsService {
     return queryVaultWithTransactions(this.prisma, id, companyId, startDate, endDate, page, pageSize);
   }
 
-  /**
-   * إنشاء خزنة + حساب أصول مرتبط تلقائياً (للقيد المزدوج) — في transaction واحدة.
-   */
+
   async create(dto: CreateVaultDto, userId?: string) {
     const tenantId = TenantContext.getTenantId();
     const normalizedPaymentMethod = dto.showAsPaymentMethod === false ? null : (dto.paymentMethod ?? null);
@@ -254,9 +236,7 @@ export class VaultsService {
     });
   }
 
-  /**
-   * تعديل خزنة.
-   */
+
   async update(id: string, companyId: string, data: {
     nameAr?:         string;
     nameEn?:         string | null;
@@ -309,9 +289,7 @@ export class VaultsService {
     return updated;
   }
 
-  /**
-   * ترتيب الخزائن النشطة غير المؤرشفة — يُحدّث sortOrder بحيث يطابق ترتيب المعرفات المرسلة.
-   */
+
   async reorder(companyId: string, vaultIds: string[]) {
     const existing = await this.prisma.vault.findMany({
       where: { companyId, isActive: true, isArchived: false },
@@ -340,9 +318,7 @@ export class VaultsService {
     return { success: true };
   }
 
-  /**
-   * أرشفة/استعادة خزنة (تبديل isArchived).
-   */
+
   async archive(id: string, companyId: string, userId?: string) {
     const tenantId = TenantContext.tryGetTenantId() ?? '';
     const vault    = await this.prisma.vault.findFirst({ where: { id, companyId } });
@@ -370,14 +346,8 @@ export class VaultsService {
     return updated;
   }
 
-  /**
-   * حذف: يتحقق من عدم وجود قيود مرتبطة.
-   * إن وُجدت قيود → يُوجَّه للأرشفة بدلاً من الحذف (حماية سلامة البيانات).
-   */
-  /**
-   * إغلاق ناعم — لا حذف فيزيائي.
-   * إذا كانت هناك حركات مالية → مرفوض (يجب الأرشفة بدلاً منه).
-   */
+
+
   async remove(id: string, companyId: string, userId?: string) {
     const tenantId = TenantContext.tryGetTenantId() ?? '';
     const vault    = await this.prisma.vault.findFirst({ where: { id, companyId } });
