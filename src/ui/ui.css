@@ -888,6 +888,82 @@
 /* nx-screen, nx-page-header, nx-toolbar, nx-filter-controls,
    nx-tab-bar, nx-tab-btn, nx-tab-btn--active ? src/index.css */
 
+/* Connected Tabs — شريط تبويب مركزي للموارد البشرية ومعرض التجارب */
+.nx-connected-tabs-head {
+  padding: 8px;
+  background: var(--noorix-bg-surface);
+}
+
+.nx-connected-tab-strip {
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  padding: 6px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 14px;
+  background: var(--noorix-bg-surface);
+  box-shadow: 0 10px 26px rgba(65, 52, 31, 0.07);
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .nx-connected-tab-strip--scroll {
+    mask-image: linear-gradient(
+      to left,
+      transparent 0,
+      #000 10px,
+      #000 calc(100% - 10px),
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to left,
+      transparent 0,
+      #000 10px,
+      #000 calc(100% - 10px),
+      transparent 100%
+    );
+  }
+}
+
+.nx-connected-tab-btn {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--noorix-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  box-shadow: none;
+  transition:
+    background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nx-connected-tab-btn--compact {
+  min-height: 30px;
+  padding-inline: 10px;
+  font-size: 12px;
+}
+
+.nx-connected-tab-btn--idle:hover {
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text);
+}
+
+.nx-connected-tab-btn--active,
+.nx-connected-tab-btn--active:hover {
+  background: var(--noorix-accent-green);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(20, 112, 68, 0.14);
+}
+
+.nx-connected-tab-content-swap {
+  animation: fadeSlideDown 0.22s cubic-bezier(0.34, 1.1, 0.64, 1) both;
+}
+
 /* ??? حالات فارغة وأخطاء ??? */
 .nx-empty-state { padding: 20px; text-align: center; color: var(--noorix-text-muted); font-size: 14px; }
 
