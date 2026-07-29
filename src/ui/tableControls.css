@@ -1,0 +1,141 @@
+/* SmartTable column visibility and resize controls. */
+.nx-col-vis-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 8px;
+  background: var(--noorix-surface);
+  color: var(--noorix-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  position: relative;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.nx-col-vis-btn:hover,
+.nx-col-vis-btn--active {
+  border-color: var(--noorix-accent-blue);
+  color: var(--noorix-accent-blue);
+  background: var(--noorix-blue-4, #eff6ff);
+}
+
+.nx-col-vis-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--noorix-accent-blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.nx-col-vis-panel {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 6px);
+  z-index: var(--nx-z-menu, 2500);
+  min-width: 180px;
+  max-width: min(240px, calc(100vw - 24px));
+  max-height: min(70vh, 420px);
+  overflow: hidden auto;
+  background: var(--noorix-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(10, 31, 68, 0.12), 0 2px 6px rgba(10, 31, 68, 0.06);
+  animation: nx-fade-in 0.12s ease;
+}
+
+.nx-col-vis-panel--viewport {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  top: var(--nx-col-vis-panel-top, auto);
+  left: var(--nx-col-vis-panel-left, auto);
+}
+
+.nx-col-vis-panel--measuring {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@keyframes nx-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.nx-col-vis-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid var(--noorix-border);
+  color: var(--noorix-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.nx-col-vis-reset {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--noorix-accent-blue);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.nx-col-vis-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  color: var(--noorix-text);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s;
+  user-select: none;
+}
+
+.nx-col-vis-item:hover { background: var(--noorix-bg-muted); }
+
+.nx-col-vis-item input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--noorix-accent-blue);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nx-col-vis-item span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nx-col-resize-handle {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 2;
+  width: 6px;
+  border-inline-end: 2px solid transparent;
+  cursor: col-resize;
+  touch-action: none;
+  transition: border-color 0.15s;
+}
+
+.nx-col-resize-handle:hover { border-inline-end-color: var(--noorix-accent-blue); }

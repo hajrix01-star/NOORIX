@@ -1113,7 +1113,6 @@
 .nx-actions-menu-item { display: flex; width: 100%; padding: 8px 12px; font-size: 13px; font-weight: 500; background: transparent; border-radius: 4px; white-space: nowrap; min-height: unset; justify-content: flex-start; }
 
 .nx-smart-frame-vars { padding: var(--nx-smart-frame-padding, 0); }
-.nx-col-vis-panel--viewport { top: var(--nx-col-vis-panel-top, auto); left: var(--nx-col-vis-panel-left, auto); }
 .nx-smart-table-vars { table-layout: var(--nx-smart-table-layout, auto); min-width: var(--nx-smart-table-min-width, 0); max-width: var(--nx-smart-table-max-width, none); }
 .nx-smart-row-vars { background: var(--nx-smart-row-bg, inherit); }
 .nx-smart-row-number-cell {

@@ -5,7 +5,8 @@
     "2026-07-10: Raised src/index.css limits for unified print preview, HR document preview/PDF alignment, invoice day-close filters, and report workspace presentation work included in PR #248.",
     "2026-07-10: Rebased PR #248 on main and documented the final central filter/table CSS footprint after the staging deploy conflict resolution.",
     "2026-07-15: Raised only the src/index.css report-scope limits for the new general report period-filter layout and adaptive comparison table styles introduced on codex/fix-profit-loss-sales-category-noise.",
-    "2026-07-27: Raised shell CSS footprint for centralized ScreenShell data/report/form workspace width governance."
+    "2026-07-27: Raised shell CSS footprint for centralized ScreenShell data/report/form workspace width governance.",
+    "2026-07-29: Added a bounded src/ui/tableControls.css module for SmartTable column controls moved out of src/index.css."
   ],
   "files": {
     "src/index.css": {
@@ -25,6 +26,15 @@
       "maxCssVariableDefinitions": 12,
       "maxCssVariableReferences": 341,
       "maxColorMix": 1
+    },
+    "src/ui/tableControls.css": {
+      "maxLines": 145,
+      "maxMediaQueries": 0,
+      "maxImportant": 0,
+      "maxKeyframes": 1,
+      "maxCssVariableDefinitions": 0,
+      "maxCssVariableReferences": 22,
+      "maxColorMix": 0
     },
     "src/modules/SmartChat/SmartChatScreen.css": {
       "maxLines": 945,
@@ -87,6 +97,12 @@
       "dashboard": {
         "pattern": "(dashboard|calendar|kpi|stat-card|summary-bar)",
         "maxMatches": 24
+      }
+    },
+    "src/ui/tableControls.css": {
+      "tableControls": {
+        "pattern": "(nx-col-vis|nx-col-resize)",
+        "maxMatches": 22
       }
     }
   }
