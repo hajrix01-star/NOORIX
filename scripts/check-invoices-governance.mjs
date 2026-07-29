@@ -113,16 +113,25 @@ if (fs.existsSync(filtersToolbarPath)) {
 const listScreenHookPath = path.join(invoicesRoot, 'useInvoicesListScreen.ts');
 if (fs.existsSync(listScreenHookPath)) {
   const listScreenSource = fs.readFileSync(listScreenHookPath, 'utf8');
-  if (!listScreenSource.includes('./invoicesListQueryModel')) {
+  const listQueryStateHookPath = path.join(invoicesRoot, 'useInvoicesListQueryState.ts');
+  const listQueryStateSource = fs.existsSync(listQueryStateHookPath)
+    ? fs.readFileSync(listQueryStateHookPath, 'utf8')
+    : '';
+  const listImportExportHookPath = path.join(invoicesRoot, 'useInvoicesListImportExportHandlers.ts');
+  const listImportExportSource = fs.existsSync(listImportExportHookPath)
+    ? fs.readFileSync(listImportExportHookPath, 'utf8')
+    : '';
+  const listHookSources = `${listScreenSource}\n${listQueryStateSource}\n${listImportExportSource}`;
+  if (!listHookSources.includes('./invoicesListQueryModel')) {
     report(listScreenHookPath, 'invoice list hook must normalize API filters through invoicesListQueryModel.');
   }
-  if (!listScreenSource.includes('./invoicesListUrlModel')) {
+  if (!listHookSources.includes('./invoicesListUrlModel')) {
     report(listScreenHookPath, 'invoice list hook must read drilldown URL state through invoicesListUrlModel.');
   }
-  if (!listScreenSource.includes('./invoicesListImportExportModel')) {
+  if (!listHookSources.includes('./invoicesListImportExportModel')) {
     report(listScreenHookPath, 'invoice list hook must delegate ImportExport fetching to invoicesListImportExportModel.');
   }
-  if (/searchParams\.get\(/.test(listScreenSource)) {
+  if (/searchParams\.get\(/.test(listHookSources)) {
     report(listScreenHookPath, 'invoice list hook must not parse URL params inline; use invoicesListUrlModel.');
   }
   if (/getInvoices\(/.test(listScreenSource) || /unwrapApiList\b/.test(listScreenSource)) {
