@@ -3,13 +3,13 @@
  */
 import type { ChangeEvent } from 'react';
 import { fmt } from '../../utils/format';
-import { formatUiDateTime } from '../../utils/saudiDate';
-import { Button, Checkbox, DialogActions, FileTrigger, InlineSelect, Input, cn, Modal } from '../../ui';
+import { Button, Checkbox, FileTrigger, InlineSelect, Input, cn } from '../../ui';
 import Card from '../../ui/Card';
 import { type CostAppsCommissionBase } from './costAccountingAppsModel';
 import { Field, SectionHeading } from './costAccountingApps/CostAccountingAppsUiParts';
 import { lastDayOfMonth, newLine, parseMoneyInput, ymdParts } from './costAccountingApps/costAccountingAppsScreenUtils';
 import { CostAppsActionsBar, CostAppsKpiCards, CostAppsPlSummaryTable } from './costAccountingApps/CostAccountingAppsResultPanels';
+import { CostAccountingAppsSavedSlotsPanel } from './costAccountingApps/CostAccountingAppsSavedSlotsPanel';
 import { useCostAccountingAppsScreen } from './costAccountingApps/useCostAccountingAppsScreen';
 
 export default function CostAccountingAppsScreen() {
@@ -500,67 +500,17 @@ export default function CostAccountingAppsScreen() {
         </div>
       </Card>
 
-      <Card
-        key={`cost-apps-saved-slots-${activeCompanyId}`}
-        variant="surface"
-        padding="none"
-        className="noorix-print-hidden overflow-hidden border border-noorix-border shadow-sm print:hidden"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
-          <div className="min-w-0">
-            <h2 className="m-0 text-[15px] font-bold">{t('reportCostAppsSavedSlotsTitle')}</h2>
-          </div>
-          <Button type="button" variant="secondary" size="sm" onClick={handleSaveCalculatorSlot}>
-            {t('reportCostAppsSaveSlotBtn')}
-          </Button>
-        </div>
-        <div className="overflow-x-auto p-3 sm:p-4">
-          {savedSlots.length === 0 ? (
-            <p className="m-0 px-2 py-8 text-center text-[13px] text-noorix-muted">{t('reportCostAppsSavedSlotsEmpty')}</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {savedSlots.map((slot) => (
-                <div
-                  key={slot.id}
-                  className="flex flex-col gap-3 rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-                >
-                  <div className="min-w-0 flex-1 text-center sm:text-start">
-                    <p className="m-0 truncate text-sm font-bold text-noorix-text" title={slot.label}>
-                      {slot.label}
-                    </p>
-                    <p className="m-0 mt-1 text-center text-[12px] text-noorix-muted sm:text-start">
-                      {formatUiDateTime(slot.savedAt, lang, 'detailed')}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 flex-row flex-wrap items-center justify-center gap-2 sm:justify-end">
-                    <Button type="button" variant="ghost" size="sm" className="min-h-9 min-w-[4.5rem] whitespace-nowrap px-3" onClick={() => setPreviewSlot(slot)}>
-                      {t('reportCostAppsSavedView')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="min-h-9 min-w-[5.5rem] whitespace-nowrap px-3"
-                      onClick={() => handleImportSavedSlot(slot)}
-                    >
-                      {t('reportCostAppsSavedImport')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-9 min-w-[4.5rem] whitespace-nowrap px-3 text-noorix-red hover:bg-noorix-red/10"
-                      onClick={() => handleDeleteSavedSlot(slot.id)}
-                    >
-                      {t('reportCostAppsSavedDelete')}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </Card>
+      <CostAccountingAppsSavedSlotsPanel
+        t={t}
+        lang={lang}
+        activeCompanyId={activeCompanyId}
+        savedSlots={savedSlots}
+        previewSlot={previewSlot}
+        onPreviewSlot={setPreviewSlot}
+        onSaveSlot={handleSaveCalculatorSlot}
+        onImportSlot={handleImportSavedSlot}
+        onDeleteSlot={handleDeleteSavedSlot}
+      />
 
         </div>
 
@@ -590,42 +540,6 @@ export default function CostAccountingAppsScreen() {
           />
         </div>
       </div>
-
-      <Modal
-        open={!!previewSlot}
-        onClose={() => setPreviewSlot(null)}
-        title={previewSlot?.label ?? ''}
-        size="xl"
-        footer={
-          previewSlot ? (
-            <DialogActions
-              actions={[
-                {
-                  key: 'import-saved-slot',
-                  label: t('reportCostAppsSavedImport'),
-                  role: 'primary',
-                  onClick: () => handleImportSavedSlot(previewSlot),
-                },
-              ]}
-            />
-          ) : undefined
-        }
-      >
-        {previewSlot ? (
-          <pre
-            className="m-0 max-w-full overflow-x-auto font-mono text-[12px] leading-relaxed text-noorix-text whitespace-pre-wrap break-words"
-            dir="ltr"
-          >
-            {(() => {
-              try {
-                return JSON.stringify(JSON.parse(previewSlot.scenarioJson), null, 2);
-              } catch {
-                return previewSlot.scenarioJson;
-              }
-            })()}
-          </pre>
-        ) : null}
-      </Modal>
 
       <style>{`
         @media print {
