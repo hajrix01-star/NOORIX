@@ -6,12 +6,10 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { createInvoice, getExpenseLines, throwIfApiFailed, uploadInvoiceAttachment } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { expenseKeys } from '../../../services/queryKeys';
-import { fmt } from '../../../utils/format';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
-import { Button, AdaptiveSheet, Checkbox, DialogActions, TransactionDatePicker, FileTrigger, Input, SearchableOptionsPicker } from '../../../ui';
+import { AdaptiveSheet, Checkbox, DialogActions, TransactionDatePicker, Input, SearchableOptionsPicker } from '../../../ui';
 import {
-  canExemptThisExpensePayment,
   isExpenseSupplierInvoiceNumberRequired,
   isExpensePaymentTaxable,
   supplierAppliesVat,
@@ -29,6 +27,13 @@ import {
   validateExpensePaymentForm,
   type ExpensePaymentFormState,
 } from '../expenseModels';
+import {
+  ExpenseAttachmentField,
+  ExpenseCoverageSection,
+  ExpenseTaxGuidance,
+  ExpenseTaxPreview,
+  ExpenseVaultSection,
+} from './ExpenseFormSections';
 
 type ExpenseFormModalProps = {
   companyId: string;
@@ -62,7 +67,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
   const [error, setError] = useState('');
   const [exemptThisPayment, setExemptThisPayment] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const receiptInputRef = useRef<HTMLInputElement | null>(null);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
   const lastPrefilledLineIdRef = useRef<string | null>(null);
 
   const { data: expenseLines = [] } = useApiListQuery<ExpenseLineRecord>({
@@ -216,20 +221,13 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
           placeholder={t('supplierInvoiceNumber')}
         />
 
-        {selectedLine && taxStatusKind === 'account_exempt' ? <p className="m-0 text-[12px] text-noorix-muted">{t('expenseTaxAccountExemptHint')}</p> : null}
-        {selectedLine && taxStatusKind === 'supplier_not_registered' ? <p className="m-0 text-[12px] text-noorix-muted">{t('expenseTaxSupplierNotRegisteredHint')}</p> : null}
-        {selectedLine && taxStatusKind === 'default_taxable' ? <p className="m-0 text-[12px] text-noorix-muted">{t('expenseTaxDefaultFromSupplierHint')}</p> : null}
-
-        {selectedLine && canExemptThisExpensePayment(selectedLine) ? (
-          <label className="flex items-start gap-2.5 min-h-[44px] cursor-pointer rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2.5">
-            <Checkbox
-              checked={exemptThisPayment}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setExemptThisPayment(event.target.checked)}
-              className="mt-0.5 h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
-            />
-            <span className="text-[13px] font-semibold text-noorix-text leading-snug">{t('expenseTaxExemptThisPayment')}</span>
-          </label>
-        ) : null}
+        <ExpenseTaxGuidance
+          selectedLine={selectedLine}
+          taxStatusKind={taxStatusKind}
+          exemptThisPayment={exemptThisPayment}
+          setExemptThisPayment={setExemptThisPayment}
+          t={t}
+        />
 
         <Input
           type="number"
@@ -243,74 +241,21 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
           disabled={amountLocked}
           className="ltr"
         />
-        {hasTaxPreview ? (
-          <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2.5 text-[12px] leading-relaxed text-noorix-text">
-            <div className="mb-1 font-semibold text-noorix-muted">{t('expenseTaxBreakdownTitle')}</div>
-            {isTaxable ? (
-              <div className="flex flex-wrap gap-x-4 gap-y-1 nx-font-numbers">
-                <span>{t('expenseTaxBreakdownNet')}: {fmt(taxPreview.net)} <span className="nx-sar text-[11px]">SR</span></span>
-                <span>{t('expenseTaxBreakdownVat')}: {fmt(taxPreview.tax)} <span className="nx-sar text-[11px]">SR</span></span>
-              </div>
-            ) : (
-              <span>{t('expenseTaxBreakdownNoVat')}</span>
-            )}
-          </div>
-        ) : null}
+        <ExpenseTaxPreview hasTaxPreview={hasTaxPreview} isTaxable={isTaxable} taxPreview={taxPreview} t={t} />
         {selectedLine?.referenceAmount != null && selectedLine.allowPaymentAmountOverride !== false && !amountLocked ? (
           <p className="text-[11px] text-noorix-muted -mt-2">{t('expensePaymentPrefilledFromLine')}</p>
         ) : null}
         {amountLocked ? <p className="text-[11px] text-noorix-muted -mt-2">{t('expensePaymentAmountLocked')}</p> : null}
 
-        {selectedLine?.kind === 'fixed_expense' ? (
-          <div className="rounded-xl border border-noorix-border bg-noorix-surface p-3 flex flex-col gap-2">
-            <div className="text-[12px] font-semibold text-noorix-text">{t('expenseCoverageSection')}</div>
-            <p className="text-[11px] text-noorix-muted m-0">{t('expenseCoverageHint')}</p>
-            <Input
-              type="number"
-              label={t('expenseCoverageYear')}
-              min={2000}
-              max={2100}
-              step={1}
-              value={form.expenseCoverageYear}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('expenseCoverageYear', Number(event.target.value))}
-              className="ltr"
-              required
-            />
-            <SearchableOptionsPicker
-              label={t('expenseCoverageModeLabel')}
-              value={form.coverageMode}
-              onChange={(value) => set('coverageMode', value === 'month_range' ? 'month_range' : 'quarter')}
-              options={coverageModeOptions}
-              aria-label={t('expenseCoverageModeLabel')}
-            />
-            {form.coverageMode === 'quarter' ? (
-              <SearchableOptionsPicker
-                label={t('expenseCoverageQuarter')}
-                value={String(form.expenseCoverageQuarter)}
-                onChange={(value) => set('expenseCoverageQuarter', Number(value))}
-                options={quarterOptions}
-                aria-label={t('expenseCoverageQuarter')}
-              />
-            ) : (
-              <>
-                <SearchableOptionsPicker
-                  label={t('expenseCoverageMonthStart')}
-                  value={String(form.expenseCoverageMonthStart)}
-                  onChange={(value) => set('expenseCoverageMonthStart', Number(value))}
-                  options={monthOptions}
-                  aria-label={t('expenseCoverageMonthStart')}
-                />
-                <SearchableOptionsPicker
-                  label={t('expenseCoverageMonthsCount')}
-                  value={String(form.expenseMonthsCovered)}
-                  onChange={(value) => set('expenseMonthsCovered', Number(value))}
-                  options={monthOptions}
-                  aria-label={t('expenseCoverageMonthsCount')}
-                />
-              </>
-            )}
-          </div>
-        ) : null}
+        <ExpenseCoverageSection
+          selectedLine={selectedLine}
+          form={form}
+          set={set}
+          coverageModeOptions={coverageModeOptions}
+          quarterOptions={quarterOptions}
+          monthOptions={monthOptions}
+          t={t}
+        />
 
         <TransactionDatePicker
           label={`${t('date')} *`}
@@ -319,62 +264,18 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
           required
         />
 
-        <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted p-3 flex flex-col gap-2">
-          <div className="text-[12px] font-semibold text-noorix-text">{t('invoiceVaultColumn')} *</div>
-          <SearchableOptionsPicker
-            label={t('selectVault')}
-            allowEmpty
-            emptyValue=""
-            emptyLabel={t('selectVault')}
-            value={form.primaryVaultId}
-            onChange={(value) => set('primaryVaultId', value)}
-            options={vaultPickerOptions}
-            aria-label={t('selectVault')}
-          />
-
-          {!secondVaultEnabled ? (
-            <Button type="button" size="sm" variant="ghost" className="self-start" onClick={() => setSecondVaultEnabled(true)}>
-              {t('addSecondVaultBtn')}
-            </Button>
-          ) : (
-            <>
-              <div className="text-[11px] text-noorix-muted">{t('secondVaultHint')}</div>
-              <SearchableOptionsPicker
-                label={t('secondVaultSelectLabel')}
-                allowEmpty
-                emptyValue=""
-                emptyLabel={t('selectVault')}
-                value={secondVaultId}
-                onChange={setSecondVaultId}
-                options={vaultPickerOptions}
-                getOptionDisabled={(option) => option.value === form.primaryVaultId}
-                aria-label={t('secondVaultSelectLabel')}
-              />
-              <Input
-                type="number"
-                step="0.01"
-                min="0.01"
-                label={t('secondVaultAmountLabel')}
-                value={secondAmount}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSecondAmount(event.target.value)}
-                className="ltr"
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="self-start"
-                onClick={() => {
-                  setSecondVaultEnabled(false);
-                  setSecondVaultId('');
-                  setSecondAmount('');
-                }}
-              >
-                {t('removeSecondVaultBtn')}
-              </Button>
-            </>
-          )}
-        </div>
+        <ExpenseVaultSection
+          form={form}
+          set={set}
+          secondVaultEnabled={secondVaultEnabled}
+          setSecondVaultEnabled={setSecondVaultEnabled}
+          secondVaultId={secondVaultId}
+          setSecondVaultId={setSecondVaultId}
+          secondAmount={secondAmount}
+          setSecondAmount={setSecondAmount}
+          vaultPickerOptions={vaultPickerOptions}
+          t={t}
+        />
 
         <Input
           multiline
@@ -385,18 +286,12 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
           rows={3}
         />
 
-        <div className="rounded-xl border border-noorix-border bg-noorix-surface px-3 py-2.5 flex flex-col gap-2">
-          <div className="text-[12px] font-semibold text-noorix-text">{t('invoiceReceiptAttachment')}</div>
-          <p className="text-[11px] text-noorix-muted m-0">{t('invoiceReceiptAttachmentHint')}</p>
-          <FileTrigger
-            ref={receiptInputRef}
-            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setReceiptFile(event.target.files?.[0] || null)}
-            label={receiptFile ? receiptFile.name : t('invoiceReceiptChooseFile')}
-            buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-full truncate' }}
-          />
-          {receiptFile ? <span className="text-[11px] text-noorix-muted truncate" title={receiptFile.name}>{receiptFile.name}</span> : null}
-        </div>
+        <ExpenseAttachmentField
+          receiptInputRef={receiptInputRef}
+          receiptFile={receiptFile}
+          setReceiptFile={setReceiptFile}
+          t={t}
+        />
 
         <label className="flex items-start gap-2.5 min-h-[44px] cursor-pointer rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2.5">
           <Checkbox
