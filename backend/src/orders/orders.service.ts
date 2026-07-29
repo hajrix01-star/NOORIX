@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+﻿import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
@@ -7,19 +7,16 @@ import { mapDtoItemsToOrderLines, orderLinesToLastPriceInputs } from './orders-l
 import { orderGregorianDateToNumberPrefix, buildOrderNumberFromPrefix } from './orders-order-number.util';
 import { aggregateOrdersMonthSummary, aggregateOrdersRangeSummaryGroups } from './orders-month-summary.util';
 import { aggregateOrderItemsByProductForReport } from './orders-items-report-aggregate.util';
-import {
-  enrichProductWithSectionIds,
-  normalizeProductSections,
-  parseStringArrayJson,
-  idsToNames,
-} from './orders-product-sections.util';
+import { OrdersCatalogService } from './orders-catalog.service';
 
 type OrderItemInput = { productId: string; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
-type OrderProductWithSections = { sections?: unknown; sectionIds?: unknown };
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly catalog: OrdersCatalogService,
+  ) {}
 
   async updateProductLastPrices(items: OrderItemInput[]) {
     for (const it of items) {
@@ -70,7 +67,7 @@ export class OrdersService {
         },
       },
     });
-    if (!order) throw new NotFoundException('الطلب غير موجود');
+    if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
     return order;
   }
 
@@ -82,7 +79,7 @@ export class OrdersService {
     items: { productId: string; size?: string; packaging?: string; unit?: string; quantity: string; unitPrice: string }[];
   }) {
     const tenantId = TenantContext.getTenantId();
-    if (!dto.items?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
+    if (!dto.items?.length) throw new BadRequestException('ÙŠØ¬Ø¨ Ø¥Ø¯Ø®Ø§Ù„ ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„');
 
     const items = mapDtoItemsToOrderLines(dto.items);
     const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
@@ -134,7 +131,7 @@ export class OrdersService {
     items?: { productId: string; size?: string; packaging?: string; unit?: string; quantity: string; unitPrice: string }[];
   }) {
     const existing = await this.prisma.order.findFirst({ where: { id, companyId, status: 'active' } });
-    if (!existing) throw new NotFoundException('الطلب غير موجود');
+    if (!existing) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
 
     if (dto.items?.length) {
       await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
@@ -180,7 +177,7 @@ export class OrdersService {
 
   async cancel(id: string, companyId: string) {
     const o = await this.prisma.order.findFirst({ where: { id, companyId } });
-    if (!o) throw new NotFoundException('الطلب غير موجود');
+    if (!o) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
     await this.prisma.order.update({ where: { id }, data: { status: 'cancelled' } });
     return { success: true };
   }
@@ -282,100 +279,16 @@ export class OrdersService {
     }));
   }
 
-  private async loadSectionList(companyId: string) {
-    return this.prisma.orderSection.findMany({
-      where: { companyId },
-      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
-    });
-  }
-
-  private async enrichProductsList<T extends OrderProductWithSections>(companyId: string, products: T[]) {
-    const sectionList = await this.loadSectionList(companyId);
-    return products.map((p) => enrichProductWithSectionIds(p, sectionList));
-  }
-
-  // ── Order Products ─────────────────────────────────────────────
   async getProducts(companyId: string, section?: string, productType?: string) {
-    const all = await this.prisma.orderProduct.findMany({
-      where: {
-        companyId,
-        isActive: true,
-        ...(productType ? { productType } : {}),
-      },
-      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
-      include: { category: true },
-    });
-    const enriched = await this.enrichProductsList(companyId, all);
-    if (!section) return enriched;
-    return enriched.filter((p) => {
-      const secs = parseStringArrayJson(p.sections);
-      return secs.length > 0 && secs.includes(section);
-    });
+    return this.catalog.getProducts(companyId, section, productType);
   }
 
-  async createProductsBatch(companyId: string, products: { nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }> }[]) {
-    const tenantId = TenantContext.getTenantId();
-    const sectionList = await this.loadSectionList(companyId);
-    const data: Prisma.OrderProductCreateManyInput[] = [];
-    for (const dto of products) {
-      if (!dto.nameAr?.trim()) continue;
-      const variantsData = dto.variants?.length
-        ? dto.variants.map((v) => ({ size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', lastPrice: v.lastPrice || '0' }))
-        : null;
-      const sec = normalizeProductSections(sectionList, {
-        sections: dto.sections,
-        sectionIds: dto.sectionIds,
-      });
-      data.push({
-        tenantId,
-        companyId,
-        nameAr: dto.nameAr.trim(),
-        nameEn: dto.nameEn?.trim() || null,
-        unit: dto.unit || 'piece',
-        sizes: dto.sizes?.trim() || null,
-        packaging: dto.packaging?.trim() || null,
-        categoryId: dto.categoryId || null,
-        productType: dto.productType === 'sale' ? 'sale' : 'order',
-        sections: sec.sections?.length ? sec.sections : Prisma.DbNull,
-        sectionIds: sec.sectionIds?.length ? sec.sectionIds : Prisma.DbNull,
-        lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
-        variants: variantsData === null ? Prisma.DbNull : (variantsData as Prisma.InputJsonValue),
-      } as Prisma.OrderProductCreateManyInput);
-    }
-    if (data.length === 0) return [];
-    const inserted = await this.prisma.orderProduct.createManyAndReturn({
-      data,
-    });
-    const withCategory = await this.prisma.orderProduct.findMany({
-      where: { id: { in: inserted.map((r) => r.id) } },
-      include: { category: true },
-    });
-    const byId = new Map(withCategory.map((r) => [r.id, r]));
-    return this.enrichProductsList(
-      companyId,
-      inserted.map((r) => {
-        const row = byId.get(r.id);
-        if (!row) throw new Error('orderProduct batch: missing row after insert');
-        return row;
-      }),
-    );
+  async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }> }>) {
+    return this.catalog.createProductsBatch(companyId, products);
   }
 
-  async createCategoriesBatch(companyId: string, categories: { nameAr: string; nameEn?: string; sortOrder?: number }[]) {
-    const tenantId = TenantContext.getTenantId();
-    const data: Prisma.OrderCategoryCreateManyInput[] = [];
-    for (const dto of categories) {
-      if (!dto.nameAr?.trim()) continue;
-      data.push({
-        tenantId,
-        companyId,
-        nameAr: dto.nameAr.trim(),
-        nameEn: dto.nameEn?.trim() || null,
-        sortOrder: dto.sortOrder ?? 0,
-      });
-    }
-    if (data.length === 0) return [];
-    return this.prisma.orderCategory.createManyAndReturn({ data });
+  async createCategoriesBatch(companyId: string, categories: Array<{ nameAr: string; nameEn?: string; sortOrder?: number }>) {
+    return this.catalog.createCategoriesBatch(companyId, categories);
   }
 
   async createProduct(companyId: string, dto: {
@@ -391,32 +304,7 @@ export class OrdersService {
     productType?: string;
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }>;
   }) {
-    const tenantId = TenantContext.getTenantId();
-    if (!dto.nameAr?.trim()) throw new BadRequestException('اسم الصنف بالعربية مطلوب');
-    const sectionList = await this.loadSectionList(companyId);
-    const sec = normalizeProductSections(sectionList, { sections: dto.sections, sectionIds: dto.sectionIds });
-    const variantsData = dto.variants?.length
-      ? dto.variants.map((v) => ({ size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', lastPrice: v.lastPrice || '0' }))
-      : null;
-    const created = await this.prisma.orderProduct.create({
-      data: {
-        tenantId,
-        companyId,
-        nameAr: dto.nameAr.trim(),
-        nameEn: dto.nameEn?.trim() || null,
-        unit: dto.unit || 'piece',
-        sizes: dto.sizes?.trim() || null,
-        packaging: dto.packaging?.trim() || null,
-        categoryId: dto.categoryId || null,
-        lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
-        sections: sec.sections?.length ? sec.sections : Prisma.DbNull,
-        sectionIds: sec.sectionIds?.length ? sec.sectionIds : Prisma.DbNull,
-        productType: dto.productType || 'order',
-        variants: variantsData === null ? Prisma.DbNull : variantsData as Prisma.InputJsonValue,
-      },
-      include: { category: true },
-    });
-    return enrichProductWithSectionIds(created, sectionList);
+    return this.catalog.createProduct(companyId, dto);
   }
 
   async updateProduct(id: string, companyId: string, dto: {
@@ -433,166 +321,39 @@ export class OrdersService {
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }>;
     isActive?: boolean;
   }) {
-    const p = await this.prisma.orderProduct.findFirst({ where: { id, companyId } });
-    if (!p) throw new NotFoundException('الصنف غير موجود');
-    const sectionList = await this.loadSectionList(companyId);
-    const secNorm = dto.sections !== undefined || dto.sectionIds !== undefined
-      ? normalizeProductSections(sectionList, { sections: dto.sections ?? undefined, sectionIds: dto.sectionIds ?? undefined })
-      : null;
-    const variantsData = dto.variants !== undefined
-      ? (dto.variants?.length
-        ? dto.variants.map((v) => ({ size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', lastPrice: v.lastPrice || '0' }))
-        : null)
-      : undefined;
-    const updated = await this.prisma.orderProduct.update({
-      where: { id },
-      data: {
-        ...(dto.nameAr !== undefined ? { nameAr: dto.nameAr.trim() } : {}),
-        ...(dto.nameEn !== undefined ? { nameEn: dto.nameEn?.trim() || null } : {}),
-        ...(dto.unit !== undefined ? { unit: dto.unit } : {}),
-        ...(dto.sizes !== undefined ? { sizes: dto.sizes?.trim() || null } : {}),
-        ...(dto.packaging !== undefined ? { packaging: dto.packaging?.trim() || null } : {}),
-        ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId || null } : {}),
-        ...(dto.lastPrice !== undefined ? { lastPrice: new Prisma.Decimal(dto.lastPrice) } : {}),
-        ...(secNorm
-          ? {
-              sections: secNorm.sections?.length ? secNorm.sections : Prisma.DbNull,
-              sectionIds: secNorm.sectionIds?.length ? secNorm.sectionIds : Prisma.DbNull,
-            }
-          : {}),
-        ...(dto.productType !== undefined ? { productType: dto.productType } : {}),
-        ...(variantsData !== undefined ? { variants: variantsData as object } : {}),
-        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
-      },
-      include: { category: true },
-    });
-    return enrichProductWithSectionIds(updated, sectionList);
+    return this.catalog.updateProduct(id, companyId, dto);
   }
 
-  // ── Order Categories ────────────────────────────────────────────
   async getCategories(companyId: string) {
-    return this.prisma.orderCategory.findMany({
-      where: { companyId, isActive: true },
-      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
-    });
+    return this.catalog.getCategories(companyId);
   }
 
   async createCategory(companyId: string, dto: { nameAr: string; nameEn?: string; sortOrder?: number }) {
-    const tenantId = TenantContext.getTenantId();
-    if (!dto.nameAr?.trim()) throw new BadRequestException('اسم الفئة بالعربية مطلوب');
-    return this.prisma.orderCategory.create({
-      data: {
-        tenantId,
-        companyId,
-        nameAr: dto.nameAr.trim(),
-        nameEn: dto.nameEn?.trim() || null,
-        sortOrder: dto.sortOrder ?? 0,
-      },
-    });
+    return this.catalog.createCategory(companyId, dto);
   }
 
-  // ── Order Sections ──────────────────────────────────────────────
   async getSections(companyId: string) {
-    return this.prisma.orderSection.findMany({
-      where: { companyId },
-      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
-    });
+    return this.catalog.getSections(companyId);
   }
 
   async createSection(companyId: string, dto: { nameAr: string; nameEn?: string; sortOrder?: number }) {
-    const tenantId = TenantContext.getTenantId();
-    if (!dto.nameAr?.trim()) throw new BadRequestException('اسم القسم بالعربية مطلوب');
-    return this.prisma.orderSection.create({
-      data: { tenantId, companyId, nameAr: dto.nameAr.trim(), nameEn: dto.nameEn?.trim() || null, sortOrder: dto.sortOrder ?? 0 },
-    });
+    return this.catalog.createSection(companyId, dto);
   }
 
   async updateSection(id: string, companyId: string, dto: { nameAr?: string; nameEn?: string | null; sortOrder?: number }) {
-    const sec = await this.prisma.orderSection.findFirst({ where: { id, companyId } });
-    if (!sec) throw new NotFoundException('القسم غير موجود');
-    const oldNameAr = sec.nameAr;
-    const updated = await this.prisma.orderSection.update({
-      where: { id },
-      data: {
-        ...(dto.nameAr !== undefined ? { nameAr: dto.nameAr.trim() } : {}),
-        ...(dto.nameEn !== undefined ? { nameEn: dto.nameEn?.trim() || null } : {}),
-        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
-      },
-    });
-    if (dto.nameAr !== undefined && dto.nameAr.trim() !== oldNameAr) {
-      const products = await this.prisma.orderProduct.findMany({ where: { companyId, isActive: true } });
-      await Promise.all(
-        products.map((p) => {
-          const ids = parseStringArrayJson(p.sectionIds);
-          if (!ids.includes(id)) return Promise.resolve();
-          const names = parseStringArrayJson(p.sections).map((n) => (n === oldNameAr ? updated.nameAr : n));
-          return this.prisma.orderProduct.update({
-            where: { id: p.id },
-            data: { sections: names.length > 0 ? names : Prisma.DbNull },
-          });
-        }),
-      );
-    }
-    return updated;
+    return this.catalog.updateSection(id, companyId, dto);
   }
 
   async deleteSection(id: string, companyId: string) {
-    const sec = await this.prisma.orderSection.findFirst({ where: { id, companyId } });
-    if (!sec) throw new NotFoundException('القسم غير موجود');
-    const products = await this.prisma.orderProduct.findMany({ where: { companyId, isActive: true } });
-    await Promise.all(
-      products.map((p) => {
-        const ids = parseStringArrayJson(p.sectionIds).filter((sid) => sid !== id);
-        const names = parseStringArrayJson(p.sections).filter((n) => n !== sec.nameAr);
-        const changed = ids.length !== parseStringArrayJson(p.sectionIds).length
-          || names.length !== parseStringArrayJson(p.sections).length;
-        if (!changed) return Promise.resolve();
-        return this.prisma.orderProduct.update({
-          where: { id: p.id },
-          data: {
-            sectionIds: ids.length > 0 ? ids : Prisma.DbNull,
-            sections: names.length > 0 ? names : Prisma.DbNull,
-          },
-        });
-      }),
-    );
-    await this.prisma.orderSection.delete({ where: { id } });
-    return { deleted: true };
+    return this.catalog.deleteSection(id, companyId);
   }
 
-  /** ربط مجموعة أصناف بقائمة أقسام (استبدال كامل أو إضافة) */
   async bulkSetProductSections(
     companyId: string,
     productIds: string[],
     opts: { sectionNames?: string[]; sectionIds?: string[]; mode?: 'replace' | 'add' },
   ) {
-    const mode = opts.mode ?? 'replace';
-    const sectionList = await this.loadSectionList(companyId);
-    const normalized = normalizeProductSections(sectionList, {
-      sections: opts.sectionNames,
-      sectionIds: opts.sectionIds,
-    });
-    const products = await this.prisma.orderProduct.findMany({ where: { id: { in: productIds }, companyId } });
-    await Promise.all(
-      products.map((p) => {
-        const existingIds = parseStringArrayJson(p.sectionIds);
-        const existingNames = parseStringArrayJson(p.sections);
-        const nextIds = mode === 'add'
-          ? [...new Set([...existingIds, ...(normalized.sectionIds ?? [])])]
-          : (normalized.sectionIds ?? []);
-        const nextNames = mode === 'add'
-          ? [...new Set([...existingNames, ...(normalized.sections ?? [])])]
-          : (normalized.sections ?? []);
-        return this.prisma.orderProduct.update({
-          where: { id: p.id },
-          data: {
-            sectionIds: nextIds.length > 0 ? nextIds : Prisma.DbNull,
-            sections: nextNames.length > 0 ? nextNames : Prisma.DbNull,
-          },
-        });
-      }),
-    );
-    return { updated: products.length };
+    return this.catalog.bulkSetProductSections(companyId, productIds, opts);
   }
 
   async updateCategory(id: string, companyId: string, dto: {
@@ -601,17 +362,6 @@ export class OrdersService {
     sortOrder?: number;
     isActive?: boolean;
   }) {
-    const c = await this.prisma.orderCategory.findFirst({ where: { id, companyId } });
-    if (!c) throw new NotFoundException('الفئة غير موجودة');
-    return this.prisma.orderCategory.update({
-      where: { id },
-      data: {
-        ...(dto.nameAr !== undefined ? { nameAr: dto.nameAr.trim() } : {}),
-        ...(dto.nameEn !== undefined ? { nameEn: dto.nameEn?.trim() || null } : {}),
-        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
-        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
-      },
-    });
+    return this.catalog.updateCategory(id, companyId, dto);
   }
-
 }
