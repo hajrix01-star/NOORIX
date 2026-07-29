@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 import {
-  useCreateShishaPurchaseMutation,
+  useCreateShishaPurchasesMutation,
   useCreateShishaStocktakeMutation,
   useInitializeShishaInventoryMutation,
   useShishaInventory,
 } from '../../../hooks/useOrders';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type {
-  CreateShishaPurchasePayload,
+  CreateShishaPurchaseBatchPayload,
   CreateShishaStocktakePayload,
   InitializeShishaInventoryPayload,
   ShishaInventoryDailyRow,
@@ -19,6 +19,26 @@ import type { SimpleTableColumn } from '../../../ui';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 
 type FormKind = 'opening' | 'purchase' | 'stocktake' | null;
+type PurchaseMaterial = CreateShishaPurchaseBatchPayload['items'][number]['materialType'];
+type PurchaseUnit = CreateShishaPurchaseBatchPayload['items'][number]['unit'];
+type PurchaseDraftRow = {
+  id: string;
+  materialType: PurchaseMaterial;
+  quantity: string;
+  unit: PurchaseUnit;
+  costInclVat: string;
+};
+
+let purchaseRowSequence = 0;
+const purchaseUnitFor = (materialType: PurchaseMaterial): PurchaseUnit =>
+  materialType === 'tobacco' ? 'kg' : materialType === 'charcoal' ? 'pack' : 'piece';
+const newPurchaseRow = (materialType: PurchaseMaterial = 'tobacco'): PurchaseDraftRow => ({
+  id: `purchase-row-${++purchaseRowSequence}`,
+  materialType,
+  quantity: '',
+  unit: purchaseUnitFor(materialType),
+  costInclVat: '',
+});
 const num = (value: number | string | null | undefined, digits = 3) =>
   Number(value ?? 0).toLocaleString('en-US', { maximumFractionDigits: digits });
 
@@ -35,7 +55,19 @@ function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
     consumedKg: sum.consumedKg + row.tobaccoConsumedKg,
     hoses: sum.hoses + row.hosesConsumed,
     purchasedKg: sum.purchasedKg + row.tobaccoPurchasedKg,
-  }), { operations: 0, newShisha: 0, changes: 0, heads: 0, consumedKg: 0, hoses: 0, purchasedKg: 0 }), [rows]);
+    charcoalPurchased: sum.charcoalPurchased + row.charcoalPurchasedBoxes,
+    charcoalConsumed: sum.charcoalConsumed + row.charcoalConsumedBoxes,
+  }), {
+    operations: 0,
+    newShisha: 0,
+    changes: 0,
+    heads: 0,
+    consumedKg: 0,
+    hoses: 0,
+    purchasedKg: 0,
+    charcoalPurchased: 0,
+    charcoalConsumed: 0,
+  }), [rows]);
   const columns = useMemo<SimpleTableColumn<ShishaInventoryDailyRow>[]>(() => [
     { key: 'date', label: 'التاريخ', minWidth: 110, render: (_v, row) => formatSaudiDate(row.date) },
     { key: 'operations', label: 'العمليات', numeric: true, render: (v) => num(v as number, 0) },
@@ -45,18 +77,24 @@ function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
     { key: 'tobaccoConsumedKg', label: 'المعسل المستهلك كجم', numeric: true, render: (v) => num(v as number) },
     { key: 'hosesConsumed', label: 'الليات المستهلكة', numeric: true, render: (v) => num(v as number, 0) },
     { key: 'tobaccoPurchasedKg', label: 'مشتريات المعسل كجم', numeric: true, cellClassName: 'text-emerald-600', render: (v) => num(v as number) },
+    { key: 'charcoalPurchasedBoxes', label: 'مشتريات الفحم علبة', numeric: true, cellClassName: 'text-emerald-600', render: (v) => num(v as number) },
+    { key: 'charcoalConsumedBoxes', label: 'الفحم المستهلك علبة', numeric: true, cellClassName: 'text-orange-600', render: (v) => num(v as number) },
     { key: 'openingTobaccoKg', label: 'مخزون أول اليوم كجم', numeric: true, render: (v) => num(v as number) },
     { key: 'closingTobaccoKg', label: 'مخزون آخر اليوم كجم', numeric: true, cellClassName: 'font-bold', render: (v) => num(v as number) },
     { key: 'closingTobaccoHeads', label: 'يكفي رؤوس', numeric: true, render: (v) => num(v as number, 0) },
     { key: 'closingHoses', label: 'الليات آخر اليوم', numeric: true, render: (v) => num(v as number, 0) },
+    { key: 'openingCharcoalBoxes', label: 'الفحم أول اليوم علبة', numeric: true, render: (v) => num(v as number) },
+    { key: 'closingCharcoalBoxes', label: 'الفحم آخر اليوم علبة', numeric: true, cellClassName: 'font-bold', render: (v) => num(v as number) },
   ], []);
   return <div className="space-y-2">
-    <SimpleTable columns={columns} data={rows} tableMinWidth={1180} emptyMessage="لا توجد بيانات في الفترة المحددة." stickyHeader />
+    <SimpleTable columns={columns} data={rows} tableMinWidth={1580} emptyMessage="لا توجد بيانات في الفترة المحددة." stickyHeader />
     <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-noorix-bg-muted px-4 py-3 text-[12px] font-bold">
       <span>المجموع:</span><span>العمليات {num(totals.operations, 0)}</span><span>الجديدة {num(totals.newShisha, 0)}</span>
       <span>التغيير {num(totals.changes, 0)}</span><span>الرؤوس {num(totals.heads, 0)}</span>
       <span>المعسل {num(totals.consumedKg)} كجم</span><span>الليات {num(totals.hoses, 0)}</span>
       <span>المشتريات {num(totals.purchasedKg)} كجم</span>
+      <span>الفحم المشترى {num(totals.charcoalPurchased)} علبة</span>
+      <span>الفحم المستهلك {num(totals.charcoalConsumed)} علبة</span>
     </div>
   </div>;
 }
@@ -66,7 +104,7 @@ function MovementTable({ rows }: { rows: ShishaInventoryMovement[] }) {
     { key: 'transactionDate', label: 'التاريخ', render: (v) => formatSaudiDate(String(v)) },
     { key: 'movementType', label: 'نوع العملية', render: (v) => v === 'opening' ? 'رصيد افتتاحي' : v === 'purchase' ? 'شراء' : 'تصحيح جرد' },
     { key: 'materialType', label: 'المادة', render: (v) => v === 'tobacco' ? 'معسل (جرام)' : v === 'hose' ? 'ليات (حبة)' : 'فحم (حبة)' },
-    { key: 'quantityBase', label: 'الكمية الأساسية', numeric: true, cellClassName: 'font-semibold', render: (v) => num(v as string) },
+    { key: 'quantityBase', label: 'الكمية', numeric: true, cellClassName: 'font-semibold', render: (v, row) => row.materialType === 'charcoal' ? `${num(Number(v) / 64)} علبة (${num(v as string, 0)} حبة)` : num(v as string) },
     { key: 'costInclVat', label: 'التكلفة', numeric: true, render: (v) => v == null ? '—' : `${num(v as string, 2)} ر.س` },
     { key: 'invoiceNumber', label: 'الفاتورة', render: (v) => String(v || '—') },
     { key: 'createdBy', label: 'بواسطة', render: (_v, row) => row.createdBy?.nameAr || row.createdBy?.nameEn || '—' },
@@ -90,17 +128,17 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
   const [openingDate, setOpeningDate] = useState(today);
   const [purchaseDate, setPurchaseDate] = useState(today);
   const [stocktakeDate, setStocktakeDate] = useState(today);
-  const [purchaseMaterial, setPurchaseMaterial] = useState<CreateShishaPurchasePayload['materialType']>('tobacco');
-  const [purchaseUnit, setPurchaseUnit] = useState<CreateShishaPurchasePayload['unit']>('kg');
+  const [purchaseRows, setPurchaseRows] = useState<PurchaseDraftRow[]>(() => [newPurchaseRow()]);
   useEffect(() => {
     if (form) return;
     setOpeningDate(today);
     setPurchaseDate(today);
     setStocktakeDate(today);
+    setPurchaseRows([newPurchaseRow()]);
   }, [form, today]);
   const { data, isLoading, error } = useShishaInventory(companyId, normalizedStartDate, normalizedEndDate);
   const initialize = useInitializeShishaInventoryMutation();
-  const purchase = useCreateShishaPurchaseMutation();
+  const purchase = useCreateShishaPurchasesMutation();
   const stocktake = useCreateShishaStocktakeMutation();
   const initialized = Boolean(data?.initialized);
   const current = data?.current;
@@ -117,12 +155,27 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
     };
     initialize.mutate(body, { onSuccess: () => setForm(null) });
   };
+  const updatePurchaseRow = (id: string, patch: Partial<PurchaseDraftRow>) => {
+    setPurchaseRows((rows) => rows.map((row) => row.id === id ? { ...row, ...patch } : row));
+  };
+  const changePurchaseMaterial = (id: string, materialType: PurchaseMaterial) => {
+    updatePurchaseRow(id, { materialType, unit: purchaseUnitFor(materialType) });
+  };
+  const removePurchaseRow = (id: string) => {
+    setPurchaseRows((rows) => rows.length === 1 ? rows : rows.filter((row) => row.id !== id));
+  };
   const submitPurchase = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const v = Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string>;
-    const body: CreateShishaPurchasePayload = {
-      companyId, transactionDate: purchaseDate, materialType: v.materialType as CreateShishaPurchasePayload['materialType'],
-      quantity: v.quantity, unit: v.unit as CreateShishaPurchasePayload['unit'], costInclVat: v.costInclVat || undefined,
+    const body: CreateShishaPurchaseBatchPayload = {
+      companyId,
+      transactionDate: purchaseDate,
+      items: purchaseRows.map((row) => ({
+        materialType: row.materialType,
+        quantity: row.quantity,
+        unit: row.unit,
+        costInclVat: row.costInclVat || undefined,
+      })),
       invoiceNumber: v.invoiceNumber || undefined, supplierName: v.supplierName || undefined, notes: v.notes || undefined,
     };
     purchase.mutate(body, { onSuccess: () => setForm(null) });
@@ -159,8 +212,8 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
           <MetricCard color="#2563eb" className="min-h-[132px]"><MetricCard.Header label="المعسل المتوفر" subLabel={`${num(current?.tobaccoGrams, 0)} جرام`} /><MetricCard.Value value={num(current?.tobaccoKg)} currency="كجم" /><MetricCard.Footer className="mt-auto border-t border-noorix-border py-2 text-[11px] text-noorix-muted"><span>المتوسط</span><span>{num(data?.settings?.headsPerKg, 0)} رأس/كجم</span></MetricCard.Footer></MetricCard>
           <MetricCard color="#7c3aed" className="min-h-[132px]"><MetricCard.Header label="الرؤوس المتاحة" subLabel="حسب كمية المعسل فقط" /><MetricCard.Value value={num(current?.tobaccoHeads, 0)} currency="رأس" /></MetricCard>
-          <MetricCard color="#0891b2" className="min-h-[132px]"><MetricCard.Header label="الليات المتوفرة" subLabel="لي واحد لكل رأس، ويشمل التغيير" /><MetricCard.Value value={num(current?.hoses, 0)} currency="لي" /></MetricCard>
-          <MetricCard color="#ea580c" className="min-h-[132px]"><MetricCard.Header label="الفحم المتوفر" subLabel={`${num(current?.charcoalPiecesTotal, 0)} حبة`} /><MetricCard.Value value={`${num(current?.charcoalCartons, 0)} كرتون`} /><MetricCard.Footer className="mt-auto border-t border-noorix-border py-2 text-[11px] text-noorix-muted"><span>{num(current?.charcoalPacks, 0)} باكت</span><span>{num(current?.charcoalPieces, 0)} حبة</span></MetricCard.Footer></MetricCard>
+          <MetricCard color="#0891b2" className="min-h-[132px]"><MetricCard.Header label="الليات المتوفرة" subLabel="لي واحد لكل شيشة جديدة فقط" /><MetricCard.Value value={num(current?.hoses, 0)} currency="لي" /></MetricCard>
+          <MetricCard color="#ea580c" className="min-h-[132px]"><MetricCard.Header label="الفحم المتوفر" subLabel={`${num(current?.charcoalPiecesTotal, 0)} حبة`} /><MetricCard.Value value={num(current?.charcoalBoxesTotal)} currency="علبة" /><MetricCard.Footer className="mt-auto border-t border-noorix-border py-2 text-[11px] text-noorix-muted"><span>64 حبة/علبة</span><span>علبة لكل 6 رؤوس</span></MetricCard.Footer></MetricCard>
           <MetricCard color="#16a34a" className="min-h-[132px]"><MetricCard.Header label="استهلاك الفترة" subLabel={`${num(data?.periodTotals?.changes, 0)} تغيير`} /><MetricCard.Value value={num(data?.periodTotals?.tobaccoHeadsConsumed, 0)} currency="رأس" /><MetricCard.Footer className="mt-auto border-t border-noorix-border py-2 text-[11px] text-noorix-muted"><span>معسل</span><span>{num(data?.periodTotals?.tobaccoConsumedKg)} كجم</span></MetricCard.Footer></MetricCard>
           <MetricCard color="#ca8a04" className="min-h-[132px]"><MetricCard.Header label="متوسط تكلفة المعسل" subLabel={current?.averageCostPerGram == null ? 'أدخل تكلفة المشتريات لحسابها' : `${num(current.averageCostPerGram, 4)} ر.س/جرام`} /><MetricCard.Value value={current?.averageCostPerHead == null ? '—' : num(current.averageCostPerHead, 2)} currency={current?.averageCostPerHead == null ? undefined : 'ر.س/رأس'} /></MetricCard>
         </div>
@@ -174,16 +227,31 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
 
       <AdaptiveSheet open={form === 'opening'} onClose={() => setForm(null)} title="تسجيل مخزون البداية" size="lg"><form onSubmit={submitOpening} className="space-y-4">
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800">هذه العملية تنفذ مرة واحدة ولا يمكن تعديلها لاحقاً. تأكد من الكميات قبل الحفظ.</div>
-        <FieldGrid><DateField label="تاريخ بداية التتبع" value={openingDate} onValueChange={setOpeningDate} max={today} required /><Input name="headsPerKg" type="number" label="متوسط الرؤوس لكل كيلو" defaultValue="39" min="1" step="0.01" required /><Input name="tobaccoQuantity" type="number" label="المعسل (كجم)" defaultValue="15" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات (حبة)" defaultValue="0" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم (كرتون)" defaultValue="0" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم (باكت)" defaultValue="0" min="0" step="1" required /><Input name="charcoalPieces" type="number" label="الفحم (حبة)" defaultValue="0" min="0" step="1" required /><Input name="tobaccoCostInclVat" type="number" label="تكلفة المعسل شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="hoseCostInclVat" type="number" label="تكلفة الليات شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="charcoalCostInclVat" type="number" label="تكلفة الفحم شاملة الضريبة (اختياري)" min="0" step="0.01" /></FieldGrid>
+        <FieldGrid><DateField label="تاريخ بداية التتبع" value={openingDate} onValueChange={setOpeningDate} max={today} required /><Input name="headsPerKg" type="number" label="متوسط الرؤوس لكل كيلو" defaultValue="39" min="1" step="0.01" required /><Input name="tobaccoQuantity" type="number" label="المعسل (كجم)" defaultValue="15" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات (حبة)" defaultValue="0" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم (كرتون)" defaultValue="0" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم (علبة)" defaultValue="0" min="0" step="0.25" required /><Input name="charcoalPieces" type="number" label="الفحم (حبة)" defaultValue="0" min="0" step="1" required /><Input name="tobaccoCostInclVat" type="number" label="تكلفة المعسل شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="hoseCostInclVat" type="number" label="تكلفة الليات شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="charcoalCostInclVat" type="number" label="تكلفة الفحم شاملة الضريبة (اختياري)" min="0" step="0.01" /></FieldGrid>
         <Input name="notes" label="ملاحظات" multiline rows={2} /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'اعتماد مخزون البداية', role: 'save', type: 'submit', loading: initialize.isPending }]} />
       </form></AdaptiveSheet>
-      <AdaptiveSheet open={form === 'purchase'} onClose={() => setForm(null)} title="تسجيل شراء للمخزون" size="lg"><form onSubmit={submitPurchase} className="space-y-4">
-        <FieldGrid><DateField label="تاريخ الشراء" value={purchaseDate} onValueChange={setPurchaseDate} max={today} required /><Input name="materialType" type="select" label="المادة" value={purchaseMaterial} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => { const material = event.target.value as CreateShishaPurchasePayload['materialType']; setPurchaseMaterial(material); const unit = material === 'tobacco' ? 'kg' : 'piece'; setPurchaseUnit(unit); }} required><option value="tobacco">معسل</option><option value="hose">ليات</option><option value="charcoal">فحم</option></Input><Input name="quantity" type="number" label="الكمية" min="0.001" step="0.001" required /><Input name="unit" type="select" label="الوحدة" value={purchaseUnit} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setPurchaseUnit(event.target.value as CreateShishaPurchasePayload['unit'])} required>{purchaseMaterial === 'tobacco' && <><option value="kg">كيلو</option><option value="g">جرام</option></>}{purchaseMaterial === 'hose' && <option value="piece">حبة</option>}{purchaseMaterial === 'charcoal' && <><option value="piece">حبة</option><option value="pack">باكت</option><option value="carton">كرتون</option></>}</Input><Input name="costInclVat" type="number" label="التكلفة شاملة الضريبة" min="0" step="0.01" /><Input name="invoiceNumber" label="رقم الفاتورة" /><Input name="supplierName" label="المورد" /></FieldGrid>
-        <Input name="notes" label="ملاحظات" multiline rows={2} /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'تسجيل الشراء', role: 'save', type: 'submit', loading: purchase.isPending }]} />
+      <AdaptiveSheet open={form === 'purchase'} onClose={() => setForm(null)} title="تسجيل فاتورة شراء للمخزون" size="lg"><form onSubmit={submitPurchase} className="space-y-4">
+        <FieldGrid><DateField label="تاريخ الشراء" value={purchaseDate} onValueChange={setPurchaseDate} max={today} required /><Input name="invoiceNumber" label="رقم الفاتورة" /><Input name="supplierName" label="المورد" /></FieldGrid>
+        <div className="space-y-3 rounded-xl border border-noorix-border p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div><div className="text-[13px] font-bold text-noorix-text">أصناف الفاتورة</div><div className="text-[11px] text-noorix-muted">يمكن إضافة المعسل والليات والفحم في فاتورة واحدة.</div></div>
+            <Button type="button" size="sm" onClick={() => setPurchaseRows((rows) => [...rows, newPurchaseRow()])}>إضافة صنف</Button>
+          </div>
+          {purchaseRows.map((row, index) => (
+            <div key={row.id} className="grid grid-cols-1 items-end gap-2 rounded-lg bg-noorix-bg-muted p-3 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1fr_auto]">
+              <Input type="select" label={`المادة ${index + 1}`} value={row.materialType} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => changePurchaseMaterial(row.id, event.target.value as PurchaseMaterial)} required><option value="tobacco">معسل</option><option value="hose">ليات</option><option value="charcoal">فحم</option></Input>
+              <Input type="number" label="الكمية" value={row.quantity} onChange={(event: React.ChangeEvent<HTMLInputElement>) => updatePurchaseRow(row.id, { quantity: event.target.value })} min="0.001" step={row.materialType === 'charcoal' ? '0.25' : '0.001'} required />
+              <Input type="select" label="الوحدة" value={row.unit} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => updatePurchaseRow(row.id, { unit: event.target.value as PurchaseUnit })} required>{row.materialType === 'tobacco' && <><option value="kg">كيلو</option><option value="g">جرام</option></>}{row.materialType === 'hose' && <option value="piece">حبة</option>}{row.materialType === 'charcoal' && <option value="pack">علبة (64 حبة)</option>}</Input>
+              <Input type="number" label="التكلفة شاملة الضريبة" value={row.costInclVat} onChange={(event: React.ChangeEvent<HTMLInputElement>) => updatePurchaseRow(row.id, { costInclVat: event.target.value })} min="0" step="0.01" />
+              <Button type="button" size="sm" variant="danger" disabled={purchaseRows.length === 1} onClick={() => removePurchaseRow(row.id)}>حذف</Button>
+            </div>
+          ))}
+        </div>
+        <Input name="notes" label="ملاحظات" multiline rows={2} /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'تسجيل الفاتورة', role: 'save', type: 'submit', loading: purchase.isPending }]} />
       </form></AdaptiveSheet>
       <AdaptiveSheet open={form === 'stocktake'} onClose={() => setForm(null)} title="الجرد واعتماد التصحيح" size="lg"><form onSubmit={submitStocktake} className="space-y-4">
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">أدخل الكميات الفعلية. سيحسب نوركس الفرق عن الرصيد الدفتري ويسجله كعملية تصحيح مستقلة غير قابلة للتعديل.</div>
-        <FieldGrid><DateField label="تاريخ الجرد" value={stocktakeDate} onValueChange={setStocktakeDate} max={today} required /><Input name="tobaccoQuantity" type="number" label="المعسل الفعلي (كجم)" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات الفعلية (حبة)" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم الفعلي (كرتون)" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم الفعلي (باكت)" min="0" step="1" required /><Input name="charcoalPieces" type="number" label="الفحم الفعلي (حبة)" min="0" step="1" required /></FieldGrid>
+        <FieldGrid><DateField label="تاريخ الجرد" value={stocktakeDate} onValueChange={setStocktakeDate} max={today} required /><Input name="tobaccoQuantity" type="number" label="المعسل الفعلي (كجم)" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات الفعلية (حبة)" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم الفعلي (كرتون)" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم الفعلي (علبة)" min="0" step="0.25" required /><Input name="charcoalPieces" type="number" label="الفحم الفعلي (حبة)" min="0" step="1" required /></FieldGrid>
         <Input name="notes" label="سبب أو ملاحظات الجرد" multiline rows={2} required /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'اعتماد الجرد والتصحيح', role: 'save', type: 'submit', loading: stocktake.isPending }]} />
       </form></AdaptiveSheet>
     </div>

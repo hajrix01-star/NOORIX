@@ -1,5 +1,6 @@
 import {
   createShishaInventoryPurchase,
+  createShishaInventoryPurchases,
   createShishaInventoryStocktake,
   getShishaInventorySummary,
   initializeShishaInventory,
@@ -7,6 +8,7 @@ import {
 import { orderKeys } from '../../services/queryKeys';
 import type {
   CreateShishaPurchasePayload,
+  CreateShishaPurchaseBatchPayload,
   CreateShishaStocktakePayload,
   InitializeShishaInventoryPayload,
   ShishaInventorySummary,
@@ -36,6 +38,14 @@ export function useCreateShishaPurchaseMutation() {
     mutationFn: (body: CreateShishaPurchasePayload) => createShishaInventoryPurchase(body),
     invalidateQueries: [orderKeys.shishaInventoryRoot()],
     successToast: 'تم تسجيل حركة الشراء بنجاح',
+  });
+}
+
+export function useCreateShishaPurchasesMutation() {
+  return useApiMutation({
+    mutationFn: (body: CreateShishaPurchaseBatchPayload) => createShishaInventoryPurchases(body),
+    invalidateQueries: [orderKeys.shishaInventoryRoot()],
+    successToast: 'تم تسجيل فاتورة الشراء بجميع أصنافها بنجاح',
   });
 }
 

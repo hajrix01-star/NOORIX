@@ -23,6 +23,7 @@ import type {
   UpdateOrderPayload,
   ShishaInventorySummary,
   InitializeShishaInventoryPayload,
+  CreateShishaPurchaseBatchPayload,
   CreateShishaPurchasePayload,
   CreateShishaStocktakePayload,
 } from '../../../types/api';
@@ -57,6 +58,16 @@ export async function createShishaInventoryPurchase(
   const { companyId, ...payload } = body;
   return apiPost(
     `/api/v1/orders/shisha-inventory/purchases?companyId=${encodeURIComponent(companyId)}`,
+    payload,
+  );
+}
+
+export async function createShishaInventoryPurchases(
+  body: CreateShishaPurchaseBatchPayload,
+): Promise<ApiParsedResult<{ count: number }>> {
+  const { companyId, ...payload } = body;
+  return apiPost(
+    `/api/v1/orders/shisha-inventory/purchases/batch?companyId=${encodeURIComponent(companyId)}`,
     payload,
   );
 }

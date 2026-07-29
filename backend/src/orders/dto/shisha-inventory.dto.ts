@@ -1,4 +1,14 @@
-import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsIn,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 
 const NON_NEGATIVE_DECIMAL = /^\d+(\.\d{1,6})?$/;
 const POSITIVE_DECIMAL = /^(?!0+(?:\.0+)?$)\d+(\.\d{1,6})?$/;
@@ -76,6 +86,50 @@ export class CreateShishaPurchaseDto {
   @IsString()
   @Matches(NON_NEGATIVE_DECIMAL)
   costInclVat?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  invoiceNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  supplierName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  notes?: string;
+}
+
+export class CreateShishaPurchaseBatchItemDto {
+  @IsIn(['tobacco', 'hose', 'charcoal'])
+  materialType: 'tobacco' | 'hose' | 'charcoal';
+
+  @IsString()
+  @Matches(POSITIVE_DECIMAL)
+  quantity: string;
+
+  @IsIn(['kg', 'g', 'piece', 'pack'])
+  unit: 'kg' | 'g' | 'piece' | 'pack';
+
+  @IsOptional()
+  @IsString()
+  @Matches(NON_NEGATIVE_DECIMAL)
+  costInclVat?: string;
+}
+
+export class CreateShishaPurchaseBatchDto {
+  @IsString()
+  @Matches(YMD)
+  transactionDate: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateShishaPurchaseBatchItemDto)
+  items: CreateShishaPurchaseBatchItemDto[];
 
   @IsOptional()
   @IsString()

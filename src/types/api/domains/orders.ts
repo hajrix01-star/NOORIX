@@ -321,6 +321,7 @@ export type OrderCatalogBatchCreateResult = {
 } | Array<OrderProduct | OrderCategory>;
 
 export type {
+  CreateShishaPurchaseBatchPayload,
   CreateShishaPurchasePayload,
   CreateShishaStocktakePayload,
   InitializeShishaInventoryPayload,

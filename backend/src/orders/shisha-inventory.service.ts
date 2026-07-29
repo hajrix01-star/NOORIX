@@ -4,6 +4,7 @@ import { TenantContext } from '../common/tenant-context';
 import { toYmd } from '../common/utils/to-ymd.util';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import {
+  CreateShishaPurchaseBatchDto,
   CreateShishaPurchaseDto,
   CreateShishaStocktakeDto,
   InitializeShishaInventoryDto,
@@ -17,6 +18,7 @@ import {
 } from './shisha-inventory-calculator.util';
 
 const ZERO = new Prisma.Decimal(0);
+const CHARCOAL_SHISHAS_PER_PACK = 6;
 
 function decimal(value: string | number | Prisma.Decimal): Prisma.Decimal {
   return new Prisma.Decimal(value);
@@ -39,6 +41,33 @@ function charcoalPieces(
     .times(piecesPerPack)
     .plus(decimal(packs).times(piecesPerPack))
     .plus(decimal(pieces));
+}
+
+function purchaseQuantityBase(
+  settings: { charcoalPacksPerCarton: number; charcoalPiecesPerPack: number },
+  item: { materialType: 'tobacco' | 'hose' | 'charcoal'; quantity: string; unit: string },
+): Prisma.Decimal {
+  if (item.materialType === 'tobacco') {
+    if (item.unit !== 'kg' && item.unit !== 'g') {
+      throw new BadRequestException('وحدة المعسل يجب أن تكون كيلو أو جرام.');
+    }
+    return tobaccoGrams(item.quantity, item.unit);
+  }
+  if (item.materialType === 'hose') {
+    if (item.unit !== 'piece') {
+      throw new BadRequestException('وحدة اللي يجب أن تكون حبة.');
+    }
+    return decimal(item.quantity);
+  }
+  if (!['piece', 'pack', 'carton'].includes(item.unit)) {
+    throw new BadRequestException('وحدة الفحم يجب أن تكون حبة أو علبة أو كرتون.');
+  }
+  const multiplier = item.unit === 'carton'
+    ? settings.charcoalPacksPerCarton * settings.charcoalPiecesPerPack
+    : item.unit === 'pack'
+      ? settings.charcoalPiecesPerPack
+      : 1;
+  return decimal(item.quantity).times(multiplier);
 }
 
 function normalizeText(value?: string): string | null {
@@ -141,6 +170,7 @@ export class ShishaInventoryService {
         headsPerKg: settings.headsPerKg,
         charcoalPacksPerCarton: settings.charcoalPacksPerCarton,
         charcoalPiecesPerPack: settings.charcoalPiecesPerPack,
+        charcoalShishaPerPack: CHARCOAL_SHISHAS_PER_PACK,
         movements: movementInputs,
         sales,
       }),
@@ -182,6 +212,7 @@ export class ShishaInventoryService {
         gramsPerHead: Number(new Prisma.Decimal(1000).div(settings.headsPerKg).toDecimalPlaces(3)),
         charcoalPacksPerCarton: settings.charcoalPacksPerCarton,
         charcoalPiecesPerPack: settings.charcoalPiecesPerPack,
+        charcoalShishaPerPack: CHARCOAL_SHISHAS_PER_PACK,
       },
       ...calculation,
       latestStocktake,
@@ -305,6 +336,51 @@ export class ShishaInventoryService {
       },
     });
     return { id: movement.id, createdAt: movement.createdAt };
+  }
+
+  async recordPurchases(companyId: string, userId: string, dto: CreateShishaPurchaseBatchDto) {
+    const settings = await this.requireSettings(companyId);
+    const date = parseSaleDateYmd(dto.transactionDate);
+    if (date < settings.trackingStartedAt) {
+      throw new BadRequestException('تاريخ الشراء لا يمكن أن يسبق تاريخ بداية التتبع.');
+    }
+
+    const invoiceNumber = normalizeText(dto.invoiceNumber);
+    if (invoiceNumber) {
+      const duplicate = await this.prisma.shishaInventoryMovement.findFirst({
+        where: {
+          companyId,
+          movementType: 'purchase',
+          invoiceNumber: { equals: invoiceNumber, mode: 'insensitive' },
+        },
+        select: { id: true },
+      });
+      if (duplicate) throw new ConflictException('هذه الفاتورة مسجلة مسبقًا.');
+    }
+
+    const tenantId = TenantContext.getTenantId();
+    const supplierName = normalizeText(dto.supplierName);
+    const notes = normalizeText(dto.notes);
+    const invoiceKey = invoiceNumber?.toLocaleLowerCase('en') ?? null;
+    const rows = dto.items.map((item, index) => ({
+      tenantId,
+      companyId,
+      transactionDate: date,
+      movementType: 'purchase',
+      materialType: item.materialType,
+      quantityBase: purchaseQuantityBase(settings, item),
+      costInclVat: item.costInclVat ? decimal(item.costInclVat) : null,
+      invoiceNumber,
+      supplierName,
+      sourceKey: invoiceKey
+        ? `shisha-purchase-batch:${companyId}:${invoiceKey}:${index}`
+        : null,
+      notes,
+      createdByUserId: userId,
+    }));
+
+    const result = await this.prisma.shishaInventoryMovement.createMany({ data: rows });
+    return { count: result.count };
   }
 
   async createStocktake(companyId: string, userId: string, dto: CreateShishaStocktakeDto) {

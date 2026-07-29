@@ -17,6 +17,11 @@ export type ShishaInventoryDailyRow = {
   closingHoses: number;
   openingCharcoalPieces: number;
   closingCharcoalPieces: number;
+  charcoalPurchasedBoxes: number;
+  charcoalConsumedBoxes: number;
+  charcoalConsumedPieces: number;
+  openingCharcoalBoxes: number;
+  closingCharcoalBoxes: number;
 };
 
 export type ShishaInventoryMovement = {
@@ -54,6 +59,7 @@ export type ShishaInventorySummary = {
     gramsPerHead: number;
     charcoalPacksPerCarton: number;
     charcoalPiecesPerPack: number;
+    charcoalShishaPerPack: number;
   };
   effectiveStart?: string;
   daily?: ShishaInventoryDailyRow[];
@@ -63,6 +69,7 @@ export type ShishaInventorySummary = {
     tobaccoHeads: number;
     hoses: number;
     charcoalPiecesTotal: number;
+    charcoalBoxesTotal: number;
     charcoalCartons: number;
     charcoalPacks: number;
     charcoalPieces: number;
@@ -79,6 +86,9 @@ export type ShishaInventorySummary = {
     tobaccoPurchasedKg: number;
     hosesPurchased: number;
     charcoalPiecesPurchased: number;
+    charcoalBoxesPurchased: number;
+    charcoalPiecesConsumed: number;
+    charcoalBoxesConsumed: number;
     tobaccoCorrectionKg: number;
   };
   latestStocktake?: ShishaStocktake | null;
@@ -108,6 +118,20 @@ export type CreateShishaPurchasePayload = {
   quantity: string;
   unit: 'kg' | 'g' | 'piece' | 'pack' | 'carton';
   costInclVat?: string;
+  invoiceNumber?: string;
+  supplierName?: string;
+  notes?: string;
+};
+
+export type CreateShishaPurchaseBatchPayload = {
+  companyId: string;
+  transactionDate: string;
+  items: Array<{
+    materialType: 'tobacco' | 'hose' | 'charcoal';
+    quantity: string;
+    unit: 'kg' | 'g' | 'piece' | 'pack';
+    costInclVat?: string;
+  }>;
   invoiceNumber?: string;
   supplierName?: string;
   notes?: string;

@@ -8,6 +8,7 @@ import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { requireCompanyId } from '../common/utils/require-company-id';
 import {
+  CreateShishaPurchaseBatchDto,
   CreateShishaPurchaseDto,
   CreateShishaStocktakeDto,
   InitializeShishaInventoryDto,
@@ -33,6 +34,20 @@ export class ShishaInventoryController {
   ) {
     const range = parseRequiredDateRange(startDate, endDate);
     return this.shishaInventoryService.getSummary(requireCompanyId(companyId), range.startDate, range.endDate);
+  }
+
+  @Post('shisha-inventory/purchases/batch')
+  @RequirePermission('ORDERS_WRITE')
+  createShishaInventoryPurchases(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: CurrentAuthUser,
+    @Body() body: CreateShishaPurchaseBatchDto,
+  ) {
+    return this.shishaInventoryService.recordPurchases(
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      body,
+    );
   }
 
   @Post('shisha-inventory/initialize')

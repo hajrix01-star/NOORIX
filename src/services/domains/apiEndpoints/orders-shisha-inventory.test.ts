@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiPost } from '../../core/apiHttp';
 import {
   createShishaInventoryPurchase,
+  createShishaInventoryPurchases,
   createShishaInventoryStocktake,
   initializeShishaInventory,
 } from './orders';
@@ -52,6 +53,29 @@ describe('shisha inventory write endpoints', () => {
     expect(mockedApiPost).toHaveBeenCalledWith(
       '/api/v1/orders/shisha-inventory/purchases?companyId=company-1',
       expect.not.objectContaining({ companyId: expect.anything() }),
+    );
+  });
+
+  it('sends a multi-item purchase invoice in one batch request', async () => {
+    await createShishaInventoryPurchases({
+      companyId: 'company-1',
+      transactionDate: '2026-07-30',
+      invoiceNumber: 'INV-10',
+      items: [
+        { materialType: 'tobacco', quantity: '8', unit: 'kg' },
+        { materialType: 'hose', quantity: '25', unit: 'piece' },
+        { materialType: 'charcoal', quantity: '15', unit: 'pack' },
+      ],
+    });
+
+    expect(mockedApiPost).toHaveBeenCalledWith(
+      '/api/v1/orders/shisha-inventory/purchases/batch?companyId=company-1',
+      expect.objectContaining({
+        invoiceNumber: 'INV-10',
+        items: expect.arrayContaining([
+          expect.objectContaining({ materialType: 'charcoal', quantity: '15', unit: 'pack' }),
+        ]),
+      }),
     );
   });
 

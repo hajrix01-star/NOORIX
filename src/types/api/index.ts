@@ -58,6 +58,7 @@ export type {
   ShishaInventorySummary,
   ShishaStocktake,
   InitializeShishaInventoryPayload,
+  CreateShishaPurchaseBatchPayload,
   CreateShishaPurchasePayload,
   CreateShishaStocktakePayload,
 } from './domains/orders';
