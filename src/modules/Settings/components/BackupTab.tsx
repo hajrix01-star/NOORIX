@@ -34,6 +34,7 @@ import {
   BackupCommandCenter,
   BackupSheetsAndModals,
 } from './backup';
+import { useBackupScheduleForms } from './backup/backupScheduleForms';
 import { appKeys, settingsKeys } from '../../../services/queryKeys';
 import type { ApiParsedResult } from '../../../types/api';
 import type {
@@ -46,7 +47,6 @@ import type {
   BackupRestoreModal,
   BackupRestorePcModal,
   BackupSchedulePatch,
-  BackupScheduleForm,
   SettingsApiResult,
   SettingsCompany,
 } from '../settingsTypes';
@@ -95,22 +95,6 @@ export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
   const [importNameAr, setImportNameAr] = useState('');
   const [importConfirmed, setImportConfirmed] = useState(false);
   const [importStrictAlloc, setImportStrictAlloc] = useState(false);
-  const [sysForm, setSysForm] = useState<BackupScheduleForm>({
-    enabled: false,
-    scheduleHour: 6,
-    scheduleMinute: 0,
-    retentionCount: 10,
-    gdriveScriptUrl: '',
-    gdriveFolderId: '',
-  });
-  const [coForm, setCoForm] = useState<BackupScheduleForm>({
-    enabled: false,
-    scheduleHour: 6,
-    scheduleMinute: 0,
-    retentionCount: 5,
-    gdriveScriptUrl: '',
-    gdriveFolderId: '',
-  });
   const [restoreModal, setRestoreModal] = useState<BackupRestoreModal | null>(null);
   const [restorePhrase, setRestorePhrase] = useState('');
   const [restorePcModal, setRestorePcModal] = useState<BackupRestorePcModal | null>(null);
@@ -175,40 +159,7 @@ export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
         : (coCfgData ? { success: true, data: coCfgData } : undefined),
     [coCfgData, coCfgError?.message, coCfgIsError, t],
   );
-
-  React.useEffect(() => {
-    if (!sysCfgData) return;
-    const d = sysCfgData;
-    if (typeof d !== 'object' || d.enabled === undefined) return;
-    const h = Number(d.scheduleHour);
-    const m = Number(d.scheduleMinute);
-    const r = Number(d.retentionCount);
-    setSysForm({
-      enabled: !!d.enabled,
-      scheduleHour: Number.isFinite(h) ? h : 6,
-      scheduleMinute: Number.isFinite(m) ? m : 0,
-      retentionCount: Math.min(50, Math.max(1, Number.isFinite(r) ? r : 10)),
-      gdriveScriptUrl: typeof d.gdriveScriptUrl === 'string' ? d.gdriveScriptUrl : '',
-      gdriveFolderId: typeof d.gdriveFolderId === 'string' ? d.gdriveFolderId : '',
-    });
-  }, [sysCfgData]);
-
-  React.useEffect(() => {
-    if (!coCfgData) return;
-    const d = coCfgData;
-    if (typeof d !== 'object') return;
-    const h = Number(d.scheduleHour);
-    const m = Number(d.scheduleMinute);
-    const r = Number(d.retentionCount);
-    setCoForm({
-      enabled: !!d.enabled,
-      scheduleHour: Number.isFinite(h) ? h : 6,
-      scheduleMinute: Number.isFinite(m) ? m : 0,
-      retentionCount: Math.min(50, Math.max(1, Number.isFinite(r) ? r : 5)),
-      gdriveScriptUrl: typeof d.gdriveScriptUrl === 'string' ? d.gdriveScriptUrl : '',
-      gdriveFolderId: typeof d.gdriveFolderId === 'string' ? d.gdriveFolderId : '',
-    });
-  }, [coCfgData]);
+  const { sysForm, setSysForm, coForm, setCoForm } = useBackupScheduleForms(sysCfgData, coCfgData);
 
   const jobs = jobsRes.success ? jobsRes.data : [];
 
