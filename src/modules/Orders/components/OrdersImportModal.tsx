@@ -1,20 +1,11 @@
 /**
- * OrdersImportModal — multi-phase professional import wizard
- * Phases: upload → parsing → preview → importing → done
+ * OrdersImportModal - multi-phase professional import wizard.
  * Handles both products and categories with duplicate detection.
  */
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { AdaptiveSheet, Button, Checkbox, FileInput } from '../../../ui';
+import { AdaptiveSheet, Checkbox } from '../../../ui';
 import { useTranslation } from '../../../i18n/useTranslation';
-import {
-  importFromExcel,
-  filterOrderProductsTemplateRows,
-  filterOrderCategoriesTemplateRows,
-  groupOrderProductImportRows,
-  orderProductImportGroupsToPayload,
-  type ImportRow,
-  type OrderProductImportGroup,
-} from '../../../utils/exportUtils';
+import { importFromExcel } from '../../../utils/exportUtils';
 import {
   addCustomSize,
   addCustomPackaging,
@@ -28,47 +19,37 @@ import {
   OrdersImportProgress,
   StepIndicator,
 } from './OrdersImportModalParts';
+import { OrdersImportUpload } from './OrdersImportUpload';
+import {
+  errorMessage,
+  knownOrderSectionNames,
+  mutationCreatedCount,
+  mutationCreatedItems,
+  parseOrdersImportRows,
+  productPayloadSections,
+  productPayloadVariants,
+  requirePayload,
+  type BatchMutation,
+  type FilterType,
+  type ImportResult,
+  type ParsedRow,
+  type Phase,
+} from './OrdersImportModalModel';
 import type {
   OrderCategory,
   OrderCategoryPayload,
   OrderProduct,
   OrderProductPayload,
   OrderProductType,
-  OrderProductVariant,
   OrderSection,
   OrderCatalogBatchCreateResult,
   ApiParsedResult,
 } from '../../../types/api';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type RowStatus = 'new' | 'duplicate' | 'invalid';
-type Phase = 'upload' | 'parsing' | 'preview' | 'importing' | 'done';
-type FilterType = 'all' | RowStatus;
-
-interface ParsedRow {
-  status: RowStatus;
-  reason: string;
-  nameAr: string;
-  nameEn: string;
-  category: string;
-  sectionsSummary: string;
-  variantsSummary: string;
-  payload: OrderProductPayload | OrderCategoryPayload | null;
-}
-
-interface ImportResult {
-  imported: number;
-  skipped: number;
-  invalid: number;
-  error?: string;
-}
 
 interface Props {
   type: 'products' | 'categories';
-  /** أصناف الطلبات أو المبيعات — يُطبَّق على الاستيراد والتكرار */
   productType?: OrderProductType;
-  /** أقسام الشركة (بار، شيشة، مطبخ…) — للاختيار عند استيراد المبيعات */
   sections?: OrderSection[];
   companyId: string;
   products: OrderProduct[];
@@ -77,61 +58,6 @@ interface Props {
   createCategoriesBatch: BatchMutation<OrderCategoryPayload>;
   onClose: () => void;
 }
-
-type BatchMutation<TPayload> = {
-  mutate: (
-    payload: TPayload[],
-    options: {
-      onSuccess: (data: ApiParsedResult<OrderCatalogBatchCreateResult>) => void;
-      onError: (error: Error) => void;
-    },
-  ) => void;
-  isPending?: boolean;
-};
-
-function mutationCreatedCount(value: ApiParsedResult<OrderCatalogBatchCreateResult>, fallback: number): number {
-  if (Array.isArray(value.data)) return value.data.length;
-  const created = Number(value.data?.created ?? value.data?.count);
-  return Number.isFinite(created) ? created : fallback;
-}
-
-function mutationCreatedItems(value: ApiParsedResult<OrderCatalogBatchCreateResult>): Array<OrderProduct | OrderCategory> {
-  if (Array.isArray(value.data)) return value.data;
-  return Array.isArray(value.data?.items) ? value.data.items : [];
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
-}
-
-function productPayloadVariants(payload: OrderProductPayload | OrderCategoryPayload | null): OrderProductVariant[] {
-  if (!payload || !('variants' in payload) || !Array.isArray(payload.variants)) return [];
-  return payload.variants;
-}
-
-function productPayloadSections(payload: OrderProductPayload | OrderCategoryPayload | null): string[] {
-  if (!payload || !('sections' in payload) || !Array.isArray(payload.sections)) return [];
-  return payload.sections;
-}
-
-function groupNameAr(group: OrderProductImportGroup): string {
-  return group.type === 'flat' ? group.nameAr : String(group.row.nameAr ?? group.row.name_ar ?? '');
-}
-
-function groupNameEn(group: OrderProductImportGroup): string {
-  return group.type === 'flat' ? group.nameEn : String(group.row.nameEn ?? group.row.name_en ?? '');
-}
-
-function groupCategory(group: OrderProductImportGroup): string {
-  return group.type === 'flat' ? group.category : String(group.row.category ?? group.row.categoryName ?? '');
-}
-
-function requirePayload(payload: OrderProductPayload | OrderCategoryPayload | null): OrderProductPayload | OrderCategoryPayload {
-  if (!payload) throw new Error('Invalid empty import payload');
-  return payload;
-}
-
-// ─── Main component ────────────────────────────────────────────────────────────
 
 export function OrdersImportModal({
   type,
@@ -151,10 +77,7 @@ export function OrdersImportModal({
     () => (isProducts ? products.filter((product) => (product.productType || 'order') === productType) : products),
     [isProducts, products, productType],
   );
-  const knownSectionNames = useMemo(
-    () => sections.map((section) => String(section.nameAr ?? '').trim()).filter(Boolean),
-    [sections],
-  );
+  const knownSectionNames = useMemo(() => knownOrderSectionNames(sections), [sections]);
 
   const [phase, setPhase] = useState<Phase>('upload');
   const [importSections, setImportSections] = useState<string[]>([]);
@@ -162,14 +85,10 @@ export function OrdersImportModal({
   const [filter, setFilter] = useState<FilterType>('all');
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [result, setResult] = useState<ImportResult | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [parseError, setParseError] = useState('');
   const [newCategoriesToCreate, setNewCategoriesToCreate] = useState<string[]>([]);
-  const fileRef = useRef<HTMLInputElement>(null);
-  // Persists catByName across processFile → handleImport so new category IDs can be injected
+  // Persists category IDs across parsing and importing so new categories can be injected.
   const catByNameRef = useRef<Map<string, string>>(new Map());
-
-  // ── Derived counts ──────────────────────────────────────────────────────────
   const counts = useMemo(() => ({
     total: rows.length,
     new: rows.filter(r => r.status === 'new').length,
@@ -219,121 +138,38 @@ export function OrdersImportModal({
       </div>
     );
   }
-
-  // ── File processing ─────────────────────────────────────────────────────────
   const processFile = useCallback(async (file: File) => {
     setParseError('');
     if (needsImportSections && importSections.length === 0) {
       setParseError(t('importSectionsRequired'));
       return;
     }
+
     setPhase('parsing');
     try {
       const rawRows = await importFromExcel(file);
-      let parsed: ParsedRow[] = [];
+      const parsed = parseOrdersImportRows({
+        rawRows,
+        isProducts,
+        productType,
+        needsImportSections,
+        importSections,
+        knownSectionNames,
+        scopedProducts,
+        categories,
+        t,
+      });
 
-      if (!isProducts) {
-        // ── Categories ─────────────────────────────────────────────────────
-        const filtered = filterOrderCategoriesTemplateRows(rawRows);
-        const existingNames = new Set(
-          categories.map((category) => String(category.nameAr ?? '').trim().toLowerCase()),
-        );
-        parsed = filtered.map((r: ImportRow): ParsedRow => {
-          const nameAr = String(r.nameAr ?? r.name_ar ?? '').trim();
-          const nameEn = String(r.nameEn ?? r.name_en ?? '').trim();
-          if (!nameAr) {
-            return { status: 'invalid', reason: t('importReasonMissingNameAr'), nameAr: '—', nameEn, category: '', sectionsSummary: '', variantsSummary: '', payload: null };
-          }
-          if (existingNames.has(nameAr.toLowerCase())) {
-            return { status: 'duplicate', reason: t('importReasonDuplicate'), nameAr, nameEn, category: '', sectionsSummary: '', variantsSummary: '', payload: { nameAr, nameEn: nameEn || undefined } };
-          }
-          return { status: 'new', reason: '', nameAr, nameEn, category: '', sectionsSummary: '', variantsSummary: '', payload: { nameAr, nameEn: nameEn || undefined } };
-        });
-      } else {
-        // ── Products ────────────────────────────────────────────────────────
-        const filtered = filterOrderProductsTemplateRows(rawRows, productType);
-        const catByName = new Map(
-          categories.map((category) => [String(category.nameAr ?? '').trim().toLowerCase(), category.id]),
-        );
-        catByNameRef.current = catByName;
+      catByNameRef.current = parsed.categoryByName;
+      setNewCategoriesToCreate(parsed.newCategoriesToCreate);
 
-        const existingNames = new Set(
-          scopedProducts.map((product) => String(product.nameAr ?? '').trim().toLowerCase()),
-        );
-        const groups = groupOrderProductImportRows(filtered);
-        const payloads = orderProductImportGroupsToPayload(groups, catByName, productType, {
-          knownSectionNames,
-          defaultSections: importSections,
-        });
-        const payloadMap = new Map(payloads.map((payload) => [String(payload.nameAr).trim().toLowerCase(), payload]));
-
-        // Collect unique category names that need to be created
-        const missingCatNames = new Map<string, string>(); // lower → original case
-
-        parsed = groups.map((g: OrderProductImportGroup): ParsedRow => {
-          const nameAr = groupNameAr(g).trim();
-          const nameEn = groupNameEn(g).trim();
-          const category = groupCategory(g).trim();
-
-          if (!nameAr) {
-            return { status: 'invalid', reason: t('importReasonMissingNameAr'), nameAr: '—', nameEn, category, sectionsSummary: '', variantsSummary: '', payload: null };
-          }
-
-          const payload = payloadMap.get(nameAr.toLowerCase()) ?? null;
-          const variants = productPayloadVariants(payload);
-          const variantsSummary = variants.length > 0
-            ? t('importVariants', String(variants.length))
-            : '—';
-          const rowSections = productPayloadSections(payload);
-          const sectionsSummary = rowSections.length > 0 ? rowSections.join(' · ') : '—';
-
-          const catNameLower = category.trim().toLowerCase();
-          let catNote = '';
-          if (catNameLower && !catByName.has(catNameLower)) {
-            missingCatNames.set(catNameLower, category.trim());
-            catNote = t('importReasonCategoryWillBeCreated');
-          }
-
-          if (needsImportSections && rowSections.length === 0) {
-            return {
-              status: 'invalid',
-              reason: t('importReasonMissingSection'),
-              nameAr,
-              nameEn,
-              category,
-              sectionsSummary,
-              variantsSummary,
-              payload: null,
-            };
-          }
-
-          if (existingNames.has(nameAr.toLowerCase())) {
-            return {
-              status: 'duplicate',
-              reason: t('importReasonDuplicate') + (catNote ? ` — ${catNote}` : ''),
-              nameAr, nameEn, category, sectionsSummary, variantsSummary, payload,
-            };
-          }
-          return {
-            status: 'new',
-            reason: catNote,
-            nameAr, nameEn, category, sectionsSummary, variantsSummary, payload,
-          };
-        });
-
-        setNewCategoriesToCreate(Array.from(missingCatNames.values()));
-      }
-
-      // Filter out completely empty rows (no nameAr, no data)
-      parsed = parsed.filter(r => r.nameAr !== '' || r.nameEn !== '' || r.category !== '');
-
-      if (parsed.length === 0) {
+      if (parsed.rows.length === 0) {
         setParseError(t('ordersImportNoValidRows'));
         setPhase('upload');
         return;
       }
 
-      setRows(parsed);
+      setRows(parsed.rows);
       setFilter('all');
       setPhase('preview');
     } catch (error) {
@@ -342,20 +178,6 @@ export function OrdersImportModal({
     }
   }, [isProducts, productType, needsImportSections, importSections, knownSectionNames, scopedProducts, categories, t]);
 
-  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) processFile(file);
-    e.target.value = '';
-  }
-
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) processFile(file);
-  }
-
-  // ── Import execution ────────────────────────────────────────────────────────
   async function handleImport() {
     const toImport = rows.filter(
       r => r.payload && (r.status === 'new' || (r.status === 'duplicate' && !skipDuplicates)),
@@ -372,7 +194,6 @@ export function OrdersImportModal({
     const invalid = counts.invalid;
 
     try {
-      // ── Step 1: auto-create missing categories (products only) ─────────────
       if (isProducts && newCategoriesToCreate.length > 0) {
         const newCatPayloads = newCategoriesToCreate.map(nameAr => ({ nameAr }));
         const catRes = await new Promise<ApiParsedResult<OrderCatalogBatchCreateResult>>((resolve, reject) => {
@@ -386,8 +207,6 @@ export function OrdersImportModal({
           if (key && cat.id) catByNameRef.current.set(key, cat.id);
         }
       }
-
-      // ── Step 2: build final product payloads (inject newly created categoryIds) ──
       let payloads: Array<OrderProductPayload | OrderCategoryPayload>;
       if (isProducts) {
         payloads = toImport.map((r) => {
@@ -403,8 +222,6 @@ export function OrdersImportModal({
       } else {
         payloads = toImport.map((r) => requirePayload(r.payload));
       }
-
-      // ── Step 3: create items ────────────────────────────────────────────────
       const itemRes = isProducts
         ? await new Promise<ApiParsedResult<OrderCatalogBatchCreateResult>>((resolve, reject) => {
             createProductsBatch.mutate(payloads as OrderProductPayload[], { onSuccess: resolve, onError: reject });
@@ -416,8 +233,6 @@ export function OrdersImportModal({
         throw new Error(itemRes.error || t('importDoneError'));
       }
       const imported = mutationCreatedCount(itemRes, payloads.length);
-
-      // ── Step 4: persist new sizes & packaging into localStorage ────────────
       if (isProducts && companyId) {
         const existingSizes = new Set(
           getSizesOptions(companyId).map((option) => String(option.ar ?? '').trim().toLowerCase()),
@@ -448,61 +263,10 @@ export function OrdersImportModal({
       setPhase('done');
     }
   }
-
-  // ── Steps ───────────────────────────────────────────────────────────────────
   const stepLabels = [t('importStepUpload'), t('importStepPreview'), t('importStepImport')];
   const phaseToStep: Record<Phase, number> = {
     upload: 0, parsing: 0, preview: 1, importing: 2, done: 2,
   };
-
-  // ── Render helpers ──────────────────────────────────────────────────────────
-  function renderUpload() {
-    return (
-      <div className="flex flex-col gap-4">
-        {renderImportSectionsPicker()}
-        {parseError && (
-          <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 text-[12px]">
-            <span className="text-base leading-none mt-0.5">⚠️</span>
-            <span>{parseError}</span>
-          </div>
-        )}
-        <div
-          className={`
-            border-2 border-dashed rounded-xl p-10 flex flex-col items-center gap-3 cursor-pointer
-            transition-all duration-150 select-none
-            ${isDragging
-              ? 'border-noorix-primary bg-noorix-primary/5 scale-[1.01]'
-              : 'border-noorix-border hover:border-noorix-primary/60 hover:bg-noorix-bg-muted/60'
-            }
-          `}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}
-        >
-          <span className="text-4xl leading-none select-none">📥</span>
-          <div className="text-center">
-            <p className="text-[15px] font-semibold text-noorix-text m-0 mb-1">{t('importDropZoneTitle')}</p>
-            <p className="text-[12px] text-noorix-muted m-0">{t('importDropZoneOr')}</p>
-          </div>
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={(e: React.MouseEvent) => { e.stopPropagation(); fileRef.current?.click(); }}
-          >
-            {t('importChooseFile')}
-          </Button>
-          <p className="text-[11px] text-noorix-muted m-0">{t('importDropZoneHint')}</p>
-        </div>
-        <FileInput ref={fileRef} accept=".xlsx,.xls" onChange={handleFileInput} className="hidden" />
-        <p className="text-[11px] text-noorix-muted m-0 text-center">{t('importDropZoneNote')}</p>
-      </div>
-    );
-  }
-
   function renderParsing() {
     return <OrdersImportProgress label={t('importParsing')} />;
   }
@@ -558,11 +322,11 @@ export function OrdersImportModal({
       onClose={phase === 'upload' || phase === 'done' ? onClose : undefined}
       title={
         <span className="flex items-center gap-2">
-          <span className="text-base leading-none">📥</span>
+          <span className="text-base leading-none"></span>
           {title}
           {phase === 'preview' && (
             <span className="text-[11px] text-noorix-muted font-normal ms-1">
-              — {t('importRowsFound', String(counts.total))}
+              - {t('importRowsFound', String(counts.total))}
             </span>
           )}
         </span>
@@ -574,7 +338,14 @@ export function OrdersImportModal({
       {phase !== 'done' && (
         <StepIndicator steps={stepLabels} current={phaseToStep[phase]} />
       )}
-      {phase === 'upload' && renderUpload()}
+      {phase === 'upload' && (
+        <OrdersImportUpload
+          t={t}
+          importSectionsNode={renderImportSectionsPicker()}
+          parseError={parseError}
+          onFile={processFile}
+        />
+      )}
       {phase === 'parsing' && renderParsing()}
       {phase === 'preview' && renderPreview()}
       {phase === 'importing' && renderImporting()}
