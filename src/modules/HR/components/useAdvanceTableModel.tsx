@@ -1,12 +1,30 @@
 import React, { useCallback, useMemo } from 'react';
 import { Badge, Button, cn, FmtNum } from '../../../ui';
+import type { BadgeStatusMap } from '../../../ui/Badge';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
+import type { SmartTableColumn } from '../../../ui';
+import type { AdvanceGroupRow, AdvanceRow } from '../utils/advanceGrouping';
 
-type HrAny = ReturnType<typeof JSON.parse>;
+type TranslationFn = (key: string, ...args: unknown[]) => string;
 
 const remainingClass = (amount: number) => amount > 0 ? 'text-noorix-amber' : 'text-noorix-green';
-const isDeductionRow = (row: HrAny) => row.recordType === 'deduction';
+const isDeductionRow = (row: AdvanceRow) => row.recordType === 'deduction';
+const displayText = (value: unknown, fallback = '-') => {
+  if (value == null || value === '') return fallback;
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  return fallback;
+};
+
+type AdvanceTableModelOptions = {
+  t: TranslationFn;
+  expandedEmployees: Set<string>;
+  settlementMap: BadgeStatusMap;
+  toggleEmployeeExpanded: (employeeId: string) => void;
+  handleDeleteAdvance: (row: AdvanceRow) => void;
+  setEditingAdvance: (row: AdvanceRow) => void;
+  setSettlingAdvance: (row: AdvanceRow) => void;
+};
 
 export function useAdvanceTableModel({
   t,
@@ -16,10 +34,10 @@ export function useAdvanceTableModel({
   handleDeleteAdvance,
   setEditingAdvance,
   setSettlingAdvance,
-}: HrAny) {
-  const columns = useMemo(() => [
+}: AdvanceTableModelOptions) {
+  const columns = useMemo<SmartTableColumn<AdvanceGroupRow>[]>(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 220,
-      render: (v: HrAny, row: HrAny) => {
+      render: (v: unknown, row: AdvanceGroupRow) => {
         const expanded = expandedEmployees.has(row.employeeId);
         return (
           <Button
@@ -30,19 +48,19 @@ export function useAdvanceTableModel({
             aria-expanded={expanded}
           >
             <span className="inline-block me-1.5" aria-hidden>{expanded ? 'v' : '>'}</span>
-            {v || '-'}
+            {displayText(v)}
           </Button>
         );
       } },
     { key: 'advanceCount', label: t('advancesList'), numeric: true, width: 110, minWidth: 100,
-      render: (_: HrAny, row: HrAny) => (
+      render: (_: unknown, row: AdvanceGroupRow) => (
         <span className="nx-cell-num">
           {row.advanceCount}
           {row.deductionCount ? <span className="ms-1 text-noorix-red">({row.deductionCount})</span> : null}
         </span>
       ) },
     { key: 'totalAmount', label: t('advanceAmount'), numeric: true, sortable: true, width: 140, minWidth: 130,
-      render: (_: HrAny, row: HrAny) => (
+      render: (_: unknown, row: AdvanceGroupRow) => (
         <span className="nx-cell-num">
           {hrFmt(row.totalAmount)}
           {row.manualDeductionAmount ? (
@@ -51,20 +69,20 @@ export function useAdvanceTableModel({
         </span>
       ) },
     { key: 'settledAmount', label: t('advanceSettledAmount'), numeric: true, sortable: true, width: 120, minWidth: 110,
-      render: (_: HrAny, row: HrAny) => <span className="nx-cell-num text-noorix-green">{hrFmt(row.settledAmountNum || 0)}</span> },
+      render: (_: unknown, row: AdvanceGroupRow) => <span className="nx-cell-num text-noorix-green">{hrFmt(row.settledAmountNum || 0)}</span> },
     { key: 'remainingAmount', label: t('advanceRemainingAmount'), numeric: true, sortable: true, width: 120, minWidth: 110,
-      render: (_: HrAny, row: HrAny) => (
+      render: (_: unknown, row: AdvanceGroupRow) => (
         <span className={cn('nx-cell-num', remainingClass(row.remainingAmount || 0))}>
           {hrFmt(row.remainingAmount || 0)}
         </span>
       ) },
     { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
-      render: (v: HrAny) => <span className="nx-cell-muted-sm whitespace-nowrap">{v ? formatSaudiDate(v) : '-'}</span> },
+      render: (v: unknown) => <span className="nx-cell-muted-sm whitespace-nowrap">{v ? formatSaudiDate(String(v)) : '-'}</span> },
     { key: 'status', label: t('status'), width: 130, minWidth: 120,
-      render: (_: HrAny, row: HrAny) => <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className="shrink-0" /> },
+      render: (_: unknown, row: AdvanceGroupRow) => <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className="shrink-0" /> },
   ], [expandedEmployees, settlementMap, t, toggleEmployeeExpanded]);
 
-  const renderAdvanceDetailRows = useCallback((advances: HrAny[]) => (
+  const renderAdvanceDetailRows = useCallback((advances: AdvanceRow[]) => (
     <div className="p-3 bg-noorix-bg-muted/40">
       <div className="overflow-x-auto rounded-lg border border-noorix-border bg-noorix-surface">
         <table className="w-full min-w-[760px] text-[12px]">
@@ -85,16 +103,17 @@ export function useAdvanceTableModel({
               const deduction = isDeductionRow(row);
               const settled = row.settlementStatus === 'settled';
               const canSettle = !deduction && row.settlementStatus !== 'settled' && row.settlementStatus !== 'cancelled';
+              const installmentCount = Number(row.installmentCount ?? 0);
               return (
                 <tr key={row.id} className="border-b border-noorix-border last:border-b-0">
                   <td className={cn('px-3 py-2 whitespace-nowrap', settled && 'line-through text-noorix-muted')}>{formatSaudiDate(row.transactionDate)}</td>
                   <td className={cn('px-3 py-2 text-end nx-font-numbers', deduction && 'text-noorix-red', settled && !deduction && 'line-through text-noorix-muted')}>
-                    {deduction ? '-' : ''}{hrFmt(row.totalAmountNum)}
+                    {deduction ? '-' : ''}{hrFmt(row.totalAmountNum ?? row.totalAmount ?? 0)}
                   </td>
-                  <td className="px-3 py-2 text-end nx-font-numbers text-noorix-green">{hrFmt(row.settledAmountNum)}</td>
+                  <td className="px-3 py-2 text-end nx-font-numbers text-noorix-green">{hrFmt(row.settledAmountNum ?? 0)}</td>
                   <td className={cn('px-3 py-2 text-end nx-font-numbers', remainingClass(row.remainingAmount || 0))}>{hrFmt(row.remainingAmount)}</td>
                   <td className="px-3 py-2 text-noorix-blue font-semibold ltr">
-                    {deduction ? (row.notes || t('deductionsList')) : row.installmentCount > 1 ? `${row.installmentCount} x ${hrFmt(row.installmentAmount ?? 0)}` : '-'}
+                    {deduction ? displayText(row.notes, t('deductionsList')) : installmentCount > 1 ? `${installmentCount} x ${hrFmt(row.installmentAmount ?? 0)}` : '-'}
                   </td>
                   <td className="px-3 py-2 text-noorix-muted whitespace-nowrap">{row.settledAt ? formatSaudiDate(row.settledAt) : '-'}</td>
                   <td className="px-3 py-2 text-center">
@@ -126,7 +145,7 @@ export function useAdvanceTableModel({
     </div>
   ), [handleDeleteAdvance, settlementMap, setEditingAdvance, setSettlingAdvance, t]);
 
-  const renderMobileCard = useCallback((row: HrAny) => {
+  const renderMobileCard = useCallback((row: AdvanceGroupRow) => {
     const expanded = expandedEmployees.has(row.employeeId);
     return (
       <div>
@@ -163,7 +182,7 @@ export function useAdvanceTableModel({
         </div>
         {expanded && (
           <div className="mt-3 grid gap-2">
-            {row.advances.map((advance: HrAny) => {
+            {row.advances.map((advance: AdvanceRow) => {
               const deduction = isDeductionRow(advance);
               const canSettle = !deduction && advance.settlementStatus !== 'settled' && advance.settlementStatus !== 'cancelled';
               return (
@@ -175,11 +194,11 @@ export function useAdvanceTableModel({
                   <div className="grid grid-cols-3 gap-2 text-center mb-2">
                     <div>
                       <div className="nx-mc__stat-label">{t('advanceAmount')}</div>
-                      <div className={cn('nx-mc__stat-value', deduction && 'text-noorix-red')}>{deduction ? '-' : ''}{hrFmt(advance.totalAmountNum)}</div>
+                      <div className={cn('nx-mc__stat-value', deduction && 'text-noorix-red')}>{deduction ? '-' : ''}{hrFmt(advance.totalAmountNum ?? advance.totalAmount ?? 0)}</div>
                     </div>
                     <div>
                       <div className="nx-mc__stat-label">{t('advanceSettledAmount')}</div>
-                      <div className="nx-mc__stat-value text-noorix-green">{hrFmt(advance.settledAmountNum)}</div>
+                      <div className="nx-mc__stat-value text-noorix-green">{hrFmt(advance.settledAmountNum ?? 0)}</div>
                     </div>
                     <div>
                       <div className="nx-mc__stat-label">{t('advanceRemainingAmount')}</div>
@@ -190,7 +209,7 @@ export function useAdvanceTableModel({
                   </div>
                   <div className="flex items-center justify-end gap-1.5">
                     {deduction ? (
-                      <span className="text-[11px] text-noorix-muted">{advance.notes || t('deductionsList')}</span>
+                      <span className="text-[11px] text-noorix-muted">{displayText(advance.notes, t('deductionsList'))}</span>
                     ) : (
                       <>
                         <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(advance)}>{t('edit')}</Button>
@@ -210,7 +229,7 @@ export function useAdvanceTableModel({
     );
   }, [expandedEmployees, handleDeleteAdvance, settlementMap, setEditingAdvance, setSettlingAdvance, t, toggleEmployeeExpanded]);
 
-  const renderCompactRow = useCallback((row: HrAny) => {
+  const renderCompactRow = useCallback((row: AdvanceGroupRow) => {
     const expanded = expandedEmployees.has(row.employeeId);
     return (
       <div>
@@ -241,7 +260,7 @@ export function useAdvanceTableModel({
         </Button>
         {expanded && (
           <div className="mt-2 grid gap-2">
-            {row.advances.map((advance: HrAny) => {
+            {row.advances.map((advance: AdvanceRow) => {
               const deduction = isDeductionRow(advance);
               const canSettle = !deduction && advance.settlementStatus !== 'settled' && advance.settlementStatus !== 'cancelled';
               return (
@@ -252,7 +271,7 @@ export function useAdvanceTableModel({
                   </div>
                   <div className="nx-cr__line2">
                     <div className="nx-cr__line2-start">
-                      <span className={cn('nx-cr__meta', deduction && 'text-noorix-red')}>{deduction ? t('deductionsList') : t('advanceAmount')}: {deduction ? '-' : ''}{hrFmt(advance.totalAmountNum)}</span>
+                      <span className={cn('nx-cr__meta', deduction && 'text-noorix-red')}>{deduction ? t('deductionsList') : t('advanceAmount')}: {deduction ? '-' : ''}{hrFmt(advance.totalAmountNum ?? advance.totalAmount ?? 0)}</span>
                     </div>
                     <div className="nx-cr__line2-end">
                       <span className={cn('nx-cr__amount', remainingClass(advance.remainingAmount || 0))}>
@@ -262,7 +281,7 @@ export function useAdvanceTableModel({
                   </div>
                   <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
                     {deduction ? (
-                      <span className="text-[11px] text-noorix-muted">{advance.notes || t('deductionsList')}</span>
+                      <span className="text-[11px] text-noorix-muted">{displayText(advance.notes, t('deductionsList'))}</span>
                     ) : (
                       <>
                         <Button size="sm" className="h-6 px-2" variant="ghost" onClick={() => setEditingAdvance(advance)}>{t('edit')}</Button>

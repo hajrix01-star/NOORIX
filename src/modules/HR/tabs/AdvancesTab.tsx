@@ -22,19 +22,36 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Input, SmartTable } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
+import type { HrEmployee } from '../../../types/api';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
 import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
 import { countTruthyFilters } from '../utils/hrActiveFilterCount';
 import { getAdvanceTotals, normalizeAdvances } from '../utils/advanceBalance';
 import { buildAdvanceFinancialFooterRow } from '../utils/advanceTableFooter';
-import { buildGroupedAdvanceRows } from '../utils/advanceGrouping';
+import { buildGroupedAdvanceRows, type AdvanceGroupRow, type AdvanceRow } from '../utils/advanceGrouping';
 
-type HrAny = ReturnType<typeof JSON.parse>;
+type AdvanceEditableRow = AdvanceRow & { id: string };
+type AdvanceApiRow = AdvanceRow & {
+  employee?: HrEmployee | null;
+  employeeId?: string | null;
+  employeeName?: string | null;
+};
+type DeductionApiRow = AdvanceApiRow & {
+  amount?: number | string | null;
+  createdAt?: string | null;
+  deductionType?: string | null;
+  notes?: string | null;
+};
+type SelectChange = React.ChangeEvent<HTMLInputElement | HTMLSelectElement>;
 
 const PAGE_SIZE = 50;
 
 type AdvancesTabProps = { embedded?: boolean };
+
+function isEditableAdvance(row: AdvanceRow): row is AdvanceEditableRow {
+  return typeof row.id === 'string' && row.id.length > 0;
+}
 
 export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const { t, lang } = useTranslation();
@@ -42,8 +59,8 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const companyId = activeCompanyId ?? '';
   const queryClient = useQueryClient();
   const [showAdvance, setShowAdvance] = useState(false);
-  const [editingAdvance, setEditingAdvance] = useState<HrAny>(null);
-  const [settlingAdvance, setSettlingAdvance] = useState<HrAny>(null);
+  const [editingAdvance, setEditingAdvance] = useState<AdvanceEditableRow | null>(null);
+  const [settlingAdvance, setSettlingAdvance] = useState<AdvanceEditableRow | null>(null);
   const { showToast } = useToast();
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
@@ -56,7 +73,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     fetchEnabled: !!companyId,
   });
 
-  const { data: rawAdvanceRows, isLoading, isError } = useApiListQuery<HrAny, HrAny[]>({
+  const { data: rawAdvanceRows, isLoading, isError } = useApiListQuery<AdvanceApiRow, AdvanceRow[]>({
     queryKey: hrKeys.advancesForCompany(companyId),
     queryFn: () => getHrAdvances(companyId),
     fallbackMessage: 'فشل تحميل السلف',
@@ -64,7 +81,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     enabled: !!companyId,
   });
 
-  const { data: rawDeductionRows = [], isLoading: deductionsLoading, isError: deductionsError } = useApiListQuery<HrAny, HrAny[]>({
+  const { data: rawDeductionRows = [], isLoading: deductionsLoading, isError: deductionsError } = useApiListQuery<DeductionApiRow>({
     queryKey: hrKeys.deductionsByCompany(companyId),
     queryFn: () => getDeductions(companyId),
     fallbackMessage: 'Failed to load employee deductions',
@@ -72,27 +89,27 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   });
 
   const employeesById = useMemo(() => new Map(
-    activeEmployees.map((emp: HrAny) => [String(emp.id), emp]),
+    activeEmployees.map((emp: HrEmployee) => [String(emp.id), emp]),
   ), [activeEmployees]);
 
   const items = useMemo(() => {
-    const advanceItems = (rawAdvanceRows ?? []).map((row: HrAny) => {
-    const emp = row.employee || { name: row.employeeName };
-    return {
-      ...row,
-      recordType: 'advance',
-      employeeName: employeeDisplayName(emp, lang, row.employeeId),
-    };
+    const advanceItems = (rawAdvanceRows ?? []).map((row: AdvanceApiRow): AdvanceRow => {
+      const emp = row.employee || { name: row.employeeName };
+      return {
+        ...row,
+        recordType: 'advance',
+        employeeName: employeeDisplayName(emp, lang, row.employeeId ?? undefined),
+      };
     });
     const deductionItems = (rawDeductionRows ?? [])
-      .filter((row: HrAny) => row.deductionType !== 'advance')
-      .map((row: HrAny) => {
+      .filter((row: DeductionApiRow) => row.deductionType !== 'advance')
+      .map((row: DeductionApiRow): AdvanceRow => {
         const emp = row.employee || employeesById.get(String(row.employeeId)) || { name: row.employeeName };
         const amount = Number(row.amount ?? 0);
         return {
           ...row,
           recordType: 'deduction',
-          employeeName: employeeDisplayName(emp, lang, row.employeeId),
+          employeeName: employeeDisplayName(emp, lang, row.employeeId ?? undefined),
           transactionDate: row.transactionDate || row.createdAt,
           totalAmount: amount,
           totalAmountNum: amount,
@@ -107,7 +124,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   }, [employeesById, rawAdvanceRows, rawDeductionRows, lang]);
   const employeeFilterOptions = useMemo(
     () => [...activeEmployees]
-      .map((emp: HrAny) => ({
+      .map((emp: HrEmployee) => ({
         id: emp.id,
         name: employeeDisplayName(emp, lang, emp.id),
       }))
@@ -115,11 +132,11 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     [activeEmployees, lang],
   );
   const monthOptions = useMemo(
-    () => [...new Set(items.map((r: HrAny) => String(r.transactionDate || '').slice(0, 7)).filter((m: HrAny) => /^\d{4}-\d{2}$/.test(m)))].sort().reverse(),
+    () => [...new Set(items.map((r: AdvanceRow) => String(r.transactionDate || '').slice(0, 7)).filter((m: string) => /^\d{4}-\d{2}$/.test(m)))].sort().reverse(),
     [items],
   ) as string[];
   const preFilteredItems = useMemo(() => {
-    return items.filter((row: HrAny) => {
+    return items.filter((row: AdvanceRow) => {
       const byEmployee = employeeFilter ? row.employeeId === employeeFilter : true;
       const byMonth = monthFilter ? String(row.transactionDate || '').slice(0, 7) === monthFilter : true;
       const bySettlement = settlementFilter === 'all'
@@ -141,13 +158,13 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     });
 
   const advanceOnlyRows = useMemo(
-    () => allFilteredData.filter((row: HrAny) => row.recordType !== 'deduction'),
+    () => allFilteredData.filter((row: AdvanceRow) => row.recordType !== 'deduction'),
     [allFilteredData],
   );
   const manualDeductionTotal = useMemo(
     () => allFilteredData
-      .filter((row: HrAny) => row.recordType === 'deduction')
-      .reduce((sum: number, row: HrAny) => sum + Number(row.totalAmountNum ?? row.totalAmount ?? 0), 0),
+      .filter((row: AdvanceRow) => row.recordType === 'deduction')
+      .reduce((sum: number, row: AdvanceRow) => sum + Number(row.totalAmountNum ?? row.totalAmount ?? 0), 0),
     [allFilteredData],
   );
   const advanceTotals = useMemo(() => getAdvanceTotals(advanceOnlyRows), [advanceOnlyRows]);
@@ -162,18 +179,27 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     });
   }, []);
 
-  const handleDeleteAdvance = useCallback((row: HrAny) => {
+  const handleDeleteAdvance = useCallback((row: AdvanceRow) => {
+    if (!isEditableAdvance(row)) return;
     if (!window.confirm(t('deleteAdvance'))) return;
-    updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res: HrAny) => {
+    updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res: unknown) => {
       try {
         throwIfApiFailed(res, t('saveFailed'));
         invalidateOnFinancialMutation(queryClient);
         showToast(t('advanceDeleted'), 'success');
-      } catch (e: HrAny) {
-        showToast(e?.message || t('saveFailed'), 'error');
+      } catch (e: unknown) {
+        showToast(e instanceof Error ? e.message : t('saveFailed'), 'error');
       }
     });
   }, [companyId, queryClient, showToast, t]);
+
+  const openEditAdvance = useCallback((row: AdvanceRow) => {
+    if (isEditableAdvance(row)) setEditingAdvance(row);
+  }, []);
+
+  const openSettleAdvance = useCallback((row: AdvanceRow) => {
+    if (isEditableAdvance(row)) setSettlingAdvance(row);
+  }, []);
 
   const groupedRows = useMemo(
     () => buildGroupedAdvanceRows(allFilteredData, sortKey, sortDir, lang === 'ar' ? 'ar' : 'en'),
@@ -201,25 +227,28 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     ),
   }), [advanceTotals, allFilteredData.length, manualDeductionTotal, t]);
 
-  const exportData = allFilteredData.map((r: HrAny) => ({
-    employeeName: r.employeeName || '—',
-    amount: r.recordType === 'deduction' ? `-${hrFmt(r.totalAmount)}` : hrFmt(r.totalAmount),
-    transactionDate: formatSaudiDate(r.transactionDate),
-    installmentCount: r.installmentCount > 1 ? r.installmentCount : '—',
-    installmentAmount: r.installmentCount > 1 ? hrFmt(r.installmentAmount ?? 0) : '—',
-    settledAmount: hrFmt(r.settledAmountNum || 0),
-    remainingAmount: hrFmt(r.remainingAmount || 0),
-    settlementDate: r.settledAt ? formatSaudiDate(r.settledAt) : '—',
-    status: r.recordType === 'deduction'
-      ? t('deductionsList')
-      : r.settlementStatus === 'cancelled'
-      ? t('cancelled')
-      : r.settlementStatus === 'settled'
-        ? t('advanceSettled')
-        : r.settlementStatus === 'partial'
-          ? t('advanceStatusPartial')
-        : t('advanceOutstanding'),
-  }));
+  const exportData = allFilteredData.map((r: AdvanceRow) => {
+    const installmentCount = Number(r.installmentCount ?? 0);
+    return {
+      employeeName: r.employeeName || '—',
+      amount: r.recordType === 'deduction' ? `-${hrFmt(r.totalAmount)}` : hrFmt(r.totalAmount),
+      transactionDate: formatSaudiDate(r.transactionDate),
+      installmentCount: installmentCount > 1 ? installmentCount : '—',
+      installmentAmount: installmentCount > 1 ? hrFmt(r.installmentAmount ?? 0) : '—',
+      settledAmount: hrFmt(r.settledAmountNum || 0),
+      remainingAmount: hrFmt(r.remainingAmount || 0),
+      settlementDate: r.settledAt ? formatSaudiDate(r.settledAt) : '—',
+      status: r.recordType === 'deduction'
+        ? t('deductionsList')
+        : r.settlementStatus === 'cancelled'
+        ? t('cancelled')
+        : r.settlementStatus === 'settled'
+          ? t('advanceSettled')
+          : r.settlementStatus === 'partial'
+            ? t('advanceStatusPartial')
+          : t('advanceOutstanding'),
+    };
+  });
 
   const { columns, renderAdvanceDetailRows, renderMobileCard, renderCompactRow } = useAdvanceTableModel({
     t,
@@ -227,24 +256,24 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     settlementMap,
     toggleEmployeeExpanded,
     handleDeleteAdvance,
-    setEditingAdvance,
-    setSettlingAdvance,
+    setEditingAdvance: openEditAdvance,
+    setSettlingAdvance: openSettleAdvance,
   });
   const advanceFilters = (
     <>
-      <Input type="select" label={t('advancesFilterEmployee')} value={employeeFilter} onChange={(e: HrAny) => setEmployeeFilter(e.target.value)} size="sm">
+      <Input type="select" label={t('advancesFilterEmployee')} value={employeeFilter} onChange={(e: SelectChange) => setEmployeeFilter(e.target.value)} size="sm">
         <option value="">{t('advancesFilterAll')}</option>
         {employeeFilterOptions.map((emp) => (
           <option key={emp.id} value={emp.id}>{emp.name}</option>
         ))}
       </Input>
-      <Input type="select" label={t('advancesFilterMonth')} value={monthFilter} onChange={(e: HrAny) => setMonthFilter(e.target.value)} size="sm">
+      <Input type="select" label={t('advancesFilterMonth')} value={monthFilter} onChange={(e: SelectChange) => setMonthFilter(e.target.value)} size="sm">
         <option value="">{t('advancesFilterAll')}</option>
         {monthOptions.map((month: string) => (
           <option key={month} value={month}>{month}</option>
         ))}
       </Input>
-      <Input type="select" label={t('advancesFilterSettlement')} value={settlementFilter} onChange={(e: HrAny) => setSettlementFilter(e.target.value)} size="sm">
+      <Input type="select" label={t('advancesFilterSettlement')} value={settlementFilter} onChange={(e: SelectChange) => setSettlementFilter(e.target.value)} size="sm">
         <option value="all">{t('advancesFilterAll')}</option>
         <option value="outstanding">{t('advancesFilterOutstandingOnly')}</option>
         <option value="settled">{t('advancesFilterSettledOnly')}</option>
@@ -316,8 +345,8 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
           emptyMessage={t('noDataInPeriod')}
           renderCompactRow={renderCompactRow}
           renderMobileCard={renderMobileCard}
-          isRowExpanded={(row: HrAny) => expandedEmployees.has(row.employeeId)}
-          renderExpandedRow={(row: HrAny) => renderAdvanceDetailRows(row.advances)}
+          isRowExpanded={(row: AdvanceGroupRow) => expandedEmployees.has(row.employeeId)}
+          renderExpandedRow={(row: AdvanceGroupRow) => renderAdvanceDetailRows(row.advances)}
           stripeMobileCards
         />
       )}
@@ -344,7 +373,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
             showToast(t('advanceUpdated'), 'success');
             setEditingAdvance(null);
           }}
-          onError={(msg: HrAny) => showToast(msg, 'error')}
+          onError={(msg: string) => showToast(msg, 'error')}
         />
       )}
       {settlingAdvance && (
@@ -358,7 +387,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
             showToast(t('advanceSettledSuccess'), 'success');
             setSettlingAdvance(null);
           }}
-          onError={(msg: HrAny) => showToast(msg, 'error')}
+          onError={(msg: string) => showToast(msg, 'error')}
         />
       )}
     </HrFlatListTabShell>
