@@ -2,13 +2,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
-import { fmt } from '../../utils/format';
-import { formatSaudiDate, getSaudiToday, toDateInputYmd } from '../../utils/saudiDate';
+import { getSaudiToday, toDateInputYmd } from '../../utils/saudiDate';
 import { orderKeys } from '../../services/queryKeys';
 import {
   type StaffBasketLine,
   defaultVariantModalState,
-  formatVariantLabel,
   productHasVariants,
   resolveVariantFromModal,
   staffBasketLineKey,
@@ -32,13 +30,12 @@ import {
   resolveItemSection,
 } from './StaffOrdersViewParts';
 import {
-  StaffItemPriceSuffix,
   StaffSaleLogMetrics,
   StaffSentOrderRow,
   StaffSentSaleGroup,
-  StatusBadge,
 } from './StaffOrdersSentPanels';
 import { StaffQtyModal, StaffWhatsAppPromptModal } from './StaffOrderPanelModals';
+import { StaffOrdersPendingPanel } from './StaffOrdersPendingPanel';
 import { OrderConfirmModal } from './components/OrderConfirmModal';
 import {
   useMyStaffOrders,
@@ -469,51 +466,14 @@ export function StaffOrderPanel({
         </div>
       )}
 
-      {/* Pending section orders */}
-      {!isSale && pendingOrders.length > 0 && (
-        <div className="noorix-surface-card overflow-hidden">
-          <div className="px-4 py-3 border-b border-noorix-border flex items-center justify-between">
-            <span className="text-[13px] font-bold">{t('staffOrderMyPending')}</span>
-            <Badge color="amber" size="sm">{pendingOrders.length}</Badge>
-          </div>
-          <div className="divide-y divide-noorix-border">
-            {pendingOrders.map((o) => (
-              <div key={o.id} className="p-3 flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[14px]">{o.sectionName}</span>
-                    <StatusBadge status={o.status} />
-                  </div>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => loadForEdit(o)}>{t('edit')}</Button>
-                    <Button size="sm" variant="danger" onClick={() => handleDelete(o)}>{t('delete')}</Button>
-                  </div>
-                </div>
-                <div className="text-[11px] text-noorix-muted">{formatSaudiDate(o.createdAt)}</div>
-                <div className="flex flex-col gap-1">
-                  {(o.items || []).map((it, i) => {
-                    const p = it.product;
-                    const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '-') : (p?.nameAr || p?.nameEn || '-');
-                    const variant = formatVariantLabel(it.size, it.packaging, it.unit);
-                    return (
-                      <div key={i} className="flex justify-between gap-2 text-[13px]">
-                        <div className="min-w-0">
-                          <span>{name}</span>
-                          {variant ? <div className="text-[11px] text-noorix-muted ltr">{variant}</div> : null}
-                        </div>
-                        <span className="font-semibold nx-font-numbers shrink-0 ltr text-end">
-                          {fmt(it.quantity, 0)}
-                          <StaffItemPriceSuffix it={it} product={p} />
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-                {o.notes && <div className="text-[11px] text-noorix-muted italic">{o.notes}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
+      {!isSale && (
+        <StaffOrdersPendingPanel
+          orders={pendingOrders}
+          lang={lang}
+          t={t}
+          onEdit={loadForEdit}
+          onDelete={handleDelete}
+        />
       )}
 
       {/* Sender */}
