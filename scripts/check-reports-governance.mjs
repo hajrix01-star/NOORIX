@@ -25,6 +25,7 @@ const requiredFiles = [
   path.join(reportsRoot, 'accountingReportPeriodModel.ts'),
   path.join(reportsRoot, 'accountingReportPeriodModel.test.ts'),
   path.join(reportsRoot, 'reportsComparablePeriodModel.ts'),
+  path.join(reportsRoot, 'profitLossPrintPreviewModel.ts'),
   path.join(reportsRoot, 'taxReportTabModel.ts'),
   path.join(reportsRoot, 'taxReportTabModel.spec.ts'),
 ];
@@ -147,13 +148,7 @@ if (fs.existsSync(reportsScreenPath)) {
   if (source.includes('./reportsPlMonthPrint')) {
     report(reportsScreenPath, 'ReportsScreen must not use the legacy monthly print template.');
   }
-  for (const symbol of [
-    'openPrintDocumentPreview',
-    'buildPrintHtmlTable',
-    'profitLossUnifiedPrintCss',
-    'comparisonPrintColumns',
-    'accountingReportPeriodModel',
-  ]) {
+  for (const symbol of ['openPrintDocumentPreview', 'buildProfitLossPrintPreviewDocument', 'accountingReportPeriodModel']) {
     if (!source.includes(symbol)) {
       report(reportsScreenPath, `ReportsScreen unified print must include ${symbol}.`);
     }
@@ -166,6 +161,16 @@ if (fs.existsSync(reportsScreenPath)) {
   ]) {
     if (source.includes(localPeriodHelper)) {
       report(reportsScreenPath, `ReportsScreen must not own accounting period helper: ${localPeriodHelper}.`);
+    }
+  }
+}
+
+const profitLossPrintPath = path.join(reportsRoot, 'profitLossPrintPreviewModel.ts');
+if (fs.existsSync(profitLossPrintPath)) {
+  const source = fs.readFileSync(profitLossPrintPath, 'utf8');
+  for (const symbol of ['buildPrintHtmlTable', 'profitLossUnifiedPrintCss', 'comparisonPrintColumns']) {
+    if (!source.includes(symbol)) {
+      report(profitLossPrintPath, `profit/loss print preview model must include ${symbol}.`);
     }
   }
 }
