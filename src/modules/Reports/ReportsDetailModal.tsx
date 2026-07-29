@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ReportsDetailModal — تفاصيل بند تقرير ربح وخسارة (AdaptiveSheet: مودال على العريض، لوح على الضيق)
  */
 import React, { useMemo, useState, useEffect } from 'react';
@@ -9,18 +9,6 @@ import { fmt } from '../../utils/format';
 import { percentText, truncateText, isEmptyMetric, metricCardAmountValue } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button, AdaptiveSheet, MetricCard, ScreenTabs, SmartTable, usePrintPreview } from '../../ui';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Cell,
-  LabelList,
-} from 'recharts';
-import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 import { toYmd } from '../../utils/saudiDate';
 import {
   DETAIL_INVOICES_PAGE_SIZE,
@@ -42,10 +30,10 @@ import {
   type ReportsDetailTabId,
   type ReportsDetailData,
   type ReportsDetailState,
-  type TooltipProps,
   type TranslateFn,
 } from './reportsDetailModel';
 import { buildReportsDetailPrintDocument } from './reportsDetailPrintModel';
+import { ReportsDetailTrendPanel } from './ReportsDetailTrendPanel';
 
 type ReportsDetailModalProps = {
   state: ReportsDetailState | null;
@@ -245,128 +233,18 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           )}
 
           {activeTab === 'trend' && state?.showTrend && (
-            <>
-              {trendIsError && (
-                <div className="p-4 mb-2 rounded-xl text-noorix-amber border border-noorix-amber/30 bg-noorix-amber/10 text-[13px]">
-                  {trendError?.message || t('reportTrendLoadError')}
-                </div>
-              )}
-              {trendLoading && !trend && !trendIsError && (
-                <div className="py-6 text-center text-noorix-muted text-[13px]">{t('loading')}</div>
-              )}
-              {trend && (
-                <div className="noorix-surface-card p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                    <div>
-                      <div className="text-[14px] font-extrabold">{t('reportTrend')}</div>
-                      <div className="mt-1 text-noorix-muted text-[12px]">{t('reportTimeline')}</div>
-                    </div>
-                    <div className="text-[12px] text-noorix-muted">
-                      {t('reportSalesShareYear')}: <strong className="nx-font-numbers">{percentText(trend.percentOfSalesYear)}</strong>
-                    </div>
-                  </div>
-                  <div className="grid gap-2.5 mb-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
-                    <MetricCard color="var(--color-nx-purchases)">
-                      <MetricCard.Header label={t('reportMonthlyAverage')} />
-                      <MetricCard.Value value={metricCardAmountValue(averageAmount)} currency="SR" />
-                    </MetricCard>
-                    <MetricCard color="var(--color-nx-profit)">
-                      <MetricCard.Header label={t('reportTopMonth')} />
-                      <MetricCard.Value value={peakPoint?.label || '—'} />
-                      <MetricCard.Section>
-                        <span className="text-[12px] text-noorix-muted inline-flex items-baseline gap-x-1">
-                          {peakPoint != null && !isEmptyMetric(peakPoint.amount) ? (
-                            <>
-                              <span className="nx-font-numbers">{fmt(Number(peakPoint.amount))}</span>
-                              <span className="nx-sar">SR</span>
-                            </>
-                          ) : (
-                            '—'
-                          )}
-                        </span>
-                      </MetricCard.Section>
-                    </MetricCard>
-                    <MetricCard color="var(--color-nx-sales)">
-                      <MetricCard.Header label={t('selectedMonth')} />
-                      <MetricCard.Value value={data?.monthLabel || t('allMonths')} />
-                      <MetricCard.Section>
-                        <span className="text-[12px] text-noorix-muted inline-flex items-baseline gap-x-1">
-                          {!isEmptyMetric(displayContextAmount) ? (
-                            <>
-                              <span className="nx-font-numbers">{fmt(Number(displayContextAmount))}</span>
-                              <span className="nx-sar">SR</span>
-                            </>
-                          ) : (
-                            '—'
-                          )}
-                        </span>
-                      </MetricCard.Section>
-                    </MetricCard>
-                  </div>
-                  <div className="mt-1 rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-2 sm:p-4" dir="ltr">
-                    <div className="mb-2 text-[11px] font-semibold text-noorix-muted sm:text-[12px]">
-                      {t('reportTrendChartCaption')}
-                    </div>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={trendChartData} margin={{ top: 24, right: 6, left: 0, bottom: 4 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--noorix-border)" />
-                        <XAxis
-                          dataKey="name"
-                          tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
-                          axisLine={{ stroke: 'var(--noorix-border)' }}
-                          tickLine={false}
-                          interval={0}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
-                          tickFormatter={(value: number) => fmt(value, 0)}
-                          width={44}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <Tooltip
-                          cursor={{ fill: 'color-mix(in srgb, var(--color-nx-sales) 8%, transparent)' }}
-                          content={({ active, payload }: TooltipProps) => {
-                            if (!active || !payload?.length) return null;
-                            const d = payload[0]?.payload;
-                            return (
-                              <div className="rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2 shadow-md text-[12px]">
-                                <div className="mb-1 font-bold text-noorix-text">{d?.name}</div>
-                                <div className="nx-font-numbers font-semibold text-noorix-text">
-                                  {fmt(d?.rawAmount)} <span className="nx-sar">SR</span>
-                                </div>
-                                <div className="mt-1 text-[11px] text-nx-profit">
-                                  {t('reportSalesShare')}: {d?.pctStr}
-                                </div>
-                              </div>
-                            );
-                          }}
-                        />
-                        <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={52}>
-                          {trendChartData.map((entry) => (
-                            <Cell
-                              key={entry.key}
-                              fill={entry.rawAmount >= 0 ? KPI_RECHARTS_COLORS.grossProfit : KPI_RECHARTS_COLORS.expenses}
-                              stroke={entry.isSelected ? KPI_RECHARTS_COLORS.sales : 'transparent'}
-                              strokeWidth={entry.isSelected ? 2 : 0}
-                            />
-                          ))}
-                          <LabelList
-                            dataKey="pctStr"
-                            position="top"
-                            style={{
-                              fontSize: 10,
-                              fill: 'var(--noorix-text-muted)',
-                              fontFamily: 'var(--noorix-font-numbers)',
-                            }}
-                          />
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-            </>
+            <ReportsDetailTrendPanel
+              t={t}
+              trendIsError={trendIsError}
+              trendErrorMessage={trendError?.message}
+              trendLoading={trendLoading}
+              trend={trend as ReportTrendData | undefined}
+              trendChartData={trendChartData}
+              averageAmount={averageAmount}
+              peakPoint={peakPoint}
+              data={data as ReportsDetailData}
+              displayContextAmount={displayContextAmount}
+            />
           )}
 
           {activeTab === 'breakdown' && data.kind === 'derived' && (
