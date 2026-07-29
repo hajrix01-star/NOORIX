@@ -1,12 +1,9 @@
-/**
- * دخل: الملخصات اليومية (processInflow، updateInflow)
- */
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+﻿import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
 import { IdempotencyService } from '../idempotency/idempotency.service';
-import { assertOperationNotesLength, type JsonObject } from './financial-core-helpers.util';
+import { assertOperationNotesLength } from './financial-core-helpers.util';
 import { FinancialCoreSupportService } from './financial-core-support.service';
 import {
   assertInflowChannelsListNonEmpty,
@@ -21,15 +18,17 @@ import type { InflowDto, SalesChannelDto, SalesShift } from './dto/financial-ope
 import { assertValidInflowBatch } from './financial-inflow-batch.util';
 import { resolveVatRateDecimal } from '@noorix/finance-core';
 import type { TxClient } from './financial-core-helpers.util';
-import {
-  buildActiveSalesSummaryShiftDuplicateWhere,
-  normalizeSalesSummaryShift,
-} from '../sales/sales-summary-duplicate.util';
 import { resolveSalesDayContextSnapshot, salesDayContextJson } from '../sales/sales-day-context.util';
-
-function normalizeSalesShift(value: unknown): SalesShift {
-  return normalizeSalesSummaryShift(value);
-}
+import { createInflowSummaryAuditLog, updateInflowSummaryAuditLog } from './financial-inflow-audit.util';
+import {
+  createInflowSaleInvoiceWithAllocations,
+  updateInflowSaleInvoiceWithAllocations,
+} from './financial-inflow-invoice.util';
+import {
+  assertNoActiveSummaryForShift,
+  buildDailySalesSummaryNumber,
+  normalizeInflowSalesShift,
+} from './financial-inflow-summary.util';
 
 @Injectable()
 export class FinancialInflowService {
@@ -40,45 +39,13 @@ export class FinancialInflowService {
     private readonly support: FinancialCoreSupportService,
   ) {}
 
-  private async assertNoActiveSummaryForShift(
-    tx: TxClient,
-    companyId: string,
-    transactionDate: Date,
-    shift: SalesShift,
-    excludeId?: string,
-  ) {
-    const duplicate = await tx.dailySalesSummary.findFirst({
-      where: buildActiveSalesSummaryShiftDuplicateWhere({
-        companyId,
-        transactionDate,
-        shift,
-        excludeId,
-      }),
-      select: { summaryNumber: true },
-    });
-
-    if (duplicate) {
-      throw new BadRequestException(
-        'يوجد ملخص مبيعات نشط لنفس التاريخ والشفت. ألغِ الملخص السابق أو عدّله بدلاً من إنشاء مكرر.',
-      );
-    }
-  }
-
-  // 2. INFLOW — دخل: المبيعات اليومية (ملخص بقنوات متعددة)
-  // ══════════════════════════════════════════════════════════
-  /**
-   * processInflow: ينشئ داخل transaction واحدة:
-   *   [1] DailySalesSummary + DailySalesChannels
-   *   [2] LedgerEntry لكل قناة بيع (مدين=خزنة، دائن=إيراد)
-   *   [3] AuditLog
-   */
   async processInflow(dto: InflowDto, callerUserId?: string) {
     const tenantId = this.support.resolveTenantId();
     if (dto.idempotencyKey) {
       const keyHash = this.idempotency.hashKey('processInflow', {
         companyId:       dto.companyId,
         transactionDate: dto.transactionDate,
-        shift:           normalizeSalesShift(dto.shift),
+        shift:           normalizeInflowSalesShift(dto.shift),
         channels:        dto.channels,
         idempotencyKey:  dto.idempotencyKey,
       });
@@ -92,9 +59,6 @@ export class FinancialInflowService {
     return this.support.withRetry(async () => this._processInflowInner(dto, callerUserId));
   }
 
-  /**
-   * processInflowBatch: عدة ملخصات (شفتان كحد أقصى) في transaction واحدة.
-   */
   async processInflowBatch(dtos: InflowDto[], callerUserId?: string, batchIdempotencyKey?: string) {
     assertValidInflowBatch(dtos);
     if (dtos.length === 1) {
@@ -110,7 +74,7 @@ export class FinancialInflowService {
         companyId,
         transactionDate: dtos[0].transactionDate,
         itemCount:       dtos.length,
-        shifts:          dtos.map((d) => normalizeSalesShift(d.shift)).join(','),
+        shifts:          dtos.map((d) => normalizeInflowSalesShift(d.shift)).join(','),
         idempotencyKey:  batchIdempotencyKey,
       });
       return this.idempotency.withIdempotency(
@@ -164,17 +128,11 @@ export class FinancialInflowService {
     const totalAmount = sumInflowChannelAmounts(dto.channels!);
     assertInflowTotalPositive(totalAmount);
     const activeChannels = filterPositiveInflowChannels(dto.channels!);
-    const shift = normalizeSalesShift(dto.shift);
-    await this.assertNoActiveSummaryForShift(tx, dto.companyId, txDate, shift);
+    const shift = normalizeInflowSalesShift(dto.shift);
+    await assertNoActiveSummaryForShift({ tx, companyId: dto.companyId, transactionDate: txDate, shift });
 
-    // ── [A] توليد رقم ملخص فريد DS-YYYYMMDD-NNN ────────
-    const dateStr  = dto.transactionDate.replace(/-/g, '').slice(0, 8);
-    const existing = await tx.dailySalesSummary.count({
-      where: { companyId: dto.companyId, summaryNumber: { startsWith: `DS-${dateStr}` } },
-    });
-    const summaryNumber = `DS-${dateStr}-${String(existing + 1).padStart(3, '0')}`;
+    const summaryNumber = await buildDailySalesSummaryNumber(tx, dto.companyId, dto.transactionDate);
 
-    // ── [A2] جلب إعدادات الضريبة للشركة ─────────────────
     const company = await tx.company.findUnique({
         where: { id: dto.companyId },
         select: { vatEnabledForSales: true, vatRatePercent: true },
@@ -182,7 +140,6 @@ export class FinancialInflowService {
       const vatEnabled = !!company?.vatEnabledForSales;
       const vatRateDecimal = resolveVatRateDecimal(company?.vatRatePercent).toNumber();
 
-      // ── [B] حساب الإيراد الافتراضي وحساب الضريبة ─────────
       const revenueAccountId = await this.support.getDefaultRevenueAccount(tx, dto.companyId);
       const vatAccountId = vatEnabled ? await this.support.getVatCollectedAccount(tx, dto.companyId) : null;
 
@@ -203,7 +160,6 @@ export class FinancialInflowService {
       );
       const dayContext = await resolveSalesDayContextSnapshot(tx, dto.companyId, txDate);
 
-      // ── [E] Create DailySalesSummary + Channels ──────────
       const summary = await tx.dailySalesSummary.create({
         data: {
           tenantId,
@@ -228,32 +184,21 @@ export class FinancialInflowService {
         },
       });
 
-      // ── [E2] Create Invoice (kind=sale) مع الصافي والضريبة ──
-      const saleInvoice = await tx.invoice.create({
-        data: {
-          tenantId,
-          companyId:           dto.companyId,
-          invoiceNumber:       summaryNumber,
-          kind:                'sale',
-          totalAmount,
-          netAmount:           vatEnabled ? totalNet : totalAmount,
-          taxAmount:           vatEnabled ? totalTax : new Prisma.Decimal(0),
-          transactionDate:     txDate,
-          entryDate,
-          vaultId:             activeChannels.length === 1 ? activeChannels[0].vaultId : null,
-          notes:               dto.notes ?? null,
-          dailySalesSummaryId: summary.id,
-          status:              'active',
-          createdByUserId:     userId,
-        },
-      });
-      await tx.invoiceVaultAllocation.createMany({
-        data: activeChannels.map((ch) => ({
-          tenantId,
-          invoiceId: saleInvoice.id,
-          vaultId:   ch.vaultId,
-          amount:    new Prisma.Decimal(ch.amount),
-        })),
+      await createInflowSaleInvoiceWithAllocations({
+        tx,
+        tenantId,
+        companyId: dto.companyId,
+        userId,
+        summaryId: summary.id,
+        summaryNumber,
+        entryDate,
+        txDate,
+        totalAmount,
+        totalNet,
+        totalTax,
+        vatEnabled,
+        activeChannels,
+        notes: dto.notes,
       });
 
       const ledgerEntries = await createInflowSaleLedgerEntries({
@@ -273,32 +218,23 @@ export class FinancialInflowService {
         collectResults: true,
       });
 
-      // ── [F] AuditLog ─────────────────────────────────────
-      await tx.auditLog.create({
-        data: {
-          tenantId,
-          companyId: dto.companyId,
-          userId,
-          action:    'create',
-          entity:    'daily_sales_summary',
-          entityId:  summary.id,
-          newValue:  {
-            summaryNumber,
-            totalAmount:   totalAmount.toString(),
-            customerCount: dto.customerCount,
-            shift,
-            channelCount:  activeChannels.length,
-          } as JsonObject,
-          createdAt: entryDate,
-        },
+      await createInflowSummaryAuditLog({
+        tx,
+        tenantId,
+        companyId: dto.companyId,
+        userId,
+        entryDate,
+        summaryId: summary.id,
+        summaryNumber,
+        totalAmount,
+        customerCount: dto.customerCount,
+        shift,
+        activeChannels,
       });
 
       return { summary, ledgerEntries };
   }
 
-  /**
-   * updateInflow: تحديث ملخص مبيعات — يلغي القيود القديمة وينشئ قيوداً جديدة.
-   */
   async updateInflow(
     summaryId: string,
     companyId: string,
@@ -324,7 +260,7 @@ export class FinancialInflowService {
 
     const activeChannels = filterPositiveInflowChannels(dto.channels);
     if (!activeChannels.length) {
-      throw new BadRequestException('يجب إدخال قناة بيع واحدة على الأقل.');
+      throw new BadRequestException('ÙŠØ¬Ø¨ Ø¥Ø¯Ø®Ø§Ù„ Ù‚Ù†Ø§Ø© Ø¨ÙŠØ¹ ÙˆØ§Ø­Ø¯Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„.');
     }
 
     return this.db.withTenant(async (tx) => {
@@ -334,15 +270,15 @@ export class FinancialInflowService {
         where: { id: summaryId, companyId, status: 'active' },
       });
       if (!summary) {
-        throw new NotFoundException('الملخص غير موجود أو تم إلغاؤه.');
+        throw new NotFoundException('Ø§Ù„Ù…Ù„Ø®Øµ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯ Ø£Ùˆ ØªÙ… Ø¥Ù„ØºØ§Ø¤Ù‡.');
       }
 
       if (summary.transactionDate.getTime() !== txDate.getTime()) {
         await this.fiscalPeriod.assertPeriodOpenForDate(tx, companyId, summary.transactionDate);
       }
 
-      const shift = dto.shift ?? normalizeSalesShift(summary.shift);
-      await this.assertNoActiveSummaryForShift(tx, companyId, txDate, shift, summaryId);
+      const shift = dto.shift ?? normalizeInflowSalesShift(summary.shift);
+      await assertNoActiveSummaryForShift({ tx, companyId, transactionDate: txDate, shift, excludeId: summaryId });
 
       await this.support.assertVaultsUsableAsSalesPayment(
         tx,
@@ -396,30 +332,18 @@ export class FinancialInflowService {
         vatRateDecimal,
       );
 
-      const saleInvoice = await tx.invoice.findFirst({
-        where: { dailySalesSummaryId: summaryId, companyId },
+      await updateInflowSaleInvoiceWithAllocations({
+        tx,
+        tenantId,
+        companyId,
+        summaryId,
+        txDate,
+        totalAmount,
+        totalNet,
+        totalTax,
+        vatEnabled,
+        activeChannels,
       });
-      if (saleInvoice) {
-        await tx.invoiceVaultAllocation.deleteMany({ where: { invoiceId: saleInvoice.id } });
-        await tx.invoiceVaultAllocation.createMany({
-          data: activeChannels.map((ch: SalesChannelDto) => ({
-            tenantId,
-            invoiceId: saleInvoice.id,
-            vaultId:   ch.vaultId,
-            amount:    new Prisma.Decimal(ch.amount),
-          })),
-        });
-        await tx.invoice.update({
-          where: { id: saleInvoice.id },
-          data:  {
-            transactionDate: txDate,
-            totalAmount,
-            netAmount: vatEnabled ? totalNet : totalAmount,
-            taxAmount: vatEnabled ? totalTax : new Prisma.Decimal(0),
-            vaultId: activeChannels.length === 1 ? activeChannels[0].vaultId : null,
-          },
-        });
-      }
 
       const revenueAccountId = await this.support.getDefaultRevenueAccount(tx, companyId);
       const vatAccountId = vatEnabled ? await this.support.getVatCollectedAccount(tx, companyId) : null;
@@ -444,22 +368,17 @@ export class FinancialInflowService {
         collectResults: false,
       });
 
-      await tx.auditLog.create({
-        data: {
-          tenantId,
-          companyId,
-          userId,
-          action:    'update',
-          entity:    'daily_sales_summary',
-          entityId:  summaryId,
-          newValue:  {
-            totalAmount:   totalAmount.toString(),
-            customerCount: dto.customerCount,
-            shift,
-            channelCount:  activeChannels.length,
-          } as JsonObject,
-          createdAt: entryDate,
-        },
+      await updateInflowSummaryAuditLog({
+        tx,
+        tenantId,
+        companyId,
+        userId,
+        entryDate,
+        summaryId,
+        totalAmount,
+        customerCount: dto.customerCount,
+        shift,
+        activeChannels,
       });
 
       const updated = await tx.dailySalesSummary.findUnique({
@@ -470,5 +389,4 @@ export class FinancialInflowService {
     });
   }
 
-  // ══════════════════════════════════════════════════════════
 }
