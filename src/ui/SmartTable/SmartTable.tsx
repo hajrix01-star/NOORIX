@@ -8,7 +8,7 @@ import { useIsNarrow768 } from '../responsive';
 import { useUiDir } from '../../hooks/useUiDir';
 import { cn } from '../cn';
 import type { SmartTableColumn, SmartTableProps as SmartTablePropsBase, SmartTableRow } from './types';
-import { columnLabel, getAlign } from './columnUtils';
+import { columnLabel } from './columnUtils';
 import { buildFooterCells } from './buildFooterCells';
 import { getColumnKindClass, normalizeSmartColumn } from './columnPresets';
 import { useSmartTableEngine } from './tableEngine';
@@ -19,42 +19,24 @@ import { SmartTableErrorState, SmartTableLoadingState } from './SmartTableStates
 import { SmartTableCompactRows, SmartTableMobileCards } from './SmartTableResponsiveRows';
 import { useSmartTableColumnResize } from './useSmartTableColumnResize';
 import { useSmartTableColumnVisibility } from './useSmartTableColumnVisibility';
+import { readRowValue } from './smartTableCellValue';
+import { SmartTableDesktopRows } from './SmartTableDesktopRows';
 import {
   DEFAULT_INNER_PADDING,
   SMART_TABLE_COMPACT_PADDING,
   SMART_TABLE_RELAXED_BODY_PADDING,
   SMART_TABLE_RELAXED_HEADER_PADDING,
-  buildBodyCellStyle,
   buildColumnStyle,
   buildFrameStyle,
   buildHeaderCellStyle,
   buildRowNumberCellStyle,
   buildRowNumberHeaderStyle,
-  buildRowStyle,
   buildTableStyle,
   DEFAULT_ROW_NUMBER_WIDTH,
 } from './smartTableStyles';
 
 export { placeColVisPanel };
 
-function renderRawCellValue(value: unknown): React.ReactNode {
-  if (value == null) return '—';
-  if (
-    typeof value === 'string'
-    || typeof value === 'number'
-    || typeof value === 'boolean'
-    || React.isValidElement(value)
-  ) {
-    return value;
-  }
-  return String(value);
-}
-
-function readRowValue(row: object, key: string): unknown {
-  return (row as Record<string, unknown>)[key];
-}
-
-// ── SmartTable ───────────────────────────────────────────────
 function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: SmartTablePropsBase<TRow>) {
   const {
     columns = [],
@@ -344,78 +326,27 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
               </tr>
             </thead>
             <tbody>
-              {engineRows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={effectiveCols}
-                    className={cn(
-                      'text-center text-noorix-muted',
-                      compact ? 'px-4 py-6 text-[13px]' : 'p-9 text-[15px]',
-                    )}
-                  >
-                    {emptyMsg}
-                  </td>
-                </tr>
-              ) : engineRows.map(({ original: row, index: i }) => (
-                <React.Fragment key={rowKey(row, i)}>
-                <tr
-                  className={`nx-smart-row-vars border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
-                  style={buildRowStyle({ row, index: i, getRowStyle })}
-                >
-                  {showRowNumbers && (
-                    <td className="nx-row-number-td nx-smart-row-number-cell nx-smart-body-cell-vars text-center font-semibold" style={rowNumberCellStyle}>
-                      {(pagination.page - 1) * safePageSize + i + 1}
-                    </td>
-                  )}
-                  {visibleColumns.map((col) => {
-                    const value  = readRowValue(row, col.key);
-                    const align  = getAlign(col);
-                    const family = col.numeric ? 'var(--noorix-font-numbers)' : undefined;
-                    const shrink = col.shrink === true;
-                    const actionSticky = col.key === 'actions' && stickyActionColumn;
-                    const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
-                    const tdEffectiveWidth = columnEffectiveWidth(col);
-                    const renderedValue = col.render ? col.render(value, row, i) : renderRawCellValue(value);
-                    return (
-                      <td
-                        key={col.key}
-                        className={cn(
-                          'nx-smart-body-cell-vars',
-                          col.cellClassName,
-                          getColumnKindClass(col),
-                          col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',
-                          col.numeric ? 'noorix-numeric-cell' : '',
-                          shrink ? 'noorix-td-shrink' : '',
-                          shouldTruncate ? 'noorix-table-cell-truncate' : '',
-                        )}
-                        style={buildBodyCellStyle({
-                          col,
-                          tdEffectiveWidth,
-                          align: align as React.CSSProperties['textAlign'],
-                          family,
-                          shrink,
-                          cellPad,
-                          cellFs,
-                        })}
-                        data-column-kind={col.kind}
-                        data-column-size={col.size}
-                      >
-                        {col.numeric ? (
-                          <div className="nx-smart-numeric-content">{renderedValue}</div>
-                        ) : renderedValue}
-                      </td>
-                    );
-                  })}
-                </tr>
-                {typeof renderExpandedRow === 'function' && isRowExpanded?.(row, i) && (
-                  <tr className="border-b border-noorix-border bg-noorix-surface">
-                    <td colSpan={effectiveCols} className="p-0">
-                      {renderExpandedRow(row, i)}
-                    </td>
-                  </tr>
-                )}
-                </React.Fragment>
-              ))}
+              <SmartTableDesktopRows
+                rows={engineRows}
+                visibleColumns={visibleColumns}
+                effectiveCols={effectiveCols}
+                emptyMsg={emptyMsg}
+                compact={compact}
+                layout={layout}
+                cellPad={cellPad}
+                cellFs={cellFs}
+                showRowNumbers={showRowNumbers}
+                rowNumberCellStyle={rowNumberCellStyle}
+                paginationPage={pagination.page}
+                safePageSize={safePageSize}
+                stickyActionColumn={stickyActionColumn}
+                rowKey={rowKey}
+                columnEffectiveWidth={columnEffectiveWidth}
+                getRowClassName={getRowClassName}
+                getRowStyle={getRowStyle}
+                isRowExpanded={isRowExpanded}
+                renderExpandedRow={renderExpandedRow}
+              />
             </tbody>
             {(footerCells || footerRow) && (
               <tfoot>

@@ -113,6 +113,8 @@ const centralTableCssPath = 'src/index.css';
 const centralTableCss = read(centralTableCssPath);
 const smartTableSourcePath = 'src/ui/SmartTable/SmartTable.tsx';
 const smartTableSource = read(smartTableSourcePath);
+const smartTableDesktopRowsSourcePath = 'src/ui/SmartTable/SmartTableDesktopRows.tsx';
+const smartTableDesktopRowsSource = read(smartTableDesktopRowsSourcePath);
 const cellDirectionSelectors = [
   '.noorix-table td[data-column-kind="money"]',
   '.noorix-table td[data-column-kind="number"]',
@@ -141,7 +143,7 @@ for (const match of centralTableCss.matchAll(cssRulePattern)) {
 if (!/\.noorix-table\s+\.nx-smart-numeric-content\s*\{[^}]*\bdirection\s*:\s*ltr\b[^}]*\bunicode-bidi\s*:\s*isolate\b/s.test(centralTableCss)) {
   fail(centralTableCssPath, null, 'missing the central LTR isolation contract for numeric cell content');
 }
-if (!smartTableSource.includes('className="nx-smart-numeric-content"')) {
+if (![smartTableSource, smartTableDesktopRowsSource].some((source) => source.includes('className="nx-smart-numeric-content"'))) {
   fail(smartTableSourcePath, null, 'numeric SmartTable values must use the central numeric-content wrapper');
 }
 
