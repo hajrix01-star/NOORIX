@@ -8,6 +8,7 @@ const violations = [];
 
 const strictFiles = [
   'src/App.tsx',
+  'src/AppRoutes.tsx',
   'src/constants/cardStyles.ts',
   'src/modules/themePreview/ThemePreviewScreen.tsx',
   'src/utils/routePrefetch.ts',
@@ -76,8 +77,9 @@ if (fs.existsSync(abs('src/modules/ThemePreviewScreen.tsx'))) {
 }
 
 const appSource = read('src/App.tsx');
-if (!appSource.includes("import('./modules/themePreview/ThemePreviewScreen')")) {
-  report('src/App.tsx', 'App must lazy-load Theme Preview from the themePreview module folder.');
+const appRoutesSource = read('src/AppRoutes.tsx');
+if (!appRoutesSource.includes("import('./modules/themePreview/ThemePreviewScreen')")) {
+  report('src/AppRoutes.tsx', 'Protected app routes must lazy-load Theme Preview from the themePreview module folder.');
 }
 
 const routePrefetchSource = read('src/utils/routePrefetch.ts');
