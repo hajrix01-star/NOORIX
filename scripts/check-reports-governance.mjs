@@ -20,8 +20,6 @@ const strictCodeFiles = [
 const requiredFiles = [
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'reports-query.ts'),
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'reports-query.test.ts'),
-  path.join(reportsRoot, 'generalReportV2Model.ts'),
-  path.join(reportsRoot, 'generalReportV2Model.spec.ts'),
   path.join(reportsRoot, 'accountingReportPeriodModel.ts'),
   path.join(reportsRoot, 'accountingReportPeriodModel.test.ts'),
   path.join(reportsRoot, 'reportsComparablePeriodModel.ts'),
@@ -32,8 +30,6 @@ const requiredFiles = [
 
 const allowedRawTableFiles = new Set([
   path.join(reportsRoot, 'GeneralPlTable.tsx'),
-  path.join(reportsRoot, 'generalReportV2PrintModel.ts'),
-  path.join(reportsRoot, 'generalReportV2Model.ts'),
   path.join(reportsRoot, 'ReportsScreen.tsx'),
   path.join(reportsRoot, 'reportsPlMonthPrint.ts'),
   path.join(reportsRoot, 'ReportsDetailModal.tsx'),
@@ -128,17 +124,6 @@ if (fs.existsSync(reportsApiPath)) {
   }
   if (/encodeURIComponent\(|new URLSearchParams\(|\?\$\{|\?companyId=/.test(source)) {
     report(reportsApiPath, 'reports API endpoints must not hand-build query strings.');
-  }
-}
-
-const generalV2Path = path.join(reportsRoot, 'GeneralReportV2Screen.tsx');
-if (fs.existsSync(generalV2Path)) {
-  const source = fs.readFileSync(generalV2Path, 'utf8');
-  if (!source.includes('./generalReportV2Model')) {
-    report(generalV2Path, 'GeneralReportV2Screen must delegate printable/export row shaping to generalReportV2Model.');
-  }
-  if (/function\s+buildPrintableReportHtml\b/.test(source)) {
-    report(generalV2Path, 'GeneralReportV2Screen must not own printable HTML builders.');
   }
 }
 

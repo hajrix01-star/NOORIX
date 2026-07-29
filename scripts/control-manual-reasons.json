@@ -1,12 +1,6 @@
 {
   "version": 1,
   "description": "Phase 1 closure decisions for remaining raw UI controls outside src/ui. Every entry in control-manual-exceptions.json must have a reason here.",
-  "rawButtonReasons": {
-    "src/modules/Reports/GeneralReportV2Screen.tsx": {
-      "category": "print-html-string",
-      "decision": "leave",
-      "reason": "the remaining raw button is inside generated printable HTML, not mounted React UI."
-    }
-  },
+  "rawButtonReasons": {},
   "rawFormControlReasons": {}
 }

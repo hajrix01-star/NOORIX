@@ -114,6 +114,14 @@ export default function ProfitLossReportWorkspace({
           </div>
 
           <FilterToolbar variant="bare" className="nx-pl-command-center__controls">
+            <Input
+              type="text"
+              size="sm"
+              className="nx-pl-row-search nx-pl-row-search--command"
+              label={t('reportPlRowFilterPlaceholder')}
+              value={rowSearch}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => onRowSearchChange(event.target.value)}
+            />
             <Button size="sm" onClick={onExportExcel} disabled={!report}>
               {t('exportExcel')}
             </Button>
@@ -206,14 +214,6 @@ export default function ProfitLossReportWorkspace({
                       </Button>
                     ))}
                   </div>
-                  <Input
-                    type="text"
-                    size="sm"
-                    className="nx-pl-row-search"
-                    label={t('reportPlRowFilterPlaceholder')}
-                    value={rowSearch}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => onRowSearchChange(event.target.value)}
-                  />
                 </FilterToolbar>
               </div>
 

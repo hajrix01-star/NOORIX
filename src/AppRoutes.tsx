@@ -15,7 +15,6 @@ const OwnerDashboardScreen = React.lazy(() => import('./modules/Owner/OwnerDashb
 const ReportsLayout = React.lazy(() => import('./modules/Reports/ReportsLayout'));
 const ReportsIndexRedirect = React.lazy(() => import('./modules/Reports/ReportsIndexRedirect'));
 const ReportsScreen = React.lazy(() => import('./modules/Reports/ReportsScreen'));
-const GeneralReportV2Screen = React.lazy(() => import('./modules/Reports/GeneralReportV2Screen'));
 const CostAccountingAppsScreen = React.lazy(() => import('./modules/Reports/CostAccountingAppsScreen'));
 const ReportsTaxScreen = React.lazy(() => import('./modules/Reports/ReportsTaxScreen'));
 const HajriTaxLayout = React.lazy(() => import('./modules/HajriTax/HajriTaxLayout'));
@@ -72,7 +71,6 @@ export function ProtectedAppRoutes({ user, isUserLoading }: ProtectedAppRoutesPr
         <Route path="/reports" element={<ReportsLayout />}>
           <Route index element={<ReportsIndexRedirect />} />
           <Route path="general" element={<ReportsScreen />} />
-          <Route path="general-v2" element={<GeneralReportV2Screen />} />
           <Route path="cost-apps" element={<CostAccountingAppsScreen />} />
           <Route path="tax" element={<ReportsTaxScreen />} />
           <Route path="vat-registry" element={<Navigate to="/hajri-tax" replace />} />

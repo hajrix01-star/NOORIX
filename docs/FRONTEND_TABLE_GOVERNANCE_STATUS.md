@@ -8,8 +8,8 @@ Status: governed; no new raw table is allowed without registry count and reason.
 
 | Metric | Count |
 |---|---:|
-| Manual `<table>` outside `src/ui` | 35 |
-| Files with manual tables outside `src/ui` | 22 |
+| Manual `<table>` outside `src/ui` | 34 |
+| Files with manual tables outside `src/ui` | 21 |
 | `SmartTable` JSX usages | 46 |
 | Files using `SmartTable` JSX | 36 |
 | `SimpleTable` JSX usages | 23 |
@@ -25,7 +25,7 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | `print-financial` | 2 | 7 | protected financial print/export |
 | `editable-grid` | 6 | 6 | leave until editable table/control phase |
 | `payroll-protected` | 2 | 3 | protected HR financial scope |
-| `financial-report` | 3 | 3 | protected report scope |
+| `financial-report` | 2 | 2 | protected report scope |
 | `tax-protected` | 2 | 2 | protected tax scope |
 | `bank-protected` | 1 | 1 | protected bank workflow |
 | `hr-financial` | 1 | 1 | protected HR financial scope |

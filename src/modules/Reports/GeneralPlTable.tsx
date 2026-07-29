@@ -4,13 +4,13 @@ import {
   amountText,
   percentText,
   displayLabel,
-  getContextPercent,
   getRowTone,
   isEmptyMetric,
 } from './reportHelpers';
 import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState } from './reportTypes';
 import {
   periodAmount,
+  periodPercent,
   rowIdentity,
   type ComparisonColumnPeriod,
 } from './reportsComparablePeriodModel';
@@ -204,7 +204,7 @@ export default function GeneralPlTable({
                     >
                       <div className="nx-pl-table__amount">{tableAmountText(periodAmount(row, currentColumnPeriod.period))}</div>
                       <div className="nx-pl-table__percent">
-                        {currentColumnPeriod.period.month ? tablePercentText(getContextPercent(row, currentColumnPeriod.period.month)) : ''}
+                        {tablePercentText(periodPercent(row, currentColumnPeriod.period))}
                       </div>
                     </Button>
                   </td>
@@ -213,6 +213,7 @@ export default function GeneralPlTable({
                 {isPeriodMode && monthCompareColumns.map((column) => {
                   const compareRow = compareRows.get(`${column.period.year}:${rowIdentity(row)}`);
                   const compareValue = compareRow ? periodAmount(compareRow, column.period) : null;
+                  const comparePercent = compareRow ? periodPercent(compareRow, column.period) : null;
                   return (
                     <td
                       key={`${row.groupKey}-${column.key}`}
@@ -223,6 +224,9 @@ export default function GeneralPlTable({
                     >
                       <div className="nx-pl-table__amount">
                         {compareValue == null ? '' : tableAmountText(compareValue)}
+                      </div>
+                      <div className="nx-pl-table__percent">
+                        {tablePercentText(comparePercent)}
                       </div>
                     </td>
                   );

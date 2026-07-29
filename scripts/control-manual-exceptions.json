@@ -1,8 +1,6 @@
 {
   "version": 1,
   "description": "Phase 1 closure registry for remaining raw UI controls outside src/ui. React UI buttons and form controls outside src/ui are not allowed. Only documented non-React HTML string buttons may remain.",
-  "allowedRawButtonCounts": {
-    "src/modules/Reports/GeneralReportV2Screen.tsx": 1
-  },
+  "allowedRawButtonCounts": {},
   "allowedRawFormControlCounts": {}
 }
