@@ -9,78 +9,27 @@ import React, {
   useRef,
   useState,
   memo,
-  type ChangeEvent,
   type FormEvent,
 } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from '../i18n/useTranslation';
 import { useToast } from '../context/ToastContext';
-import { AdaptiveSheet, Button, Input, Badge, FormRow, SmartTable, SearchableOptionsPicker } from '../ui';
-
-const TYPE_MAP = {
-  purchase: { labelKey: 'categoryTypes' },
-  expense: { labelKey: 'categoryTypeExpense' },
-  sale: { labelKey: 'categoryTypeSale' },
-} as const;
-
-const TYPE_BADGE_COLOR: Record<string, 'blue' | 'amber' | 'green' | 'gray'> = {
-  purchase: 'blue',
-  expense: 'amber',
-  sale: 'green',
-};
-
-type CategoryKind = keyof typeof TYPE_MAP;
-
-type CategoryNode = {
-  id: string;
-  nameAr?: string | null;
-  nameEn?: string | null;
-  type?: string;
-  icon?: string | null;
-  parentId?: string | null;
-  code?: string | null;
-  account?: { code?: string | null } | null;
-  children?: CategoryNode[];
-};
-
-type CategoryRow = CategoryNode & {
-  _level: number;
-  _parentName?: string;
-  _parentCode?: string;
-};
-
-type FormState = {
-  nameAr: string;
-  nameEn: string;
-  type: CategoryKind;
-  icon: string;
-  parentId: string;
-};
+import { Button, Badge, SmartTable } from '../ui';
+import {
+  CategoriesManagerForm,
+  CodeBadge,
+  TYPE_BADGE_COLOR,
+  TYPE_MAP,
+  type CategoryFormState,
+  type CategoryKind,
+  type CategoryNode,
+  type CategoryRow,
+} from './CategoriesManagerParts';
 
 type CategoriesManagerProps = {
   companyId?: string | null;
   openCreateSignal?: number;
 };
-
-/** عرض الكود التحليلي مع لون يختلف حسب المستوى */
-function CodeBadge({ row }: { row: CategoryRow }) {
-  const displayCode = row.code || row.account?.code || null;
-  if (!displayCode) return <span className="text-noorix-muted text-[11px]">—</span>;
-
-  const isParent = row._level === 0;
-  return (
-    <span
-      className={[
-        'inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold leading-none',
-        isParent
-          ? 'bg-blue-50 text-noorix-blue border border-blue-200'
-          : 'bg-amber-50 text-amber-700 border border-amber-200',
-      ].join(' ')}
-    >
-      {displayCode}
-    </span>
-  );
-}
 
 export const CategoriesManager = memo(function CategoriesManager({
   companyId,
@@ -91,7 +40,7 @@ export const CategoriesManager = memo(function CategoriesManager({
   const [editing, setEditing] = useState<CategoryRow | null>(null);
   const lastOpenCreateSignal = useRef(openCreateSignal);
   const { showToast } = useToast();
-  const [form, setForm] = useState<FormState>({
+  const [form, setForm] = useState<CategoryFormState>({
     nameAr: '',
     nameEn: '',
     type: 'purchase',
@@ -126,6 +75,10 @@ export const CategoriesManager = memo(function CategoriesManager({
       parentId: parentId || '',
       type: (parent?.type as CategoryKind) || p.type,
     }));
+  };
+
+  const handleFieldChange = <K extends keyof CategoryFormState>(key: K, value: CategoryFormState[K]) => {
+    setForm((previous) => ({ ...previous, [key]: value }));
   };
 
   const rows = useMemo((): CategoryRow[] => {
@@ -352,73 +305,19 @@ export const CategoriesManager = memo(function CategoriesManager({
 
   return (
     <div className="flex flex-col gap-4">
-      <AdaptiveSheet
+      <CategoriesManagerForm
         open={showForm}
+        editing={editing}
+        form={form}
+        lang={lang}
+        t={t}
+        parentPickerOptions={parentPickerOptions}
+        isSaving={create.isPending || update.isPending}
         onClose={resetForm}
-        title={editing ? t('editCategory') : t('newCategory')}
-        size="md"
-        side="start"
-        className="category-form-drawer"
-      >
-        <form onSubmit={handleSave}>
-          <FormRow cols={2} className="mb-3.5">
-            <Input
-              type="text"
-              label={`${t('nameAr')} *`}
-              value={form.nameAr}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
-            />
-            <Input
-              type="text"
-              label={t('nameEnCol')}
-              value={form.nameEn}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameEn: e.target.value }))}
-            />
-            <Input
-              type="select"
-              label={t('type')}
-              value={form.type}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => setForm((p) => ({ ...p, type: e.target.value as CategoryKind }))}
-            >
-              <option value="purchase">{t('categoryTypes')}</option>
-              <option value="expense">{t('categoryTypeExpense')}</option>
-              <option value="sale">{t('categoryTypeSale')}</option>
-            </Input>
-            <Input
-              type="text"
-              label={t('icon')}
-              value={form.icon}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, icon: e.target.value }))}
-              placeholder=""
-            />
-          </FormRow>
-          <div className="mb-[14px]">
-            <SearchableOptionsPicker
-              label={t('parentCategory')}
-              allowEmpty
-              emptyValue=""
-              emptyLabel={lang === 'en' ? '— Main category —' : '— تصنيف رئيسي —'}
-              value={form.parentId}
-              onChange={handleParentChange}
-              options={parentPickerOptions}
-              aria-label={t('parentCategory')}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={create.isPending || update.isPending}
-              loading={create.isPending || update.isPending}
-            >
-              {create.isPending || update.isPending ? t('saving') : t('save')}
-            </Button>
-            <Button type="button" onClick={resetForm}>
-              {t('cancel')}
-            </Button>
-          </div>
-        </form>
-      </AdaptiveSheet>
+        onSubmit={handleSave}
+        onFieldChange={handleFieldChange}
+        onParentChange={handleParentChange}
+      />
       <SmartTable
         columns={columns}
         data={rows}
