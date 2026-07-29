@@ -22,11 +22,6 @@
       "decision": "leave",
       "reason": "payroll run rows contain editable inputs and payroll calculations."
     },
-    "src/modules/HR/components/useAdvanceTableModel.tsx": {
-      "category": "hr-financial",
-      "decision": "leave",
-      "reason": "advance actions/summary table model in HR financial flow."
-    },
     "src/modules/HR/tabs/EOSCalcTab.tsx": {
       "category": "payroll-protected",
       "decision": "leave",

@@ -17,6 +17,7 @@ import { useTableFilter } from '../../../hooks/useTableFilter';
 import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { AdvanceEditModal } from '../components/AdvanceEditModal';
 import { AdvanceSettlementModal } from '../components/AdvanceSettlementModal';
+import { AdvanceDetailsModal } from '../components/AdvanceDetailsModal';
 import { useAdvanceTableModel } from '../components/useAdvanceTableModel';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Input, SmartTable } from '../../../ui';
@@ -61,11 +62,11 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const [showAdvance, setShowAdvance] = useState(false);
   const [editingAdvance, setEditingAdvance] = useState<AdvanceEditableRow | null>(null);
   const [settlingAdvance, setSettlingAdvance] = useState<AdvanceEditableRow | null>(null);
+  const [selectedAdvanceGroup, setSelectedAdvanceGroup] = useState<AdvanceGroupRow | null>(null);
   const { showToast } = useToast();
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
   const [settlementFilter, setSettlementFilter] = useState('all');
-  const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(() => new Set());
   const [groupPage, setGroupPage] = useState(1);
 
   const { createAdvance, employees: activeEmployees } = useEmployees(companyId, {
@@ -170,14 +171,6 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const advanceTotals = useMemo(() => getAdvanceTotals(advanceOnlyRows), [advanceOnlyRows]);
 
   const settlementMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
-  const toggleEmployeeExpanded = useCallback((employeeId: string) => {
-    setExpandedEmployees((prev) => {
-      const next = new Set(prev);
-      if (next.has(employeeId)) next.delete(employeeId);
-      else next.add(employeeId);
-      return next;
-    });
-  }, []);
 
   const handleDeleteAdvance = useCallback((row: AdvanceRow) => {
     if (!isEditableAdvance(row)) return;
@@ -250,14 +243,10 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     };
   });
 
-  const { columns, renderAdvanceDetailRows, renderMobileCard, renderCompactRow } = useAdvanceTableModel({
+  const { columns, renderMobileCard, renderCompactRow } = useAdvanceTableModel({
     t,
-    expandedEmployees,
     settlementMap,
-    toggleEmployeeExpanded,
-    handleDeleteAdvance,
-    setEditingAdvance: openEditAdvance,
-    setSettlingAdvance: openSettleAdvance,
+    onOpenEmployee: setSelectedAdvanceGroup,
   });
   const advanceFilters = (
     <>
@@ -345,12 +334,19 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
           emptyMessage={t('noDataInPeriod')}
           renderCompactRow={renderCompactRow}
           renderMobileCard={renderMobileCard}
-          isRowExpanded={(row: AdvanceGroupRow) => expandedEmployees.has(row.employeeId)}
-          renderExpandedRow={(row: AdvanceGroupRow) => renderAdvanceDetailRows(row.advances)}
           stripeMobileCards
         />
       )}
     >
+      <AdvanceDetailsModal
+        group={selectedAdvanceGroup}
+        onClose={() => setSelectedAdvanceGroup(null)}
+        t={t}
+        settlementMap={settlementMap}
+        onEditAdvance={openEditAdvance}
+        onSettleAdvance={openSettleAdvance}
+        onDeleteAdvance={handleDeleteAdvance}
+      />
       {showAdvance && (
         <AdvanceQuickModal
           employee={null}
