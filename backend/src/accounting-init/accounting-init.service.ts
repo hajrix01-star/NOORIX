@@ -1,14 +1,3 @@
-/**
- * AccountingInitService — محرك البذر التلقائي لدليل الحسابات (COA)
- *
- * يُنفذ عند إنشاء أي شركة جديدة عبر initializeCompanyAccounting.
- * يزرع: 16 حساباً افتراضياً (5 أصناف) + خزينتين + ذمم مدينة ودائنة + فئات وتصنيفات فرعية + موردين افتراضيين.
- *
- * موردين افتراضيين: الشركة السعودية للكهرباء، الاتصالات السعودية (STC)
- * — مرتبطين بفئات (كهرباء، اتصالات) تحت إيجار ومرافق، مع الرقم الضريبي.
- *
- * القاعدة الذهبية: tenantId مُحقون في كل سجل لضمان الأمان (RLS).
- */
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { DEFAULT_BANK_TREE_CATEGORY_SEEDS } from '../bank-statements/default-bank-tree-categories.seed';
@@ -39,18 +28,9 @@ export {
 export class AccountingInitService {
   constructor(private readonly prisma: TenantPrismaService) {}
 
-  /**
-   * تهيئة المحاسبة للشركة الجديدة.
-   * يُستدعى تلقائياً من CompanyService.create.
-   *
-   * @param tenantId - معرف المستأجر (RLS)
-   * @param companyId - معرف الشركة
-   * @returns عدد الحسابات المُنشأة
-   */
   async initializeCompanyAccounting(tenantId: string, companyId: string): Promise<{ accounts: number; vaults: number; categories: number; suppliers: number }> {
     const codeToAccountId: Record<string, string> = {};
 
-    // 1. إنشاء الحسابات الـ 16 (أصول + خصوم + ملكية + إيرادات + مصروفات)
     for (const acc of MASTER_ACCOUNTS) {
       const created = await this.prisma.account.create({
         data: {
@@ -68,7 +48,6 @@ export class AccountingInitService {
       codeToAccountId[acc.code] = created.id;
     }
 
-    // 2. إنشاء الخزينتين (V-001, V-002)
     for (const v of MASTER_VAULTS) {
       const accountId = codeToAccountId[v.accountCode];
       if (!accountId) continue;
@@ -87,7 +66,6 @@ export class AccountingInitService {
       });
     }
 
-    // 3. إنشاء الفترة المالية الافتراضية (السنة الحالية)
     const now = new Date();
     const year = now.getFullYear();
     await this.prisma.fiscalPeriod.create({
@@ -102,7 +80,6 @@ export class AccountingInitService {
       },
     });
 
-    // 4. إنشاء الفئات الرئيسية وربطها بالحسابات
     const accountCodeToCategoryId: Record<string, string> = {};
     for (let i = 0; i < MASTER_CATEGORIES.length; i++) {
       const cat = MASTER_CATEGORIES[i];
@@ -125,7 +102,6 @@ export class AccountingInitService {
       accountCodeToCategoryId[cat.accountCode] = created.id;
     }
 
-    // 5. إنشاء الفئات الفرعية المقترحة (تحت كل فرع رئيسي)
     const subCategoryKeyToId: Record<string, string> = {};
     let subCount = 0;
     for (const sub of MASTER_SUBCATEGORIES) {
@@ -151,7 +127,6 @@ export class AccountingInitService {
       subCount++;
     }
 
-    // 6. إنشاء موردين الخدمات الافتراضيين (كهرباء، اتصالات)
     let supplierCount = 0;
     for (const sup of MASTER_SUPPLIERS) {
       const categoryId = subCategoryKeyToId[`${sup.parentAccountCode}:${sup.subCategoryNameAr}`];
@@ -174,7 +149,6 @@ export class AccountingInitService {
       supplierCount++;
     }
 
-    // 7. فئات شجرة تصنيف كشف الحساب (قواعد من النظام السابق)
     await this.seedDefaultBankTreeCategories(tenantId, companyId);
 
     return {
@@ -185,17 +159,6 @@ export class AccountingInitService {
     };
   }
 
-  /**
-   * إعادة تهيئة الفئات والحسابات لشركة واحدة.
-   * آمن تماماً: يمسح الفئات القديمة + الحسابات الزائدة ثم يعيد البذر بالهيكل الجديد.
-   *
-   * الخطوات:
-   * 1. فصل الموردين وبنود المصروفات عن الفئات (null)
-   * 2. حذف جميع الفئات للشركة
-   * 3. حذف الحسابات غير الأساسية (مولَّدة قديماً خارج MASTER)
-   * 4. upsert الحسابات الأساسية (إنشاء ما يغيب، تحديث ما يختلف)
-   * 5. إعادة بذر الفئات الرئيسية والفرعية بالأكواد التحليلية
-   */
   async resetAndReinitializeCategories(tenantId: string, companyId: string): Promise<{
     deleted: { categories: number; oldAccounts: number };
     created: { categories: number };
@@ -210,22 +173,16 @@ export class AccountingInitService {
 
     const masterCodes = new Set(MASTER_ACCOUNTS.map((a) => a.code));
 
-    // ① فصل الموردين عن الفئات (supplierCategoryId nullable → null آمن)
     await this.prisma.supplier.updateMany({
       where: { companyId },
       data:  { supplierCategoryId: null },
     });
 
-    // ② حذف بنود المصروفات (categoryId غير nullable → لا يمكن تصفيرها)
-    //    هذه بيانات تجريبية ستُعاد إضافتها يدوياً بعد إعادة هيكلة الفئات
     await this.prisma.expenseLine.deleteMany({ where: { companyId } });
 
-    // ③ حذف جميع الفئات (الأبناء أولاً ثم الآباء لتجنب قيود FK)
     await this.prisma.category.deleteMany({ where: { companyId, parentId: { not: null } } });
     const delCats = await this.prisma.category.deleteMany({ where: { companyId } });
 
-    // ④ حذف الحسابات الزائدة (مولَّدة قديماً وليست في MASTER)
-    //    نتحقق: لا توجد لها قيود محاسبية في ledger_entries (آمن على بيانات تجريبية)
     const oldAccounts = await this.prisma.account.findMany({
       where: { companyId, code: { notIn: [...masterCodes] } },
     });
@@ -240,12 +197,10 @@ export class AccountingInitService {
       }
     }
 
-    // ⑤ upsert الحسابات الأساسية (createMany skipDuplicates)
     const codeToAccountId: Record<string, string> = {};
     for (const acc of MASTER_ACCOUNTS) {
       const existing = await this.prisma.account.findFirst({ where: { companyId, code: acc.code } });
       if (existing) {
-        // تحديث البيانات إن تغيّرت
         await this.prisma.account.update({
           where: { id: existing.id },
           data: { nameAr: acc.nameAr, nameEn: acc.nameEn, icon: acc.icon, isActive: true },
@@ -269,7 +224,6 @@ export class AccountingInitService {
       }
     }
 
-    // ⑥ إعادة بذر الفئات الرئيسية
     const accountCodeToCategoryId: Record<string, string> = {};
     for (let i = 0; i < MASTER_CATEGORIES.length; i++) {
       const cat = MASTER_CATEGORIES[i];
@@ -292,7 +246,6 @@ export class AccountingInitService {
       accountCodeToCategoryId[cat.accountCode] = created.id;
     }
 
-    // ⑦ إعادة بذر الفئات الفرعية مع الأكواد التحليلية
     let createdSubs = 0;
     for (const sub of MASTER_SUBCATEGORIES) {
       const parentId = accountCodeToCategoryId[sub.parentAccountCode];
@@ -321,10 +274,6 @@ export class AccountingInitService {
     };
   }
 
-  /**
-   * إضافة الفئات الفرعية الناقصة فقط + تحديث nameEn للموجودة إن كانت فارغة.
-   * آمنة تماماً على الشركات التي لديها فئات مخصصة.
-   */
   async patchMissingSubcategories(tenantId: string, companyId: string): Promise<{ added: number; updated: number; skipped: number }> {
     const company = await this.prisma.company.findFirst({
       where: { id: companyId, tenantId },
@@ -344,7 +293,6 @@ export class AccountingInitService {
       });
 
       if (exists) {
-        // حدّث nameEn إن كان فارغاً أو مطابقاً للعربي (قديم)
         if (!exists.nameEn || exists.nameEn === exists.nameAr) {
           await this.prisma.category.update({
             where: { id: exists.id },
@@ -357,7 +305,6 @@ export class AccountingInitService {
         continue;
       }
 
-      // ابحث عن الفئة الأب بالكود
       const parent = await this.prisma.category.findFirst({
         where: { companyId, code: sub.parentAccountCode },
       });
@@ -383,7 +330,6 @@ export class AccountingInitService {
     return { added, updated, skipped };
   }
 
-  /** تطبيق patch على جميع الشركات */
   async patchAllCompaniesSubcategories(tenantId: string): Promise<{
     companies: number;
     totalAdded: number;
@@ -403,10 +349,6 @@ export class AccountingInitService {
     return { companies: companies.length, totalAdded, totalUpdated, details };
   }
 
-  /**
-   * إعادة تهيئة الفئات لجميع الشركات دفعةً واحدة.
-   * يُستدعى من endpoint محمي بصلاحية super_admin.
-   */
   async resetAllCompaniesCategories(tenantId: string): Promise<{
     companies: number;
     details: Array<{ companyId: string; result: Awaited<ReturnType<typeof this.resetAndReinitializeCategories>> }>;
@@ -421,7 +363,6 @@ export class AccountingInitService {
     return { companies: companies.length, details };
   }
 
-  /** يزرع فقط إن لم تكن هناك فئات شجرية — لا يكرر عند إعادة الاستدعاء */
   private async seedDefaultBankTreeCategories(tenantId: string, companyId: string): Promise<void> {
     const n = await this.prisma.bankTreeCategory.count({ where: { companyId } });
     if (n > 0) return;
