@@ -9,68 +9,19 @@ import { RequireAnyPermission } from '../auth/decorators/require-any-permission.
 import { requireCompanyId } from '../common/utils/require-company-id';
 import { OrdersService } from './orders.service';
 import { OrdersStaffService } from './orders-staff.service';
-import { ShishaInventoryService } from './shisha-inventory.service';
-import {
-  CreateShishaPurchaseDto,
-  CreateShishaStocktakeDto,
-  InitializeShishaInventoryDto,
-} from './dto/shisha-inventory.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductsBatchDto } from './dto/create-products-batch.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateStaffOrderDto } from './orders-staff.types';
-
-type CurrentAuthUser = { sub?: string; userId?: string };
-
-function requireCurrentUserId(user: CurrentAuthUser): string {
-  const userId = user.sub ?? user.userId;
-  if (!userId) {
-    throw new BadRequestException('Authenticated user id is required.');
-  }
-  return userId;
-}
-
-function parseDaysQuery(days: string | undefined, fallback = 30): number {
-  const parsed = Number.parseInt(String(days ?? ''), 10);
-  if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(365, Math.max(1, parsed));
-}
-
-function parseRequiredYearMonth(year: string | undefined, month: string | undefined): { year: number; month: number } {
-  if (!year || !month) {
-    throw new BadRequestException('year and month are required.');
-  }
-  const y = Number.parseInt(year, 10);
-  const m = Number.parseInt(month, 10);
-  if (!Number.isFinite(y) || !Number.isFinite(m) || y < 2000 || m < 1 || m > 12) {
-    throw new BadRequestException('year or month is invalid.');
-  }
-  return { year: y, month: m };
-}
-
-function parseOptionalYearMonth(year: string | undefined, month: string | undefined): { year?: number; month?: number } {
-  const y = year ? Number.parseInt(year, 10) : undefined;
-  const m = month ? Number.parseInt(month, 10) : undefined;
-  if (year && (y === undefined || !Number.isFinite(y) || y < 2000)) {
-    throw new BadRequestException('year or month is invalid.');
-  }
-  if (month && (m === undefined || !Number.isFinite(m) || m < 1 || m > 12)) {
-    throw new BadRequestException('year or month is invalid.');
-  }
-  return { year: y, month: m };
-}
-
-function parseRequiredDateRange(startDate: string | undefined, endDate: string | undefined): { startDate: string; endDate: string } {
-  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-  if (!startDate || !endDate || !datePattern.test(startDate) || !datePattern.test(endDate)) {
-    throw new BadRequestException('startDate and endDate are required as YYYY-MM-DD.');
-  }
-  if (startDate > endDate) {
-    throw new BadRequestException('startDate must be before or equal to endDate.');
-  }
-  return { startDate, endDate };
-}
+import {
+  type CurrentAuthUser,
+  parseDaysQuery,
+  parseOptionalYearMonth,
+  parseRequiredDateRange,
+  parseRequiredYearMonth,
+  requireCurrentUserId,
+} from './orders-controller-query.util';
 
 @Controller('orders')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -78,61 +29,7 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly staffService: OrdersStaffService,
-    private readonly shishaInventoryService: ShishaInventoryService,
   ) {}
-
-  @Get('shisha-inventory/summary')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_DIGEST')
-  getShishaInventorySummary(
-    @CompanyId() companyId: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
-    const range = parseRequiredDateRange(startDate, endDate);
-    return this.shishaInventoryService.getSummary(requireCompanyId(companyId), range.startDate, range.endDate);
-  }
-
-  @Post('shisha-inventory/initialize')
-  @RequirePermission('ORDERS_WRITE')
-  initializeShishaInventory(
-    @CompanyId() companyId: string,
-    @CurrentUser() user: CurrentAuthUser,
-    @Body() body: InitializeShishaInventoryDto,
-  ) {
-    return this.shishaInventoryService.initialize(
-      requireCompanyId(companyId),
-      requireCurrentUserId(user),
-      body,
-    );
-  }
-
-  @Post('shisha-inventory/purchases')
-  @RequirePermission('ORDERS_WRITE')
-  createShishaInventoryPurchase(
-    @CompanyId() companyId: string,
-    @CurrentUser() user: CurrentAuthUser,
-    @Body() body: CreateShishaPurchaseDto,
-  ) {
-    return this.shishaInventoryService.recordPurchase(
-      requireCompanyId(companyId),
-      requireCurrentUserId(user),
-      body,
-    );
-  }
-
-  @Post('shisha-inventory/stocktakes')
-  @RequirePermission('ORDERS_WRITE')
-  createShishaInventoryStocktake(
-    @CompanyId() companyId: string,
-    @CurrentUser() user: CurrentAuthUser,
-    @Body() body: CreateShishaStocktakeDto,
-  ) {
-    return this.shishaInventoryService.createStocktake(
-      requireCompanyId(companyId),
-      requireCurrentUserId(user),
-      body,
-    );
-  }
 
   // ══════════════════════════════════════════════════
   // STAFF ORDERS — طلبات الأقسام

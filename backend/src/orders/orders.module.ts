@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
+import { ShishaInventoryController } from './shisha-inventory.controller';
 import { OrdersService } from './orders.service';
 import { OrdersStaffService } from './orders-staff.service';
 import { ShishaInventoryService } from './shisha-inventory.service';
@@ -8,7 +9,7 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [PrismaModule, AuthModule],
-  controllers: [OrdersController],
+  controllers: [OrdersController, ShishaInventoryController],
   providers: [OrdersService, OrdersStaffService, ShishaInventoryService],
   exports: [OrdersService, OrdersStaffService, ShishaInventoryService],
 })
