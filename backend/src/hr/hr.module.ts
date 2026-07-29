@@ -9,6 +9,7 @@ import { AccountingCoreModule } from '../accounting-core/accounting-core.module'
 import { EmployeesModule } from '../employees/employees.module';
 import { SupplierDirectoryModule } from '../supplier-directory/supplier-directory.module';
 import { HRController } from './hr.controller';
+import { HrSupportController } from './hr-support.controller';
 import { HRService } from './hr.service';
 import { HrPayrollService } from './hr-payroll.service';
 import { HrPayrollRunReaderService } from './hr-payroll-run-reader.service';
@@ -42,7 +43,7 @@ const uploadDir = ensureUploadsSubdir('hr-documents');
     EmployeesModule,
     SupplierDirectoryModule,
   ],
-  controllers: [HRController],
+  controllers: [HRController, HrSupportController],
   providers: [
     HrPayrollRunReaderService,
     HrPayrollRunLifecycleService,

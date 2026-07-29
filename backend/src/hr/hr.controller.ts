@@ -15,14 +15,9 @@ import {
   Patch,
   Post,
   Query,
-  Res,
   ForbiddenException,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -41,18 +36,12 @@ import { IssueLeaveSalarySettlementDto } from './dto/issue-leave-salary-settleme
 import { CreateResidencyWithInvoiceDto } from './dto/create-residency-with-invoice.dto';
 import { UpdateResidencyDto } from './dto/update-residency.dto';
 import { IssueResidencyInvoiceDto } from './dto/issue-residency-invoice.dto';
-import { CreateDocumentDto } from './dto/create-document.dto';
-import { CreateMovementDto } from './dto/create-movement.dto';
-import { UpdateRaiseMovementDto } from './dto/update-raise-movement.dto';
-import { CreateAllowanceDto } from './dto/create-allowance.dto';
-import { CreateDeductionDto } from './dto/create-deduction.dto';
 import { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
 import { CalculateEosDto } from './dto/calculate-eos.dto';
 import {
   HrCompensationSnapshotsQueryDto,
   HrDeleteLeaveQueryDto,
   HrDeleteResidencyQueryDto,
-  HrEmployeeQueryDto,
   HrLeaveSalarySettlementsQueryDto,
   HrLeavesQueryDto,
   HrPayrollRunItemsQueryDto,
@@ -60,7 +49,6 @@ import {
   HrYearQueryDto,
 } from './dto/hr-query.dto';
 import {
-  normalizeHrEmployeeQuery,
   normalizeHrLeavesQuery,
   normalizeHrResidenciesQuery,
   normalizeHrYearQuery,
@@ -358,214 +346,4 @@ export class HRController {
   }
 
   // ══════════════════════════════════════════════════════════
-  // DOCUMENTS
-  // ══════════════════════════════════════════════════════════
-
-  @Get('documents')
-  @RequirePermission('HR_READ')
-  findDocuments(
-    @CompanyId() companyId: string,
-    @Query() query: HrEmployeeQueryDto,
-  ) {
-    const normalized = normalizeHrEmployeeQuery(companyId, query);
-    return this.hrService.findDocuments(normalized.companyId, normalized.employeeId);
-  }
-
-  @Post('documents')
-  @RequirePermission('HR_WRITE')
-  createDocument(
-    @Body() dto: CreateDocumentDto,
-    @CurrentUser() user: JwtUser,
-  ) {
-    return this.hrService.createDocument(dto, user.sub);
-  }
-
-  @Post('documents/upload')
-  @RequirePermission('HR_WRITE')
-  uploadDocument(
-    @Body()
-    body: {
-      companyId: string;
-      employeeId: string;
-      documentType: 'contract' | 'certificate' | 'iqama' | 'other';
-      fileName: string;
-      filePath: string;
-      fileSize: number;
-    },
-    @CurrentUser() user: JwtUser,
-  ) {
-    return this.hrService.uploadDocument(
-      body.companyId,
-      body.employeeId,
-      body.documentType,
-      body.fileName,
-      body.filePath,
-      body.fileSize,
-      user.sub,
-    );
-  }
-
-  @Post('documents/upload-file')
-  @RequirePermission('HR_WRITE')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadDocumentFile(
-    @UploadedFile() file: Express.Multer.File,
-    @Body('companyId') companyId: string,
-    @Body('employeeId') employeeId: string,
-    @Body('documentType') documentType: 'contract' | 'certificate' | 'iqama' | 'other',
-    @CurrentUser() user: JwtUser,
-  ) {
-    if (!file) {
-      return { success: false, error: 'لم يتم رفع أي ملف.' };
-    }
-    const fileName = file.originalname || file.filename || 'document';
-    return this.hrService.uploadDocument(
-      companyId,
-      employeeId,
-      documentType || 'other',
-      fileName,
-      file.path,
-      file.size,
-      user.sub,
-    );
-  }
-
-  @Get('documents/:id/download')
-  @RequirePermission('HR_READ')
-  async downloadDocument(
-    @Param('id') id: string,
-    @CompanyId() companyId: string,
-    @Res() res: Response,
-  ) {
-    const doc = await this.hrService.findDocumentById(id, companyId);
-    if (!doc.filePath) {
-      return res.status(404).json({ message: 'الملف غير متوفر للتحميل.' });
-    }
-    return res.download(doc.filePath, doc.fileName);
-  }
-
-  @Delete('documents/:id')
-  @RequirePermission('HR_DELETE')
-  deleteDocument(
-    @Param('id') id: string,
-    @CompanyId() companyId: string,
-    @CurrentUser() user: JwtUser,
-  ) {
-    return this.hrService.deleteDocument(id, companyId, user.sub);
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // MOVEMENTS
-  // ══════════════════════════════════════════════════════════
-
-  @Get('movements')
-  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
-  findMovements(
-    @CompanyId() companyId: string,
-    @Query() query: HrEmployeeQueryDto,
-  ) {
-    const normalized = normalizeHrEmployeeQuery(companyId, query);
-    return this.hrService.findMovements(normalized.companyId, normalized.employeeId);
-  }
-
-  @Post('movements')
-  @RequireAnyPermission('HR_WRITE', 'CHAT_PRESET_INCREASES')
-  createMovement(
-    @Body() dto: CreateMovementDto,
-    @CurrentUser() user: JwtUser,
-  ) {
-    return this.hrService.createMovement(dto, user.sub);
-  }
-
-  @Patch('movements/:id/raise')
-  @RequirePermission('HR_WRITE')
-  updateRaiseMovement(
-    @Param('id') id: string,
-    @CompanyId() companyId: string,
-    @Body() dto: UpdateRaiseMovementDto,
-    @CurrentUser() user: JwtUser,
-  ) {
-    return this.hrService.updateRaiseMovement(id, companyId, dto, user.sub);
-  }
-
-  @Delete('movements/:id/raise')
-  @RequirePermission('HR_WRITE')
-  deleteRaiseMovement(
-    @Param('id') id: string,
-    @CompanyId() companyId: string,
-    @CurrentUser() user: JwtUser,
-  ) {
-    return this.hrService.deleteRaiseMovement(id, companyId, user.sub);
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // ALLOWANCES
-  // ══════════════════════════════════════════════════════════
-
-  @Get('allowances')
-  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
-  findAllowances(
-    @CompanyId() companyId: string,
-    @Query() query: HrEmployeeQueryDto,
-  ) {
-    const normalized = normalizeHrEmployeeQuery(companyId, query);
-    return this.hrService.findAllowances(normalized.companyId, normalized.employeeId);
-  }
-
-  @Post('allowances')
-  @RequireAnyPermission('HR_WRITE', 'CHAT_PRESET_INCREASES')
-  createAllowance(
-    @Body() dto: CreateAllowanceDto,
-    @CurrentUser() user: JwtUser,
-  ) {
-    return this.hrService.createAllowance(dto, user.sub);
-  }
-
-  @Delete('allowances/:id')
-  @RequirePermission('HR_DELETE')
-  deleteAllowance(
-    @Param('id') id: string,
-    @CompanyId() companyId: string,
-    @CurrentUser() user: JwtUser,
-  ) {
-    return this.hrService.deleteAllowance(id, companyId, user.sub);
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // DEDUCTIONS
-  // ══════════════════════════════════════════════════════════
-
-  @Get('deductions')
-  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
-  findDeductions(
-    @CompanyId() companyId: string,
-    @Query() query: HrEmployeeQueryDto,
-  ) {
-    const normalized = normalizeHrEmployeeQuery(companyId, query);
-    return this.hrService.findDeductions(normalized.companyId, normalized.employeeId);
-  }
-
-  @Post('deductions')
-  @RequireAnyPermission('HR_WRITE', 'CHAT_PRESET_DEDUCTIONS')
-  createDeduction(
-    @Body() dto: CreateDeductionDto,
-    @CurrentUser() user: JwtUser,
-  ) {
-    return this.hrService.createDeduction(dto, user.sub);
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // DASHBOARD SUMMARY BFF
-  // ══════════════════════════════════════════════════════════
-
-  /**
-   * GET /api/v1/hr/dashboard-summary
-   * إجازات + إقامات منتهية + سلف مستحقة في طلب واحد بالتوازي.
-   * يحلّ مشكلة "تغيّر أرقام بطاقة HR" الناتجة عن 3 طلبات منفصلة.
-   */
-  @Get('dashboard-summary')
-  @RequirePermission('HR_READ')
-  getHrDashboardSummary(@CompanyId() companyId: string) {
-    return this.hrService.getDashboardSummary(companyId);
-  }
 }

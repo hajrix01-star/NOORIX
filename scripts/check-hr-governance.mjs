@@ -205,9 +205,15 @@ if (fs.existsSync(employeesControllerPath)) {
   }
 }
 
-const hrControllerPath = path.join(root, 'backend', 'src', 'hr', 'hr.controller.ts');
-if (fs.existsSync(hrControllerPath)) {
-  const source = fs.readFileSync(hrControllerPath, 'utf8');
+const hrControllerPaths = [
+  path.join(root, 'backend', 'src', 'hr', 'hr.controller.ts'),
+  path.join(root, 'backend', 'src', 'hr', 'hr-support.controller.ts'),
+];
+const hrControllerSource = hrControllerPaths
+  .filter((controllerPath) => fs.existsSync(controllerPath))
+  .map((controllerPath) => fs.readFileSync(controllerPath, 'utf8'))
+  .join('\n');
+if (hrControllerSource) {
   for (const symbol of [
     'HrEmployeeQueryDto',
     'HrYearQueryDto',
@@ -221,12 +227,12 @@ if (fs.existsSync(hrControllerPath)) {
     'normalizeHrYearQuery',
     'parseHrCsvIds',
   ]) {
-    if (!source.includes(symbol)) {
-      report(hrControllerPath, `HR controller must use central backend query contract symbol: ${symbol}.`);
+    if (!hrControllerSource.includes(symbol)) {
+      report(hrControllerPaths[0], `HR controllers must use central backend query contract symbol: ${symbol}.`);
     }
   }
-  if (/@Query\('(?:employeeId|year|employeeIds|voidSettlement|payrollMonth|serviceCategory|voidInvoice)'/.test(source)) {
-    report(hrControllerPath, 'HR controller must not define per-field tab query decorators; use HR query DTOs.');
+  if (/@Query\('(?:employeeId|year|employeeIds|voidSettlement|payrollMonth|serviceCategory|voidInvoice)'/.test(hrControllerSource)) {
+    report(hrControllerPaths[0], 'HR controllers must not define per-field tab query decorators; use HR query DTOs.');
   }
 }
 
