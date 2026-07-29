@@ -8,9 +8,10 @@ import { useIsNarrow768 } from '../responsive';
 import { useUiDir } from '../../hooks/useUiDir';
 import { cn } from '../cn';
 import type { SmartTableColumn, SmartTableProps as SmartTablePropsBase, SmartTableRow } from './types';
-import { columnLabel } from './columnUtils';
+import { compactColumnLabel } from './columnUtils';
 import { buildFooterCells } from './buildFooterCells';
 import { getColumnKindClass, normalizeSmartColumn } from './columnPresets';
+import { cssLengthToPx, estimateAdaptiveColumnWidth } from './adaptiveColumnSizing';
 import { useSmartTableEngine } from './tableEngine';
 import SmartTablePagination from './SmartTablePagination';
 import { placeColVisPanel } from './SmartTableColumnVisibility';
@@ -88,19 +89,22 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
     stickyActionColumn = true,
     /** معرف فريد للجدول — لما يُمرَّر يُفعّل السحب لتغيير عرض الأعمدة + الحفظ في localStorage */
     tableId,
+    columnSizingMode,
+    adaptiveColumnSampleSize,
     frameClassName,
     keyExtractor,
   } = props;
   const { t } = useTranslation();
   const dir = useUiDir();
   const normalizedColumns = useMemo(() => columns.map((col) => normalizeSmartColumn(col)), [columns]);
+  const sizingMode = columnSizingMode ?? (tableId ? 'adaptive' : 'fixed');
 
   const {
     colWidths,
     hasCustomColumnWidths,
     handleResizeStart,
     resetColumnWidths,
-  } = useSmartTableColumnResize({ dir, tableId });
+  } = useSmartTableColumnResize({ dir, tableId, mode: sizingMode });
   const {
     hiddenCols,
     visibleColumns,
@@ -141,7 +145,7 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   const isWideTable  = effectiveCols > 6;
   const layout       = tableLayout ?? 'fixed';
-  const minW         = tableMinWidth === 0 || tableMinWidth === ''
+  const baseMinW     = tableMinWidth === 0 || tableMinWidth === ''
     ? undefined
     : (tableMinWidth != null ? tableMinWidth : (isWideTable ? 1100 : undefined));
   const cellPad      = compact
@@ -151,14 +155,34 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
+  const visibleRows = useMemo(() => engineRows.map((row) => row.original), [engineRows]);
+  const adaptiveWidths = useMemo(() => {
+    if (sizingMode !== 'adaptive') return {};
+    return visibleColumns.reduce<Record<string, number>>((acc, col) => {
+      acc[col.key] = estimateAdaptiveColumnWidth({
+        col,
+        rows: visibleRows,
+        sampleSize: adaptiveColumnSampleSize,
+        label: compactColumnLabel(col),
+      });
+      return acc;
+    }, {});
+  }, [adaptiveColumnSampleSize, sizingMode, visibleColumns, visibleRows]);
+  const adaptiveTableMinW = useMemo(() => {
+    if (sizingMode !== 'adaptive') return baseMinW;
+    const calculated = visibleColumns.reduce((sum, col) => sum + (colWidths[col.key] ?? adaptiveWidths[col.key] ?? 0), showRowNumbers ? rowNumW : 0);
+    const explicitMin = cssLengthToPx(baseMinW);
+    return Math.max(calculated, explicitMin ?? 0);
+  }, [adaptiveWidths, baseMinW, colWidths, rowNumW, showRowNumbers, sizingMode, visibleColumns]);
   const frameStyle = buildFrameStyle(innerPadding);
-  const tableStyle = buildTableStyle({ layout, minW, isWideTable });
+  const tableStyle = buildTableStyle({ layout, minW: adaptiveTableMinW, isWideTable });
   const rowNumberHeaderStyle = buildRowNumberHeaderStyle({ cellPad, compact, rowNumW });
   const rowNumberCellStyle = buildRowNumberCellStyle({ cellPad, cellFs, rowNumW });
   const columnEffectiveWidth = (col: SmartTableColumn<TRow>): number | string | undefined => (
     colWidths[col.key] != null
       ? colWidths[col.key]
-      : (col.width ?? (col.shrink === true ? '1%' : undefined))
+      : ((sizingMode === 'adaptive' ? adaptiveWidths[col.key] : undefined)
+        ?? (col.width ?? (col.shrink === true ? '1%' : undefined)))
   );
   /** على الجوال مع بطاقات فقط: لا نعرض شريط إخفاء الأعمدة (يضيق المحتوى ويبدو كزر عائم) */
   const showTableHeaderRow = Boolean(
@@ -272,7 +296,10 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
                   // only apply it in fixed layout (where width is enforced) or when col.maxWidth bounds it
                   const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
                   const nextResizableCol = visibleColumns[columnIndex + 1];
-                  const resizableCol = Boolean(
+                  const resizableCol = sizingMode === 'adaptive' ? Boolean(
+                    tableId
+                    && col.key !== 'actions',
+                  ) : Boolean(
                     tableId
                     && col.key !== 'actions'
                     && nextResizableCol
@@ -297,7 +324,7 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
                       aria-sort={col.sortable ? columnState.ariaSort : undefined}
                       onClick={columnState.canSort ? () => tableEngine.toggleSort(col.key) : undefined}
                     >
-                      {columnLabel(col)}
+                      {compactColumnLabel(col)}
                       {col.sortable && (
                         <span className={cn('text-[13px] ms-1', columnState.isSorted ? 'opacity-100' : 'opacity-30')}>
                           {columnState.sortIndicator}
@@ -309,13 +336,14 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
                           onPointerDown={(e: React.PointerEvent<HTMLDivElement>) => {
                             const th = e.currentTarget.parentElement;
                             const nextTh = th?.nextElementSibling;
-                            if (!th || !nextTh || !nextResizableCol) return;
+                            if (!th) return;
+                            if (sizingMode === 'fixed' && (!nextTh || !nextResizableCol)) return;
                             handleResizeStart(
                               e,
                               col.key,
                               th.offsetWidth,
-                              nextResizableCol.key,
-                              (nextTh as HTMLElement).offsetWidth,
+                              nextResizableCol?.key,
+                              nextTh instanceof HTMLElement ? nextTh.offsetWidth : 0,
                             );
                           }}
                         />

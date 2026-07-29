@@ -99,7 +99,7 @@ describe('SmartTable', () => {
     expect(panel?.querySelectorAll('.nx-col-vis-item')).toHaveLength(2);
   });
 
-  it('resizes only the adjacent column pair without changing the remaining columns', () => {
+  it('resizes one adaptive column without moving adjacent columns', () => {
     const resizeColumns: SmartTableColumn[] = [
       { key: 'first', label: 'First' },
       { key: 'second', label: 'Second' },
@@ -126,16 +126,48 @@ describe('SmartTable', () => {
 
     const cols = Array.from(container.querySelectorAll('col')) as HTMLTableColElement[];
     expect(cols[0].style.width).toBe('140px');
-    expect(cols[1].style.width).toBe('60px');
-    expect(cols[2].style.width).toBe('');
-    expect(localStorage.getItem('nx-col-widths:v2:resize-pair-test')).toBe('{"first":140,"second":60}');
+    expect(cols[1].style.width).toBe('160px');
+    expect(cols[2].style.width).toBe('160px');
+    expect(localStorage.getItem('nx-col-widths:v3:resize-pair-test')).toBe('{"first":140}');
 
     fireEvent.click(container.querySelector('.nx-col-vis-btn') as HTMLButtonElement);
     fireEvent.click(document.body.querySelector('.nx-col-vis-reset-widths') as HTMLButtonElement);
-    expect(cols[0].style.width).toBe('');
-    expect(cols[1].style.width).toBe('');
+    expect(cols[0].style.width).toBe('160px');
+    expect(cols[1].style.width).toBe('160px');
+    expect(cols[2].style.width).toBe('160px');
+    expect(localStorage.getItem('nx-col-widths:v3:resize-pair-test')).toBeNull();
+  });
+
+  it('keeps the legacy adjacent resize contract when fixed sizing is requested', () => {
+    const resizeColumns: SmartTableColumn[] = [
+      { key: 'first', label: 'First' },
+      { key: 'second', label: 'Second' },
+      { key: 'third', label: 'Third' },
+    ];
+    const { container } = render(
+      <SmartTable
+        tableId="resize-fixed-test"
+        columnSizingMode="fixed"
+        columns={resizeColumns}
+        data={[{ id: '1', first: 'A', second: 'B', third: 'C' }]}
+        total={1}
+      />,
+    );
+
+    const headers = Array.from(container.querySelectorAll('thead th')) as HTMLElement[];
+    Object.defineProperty(headers[0], 'offsetWidth', { configurable: true, value: 120 });
+    Object.defineProperty(headers[1], 'offsetWidth', { configurable: true, value: 80 });
+
+    const handle = headers[0].querySelector('.nx-col-resize-handle') as HTMLElement;
+    fireEvent.pointerDown(handle, { clientX: 100 });
+    fireEvent.pointerMove(document, { clientX: 80 });
+    fireEvent.pointerUp(document);
+
+    const cols = Array.from(container.querySelectorAll('col')) as HTMLTableColElement[];
+    expect(cols[0].style.width).toBe('140px');
+    expect(cols[1].style.width).toBe('60px');
     expect(cols[2].style.width).toBe('');
-    expect(localStorage.getItem('nx-col-widths:v2:resize-pair-test')).toBeNull();
+    expect(localStorage.getItem('nx-col-widths:v2:resize-fixed-test')).toBe('{"first":140,"second":60}');
   });
 
   it('renders pagination when total exceeds pageSize', () => {
@@ -401,6 +433,20 @@ describe('SmartTable', () => {
     expect(cells[2].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
     expect(cells[3].getAttribute('data-column-size')).toBe('money-sm');
     expect(cells[3].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
+  });
+
+  it('uses compact table-only labels for long accounting headers', () => {
+    render(
+      <SmartTable
+        tableId="compact-label-test"
+        columns={[{ key: 'supplierInvoiceNumber', label: 'Supplier invoice number' }]}
+        data={[{ id: '1', supplierInvoiceNumber: 'A-100' }]}
+        total={1}
+      />,
+    );
+
+    expect(screen.getByText('Invoice no.')).toBeTruthy();
+    expect(screen.queryByText('Supplier invoice number')).toBeNull();
   });
 
   it('removes hidden columns from the rendered table layout', () => {

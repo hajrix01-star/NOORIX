@@ -15,14 +15,14 @@ const KIND_DEFAULTS: Record<ColumnKind, Partial<SmartTableColumn>> = {
 };
 
 const SIZE_DEFAULTS: Record<SmartTableColumnSize, Partial<SmartTableColumn>> = {
-  document: { align: 'center', shrink: true, width: '10ch', maxWidth: '12ch' },
-  name: { align: 'center', width: '22ch', minWidth: '18ch', maxWidth: '30ch' },
-  supplier: { align: 'center', width: '18ch', minWidth: '14ch', maxWidth: '24ch' },
-  date: { align: 'center', shrink: true, width: '10ch', maxWidth: '11ch' },
-  'money-sm': { align: 'center', numeric: true, shrink: true, width: '9ch', maxWidth: '10ch' },
-  'money-md': { align: 'center', numeric: true, shrink: true, width: '11ch', maxWidth: '12ch' },
-  'money-lg': { align: 'center', numeric: true, shrink: true, width: '13ch', maxWidth: '15ch' },
-  'serial-code': { align: 'center', shrink: true, width: '10ch', maxWidth: '13ch' },
+  document: { align: 'center', shrink: true, width: '10ch', maxWidth: '20ch' },
+  name: { align: 'center', width: '22ch', minWidth: '18ch', maxWidth: '34ch' },
+  supplier: { align: 'center', width: '18ch', minWidth: '14ch', maxWidth: '32ch' },
+  date: { align: 'center', shrink: true, width: '10ch', maxWidth: '12ch' },
+  'money-sm': { align: 'center', numeric: true, shrink: true, width: '9ch', maxWidth: '12ch' },
+  'money-md': { align: 'center', numeric: true, shrink: true, width: '11ch', maxWidth: '14ch' },
+  'money-lg': { align: 'center', numeric: true, shrink: true, width: '13ch', maxWidth: '17ch' },
+  'serial-code': { align: 'center', shrink: true, width: '10ch', maxWidth: '18ch' },
   'code-sm': { align: 'center', shrink: true, width: '7ch', maxWidth: '9ch' },
   duration: { align: 'center', shrink: true, width: '8ch', maxWidth: '10ch' },
   count: { align: 'center', numeric: true, shrink: true, width: '5ch', maxWidth: '6ch' },

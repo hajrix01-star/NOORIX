@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 export type SmartTableRow = object;
 
 export type SmartTableDataMode = 'manual' | 'client';
+export type SmartTableColumnSizingMode = 'fixed' | 'adaptive';
 export type SmartTableColumnSize =
   | 'document'
   | 'name'
@@ -82,6 +83,8 @@ export type SmartTableProps<TRow extends SmartTableRow = SmartTableRow> = {
   renderCompactRow?: (row: TRow, index: number) => ReactNode;
   stickyActionColumn?: boolean;
   tableId?: string;
+  columnSizingMode?: SmartTableColumnSizingMode;
+  adaptiveColumnSampleSize?: number;
   frameClassName?: string;
   keyExtractor?: (row: TRow, index: number) => string | number;
 };
