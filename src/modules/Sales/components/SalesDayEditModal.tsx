@@ -74,6 +74,10 @@ export function SalesDayEditModal({
     () => summaries.reduce((sum, summary) => sum.plus(sumObjectValues(forms[summary.id]?.channelAmounts)), sumObjectValues({})),
     [forms, summaries],
   );
+  const shiftGridClassName =
+    summaries.length > 1
+      ? 'grid grid-cols-1 lg:grid-cols-2 gap-3 items-start'
+      : 'grid grid-cols-1 gap-3 items-start mx-auto w-full max-w-[520px]';
 
   async function handleSave() {
     setError('');
@@ -153,7 +157,7 @@ export function SalesDayEditModal({
         </div>
       )}
 
-      <div className="mb-4 grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-3 items-end">
+      <div className="mb-4 grid grid-cols-1 sm:grid-cols-[180px_minmax(220px,520px)] gap-3 items-end">
         <label className="flex flex-col gap-1 text-[13px] font-bold text-noorix-text">
           تاريخ العملية *
           <TransactionDatePicker
@@ -167,7 +171,7 @@ export function SalesDayEditModal({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+      <div className={shiftGridClassName}>
         {summaries.map((summary) => {
           const shift = resolveSalesSummaryShift(summary);
           return (

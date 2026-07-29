@@ -68,7 +68,7 @@ export function SalesShiftEntryCard({
   ];
 
   return (
-    <Card className="flex flex-col gap-3 p-4">
+    <Card className="flex flex-col gap-2.5 p-3 sm:p-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="m-0 text-[14px] font-bold text-noorix-text">
           {shiftEmoji} {t(shiftEntryTitleKey(shift))}
@@ -80,7 +80,7 @@ export function SalesShiftEntryCard({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Input
           type="number"
           min="0"
@@ -102,21 +102,21 @@ export function SalesShiftEntryCard({
       </div>
 
       <div>
-        <label className="text-[13px] font-bold mb-2 block">{t('salesChannels')}</label>
+        <label className="text-[12px] font-bold mb-1.5 block">{t('salesChannels')}</label>
         {salesChannelsLoading ? (
-          <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px] border-2 border-dashed border-noorix-border">
+          <div className="p-3 text-center text-noorix-muted text-[13px] rounded-[10px] border-2 border-dashed border-noorix-border">
             {t('loading')}
           </div>
         ) : salesChannelsError ? (
-          <div className="p-4 text-center text-[13px] font-semibold rounded-[10px] text-noorix-red bg-noorix-bg-muted border border-noorix-border">
+          <div className="p-3 text-center text-[13px] font-semibold rounded-[10px] text-noorix-red bg-noorix-bg-muted border border-noorix-border">
             {salesChannelsError}
           </div>
         ) : salesChannels.length === 0 ? (
-          <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px] border-2 border-dashed border-noorix-border">
+          <div className="p-3 text-center text-noorix-muted text-[13px] rounded-[10px] border-2 border-dashed border-noorix-border">
             {t('noSalesChannels')}
           </div>
         ) : (
-          <div className="sales-channels-grid grid gap-2 sm:grid-cols-2">
+          <div className="sales-channels-grid grid gap-1.5 sm:grid-cols-2">
             {salesChannels.map((v) => {
               const amt = form.channelAmounts[v.id] || '';
               return (

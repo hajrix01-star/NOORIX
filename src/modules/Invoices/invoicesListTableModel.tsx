@@ -118,8 +118,8 @@ function renderVaultCell(row: InvoiceTableRow, lang: InvoiceTableLang, fmt: (val
 function renderUserStatusCell(row: InvoiceTableRow, statusMap: StatusMap) {
   const userName = asInvoiceTableText(row.createdByDisplayName);
   return (
-    <div className="mx-auto flex min-w-0 flex-col items-center justify-center gap-1 text-center">
-      <span className="nx-cell-ellipsis max-w-full" title={userName}>
+    <div className="mx-auto flex min-w-0 flex-nowrap items-center justify-center gap-2 text-center">
+      <span className="nx-cell-ellipsis max-w-[9ch]" title={userName}>
         {userName}
       </span>
       <Badge {...Badge.fromStatus(row.status, statusMap)} size="sm" />
@@ -163,14 +163,6 @@ export function buildInvoiceListColumns({
       align: 'center',
       width: '15ch',
       render: (value: unknown) => renderTextCell(value),
-    },
-    {
-      key: 'createdByDisplayName',
-      kind: 'text',
-      label: `${t('invoiceUserColumn')} / ${t('statusLabel')}`,
-      align: 'center',
-      width: '13ch',
-      render: (_value: unknown, row: InvoiceTableRow) => renderUserStatusCell(row, STATUS_MAP),
     },
     {
       key: 'kind',
@@ -229,8 +221,16 @@ export function buildInvoiceListColumns({
       kind: 'text',
       label: t('invoiceNotesColumn') || 'Notes',
       align: 'center',
-      width: '18ch',
+      width: '16ch',
       render: (_: unknown, row: InvoiceTableRow) => renderTextCell(row.notes),
+    },
+    {
+      key: 'createdByDisplayName',
+      kind: 'text',
+      label: `${t('invoiceUserColumn')} / ${t('statusLabel')}`,
+      align: 'center',
+      width: '16ch',
+      render: (_value: unknown, row: InvoiceTableRow) => renderUserStatusCell(row, STATUS_MAP),
     },
   ];
 }
@@ -238,7 +238,7 @@ export function buildInvoiceListColumns({
 export function buildInvoiceListFooterRow({ t, serverAll, total }: InvoiceFooterParams) {
   return [
     {
-      keys: ['invoiceNumber', 'supplierInvoiceNumber', 'supplierName', 'createdByDisplayName', 'kind', 'vaultLabel'],
+      keys: ['invoiceNumber', 'supplierInvoiceNumber', 'supplierName', 'kind', 'vaultLabel'],
       className: 'nx-tfoot-label text-[12px] text-center',
       content: (
         <>
@@ -268,7 +268,7 @@ export function buildInvoiceListFooterRow({ t, serverAll, total }: InvoiceFooter
       content: <FmtNum n={asInvoiceTableNumber(serverAll.total)} />,
     },
     {
-      keys: ['notesOrEmployee'],
+      keys: ['notesOrEmployee', 'createdByDisplayName'],
       className: 'nx-tfoot-label text-[12px] text-center',
       content: '',
     },
