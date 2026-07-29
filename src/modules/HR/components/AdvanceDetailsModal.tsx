@@ -1,4 +1,4 @@
-import { Badge, Button, DialogActions, Modal, cn } from '../../../ui';
+import { Badge, Button, DialogActions, Modal, SimpleTable, cn, type SimpleTableColumn } from '../../../ui';
 import type { BadgeStatusMap } from '../../../ui/Badge';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
@@ -17,7 +17,20 @@ type AdvanceDetailsModalProps = {
 };
 
 const isDeductionRow = (row: AdvanceRow) => row.recordType === 'deduction';
-const remainingClass = (amount: number) => amount > 0 ? 'text-noorix-amber' : 'text-noorix-green';
+
+type AdvanceLedgerRow = {
+  id: string;
+  source: 'advance' | 'cut';
+  transactionDate: string;
+  description: string;
+  advanceAmount: number | null;
+  repaymentAmount: number | null;
+  cutAmount: number | null;
+  remainingAmount: number | null;
+  installmentInfo: string;
+  status: string;
+  original: AdvanceRow;
+};
 
 function amountValue(row: AdvanceRow) {
   return Number(row.totalAmountNum ?? row.totalAmount ?? 0);
@@ -31,6 +44,52 @@ function textValue(value: unknown, fallback = '-') {
   if (value == null || value === '') return fallback;
   if (typeof value === 'string' || typeof value === 'number') return String(value);
   return fallback;
+}
+
+function signedMoney(value: number | null, tone?: 'green' | 'amber' | 'red') {
+  if (value == null || value === 0) return <span className="text-noorix-muted">-</span>;
+  return (
+    <span
+      dir="ltr"
+      className={cn(
+        'nx-font-numbers font-black text-noorix-text',
+        tone === 'green' && 'text-noorix-green',
+        tone === 'amber' && 'text-noorix-amber',
+        tone === 'red' && 'text-noorix-red',
+      )}
+    >
+      {hrFmt(value)}
+    </span>
+  );
+}
+
+function buildLedgerRows(rows: AdvanceRow[], t: TranslationFn): AdvanceLedgerRow[] {
+  return rows
+    .map((row, index): AdvanceLedgerRow => {
+      const isCut = isDeductionRow(row);
+      const amount = amountValue(row);
+      const remaining = Number(row.remainingAmount ?? 0);
+      const installmentCount = Number(row.installmentCount ?? 0);
+      const installmentAmount = Number(row.installmentAmount ?? 0);
+      return {
+        id: String(row.id || `${isCut ? 'cut' : 'advance'}-${index}`),
+        source: isCut ? 'cut' : 'advance',
+        transactionDate: String(row.transactionDate || row.settledAt || ''),
+        description: isCut
+          ? textValue(row.notes, t('payrollCut'))
+          : textValue(row.invoiceNumber, t('advanceEntry')),
+        advanceAmount: isCut ? null : amount,
+        repaymentAmount: isCut ? null : Number(row.settledAmountNum ?? 0),
+        cutAmount: isCut ? amount : null,
+        remainingAmount: isCut ? null : remaining,
+        installmentInfo: !isCut && installmentCount > 1
+          ? `${installmentCount} x ${hrFmt(installmentAmount)}`
+          : '-',
+        status: isCut ? t('payrollCut') : String(row.settlementStatus || ''),
+        original: row,
+      };
+    })
+    .sort((a, b) => String(b.transactionDate || '').localeCompare(String(a.transactionDate || '')));
 }
 
 function DetailMetric({
@@ -60,43 +119,6 @@ function DetailMetric({
   );
 }
 
-function DetailCell({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: React.ReactNode;
-  tone?: 'green' | 'amber' | 'red';
-}) {
-  return (
-    <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/20 px-3 py-2 text-center">
-      <div className="text-[11px] font-bold text-noorix-muted">{label}</div>
-      <div
-        className={cn(
-          'mt-1 text-[13px] font-extrabold nx-font-numbers text-noorix-text',
-          tone === 'green' && 'text-noorix-green',
-          tone === 'amber' && 'text-noorix-amber',
-          tone === 'red' && 'text-noorix-red',
-        )}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function SectionTitle({ children, count }: { children: React.ReactNode; count: number }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-noorix-border pb-2">
-      <h3 className="text-[14px] font-black text-noorix-text">{children}</h3>
-      <span className="rounded-full bg-noorix-bg-muted px-2.5 py-1 text-[12px] font-extrabold text-noorix-muted">
-        {count}
-      </span>
-    </div>
-  );
-}
-
 export function AdvanceDetailsModal({
   group,
   onClose,
@@ -107,16 +129,118 @@ export function AdvanceDetailsModal({
   onDeleteAdvance,
 }: AdvanceDetailsModalProps) {
   const rows = group?.advances ?? [];
-  const advanceRows = rows.filter((row) => !isDeductionRow(row));
-  const deductionRows = rows.filter(isDeductionRow);
   const deductionAmount = group?.manualDeductionAmount ?? 0;
+  const ledgerRows = buildLedgerRows(rows, t);
+  const ledgerColumns: SimpleTableColumn<AdvanceLedgerRow>[] = [
+    {
+      key: 'transactionDate',
+      label: t('transactionDate'),
+      width: 110,
+      align: 'center',
+      render: (value: unknown) => (
+        <span className="nx-font-numbers whitespace-nowrap font-bold text-noorix-text">
+          {value ? formatSaudiDate(String(value)) : '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'description',
+      label: t('advanceLedgerStatement'),
+      minWidth: 180,
+      align: 'center',
+      render: (value: unknown, row: AdvanceLedgerRow) => (
+        <div className="grid gap-1 text-center">
+          <Badge
+            color={row.source === 'cut' ? 'red' : 'blue'}
+            label={row.source === 'cut' ? t('payrollCut') : t('advanceEntry')}
+            size="sm"
+            className="mx-auto"
+          />
+          <span className="text-[13px] font-bold text-noorix-text">{textValue(value)}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'advanceAmount',
+      label: t('advanceEntry'),
+      numeric: true,
+      width: 120,
+      align: 'center',
+      render: (_: unknown, row: AdvanceLedgerRow) => signedMoney(row.advanceAmount),
+    },
+    {
+      key: 'repaymentAmount',
+      label: t('advanceRepayment'),
+      numeric: true,
+      width: 120,
+      align: 'center',
+      render: (_: unknown, row: AdvanceLedgerRow) => signedMoney(row.repaymentAmount, 'green'),
+    },
+    {
+      key: 'cutAmount',
+      label: t('payrollCut'),
+      numeric: true,
+      width: 110,
+      align: 'center',
+      render: (_: unknown, row: AdvanceLedgerRow) => signedMoney(row.cutAmount, 'red'),
+    },
+    {
+      key: 'remainingAmount',
+      label: t('advanceRemainingAmount'),
+      numeric: true,
+      width: 110,
+      align: 'center',
+      render: (_: unknown, row: AdvanceLedgerRow) => (
+        row.remainingAmount == null
+          ? <span className="text-noorix-muted">-</span>
+          : signedMoney(row.remainingAmount, row.remainingAmount > 0 ? 'amber' : 'green')
+      ),
+    },
+    {
+      key: 'installmentInfo',
+      label: t('installmentInfo'),
+      width: 115,
+      align: 'center',
+      render: (value: unknown) => <span dir="ltr" className="nx-font-numbers text-[12px] font-bold">{textValue(value)}</span>,
+    },
+    {
+      key: 'status',
+      label: t('advanceLedgerStatus'),
+      width: 125,
+      align: 'center',
+      render: (_: unknown, row: AdvanceLedgerRow) => (
+        row.source === 'cut'
+          ? <Badge color="red" label={t('payrollCut')} size="sm" />
+          : <Badge {...Badge.fromStatus(row.original.settlementStatus, settlementMap)} size="sm" />
+      ),
+    },
+    {
+      key: 'actions',
+      label: t('advanceLedgerActions'),
+      width: 165,
+      align: 'center',
+      render: (_: unknown, row: AdvanceLedgerRow) => (
+        row.source === 'cut' ? (
+          <span className="text-[12px] font-bold text-noorix-muted">-</span>
+        ) : (
+          <div className="flex flex-wrap items-center justify-center gap-1">
+            <Button size="sm" className="h-7 px-2" variant="ghost" onClick={() => onEditAdvance(row.original)}>{t('edit')}</Button>
+            {canSettle(row.original) ? (
+              <Button size="sm" className="h-7 px-2" variant="success" onClick={() => onSettleAdvance(row.original)}>{t('settleAdvance')}</Button>
+            ) : null}
+            <Button size="sm" className="h-7 px-2" variant="danger" onClick={() => onDeleteAdvance(row.original)}>{t('delete')}</Button>
+          </div>
+        )
+      ),
+    },
+  ];
 
   return (
     <Modal
       open={!!group}
       onClose={onClose}
-      title={group ? `${t('advancesList')} - ${group.employeeName}` : t('advancesList')}
-      size="xl"
+      title={group ? `${t('advanceLedgerTitle')} - ${group.employeeName}` : t('advanceLedgerTitle')}
+      size="2xl"
       footer={(
         <DialogActions
           actions={[
@@ -128,70 +252,20 @@ export function AdvanceDetailsModal({
       {group ? (
         <div className="grid gap-4">
           <div className="grid gap-2.5 md:grid-cols-4">
-            <DetailMetric label={t('advanceAmount')} value={hrFmt(group.totalAmount)} />
-            <DetailMetric label={t('advanceSettledAmount')} value={hrFmt(group.settledAmountNum)} tone="green" />
+            <DetailMetric label={t('advanceTotalAmount')} value={hrFmt(group.totalAmount)} />
+            <DetailMetric label={t('advanceRepayment')} value={hrFmt(group.settledAmountNum)} tone="green" />
             <DetailMetric label={t('advanceRemainingAmount')} value={hrFmt(group.remainingAmount)} tone={group.remainingAmount > 0 ? 'amber' : 'green'} />
-            <DetailMetric label={t('deductionsList')} value={hrFmt(deductionAmount)} tone={deductionAmount > 0 ? 'red' : undefined} />
+            <DetailMetric label={t('payrollCut')} value={hrFmt(deductionAmount)} tone={deductionAmount > 0 ? 'red' : undefined} />
           </div>
 
-          <div className="grid gap-4">
-            <section className="grid gap-3">
-              <SectionTitle count={advanceRows.length}>{t('advancesList')}</SectionTitle>
-              {advanceRows.length ? (
-                <div className="grid gap-2.5">
-                  {advanceRows.map((row, index) => {
-                    const remaining = Number(row.remainingAmount ?? 0);
-                    const count = Number(row.installmentCount ?? 0);
-                    return (
-                      <article key={row.id || `advance-${index}`} className="rounded-xl border border-noorix-border bg-noorix-surface px-3 py-3 shadow-sm">
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-center">
-                          <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" />
-                          <div className="text-[13px] font-extrabold text-noorix-text">{formatSaudiDate(String(row.transactionDate || ''))}</div>
-                        </div>
-                        <div className="mt-3 grid gap-2 sm:grid-cols-4">
-                          <DetailCell label={t('advanceAmount')} value={hrFmt(amountValue(row))} />
-                          <DetailCell label={t('advanceSettledAmount')} value={hrFmt(Number(row.settledAmountNum ?? 0))} tone="green" />
-                          <DetailCell label={t('advanceRemainingAmount')} value={hrFmt(remaining)} tone={remaining > 0 ? 'amber' : 'green'} />
-                          <DetailCell label={t('installmentInfo')} value={count > 1 ? `${count} x ${hrFmt(row.installmentAmount ?? 0)}` : '-'} />
-                        </div>
-                        <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
-                          <Button size="sm" className="h-8 px-3" variant="ghost" onClick={() => onEditAdvance(row)}>{t('edit')}</Button>
-                          {canSettle(row) ? (
-                            <Button size="sm" className="h-8 px-3" variant="primary" onClick={() => onSettleAdvance(row)}>{t('settleAdvance')}</Button>
-                          ) : null}
-                          <Button size="sm" className="h-8 px-3" variant="danger" onClick={() => onDeleteAdvance(row)}>{t('delete')}</Button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-noorix-border p-5 text-center text-[13px] font-bold text-noorix-muted">
-                  {t('noDataInPeriod')}
-                </div>
-              )}
-            </section>
-
-            {deductionRows.length ? (
-              <section className="grid gap-3">
-                <SectionTitle count={deductionRows.length}>{t('deductionsList')}</SectionTitle>
-                <div className="grid gap-2.5">
-                  {deductionRows.map((row, index) => (
-                    <article key={row.id || `deduction-${index}`} className="rounded-xl border border-noorix-border bg-noorix-bg-muted/20 px-3 py-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-center">
-                        <Badge color="red" label={t('deductionsList')} size="sm" />
-                        <div className="text-[13px] font-extrabold text-noorix-text">{formatSaudiDate(String(row.transactionDate || ''))}</div>
-                      </div>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_2fr]">
-                        <DetailCell label={t('advanceAmount')} value={`-${hrFmt(amountValue(row))}`} tone="red" />
-                        <DetailCell label={t('notes')} value={textValue(row.notes, t('deductionsList'))} />
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-          </div>
+          <SimpleTable
+            columns={ledgerColumns}
+            data={ledgerRows}
+            emptyMessage={t('noDataInPeriod')}
+            tableMinWidth={900}
+            cellPadding="8px 10px"
+            frameClassName="shadow-sm"
+          />
         </div>
       ) : null}
     </Modal>
