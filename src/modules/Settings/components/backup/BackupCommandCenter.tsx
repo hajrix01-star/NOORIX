@@ -1,5 +1,5 @@
 import React, { type ChangeEvent, type Dispatch, type RefObject, type SetStateAction } from 'react';
-import { Badge, Button, Card, Checkbox, FileInput, Input, SimpleTable } from '../../../../ui';
+import { Button, Card, Checkbox, FileInput, Input } from '../../../../ui';
 import type {
   BackupConfigData,
   BackupImportModal,
@@ -15,19 +15,19 @@ import type {
   SettingsVoidMutationLike,
   TranslationFn,
 } from '../../settingsTypes';
-import {
-  formatBackupDate,
-  formatFileSize,
-  scopeLabel,
-} from './backupTabHelpers';
+import { scopeLabel } from './backupTabHelpers';
 import {
   latestBackup,
   latestFailedBackup,
   latestTrustedBackup,
-  scheduleText,
   uniqueUnifiedRows,
 } from './backupCommandCenterModel';
-import { BackupStat, ScheduleNumberInput, buildBackupCommandCenterColumns } from './backupCommandCenterUi';
+import {
+  BackupHistoryCard,
+  BackupSafetyCenterCard,
+  ScheduleNumberInput,
+  buildBackupCommandCenterColumns,
+} from './backupCommandCenterUi';
 
 type BackupCommandCenterProps = {
   t: TranslationFn;
@@ -151,44 +151,13 @@ export function BackupCommandCenter({
 
   return (
     <div className="flex flex-col gap-4 md:gap-5 min-w-0">
-      <Card padding="sm" className="flex flex-col gap-3 min-w-0">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <h3 className="m-0 text-[15px] font-extrabold text-noorix-text">{label('مركز سلامة النسخ', 'Backup safety center')}</h3>
-            <p className="m-0 mt-1 text-[12px] text-noorix-muted leading-relaxed">
-              {label('نسخة النظام لا تعتمد إلا بعد فحص الأرشيف واسترجاع مؤقت ومطابقة البيانات.', 'System backups are approved only after archive, temp restore, and data parity checks.')}
-            </p>
-          </div>
-          {latestTrustedSystem ? (
-            <Badge color="green" size="sm">{label('آخر نسخة نظام موثوقة', 'Latest trusted system backup')}</Badge>
-          ) : (
-            <Badge color={latestSystem ? 'amber' : 'gray'} size="sm">
-              {latestSystem ? label('لا توجد نسخة نظام موثوقة بعد', 'No trusted system backup yet') : label('لا توجد نسخ بعد', 'No backups yet')}
-            </Badge>
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          <BackupStat
-            label={label('آخر نسخة موثوقة', 'Latest trusted')}
-            value={latestTrustedSystem ? formatBackupDate(latestTrustedSystem.completedAt || latestTrustedSystem.createdAt) : '-'}
-            tone={latestTrustedSystem ? 'good' : 'warn'}
-          />
-          <BackupStat
-            label={label('حجم آخر نسخة', 'Latest size')}
-            value={latestSystem ? formatFileSize(latestSystem.sizeBytes) || '-' : '-'}
-          />
-          <BackupStat
-            label={label('الجدولة', 'Schedule')}
-            value={sysForm.enabled ? scheduleText(sysForm) : label('متوقفة', 'Off')}
-            tone={sysForm.enabled ? 'good' : 'warn'}
-          />
-          <BackupStat
-            label={label('آخر فشل', 'Latest failure')}
-            value={latestFailed ? formatBackupDate(latestFailed.completedAt || latestFailed.createdAt) : '-'}
-            tone={latestFailed ? 'bad' : 'good'}
-          />
-        </div>
-      </Card>
+      <BackupSafetyCenterCard
+        label={label}
+        latestSystem={latestSystem}
+        latestTrustedSystem={latestTrustedSystem}
+        latestFailed={latestFailed}
+        sysForm={sysForm}
+      />
 
       {canSystemBackup && (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
@@ -392,30 +361,15 @@ export function BackupCommandCenter({
         </details>
       )}
 
-      <Card padding="sm" className="flex flex-col gap-3 min-w-0">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h3 className="m-0 text-[14px] font-extrabold text-noorix-text">{t('backupJobHistory')}</h3>
-            <p className="m-0 mt-1 text-[12px] text-noorix-muted">{label('سجل موحد لنسخ النظام ونسخ الشركات.', 'Unified history for system and company backups.')}</p>
-          </div>
-          <Badge color="gray" size="sm">{rows.length}</Badge>
-        </div>
-        <SimpleTable
-          columns={columns}
-          data={rows}
-          stickyHeader
-          maxHeight="520px"
-          tableMinWidth={900}
-          emptyMessage={isLoading || sysJobsLoading ? t('loading') : t('backupNoJobs')}
-          getRowClassName={(row) => (row.verifyOk === false || row.status === 'failed' ? 'bg-noorix-red/5' : undefined)}
-        />
-        {rows.some((row) => row.verifyOk === false && row.verifyError) && (
-          <div className="rounded-md border border-noorix-red/30 bg-noorix-red/5 px-3 py-2 text-[12px] text-noorix-red">
-            {rows.find((row) => row.verifyOk === false && row.verifyError)?.verifyError}
-          </div>
-        )}
-        {isBusy && <p className="m-0 text-[12px] text-noorix-muted">{label('هناك عملية نسخ أو حفظ قيد التنفيذ.', 'A backup or save operation is running.')}</p>}
-      </Card>
+      <BackupHistoryCard
+        t={t}
+        label={label}
+        rows={rows}
+        columns={columns}
+        isLoading={isLoading}
+        sysJobsLoading={sysJobsLoading}
+        isBusy={isBusy}
+      />
     </div>
   );
 }

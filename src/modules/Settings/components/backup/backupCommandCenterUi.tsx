@@ -1,16 +1,18 @@
 import React, { type ChangeEvent } from 'react';
-import { Badge, Input, KebabMenu } from '../../../../ui';
+import { Badge, Card, Input, KebabMenu, SimpleTable } from '../../../../ui';
 import type { SimpleTableColumn } from '../../../../ui';
 import type {
   BackupImportModal,
+  BackupJob,
   BackupRestoreModal,
   BackupRestorePcModal,
+  BackupScheduleForm,
   BackupSystemDownloadVariables,
   SettingsMutationLike,
   TranslationFn,
 } from '../../settingsTypes';
 import { defaultImportCompanyName, formatBackupDate, formatFileSize, statusBadgeColor, statusLabel } from './backupTabHelpers';
-import { verificationColor, verificationLabel, type BackupLabelFn, type UnifiedBackupRow } from './backupCommandCenterModel';
+import { scheduleText, verificationColor, verificationLabel, type BackupLabelFn, type UnifiedBackupRow } from './backupCommandCenterModel';
 
 export function BackupStat({
   label,
@@ -222,3 +224,99 @@ export function buildBackupCommandCenterColumns({
   ];
 }
 
+type BackupSafetyCenterCardProps = {
+  label: BackupLabelFn;
+  latestSystem: BackupJob | null;
+  latestTrustedSystem: BackupJob | null;
+  latestFailed: BackupJob | null;
+  sysForm: Pick<BackupScheduleForm, 'enabled' | 'scheduleHour' | 'scheduleMinute'>;
+};
+
+export function BackupSafetyCenterCard({
+  label,
+  latestSystem,
+  latestTrustedSystem,
+  latestFailed,
+  sysForm,
+}: BackupSafetyCenterCardProps) {
+  return (
+    <Card padding="sm" className="flex flex-col gap-3 min-w-0">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <h3 className="m-0 text-[15px] font-extrabold text-noorix-text">{label('مركز سلامة النسخ', 'Backup safety center')}</h3>
+          <p className="m-0 mt-1 text-[12px] text-noorix-muted leading-relaxed">
+            {label('نسخة النظام لا تعتمد إلا بعد فحص الأرشيف واسترجاع مؤقت ومطابقة البيانات.', 'System backups are approved only after archive, temp restore, and data parity checks.')}
+          </p>
+        </div>
+        {latestTrustedSystem ? (
+          <Badge color="green" size="sm">{label('آخر نسخة نظام موثوقة', 'Latest trusted system backup')}</Badge>
+        ) : (
+          <Badge color={latestSystem ? 'amber' : 'gray'} size="sm">
+            {latestSystem ? label('لا توجد نسخة نظام موثوقة بعد', 'No trusted system backup yet') : label('لا توجد نسخ بعد', 'No backups yet')}
+          </Badge>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <BackupStat
+          label={label('آخر نسخة موثوقة', 'Latest trusted')}
+          value={latestTrustedSystem ? formatBackupDate(latestTrustedSystem.completedAt || latestTrustedSystem.createdAt) : '-'}
+          tone={latestTrustedSystem ? 'good' : 'warn'}
+        />
+        <BackupStat
+          label={label('حجم آخر نسخة', 'Latest size')}
+          value={latestSystem ? formatFileSize(latestSystem.sizeBytes) || '-' : '-'}
+        />
+        <BackupStat
+          label={label('الجدولة', 'Schedule')}
+          value={sysForm.enabled ? scheduleText(sysForm) : label('متوقفة', 'Off')}
+          tone={sysForm.enabled ? 'good' : 'warn'}
+        />
+        <BackupStat
+          label={label('آخر فشل', 'Latest failure')}
+          value={latestFailed ? formatBackupDate(latestFailed.completedAt || latestFailed.createdAt) : '-'}
+          tone={latestFailed ? 'bad' : 'good'}
+        />
+      </div>
+    </Card>
+  );
+}
+
+type BackupHistoryCardProps = {
+  t: TranslationFn;
+  label: BackupLabelFn;
+  rows: UnifiedBackupRow[];
+  columns: SimpleTableColumn<UnifiedBackupRow>[];
+  isLoading: boolean;
+  sysJobsLoading: boolean;
+  isBusy: boolean;
+};
+
+export function BackupHistoryCard({ t, label, rows, columns, isLoading, sysJobsLoading, isBusy }: BackupHistoryCardProps) {
+  const failedRow = rows.find((row) => row.verifyOk === false && row.verifyError);
+  return (
+    <Card padding="sm" className="flex flex-col gap-3 min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="m-0 text-[14px] font-extrabold text-noorix-text">{t('backupJobHistory')}</h3>
+          <p className="m-0 mt-1 text-[12px] text-noorix-muted">{label('سجل موحد لنسخ النظام ونسخ الشركات.', 'Unified history for system and company backups.')}</p>
+        </div>
+        <Badge color="gray" size="sm">{rows.length}</Badge>
+      </div>
+      <SimpleTable
+        columns={columns}
+        data={rows}
+        stickyHeader
+        maxHeight="520px"
+        tableMinWidth={900}
+        emptyMessage={isLoading || sysJobsLoading ? t('loading') : t('backupNoJobs')}
+        getRowClassName={(row) => (row.verifyOk === false || row.status === 'failed' ? 'bg-noorix-red/5' : undefined)}
+      />
+      {failedRow && (
+        <div className="rounded-md border border-noorix-red/30 bg-noorix-red/5 px-3 py-2 text-[12px] text-noorix-red">
+          {failedRow.verifyError}
+        </div>
+      )}
+      {isBusy && <p className="m-0 text-[12px] text-noorix-muted">{label('هناك عملية نسخ أو حفظ قيد التنفيذ.', 'A backup or save operation is running.')}</p>}
+    </Card>
+  );
+}
