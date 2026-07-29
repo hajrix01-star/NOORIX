@@ -14,7 +14,8 @@ import ThemeGeneralReportConceptTab from './ThemeGeneralReportConceptTab';
 import ThemeGlobalTableConceptTab from './ThemeGlobalTableConceptTab';
 import ThemeProfitLossConceptTab from './ThemeProfitLossConceptTab';
 import ThemeTableContainersTab from './ThemeTableContainersTab';
-import ThemeUILabTab, { ShadcnInspiredDateFilterSamples } from './ThemeUILabTab';
+import { ShadcnInspiredDateFilterSamples } from './ThemeDateFilterSamples';
+import ThemeUILabTab from './ThemeUILabTab';
 
 type ThemePreviewTabId =
   | 'filters'
