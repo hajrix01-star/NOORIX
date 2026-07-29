@@ -22,6 +22,7 @@ import { HrPayrollRunReaderService } from './hr-payroll-run-reader.service';
 import { saudiDateYmd } from './utils/hr-saudi-dates.util';
 import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 import { assertPayrollItemsGrossMatchesCentralSnapshots } from './hr-payroll-gross-source.util';
+import { buildPayrollRunItemsData, buildPayrollRunVaultSplitIds } from './hr-payroll-run-lifecycle-model';
 
 @Injectable()
 export class HrPayrollRunLifecycleService {
@@ -79,32 +80,9 @@ export class HrPayrollRunLifecycleService {
 
     const runNumber = await this.reader.generateRunNumber(dto.companyId);
 
-    let totalAmount = 0;
-    const itemsData: Array<{
-      employeeId: string;
-      grossSalary: Prisma.Decimal;
-      allowancesAdd: Prisma.Decimal;
-      deductions: Prisma.Decimal;
-      advancesDeduct: Prisma.Decimal;
-      netSalary: Prisma.Decimal;
-      notes?: string;
-    }> = [];
+    const { itemsData, totalAmount } = buildPayrollRunItemsData(dto.items);
 
-    for (const item of dto.items) {
-      const net = Number(item.netSalary);
-      totalAmount += net;
-      itemsData.push({
-        employeeId: item.employeeId,
-        grossSalary: new Prisma.Decimal(item.grossSalary),
-        allowancesAdd: new Prisma.Decimal(item.allowancesAdd ?? 0),
-        deductions: new Prisma.Decimal(item.deductions ?? 0),
-        advancesDeduct: new Prisma.Decimal(item.advancesDeduct ?? 0),
-        netSalary: new Prisma.Decimal(item.netSalary),
-        notes: item.notes,
-      });
-    }
-
-    const splitVaultIds = (dto.vaultSplits ?? []).map((vs) => vs.vaultId);
+    const splitVaultIds = buildPayrollRunVaultSplitIds(dto.vaultSplits);
     await assertVaultsUsableForPayment(this.prisma, dto.companyId, splitVaultIds);
     if (dto.vaultSplits?.length) {
       assertPayrollRunVaultSplitsMatchTotal(dto.vaultSplits, totalAmount);
@@ -251,26 +229,15 @@ export class HrPayrollRunLifecycleService {
         dto.items as PayrollRunItemDto[],
       );
 
-      let totalAmount = 0;
+      const { itemsData, totalAmount } = buildPayrollRunItemsData(dto.items as PayrollRunItemDto[]);
       data.employeeCount = dto.items.length;
       data.items = {
         deleteMany: {},
-        create: dto.items.map((item) => {
-          totalAmount += Number(item.netSalary ?? 0);
-          return {
-            employeeId: item.employeeId,
-            grossSalary: new Prisma.Decimal(item.grossSalary),
-            allowancesAdd: new Prisma.Decimal(item.allowancesAdd ?? 0),
-            deductions: new Prisma.Decimal(item.deductions ?? 0),
-            advancesDeduct: new Prisma.Decimal(item.advancesDeduct ?? 0),
-            netSalary: new Prisma.Decimal(item.netSalary),
-            notes: item.notes,
-          };
-        }),
+        create: itemsData,
       };
       data.totalAmount = new Prisma.Decimal(totalAmount);
 
-      const splitVaultIds = (dto.vaultSplits ?? []).map((vs) => vs.vaultId);
+      const splitVaultIds = buildPayrollRunVaultSplitIds(dto.vaultSplits);
       await assertVaultsUsableForPayment(this.prisma, companyId, splitVaultIds);
       if (dto.vaultSplits?.length) {
         assertPayrollRunVaultSplitsMatchTotal(dto.vaultSplits, totalAmount);
@@ -289,7 +256,7 @@ export class HrPayrollRunLifecycleService {
           : { deleteMany: {} };
     } else if (dto.vaultSplits !== undefined) {
       const totalAmount = Number(existing.totalAmount);
-      const splitVaultIds = dto.vaultSplits.map((vs) => vs.vaultId);
+      const splitVaultIds = buildPayrollRunVaultSplitIds(dto.vaultSplits);
       await assertVaultsUsableForPayment(this.prisma, companyId, splitVaultIds);
       if (dto.vaultSplits.length) {
         assertPayrollRunVaultSplitsMatchTotal(dto.vaultSplits, totalAmount);
