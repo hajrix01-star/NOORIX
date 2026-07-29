@@ -5,6 +5,7 @@ import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 import { HrPayrollAncillaryService } from './hr-payroll-ancillary.service';
+import { HrPayrollManualEntryService } from './hr-payroll-manual-entry.service';
 
 describe('HrPayrollAncillaryService', () => {
   function runWithTenant<T>(fn: () => Promise<T>): Promise<T> {
@@ -61,9 +62,10 @@ describe('HrPayrollAncillaryService', () => {
         ],
       }),
     });
+    const manualEntries: HrPayrollManualEntryService = Object.assign(Object.create(HrPayrollManualEntryService.prototype), {});
 
     return {
-      service: new HrPayrollAncillaryService(prisma, audit, compensationSnapshot),
+      service: new HrPayrollAncillaryService(prisma, audit, compensationSnapshot, manualEntries),
       prisma,
       tx,
       compensationSnapshot,
