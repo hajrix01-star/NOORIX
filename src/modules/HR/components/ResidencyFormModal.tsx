@@ -11,9 +11,7 @@ import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys } from '../../../services/queryKeys';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { fmt } from '../../../utils/format';
-import { Checkbox, DialogActions, Input, AdaptiveSheet } from '../../../ui';
+import { Input, AdaptiveSheet } from '../../../ui';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import {
   HR_SERVICE_CATEGORIES,
@@ -30,6 +28,11 @@ import {
   addOneCalendarYearYmd,
 } from '../constants/employeeHrServiceCategories';
 import { HrServiceFormFields } from './HrServiceFormFields';
+import {
+  ResidencyFormActions,
+  ResidencyInvoiceCreationFields,
+  ResidencyInvoiceSummary,
+} from './ResidencyFormModalParts';
 import type { HrEmployee } from '../../../types/api';
 import type { SupplierRecord } from '../../Suppliers/supplierTypes';
 
@@ -40,7 +43,7 @@ const STATUS_OPTIONS = [
 ];
 
 const RESIDENCY_FORM_ID = 'residency-service-form';
-type ResidencyRecord = Record<string, unknown> & {
+export type ResidencyRecord = Record<string, unknown> & {
   id?: string | null;
   employeeId?: string | null;
   serviceCategory?: string | null;
@@ -58,7 +61,7 @@ type ResidencyRecord = Record<string, unknown> & {
   residencyInvoiceAmount?: number | string | null;
   metadata?: Record<string, unknown> | null;
 };
-type VaultOption = {
+export type VaultOption = {
   id?: string | null;
   name?: string | null;
   nameAr?: string | null;
@@ -356,37 +359,15 @@ export function ResidencyFormModal({
       side="start"
       className="residency-form-drawer"
       footer={
-        <DialogActions
-          actions={[
-            { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
-            {
-              key: 'delete',
-              label: t('delete'),
-              role: 'delete',
-              hidden: !isEdit || !onDelete,
-              className: 'me-auto',
-              onClick: () => {
-                if (residency) onDelete?.(residency);
-              },
-            },
-            {
-              key: 'issue-invoice',
-              label: t('hrServiceIssueInvoice'),
-              role: 'success',
-              hidden: !isEdit || !onIssueInvoice || !!residency?.invoiceId,
-              onClick: () => {
-                if (residency) onIssueInvoice?.(residency);
-              },
-            },
-            {
-              key: 'save',
-              label: submitting ? t('saving') : (isEdit ? t('save') : t('add')),
-              role: 'save',
-              type: 'submit',
-              form: RESIDENCY_FORM_ID,
-              disabled: submitting,
-            },
-          ]}
+        <ResidencyFormActions
+          t={t}
+          formId={RESIDENCY_FORM_ID}
+          isEdit={isEdit}
+          submitting={submitting}
+          residency={residency}
+          onClose={onClose}
+          onDelete={onDelete}
+          onIssueInvoice={onIssueInvoice}
         />
       }
     >
@@ -464,38 +445,17 @@ export function ResidencyFormModal({
         </div>
 
         {!isEdit && (
-          <>
-            <Checkbox
-              checked={createInvoiceForService}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCreateInvoiceForService(e.target.checked)}
-              label={t('hrServiceIssueInvoice')}
-              containerClassName="mb-3 text-[13px] mt-2"
-            />
-            {createInvoiceForService && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  label={t('advanceAmount')}
-                  value={invoiceAmount}
-                  onChange={(e: ResidencyInputChange) => setInvoiceAmount(e.target.value)}
-                />
-                <Input
-                  type="select"
-                  label={t('selectVault')}
-                  value={vaultId}
-                  onChange={(e: ResidencyInputChange) => setVaultId(e.target.value)}
-                  required
-                >
-                  <option value="">— {t('selectVault')} —</option>
-                  {vaults.map((v) => (
-                    <option key={v.id || ''} value={v.id || ''}>{vaultDisplayName(v, lang)}</option>
-                  ))}
-                </Input>
-              </div>
-            )}
-          </>
+          <ResidencyInvoiceCreationFields
+            t={t}
+            lang={lang}
+            createInvoiceForService={createInvoiceForService}
+            invoiceAmount={invoiceAmount}
+            vaultId={vaultId}
+            vaults={vaults}
+            onCreateInvoiceChange={setCreateInvoiceForService}
+            onInvoiceAmountChange={setInvoiceAmount}
+            onVaultChange={setVaultId}
+          />
         )}
 
         {isEdit && (
@@ -511,17 +471,11 @@ export function ResidencyFormModal({
           </Input>
         )}
 
-        {residency?.invoice?.invoiceNumber && (
-          <div className="mb-3 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2 text-[13px]">
-            <span className="text-noorix-muted">{t('invoiceNumber')}: </span>
-            <span className="font-semibold ltr text-noorix-blue">{residency.invoice.invoiceNumber}</span>
-            {residency.residencyInvoiceAmount != null && (
-              <span className="ms-2 text-noorix-muted ltr">
-                ({fmt(Number(residency.residencyInvoiceAmount))} <span className="nx-sar">SR</span>)
-              </span>
-            )}
-          </div>
-        )}
+        <ResidencyInvoiceSummary
+          t={t}
+          invoiceNumber={residency?.invoice?.invoiceNumber}
+          amount={residency?.residencyInvoiceAmount}
+        />
 
         <Input
           label={t('notes')}
