@@ -4,7 +4,6 @@ import { useDashboardOverview } from '../../../../hooks/useDashboardOverview';
 import { monthDateBounds } from '../../../../utils/reportDrillLinks';
 import { buildKpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
 import { EN_MONTHS } from '../../../Reports/reportHelpers';
-import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../../../constants/kpiCardTheme';
 import { useUiDir } from '../../../../hooks/useUiDir';
 import { getSaudiNow, getSaudiYearMonth } from '../../../../utils/saudiDate';
 import { lastDayOfMonth, prevCalendarMonth, ymd } from '../utils/dashboardOverviewDateUtils';
@@ -17,12 +16,20 @@ import {
   performanceTotalForSalesKey,
   yearMonthlyDailyAvgCapMonth,
 } from '../utils/dashboardOverviewBuilders';
+import {
+  DASHBOARD_MONTH_NAMES_AR,
+  DASHBOARD_MONTH_NAMES_EN,
+  DASHBOARD_PIE_COLORS,
+  buildDashboardKpiCardSeeds,
+  buildDashboardMonthOptions,
+  buildDashboardTimelineSeries,
+  dashboardMonthName,
+  mapDashboardTimelineRowsForDisplay,
+  pickMetricSummaries,
+} from '../utils/dashboardOverviewPresentationModel';
 import type { DashboardOverviewFilter } from '../types';
 import type {
-  DashboardSalesMetricDay,
-  DashboardSalesSummary,
   DashboardKpiCardMetric,
-  DashboardTimelineMetricRow,
 } from '../../../../types/api/domains/dashboard';
 
 /** خيارات اختيارية — تستخدمها شاشة الاستوديو فقط (لا تغيّر اللوحة التقليدية). */
@@ -31,75 +38,9 @@ export type UseDashboardOverviewModelOptions = {
   includeCancelledSales?: boolean;
 };
 
-const MONTH_NAMES_AR = [
-  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
-];
-const MONTH_NAMES_EN = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
-const PIE_COLORS = [
-  VAULT_RECHARTS_COLORS.bank,
-  VAULT_RECHARTS_COLORS.cash,
-  VAULT_RECHARTS_COLORS.app,
-  KPI_RECHARTS_COLORS.netProfit,
-  KPI_RECHARTS_COLORS.expenses,
-  KPI_RECHARTS_COLORS.purchases,
-  '#0891b2',
-  '#db2777',
-];
-
-function metricDaysToSummaries(rows: readonly DashboardSalesMetricDay[] | null | undefined): DashboardSalesSummary[] {
-  return (rows ?? []).map((row, index) => ({
-    id: `metric-day-${row.transactionDate}-${row.shift ?? 'all'}-${index}`,
-    transactionDate: row.transactionDate,
-    totalAmount: row.totalAmount,
-    customerCount: row.customerCount,
-    channels: [],
-  }));
-}
-
-function pickMetricSummaries(
-  metricRows: readonly DashboardSalesMetricDay[] | null | undefined,
-  fallbackRows: DashboardSalesSummary[],
-): DashboardSalesSummary[] {
-  return metricRows && metricRows.length > 0 ? metricDaysToSummaries(metricRows) : fallbackRows;
-}
-
-function mapTimelineRowsForDisplay(params: {
-  rows: readonly DashboardTimelineMetricRow[] | null | undefined;
-  lang: string;
-  t: (key: string) => string;
-  monthNamesAr: readonly string[];
-  enMonths: readonly string[];
-}): Record<string, string | number>[] {
-  const { rows, lang, t, monthNamesAr, enMonths } = params;
-  const salesKey = t('annualSales');
-  const purchasesKey = t('annualPurchases');
-  const expensesKey = t('annualExpenses');
-  const customersKey = t('dashboardTimelineCustomers');
-  const avgInvoiceKey = t('dashboardTimelineAvgInvoice');
-
-  return (rows ?? []).map((row) => {
-    const month = Number(row.label);
-    const label =
-      Number.isInteger(month) && month >= 1 && month <= 12 && rows?.length === 12
-        ? lang === 'ar'
-          ? monthNamesAr[month - 1]
-          : enMonths[month - 1]
-        : row.label;
-    return {
-      label,
-      [salesKey]: Number(row.sales || 0),
-      [purchasesKey]: Number(row.purchases || 0),
-      [expensesKey]: Number(row.expenses || 0),
-      [customersKey]: Number(row.customers || 0),
-      [avgInvoiceKey]: Number(row.avgInvoice || 0),
-    };
-  });
-}
+const MONTH_NAMES_AR = DASHBOARD_MONTH_NAMES_AR;
+const MONTH_NAMES_EN = DASHBOARD_MONTH_NAMES_EN;
+const PIE_COLORS = DASHBOARD_PIE_COLORS;
 
 export function useDashboardOverviewModel(
   companyId: string,
@@ -137,11 +78,7 @@ export function useDashboardOverviewModel(
   }, []);
 
   const weeklyMonthOptions = useMemo(
-    () =>
-      Array.from({ length: 12 }, (_, i) => ({
-        value: i + 1,
-        label: lang === 'ar' ? MONTH_NAMES_AR[i] : MONTH_NAMES_EN[i],
-      })),
+    () => buildDashboardMonthOptions(lang),
     [lang],
   );
 
@@ -319,52 +256,17 @@ export function useDashboardOverviewModel(
   const monthName = isCustomRange
     ? filter?.label ?? null
     : selectedMonth
-      ? lang === 'ar'
-        ? MONTH_NAMES_AR[selectedMonth - 1]
-        : MONTH_NAMES_EN[selectedMonth - 1]
+      ? dashboardMonthName(lang, selectedMonth)
       : null;
 
   const prevMonthName = useMemo(() => {
     if (selectedMonth == null) return '';
     const prev = prevCalendarMonth(year, selectedMonth);
-    return lang === 'ar'
-      ? MONTH_NAMES_AR[prev.month - 1]
-      : MONTH_NAMES_EN[prev.month - 1];
+    return dashboardMonthName(lang, prev.month);
   }, [year, selectedMonth, lang]);
 
   const cards = useMemo(
-    () => [
-      {
-        key: 'sales',
-        label: monthName ? `${t('revenueGroup')} — ${monthName}` : t('annualSales'),
-        formulaKey: 'dashboardKpiFormulaSales',
-        pctLabelKey: 'dashboardKpiPctSales',
-      },
-      {
-        key: 'purchases',
-        label: monthName ? `${t('purchasesGroup')} — ${monthName}` : t('annualPurchases'),
-        formulaKey: 'dashboardKpiFormulaPurchases',
-        pctLabelKey: 'purchasesToSalesRatio',
-      },
-      {
-        key: 'grossProfit',
-        label: monthName ? `${t('annualGrossProfit')} — ${monthName}` : t('annualGrossProfit'),
-        formulaKey: 'dashboardKpiFormulaGrossProfit',
-        pctLabelKey: 'dashboardKpiPctGrossProfit',
-      },
-      {
-        key: 'expenses',
-        label: monthName ? `${t('expensesGroup')} — ${monthName}` : t('annualExpenses'),
-        formulaKey: 'dashboardKpiFormulaExpenses',
-        pctLabelKey: 'expensesToSalesRatio',
-      },
-      {
-        key: 'netProfit',
-        label: t('annualNetProfit'),
-        formulaKey: 'dashboardKpiFormulaNetProfit',
-        pctLabelKey: 'dashboardKpiPctNetProfit',
-      },
-    ],
+    () => buildDashboardKpiCardSeeds({ monthName, t }),
     [monthName, t],
   );
 
@@ -374,11 +276,10 @@ export function useDashboardOverviewModel(
         timelineGrain === 'daily'
           ? overviewData.presentation?.timeline?.daily
           : overviewData.presentation?.timeline?.monthly;
-      return mapTimelineRowsForDisplay({
+      return mapDashboardTimelineRowsForDisplay({
         rows: timelineRows,
         lang,
         t,
-        monthNamesAr: MONTH_NAMES_AR,
         enMonths: EN_MONTHS,
       });
     },
@@ -431,28 +332,18 @@ export function useDashboardOverviewModel(
   }, []);
 
   const SERIES = useMemo(
-    () => [
-      { key: salesSeries, label: t('annualSales'), color: KPI_RECHARTS_COLORS.sales, gradId: 'gradSales', disabled: false },
-      {
-        key: purchSeries,
-        label: t('annualPurchases'),
-        color: KPI_RECHARTS_COLORS.purchases,
-        gradId: 'gradPurch',
-        disabled: !isAnnualChart,
-      },
-      {
-        key: expSeries,
-        label: t('annualExpenses'),
-        color: KPI_RECHARTS_COLORS.expenses,
-        gradId: 'gradExp',
-        disabled: !isAnnualChart,
-      },
-    ],
+    () =>
+      buildDashboardTimelineSeries({
+        salesSeries,
+        purchasesSeries: purchSeries,
+        expensesSeries: expSeries,
+        isAnnualChart,
+        t,
+      }),
     [salesSeries, purchSeries, expSeries, isAnnualChart, t],
   );
 
-  const timelineMonthName =
-    lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : MONTH_NAMES_EN[chartMonthForDaily - 1];
+  const timelineMonthName = dashboardMonthName(lang, chartMonthForDaily);
 
   const weeklySalesWeekRows = useMemo(
     () => ({ rows: overviewData.presentation?.weeklyComparison ?? [] }),
