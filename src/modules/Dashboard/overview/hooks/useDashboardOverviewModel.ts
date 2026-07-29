@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { useDashboardOverview } from '../../../../hooks/useDashboardOverview';
 import { monthDateBounds } from '../../../../utils/reportDrillLinks';
@@ -21,12 +21,12 @@ import {
   DASHBOARD_MONTH_NAMES_EN,
   DASHBOARD_PIE_COLORS,
   buildDashboardKpiCardSeeds,
-  buildDashboardMonthOptions,
   buildDashboardTimelineSeries,
   dashboardMonthName,
   mapDashboardTimelineRowsForDisplay,
   pickMetricSummaries,
 } from '../utils/dashboardOverviewPresentationModel';
+import { useDashboardWeeklyComparisonState } from './useDashboardWeeklyComparisonState';
 import type { DashboardOverviewFilter } from '../types';
 import type {
   DashboardKpiCardMetric,
@@ -54,33 +54,7 @@ export function useDashboardOverviewModel(
 
   const [timelineGrain, setTimelineGrain] = useState(() => (selectedMonth != null ? 'daily' : 'monthly'));
 
-  const saInit = getSaudiYearMonth();
-  const initPrev = prevCalendarMonth(saInit.year, saInit.month);
-  const [weeklyPanelYearA, setWeeklyPanelYearA] = useState(saInit.year);
-  const [weeklyPanelMonthA, setWeeklyPanelMonthA] = useState(saInit.month);
-  const [weeklyPanelYearB, setWeeklyPanelYearB] = useState(initPrev.year);
-  const [weeklyPanelMonthB, setWeeklyPanelMonthB] = useState(initPrev.month);
-
-  useEffect(() => {
-    if (selectedMonth == null) return;
-    setWeeklyPanelYearA(year);
-    setWeeklyPanelMonthA(selectedMonth);
-    const p = prevCalendarMonth(year, selectedMonth);
-    setWeeklyPanelYearB(p.year);
-    setWeeklyPanelMonthB(p.month);
-  }, [year, selectedMonth]);
-
-  const weeklyYearOptions = useMemo(() => {
-    const sa = getSaudiYearMonth();
-    const hi = sa.year + 1;
-    const lo = hi - 10;
-    return Array.from({ length: hi - lo + 1 }, (_, i) => hi - i);
-  }, []);
-
-  const weeklyMonthOptions = useMemo(
-    () => buildDashboardMonthOptions(lang),
-    [lang],
-  );
+  const weeklyState = useDashboardWeeklyComparisonState({ year, selectedMonth, lang });
 
   const saudiYM = getSaudiYearMonth();
   const chartMonthForDaily =
@@ -131,27 +105,6 @@ export function useDashboardOverviewModel(
   const supplierFrom = customPeriodStart ?? monthSupplierFrom;
   const supplierTo = customPeriodEnd ?? monthSupplierTo;
 
-  const weeklyBoundsA = useMemo(() => {
-    const ld = lastDayOfMonth(weeklyPanelYearA, weeklyPanelMonthA);
-    return {
-      start: ymd(weeklyPanelYearA, weeklyPanelMonthA, 1),
-      end: ymd(weeklyPanelYearA, weeklyPanelMonthA, ld),
-    };
-  }, [weeklyPanelYearA, weeklyPanelMonthA]);
-
-  const weeklyBoundsB = useMemo(() => {
-    const ld = lastDayOfMonth(weeklyPanelYearB, weeklyPanelMonthB);
-    return {
-      start: ymd(weeklyPanelYearB, weeklyPanelMonthB, 1),
-      end: ymd(weeklyPanelYearB, weeklyPanelMonthB, ld),
-    };
-  }, [weeklyPanelYearB, weeklyPanelMonthB]);
-
-  const weeklyPackYearSpanA = useMemo(
-    () => ({ yearStart: `${weeklyPanelYearA}-01-01`, yearEnd: `${weeklyPanelYearA}-12-31` }),
-    [weeklyPanelYearA],
-  );
-
   const prevMonthPackYearSpan = useMemo(
     () =>
       prevMonthSalesAvgBounds.year != null
@@ -180,12 +133,12 @@ export function useDashboardOverviewModel(
     dailyEnd: customPeriodEnd ?? dailyEndEffective,
     monthStart: monthSalesAvgBounds.start,
     monthEnd: monthSalesAvgBounds.end,
-    weeklyYearStart: weeklyPackYearSpanA.yearStart,
-    weeklyYearEnd: weeklyPackYearSpanA.yearEnd,
-    weeklyStart: weeklyBoundsA.start,
-    weeklyEnd: weeklyBoundsA.end,
-    weeklyBaselineStart: weeklyBoundsB.start,
-    weeklyBaselineEnd: weeklyBoundsB.end,
+    weeklyYearStart: weeklyState.yearSpanA.yearStart,
+    weeklyYearEnd: weeklyState.yearSpanA.yearEnd,
+    weeklyStart: weeklyState.boundsA.start,
+    weeklyEnd: weeklyState.boundsA.end,
+    weeklyBaselineStart: weeklyState.boundsB.start,
+    weeklyBaselineEnd: weeklyState.boundsB.end,
     previousMonthYearStart: prevMonthPackYearSpan?.yearStart ?? null,
     previousMonthYearEnd: prevMonthPackYearSpan?.yearEnd ?? null,
     previousMonthStart: prevMonthSalesAvgBounds.start,
@@ -406,16 +359,16 @@ export function useDashboardOverviewModel(
       isLoading: false,
       isError,
     },
-    weeklyPanelYearA,
-    setWeeklyPanelYearA,
-    weeklyPanelMonthA,
-    setWeeklyPanelMonthA,
-    weeklyPanelYearB,
-    setWeeklyPanelYearB,
-    weeklyPanelMonthB,
-    setWeeklyPanelMonthB,
-    weeklyYearOptions,
-    weeklyMonthOptions,
+    weeklyPanelYearA: weeklyState.yearA,
+    setWeeklyPanelYearA: weeklyState.setYearA,
+    weeklyPanelMonthA: weeklyState.monthA,
+    setWeeklyPanelMonthA: weeklyState.setMonthA,
+    weeklyPanelYearB: weeklyState.yearB,
+    setWeeklyPanelYearB: weeklyState.setYearB,
+    weeklyPanelMonthB: weeklyState.monthB,
+    setWeeklyPanelMonthB: weeklyState.setMonthB,
+    weeklyYearOptions: weeklyState.yearOptions,
+    weeklyMonthOptions: weeklyState.monthOptions,
     weeklySalesWeekRows,
     weeklySalesPanelLoading,
   };

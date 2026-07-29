@@ -8,37 +8,31 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useEmployees } from '../../hooks/useEmployees';
 import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '../../hooks/useApiQuery';
-import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
-import { exportToExcel } from '../../utils/exportUtils';
-import ImportExportModal from '../../components/ImportExportModal';
-import {
-  EMPLOYEE_EXCEL_EXPORT_OPTS,
-} from '../../utils/importTemplates';
+import { getSaudiToday } from '../../utils/saudiDate';
 import {
   getEmployeeCompensationSnapshots,
   getEmployeesPaged,
-  getEmployeesBulk,
 } from '../../services/api';
-import { Button, Input, ScreenShell, SmartTable } from '../../ui';
+import { Input, ScreenShell, SmartTable } from '../../ui';
 import { StaffListMobileRow } from './components/StaffListMobileRow';
 import { StaffListModals } from './components/StaffListModals';
 import { buildStaffListColumns, type HrStaffTableRow } from './staffListColumns';
 import {
-  buildCentralEmployeeExportRows,
   getCreatedEmployeeId,
   syncCustomAllowanceRows,
   type HrStaffSavePayload,
 } from './staffListDataOps';
 import { parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
-import { employeeKeys, hrKeys } from '../../services/queryKeys';
+import { hrKeys } from '../../services/queryKeys';
 import { normalizeEmployeesPagedQueryInput } from '../../services/domains/apiEndpoints/hr-query';
 import {
   hrFlatSmartTableShellProps,
 } from './hrWorkspaceLayout';
+import { buildStaffEmployeeViewModeItems } from './staffListViewModel';
 import { HrFlatListTabShell } from './components/HrFlatListTabShell';
-import { HrTabToolbar } from './components/HrTabToolbar';
-import { HrSegmentedControl } from './components/HrSegmentedControl';
+import { StaffListImportExportModal } from './components/StaffListImportExportModal';
+import { StaffListToolbar } from './components/StaffListToolbar';
 import type {
   ApiParsedResult,
   HrCompensationSnapshot,
@@ -90,30 +84,9 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     date: getSaudiToday(),
   });
   const [showImportExport, setShowImportExport] = useState(false);
-  /** After termination wizard — optional settlement invoice modal */
   const [terminationSettlementEmp, setTerminationSettlementEmp] = useState<HrEmployee | null>(null);
   const employeeViewModeItems = useMemo(
-    () =>
-      (
-        [
-          { id: 'active', fullKey: 'activeEmployeesList', shortKey: 'activeEmployeesListShort' },
-          { id: 'terminated', fullKey: 'terminatedEmployeesList', shortKey: 'terminatedEmployeesListShort' },
-          { id: 'archived', fullKey: 'archivedEmployeesList', shortKey: 'archivedEmployeesListShort' },
-        ] as const
-      ).map(({ id, fullKey, shortKey }) => {
-        const full = t(fullKey);
-        const short = t(shortKey);
-        const label =
-          short === full ? (
-            full
-          ) : (
-            <>
-              <span className="hidden sm:inline">{full}</span>
-              <span className="sm:hidden">{short}</span>
-            </>
-          );
-        return { id, label };
-      }),
+    () => buildStaffEmployeeViewModeItems(t),
     [t],
   );
   const queryClient = useQueryClient();
@@ -124,7 +97,6 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
   const debouncedQ = useDebouncedValue(searchInput.trim(), 300);
   const [sortKey, setSortKey] = useState('joinDate');
   const [sortDir, setSortDir] = useState('desc');
-  const [exporting, setExporting] = useState(false);
   const employeesPagedQuery = useMemo(
     () =>
       normalizeEmployeesPagedQueryInput({
@@ -236,37 +208,6 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
     [t, lang, STATUS_MAP, viewMode, navigate],
   );
 
-  async function handleExportExcel() {
-    if (!companyId) return;
-    setExporting(true);
-    try {
-      const res = await getEmployeesBulk(companyId, viewMode);
-      if (!res?.success) {
-        showToast(res?.error || t('saveFailed'), 'error');
-        return;
-      }
-      const list = res.data || [];
-      const centralRows = await buildCentralEmployeeExportRows(companyId, list, t);
-      const rows = list.map((e, index: number) => {
-        const parsed = parseEmployeeNotesMeta(e.notes);
-        const meta = parsed.meta || {};
-        return {
-          ...centralRows[index],
-          [t('employeesExcelColJoinDate')]: formatSaudiDate(e.joinDate),
-          [t('employeesExcelColStatus')]: (STATUS_MAP as Record<string, { label?: string }>)[String(e.status)]?.label || e.status,
-          [t('employeesExcelColTerminationReason')]: meta.terminationReason || '',
-          [t('employeesExcelColTerminationClause')]: meta.terminationClause || '',
-          [t('employeesExcelColTerminationDate')]: meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
-        };
-      });
-      exportToExcel(rows, 'employees.xlsx', EMPLOYEE_EXCEL_EXPORT_OPTS);
-    } catch (e: unknown) {
-      showToast(getErrorMessage(e, t('saveFailed')), 'error');
-    } finally {
-      setExporting(false);
-    }
-  }
-
   function handleSave(payload: HrStaffSavePayload | Record<string, unknown>) {
     const { employeeBody, customAllowances: customRows = [] } = payload?.employeeBody
       ? payload as HrStaffSavePayload
@@ -328,39 +269,15 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
   }, []);
 
   const staffToolbar = (
-    <HrTabToolbar
-      leading={(
-        <HrSegmentedControl
-          tone="filter"
-          className="nx-hr-view-modes w-full min-w-0"
-          items={employeeViewModeItems}
-          value={viewMode}
-          onChange={handleViewModeChange}
-        />
-      )}
-      desktopActions={(
-        <Button
-          size="sm"
-          className="hidden lg:inline-flex shrink-0 whitespace-nowrap"
-          icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
-          onClick={() => setShowImportExport(true)}
-        >
-          {t('importExportLabel')}
-        </Button>
-      )}
-      menuItems={[
-        {
-          key: 'import',
-          label: t('importExportLabel'),
-          onClick: () => setShowImportExport(true),
-        },
-      ]}
-      primaryAction={{
-        label: t('addEmployee'),
-        onClick: () => {
-          setEditingEmployee(null);
-          setShowForm(true);
-        },
+    <StaffListToolbar
+      t={t}
+      items={employeeViewModeItems}
+      viewMode={viewMode}
+      onViewModeChange={handleViewModeChange}
+      onOpenImportExport={() => setShowImportExport(true)}
+      onAddEmployee={() => {
+        setEditingEmployee(null);
+        setShowForm(true);
       }}
     />
   );
@@ -380,24 +297,13 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
       )}
       {companyId && (
         <>
-          <ImportExportModal
+          <StaffListImportExportModal
             isOpen={showImportExport}
-            onClose={() => setShowImportExport(false)}
-            entityType="employees"
             companyId={companyId}
-            exportFetcher={async () => {
-              const res = await getEmployeesBulk(companyId, 'active');
-              if (!res?.success) {
-                throw new Error(res?.error || t('saveFailed'));
-              }
-              const list = res.data || [];
-              return buildCentralEmployeeExportRows(companyId, list, t);
-            }}
-            onImportSuccess={(count: number) => {
-              queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
-              queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
-              showToast(t('employeesImportSuccessCount', String(count)), 'success');
-            }}
+            t={t}
+            queryClient={queryClient}
+            showToast={showToast}
+            onClose={() => setShowImportExport(false)}
           />
           {staffToolbar}
           {embedded ? (
