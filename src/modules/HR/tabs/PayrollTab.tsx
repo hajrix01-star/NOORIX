@@ -7,11 +7,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun, throwIfApiFailed } from '../../../services/api';
+import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun } from '../../../services/api';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useVaults } from '../../../hooks/useVaults';
-import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
@@ -19,7 +18,7 @@ import { PayrollRunFormModal } from '../components/PayrollRunFormModal';
 import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, DateField, DialogActions, Input, Modal, FmtNum, SmartTable, YearDateFilter, usePrintPreview } from '../../../ui';
+import { Button, Badge, FmtNum, SmartTable, YearDateFilter, usePrintPreview, type SmartTableColumn } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -27,24 +26,21 @@ import { hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
 import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
-import { computePayrollRunTotals } from '../utils/hrCalculations/payroll';
-import { buildPayrollRunPrintTable } from './payrollTabModel';
-
-type HrAny = ReturnType<typeof JSON.parse>;
+import { PayrollPayModal } from './PayrollPayModal';
+import { PayrollRunCompactRow, PayrollRunMobileCard } from './PayrollRunResponsiveRows';
+import {
+  buildPayrollRunExportRows,
+  buildPayrollRunPrintTable,
+  lastDayOfPayrollMonth,
+  toPayrollRunRow,
+  type PayrollIssuePaymentMutation,
+  type PayrollPayModalRun,
+  type PayrollRunRow,
+  type PayrollRunSource,
+  type PayrollStatusMutation,
+} from './payrollTabModel';
 
 const PAGE_SIZE = 50;
-
-/** آخر يوم تقويمي من شهر المسيرة نفسه (YYYY-MM-DD) — مثال: مسيرة مارس → 31 مارس */
-function lastDayOfPayrollMonth(monthRaw: HrAny) {
-  if (!monthRaw) return null;
-  const s = toYmd(monthRaw);
-  const [y, m] = s.split('-').map((x: HrAny) => parseInt(x, 10));
-  if (!y || !m || m < 1 || m > 12) return null;
-  const last = new Date(Date.UTC(y, m, 0));
-  const dd = String(last.getUTCDate()).padStart(2, '0');
-  const mm2 = String(last.getUTCMonth() + 1).padStart(2, '0');
-  return `${y}-${mm2}-${dd}`;
-}
 
 type PayrollTabProps = { embedded?: boolean };
 
@@ -54,7 +50,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const effectiveRole = resolveUserRole(user?.role ?? userRole);
   const canDeletePayroll = canDeletePayrollRunRole(effectiveRole);
   const companyId = activeCompanyId ?? '';
-  const activeCompany = companies?.find((c: HrAny) => c.id === companyId);
+  const activeCompany = companies?.find((company) => company.id === companyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
   const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
@@ -64,9 +60,9 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   });
   const [year, setYear] = useState(new Date().getFullYear());
   const [showCreate, setShowCreate] = useState(false);
-  const [editingRunId, setEditingRunId] = useState<HrAny>(null);
-  const [detailRunId, setDetailRunId] = useState<HrAny>(null);
-  const [payModalRun, setPayModalRun] = useState<HrAny>(null);
+  const [editingRunId, setEditingRunId] = useState<string | null>(null);
+  const [detailRunId, setDetailRunId] = useState<string | null>(null);
+  const [payModalRun, setPayModalRun] = useState<PayrollPayModalRun | null>(null);
   const [payTransactionDate, setPayTransactionDate] = useState(() => getSaudiToday());
   const [payVaultId, setPayVaultId] = useState('');
   const [paySecondVaultId, setPaySecondVaultId] = useState('');
@@ -77,46 +73,30 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const { paymentVaults = [] } = useVaults({ companyId });
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useApiListQuery<HrAny, HrAny[]>({
+  const { data, isLoading, isError } = useApiListQuery<PayrollRunSource, PayrollRunRow[]>({
     queryKey: hrKeys.payrollRuns(companyId, year),
     queryFn: () => getPayrollRuns(companyId, year),
     fallbackMessage: 'فشل تحميل مسيرات الرواتب',
-    select: (runs) =>
-      runs.map((run: HrAny) => {
-        const grossTotal = Array.isArray(run.items)
-          ? computePayrollRunTotals(run.items).grossSalary
-          : Number(run.totalAmount ?? 0);
-        return {
-          id: run.id,
-          runNumber: run.runNumber,
-          month: run.payrollMonth ? formatSaudiDate(run.payrollMonth) : null,
-          monthRaw: run.payrollMonth,
-          grossTotal,
-          netTotal: Number(run.totalAmount ?? 0),
-          status: run.status,
-          issuedInvoiceNumber: run.issuedSalaryInvoiceNumber ?? null,
-          itemsCount: run.items?.length ?? 0,
-        };
-      }),
+    select: (runs) => runs.map(toPayrollRunRow),
     enabled: !!companyId,
   });
 
-  const updateStatusMutation = useApiMutation({
-    mutationFn: ({ id, status }: HrAny) => updatePayrollRunStatus(id, companyId, status),
+  const updateStatusMutation = useApiMutation<unknown, PayrollStatusMutation>({
+    mutationFn: ({ id, status }) => updatePayrollRunStatus(id, companyId, status),
     successToast: () => t('payrollCreated'),
-    errorToast: (e: HrAny) => e?.message || t('saveFailed'),
+    errorToast: (error) => error.message || t('saveFailed'),
     onSuccess: () => invalidateOnFinancialMutation(queryClient),
   });
 
-  const issuePaymentMutation = useApiMutation({
-    mutationFn: ({ id, transactionDate, vaultSplits }: HrAny) =>
+  const issuePaymentMutation = useApiMutation<unknown, PayrollIssuePaymentMutation>({
+    mutationFn: ({ id, transactionDate, vaultSplits }) =>
       issuePayrollPayment({
         payrollRunId: id,
         transactionDate: transactionDate || getSaudiToday(),
         vaultSplits: vaultSplits?.length ? vaultSplits : undefined,
       }),
     successToast: () => t('payrollPaidSuccess') || 'تم صرف المسيرة بنجاح',
-    errorToast: (e: HrAny) => e?.message || t('saveFailed'),
+    errorToast: (error) => error.message || t('saveFailed'),
     onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
       setPayModalRun(null);
@@ -128,7 +108,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
     },
   });
 
-  const openPayModal = useCallback((row: HrAny) => {
+  const openPayModal = useCallback((row: Pick<PayrollRunRow, 'id' | 'runNumber' | 'month' | 'monthRaw' | 'netTotal'>) => {
     setPayModalRun({
       id: row.id,
       runNumber: row.runNumber,
@@ -143,14 +123,14 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
     setPayVaultError('');
   }, []);
 
-  const deleteRunMutation = useApiMutation({
-    mutationFn: ({ id }: HrAny) => deletePayrollRun(id, companyId),
+  const deleteRunMutation = useApiMutation<unknown, { id: string }>({
+    mutationFn: ({ id }) => deletePayrollRun(id, companyId),
     successToast: () => t('payrollDeleted') || t('deletedSuccessfully'),
-    errorToast: (e: HrAny) => e?.message || t('saveFailed'),
+    errorToast: (error) => error.message || t('saveFailed'),
     onSuccess: () => invalidateOnFinancialMutation(queryClient),
   });
 
-  const handleDeletePayrollRun = useCallback((row: HrAny) => {
+  const handleDeletePayrollRun = useCallback((row: Pick<PayrollRunRow, 'id' | 'status'>) => {
     const st = String(row?.status || '').toLowerCase();
     const msg =
       st === 'draft'
@@ -164,22 +144,12 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const payrollStatusMap = useMemo(() => buildPayrollRunStatusMap(t), [t]);
 
   const payrollRunBadgeProps = useCallback(
-    (row: HrAny) => {
+    (row: PayrollRunRow) => {
       const st = String(row?.status || '').toLowerCase();
       if (st === 'completed' && row?.issuedInvoiceNumber) {
         return { color: 'green', children: t('payrollPaid') };
       }
       return Badge.fromStatus(row?.status, payrollStatusMap);
-    },
-    [t, payrollStatusMap],
-  );
-
-  const payrollRunExportStatusLabel = useCallback(
-    (row: HrAny) => {
-      const st = String(row?.status || '').toLowerCase();
-      if (st === 'completed' && row?.issuedInvoiceNumber) return t('payrollPaid');
-      if (st === 'completed') return t('payrollApproved');
-      return (payrollStatusMap as Record<string, { label?: string }>)[row.status]?.label ?? row.status ?? '';
     },
     [t, payrollStatusMap],
   );
@@ -193,28 +163,28 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
       dateKeys: ['monthRaw'],
     });
 
-  const totalNet = allFilteredData.reduce((s: HrAny, r: HrAny) => s + (r.netTotal ?? 0), 0);
+  const totalNet = allFilteredData.reduce((sum, row) => sum + (row.netTotal ?? 0), 0);
 
-  const columns = useMemo(() => [
+  const columns = useMemo<SmartTableColumn<PayrollRunRow>[]>(() => [
     { key: 'runNumber', label: t('payrollRunNumber'), sortable: true, width: 150, minWidth: 140,
-      render: (v: HrAny, row: HrAny) => (
+      render: (_value: unknown, row: PayrollRunRow) => (
         <Button
           variant="raw"
           size="auto"
           className="nx-cell-num nx-cell-accent text-[13px] whitespace-nowrap hover:underline"
           onClick={() => setDetailRunId(row.id)}
         >
-          {v || '—'}
+          {row.runNumber || '—'}
         </Button>
       ) },
     { key: 'month', label: t('payrollMonth'), sortable: true, width: 130, minWidth: 120,
-      render: (v: HrAny) => <span className="text-[13px]">{v || '—'}</span> },
+      render: (_value: unknown, row: PayrollRunRow) => <span className="text-[13px]">{row.month || '—'}</span> },
     { key: 'grossTotal', label: t('payrollGross'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v: HrAny) => <FmtNum n={v} className="nx-cell-num text-[13px]" /> },
+      render: (_value: unknown, row: PayrollRunRow) => <FmtNum n={row.grossTotal} className="nx-cell-num text-[13px]" /> },
     { key: 'netTotal', label: t('payrollNet'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v: HrAny) => <FmtNum n={v} className="nx-cell-num font-bold text-[13px]" /> },
+      render: (_value: unknown, row: PayrollRunRow) => <FmtNum n={row.netTotal} className="nx-cell-num font-bold text-[13px]" /> },
     { key: 'status', label: t('payrollStatus'), width: 120, minWidth: 110,
-      render: (_: HrAny, row: HrAny) => (
+      render: (_value: unknown, row: PayrollRunRow) => (
         <Badge {...payrollRunBadgeProps(row)} size="sm" />
       ) },
     {
@@ -223,15 +193,15 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
       width: 140,
       minWidth: 120,
       shrink: true,
-      render: (v: HrAny, row: HrAny) => (
-        v ? (
+      render: (_value: unknown, row: PayrollRunRow) => (
+        row.issuedInvoiceNumber ? (
           <Link
             to={payrollSalaryInvoiceListHref(row.id, row.monthRaw)}
             className="nx-cell-num text-[12px] font-semibold text-noorix-blue hover:underline whitespace-nowrap"
             dir="ltr"
             title={t('payrollOpenIssuedInvoice')}
           >
-            {v}
+            {row.issuedInvoiceNumber}
           </Link>
         ) : (
           <span className="nx-cell-num text-[12px] whitespace-nowrap" dir="ltr">—</span>
@@ -243,87 +213,21 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const footerCells = (
     <>
       <td colSpan={2} className="text-[12px] text-noorix-muted font-semibold py-1.5 px-3">{t('payrollTotal')} ({allFilteredData.length})</td>
-      <td className="text-[13px] text-end py-1.5 px-3 nx-font-numbers">{hrFmt(allFilteredData.reduce((s: HrAny, r: HrAny) => s + (r.grossTotal ?? 0), 0))}</td>
+      <td className="text-[13px] text-end py-1.5 px-3 nx-font-numbers">{hrFmt(allFilteredData.reduce((sum, row) => sum + (row.grossTotal ?? 0), 0))}</td>
       <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers">{hrFmt(totalNet)}</td>
       <td colSpan={2} />
     </>
   );
 
-  const exportData = allFilteredData.map((r: HrAny) => ({
-    runNumber: r.runNumber,
-    month: r.month,
-    grossTotal: hrFmt(r.grossTotal),
-    netTotal: hrFmt(r.netTotal),
-    status: payrollRunExportStatusLabel(r),
-    issuedInvoiceNumber: r.issuedInvoiceNumber || '—',
-  }));
+  const exportData = buildPayrollRunExportRows(allFilteredData, payrollStatusMap, t);
 
-  const renderMobileCard = useCallback((row: HrAny) => {
-    return (
-      <div
-        className="cursor-pointer"
-        role="button"
-        tabIndex={0}
-        onClick={() => setDetailRunId(row.id)}
-        onKeyDown={(event) => { if (event.key === 'Enter') setDetailRunId(row.id); }}
-      >
-        <div className="flex items-center justify-between flex flex-wrap mb-1">
-          <span className="nx-cell-num nx-cell-accent text-[14px]">{row.runNumber}</span>
-          <Badge {...payrollRunBadgeProps(row)} size="sm" className="shrink-0" />
-        </div>
-        {row.month && <div className="nx-cell-muted mb-2 text-end">{row.month}</div>}
-        <div className="nx-mc__grid nx-mc__grid--2 mb-2.5">
-          <div>
-            <div className="nx-mc__stat-label">{t('payrollGross')}</div>
-            <div className="nx-mc__stat-value text-[14px]">{hrFmt(row.grossTotal)}</div>
-          </div>
-          <div>
-            <div className="nx-mc__stat-label">{t('payrollNet')}</div>
-            <div className="nx-mc__stat-value text-[15px] font-extrabold text-noorix-green">{hrFmt(row.netTotal)}</div>
-          </div>
-        </div>
-        {row.issuedInvoiceNumber && (
-          <div className="nx-cell-muted mb-2 text-end text-[12px]" dir="ltr">
-            {t('payrollIssuedInvoiceNumber')}:{' '}
-            <Link
-              to={payrollSalaryInvoiceListHref(row.id, row.monthRaw)}
-              className="font-semibold text-noorix-blue hover:underline"
-              title={t('payrollOpenIssuedInvoice')}
-              onClick={(event) => event.stopPropagation()}
-            >
-              {row.issuedInvoiceNumber}
-            </Link>
-          </div>
-        )}
-      </div>
-    );
-  }, [payrollRunBadgeProps, t, setDetailRunId]);
+  const renderMobileCard = useCallback((row: PayrollRunRow) => (
+    <PayrollRunMobileCard row={row} t={t} badgeProps={payrollRunBadgeProps(row)} onOpen={setDetailRunId} />
+  ), [payrollRunBadgeProps, t, setDetailRunId]);
 
-  const renderCompactRow = useCallback((row: HrAny) => {
-    return (
-      <div
-        className="cursor-pointer"
-        role="button"
-        tabIndex={0}
-        onClick={() => setDetailRunId(row.id)}
-        onKeyDown={(event) => { if (event.key === 'Enter') setDetailRunId(row.id); }}
-      >
-        <div className="nx-cr__line1">
-          <span className="nx-cr__id">{row.runNumber}</span>
-          <span className="nx-cr__sub">{row.month}</span>
-          <Badge {...payrollRunBadgeProps(row)} size="sm" />
-        </div>
-        <div className="nx-cr__line2">
-          <div className="nx-cr__line2-start">
-            <span className="nx-cr__meta">{t('payrollGross')}: <span className="text-noorix-text">{hrFmt(row.grossTotal)}</span></span>
-          </div>
-          <div className="nx-cr__line2-end">
-            <span className="nx-cr__amount text-noorix-green">{hrFmt(row.netTotal)} <span className="nx-sar">SR</span></span>
-          </div>
-        </div>
-      </div>
-    );
-  }, [t, payrollRunBadgeProps, setDetailRunId]);
+  const renderCompactRow = useCallback((row: PayrollRunRow) => (
+    <PayrollRunCompactRow row={row} t={t} badgeProps={payrollRunBadgeProps(row)} onOpen={setDetailRunId} />
+  ), [t, payrollRunBadgeProps, setDetailRunId]);
 
   function handleExportExcel() {
     exportToExcel(exportData, `payroll-runs-${year}.xlsx`);
@@ -430,167 +334,59 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
           companyNameEn={activeCompany?.nameEn || activeCompany?.nameAr || ''}
           companyLogo={companyLogo}
           onEdit={(run) => {
+            if (!run.id) return;
             setDetailRunId(null);
             setEditingRunId(run.id);
           }}
-          onApprove={(run) => updateStatusMutation.mutate({ id: run.id, status: 'completed' })}
-          onPay={(run) => openPayModal({
-            id: run.id,
-            runNumber: run.runNumber,
-            month: run.payrollMonth ? formatSaudiDate(run.payrollMonth) : null,
-            monthRaw: run.payrollMonth,
-            netTotal: Number(run.totalAmount ?? 0),
-          })}
-          onDelete={canDeletePayroll ? (run) => handleDeletePayrollRun({
-            id: run.id,
-            status: run.status,
-          }) : undefined}
+          onApprove={(run) => {
+            if (!run.id) return;
+            updateStatusMutation.mutate({ id: run.id, status: 'completed' });
+          }}
+          onPay={(run) => {
+            if (!run.id) return;
+            openPayModal({
+              id: run.id,
+              runNumber: String(run.runNumber ?? ''),
+              month: run.payrollMonth ? formatSaudiDate(run.payrollMonth) : null,
+              monthRaw: run.payrollMonth ?? null,
+              netTotal: Number(run.totalAmount ?? 0),
+            });
+          }}
+          onDelete={canDeletePayroll ? (run) => {
+            if (!run.id) return;
+            handleDeletePayrollRun({
+              id: run.id,
+              status: String(run.status ?? ''),
+            });
+          } : undefined}
           onClose={() => setDetailRunId(null)}
         />
       )}
 
-      <Modal
-        open={!!payModalRun}
+      <PayrollPayModal
+        run={payModalRun}
+        transactionDate={payTransactionDate}
+        vaultId={payVaultId}
+        secondVaultId={paySecondVaultId}
+        secondAmount={paySecondAmount}
+        secondEnabled={paySecondEnabled}
+        vaultError={payVaultError}
+        paymentVaults={paymentVaults}
+        lang={lang}
+        isPending={issuePaymentMutation.isPending}
+        t={t}
+        onTransactionDateChange={setPayTransactionDate}
+        onVaultIdChange={setPayVaultId}
+        onSecondVaultIdChange={setPaySecondVaultId}
+        onSecondAmountChange={setPaySecondAmount}
+        onSecondEnabledChange={setPaySecondEnabled}
+        onVaultErrorChange={setPayVaultError}
         onClose={() => {
           if (issuePaymentMutation.isPending) return;
           setPayModalRun(null);
         }}
-        title={t('payrollPayConfirmTitle')}
-        size="md"
-        footer={(
-          <DialogActions
-            size="md"
-            actions={[
-              {
-                key: 'cancel',
-                label: t('cancel'),
-                role: 'cancel',
-                disabled: issuePaymentMutation.isPending,
-                onClick: () => setPayModalRun(null),
-              },
-              {
-                key: 'confirm-pay',
-                label: t('payrollPayConfirm'),
-                role: 'save',
-                loading: issuePaymentMutation.isPending,
-                onClick: () => {
-                if (!payModalRun || !payTransactionDate) return;
-                setPayVaultError('');
-                const netTotal = payModalRun.netTotal ?? 0;
-                let vaultSplits: { vaultId: string; amount: number }[] = [];
-                if (paySecondEnabled) {
-                  const v1 = payVaultId.trim();
-                  const v2 = paySecondVaultId.trim();
-                  const a2 = parseFloat(paySecondAmount);
-                  if (!v1 || !v2) { setPayVaultError(t('payrollSplitVaultsIncomplete')); return; }
-                  if (v1 === v2) { setPayVaultError(t('invoiceVaultsMustDiffer')); return; }
-                  if (Number.isNaN(a2) || a2 <= 0 || a2 >= netTotal - 0.001) { setPayVaultError(t('payrollSplitVaultsIncomplete')); return; }
-                  const a1 = Math.round((netTotal - a2) * 100) / 100;
-                  vaultSplits = [{ vaultId: v1, amount: a1 }, { vaultId: v2, amount: a2 }];
-                } else if (payVaultId.trim()) {
-                  vaultSplits = [{ vaultId: payVaultId.trim(), amount: netTotal }];
-                }
-                issuePaymentMutation.mutate({
-                  id: payModalRun.id,
-                  transactionDate: payTransactionDate,
-                  vaultSplits,
-                });
-              },
-            },
-            ]}
-          />
-        )}
-      >
-        <div className="flex flex-col gap-3">
-          {payModalRun && (
-            <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-noorix-border">
-              <span className="text-[13px] text-noorix-text">
-                <span className="text-noorix-muted">{t('payrollRunNumber')}: </span>
-                <span className="font-semibold">{payModalRun.runNumber}</span>
-                {payModalRun.month && (
-                  <>
-                    <span className="text-noorix-muted"> — {t('payrollMonth')}: </span>
-                    <span className="font-semibold">{payModalRun.month}</span>
-                  </>
-                )}
-              </span>
-              {payModalRun.netTotal != null && (
-                <span className="text-[16px] font-extrabold text-noorix-green ltr nx-font-numbers">
-                  {hrFmt(payModalRun.netTotal)}
-                </span>
-              )}
-            </div>
-          )}
-          <div>
-            <label className="mb-1.5 block text-[12px] font-semibold text-noorix-muted" htmlFor="payroll-issue-date">
-              {t('transactionDate')}
-            </label>
-            <DateField
-              id="payroll-issue-date"
-              value={payTransactionDate}
-              onValueChange={setPayTransactionDate}
-            />
-          </div>
-
-          <div className="noorix-surface-card p-3 flex flex-col gap-2.5">
-            <p className="m-0 text-[11px] font-semibold text-noorix-muted">{t('payrollRunPayVaultSection')}</p>
-            <Input
-              type="select"
-              label={t('payrollPayVaultCol')}
-              value={payVaultId}
-              onChange={(e: HrAny) => setPayVaultId(e.target.value)}
-            >
-              <option value="">{t('payrollPayVaultDefault')}</option>
-              {paymentVaults.map((v: HrAny) => (
-                <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
-              ))}
-            </Input>
-            {!paySecondEnabled ? (
-              <Button type="button" size="sm" variant="ghost" className="self-start" onClick={() => setPaySecondEnabled(true)}>
-                {t('payrollAddSecondVaultShort')}
-              </Button>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <Input
-                  type="select"
-                  label={t('secondVaultSelectLabel')}
-                  value={paySecondVaultId}
-                  onChange={(e: HrAny) => setPaySecondVaultId(e.target.value)}
-                >
-                  <option value="">—</option>
-                  {paymentVaults.map((v: HrAny) => (
-                    <option key={v.id} value={v.id} disabled={v.id === payVaultId}>
-                      {vaultDisplayName(v, lang)}
-                    </option>
-                  ))}
-                </Input>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  min="0.01"
-                  label={t('payrollSecondVaultAmountShort')}
-                  value={paySecondAmount}
-                  onChange={(e: HrAny) => setPaySecondAmount(e.target.value)}
-                />
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  {paySecondAmount && payVaultId && (
-                    <span className="text-[11px] text-noorix-muted">{t('payrollPayVaultSplitHint')}</span>
-                  )}
-                  <Button type="button" size="sm" variant="ghost" onClick={() => { setPaySecondEnabled(false); setPaySecondVaultId(''); setPaySecondAmount(''); }}>
-                    {t('payrollRemoveVaultSplit')}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {payVaultError && (
-            <p className="m-0 text-[12px] font-semibold text-noorix-red">{payVaultError}</p>
-          )}
-          <p className="m-0 text-[12px] text-noorix-muted leading-relaxed">{t('payrollPayDateHelp')}</p>
-        </div>
-      </Modal>
+        onSubmit={(payload) => issuePaymentMutation.mutate(payload)}
+      />
     </HrFlatListTabShell>
   );
 }
