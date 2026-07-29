@@ -44,6 +44,9 @@ export function buildProfitLossPrintPreviewDocument({
   const isPeriodPrint = currentColumnPeriod != null;
   const comparisonPrintColumns = isPeriodPrint ? compareColumnPeriods : [];
   const currentColumnTitle = currentColumnPeriod?.label ?? '';
+  const periodSummary = isPeriodPrint
+    ? activePeriodColumns.map((column) => column.label).filter(Boolean)
+    : [String(year)];
   const headerCells = isPeriodPrint
     ? [
         { value: t('reportItem'), align: 'start' as const, className: 'pl-print-label-head' },
@@ -66,7 +69,7 @@ export function buildProfitLossPrintPreviewDocument({
     companyName: companyName || reportsFallbackTitle,
     logoUrl: companyLogoUrl,
     subtitle: isPeriodPrint
-      ? `${currentColumnTitle}${comparisonPrintColumns.length ? ` · ${activePeriodColumns.map((column) => column.label).join('، ')}` : ''}`
+      ? periodSummary.join('، ')
       : `${year} · ${t('reportGeneral')}`,
     landscape: !isPeriodPrint || comparisonPrintColumns.length > 2,
     htmlLang: printLang,
@@ -74,29 +77,45 @@ export function buildProfitLossPrintPreviewDocument({
     showPageCounter: false,
     pageMarginMm: isPeriodPrint ? 8 : 6,
     extraCss: profitLossUnifiedPrintCss(isPeriodPrint),
-    body: buildPrintHtmlTable({
-      wrapperClassName: 'pl-print-wrap',
-      tableClassName: 'print-table pl-print-table',
-      headerRows: [{ cells: headerCells }],
-      bodyRows: rows.map((row) => ({
-        className: row.rowType === 'summary' || row.rowType === 'group' ? 'pl-print-total-row' : '',
-        cells: [
-          {
-            value: displayLabel(row, lang),
-            align: 'start' as const,
-            className: `pl-print-label pl-print-depth-${Math.max(0, Math.min(3, Number(row.depth || 0)))}`,
-          },
-          ...buildProfitLossPrintAmountCells({
-            compareRows,
-            comparisonPrintColumns,
-            currentColumnPeriod,
-            isPeriodPrint,
-            row,
-          }),
-        ],
-      })),
-    }),
+    body: `
+<main class="pl-print-sheet">
+  <section class="pl-print-title-card">
+    <div>
+      <h2>${escapePrintHtml(reportTitle)}</h2>
+      <div class="pl-print-meta">
+        <span>${escapePrintHtml(companyName || reportsFallbackTitle)}</span>
+        <span>${escapePrintHtml(periodSummary.join('، ') || String(year))}</span>
+      </div>
+    </div>
+  </section>
+  ${buildPrintHtmlTable({
+    wrapperClassName: 'pl-print-wrap',
+    tableClassName: 'print-table pl-print-table',
+    headerRows: [{ cells: headerCells }],
+    bodyRows: rows.map((row) => ({
+      className: isProfitLossTotalRow(row) ? 'pl-print-total-row' : '',
+      cells: [
+        {
+          value: displayLabel(row, lang),
+          align: 'start' as const,
+          className: `pl-print-label pl-print-depth-${Math.max(0, Math.min(3, Number(row.depth || 0)))}`,
+        },
+        ...buildProfitLossPrintAmountCells({
+          compareRows,
+          comparisonPrintColumns,
+          currentColumnPeriod,
+          isPeriodPrint,
+          row,
+        }),
+      ],
+    })),
+  })}
+</main>`,
   };
+}
+
+function isProfitLossTotalRow(row: PlDisplayRow) {
+  return row.rowType === 'summary' || row.rowType === 'group' || row.rowType === 'groupTotal';
 }
 
 function buildProfitLossPrintAmountCells({
@@ -186,8 +205,41 @@ function profitLossUnifiedPrintCss(isPeriodPrint: boolean) {
   border-top-color: #e3dccf;
   color: #857d70;
 }
-.pl-print-wrap {
+.pl-print-sheet {
   width: min(100%, ${isPeriodPrint ? '190mm' : '276mm'});
+  margin: 0 auto;
+}
+.pl-print-title-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.pl-print-title-card h2 {
+  margin: 0;
+  color: #191814;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 900;
+}
+.pl-print-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.pl-print-meta span {
+  border: 1px solid #ded6c8;
+  background: #fbfaf7;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: #5f584d;
+  font-size: 11px;
+  font-weight: 800;
+}
+.pl-print-wrap {
+  width: 100%;
   margin: 0 auto;
   overflow: visible;
 }
@@ -265,6 +317,10 @@ function profitLossUnifiedPrintCss(isPeriodPrint: boolean) {
   font-weight: 850 !important;
 }
 @media print {
+  .pl-print-sheet {
+    width: auto;
+    max-width: none;
+  }
   .pl-print-table td,
   .pl-print-table th {
     break-inside: avoid;

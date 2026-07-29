@@ -113,6 +113,14 @@ export default function ProfitLossReportWorkspace({
             </div>
           </div>
 
+          <FilterToolbar variant="bare" className="nx-pl-command-center__controls">
+            <Button size="sm" onClick={onExportExcel} disabled={!report}>
+              {t('exportExcel')}
+            </Button>
+            <Button size="sm" onClick={onPrintPdf} disabled={!report}>
+              {t('print')} / PDF
+            </Button>
+          </FilterToolbar>
         </div>
         <ProfitLossPeriodSelector
           lang={lang}
@@ -206,12 +214,6 @@ export default function ProfitLossReportWorkspace({
                     value={rowSearch}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => onRowSearchChange(event.target.value)}
                   />
-                  <Button size="sm" onClick={onExportExcel} disabled={!report}>
-                    {t('exportExcel')}
-                  </Button>
-                  <Button size="sm" onClick={onPrintPdf} disabled={!report}>
-                    {t('print')} / PDF
-                  </Button>
                 </FilterToolbar>
               </div>
 
