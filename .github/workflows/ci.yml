@@ -16,9 +16,9 @@ jobs:
         with:
           node-version: 22
 
-      - run: npm install
+      - run: npm ci
 
-      - run: npm install --prefix backend
+      - run: npm ci --prefix backend
 
       - run: npm run verify:git-cleanliness -- --strict
 
