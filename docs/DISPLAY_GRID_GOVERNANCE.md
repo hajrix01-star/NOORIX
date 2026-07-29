@@ -18,7 +18,7 @@ Use a registered display grid only when the layout is not semantically a table, 
 
 | Metric | Count |
 |---|---:|
-| Governed display-grid files | 5 |
+| Governed display-grid files | 6 |
 
 ## Governed Files
 
@@ -29,6 +29,7 @@ Use a registered display grid only when the layout is not semantically a table, 
 | `src/modules/HajriTax/HajriTaxDisclosureRows.tsx` | `editable-tax-grid` | `leave-protected` |
 | `src/modules/Assets/components/AssetsWarrantyQueueTable.tsx` | `warranty-queue-grid` | `leave-central-component` |
 | `src/modules/Settings/components/backup/BackupCountsGrid.tsx` | `key-value-grid` | `leave-central-component` |
+| `src/modules/Dashboard/overview/components/DashboardOverviewRevenueDailyAvgPanel.tsx` | `key-value-grid` | `leave-central-component` |
 
 ## Governance
 

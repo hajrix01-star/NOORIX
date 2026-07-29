@@ -31,6 +31,12 @@
       "decision": "leave-central-component",
       "marker": "function BackupCountsGrid",
       "reason": "backup import/export count summary is a key-value detail list, not sortable tabular data."
+    },
+    "src/modules/Dashboard/overview/components/DashboardOverviewRevenueDailyAvgPanel.tsx": {
+      "category": "key-value-grid",
+      "decision": "leave-central-component",
+      "marker": "role=\"table\"",
+      "reason": "dashboard revenue card compares three compact KPIs across current, previous, and change rows; it is a fixed summary matrix, not a record table."
     }
   }
 }
