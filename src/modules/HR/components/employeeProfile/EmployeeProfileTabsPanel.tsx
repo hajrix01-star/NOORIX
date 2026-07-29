@@ -5,7 +5,6 @@ import { EmployeeProfileCareerSection } from './EmployeeProfileCareerSection';
 import { EmployeeProfileFinancialSection } from './EmployeeProfileFinancialSection';
 import { EmployeeProfilePayrollSection } from './EmployeeProfilePayrollSection';
 import { EmployeeProfileLeaveSection } from './EmployeeProfileLeaveSection';
-import { EmployeeProfileAdvancesSection } from './EmployeeProfileAdvancesSection';
 import { EmployeeProfileResidencySection } from './EmployeeProfileResidencySection';
 import { EmployeeProfileDocumentsSection } from './EmployeeProfileDocumentsSection';
 import type { CareerTableRow, FinancialRecordRow, ProfileRecord, SalaryRow } from './employeeProfileModel';
@@ -37,7 +36,6 @@ type LeaveRow = ComponentProps<typeof EmployeeProfileLeaveSection>['leaves'][num
 type ResidencyRow = ComponentProps<typeof EmployeeProfileResidencySection>['residencies'][number];
 type PayrollItems = ComponentProps<typeof EmployeeProfilePayrollSection>['payrollItems'];
 type Documents = ComponentProps<typeof EmployeeProfileDocumentsSection>['documents'];
-type Advances = ComponentProps<typeof EmployeeProfileAdvancesSection>['advances'];
 
 type EmployeeProfileTabsPanelProps = {
   t: TranslationFn;
@@ -51,8 +49,6 @@ type EmployeeProfileTabsPanelProps = {
   financialRecords: FinancialRecordRow[];
   canEditHrLeave: boolean;
   onOpenResidency: (rowOrId: string | ProfileRecord) => void;
-  advances: Advances;
-  advanceStatusMap: Record<string, unknown>;
   payrollItems: PayrollItems;
   payrollRunStatusMap: Record<string, unknown>;
   leaves: LeaveRow[];
@@ -89,8 +85,6 @@ export function EmployeeProfileTabsPanel({
   financialRecords,
   canEditHrLeave,
   onOpenResidency,
-  advances,
-  advanceStatusMap,
   payrollItems,
   payrollRunStatusMap,
   leaves,
@@ -151,14 +145,11 @@ export function EmployeeProfileTabsPanel({
           </div>
         ) : null}
         {activeProfileTab === 'financial' ? (
-          <div className="employee-profile-section-stack">
-            <EmployeeProfileFinancialSection
-              t={t}
-              financialRecords={financialRecords}
-              onOpenResidency={canEditHrLeave ? onOpenResidency : undefined}
-            />
-            <EmployeeProfileAdvancesSection t={t} advances={advances} advanceStatusMap={advanceStatusMap} />
-          </div>
+          <EmployeeProfileFinancialSection
+            t={t}
+            financialRecords={financialRecords}
+            onOpenResidency={canEditHrLeave ? onOpenResidency : undefined}
+          />
         ) : null}
         {activeProfileTab === 'payroll' ? (
           <EmployeeProfilePayrollSection t={t} payrollItems={payrollItems} payrollRunStatusMap={payrollRunStatusMap} />

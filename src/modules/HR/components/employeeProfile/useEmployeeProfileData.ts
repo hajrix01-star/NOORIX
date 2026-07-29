@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useApiListQuery, useApiQuery } from '../../../../hooks/useApiQuery';
 import { useEmployee } from '../../../../hooks/useEmployees';
 import {
-  buildAdvanceSettlementStatusMap,
   buildLeaveRequestStatusMap,
   buildPayrollRunStatusMap,
   buildResidencyRecordStatusMap,
@@ -127,7 +126,6 @@ export function useEmployeeProfileData({ employeeId, companyId, t }: UseEmployee
   });
 
   const careerTableRows = useMemo(() => buildCareerTableRows(movements, t), [movements, t]);
-  const advanceStatusMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
   const financialRecords = useMemo(
     () => buildFinancialRecords(hrInvoicesData, deductions, t, residencies),
     [hrInvoicesData, deductions, t, residencies],
@@ -192,7 +190,6 @@ export function useEmployeeProfileData({ employeeId, companyId, t }: UseEmployee
     deductions,
     movements,
     careerTableRows,
-    advanceStatusMap,
     financialRecords,
     employeePhotoUrl,
     setEmployeePhotoUrl,

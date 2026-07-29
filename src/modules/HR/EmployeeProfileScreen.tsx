@@ -71,7 +71,6 @@ export default function EmployeeProfileScreen() {
     documents,
     movements,
     careerTableRows,
-    advanceStatusMap,
     financialRecords,
     employeePhotoUrl,
     setEmployeePhotoUrl,
@@ -138,7 +137,6 @@ export default function EmployeeProfileScreen() {
         documents,
         movements,
         careerTableRows,
-        advanceStatusMap,
         financialRecords,
         employeePhotoUrl,
         setEmployeePhotoUrl,
@@ -179,7 +177,6 @@ type EmployeeProfileResolvedScreenProps = {
     | 'documents'
     | 'movements'
     | 'careerTableRows'
-    | 'advanceStatusMap'
     | 'financialRecords'
     | 'employeePhotoUrl'
     | 'setEmployeePhotoUrl'
@@ -286,8 +283,6 @@ function EmployeeProfileResolvedScreen({
           financialRecords={profileData.financialRecords}
           canEditHrLeave={canEditHrLeave}
           onOpenResidency={actions.openProfileResidency}
-          advances={profileData.advances}
-          advanceStatusMap={profileData.advanceStatusMap}
           payrollItems={profileData.payrollItems}
           payrollRunStatusMap={profileData.payrollRunStatusMap}
           leaves={profileData.leaves}
