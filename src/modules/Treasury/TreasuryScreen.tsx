@@ -19,6 +19,10 @@ import { buildTreasurySummary, splitVaultGroups } from './treasuryModels';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 type SectionLabelProps = { label: string };
+type VaultGroupSectionProps = {
+  label: string;
+  children: React.ReactNode;
+};
 type SummaryTile = {
   label: string;
   value: number;
@@ -30,6 +34,17 @@ function SectionLabel({ label }: SectionLabelProps) {
   return (
     <div className="text-[11px] font-bold text-noorix-muted uppercase tracking-[0.06em] mb-2.5">
       {label}
+    </div>
+  );
+}
+
+function VaultGroupSection({ label, children }: VaultGroupSectionProps) {
+  return (
+    <div className="min-w-0">
+      <SectionLabel label={label} />
+      <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
+        {children}
+      </div>
     </div>
   );
 }
@@ -209,25 +224,36 @@ export default function TreasuryScreen() {
             />
           ) : null}
 
-          {salesChannels.length > 0 ? (
-            <section>
-              <SectionLabel label={t('salesChannelsEnabled', salesChannels.length)} />
-              <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-                {salesChannels.map((vault) => (
-                  <VaultCard key={vault.id} vault={vault} {...cardHandlers} />
-                ))}
-              </div>
-            </section>
-          ) : null}
+          {salesChannels.length > 0 || otherVaults.length > 0 ? (
+            <section
+              className={
+                salesChannels.length > 0 && otherVaults.length > 0
+                  ? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-start'
+                  : 'grid gap-5'
+              }
+            >
+              {salesChannels.length > 0 ? (
+                <VaultGroupSection label={t('salesChannelsEnabled', salesChannels.length)}>
+                  {salesChannels.map((vault) => (
+                    <VaultCard key={vault.id} vault={vault} {...cardHandlers} />
+                  ))}
+                </VaultGroupSection>
+              ) : null}
 
-          {otherVaults.length > 0 ? (
-            <section>
-              <SectionLabel label={t('otherVaults', otherVaults.length)} />
-              <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-                {otherVaults.map((vault) => (
-                  <VaultCard key={vault.id} vault={vault} {...cardHandlers} />
-                ))}
-              </div>
+              {salesChannels.length > 0 && otherVaults.length > 0 ? (
+                <div
+                  className="hidden lg:block h-full min-h-[260px] bg-noorix-border"
+                  aria-hidden="true"
+                />
+              ) : null}
+
+              {otherVaults.length > 0 ? (
+                <VaultGroupSection label={t('otherVaults', otherVaults.length)}>
+                  {otherVaults.map((vault) => (
+                    <VaultCard key={vault.id} vault={vault} {...cardHandlers} />
+                  ))}
+                </VaultGroupSection>
+              ) : null}
             </section>
           ) : null}
 
