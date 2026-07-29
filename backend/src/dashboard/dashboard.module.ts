@@ -3,12 +3,13 @@ import { AuthModule } from '../auth/auth.module';
 import { ReportsModule } from '../reports/reports.module';
 import { SalesModule } from '../sales/sales.module';
 import { ReportingModule } from '../reporting/reporting.module';
+import { DashboardCalendarService } from './dashboard-calendar.service';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 
 @Module({
   imports: [AuthModule, ReportsModule, SalesModule, ReportingModule],
   controllers: [DashboardController],
-  providers: [DashboardService],
+  providers: [DashboardService, DashboardCalendarService],
 })
 export class DashboardModule {}

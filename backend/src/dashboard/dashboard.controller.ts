@@ -5,6 +5,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
+import { DashboardCalendarService } from './dashboard-calendar.service';
 import { DashboardService } from './dashboard.service';
 import { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.dto';
 import { ApplySpecialOccasionsDto } from './dto/apply-special-occasions.dto';
@@ -21,7 +22,10 @@ import { SkipCompanyCheck } from '../auth/decorators/skip-company-check.decorato
 @Controller('dashboard')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(
+    private readonly dashboardService: DashboardService,
+    private readonly dashboardCalendarService: DashboardCalendarService,
+  ) {}
 
   @Get('overview')
   @RequirePermission('REPORTS_READ')
@@ -42,7 +46,7 @@ export class DashboardController {
     @Query('month') month: string,
     @CurrentUser() user: JwtUser,
   ) {
-    return this.dashboardService.getCalendarData(
+    return this.dashboardCalendarService.getCalendarData(
       companyId,
       user.tenantId ?? '',
       parseInt(year, 10),
@@ -60,7 +64,7 @@ export class DashboardController {
     @Body() body: { targets: unknown },
     @CurrentUser() user: JwtUser,
   ) {
-    return this.dashboardService.upsertCalendarTargets(
+    return this.dashboardCalendarService.upsertCalendarTargets(
       companyId,
       user.tenantId ?? '',
       parseInt(year, 10),
@@ -78,7 +82,7 @@ export class DashboardController {
     @Query('month') month: string,
     @CurrentUser() user: JwtUser,
   ) {
-    return this.dashboardService.resetMonthTargets(
+    return this.dashboardCalendarService.resetMonthTargets(
       companyId,
       user.tenantId ?? '',
       parseInt(year, 10),
@@ -94,7 +98,7 @@ export class DashboardController {
     if (!Number.isFinite(y)) {
       return [];
     }
-    return this.dashboardService.getSaudiOccasions(y);
+    return this.dashboardCalendarService.getSaudiOccasions(y);
   }
 
   @Get('calendar/school-holidays')
@@ -105,7 +109,7 @@ export class DashboardController {
     if (!Number.isFinite(y)) {
       return { source: null, variant: variant === 'western' ? 'western' : 'general', events: [] };
     }
-    return this.dashboardService.getSchoolAcademicHolidays(y, variant);
+    return this.dashboardCalendarService.getSchoolAcademicHolidays(y, variant);
   }
 
   @Get('calendar/occasion-catalog')
@@ -114,9 +118,9 @@ export class DashboardController {
   getCalendarOccasionCatalog(@Query('year') year: string, @Query('variant') variant?: 'general' | 'western') {
     const y = parseInt(year, 10);
     if (!Number.isFinite(y)) {
-      return this.dashboardService.getCalendarOccasionCatalog(new Date().getFullYear(), variant);
+      return this.dashboardCalendarService.getCalendarOccasionCatalog(new Date().getFullYear(), variant);
     }
-    return this.dashboardService.getCalendarOccasionCatalog(y, variant);
+    return this.dashboardCalendarService.getCalendarOccasionCatalog(y, variant);
   }
 
   @Post('calendar/special-days/apply-occasions')
@@ -127,7 +131,7 @@ export class DashboardController {
     @CurrentUser() user: JwtUser,
   ) {
     const lang = body.lang === 'en' ? 'en' : 'ar';
-    return this.dashboardService.applySaudiSpecialOccasions(
+    return this.dashboardCalendarService.applySaudiSpecialOccasions(
       user,
       user.tenantId ?? '',
       companyId,
@@ -148,7 +152,7 @@ export class DashboardController {
     @CurrentUser() user: JwtUser,
   ) {
     const lang = body.lang === 'en' ? 'en' : 'ar';
-    return this.dashboardService.applySchoolAcademicHolidays(
+    return this.dashboardCalendarService.applySchoolAcademicHolidays(
       user,
       user.tenantId ?? '',
       companyId,
@@ -170,7 +174,7 @@ export class DashboardController {
     @Body() body: { specialDays: unknown },
     @CurrentUser() user: JwtUser,
   ) {
-    return this.dashboardService.upsertCalendarSpecialDays(
+    return this.dashboardCalendarService.upsertCalendarSpecialDays(
       companyId,
       user.tenantId ?? '',
       parseInt(year, 10),
@@ -188,7 +192,7 @@ export class DashboardController {
     @Body() body: { dayNotes: unknown },
     @CurrentUser() user: JwtUser,
   ) {
-    return this.dashboardService.upsertCalendarDayNotes(
+    return this.dashboardCalendarService.upsertCalendarDayNotes(
       companyId,
       user.tenantId ?? '',
       parseInt(year, 10),
