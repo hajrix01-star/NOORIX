@@ -12,12 +12,10 @@ import type { UpdateResidencyDto } from './dto/update-residency.dto';
 import type { IssueResidencyInvoiceDto } from './dto/issue-residency-invoice.dto';
 import type { ResidencyIssueInvoiceInlineDto } from './dto/create-residency-with-invoice.dto';
 import {
-  requiresIqamaNumber,
   serviceCategoryLabelAr,
   usesCompanyAsSponsor,
   companySponsorNameFromRecord,
   requiresExpiryDate,
-  requiresReferenceLabel,
   requiresVisaDurationMonths,
   formatVisaDurationReferenceAr,
 } from './constants/employee-hr-service-categories';
@@ -25,6 +23,11 @@ import { issueResidencyServiceInvoiceCore } from './hr-residency-issue-invoice.u
 import { voidResidencyServiceInvoiceCore } from './hr-residency-void-invoice.util';
 import { SupplierDirectoryService } from '../supplier-directory/supplier-directory.service';
 import { hrServiceRequiresSupplier } from '../supplier-directory/supplier-directory-hr.util';
+import {
+  mapResidencyDateFields,
+  showsResidencyIssueDate,
+  validateResidencyServicePayload,
+} from './hr-residency-payload.util';
 
 const residencyInclude = {
   employee: true,
@@ -50,31 +53,6 @@ export class HrResidencyService {
       include: residencyInclude,
       orderBy: [{ expiryDate: 'asc' }, { createdAt: 'desc' }],
     });
-  }
-
-  private validateServicePayload(
-    category: string,
-    dto: { iqamaNumber?: string; referenceLabel?: string; expiryDate?: string; visaDurationMonths?: number },
-  ) {
-    if (requiresIqamaNumber(category) && !dto.iqamaNumber?.trim()) {
-      throw new BadRequestException('رقم الإقامة مطلوب لهذا النوع من الخدمة.');
-    }
-    if (requiresExpiryDate(category) && !dto.expiryDate) {
-      throw new BadRequestException('تاريخ الانتهاء مطلوب لهذا النوع من الخدمة.');
-    }
-    if (requiresReferenceLabel(category) && !dto.referenceLabel?.trim()) {
-      throw new BadRequestException('رقم الشهادة الصحية مطلوب.');
-    }
-    if (requiresVisaDurationMonths(category)) {
-      const m = dto.visaDurationMonths;
-      if (m == null || m < 1 || m > 5) {
-        throw new BadRequestException('مدة التأشيرة مطلوبة (من شهر إلى 5 أشهر).');
-      }
-    }
-  }
-
-  private showsIssueDate(category: string): boolean {
-    return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(category);
   }
 
   private async prepareCategoryFields(
@@ -108,20 +86,8 @@ export class HrResidencyService {
     return {
       referenceLabel: dto.referenceLabel?.trim() || null,
       metadata: null,
-      issueDate: this.showsIssueDate(category) ? dates.issueDate : null,
+      issueDate: showsResidencyIssueDate(category) ? dates.issueDate : null,
       expiryDate: requiresExpiryDate(category) ? dates.expiryDate : null,
-    };
-  }
-
-  private mapDateFields(dto: {
-    issueDate?: string;
-    expiryDate?: string;
-    transactionDate?: string;
-  }) {
-    return {
-      issueDate: dto.issueDate ? new Date(dto.issueDate) : null,
-      expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
-      transactionDate: dto.transactionDate ? new Date(dto.transactionDate) : null,
     };
   }
 
@@ -172,10 +138,10 @@ export class HrResidencyService {
     issueInvoice?: ResidencyIssueInvoiceInlineDto,
   ) {
     const category = dto.serviceCategory ?? 'iqama_renewal';
-    this.validateServicePayload(category, dto);
+    validateResidencyServicePayload(category, dto);
 
     const tenantId = TenantContext.getTenantId();
-    const dates = this.mapDateFields(dto);
+    const dates = mapResidencyDateFields(dto);
     const prepared = await this.prepareCategoryFields(dto.companyId, category, dto, {
       issueDate: dates.issueDate,
       expiryDate: dates.expiryDate,
@@ -262,14 +228,14 @@ export class HrResidencyService {
         ? existingMeta.visaDurationMonths
         : undefined);
 
-    this.validateServicePayload(category, {
+    validateResidencyServicePayload(category, {
       iqamaNumber: dto.iqamaNumber ?? existing.iqamaNumber ?? undefined,
       referenceLabel: dto.referenceLabel ?? existing.referenceLabel ?? undefined,
       expiryDate: dto.expiryDate ?? existing.expiryDate?.toISOString(),
       visaDurationMonths: mergedVisaMonths,
     });
 
-    const dates = this.mapDateFields({
+    const dates = mapResidencyDateFields({
       issueDate: dto.issueDate,
       expiryDate: dto.expiryDate,
       transactionDate: dto.transactionDate,
