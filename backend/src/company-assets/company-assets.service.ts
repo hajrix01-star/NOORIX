@@ -1,9 +1,5 @@
-/**
- * CompanyAsset — سجل أصول تشغيلي (بدون إهلاك): ضمان، مدة، تقارير، قائمة انتظار من المشتريات.
- */
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { existsSync } from 'fs';
 import { unlink } from 'fs/promises';
 import type { Response } from 'express';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -19,6 +15,12 @@ import {
 } from './company-assets-datetime.util';
 import { mapCompanyAssetRow, type WarrantyFilter } from './company-assets-map.util';
 import { createCompanyAssetWarrantyLinesTx } from './company-assets-warranty-line-tx.util';
+import { sendWarrantyAttachmentFile } from './company-assets-warranty-attachment.util';
+import {
+  mapPendingWarrantyInvoice,
+  pendingWarrantyInvoiceInclude,
+} from './company-assets-pending-invoices.util';
+import { assetDetailInclude, assetListInclude } from './company-assets-query-shapes.util';
 
 export type { WarrantyFilter };
 
@@ -29,11 +31,11 @@ const ASSET_WARRANTY_ATTACHMENT_MIMES = new Set([
   'image/gif',
 ]);
 
-function validateWarrantyAttachmentFile(file: Express.Multer.File | undefined) {
+function validateWarrantyAttachmentFile(file: Express.Multer.File | undefined): string | null {
   if (!file?.path) return null;
   const mime = file.mimetype || '';
   if (!ASSET_WARRANTY_ATTACHMENT_MIMES.has(mime)) {
-    return 'نوع الصورة غير مسموح. استخدم JPG أو PNG أو WEBP أو GIF.';
+    return 'Ù†ÙˆØ¹ Ø§Ù„ØµÙˆØ±Ø© ØºÙŠØ± Ù…Ø³Ù…ÙˆØ­. Ø§Ø³ØªØ®Ø¯Ù… JPG Ø£Ùˆ PNG Ø£Ùˆ WEBP Ø£Ùˆ GIF.';
   }
   return null;
 }
@@ -41,22 +43,6 @@ function validateWarrantyAttachmentFile(file: Express.Multer.File | undefined) {
 @Injectable()
 export class CompanyAssetsService {
   constructor(private readonly prisma: TenantPrismaService) {}
-
-  private readonly assetDetailInclude = {
-    supplier: { select: { id: true, nameAr: true, nameEn: true } },
-    invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
-    warrantyLines: { orderBy: { sortOrder: 'asc' } },
-    _count: { select: { warrantyLines: true } },
-  } satisfies Prisma.CompanyAssetInclude;
-
-  private async findFullAssetOrThrow(id: string, companyId: string) {
-    const full = await this.prisma.companyAsset.findFirst({
-      where: { id, companyId },
-      include: this.assetDetailInclude,
-    });
-    if (!full) throw new NotFoundException('الأصل غير موجود');
-    return full;
-  }
 
   private async assertSupplierCompany(supplierId: string | undefined, companyId: string): Promise<void> {
     if (!supplierId) return;
@@ -120,11 +106,7 @@ export class CompanyAssetsService {
         orderBy: [{ purchaseDate: 'desc' }, { createdAt: 'desc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: {
-          supplier: { select: { id: true, nameAr: true, nameEn: true } },
-          invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
-          _count: { select: { warrantyLines: true } },
-        },
+        include: assetListInclude,
       }),
       this.prisma.companyAsset.count({ where }),
       this.prisma.companyAsset.aggregate({
@@ -160,48 +142,15 @@ export class CompanyAssetsService {
       },
       orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }],
       take: 200,
-      include: {
-        supplier: { select: { id: true, nameAr: true, nameEn: true } },
-        expenseLine: {
-          select: {
-            nameAr: true,
-            nameEn: true,
-            supplier: { select: { id: true, nameAr: true, nameEn: true } },
-          },
-        },
-      },
+      include: pendingWarrantyInvoiceInclude,
     });
-    return rows.map((inv) => {
-      const supplier = inv.supplier ?? inv.expenseLine?.supplier ?? null;
-      return {
-        id: inv.id,
-        kind: inv.kind,
-        invoiceNumber: inv.invoiceNumber,
-        supplierInvoiceNumber: inv.supplierInvoiceNumber,
-        transactionDate: inv.transactionDate,
-        totalAmount: inv.totalAmount.toString(),
-        netAmount: inv.netAmount.toString(),
-        taxAmount: inv.taxAmount.toString(),
-        notes: inv.notes,
-        supplier,
-        expenseLine: inv.expenseLine
-          ? {
-              nameAr: inv.expenseLine.nameAr,
-              nameEn: inv.expenseLine.nameEn ?? undefined,
-            }
-          : null,
-      };
-    });
+    return rows.map(mapPendingWarrantyInvoice);
   }
 
   async findOne(id: string, companyId: string) {
     const row = await this.prisma.companyAsset.findFirst({
       where: { id, companyId },
-      include: {
-        supplier: { select: { id: true, nameAr: true, nameEn: true } },
-        invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
-        warrantyLines: { orderBy: { sortOrder: 'asc' } },
-      },
+      include: assetDetailInclude,
     });
     if (!row) throw new NotFoundException('الأصل غير موجود');
     return mapCompanyAssetRow(row);
@@ -216,18 +165,7 @@ export class CompanyAssetsService {
         warrantyAttachmentMime: true,
       },
     });
-    const p = asset?.warrantyAttachmentPath?.trim();
-    if (!asset || !p) {
-      throw new NotFoundException('لا توجد صورة ضمان لهذا الأصل.');
-    }
-    if (!existsSync(p)) {
-      throw new NotFoundException('صورة الضمان غير موجودة على الخادم.');
-    }
-
-    const name = asset.warrantyAttachmentOriginalName?.trim() || 'warranty-image';
-    res.setHeader('Content-Type', asset.warrantyAttachmentMime || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(name)}`);
-    res.sendFile(p);
+    sendWarrantyAttachmentFile(asset, res);
   }
 
   async create(dto: CreateCompanyAssetDto) {
@@ -268,22 +206,12 @@ export class CompanyAssetsService {
           warrantyEndDate: w.warrantyEndDate,
           notes: dto.notes?.trim() || null,
         },
-        include: {
-          supplier: { select: { id: true, nameAr: true, nameEn: true } },
-          invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
-          warrantyLines: { orderBy: { sortOrder: 'asc' } },
-          _count: { select: { warrantyLines: true } },
-        },
+          include: assetDetailInclude,
       });
       await createCompanyAssetWarrantyLinesTx(tx, tenantId, dto.companyId, asset.id, dto.warrantyLines);
       const full = await tx.companyAsset.findFirstOrThrow({
         where: { id: asset.id },
-        include: {
-          supplier: { select: { id: true, nameAr: true, nameEn: true } },
-          invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
-          warrantyLines: { orderBy: { sortOrder: 'asc' } },
-          _count: { select: { warrantyLines: true } },
-        },
+        include: assetDetailInclude,
       });
       return mapCompanyAssetRow(full);
     });
@@ -373,7 +301,7 @@ export class CompanyAssetsService {
         }
         const full = await tx.companyAsset.findFirstOrThrow({
           where: { id: asset.id },
-          include: this.assetDetailInclude,
+          include: assetDetailInclude,
         });
         return mapCompanyAssetRow(full);
       });
@@ -454,12 +382,7 @@ export class CompanyAssetsService {
 
       const full = await tx.companyAsset.findFirstOrThrow({
         where: { id },
-        include: {
-          supplier: { select: { id: true, nameAr: true, nameEn: true } },
-          invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
-          warrantyLines: { orderBy: { sortOrder: 'asc' } },
-          _count: { select: { warrantyLines: true } },
-        },
+        include: assetDetailInclude,
       });
       return mapCompanyAssetRow(full);
     });
