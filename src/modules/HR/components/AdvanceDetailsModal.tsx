@@ -1,4 +1,4 @@
-import { Badge, Button, DialogActions, Modal, SimpleTable, cn } from '../../../ui';
+import { Badge, Button, DialogActions, Modal, cn } from '../../../ui';
 import type { BadgeStatusMap } from '../../../ui/Badge';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
@@ -60,6 +60,43 @@ function DetailMetric({
   );
 }
 
+function DetailCell({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: 'green' | 'amber' | 'red';
+}) {
+  return (
+    <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/20 px-3 py-2 text-center">
+      <div className="text-[11px] font-bold text-noorix-muted">{label}</div>
+      <div
+        className={cn(
+          'mt-1 text-[13px] font-extrabold nx-font-numbers text-noorix-text',
+          tone === 'green' && 'text-noorix-green',
+          tone === 'amber' && 'text-noorix-amber',
+          tone === 'red' && 'text-noorix-red',
+        )}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({ children, count }: { children: React.ReactNode; count: number }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-noorix-border pb-2">
+      <h3 className="text-[14px] font-black text-noorix-text">{children}</h3>
+      <span className="rounded-full bg-noorix-bg-muted px-2.5 py-1 text-[12px] font-extrabold text-noorix-muted">
+        {count}
+      </span>
+    </div>
+  );
+}
+
 export function AdvanceDetailsModal({
   group,
   onClose,
@@ -70,6 +107,8 @@ export function AdvanceDetailsModal({
   onDeleteAdvance,
 }: AdvanceDetailsModalProps) {
   const rows = group?.advances ?? [];
+  const advanceRows = rows.filter((row) => !isDeductionRow(row));
+  const deductionRows = rows.filter(isDeductionRow);
   const deductionAmount = group?.manualDeductionAmount ?? 0;
 
   return (
@@ -95,93 +134,64 @@ export function AdvanceDetailsModal({
             <DetailMetric label={t('deductionsList')} value={hrFmt(deductionAmount)} tone={deductionAmount > 0 ? 'red' : undefined} />
           </div>
 
-          <SimpleTable<AdvanceRow>
-            compact
-            tableMinWidth={760}
-            frameClassName="shadow-none"
-            data={rows}
-            emptyMessage={t('noDataInPeriod')}
-            columns={[
-              {
-                key: 'transactionDate',
-                label: t('advanceLoanDate'),
-                minWidth: 110,
-                render: (value) => formatSaudiDate(String(value || '')),
-              },
-              {
-                key: 'recordType',
-                label: t('type'),
-                minWidth: 110,
-                render: (_value, row) => (
-                  isDeductionRow(row)
-                    ? <Badge color="red" label={t('deductionsList')} size="sm" />
-                    : <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" />
-                ),
-              },
-              {
-                key: 'totalAmount',
-                label: t('advanceAmount'),
-                numeric: true,
-                minWidth: 110,
-                render: (_value, row) => (
-                  <span className={cn('nx-cell-num', isDeductionRow(row) && 'text-noorix-red')}>
-                    {isDeductionRow(row) ? '-' : ''}{hrFmt(amountValue(row))}
-                  </span>
-                ),
-              },
-              {
-                key: 'settledAmountNum',
-                label: t('advanceSettledAmount'),
-                numeric: true,
-                minWidth: 110,
-                render: (value) => <span className="nx-cell-num text-noorix-green">{hrFmt(Number(value ?? 0))}</span>,
-              },
-              {
-                key: 'remainingAmount',
-                label: t('advanceRemainingAmount'),
-                numeric: true,
-                minWidth: 110,
-                render: (value) => {
-                  const remaining = Number(value ?? 0);
-                  return <span className={cn('nx-cell-num', remainingClass(remaining))}>{hrFmt(remaining)}</span>;
-                },
-              },
-              {
-                key: 'installmentCount',
-                label: t('installmentInfo'),
-                minWidth: 180,
-                render: (_value, row) => {
-                  if (isDeductionRow(row)) return textValue(row.notes, t('deductionsList'));
-                  const count = Number(row.installmentCount ?? 0);
-                  return count > 1 ? `${count} x ${hrFmt(row.installmentAmount ?? 0)}` : '-';
-                },
-              },
-              {
-                key: 'settledAt',
-                label: t('advanceSettlementDate'),
-                minWidth: 110,
-                render: (value) => value ? formatSaudiDate(String(value)) : '-',
-              },
-              {
-                key: 'actions',
-                label: t('actions'),
-                minWidth: 190,
-                align: 'center',
-                render: (_value, row) => {
-                  if (isDeductionRow(row)) return <span className="text-noorix-muted">-</span>;
-                  return (
-                    <div className="flex items-center justify-center gap-1.5">
-                      <Button size="sm" className="h-7 px-2" variant="ghost" onClick={() => onEditAdvance(row)}>{t('edit')}</Button>
-                      {canSettle(row) ? (
-                        <Button size="sm" className="h-7 px-2" variant="primary" onClick={() => onSettleAdvance(row)}>{t('settleAdvance')}</Button>
-                      ) : null}
-                      <Button size="sm" className="h-7 px-2" variant="danger" onClick={() => onDeleteAdvance(row)}>{t('delete')}</Button>
-                    </div>
-                  );
-                },
-              },
-            ]}
-          />
+          <div className="grid gap-4">
+            <section className="grid gap-3">
+              <SectionTitle count={advanceRows.length}>{t('advancesList')}</SectionTitle>
+              {advanceRows.length ? (
+                <div className="grid gap-2.5">
+                  {advanceRows.map((row, index) => {
+                    const remaining = Number(row.remainingAmount ?? 0);
+                    const count = Number(row.installmentCount ?? 0);
+                    return (
+                      <article key={row.id || `advance-${index}`} className="rounded-xl border border-noorix-border bg-noorix-surface px-3 py-3 shadow-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-center">
+                          <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" />
+                          <div className="text-[13px] font-extrabold text-noorix-text">{formatSaudiDate(String(row.transactionDate || ''))}</div>
+                        </div>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                          <DetailCell label={t('advanceAmount')} value={hrFmt(amountValue(row))} />
+                          <DetailCell label={t('advanceSettledAmount')} value={hrFmt(Number(row.settledAmountNum ?? 0))} tone="green" />
+                          <DetailCell label={t('advanceRemainingAmount')} value={hrFmt(remaining)} tone={remaining > 0 ? 'amber' : 'green'} />
+                          <DetailCell label={t('installmentInfo')} value={count > 1 ? `${count} x ${hrFmt(row.installmentAmount ?? 0)}` : '-'} />
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+                          <Button size="sm" className="h-8 px-3" variant="ghost" onClick={() => onEditAdvance(row)}>{t('edit')}</Button>
+                          {canSettle(row) ? (
+                            <Button size="sm" className="h-8 px-3" variant="primary" onClick={() => onSettleAdvance(row)}>{t('settleAdvance')}</Button>
+                          ) : null}
+                          <Button size="sm" className="h-8 px-3" variant="danger" onClick={() => onDeleteAdvance(row)}>{t('delete')}</Button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-noorix-border p-5 text-center text-[13px] font-bold text-noorix-muted">
+                  {t('noDataInPeriod')}
+                </div>
+              )}
+            </section>
+
+            {deductionRows.length ? (
+              <section className="grid gap-3">
+                <SectionTitle count={deductionRows.length}>{t('deductionsList')}</SectionTitle>
+                <div className="grid gap-2.5">
+                  {deductionRows.map((row, index) => (
+                    <article key={row.id || `deduction-${index}`} className="rounded-xl border border-noorix-border bg-noorix-bg-muted/20 px-3 py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-center">
+                        <Badge color="red" label={t('deductionsList')} size="sm" />
+                        <div className="text-[13px] font-extrabold text-noorix-text">{formatSaudiDate(String(row.transactionDate || ''))}</div>
+                      </div>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_2fr]">
+                        <DetailCell label={t('advanceAmount')} value={`-${hrFmt(amountValue(row))}`} tone="red" />
+                        <DetailCell label={t('notes')} value={textValue(row.notes, t('deductionsList'))} />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </Modal>

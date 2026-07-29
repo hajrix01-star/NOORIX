@@ -66,8 +66,17 @@ export function useAdvanceTableModel({
       ) },
     { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
       render: (v: unknown) => <span className="nx-cell-muted-sm whitespace-nowrap">{v ? formatSaudiDate(String(v)) : '-'}</span> },
-    { key: 'status', label: t('status'), width: 130, minWidth: 120,
-      render: (_: unknown, row: AdvanceGroupRow) => <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className="shrink-0" /> },
+    { key: 'status', label: t('status'), width: 140, minWidth: 120,
+      render: (_: unknown, row: AdvanceGroupRow) => (
+        <div className="flex items-center justify-center gap-1.5">
+          {row.advanceCount > 0 ? (
+            <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className="shrink-0" />
+          ) : null}
+          {row.deductionCount > 0 ? (
+            <Badge color="red" label={row.advanceCount > 0 ? `${t('deductionsList')} ${row.deductionCount}` : t('deductionsList')} size="sm" />
+          ) : null}
+        </div>
+      ) },
     { key: 'actions', label: t('actions'), width: 110, minWidth: 100, align: 'center',
       render: (_: unknown, row: AdvanceGroupRow) => (
         <Button size="sm" variant="default" onClick={() => onOpenEmployee(row)}>

@@ -76,9 +76,11 @@ export function buildGroupedAdvanceRows(
     if (!existing.transactionDate || String(row.transactionDate || '') > existing.transactionDate) {
       existing.transactionDate = String(row.transactionDate || '');
     }
-    if (row.settlementStatus === 'outstanding') existing.outstandingCount += 1;
-    if (row.settlementStatus === 'partial') existing.partialCount += 1;
-    if (row.settlementStatus === 'settled') existing.settledCount += 1;
+    if (row.recordType !== 'deduction') {
+      if (row.settlementStatus === 'outstanding') existing.outstandingCount += 1;
+      if (row.settlementStatus === 'partial') existing.partialCount += 1;
+      if (row.settlementStatus === 'settled') existing.settledCount += 1;
+    }
     groups.set(employeeId, existing);
   }
 

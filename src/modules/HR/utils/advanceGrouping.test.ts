@@ -61,6 +61,7 @@ describe('buildGroupedAdvanceRows', () => {
       manualDeductionAmount: 25,
       outstandingCount: 1,
       partialCount: 1,
+      settledCount: 0,
       settlementStatus: 'partial',
     });
     expect(result[1]).toMatchObject({
