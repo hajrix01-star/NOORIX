@@ -33,12 +33,6 @@ import {
   uploadEmployeePhoto,
 } from '../../services/api';
 import { ScreenShell } from '../../ui';
-import { AdvanceQuickModal } from './components/AdvanceQuickModal';
-import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovementModal';
-import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
-import { LeaveFormModal } from './components/LeaveFormModal';
-import { ResidencyFormModal } from './components/ResidencyFormModal';
-import { StaffListModals } from './components/StaffListModals';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import {
   buildAdvanceSettlementStatusMap,
@@ -53,17 +47,12 @@ import {
 } from './components/employeeProfile/EmployeeProfileStates';
 import { EmployeeProfileHeaderBar } from './components/employeeProfile/EmployeeProfileHeaderBar';
 import {
-  EmployeeProfileBasicInfoCard,
-  EmployeeProfileSalaryCard,
-} from './components/employeeProfile/EmployeeProfileBasicAndSalaryCards';
-import { EmployeeProfileCareerSection } from './components/employeeProfile/EmployeeProfileCareerSection';
-import { EmployeeProfileFinancialSection } from './components/employeeProfile/EmployeeProfileFinancialSection';
-import { EmployeeProfilePayrollSection } from './components/employeeProfile/EmployeeProfilePayrollSection';
-import { EmployeeProfileLeaveSection } from './components/employeeProfile/EmployeeProfileLeaveSection';
+  EmployeeProfileTabsPanel,
+  EMPLOYEE_PROFILE_TAB_IDS,
+  type EmployeeProfileTabId,
+} from './components/employeeProfile/EmployeeProfileTabsPanel';
+import { EmployeeProfileModals } from './components/employeeProfile/EmployeeProfileModals';
 import { employeeKeys, hrKeys, invoiceKeys } from '../../services/queryKeys';
-import { EmployeeProfileAdvancesSection } from './components/employeeProfile/EmployeeProfileAdvancesSection';
-import { EmployeeProfileResidencySection } from './components/employeeProfile/EmployeeProfileResidencySection';
-import { EmployeeProfileDocumentsSection } from './components/employeeProfile/EmployeeProfileDocumentsSection';
 import { EmployeeProfileSummary } from './components/employeeProfile/EmployeeProfileSummary';
 import { syncCustomAllowanceRows, type HrStaffSavePayload } from './staffListDataOps';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
@@ -91,27 +80,6 @@ type HrProfileCompensationSnapshot = HrCompensationSnapshot & {
   payrollItems?: PayrollProfileItem[];
   customAllowances?: HrCompensationSnapshot['customAllowances'];
 };
-
-const EMPLOYEE_PROFILE_TAB_IDS = ['overview', 'financial', 'payroll', 'leave', 'services', 'documents', 'career'] as const;
-type EmployeeProfileTabId = (typeof EMPLOYEE_PROFILE_TAB_IDS)[number];
-
-function getEmployeeProfileTabLabel(tabId: EmployeeProfileTabId, lang: string, t: (key: string, ...args: unknown[]) => string) {
-  const isArabic = lang === 'ar';
-  const labels: Record<EmployeeProfileTabId, { ar: string; en: string }> = {
-    overview: { ar: 'نظرة عامة', en: 'Overview' },
-    financial: { ar: 'السجل المالي', en: 'Financial record' },
-    payroll: { ar: 'مسيرات الرواتب', en: 'Payroll runs' },
-    leave: { ar: 'الإجازات', en: 'Leave' },
-    services: { ar: 'خدمات الموظف', en: 'Employee services' },
-    documents: { ar: 'ملفات الموظف', en: 'Documents' },
-    career: { ar: 'سجل الترقيات والزيادات', en: 'Career changes' },
-  };
-  if (tabId === 'financial') {
-    const translated = t('financialRecord');
-    if (translated && translated !== 'financialRecord') return translated;
-  }
-  return isArabic ? labels[tabId].ar : labels[tabId].en;
-}
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -544,10 +512,9 @@ export default function EmployeeProfileScreen() {
     documents,
     careerTableRows,
   });
-  const profileTabs = EMPLOYEE_PROFILE_TAB_IDS.map((tabId) => ({
-    id: tabId,
-    label: getEmployeeProfileTabLabel(tabId, lang, t),
-  }));
+  const normalizedActiveProfileTab: EmployeeProfileTabId = EMPLOYEE_PROFILE_TAB_IDS.includes(activeProfileTab as EmployeeProfileTabId)
+    ? (activeProfileTab as EmployeeProfileTabId)
+    : 'overview';
 
   return (
     <ScreenShell variant="form">
@@ -588,224 +555,120 @@ export default function EmployeeProfileScreen() {
           onPhotoChange={handleEmployeePhotoChange}
           onDeletePhoto={() => deleteEmployeePhotoMutation.mutate()}
         />
-        <div className="employee-profile-tabs" role="tablist" aria-label={lang === 'ar' ? 'تبويبات ملف الموظف' : 'Employee profile tabs'}>
-          {profileTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeProfileTab === tab.id}
-              className={activeProfileTab === tab.id ? 'employee-profile-tabs__btn employee-profile-tabs__btn--active' : 'employee-profile-tabs__btn'}
-              onClick={() => setActiveProfileTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        <div className="employee-profile-tab-panel" role="tabpanel">
-          {activeProfileTab === 'overview' ? (
-            <div className="employee-profile-layout">
-              <EmployeeProfileBasicInfoCard employee={employee} lang={lang} empStatusMap={empStatusMap} t={t} />
-              <EmployeeProfileSalaryCard t={t} salaryRows={salaryRows} total={total} />
-            </div>
-          ) : null}
-          {activeProfileTab === 'financial' ? (
-            <div className="employee-profile-section-stack">
-              <EmployeeProfileFinancialSection
-                t={t}
-                financialRecords={financialRecords}
-                onOpenResidency={canEditHrLeave ? openProfileResidency : undefined}
-              />
-              <EmployeeProfileAdvancesSection t={t} advances={advances} advanceStatusMap={advanceStatusMap} />
-            </div>
-          ) : null}
-          {activeProfileTab === 'payroll' ? (
-            <EmployeeProfilePayrollSection t={t} payrollItems={payrollItems} payrollRunStatusMap={payrollRunStatusMap} />
-          ) : null}
-          {activeProfileTab === 'leave' ? (
-            <EmployeeProfileLeaveSection
-              t={t}
-              leaves={leaves}
-              leaveProfileStatusMap={leaveProfileStatusMap}
-              canEditHrLeave={canEditHrLeave}
-              onEditLeave={setEditProfileLeave}
-            />
-          ) : null}
-          {activeProfileTab === 'services' ? (
-            <EmployeeProfileResidencySection
-              t={t}
-              residencies={residencies}
-              residencyProfileStatusMap={residencyProfileStatusMap}
-              canAddService={canEditHrLeave}
-              canEditService={canEditHrLeave}
-              onQuickAdd={(category: string) => setProfileServiceAdd({ category })}
-              onOpenService={canEditHrLeave ? openProfileResidency : undefined}
-              onDeleteService={canEditHrLeave ? handleDeleteService : undefined}
-            />
-          ) : null}
-          {activeProfileTab === 'documents' ? (
-            <EmployeeProfileDocumentsSection
-              t={t}
-              documents={documents}
-              uploading={uploading}
-              fileInputRef={docFileRef}
-              onFileChange={handleUploadDoc}
-              onPickFile={() => docFileRef.current?.click()}
-              onDownload={handleDownloadDoc}
-            />
-          ) : null}
-          {activeProfileTab === 'career' ? (
-            <EmployeeProfileCareerSection
-              t={t}
-              careerTableRows={careerTableRows}
-              canShowCareerActions={canShowCareerActions}
-              canEditRaise={canRecordCareer}
-              onOpenPromotion={() => setCareerModal('promotion')}
-              onOpenRaise={() => setCareerModal('raise')}
-              onEditRaise={handleEditRaise}
-              onDeleteRaise={handleDeleteRaise}
-            />
-          ) : null}
-        </div>
+        <EmployeeProfileTabsPanel
+          t={t}
+          lang={lang}
+          activeProfileTab={normalizedActiveProfileTab}
+          onTabChange={setActiveProfileTab}
+          employee={employee}
+          empStatusMap={empStatusMap}
+          salaryRows={salaryRows}
+          total={total}
+          financialRecords={financialRecords}
+          canEditHrLeave={canEditHrLeave}
+          onOpenResidency={openProfileResidency}
+          advances={advances}
+          advanceStatusMap={advanceStatusMap}
+          payrollItems={payrollItems}
+          payrollRunStatusMap={payrollRunStatusMap}
+          leaves={leaves}
+          leaveProfileStatusMap={leaveProfileStatusMap}
+          onEditLeave={setEditProfileLeave}
+          residencies={residencies}
+          residencyProfileStatusMap={residencyProfileStatusMap}
+          onQuickAddService={(category: string) => setProfileServiceAdd({ category })}
+          onDeleteService={handleDeleteService}
+          documents={documents}
+          uploading={uploading}
+          fileInputRef={docFileRef}
+          onUploadDocument={handleUploadDoc}
+          onPickDocument={() => docFileRef.current?.click()}
+          onDownloadDocument={handleDownloadDoc}
+          careerTableRows={careerTableRows}
+          canShowCareerActions={canShowCareerActions}
+          canRecordCareer={canRecordCareer}
+          onOpenPromotion={() => setCareerModal('promotion')}
+          onOpenRaise={() => setCareerModal('raise')}
+          onEditRaise={handleEditRaise}
+          onDeleteRaise={handleDeleteRaise}
+        />
       </div>
 
-      {docModal === 'salary' && (
-        <SalaryCertificateModal
-          employee={employee}
-          compensationSnapshot={compensationSnapshot}
-          companyId={companyId}
-          companyName={companyName}
-          companyLogo={companyLogo}
-          onClose={() => setDocModal(null)}
-          onSaved={() => {
-            invalidateAll();
-            showToast(t('documentUploaded'), 'success');
-          }}
-        />
-      )}
-      {docModal === 'contract' && (
-        <ContractModal
-          employee={employee}
-          compensationSnapshot={compensationSnapshot}
-          companyId={companyId}
-          companyName={companyName}
-          companyLogo={companyLogo}
-          onClose={() => setDocModal(null)}
-          onSaved={() => {
-            invalidateAll();
-            showToast(t('documentUploaded'), 'success');
-          }}
-        />
-      )}
-      {docModal === 'settlement' && (
-        <FinalSettlementModal
-          employee={employee}
-          compensationSnapshot={compensationSnapshot}
-          companyId={companyId}
-          companyName={companyName}
-          companyLogo={companyLogo}
-          onClose={() => setDocModal(null)}
-          onSaved={() => {
-            invalidateAll();
-            showToast(t('documentUploaded'), 'success');
-          }}
-        />
-      )}
-      {showAdvance && (
-        <AdvanceQuickModal
-          employee={employee}
-          companyId={companyId}
-          createAdvance={createAdvance}
-          onSuccess={() => {
-            invalidateOnFinancialMutation(queryClient);
-            showToast(t('advancePaid'), 'success');
-          }}
-          onClose={() => setShowAdvance(false)}
-        />
-      )}
-      {(careerModal || editRaiseMovement) && (
-        <EmployeeCareerMovementModal
-          kind={editRaiseMovement ? 'raise' : careerModal}
-          employee={employee}
-          companyId={companyId}
-          customAllowanceTotal={compensationSnapshot.customAllowances?.total ?? 0}
-          currentTotalAllIn={compensationSnapshot.salaryPackage.total}
-          editMovement={editRaiseMovement}
-          onClose={() => {
-            setCareerModal(null);
-            setEditRaiseMovement(null);
-          }}
-          onSuccess={() => {
-            invalidateAll();
-            showToast(editRaiseMovement ? t('careerRaiseUpdated') : t('careerMovementSaved'), 'success');
-          }}
-        />
-      )}
-      {editProfileLeave && (
-        <LeaveFormModal
-          key={editProfileLeave.id}
-          companyId={companyId}
-          employeeId={id}
-          editLeave={editProfileLeave}
-          lockEmployeeSelector
-          onSuccess={() => {
-            invalidateAll();
-            showToast(t('leaveUpdated'), 'success');
-          }}
-          onClose={() => setEditProfileLeave(null)}
-        />
-      )}
-      {profileServiceAdd && id && (
-        <ResidencyFormModal
-          key={`${profileServiceAdd.category}-${id}`}
-          companyId={companyId}
-          defaultCategory={profileServiceAdd.category}
-          defaultEmployeeId={id}
-          onSuccess={() => {
-            invalidateAll();
-            showToast(t('hrServiceAdded'), 'success');
-            setProfileServiceAdd(null);
-          }}
-          onClose={() => setProfileServiceAdd(null)}
-        />
-      )}
-      {editProfileResidency && (
-        <ResidencyFormModal
-          key={editProfileResidency.id}
-          residency={editProfileResidency}
-          companyId={companyId}
-          defaultEmployeeId={id}
-          onSuccess={() => {
-            invalidateAll();
-            showToast(t('hrServiceUpdated'), 'success');
-            setEditProfileResidency(null);
-          }}
-          onClose={() => setEditProfileResidency(null)}
-          onDelete={handleDeleteService}
-        />
-      )}
-      <StaffListModals
+      <EmployeeProfileModals
         t={t}
+        employee={employee}
+        employeeId={id}
         companyId={companyId}
         companyName={companyName}
-        showForm={false}
-        setShowForm={() => undefined}
-        editingEmployee={editingEmployee}
-        setEditingEmployee={setEditingEmployee}
-        advanceEmployee={null}
-        setAdvanceEmployee={() => undefined}
-        terminatingEmployee={terminatingEmployee}
-        setTerminatingEmployee={setTerminatingEmployee}
-        terminationSettlementEmp={terminationSettlementEmp}
-        setTerminationSettlementEmp={setTerminationSettlementEmp}
-        terminationForm={terminationForm}
-        setTerminationForm={setTerminationForm}
-        handleSave={handleSaveProfileEmployee}
-        create={{ isPending: false }}
-        update={update}
+        companyLogo={companyLogo}
+        compensationSnapshot={compensationSnapshot}
+        docModal={docModal}
+        onCloseDocModal={() => setDocModal(null)}
+        onDocumentSaved={() => {
+          invalidateAll();
+          showToast(t('documentUploaded'), 'success');
+        }}
+        showAdvance={showAdvance}
         createAdvance={createAdvance}
-        queryClient={queryClient}
-        showToast={showToast}
+        onCloseAdvance={() => setShowAdvance(false)}
+        onAdvanceSaved={() => {
+          invalidateOnFinancialMutation(queryClient);
+          showToast(t('advancePaid'), 'success');
+        }}
+        careerModal={careerModal}
+        editRaiseMovement={editRaiseMovement}
+        onCloseCareerModal={() => {
+          setCareerModal(null);
+          setEditRaiseMovement(null);
+        }}
+        onCareerSaved={(isEditRaise) => {
+          invalidateAll();
+          showToast(isEditRaise ? t('careerRaiseUpdated') : t('careerMovementSaved'), 'success');
+        }}
+        editProfileLeave={editProfileLeave}
+        onLeaveSaved={() => {
+          invalidateAll();
+          showToast(t('leaveUpdated'), 'success');
+        }}
+        onCloseProfileLeave={() => setEditProfileLeave(null)}
+        profileServiceAdd={profileServiceAdd}
+        onServiceAdded={() => {
+          invalidateAll();
+          showToast(t('hrServiceAdded'), 'success');
+          setProfileServiceAdd(null);
+        }}
+        onCloseServiceAdd={() => setProfileServiceAdd(null)}
+        editProfileResidency={editProfileResidency}
+        onServiceUpdated={() => {
+          invalidateAll();
+          showToast(t('hrServiceUpdated'), 'success');
+          setEditProfileResidency(null);
+        }}
+        onCloseProfileResidency={() => setEditProfileResidency(null)}
+        onDeleteService={handleDeleteService}
+        staffListModalsProps={{
+          t,
+          companyId,
+          companyName,
+          showForm: false,
+          setShowForm: () => undefined,
+          editingEmployee,
+          setEditingEmployee,
+          advanceEmployee: null,
+          setAdvanceEmployee: () => undefined,
+          terminatingEmployee,
+          setTerminatingEmployee,
+          terminationSettlementEmp,
+          setTerminationSettlementEmp,
+          terminationForm,
+          setTerminationForm,
+          handleSave: handleSaveProfileEmployee,
+          create: { isPending: false },
+          update,
+          createAdvance,
+          queryClient,
+          showToast,
+        }}
       />
     </ScreenShell>
   );
