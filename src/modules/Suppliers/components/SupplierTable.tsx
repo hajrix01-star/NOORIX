@@ -222,6 +222,8 @@ export const SupplierTable = memo(function SupplierTable({
       compact={false}
       tableLayout="auto"
       stickyActionColumn={false}
+      tableId="suppliers-list"
+      mobileMode="table"
       tableMinWidth={760}
       innerPadding={0}
       getRowStyle={(row): CSSProperties | undefined =>
