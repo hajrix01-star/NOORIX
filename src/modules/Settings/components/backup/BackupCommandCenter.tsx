@@ -1,6 +1,5 @@
 import React, { type ChangeEvent, type Dispatch, type RefObject, type SetStateAction } from 'react';
-import { Badge, Button, Card, Checkbox, FileInput, Input, KebabMenu, SimpleTable } from '../../../../ui';
-import type { SimpleTableColumn } from '../../../../ui';
+import { Badge, Button, Card, Checkbox, FileInput, Input, SimpleTable } from '../../../../ui';
 import type {
   BackupConfigData,
   BackupImportModal,
@@ -17,12 +16,9 @@ import type {
   TranslationFn,
 } from '../../settingsTypes';
 import {
-  defaultImportCompanyName,
   formatBackupDate,
   formatFileSize,
   scopeLabel,
-  statusBadgeColor,
-  statusLabel,
 } from './backupTabHelpers';
 import {
   latestBackup,
@@ -30,10 +26,8 @@ import {
   latestTrustedBackup,
   scheduleText,
   uniqueUnifiedRows,
-  verificationColor,
-  verificationLabel,
-  type UnifiedBackupRow,
 } from './backupCommandCenterModel';
+import { BackupStat, ScheduleNumberInput, buildBackupCommandCenterColumns } from './backupCommandCenterUi';
 
 type BackupCommandCenterProps = {
   t: TranslationFn;
@@ -74,54 +68,6 @@ type BackupCommandCenterProps = {
   setRestorePcPhrase: (value: string) => void;
   setRestorePcModal: (value: BackupRestorePcModal | null) => void;
 };
-
-function BackupStat({
-  label,
-  value,
-  tone = 'neutral',
-}: {
-  label: React.ReactNode;
-  value: React.ReactNode;
-  tone?: 'neutral' | 'good' | 'bad' | 'warn';
-}) {
-  const valueClass =
-    tone === 'good' ? 'text-noorix-green' : tone === 'bad' ? 'text-noorix-red' : tone === 'warn' ? 'text-noorix-amber' : 'text-noorix-text';
-  return (
-    <div className="rounded-md border border-noorix-border bg-white px-3 py-2 min-w-0">
-      <div className="text-[11px] font-semibold text-noorix-muted leading-tight truncate">{label}</div>
-      <div className={`mt-1 text-[14px] font-extrabold leading-tight truncate ${valueClass}`}>{value}</div>
-    </div>
-  );
-}
-
-type ScheduleNumberInputProps = {
-  id: string;
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  fallback: number;
-  disabled?: boolean;
-  onValue: (value: number) => void;
-};
-
-function ScheduleNumberInput({ id, label, value, min, max, fallback, disabled, onValue }: ScheduleNumberInputProps) {
-  return (
-    <Input
-      id={id}
-      type="number"
-      min={min}
-      max={max}
-      label={label}
-      className="noorix-bank-filter"
-      value={value}
-      onChange={(event: ChangeEvent<HTMLInputElement>) =>
-        onValue(Math.min(max, Math.max(min, Number(event.target.value) || fallback)))
-      }
-      disabled={disabled}
-    />
-  );
-}
 
 export function BackupCommandCenter({
   t,
@@ -169,131 +115,23 @@ export function BackupCommandCenter({
   const rows = React.useMemo(() => uniqueUnifiedRows(sysJobs, jobs).slice(0, 30), [jobs, sysJobs]);
   const isBusy = runFullArchiveMut.isPending || triggerMut.isPending || saveSysMut.isPending || saveCoMut.isPending;
 
-  const columns = React.useMemo<SimpleTableColumn<UnifiedBackupRow>[]>(() => [
-    {
-      key: 'ordinal',
-      label: '#',
-      width: 86,
-      align: 'center',
-      render: (_value, row) => (
-        <span dir="ltr" className="font-extrabold tabular-nums text-noorix-text">
-          {row.ordinal != null ? row.ordinal : '-'}
-        </span>
-      ),
-    },
-    {
-      key: 'scope',
-      label: label('النسخة', 'Backup'),
-      minWidth: 230,
-      render: (_value, row) => (
-        <div className="flex flex-col gap-1 min-w-0">
-          <span className="font-bold text-noorix-text truncate">
-            {row.company ? row.company.nameAr || row.company.nameEn || '-' : label('النظام الكامل', 'Full system')}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: 'createdAt',
-      label: label('التاريخ', 'Date'),
-      minWidth: 170,
-      align: 'center',
-      render: (_value, row) => (
-        <span dir="ltr" className="tabular-nums text-[12px]">
-          {formatBackupDate(row.createdAt)}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      label: label('الحالة', 'Status'),
-      minWidth: 130,
-      align: 'center',
-      render: (_value, row) => (
-        <Badge color={statusBadgeColor(row.status)} size="sm">
-          {statusLabel(row.status, t)}
-        </Badge>
-      ),
-    },
-    {
-      key: 'verifyOk',
-      label: label('المطابقة', 'Parity'),
-      minWidth: 130,
-      align: 'center',
-      render: (_value, row) => (
-        <Badge color={verificationColor(row)} size="sm">
-          {verificationLabel(row, t, label)}
-        </Badge>
-      ),
-    },
-    {
-      key: 'sizeBytes',
-      label: label('الحجم', 'Size'),
-      width: 110,
-      numeric: true,
-      render: (_value, row) => <span dir="ltr">{formatFileSize(row.sizeBytes)}</span>,
-    },
-    {
-      key: 'actions',
-      label: label('الإجراءات', 'Actions'),
-      width: 92,
-      align: 'center',
-      render: (_value, row) => {
-        const isSystem = row.rowScope === 'system';
-        const canDownload = Boolean(row.status === 'completed' && row.localRelativePath);
-        return (
-          <KebabMenu
-            ariaLabel={t('backupActionsMenu')}
-            menuWidth={220}
-            items={[
-              { key: 'report', label: t('backupRestoreReport'), onClick: () => reportMut.mutate(row.id) },
-              canDownload && isSystem && {
-                key: 'download-system',
-                label: t('backupSystemDownload'),
-                disabled: downloadSysMut.isPending,
-                onClick: () =>
-                  downloadSysMut.mutate({
-                    jobId: row.id,
-                    suggestedName: `noorix-system-archive-${row.ordinal ?? 'na'}-${row.id}.tar.gz`,
-                  }),
-              },
-              canDownload && !isSystem && {
-                key: 'download-company',
-                label: t('backupDownload'),
-                disabled: downloadMut.isPending,
-                onClick: () => downloadMut.mutate(row.id),
-              },
-              canDownload && {
-                key: 'verify',
-                label: t('backupVerify'),
-                disabled: isSystem ? verifySysMut.isPending : verifyCoMut.isPending,
-                onClick: () => (isSystem ? verifySysMut.mutate(row.id) : verifyCoMut.mutate(row.id)),
-              },
-              !isSystem && canDownload && {
-                key: 'import-company',
-                label: t('backupImportNewCompany'),
-                onClick: () => {
-                  setImportNameAr(defaultImportCompanyName(row, t, lang));
-                  setImportConfirmed(false);
-                  setImportModal({ jobId: row.id });
-                },
-              },
-              isSystem && canDownload && {
-                key: 'restore-system',
-                label: t('backupSystemRestore'),
-                disabled: restoreMut.isPending || restorePcMut.isPending,
-                style: { color: 'var(--nx-red, #dc2626)' },
-                onClick: () => {
-                  setRestorePhrase('');
-                  setRestoreModal({ jobId: row.id });
-                },
-              },
-            ]}
-          />
-        );
-      },
-    },
-  ], [
+  const columns = React.useMemo(() => buildBackupCommandCenterColumns({
+    downloadMut,
+    downloadSysMut,
+    label,
+    lang,
+    reportMut,
+    restoreMut,
+    restorePcMut,
+    setImportConfirmed,
+    setImportModal,
+    setImportNameAr,
+    setRestoreModal,
+    setRestorePhrase,
+    t,
+    verifyCoMut,
+    verifySysMut,
+  }), [
     downloadMut,
     downloadSysMut,
     label,
