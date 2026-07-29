@@ -73,7 +73,7 @@ export function buildProfitLossPrintPreviewDocument({
     htmlDir: printDir,
     showPageCounter: false,
     pageMarginMm: isPeriodPrint ? 8 : 6,
-    extraCss: profitLossUnifiedPrintCss(),
+    extraCss: profitLossUnifiedPrintCss(isPeriodPrint),
     body: buildPrintHtmlTable({
       wrapperClassName: 'pl-print-wrap',
       tableClassName: 'print-table pl-print-table',
@@ -150,18 +150,53 @@ function printPlainCell(value: unknown) {
   };
 }
 
-function profitLossUnifiedPrintCss() {
+function profitLossUnifiedPrintCss(isPeriodPrint: boolean) {
   return `
+.print-header {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  margin: 0 auto 14px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid #d8d0c1;
+}
+.print-header img {
+  width: 34px;
+  height: 34px;
+  max-height: 34px;
+  object-fit: contain;
+  margin: 0;
+}
+.print-header h1 {
+  margin: 0;
+  color: #191814;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 900;
+}
+.print-header .sub {
+  margin: 0;
+  color: #6f6a5f;
+  font-size: 10.5px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+.print-footer {
+  margin-top: 16px;
+  border-top-color: #e3dccf;
+  color: #857d70;
+}
 .pl-print-wrap {
-  width: 100%;
+  width: min(100%, ${isPeriodPrint ? '190mm' : '276mm'});
+  margin: 0 auto;
   overflow: visible;
 }
 .pl-print-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border: 1px solid #d8d0c1;
+  border-radius: 10px;
   overflow: hidden;
   table-layout: fixed;
 }
@@ -169,31 +204,29 @@ function profitLossUnifiedPrintCss() {
   display: table-header-group;
 }
 .pl-print-table th {
-  background: #1d5fa7;
+  background: #137a4a;
   color: #ffffff;
   border-color: rgba(255,255,255,.22);
-  padding: 8px 7px;
+  padding: 7px 7px;
   text-align: center;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 900;
   line-height: 1.25;
 }
 .pl-print-table td {
-  border-color: #dbe5f0;
+  border-color: #e2dacd;
   padding: 7px 8px;
-  color: #172033;
+  background: #ffffff;
+  color: #24211c;
   font-size: 10.8px;
   font-weight: 750;
   line-height: 1.3;
   page-break-inside: avoid;
   vertical-align: middle;
 }
-.pl-print-table tr:nth-child(even) td {
-  background: #f8fafc;
-}
 .pl-print-table .pl-print-total-row td {
-  background: #e8eef5 !important;
-  color: #0f172a;
+  background: #f1ece3 !important;
+  color: #191814;
   font-weight: 900;
 }
 .pl-print-label-head,
@@ -215,20 +248,20 @@ function profitLossUnifiedPrintCss() {
 .pl-print-number strong {
   display: block;
   min-height: 12px;
-  color: #172033;
+  color: #191814;
   font-size: 10.8px;
   font-weight: 900;
 }
 .pl-print-number span {
   display: block;
   margin-top: 2px;
-  color: #64748b;
-  font-size: 11px;
+  color: #17764a;
+  font-size: 9.8px;
   font-weight: 800;
 }
 .pl-print-percent-only {
-  color: #64748b !important;
-  font-size: 11px !important;
+  color: #17764a !important;
+  font-size: 10px !important;
   font-weight: 850 !important;
 }
 @media print {
