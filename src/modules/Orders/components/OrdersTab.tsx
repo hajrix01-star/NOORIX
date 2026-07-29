@@ -1,7 +1,7 @@
 ﻿/**
  * OrdersTab — تبويبة الطلبات
  */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
@@ -31,9 +31,14 @@ import { DateFilterBar } from '../../../ui/date';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
 import { OrderConfirmModal } from './OrderConfirmModal';
-import { Button, Badge, AdaptiveSheet, DialogActions, FilterToolbar, SmartTable, FmtNum, usePrintPreview } from '../../../ui';
-import type { SmartTableColumn } from '../../../ui';
+import { Button, AdaptiveSheet, DialogActions, FilterToolbar, SmartTable, FmtNum, usePrintPreview } from '../../../ui';
 import type { OrderLine, OrderProduct, OrderRecord } from '../../../types/api';
+import {
+  buildOrdersColumns,
+  buildOrdersFooterCells,
+  renderOrdersCompactRow,
+  renderOrdersMobileCard,
+} from './OrdersTableParts';
 
 export function OrdersTab({
   companyId,
@@ -92,187 +97,25 @@ export function OrdersTab({
     [dateFilteredOrders],
   );
 
-  const ordersColumns = useMemo<SmartTableColumn<OrderRecord>[]>(
-    () => [
-      {
-        key: 'orderNumber',
-        label: t('orderNumber'),
-        minWidth: 100,
-        align: 'center',
-        shrink: true,
-        render: (_value: unknown, row: OrderRecord) => (
-          <Button
-            variant="raw"
-            size="auto"
-            className="mx-auto !h-auto rounded-md px-2 py-1 text-center nx-cell-num nx-cell-num--blue whitespace-nowrap hover:bg-noorix-blue/10 focus-visible:ring-2 focus-visible:ring-noorix-blue"
-            onClick={() => handleView(row)}
-          >
-            {row.orderNumber}
-          </Button>
-        ),
-      },
-      {
-        key: 'orderDate',
-        label: t('orderDate'),
-        minWidth: 115,
-        align: 'center',
-        render: (_value: unknown, row: OrderRecord) => <span className="whitespace-nowrap">{formatSaudiDate(row.orderDate)}</span>,
-      },
-      {
-        key: 'orderType',
-        label: t('orderType'),
-        align: 'center',
-        shrink: true,
-        render: (_value: unknown, row: OrderRecord) => {
-          const isExt = row.orderType === 'external';
-          return (
-            <Badge color={isExt ? 'blue' : 'green'} size="sm">
-              {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
-            </Badge>
-          );
-        },
-      },
-      {
-        key: 'items',
-        label: t('ordersTotalItems'),
-        numeric: true,
-        align: 'center',
-        shrink: true,
-        render: (_value: unknown, row: OrderRecord) => (row.items ?? []).length,
-      },
-      {
-        key: 'pettyCashAmount',
-        label: t('ordersPettyCashGiven'),
-        align: 'center',
-        shrink: true,
-        render: (_value: unknown, o: OrderRecord) =>
-          o.orderType === 'external' && o.pettyCashAmount != null ? (
-            <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap"><FmtNum n={o.pettyCashAmount} /> SR</span>
-          ) : (
-            <span className="nx-cell-muted">—</span>
-          ),
-      },
-      {
-        key: 'totalAmount',
-        label: t('orderTotalAmount') || t('ordersDelegatePurchases'),
-        numeric: true,
-        align: 'center',
-        shrink: true,
-        render: (_value: unknown, row: OrderRecord) => <span className="nx-cell-num font-bold whitespace-nowrap"><FmtNum n={row.totalAmount ?? 0} /> SR</span>,
-      },
-      {
-        key: 'id',
-        label: t('ordersCumulativeRemaining'),
-        align: 'center',
-        shrink: true,
-        render: (_value: unknown, o: OrderRecord) => {
-          const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
-          if (cumRem == null) return <span className="nx-cell-muted">—</span>;
-          return (
-            <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
-              {cumRem >= 0 ? '' : '−'}
-              <FmtNum n={Math.abs(cumRem)} /> SR
-            </Badge>
-          );
-        },
-      },
-    ],
-    [t, fmt, formatSaudiDate, cumulativeRemainingByOrderId],
+  const tablePartsInput = useMemo(
+    () => ({ t, cumulativeRemainingByOrderId, onView: handleView }),
+    [t, cumulativeRemainingByOrderId],
   );
-
+  const ordersColumns = useMemo(
+    () => buildOrdersColumns(tablePartsInput),
+    [tablePartsInput],
+  );
   const ordersFooterCells = useMemo(
-    () => (
-      <>
-        <td colSpan={5} className="font-bold text-center py-[11px] px-[14px]">
-          {t('ordersFilteredTotal')}
-        </td>
-        <td className="nx-cell-num nx-cell-num--blue font-extrabold text-center text-[14px] py-[11px] px-[14px]">
-          <FmtNum n={filteredTotal} /> SR
-        </td>
-        <td className="text-center py-[11px] px-[14px]" />
-      </>
-    ),
-    [t, filteredTotal, fmt],
+    () => buildOrdersFooterCells(t, filteredTotal),
+    [t, filteredTotal],
   );
-
-  const ordersRenderMobileCard = useCallback(
-    (o: OrderRecord) => {
-      const pettyGiven = o.orderType === 'external' ? Number(o.pettyCashAmount ?? 0) : null;
-      const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
-      const isExt = o.orderType === 'external';
-      return (
-        <div className="flex cursor-pointer flex-col gap-2" onClick={() => handleView(o)}>
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="font-bold text-noorix-blue nx-font-numbers">#{o.orderNumber}</span>
-            <Badge color={isExt ? 'blue' : 'green'} size="sm">
-              {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
-            </Badge>
-          </div>
-          <div className="text-[12px] text-noorix-muted text-end">{formatSaudiDate(o.orderDate)}</div>
-          <div className="grid grid-cols-2 gap-2 rounded-lg bg-noorix-bg-muted py-2 px-2.5">
-            <div className="flex min-w-0 flex-col items-center">
-              <div className="text-[12px] text-noorix-muted mb-0.5 w-full text-center">{t('ordersTotalItems')}</div>
-              <div className="text-[13px] font-semibold nx-font-numbers w-full text-center">{(o.items ?? []).length}</div>
-            </div>
-            <div className="flex min-w-0 flex-col items-center">
-              <div className="text-[12px] text-noorix-muted mb-0.5 w-full text-center">{t('orderTotalAmount')}</div>
-              <div dir="ltr" className="text-[13px] font-bold nx-font-numbers text-noorix-navy w-full text-center"><FmtNum n={Number(o.totalAmount ?? 0)} /> SR</div>
-            </div>
-            {pettyGiven != null && (
-              <div className="flex min-w-0 flex-col items-center">
-                <div className="text-[12px] text-noorix-muted mb-0.5 w-full text-center">{t('ordersPettyCashGiven')}</div>
-                <div dir="ltr" className="text-[13px] nx-font-numbers text-noorix-blue w-full text-center"><FmtNum n={pettyGiven} /> SR</div>
-              </div>
-            )}
-            {cumRem != null && (
-              <div className="flex min-w-0 flex-col items-center">
-                <div className="text-[12px] text-noorix-muted mb-0.5 w-full text-center">{t('ordersCumulativeRemaining')}</div>
-                <div className="flex w-full justify-center">
-                  <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
-                    {cumRem >= 0 ? '' : '−'}
-                    <FmtNum n={Math.abs(cumRem)} /> SR
-                  </Badge>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    },
-    [t, fmt, formatSaudiDate, cumulativeRemainingByOrderId],
+  const ordersRenderMobileCard = useMemo(
+    () => (order: OrderRecord) => renderOrdersMobileCard(order, tablePartsInput),
+    [tablePartsInput],
   );
-
-  const renderCompactRow = useCallback(
-    (o: OrderRecord) => {
-      const isExt = o.orderType === 'external';
-      const total = Number(o.totalAmount ?? 0);
-      const cumRem = cumulativeRemainingByOrderId?.get(o.id);
-      return (
-        <div className="cursor-pointer" onClick={() => handleView(o)}>
-          <div className="nx-cr__line1">
-            <span className="nx-cr__id">#{o.orderNumber}</span>
-            <Badge color={isExt ? 'blue' : 'green'} size="sm">
-              {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
-            </Badge>
-            {cumRem != null && (
-              <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
-                {cumRem >= 0 ? '' : '−'}<FmtNum n={Math.abs(cumRem)} />
-              </Badge>
-            )}
-          </div>
-          <div className="nx-cr__line2">
-            <div className="nx-cr__line2-start">
-              <span className="nx-cr__meta">{formatSaudiDate(o.orderDate)}</span>
-              <span className="nx-cr__meta">{(o.items ?? []).length} {t('ordersTotalItems')}</span>
-            </div>
-            <div className="nx-cr__line2-end">
-              <span className="nx-cr__amount"><FmtNum n={total} /> <span className="nx-sar">SR</span></span>
-            </div>
-          </div>
-        </div>
-      );
-    },
-    [t, formatSaudiDate, cumulativeRemainingByOrderId],
+  const renderCompactRow = useMemo(
+    () => (order: OrderRecord) => renderOrdersCompactRow(order, tablePartsInput),
+    [tablePartsInput],
   );
 
   function handleWhatsApp(order: OrderRecord) {
