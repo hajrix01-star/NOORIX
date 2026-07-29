@@ -1,11 +1,12 @@
 import React from 'react';
 import { Button } from '../../ui';
 import type { SimpleTableColumn } from '../../ui';
-import { amountText, percentText } from './reportHelpers';
+import { amountText, isEmptyMetric, percentText } from './reportHelpers';
 import { displayV2RowLabel, groupToneClass } from './generalReportV2Model';
 import {
   numericAmount,
   periodAmount,
+  periodPercent,
   rowIdentity,
   type ComparablePeriod,
 } from './reportsComparablePeriodModel';
@@ -55,6 +56,16 @@ export function generalReportV2TableRowClass(row: PlDisplayRow) {
 function generalReportV2ValueClass(_value: number, row: PlDisplayRow) {
   if (row.rowType === 'summary' || row.rowType === 'groupTotal') return 'text-slate-700';
   return 'text-slate-700';
+}
+
+function renderAmountWithPercent(value: number, percent: unknown, row: PlDisplayRow) {
+  const percentLabel = isEmptyMetric(percent) ? '' : percentText(percent);
+  return (
+    <>
+      <strong className={`block leading-tight ${generalReportV2ValueClass(value, row)}`}>{amountText(value)}</strong>
+      {percentLabel ? <span className="mt-0.5 block text-[11px] font-black leading-none text-teal-600">{percentLabel}</span> : null}
+    </>
+  );
 }
 
 export function buildGeneralReportV2TableModel({
@@ -140,8 +151,8 @@ export function buildGeneralReportV2TableModel({
       render: (_value, row) => {
         const current = periodAmount(row, currentPeriod);
         return (
-          <span className={`inline-block min-w-[116px] text-end font-black ${generalReportV2ValueClass(current, row)}`} dir="ltr">
-            {amountText(current)}
+          <span className="inline-block min-w-[116px] text-end font-black" dir="ltr">
+            {renderAmountWithPercent(current, periodPercent(row, currentPeriod), row)}
           </span>
         );
       },
@@ -167,8 +178,8 @@ export function buildGeneralReportV2TableModel({
           const compareRow = compareRows.get(rowIdentity(row));
           const previous = compareRow ? periodAmount(compareRow, compareColumn.period) : 0;
           return (
-            <span className={`inline-block min-w-[116px] text-end font-black ${generalReportV2ValueClass(previous, row)}`} dir="ltr">
-              {compareRow ? amountText(previous) : '-'}
+            <span className="inline-block min-w-[116px] text-end font-black" dir="ltr">
+              {compareRow ? renderAmountWithPercent(previous, periodPercent(compareRow, compareColumn.period), row) : '-'}
             </span>
           );
         },
@@ -225,11 +236,11 @@ export function buildGeneralReportV2TableModel({
             <Button
               variant="raw"
               type="button"
-              className={`inline-block min-w-[64px] p-0 text-end font-black ${generalReportV2ValueClass(value, row)}`}
+              className="inline-block min-w-[64px] p-0 text-end font-black"
               onClick={() => openDetail(row, monthIndex, (row.originalRowType || row.rowType) === 'item')}
               dir="ltr"
             >
-              {amountText(value)}
+              {renderAmountWithPercent(value, row.percentOfSalesMonths?.[monthIndex - 1], row)}
             </Button>
           );
         },
@@ -251,8 +262,8 @@ export function buildGeneralReportV2TableModel({
       render: (_value, row) => {
         const value = numericAmount(row.total);
         return (
-          <span className={`inline-block min-w-[78px] text-end font-black ${generalReportV2ValueClass(value, row)}`} dir="ltr">
-            {amountText(value)}
+          <span className="inline-block min-w-[78px] text-end font-black" dir="ltr">
+            {renderAmountWithPercent(value, row.percentOfSalesYear, row)}
           </span>
         );
       },

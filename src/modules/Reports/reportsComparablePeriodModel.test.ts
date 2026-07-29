@@ -4,6 +4,7 @@ import {
   buildCompareColumnPeriods,
   cardAmount,
   periodAmount,
+  periodPercent,
   rowIdentity,
   type ComparablePeriod,
 } from './reportsComparablePeriodModel';
@@ -54,6 +55,18 @@ describe('reportsComparablePeriodModel', () => {
 
     expect(periodAmount(row('sales'), period('months', 2026, 4, 6))).toBe(150);
     expect(periodAmount(row('sales'), custom)).toBe(110);
+  });
+
+  it('reads visible percent from the same month or year period', () => {
+    const source = {
+      ...row('sales'),
+      percentOfSalesMonths: ['100', '80', '60'],
+      percentOfSalesYear: '70',
+    };
+
+    expect(periodPercent(source, period('month', 2026, 2, 2, 2))).toBe('80');
+    expect(periodPercent(source, period('year', 2026, 1, 12))).toBe('70');
+    expect(periodPercent(source, period('months', 2026, 1, 3))).toBeNull();
   });
 
   it('builds comparison columns without aggregating custom months into one column', () => {

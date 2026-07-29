@@ -118,6 +118,12 @@ export function periodAmount(row: PlDisplayRow, period: ComparablePeriod) {
   return months.reduce((total, month) => total + numericAmount(row.months?.[month - 1]), 0);
 }
 
+export function periodPercent(row: PlDisplayRow, period: ComparablePeriod) {
+  if (period.mode === 'year' || period.mode === 'all') return row.percentOfSalesYear;
+  if (period.mode === 'month' && period.month) return row.percentOfSalesMonths?.[period.month - 1];
+  return null;
+}
+
 export function cardAmount(
   report: GeneralProfitLossReport | null | undefined,
   key: ProfitLossKpiKey,

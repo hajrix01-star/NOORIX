@@ -236,6 +236,13 @@ export default function GeneralReportV2Screen() {
         <FilterToolbar
           className="border-b border-noorix-border bg-slate-50 px-4 py-3"
           filtersClassName="justify-center"
+          actionsClassName="justify-center sm:justify-end"
+          actions={(
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button size="sm" type="button" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
+              <Button size="sm" type="button" onClick={handlePrintPdf} disabled={!report}>{t('print')} / PDF</Button>
+            </div>
+          )}
         >
           <div className="flex flex-wrap items-center justify-center gap-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -348,8 +355,6 @@ export default function GeneralReportV2Screen() {
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => setRowSearch(event.target.value)}
               placeholder={t('reportPlRowFilterPlaceholder')}
             />
-            <Button size="sm" type="button" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
-            <Button size="sm" type="button" onClick={handlePrintPdf} disabled={!report}>{t('print')} / PDF</Button>
           </div>
         </div>
       </section>
