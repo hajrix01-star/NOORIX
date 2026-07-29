@@ -16,8 +16,14 @@ import {
   computeEmployeeSalaryPackageBreakdown,
   sumSalaryCustomAllowances,
 } from '../utils/employeeSalaryMath';
-import { Button, DateField, DialogActions, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import { DateField, DialogActions, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import type { HrEmployee } from '../../../types/api';
+import {
+  StaffCustomAllowancesSection,
+  type CustomAllowanceRow,
+  type StaffInputChange,
+} from './StaffCustomAllowancesSection';
+import { StaffTerminationFields } from './StaffTerminationFields';
 
 const EMPTY = {
   name: '', nameEn: '', jobTitle: '', iqamaNumber: '',
@@ -27,22 +33,8 @@ const EMPTY = {
   terminationReason: '', terminationClause: '', terminationDate: '',
 };
 
-const ALLOWANCE_TEMPLATES = [
-  { key: 'meal', labelKey: 'allowanceTemplateMeal' },
-  { key: 'housing', labelKey: 'allowanceTemplateHousing' },
-  { key: 'transport', labelKey: 'allowanceTemplateTransport' },
-  { key: 'overtime', labelKey: 'allowanceTemplateOvertime' },
-];
-
 type StaffFormState = typeof EMPTY;
 type StaffFormKey = keyof StaffFormState;
-type StaffInputChange = React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>;
-type CustomAllowanceRow = {
-  id?: string;
-  rowId: string;
-  nameAr: string;
-  amount: string;
-};
 type PreparedAllowanceRow = {
   id?: string;
   nameAr: string;
@@ -361,41 +353,14 @@ export const StaffFormModal = memo(function StaffFormModal({
           )}
         </div>
         {isEdit && form.status === 'terminated' && (
-          <div className="grid gap-3 mb-[14px] [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
-            <div>
-              <Input
-                type="select"
-                label={t('terminationReason')}
-                value={form.terminationReason}
-                onChange={(e: StaffInputChange) => set('terminationReason', e.target.value)}
-              >
-                <option value="">{t('terminationReasonPlaceholder')}</option>
-                {terminationReasonOptions.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </Input>
-              <div className="mt-1 text-[11px] text-noorix-muted">
-                {t('terminationReasonExamples')}
-              </div>
-            </div>
-            <Input
-              type="select"
-              label={t('terminationClause')}
-              value={form.terminationClause}
-              onChange={(e: StaffInputChange) => set('terminationClause', e.target.value)}
-            >
-              <option value="">{t('terminationClausePlaceholder')}</option>
-              <option value={t('terminationClauseArt80')}>{t('terminationClauseArt80')}</option>
-              <option value={t('terminationClauseArt77')}>{t('terminationClauseArt77')}</option>
-              <option value={t('terminationClauseArt74')}>{t('terminationClauseArt74')}</option>
-              <option value={t('terminationClauseArt81')}>{t('terminationClauseArt81')}</option>
-            </Input>
-            <DateField
-              label={t('terminationDate')}
-              value={form.terminationDate || ''}
-              onValueChange={(value) => set('terminationDate', value)}
-            />
-          </div>
+          <StaffTerminationFields
+            reason={form.terminationReason}
+            clause={form.terminationClause}
+            date={form.terminationDate}
+            reasonOptions={terminationReasonOptions}
+            t={t}
+            onChange={set}
+          />
         )}
         <div className="mb-[14px]">
           <Input
@@ -407,54 +372,14 @@ export const StaffFormModal = memo(function StaffFormModal({
             className="resize-y"
           />
         </div>
-        <div className="border border-noorix-border rounded-xl p-3.5 mb-[18px]">
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-[10px]">
-            <strong className="text-[13px]">{t('customAllowances')}</strong>
-            <Button type="button" size="sm" onClick={() => addAllowanceRow()}>
-              {t('addCustomAllowance')}
-            </Button>
-          </div>
-          <div className="flex flex flex-wrap gap-2 mb-3">
-            {ALLOWANCE_TEMPLATES.map((item) => (
-              <Button
-                key={item.key}
-                type="button"
-                size="sm"
-                onClick={() => addAllowanceRow(t(item.labelKey))}
-              >
-                {t(item.labelKey)}
-              </Button>
-            ))}
-          </div>
-          {customAllowances.length === 0 && (
-            <div className="text-[12px] text-noorix-muted">{t('noCustomAllowances')}</div>
-          )}
-          <div className="grid gap-2">
-            {customAllowances.map((row) => (
-              <div key={row.rowId} className="grid gap-2 items-end [grid-template-columns:1.4fr_1fr_auto]">
-                <Input
-                  label={t('customAllowanceName')}
-                  value={row.nameAr}
-                  onChange={(e: StaffInputChange) => setAllowance(row.rowId, { nameAr: e.target.value })}
-                />
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  label={t('customAllowanceAmount')}
-                  value={row.amount}
-                  onChange={(e: StaffInputChange) => setAllowance(row.rowId, { amount: e.target.value })}
-                />
-                <Button type="button" variant="danger" size="sm" onClick={() => removeAllowanceRow(row.rowId)}>
-                  {t('delete') || 'حذف'}
-                </Button>
-              </div>
-            ))}
-          </div>
-          {allowanceError && (
-            <div className="mt-2.5 text-[12px] text-noorix-red">{allowanceError}</div>
-          )}
-        </div>
+        <StaffCustomAllowancesSection
+          rows={customAllowances}
+          error={allowanceError}
+          t={t}
+          onAdd={addAllowanceRow}
+          onRemove={removeAllowanceRow}
+          onUpdate={setAllowance}
+        />
       </form>
     </AdaptiveSheet>
   );
