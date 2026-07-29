@@ -10,13 +10,8 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useSales } from '../../../hooks/useSales';
 import { useSalesChannels } from '../../../hooks/useSalesChannels';
 import { useDateFilter } from '../../../ui/date';
-import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } from '../../../services/api';
+import { getCompany, getDailySalesSummaries } from '../../../services/api';
 import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toYmd } from '../../../utils/saudiDate';
-import { fmt } from '../../../utils/format';
-import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { exportToExcel } from '../../../utils/exportUtils';
-import { buildPrintRecordsTableHtml, buildPrintTableHtml } from '../../../utils/printTableHtml';
-import { formatSalesForExport } from '../../../utils/importTemplates';
 import { hasPermission, PERMISSIONS } from '../../../constants/permissions';
 import { buildActiveCancelledStatusMap } from '../../../constants/badgeMaps';
 import { salesKeys, companyKeys } from '../../../services/queryKeys';
@@ -38,6 +33,7 @@ import {
   buildDailyShiftWhatsAppText,
   openWhatsAppWithText,
 } from '../utils/salesDayShiftReport';
+import { useDailySalesExportActions } from './useDailySalesExportActions';
 
 const PAGE_SIZE = 50;
 
@@ -78,7 +74,6 @@ export function useDailySalesScreen() {
   const debouncedQRaw = useDebouncedValue(searchInput.trim(), 300);
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
-  const [exportBusy, setExportBusy] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
   /** افتراضي: الملخصات الملغاة مخفية (لا يُرسل includeCancelled للـ API) */
   const [showCancelledSales, setShowCancelledSales] = useState(false);
@@ -298,124 +293,26 @@ export function useDailySalesScreen() {
   const totalCustomers = pageSummary ? pageSummary.customerCount : 0;
   const avgPerCustomer = pageSummary ? pageSummary.avgPerCustomer : 0;
 
-  const exportColumns = useMemo(() => [
-    { key: 'summaryNumber', label: t('summaryNumber') },
-    { key: 'transactionDate', label: t('transactionDate') },
-    { key: 'shiftLabel', label: t('salesShiftLabel') },
-    { key: 'channelsText', label: t('salesChannels') },
-    { key: 'customerCount', label: t('customers') },
-    { key: 'totalAmount', label: t('total') },
-    { key: 'avgPerCustomer', label: t('avgPerOrder') },
-    { key: 'status', label: t('statusLabel') },
-  ], [t]);
-
-  function mapSummariesToExportRows(rows: DailySalesSummary[]) {
-    return rows.map((s) => {
-      const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
-      return {
-        summaryNumber: s.summaryNumber,
-        transactionDate: formatSaudiDate(s.transactionDate),
-        shiftLabel: getSalesShiftLabel(resolveSalesSummaryShift(s), t),
-        channelsText,
-        customerCount: s.customerCount,
-        totalAmount: fmt(s.totalAmount),
-        avgPerCustomer: fmt(s.avgPerCustomer),
-        status: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
-      };
-    });
-  }
-
-  async function handleExportExcel() {
-    if (!companyId) return;
-    setExportBusy(true);
-    try {
-      const all = await fetchAllSalesSummariesForExport(
-        companyId,
-        dateFilter.startDate,
-        dateFilter.endDate,
-        debouncedQEffective,
-        sortKey,
-        sortDir,
-        showCancelledSales,
-        selectedShift,
-      );
-      const exportData = mapSummariesToExportRows(all);
-      exportToExcel({
-        columns: exportColumns,
-        data: exportData,
-        filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}.xlsx`,
-        companyName,
-        title: `${t('salesDailySummary')} — ${dateFilter.label}`,
-        logoUrl,
-      });
-    } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : t('saveFailed'), 'error');
-    } finally {
-      setExportBusy(false);
-    }
-  }
-
-  async function handlePrint() {
-    if (!companyId) return;
-    setExportBusy(true);
-    let allFilteredData: DailySalesSummary[] = [];
-    try {
-      allFilteredData = await fetchAllSalesSummariesForExport(
-        companyId,
-        dateFilter.startDate,
-        dateFilter.endDate,
-        debouncedQEffective,
-        sortKey,
-        sortDir,
-        showCancelledSales,
-        selectedShift,
-      );
-    } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : t('saveFailed'), 'error');
-      setExportBusy(false);
-      return;
-    } finally {
-      setExportBusy(false);
-    }
-    const printRows = allFilteredData.map((s) => {
-      const ch = (s.channels || []).map((c) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount)}`).join(' | ');
-      return {
-        [t('summaryNumber')]: String(s.summaryNumber ?? ''),
-        [t('transactionDate')]: formatSaudiDate(s.transactionDate),
-        [t('salesShiftLabel')]: getSalesShiftLabel(resolveSalesSummaryShift(s), t),
-        [t('salesChannels')]: ch || '—',
-        [t('customers')]: s.customerCount,
-        [t('total')]: fmt(s.totalAmount),
-        [t('avgPerOrder')]: fmt(s.avgPerCustomer),
-        [t('statusLabel')]: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
-      };
-    });
-    openPrintDocumentPreview({
-      title: t('salesDailySummary'),
-      companyName: companyName || 'الشركة',
-      subtitle: `${t('salesDailySummary')} — ${dateFilter.label || ''}`,
-      logoUrl: logoUrl || '',
-      body: buildPrintRecordsTableHtml({
-        records: printRows,
-        emptyMessage: t('noSummariesInPeriod'),
-        numericKeys: [t('customers'), t('total'), t('avgPerOrder')],
-      }),
-    });
-  }
-
-  const importExportFetcher = useCallback(async () => {
-    const list = await fetchAllSalesSummariesForExport(
-      companyId,
-      dateFilter.startDate,
-      dateFilter.endDate,
-      debouncedQEffective,
-      sortKey,
-      sortDir,
-      showCancelledSales,
-      selectedShift,
-    );
-    return list.map(formatSalesForExport);
-  }, [companyId, dateFilter.startDate, dateFilter.endDate, debouncedQEffective, sortKey, sortDir, showCancelledSales, selectedShift]);
+  const {
+    exportBusy,
+    handleExportExcel,
+    handlePrint,
+    importExportFetcher,
+  } = useDailySalesExportActions({
+    companyId,
+    companyName,
+    logoUrl,
+    lang,
+    t,
+    dateFilter,
+    debouncedQEffective,
+    sortKey,
+    sortDir,
+    showCancelledSales,
+    selectedShift,
+    showToast,
+    openPrintDocumentPreview,
+  });
 
   const handleImportSuccess = useCallback(() => {
     invalidateOnFinancialMutation(queryClient);
