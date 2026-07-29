@@ -24,6 +24,16 @@ import {
   statusBadgeColor,
   statusLabel,
 } from './backupTabHelpers';
+import {
+  latestBackup,
+  latestFailedBackup,
+  latestTrustedBackup,
+  scheduleText,
+  uniqueUnifiedRows,
+  verificationColor,
+  verificationLabel,
+  type UnifiedBackupRow,
+} from './backupCommandCenterModel';
 
 type BackupCommandCenterProps = {
   t: TranslationFn;
@@ -64,50 +74,6 @@ type BackupCommandCenterProps = {
   setRestorePcPhrase: (value: string) => void;
   setRestorePcModal: (value: BackupRestorePcModal | null) => void;
 };
-
-type UnifiedBackupRow = BackupJob & {
-  rowScope: 'system' | 'company';
-};
-
-function sortByCreatedDesc(left: BackupJob, right: BackupJob): number {
-  return new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime();
-}
-
-function isCompletedBackup(job: BackupJob | null | undefined): job is BackupJob {
-  return Boolean(job && job.status === 'completed' && job.localRelativePath);
-}
-
-function isTrustedBackup(job: BackupJob | null | undefined): job is BackupJob {
-  return isCompletedBackup(job) && job.verifyOk === true;
-}
-
-function scheduleText(form: BackupScheduleForm): string {
-  return `${String(form.scheduleHour).padStart(2, '0')}:${String(form.scheduleMinute).padStart(2, '0')}`;
-}
-
-function verificationLabel(job: BackupJob, t: TranslationFn, label: (ar: string, en: string) => string) {
-  if (job.verifyOk === true) return t('backupVerifyOk');
-  if (job.verifyOk === false) return label('فشل الفحص', 'Verify failed');
-  if (job.status === 'completed') return label('لم يفحص', 'Not checked');
-  return '-';
-}
-
-function verificationColor(job: BackupJob) {
-  if (job.verifyOk === true) return 'green';
-  if (job.verifyOk === false) return 'red';
-  return 'gray';
-}
-
-function uniqueUnifiedRows(systemJobs: BackupJob[], companyJobs: BackupJob[]): UnifiedBackupRow[] {
-  const seen = new Set<string>();
-  const rows: UnifiedBackupRow[] = [];
-  for (const job of [...systemJobs, ...companyJobs].sort(sortByCreatedDesc)) {
-    if (seen.has(job.id)) continue;
-    seen.add(job.id);
-    rows.push({ ...job, rowScope: job.scope === 'system_full' || job.scope === 'database_full' ? 'system' : 'company' });
-  }
-  return rows;
-}
 
 function BackupStat({
   label,
@@ -197,12 +163,9 @@ export function BackupCommandCenter({
   setRestorePcModal,
 }: BackupCommandCenterProps) {
   const label = React.useCallback((ar: string, en: string) => (lang === 'en' ? en : ar), [lang]);
-  const latestSystem = React.useMemo(() => [...sysJobs].sort(sortByCreatedDesc)[0] || null, [sysJobs]);
-  const latestTrustedSystem = React.useMemo(() => [...sysJobs].filter(isTrustedBackup).sort(sortByCreatedDesc)[0] || null, [sysJobs]);
-  const latestFailed = React.useMemo(
-    () => [...sysJobs, ...jobs].filter((job) => job.status === 'failed' || job.verifyOk === false).sort(sortByCreatedDesc)[0] || null,
-    [jobs, sysJobs],
-  );
+  const latestSystem = React.useMemo(() => latestBackup(sysJobs), [sysJobs]);
+  const latestTrustedSystem = React.useMemo(() => latestTrustedBackup(sysJobs), [sysJobs]);
+  const latestFailed = React.useMemo(() => latestFailedBackup([...sysJobs, ...jobs]), [jobs, sysJobs]);
   const rows = React.useMemo(() => uniqueUnifiedRows(sysJobs, jobs).slice(0, 30), [jobs, sysJobs]);
   const isBusy = runFullArchiveMut.isPending || triggerMut.isPending || saveSysMut.isPending || saveCoMut.isPending;
 
