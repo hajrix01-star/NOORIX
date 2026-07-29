@@ -7,83 +7,28 @@ import {
   autoDetectRows,
   autoDetectColumns,
   countDataRowsFrom,
-  extractDateFromCell,
   sanitizeBankName,
   sanitizeCustomerName,
-  type BankSheetCell,
   type BankSheetData,
-  type BankSheetRow,
 } from './bank/bankMappingAutoDetect';
-import { formatSaudiDate, toYmd } from '../../utils/saudiDate';
 import { bankKeys } from '../../services/queryKeys';
-import type { BankStatementLite } from './bank/bankAnalysisTab.types';
-
-const COLUMN_FIELD_DEFS = [
-  { key: 'dateCol', labelKey: 'bankMapColDate', required: true, badgeClass: 'bank-map-badge--date', cellClass: 'bank-map-cell--date' },
-  { key: 'descCol', labelKey: 'bankMapColDescription', required: true, badgeClass: 'bank-map-badge--desc', cellClass: 'bank-map-cell--desc' },
-  { key: 'debitCol', labelKey: 'bankMapColDebit', required: true, badgeClass: 'bank-map-badge--debit', cellClass: 'bank-map-cell--debit' },
-  { key: 'creditCol', labelKey: 'bankMapColCredit', required: true, badgeClass: 'bank-map-badge--credit', cellClass: 'bank-map-cell--credit' },
-  { key: 'balanceCol', labelKey: 'bankMapColBalance', required: false, badgeClass: 'bank-map-badge--balance', cellClass: 'bank-map-cell--balance' },
-  { key: 'refCol', labelKey: 'bankMapColReference', required: false, badgeClass: 'bank-map-badge--ref', cellClass: 'bank-map-cell--ref' },
-  { key: 'notesCol', labelKey: 'bankMapColNotes', required: false, badgeClass: 'bank-map-badge--notes', cellClass: 'bank-map-cell--notes' },
-] as const;
-
-type ColumnMapKey = typeof COLUMN_FIELD_DEFS[number]['key'];
-type MappingColumnMap = Record<ColumnMapKey, number>;
-type HeaderCell = { index: number; label: string };
-type MappingStatement = BankStatementLite & {
-  rawData?: BankSheetData | null;
-  _fullRaw?: BankSheetData;
-};
-type HeaderMetadata = {
-  customerName?: string | null;
-  bankName?: string | null;
-  periodFrom?: BankSheetCell;
-  periodTo?: BankSheetCell;
-};
-type ConfirmMappingData = {
-  transactionCount?: number | string | null;
-};
-type BankStatementMappingModalProps = {
-  statement: MappingStatement;
-  companyId: string;
-  onClose: () => void;
-  onConfirm: () => void;
-  showToast: (message: string, type?: string) => void;
-};
-
-function normalizeDateForInput(value: BankSheetCell): string {
-  if (!value) return '';
-  const ymd = toYmd(value);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return ymd;
-  return toYmd(extractDateFromCell(value)) || '';
-}
-
-function emptyColumnMap(): MappingColumnMap {
-  return {
-    dateCol: -1,
-    descCol: -1,
-    debitCol: -1,
-    creditCol: -1,
-    balanceCol: -1,
-    refCol: -1,
-    notesCol: -1,
-  };
-}
-
-function nonEmptyRow(row: BankSheetRow): boolean {
-  return row.some((cell) => cell !== '' && cell != null);
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
-}
-
-function getConfirmTransactionCount(data: unknown): string {
-  if (!data || typeof data !== 'object') return '0';
-  const value = (data as ConfirmMappingData).transactionCount;
-  return String(value ?? 0);
-}
+import {
+  COLUMN_FIELD_DEFS,
+  buildDetectedColumnMap,
+  emptyColumnMap,
+  errorMessage,
+  formatMappingCell,
+  getConfirmTransactionCount,
+  hasRequiredColumnMapping,
+  nonEmptyRow,
+  normalizeDateForInput,
+  type BankStatementMappingModalProps,
+  type ColumnMapKey,
+  type HeaderCell,
+  type HeaderMetadata,
+  type MappingColumnMap,
+  type MappingStatement,
+} from './bank/bankStatementMappingModel';
 
 export default function BankStatementMappingModal({ statement, companyId, onClose, onConfirm, showToast }: BankStatementMappingModalProps) {
   const { t } = useTranslation();
@@ -131,15 +76,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
     setEndDate((prev) => prev || normalizeDateForInput(detectedRows.periodTo) || '');
     if (!raw[detectedRows.headerRow]) return;
     const detectedColumns = autoDetectColumns(raw, detectedRows.headerRow, detectedRows.dataStartRow);
-    setColumnMapping({
-      dateCol: detectedColumns.date ?? -1,
-      descCol: detectedColumns.description ?? -1,
-      debitCol: detectedColumns.debit ?? -1,
-      creditCol: detectedColumns.credit ?? -1,
-      balanceCol: detectedColumns.balance ?? -1,
-      refCol: detectedColumns.reference ?? -1,
-      notesCol: detectedColumns.notes ?? -1,
-    });
+    setColumnMapping(buildDetectedColumnMap(detectedColumns));
     setIsAutoDetected(Object.keys(detectedColumns).length >= 3);
   }, [raw, statement?.id]);
 
@@ -205,7 +142,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
   };
 
   const canConfirm = useMemo(
-    () => columnMapping.dateCol >= 0 && columnMapping.descCol >= 0 && columnMapping.debitCol >= 0 && columnMapping.creditCol >= 0,
+    () => hasRequiredColumnMapping(columnMapping),
     [columnMapping],
   );
 
@@ -243,11 +180,6 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const formatCell = (cell: BankSheetCell): string => {
-    if (cell instanceof Date) return formatSaudiDate(cell);
-    return String(cell ?? '').slice(0, 48);
   };
 
   return (
@@ -396,7 +328,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
                     const badge = getColumnBadge(header.index);
                     return (
                       <td key={header.index} className={`p-1.5 max-w-[140px] ${badge ? `font-semibold ${badge.cellClass}` : 'font-normal'}`}>
-                        {formatCell(row[header.index])}
+                        {formatMappingCell(row[header.index])}
                       </td>
                     );
                   })}
