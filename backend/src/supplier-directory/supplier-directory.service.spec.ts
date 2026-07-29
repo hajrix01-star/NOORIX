@@ -1,4 +1,5 @@
 import { SupplierDirectoryService } from './supplier-directory.service';
+import { rankSupplierDirectoryMatches } from './supplier-directory-match.util';
 import {
   HR_DEFAULT_DIRECTORY_CODES,
   HR_SERVICE_CATEGORY_CODES,
@@ -7,7 +8,6 @@ import {
 } from './supplier-directory-hr.util';
 
 describe('SupplierDirectoryService safe supplier linking', () => {
-  const service = new SupplierDirectoryService({} as never, {} as never);
   const hrsdEntry = {
     id: 'GOV-HRSD',
     code: 'GOV-HRSD',
@@ -31,12 +31,7 @@ describe('SupplierDirectoryService safe supplier linking', () => {
     directoryEntryId: string | null;
     supplierCategoryId: string | null;
   }>) {
-    return (service as unknown as {
-      rankMatches: (
-        entry: typeof hrsdEntry,
-        rows: typeof suppliers,
-      ) => Array<{ supplier: { id: string }; score: number }>;
-    }).rankMatches(hrsdEntry, suppliers);
+    return rankSupplierDirectoryMatches(hrsdEntry, suppliers);
   }
 
   it('does not propose Ministry of Justice for HRSD', () => {

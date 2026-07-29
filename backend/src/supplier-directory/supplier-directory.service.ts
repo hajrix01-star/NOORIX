@@ -5,113 +5,23 @@ import {
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
+import { isShamiTaxWorkspace } from './supplier-directory-search.util';
 import {
-  isShamiTaxWorkspace,
-  matchesDirectorySearch,
-  normalizeDirectoryText,
-  directoryIdentitySimilarity,
-} from './supplier-directory-search.util';
+  aliasesFromJson,
+  CANONICAL_CATEGORY_FALLBACKS,
+  type DirectoryEntryRow,
+  rankSupplierDirectoryMatches,
+  supplierMatchesQuery,
+} from './supplier-directory-match.util';
 import { SUPPLIER_DIRECTORY_SEEDS } from './supplier-directory.seed';
 import {
   HR_DEFAULT_DIRECTORY_CODES,
   HR_SERVICE_CATEGORY_CODES,
   HR_SERVICE_DIRECTORY_CODES,
 } from './supplier-directory-hr.util';
-
-type DirectoryEntryRow = {
-  id: string;
-  code: string;
-  nameAr: string;
-  nameEn: string | null;
-  aliases: Prisma.JsonValue;
-  searchText: string;
-  entityType: string;
-  defaultCategoryCode: string;
-  isTaxRegistered: boolean;
-  taxNumber: string | null;
-  supplierInvoiceNumberRequired: boolean;
-  isActive: boolean;
-  sortOrder: number;
-};
-
-type SupplierMatchRow = {
-  id: string;
-  nameAr: string;
-  nameEn: string | null;
-  directoryEntryId: string | null;
-  supplierCategoryId: string | null;
-};
-
-const CANONICAL_CATEGORY_FALLBACKS: Record<string, {
-  parentCode: string;
-  nameAr: string;
-  nameEn: string;
-  sortOrder: number;
-}> = {
-  'E2-8': {
-    parentCode: 'EXP-002',
-    nameAr: 'GOSI',
-    nameEn: 'GOSI',
-    sortOrder: 7,
-  },
-  'E2-10': {
-    parentCode: 'EXP-002',
-    nameAr: 'رسوم منصات حكومية',
-    nameEn: 'Government Platform Fees',
-    sortOrder: 9,
-  },
-  'E2-11': {
-    parentCode: 'EXP-002',
-    nameAr: 'شهادات صحية وتصاريح موظفين',
-    nameEn: 'Health Certificates & Employee Permits',
-    sortOrder: 10,
-  },
-  'E4-1': {
-    parentCode: 'EXP-004',
-    nameAr: 'تذاكر سفر الموظفين',
-    nameEn: 'Employee Travel Tickets',
-    sortOrder: 0,
-  },
-  'E4-2': {
-    parentCode: 'EXP-004',
-    nameAr: 'التأمين الطبي للموظفين',
-    nameEn: 'Employee Medical Insurance',
-    sortOrder: 1,
-  },
-};
-
-function aliasesFromJson(value: Prisma.JsonValue): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === 'string');
-}
-
-function entrySearchValues(entry: DirectoryEntryRow): string[] {
-  return [entry.nameAr, entry.nameEn ?? '', ...aliasesFromJson(entry.aliases)];
-}
-
-function supplierSearchValues(supplier: SupplierMatchRow): string[] {
-  return [supplier.nameAr, supplier.nameEn ?? ''];
-}
-
-function supplierMatchScore(entry: DirectoryEntryRow, supplier: SupplierMatchRow): number {
-  if (supplier.directoryEntryId && supplier.directoryEntryId !== entry.id) return 0;
-  const entryValues = entrySearchValues(entry).map(normalizeDirectoryText).filter(Boolean);
-  const supplierValues = supplierSearchValues(supplier).map(normalizeDirectoryText).filter(Boolean);
-  if (supplier.directoryEntryId === entry.id) return 1;
-  if (supplierValues.some((value) => entryValues.includes(value))) return 0.99;
-
-  let best = 0;
-  for (const supplierValue of supplierValues) {
-    for (const entryValue of entryValues) {
-      best = Math.max(best, directoryIdentitySimilarity(supplierValue, entryValue));
-    }
-  }
-  return best;
-}
 
 @Injectable()
 export class SupplierDirectoryService implements OnModuleInit {
@@ -268,13 +178,6 @@ export class SupplierDirectoryService implements OnModuleInit {
     return company;
   }
 
-  private rankMatches(entry: DirectoryEntryRow, suppliers: SupplierMatchRow[]) {
-    return suppliers
-      .map((supplier) => ({ supplier, score: supplierMatchScore(entry, supplier) }))
-      .filter((match) => match.score >= 0.68)
-      .sort((left, right) => right.score - left.score);
-  }
-
   async list(companyId: string, query?: string) {
     const company = await this.prisma.company.findFirst({
       where: { id: companyId },
@@ -312,9 +215,9 @@ export class SupplierDirectoryService implements OnModuleInit {
     const categoryByCode = new Map(categories.map((category) => [category.code, category]));
 
     const items = (entries as DirectoryEntryRow[])
-      .filter((entry) => matchesDirectorySearch(query, entrySearchValues(entry)))
+      .filter((entry) => supplierMatchesQuery(query, entry))
       .map((entry) => {
-        const matches = this.rankMatches(entry, suppliers);
+        const matches = rankSupplierDirectoryMatches(entry, suppliers);
         const linked = matches.find((match) => match.supplier.directoryEntryId === entry.id);
         const best = linked ?? matches[0];
         const ambiguous = !linked
@@ -410,7 +313,7 @@ export class SupplierDirectoryService implements OnModuleInit {
         };
       }
 
-      const matches = this.rankMatches(entry, suppliers);
+      const matches = rankSupplierDirectoryMatches(entry, suppliers);
       if (
         matches.length > 1
         && Math.abs(matches[0].score - matches[1].score) < 0.08
