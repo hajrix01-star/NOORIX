@@ -1,3 +1,5 @@
+import Decimal from 'decimal.js';
+import { sumObjectValues } from '@noorix/finance-core';
 import { emptyShiftEntryForm, hasEntrySelection, type SalesEntrySelection, type ShiftEntryFormState } from '../constants/salesShiftEntry';
 import type { SalesShiftValue } from '../constants/salesShift';
 
@@ -10,6 +12,21 @@ export function ensureSalesEntryShiftForms(
     if (!next[shift]) next[shift] = emptyShiftEntryForm();
   }
   return next;
+}
+
+export function buildSalesEntryGrandTotal(
+  activeShifts: SalesShiftValue[],
+  shiftForms: Partial<Record<SalesShiftValue, ShiftEntryFormState>>,
+): { total: Decimal; customers: number } {
+  let total = new Decimal(0);
+  let customers = 0;
+  for (const shift of activeShifts) {
+    const form = shiftForms[shift];
+    if (!form) continue;
+    total = total.plus(sumObjectValues(form.channelAmounts));
+    customers += parseInt(form.customerCount, 10) || 0;
+  }
+  return { total, customers };
 }
 
 type SalesEntrySaveDisabledInput = {

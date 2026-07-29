@@ -1,21 +1,12 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import Decimal from 'decimal.js';
+import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useToast } from '../../../context/ToastContext';
-import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
+import { formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
 import { sumObjectValues } from '@noorix/finance-core';
 import { Button, DialogActions, AdaptiveSheet } from '../../../ui';
 import { SalesShiftPicker } from './SalesShiftPicker';
-import { isShiftEntryFormValid, buildShiftEntryPayload } from './SalesShiftEntryCard';
+import { buildShiftEntryPayload } from './SalesShiftEntryCard';
 import { SalesDualShiftEntryReport, buildDualShiftPreviewRows } from './SalesDualShiftEntryReport';
-import type { SalesShiftValue } from '../constants/salesShift';
-import {
-  EMPTY_SALES_ENTRY_SELECTION,
-  getActiveEntryShifts,
-  hasEntrySelection,
-  type SalesEntrySelection,
-  type ShiftEntryFormState,
-} from '../constants/salesShiftEntry';
+import { hasEntrySelection } from '../constants/salesShiftEntry';
 import {
   aggregateSalesDayByShift,
   buildDailyShiftWhatsAppText,
@@ -25,21 +16,12 @@ import {
 import { buildCreateSalesSummaryApiBody } from '../utils/salesApiPayload';
 import { buildVaultLookup, channelsFromEntryPayload } from '../utils/salesWhatsAppChannels';
 import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
-import { useSalesEntryDateContext } from '../hooks/useSalesEntryDateContext';
-import { compareYmd } from '../utils/suggestSalesEntryDate';
-import {
-  buildSalesEntryDateBanner,
-  buildSalesEntryWarningHints,
-  confirmSalesEntrySaveWarnings,
-  formatSalesEntrySaveError,
-} from '../utils/salesEntryWarnings';
-import { ensureSalesEntryShiftForms, isSalesEntrySaveDisabled } from '../utils/salesEntryModalModel';
-import { useQueryClient } from '@tanstack/react-query';
-import { salesKeys } from '../../../services/queryKeys';
+import { formatSalesEntrySaveError } from '../utils/salesEntryWarnings';
 import type { SalesEntryItem, SalesEntryModalProps, SavedSummary } from './SalesEntryModalTypes';
 import { SalesEntryDatePanel } from './SalesEntryDatePanel';
 import { SalesEntrySuccessSheet } from './SalesEntrySuccessSheet';
 import { SalesEntryShiftFormsList } from './SalesEntryShiftFormsList';
+import { useSalesEntryModalState } from '../hooks/useSalesEntryModalState';
 export function SalesEntryModal({
   companyId,
   companyName = '',
@@ -57,72 +39,40 @@ export function SalesEntryModal({
   autoCloseOnSuccess = true,
 }: SalesEntryModalProps) {
   const { t, lang } = useTranslation();
-  const { showToast } = useToast();
-  const queryClient = useQueryClient();
-  const [txDate, setTxDate] = useState('');
-  const [dateTouched, setDateTouched] = useState(false);
-  const dateAutoAppliedRef = useRef(false);
-  const [selection, setSelection] = useState<SalesEntrySelection>(EMPTY_SALES_ENTRY_SELECTION);
-  const [shiftForms, setShiftForms] = useState<Partial<Record<SalesShiftValue, ShiftEntryFormState>>>({});
-  const [savedSummaries, setSavedSummaries] = useState<SavedSummary[] | null>(null);
-  const [savedEntryItems, setSavedEntryItems] = useState<SalesEntryItem[] | null>(null);
-  const activeShifts = useMemo(() => getActiveEntryShifts(selection), [selection]);
-  const {
-    lastEntryYmd,
-    suggestedDate,
-    gapDays,
-    gapDaysTotalCount,
-    duplicateShifts,
-    contextLoading,
-    daySummariesLoading,
-  } = useSalesEntryDateContext(companyId, txDate || getSaudiToday(), activeShifts);
-  const isBatch = activeShifts.length > 1;
   const saving = createSummary.isPending || (createSummaryBatch?.isPending ?? false);
-  useEffect(() => {
-    setDateTouched(false);
-    dateAutoAppliedRef.current = false;
-    setTxDate('');
-    setSelection(EMPTY_SALES_ENTRY_SELECTION);
-    setShiftForms({});
-    setSavedSummaries(null);
-  }, [companyId]);
-  useEffect(() => {
-    if (!suggestedDate || dateTouched || contextLoading) return;
-    if (dateAutoAppliedRef.current && txDate) return;
-    setTxDate(suggestedDate);
-    dateAutoAppliedRef.current = true;
-  }, [suggestedDate, dateTouched, contextLoading, txDate]);
-  useEffect(() => {
-    setShiftForms((prev) => ensureSalesEntryShiftForms(prev, activeShifts));
-  }, [activeShifts]);
-  const grandTotal = useMemo(() => {
-    let total = new Decimal(0);
-    let customers = 0;
-    for (const s of activeShifts) {
-      const f = shiftForms[s];
-      if (!f) continue;
-      total = total.plus(sumObjectValues(f.channelAmounts));
-      customers += parseInt(f.customerCount, 10) || 0;
-    }
-    return { total, customers };
-  }, [activeShifts, shiftForms]);
-  const allFormsValid = useMemo(
-    () => activeShifts.length > 0 && activeShifts.every((s) => {
-      const f = shiftForms[s];
-      return f && isShiftEntryFormValid(f, salesChannels);
-    }),
-    [activeShifts, shiftForms, salesChannels],
-  );
-  const resetForm = useCallback(async () => {
-    setDateTouched(false);
-    dateAutoAppliedRef.current = false;
-    setTxDate('');
-    setSelection(EMPTY_SALES_ENTRY_SELECTION);
-    setShiftForms({});
-    setSavedSummaries(null);
-    setSavedEntryItems(null);
-    await queryClient.refetchQueries({ queryKey: salesKeys.entryContextRoot() });
-  }, [queryClient]);
+  const {
+    txDate,
+    suggestedDate,
+    contextLoading,
+    handleDateChange,
+    selection,
+    setSelection,
+    shiftForms,
+    setShiftForms,
+    savedSummaries,
+    setSavedSummaries,
+    savedEntryItems,
+    setSavedEntryItems,
+    activeShifts,
+    isBatch,
+    grandTotal,
+    allFormsValid,
+    resetForm,
+    saveDisabled,
+    dateBannerText,
+    showDateDiffersHint,
+    duplicateShiftHint,
+    gapDaysHint,
+    confirmSaveWarnings,
+  } = useSalesEntryModalState({
+    companyId,
+    salesChannels,
+    salesChannelsLoading,
+    salesChannelsError,
+    saving,
+    t,
+    lang,
+  });
   const enrichSummariesWithEntryChannels = useCallback((
     summaries: SavedSummary[],
     items: SalesEntryItem[],
@@ -177,50 +127,6 @@ export function SalesEntryModal({
     ),
     [activeShifts, shiftForms],
   );
-
-  const saveDisabled = isSalesEntrySaveDisabled({
-    saving,
-    salesChannelsLoading,
-    salesChannelsError,
-    salesChannelsCount: salesChannels.length,
-    selection,
-    allFormsValid,
-    txDate,
-    contextLoading,
-    daySummariesLoading,
-  });
-
-  const dateBannerText = useMemo(
-    () => buildSalesEntryDateBanner(t, lastEntryYmd, suggestedDate),
-    [lastEntryYmd, suggestedDate, t],
-  );
-
-  const showDateDiffersHint = !!txDate
-    && !!suggestedDate
-    && compareYmd(txDate, suggestedDate) !== 0;
-
-  const { duplicateShiftHint, gapDaysHint } = buildSalesEntryWarningHints({
-    t,
-    lang,
-    txDate,
-    suggestedDate,
-    lastEntryYmd,
-    duplicateShifts,
-    gapDays,
-    gapDaysTotalCount,
-  });
-
-  function confirmSaveWarnings(): boolean {
-    return confirmSalesEntrySaveWarnings({
-      t,
-      lang,
-      txDate,
-      duplicateShifts,
-      duplicateShiftHint,
-      gapDays,
-      gapDaysTotalCount,
-    });
-  }
 
   function handleSave(sendWhatsAppAfter = false) {
     if (!companyId || saving || !allFormsValid || !txDate) return;
@@ -347,10 +253,7 @@ export function SalesEntryModal({
         showDateDiffersHint={showDateDiffersHint}
         duplicateShiftHint={duplicateShiftHint}
         gapDaysHint={gapDaysHint}
-        onDateChange={(value) => {
-          setDateTouched(true);
-          setTxDate(value);
-        }}
+        onDateChange={handleDateChange}
       />
 
       <SalesShiftPicker mode="entry" selection={selection} onChange={setSelection} className="mb-4" />

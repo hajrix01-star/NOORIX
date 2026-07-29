@@ -146,6 +146,10 @@ export default {
     en: 'Creates a new company from the snapshot and links your current user. Does not delete existing companies. Large datasets may take several minutes.',
   },
   backupImportNameLabel: { ar: 'اسم الشركة الجديدة (عربي)', en: 'New company name (Arabic)' },
+  backupImportConfirmNewCompany: {
+    ar: 'أؤكد إنشاء شركة جديدة من هذه النسخة الاحتياطية',
+    en: 'I confirm creating a new company from this backup',
+  },
   backupImportStrictAllocations: {
     ar: 'إيقاف الاستيراد إن وُجد تعارض في توزيع الخزائن',
     en: 'Abort import if vault split totals mismatch invoices',

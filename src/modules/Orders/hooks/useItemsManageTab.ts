@@ -25,20 +25,16 @@ import {
 } from '../constants/orderDefaults';
 import { useItemsManageTabCatalogIo } from './useItemsManageTabCatalogIo';
 import {
+  buildEditableOrderProduct,
   buildOrderProductPayload,
-  type OrderProductForm,
+  buildOrderProductUpdateBody,
+  createEmptyOrderProductForm,
+  type EditableOrderProduct,
   filterOrderCategoriesForManageTab,
   filterOrderProductsForManageTab,
 } from '../utils/itemsManageModel';
 import { useItemsManageTabSelection } from './useItemsManageTabSelection';
-import type { OrderCategory, OrderProduct, OrderProductType, OrderProductVariant } from '../../../types/api';
-type EditableOrderProduct = OrderProductForm & {
-  id?: string;
-  _advanced?: boolean;
-};
-function normalizeOrderProductType(value: unknown, fallback: OrderProductType): OrderProductType {
-  return value === 'sale' || value === 'order' ? value : fallback;
-}
+import type { OrderCategory, OrderProduct, OrderProductVariant } from '../../../types/api';
 /**
  * State and handlers for the Orders Â«manage itemsÂ» tab (products + categories).
  */
@@ -49,15 +45,7 @@ export function useItemsManageTab(companyId: string) {
   const { showToast } = useToast();
   const [editingProduct, setEditingProduct] = useState<EditableOrderProduct | null>(null);
   const [editingCategory, setEditingCategory] = useState<OrderCategory | null>(null);
-  const [newProduct, setNewProduct] = useState({
-    nameAr: '',
-    nameEn: '',
-    categoryId: '',
-    sectionIds: [] as string[],
-    productType: 'order' as 'order' | 'sale',
-    simpleLastPrice: '',
-    variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
-  });
+  const [newProduct, setNewProduct] = useState(createEmptyOrderProductForm('order'));
   const [newCategory, setNewCategory] = useState({ nameAr: '', nameEn: '' });
   const [addSizeModal, setAddSizeModal] = useState(false);
   const [addPackagingModal, setAddPackagingModal] = useState(false);
@@ -133,15 +121,7 @@ export function useItemsManageTab(companyId: string) {
     [categories, categorySearchQuery],
   );
   function resetNewProductForm(productType: 'order' | 'sale' = catalogProductType) {
-    setNewProduct({
-      nameAr: '',
-      nameEn: '',
-      categoryId: '',
-      sectionIds: [],
-      productType,
-      simpleLastPrice: '',
-      variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
-    });
+    setNewProduct(createEmptyOrderProductForm(productType));
   }
   function handleCreateProduct(onDone?: () => void) {
     if (!newProduct.nameAr?.trim()) {
@@ -165,24 +145,8 @@ export function useItemsManageTab(companyId: string) {
   }
   function handleUpdateProduct(onDone?: () => void) {
     if (!editingProduct?.id) return;
-    const built = buildOrderProductPayload(editingProduct, editingProduct.productType || catalogProductType);
-    const validVariants = (editingProduct.variants || []).filter(
-      (v) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || Number.parseFloat(String(v.lastPrice ?? '')) > 0,
-    );
-    const body = {
-      nameAr: built.nameAr,
-      nameEn: built.nameEn ?? null,
-      categoryId: built.categoryId || null,
-      sectionIds: (built as { sectionIds?: string[] }).sectionIds ?? [],
-      productType: built.productType,
-      ...(validVariants.length > 0
-        ? {
-            variants: built.variants ?? [],
-          }
-        : { variants: [], lastPrice: built.lastPrice || '0' }),
-    };
     updateProductMutation.mutate(
-      { id: editingProduct.id, body },
+      { id: editingProduct.id, body: buildOrderProductUpdateBody(editingProduct, catalogProductType) },
       {
         onSuccess: () => {
           showToast(t('ordersProductUpdated'), 'success');
@@ -196,28 +160,7 @@ export function useItemsManageTab(companyId: string) {
     );
   }
   function openEditProduct(p: OrderProduct) {
-    const variants = Array.isArray(p.variants) ? p.variants : [];
-    const hasVariants = variants.some(
-      (v) => v.size || v.packaging || Number.parseFloat(String(v.lastPrice ?? '')) > 0,
-    );
-    setEditingProduct({
-      id: p.id,
-      nameAr: p.nameAr,
-      nameEn: p.nameEn || '',
-      categoryId: p.categoryId || '',
-      sectionIds: Array.isArray(p.sectionIds) ? [...p.sectionIds] : [],
-      productType: normalizeOrderProductType(p.productType, catalogProductType),
-      simpleLastPrice: hasVariants ? '' : String(p.lastPrice ?? ''),
-      variants: hasVariants
-        ? (variants as OrderProductVariant[]).map((v) => ({
-            size: v.size || '',
-            packaging: v.packaging || '',
-            unit: v.unit || 'piece',
-            lastPrice: v.lastPrice ? String(v.lastPrice) : '',
-          }))
-        : [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
-      _advanced: hasVariants,
-    });
+    setEditingProduct(buildEditableOrderProduct(p, catalogProductType));
   }
   function handleCreateCategory() {
     if (!newCategory.nameAr?.trim()) {
