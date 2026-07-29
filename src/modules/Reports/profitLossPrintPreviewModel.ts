@@ -70,7 +70,7 @@ export function buildProfitLossPrintPreviewDocument({
     logoUrl: companyLogoUrl,
     subtitle: isPeriodPrint
       ? periodSummary.join('، ')
-      : `${year} · ${t('reportGeneral')}`,
+      : `${year} - ${t('reportGeneral')}`,
     landscape: !isPeriodPrint || comparisonPrintColumns.length > 2,
     htmlLang: printLang,
     htmlDir: printDir,
@@ -96,9 +96,13 @@ export function buildProfitLossPrintPreviewDocument({
       className: isProfitLossTotalRow(row) ? 'pl-print-total-row' : '',
       cells: [
         {
-          value: displayLabel(row, lang),
+          html: buildProfitLossPrintLabelHtml(row, lang),
           align: 'start' as const,
-          className: `pl-print-label pl-print-depth-${Math.max(0, Math.min(3, Number(row.depth || 0)))}`,
+          className: [
+            'pl-print-label',
+            `pl-print-row-${row.rowType || 'item'}`,
+            `pl-print-depth-${getProfitLossPrintVisualDepth(row)}`,
+          ].join(' '),
         },
         ...buildProfitLossPrintAmountCells({
           compareRows,
@@ -116,6 +120,19 @@ export function buildProfitLossPrintPreviewDocument({
 
 function isProfitLossTotalRow(row: PlDisplayRow) {
   return row.rowType === 'summary' || row.rowType === 'group' || row.rowType === 'groupTotal';
+}
+
+function getProfitLossPrintVisualDepth(row: PlDisplayRow) {
+  if (row.rowType === 'summary' || row.rowType === 'group' || row.rowType === 'groupTotal') return 0;
+  const sourceDepth = Number(row.depth || 0);
+  const visualDepth = row.groupKey ? sourceDepth + 1 : sourceDepth;
+  return Math.max(0, Math.min(3, visualDepth));
+}
+
+function buildProfitLossPrintLabelHtml(row: PlDisplayRow, lang: string) {
+  const visualDepth = getProfitLossPrintVisualDepth(row);
+  const markerHtml = visualDepth > 0 ? '<span class="pl-print-tree-marker" aria-hidden="true"></span>' : '';
+  return `<span class="pl-print-label-inner">${markerHtml}<span class="pl-print-label-text">${escapePrintHtml(displayLabel(row, lang))}</span></span>`;
 }
 
 function buildProfitLossPrintAmountCells({
@@ -288,9 +305,43 @@ function profitLossUnifiedPrintCss(isPeriodPrint: boolean) {
 .pl-print-label {
   white-space: normal;
 }
-.pl-print-depth-1 { padding-inline-start: 20px !important; }
-.pl-print-depth-2 { padding-inline-start: 34px !important; color: #475569 !important; }
-.pl-print-depth-3 { padding-inline-start: 48px !important; color: #64748b !important; }
+.pl-print-label-inner {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+.pl-print-label-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pl-print-tree-marker {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border: 1.4px solid #b8ae9e;
+  border-radius: 999px;
+  background: #ffffff;
+}
+.pl-print-depth-1 { padding-inline-start: 18px !important; }
+.pl-print-depth-2 { padding-inline-start: 34px !important; color: #4b5563 !important; }
+.pl-print-depth-3 { padding-inline-start: 50px !important; color: #64748b !important; }
+.pl-print-row-category {
+  color: #2c261d !important;
+  font-weight: 850 !important;
+}
+.pl-print-row-item {
+  font-weight: 720 !important;
+}
+.pl-print-depth-2 .pl-print-tree-marker,
+.pl-print-depth-3 .pl-print-tree-marker {
+  width: 5px;
+  height: 5px;
+  flex-basis: 5px;
+  border-color: #d3c8b7;
+  background: #d3c8b7;
+}
 .pl-print-number {
   direction: ltr;
   text-align: center !important;
