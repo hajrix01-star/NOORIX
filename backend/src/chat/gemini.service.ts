@@ -1,53 +1,25 @@
-/**
- * GeminiService — فهم النية من السؤال باستخدام Gemini API
- * يُستخدم فقط لفهم السؤال (intent + period)
- * البيانات الحقيقية تُجلب من المعالجات (handlers) — لا يُرسل أي بيانات مالية لـ Gemini
- *
- * الأمان: المفتاح في backend/.env فقط — يُقرأ عبر gemini.config.ts
- */
 import { Injectable, Logger } from '@nestjs/common';
 import { getGeminiApiKey, getGeminiIntentConfidenceMin } from '../config/gemini.config';
 import { extractJson } from '../common/utils/extract-json.util';
 import { getGeminiChatIntentRequestUrl, GEMINI_CHAT_INTENT_SYSTEM_PROMPT, GEMINI_INTENT_FIELD_SCHEMA_DESCRIPTION } from './gemini-chat-intent-prompts.util';
-import { toYmd } from '../common/utils/to-ymd.util';
 import { normalizeGeminiIntent, normalizeGeminiPeriod } from './gemini-normalize.util';
 import { GeminiConcurrencyGate } from './gemini-concurrency.util';
 import type { GeminiParseResult } from './gemini-types';
+import {
+  analyzeBankStatementPhase1WithGemini,
+  analyzeBankStatementPhase2WithGemini,
+  suggestBankStatementHeaderMetadataWithGemini,
+} from './gemini-bank-statement-analysis.util';
+import type { BankStatementHeaderMetadata, BankStatementPhase1Result } from './gemini-bank-statement-prompts.util';
+import { buildDashboardInsightsPrompt } from './gemini-dashboard-insights-prompt.util';
+import { buildGeneralAnswerPrompt } from './gemini-general-answer-prompt.util';
+import {
+  getGeminiCandidateText,
+  type GeminiGenerateContentResponse,
+} from './gemini-response.util';
 
 export type { GeminiIntent, GeminiPeriod, GeminiParseResult } from './gemini-types';
-
-/** مطالبة نظام لشرح JSON الرؤى — يُختبر في الوحدات لضمان عدم طلب حسابات جديدة */
-export const DASHBOARD_INSIGHTS_LLM_SYSTEM_PROMPT = `You are a financial explanation assistant for NOORIX.
-Use only the provided Dashboard Insights JSON.
-Do not calculate new financial numbers.
-Do not invent missing data.
-Do not mention anything not present in the JSON.
-Do not create new warnings.
-Do not override severity.
-Do not provide tax, payroll, VAT, bank, vault, or legal advice.
-If the JSON does not support an answer, say the data is not enough.
-Keep the answer concise and business-friendly.
-Arabic first when the user writes Arabic.
-Structure: one short opening sentence on overall status, then 1–3 bullet points based only on warnings/insights from the JSON. If there are no warnings and no relevant insights in the JSON, say the neutral line that current figures do not exceed configured warning thresholds (in both languages).`;
-
-type GeminiGenerateContentResponse = {
-  candidates?: Array<{
-    finishReason?: string;
-    content?: {
-      parts?: Array<{ text?: string }>;
-    };
-  }>;
-};
-
-function getGeminiCandidateText(data: GeminiGenerateContentResponse): string | null {
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  return typeof text === 'string' && text.trim() ? text : null;
-}
-
-function getGeminiFinishReason(data: GeminiGenerateContentResponse): string | undefined {
-  const reason = data.candidates?.[0]?.finishReason;
-  return typeof reason === 'string' ? reason : undefined;
-}
+export { DASHBOARD_INSIGHTS_LLM_SYSTEM_PROMPT } from './gemini-dashboard-insights-prompt.util';
 
 @Injectable()
 export class GeminiService {
@@ -59,14 +31,14 @@ export class GeminiService {
     this.apiKey = getGeminiApiKey();
   }
 
-  /** هل الخدمة متاحة (مفتاح موجود)؟ */
+  /** Ù‡Ù„ Ø§Ù„Ø®Ø¯Ù…Ø© Ù…ØªØ§Ø­Ø© (Ù…ÙØªØ§Ø­ Ù…ÙˆØ¬ÙˆØ¯)ØŸ */
   isAvailable(): boolean {
     return !!this.apiKey;
   }
 
   /**
-   * فهم النية من السؤال باستخدام Gemini
-   * لا يُرسل أي بيانات مالية — فقط نص السؤال
+   * ÙÙ‡Ù… Ø§Ù„Ù†ÙŠØ© Ù…Ù† Ø§Ù„Ø³Ø¤Ø§Ù„ Ø¨Ø§Ø³ØªØ®Ø¯Ø§Ù… Gemini
+   * Ù„Ø§ ÙŠÙØ±Ø³Ù„ Ø£ÙŠ Ø¨ÙŠØ§Ù†Ø§Øª Ù…Ø§Ù„ÙŠØ© â€” ÙÙ‚Ø· Ù†Øµ Ø§Ù„Ø³Ø¤Ø§Ù„
    */
   async parseIntent(query: string): Promise<GeminiParseResult | null> {
     if (!this.apiKey) return null;
@@ -82,7 +54,7 @@ export class GeminiService {
         body: JSON.stringify({
           contents: [
             {
-              parts: [{ text: `${GEMINI_CHAT_INTENT_SYSTEM_PROMPT}\n\nالسؤال: "${trimmed}"` }],
+              parts: [{ text: `${GEMINI_CHAT_INTENT_SYSTEM_PROMPT}\n\nØ§Ù„Ø³Ø¤Ø§Ù„: "${trimmed}"` }],
             },
           ],
           generationConfig: {
@@ -155,7 +127,7 @@ export class GeminiService {
   }
 
   /**
-   * شرح JSON الرؤى فقط — لا جلب بيانات ولا حسابات؛ عند الفشل يُرجع null
+   * Ø´Ø±Ø­ JSON Ø§Ù„Ø±Ø¤Ù‰ ÙÙ‚Ø· â€” Ù„Ø§ Ø¬Ù„Ø¨ Ø¨ÙŠØ§Ù†Ø§Øª ÙˆÙ„Ø§ Ø­Ø³Ø§Ø¨Ø§ØªØ› Ø¹Ù†Ø¯ Ø§Ù„ÙØ´Ù„ ÙŠÙØ±Ø¬Ø¹ null
    */
   async explainDashboardInsights(
     userQuery: string,
@@ -165,10 +137,6 @@ export class GeminiService {
     if (!this.apiKey) return null;
     const trimmed = (userQuery || '').trim();
     if (!trimmed || trimmed.length > 500) return null;
-
-    const pref = opts.prefersArabic
-      ? 'The user writes primarily in Arabic: lead with Arabic tone in answerAr; answerEn mirrors the same facts.'
-      : 'The user writes primarily in English: lead with English in answerEn; answerAr mirrors the same facts.';
 
     return this.geminiGate.with(async () => {
       try {
@@ -180,7 +148,11 @@ export class GeminiService {
               {
                 parts: [
                   {
-                    text: `${DASHBOARD_INSIGHTS_LLM_SYSTEM_PROMPT}\n\n${pref}\n\nDashboard Insights JSON (only source of truth):\n${JSON.stringify(insightsPackage)}\n\nUser question: ${JSON.stringify(trimmed)}\n\nReturn JSON only: {"answerAr":"...","answerEn":"..."}`,
+                    text: buildDashboardInsightsPrompt({
+                      prefersArabic: opts.prefersArabic,
+                      insightsPackage,
+                      userQuery: trimmed,
+                    }),
                   },
                 ],
               },
@@ -222,8 +194,8 @@ export class GeminiService {
   }
 
   /**
-   * إجابة عامة — للأسئلة خارج نطاق النظام (تحيات، أسئلة عامة)
-   * للتجربة: عند تفعيل GEMINI_OPEN_MODE=true
+   * Ø¥Ø¬Ø§Ø¨Ø© Ø¹Ø§Ù…Ø© â€” Ù„Ù„Ø£Ø³Ø¦Ù„Ø© Ø®Ø§Ø±Ø¬ Ù†Ø·Ø§Ù‚ Ø§Ù„Ù†Ø¸Ø§Ù… (ØªØ­ÙŠØ§ØªØŒ Ø£Ø³Ø¦Ù„Ø© Ø¹Ø§Ù…Ø©)
+   * Ù„Ù„ØªØ¬Ø±Ø¨Ø©: Ø¹Ù†Ø¯ ØªÙØ¹ÙŠÙ„ GEMINI_OPEN_MODE=true
    */
   async answerGeneral(query: string): Promise<{ answerAr: string; answerEn: string } | null> {
     if (!this.apiKey) return null;
@@ -239,16 +211,7 @@ export class GeminiService {
         body: JSON.stringify({
           contents: [
             {
-              parts: [{
-                text: `أنت مساعد مفيد داخل تطبيق نوركس (محاسبة). أجب على سؤال المستخدم مباشرة وبشكل مكتمل قدر الحاجة.
-- للتحيات: رد بحرية وود دون إلزامه بطرح سؤال محاسبي.
-- لأي موضوع عام (علوم، تاريخ، برمجة، نصائح، شرح مفهوم، إلخ): أجب كمساعد عام؛ لا ترفض الإجابة بحجة أنك للمحاسبة فقط.
-- يمكنك إن مناسباً أن تذكر في ختام إجابة قصيرة أن نوركس يدعم أيضاً استفسارات المبيعات والخزائن والتقارير — اختياري وليس في كل رد.
-
-السؤال: "${trimmed}"
-
-أرجع JSON فقط: {"answerAr":"النص بالعربية","answerEn":"النص بالإنجليزية"}`,
-              }],
+              parts: [{ text: buildGeneralAnswerPrompt(trimmed) }],
             },
           ],
           generationConfig: {
@@ -288,260 +251,53 @@ export class GeminiService {
   }
 
   /**
-   * تحليل كشف حساب — خطوة 1: استخراج البيانات الوصفية ونطاق الجدول
+   * ØªØ­Ù„ÙŠÙ„ ÙƒØ´Ù Ø­Ø³Ø§Ø¨ â€” Ø®Ø·ÙˆØ© 1: Ø§Ø³ØªØ®Ø±Ø§Ø¬ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ÙˆØµÙÙŠØ© ÙˆÙ†Ø·Ø§Ù‚ Ø§Ù„Ø¬Ø¯ÙˆÙ„
    *
-   * ⚠️ تحذير أمني: يُرسَل إلى Gemini API أول 35 صفاً من ملف Excel الخام.
-   * قد تحتوي هذه الصفوف على: اسم الشركة، اسم البنك، تواريخ، وصف الحركات،
-   * ومبالغ مدين/دائن. لا تُرسَل أرقام حسابات بنكية كاملة أو كلمات مرور.
-   * إن كان لديك سياسة بيانات صارمة، استبدل هذه الدالة بتحليل محلي.
+   * âš ï¸ ØªØ­Ø°ÙŠØ± Ø£Ù…Ù†ÙŠ: ÙŠÙØ±Ø³ÙŽÙ„ Ø¥Ù„Ù‰ Gemini API Ø£ÙˆÙ„ 35 ØµÙØ§Ù‹ Ù…Ù† Ù…Ù„Ù Excel Ø§Ù„Ø®Ø§Ù….
+   * Ù‚Ø¯ ØªØ­ØªÙˆÙŠ Ù‡Ø°Ù‡ Ø§Ù„ØµÙÙˆÙ Ø¹Ù„Ù‰: Ø§Ø³Ù… Ø§Ù„Ø´Ø±ÙƒØ©ØŒ Ø§Ø³Ù… Ø§Ù„Ø¨Ù†ÙƒØŒ ØªÙˆØ§Ø±ÙŠØ®ØŒ ÙˆØµÙ Ø§Ù„Ø­Ø±ÙƒØ§ØªØŒ
+   * ÙˆÙ…Ø¨Ø§Ù„Øº Ù…Ø¯ÙŠÙ†/Ø¯Ø§Ø¦Ù†. Ù„Ø§ ØªÙØ±Ø³ÙŽÙ„ Ø£Ø±Ù‚Ø§Ù… Ø­Ø³Ø§Ø¨Ø§Øª Ø¨Ù†ÙƒÙŠØ© ÙƒØ§Ù…Ù„Ø© Ø£Ùˆ ÙƒÙ„Ù…Ø§Øª Ù…Ø±ÙˆØ±.
+   * Ø¥Ù† ÙƒØ§Ù† Ù„Ø¯ÙŠÙƒ Ø³ÙŠØ§Ø³Ø© Ø¨ÙŠØ§Ù†Ø§Øª ØµØ§Ø±Ù…Ø©ØŒ Ø§Ø³ØªØ¨Ø¯Ù„ Ù‡Ø°Ù‡ Ø§Ù„Ø¯Ø§Ù„Ø© Ø¨ØªØ­Ù„ÙŠÙ„ Ù…Ø­Ù„ÙŠ.
    */
-  async analyzeBankStatementPhase1(raw: string[][]): Promise<{
-    companyName: string;
-    reportDate: string;
-    dataStartRow: number;
-    dataEndRow: number;
-    headerRow: number;
-  } | null> {
-    if (!this.apiKey) return null;
-    if (!raw?.length || !Array.isArray(raw[0])) return null;
-
-    const sample = raw.slice(0, 35).map((row) =>
-      (Array.isArray(row) ? row : []).map((c) => String(c ?? '').slice(0, 60)).join(' | '),
-    );
-    const textSample = sample.map((r, i) => `[${i}]: ${r}`).join('\n');
-    const lastRow = raw.length - 1;
-
-    const prompt = `كشف حساب بنكي Excel. من العيّنة:
-
-${textSample}
-
-حدد (الأرقام تبدأ من 0):
-1. companyName: اسم الشركة من الصفوف الأولى (إن وُجد)
-2. reportDate: تاريخ التقرير بصيغة YYYY-MM إن وُجد، وإلا null
-3. headerRow: رقم صف العناوين (التاريخ، المدين، الدائن، الوصف...)
-4. dataStartRow: أول صف للحركات (بعد العناوين)
-5. dataEndRow: آخر صف للحركات (لا يتجاوز ${lastRow})
-
-أرجع JSON فقط:
-{"companyName":"...","reportDate":"..." أو null,"headerRow":عدد,"dataStartRow":عدد,"dataEndRow":عدد}`;
-
-    return this.geminiGate.with(async () => {
-    try {
-      const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.05,
-            maxOutputTokens: 256,
-            responseMimeType: 'application/json',
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        this.logger.warn(`Phase1 API ${response.status}: ${errText.slice(0, 300)}`);
-        return null;
-      }
-      const data: GeminiGenerateContentResponse = await response.json();
-      const text = getGeminiCandidateText(data);
-      if (!text) {
-        const reason = getGeminiFinishReason(data);
-        this.logger.warn(`Phase1 no text, finishReason: ${reason}`);
-        return null;
-      }
-
-      const parsed = extractJson<{
-        companyName?: string;
-        reportDate?: string | null;
-        headerRow?: number;
-        dataStartRow?: number;
-        dataEndRow?: number;
-      }>(text);
-
-      if (!parsed || parsed.dataStartRow == null) {
-        this.logger.warn(`Phase1 parse failed or missing dataStartRow. Raw: ${text.slice(0, 200)}`);
-        return null;
-      }
-
-      const dataStartRow = Math.max(0, Math.min(raw.length - 1, Math.floor(Number(parsed.dataStartRow) || 0)));
-      const dataEndRow = Math.max(
-        dataStartRow,
-        Math.min(raw.length - 1, Math.floor(Number(parsed.dataEndRow) ?? lastRow)),
-      );
-      const headerRow = Math.max(0, Math.min(dataStartRow, Math.floor(Number(parsed.headerRow ?? dataStartRow - 1) || 0)));
-
-      return {
-        companyName: String(parsed.companyName ?? '').trim() || '',
-        reportDate: parsed.reportDate && String(parsed.reportDate).trim() !== 'null' ? String(parsed.reportDate).trim() : '',
-        dataStartRow,
-        dataEndRow,
-        headerRow,
-      };
-    } catch (err) {
-      this.logger.warn(`Phase1 error: ${err instanceof Error ? err.message : String(err)}`);
-      return null;
-    }
+  async analyzeBankStatementPhase1(raw: string[][]): Promise<BankStatementPhase1Result | null> {
+    return analyzeBankStatementPhase1WithGemini({
+      apiKey: this.apiKey,
+      gate: this.geminiGate,
+      logger: this.logger,
+      raw,
     });
   }
 
   /**
-   * تحليل كشف حساب — خطوة 2: اقتراح نوع كل عمود
+   * ØªØ­Ù„ÙŠÙ„ ÙƒØ´Ù Ø­Ø³Ø§Ø¨ â€” Ø®Ø·ÙˆØ© 2: Ø§Ù‚ØªØ±Ø§Ø­ Ù†ÙˆØ¹ ÙƒÙ„ Ø¹Ù…ÙˆØ¯
    *
-   * ⚠️ تحذير أمني: يُرسَل إلى Gemini API صف العناوين و5 صفوف عيّنة من البيانات.
-   * الهدف: تحديد أنواع الأعمدة فقط (تاريخ، مدين، دائن...) وليس استخراج المبالغ.
-   * المبالغ المُرسَلة محدودة ومقتصرة على العيّنة التشخيصية.
+   * âš ï¸ ØªØ­Ø°ÙŠØ± Ø£Ù…Ù†ÙŠ: ÙŠÙØ±Ø³ÙŽÙ„ Ø¥Ù„Ù‰ Gemini API ØµÙ Ø§Ù„Ø¹Ù†Ø§ÙˆÙŠÙ† Ùˆ5 ØµÙÙˆÙ Ø¹ÙŠÙ‘Ù†Ø© Ù…Ù† Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª.
+   * Ø§Ù„Ù‡Ø¯Ù: ØªØ­Ø¯ÙŠØ¯ Ø£Ù†ÙˆØ§Ø¹ Ø§Ù„Ø£Ø¹Ù…Ø¯Ø© ÙÙ‚Ø· (ØªØ§Ø±ÙŠØ®ØŒ Ù…Ø¯ÙŠÙ†ØŒ Ø¯Ø§Ø¦Ù†...) ÙˆÙ„ÙŠØ³ Ø§Ø³ØªØ®Ø±Ø§Ø¬ Ø§Ù„Ù…Ø¨Ø§Ù„Øº.
+   * Ø§Ù„Ù…Ø¨Ø§Ù„Øº Ø§Ù„Ù…ÙØ±Ø³ÙŽÙ„Ø© Ù…Ø­Ø¯ÙˆØ¯Ø© ÙˆÙ…Ù‚ØªØµØ±Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø¹ÙŠÙ‘Ù†Ø© Ø§Ù„ØªØ´Ø®ÙŠØµÙŠØ©.
    */
   async analyzeBankStatementPhase2(raw: string[][], dataStartRow: number, headerRow: number): Promise<Record<number, string> | null> {
-    if (!this.apiKey) return null;
-    if (!raw?.length || !Array.isArray(raw[0])) return null;
-
-    const colCount = Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0)), 1);
-    const headerCells = (raw[headerRow] || []).map((c, i) => `col${i}:"${String(c ?? '').slice(0, 30)}"`).join(', ');
-    const sampleRows = raw
-      .slice(dataStartRow, dataStartRow + 5)
-      .map((row, idx) => {
-        const cells = (Array.isArray(row) ? row : []).map((c, i) => `[${i}]:"${String(c ?? '').slice(0, 25)}"`).join(' ');
-        return `row${idx}: ${cells}`;
-      })
-      .join('\n');
-
-    const prompt = `كشف حساب بنكي. العناوين (صف ${headerRow}):
-${headerCells}
-
-عيّنة بيانات:
-${sampleRows}
-
-لكل عمود 0 إلى ${colCount - 1} اختر: date | debit | credit | amount | description | notes | balance | reference | ignore
-(notes = ملاحظات إضافية تُدمج مع الوصف، reference = مرجع/رقم عملية)
-أرجع JSON فقط: {"0":"نوع","1":"نوع",...}`;
-
-    return this.geminiGate.with(async () => {
-    try {
-      const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.05, maxOutputTokens: 512, responseMimeType: 'application/json' },
-        }),
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        this.logger.warn(`Phase2 API ${response.status}: ${errText.slice(0, 300)}`);
-        return null;
-      }
-      const data: GeminiGenerateContentResponse = await response.json();
-      const text = getGeminiCandidateText(data);
-      if (!text) {
-        this.logger.warn(`Phase2 no text`);
-        return null;
-      }
-
-      const parsed = extractJson<Record<string, string>>(text);
-      if (!parsed || typeof parsed !== 'object') {
-        this.logger.warn(`Phase2 parse failed. Raw: ${text.slice(0, 200)}`);
-        return null;
-      }
-
-      const validTypes = [
-        'date',
-        'debit',
-        'credit',
-        'amount',
-        'description',
-        'notes',
-        'balance',
-        'reference',
-        'ignore',
-      ];
-      const columnTypes: Record<number, string> = {};
-      for (let i = 0; i < colCount; i++) {
-        const t = String(parsed[String(i)] ?? 'ignore').toLowerCase();
-        columnTypes[i] = validTypes.includes(t) ? t : 'ignore';
-      }
-      return columnTypes;
-    } catch (err) {
-      this.logger.warn(`Phase2 error: ${err instanceof Error ? err.message : String(err)}`);
-      return null;
-    }
+    return analyzeBankStatementPhase2WithGemini({
+      apiKey: this.apiKey,
+      gate: this.geminiGate,
+      logger: this.logger,
+      raw,
+      dataStartRow,
+      headerRow,
     });
   }
 
   /**
-   * ترويسة الكشف (عميل، بنك، فترة) — مطابقة برومبت InvokeLLM في BankColumnMapper (Base44)
+   * ØªØ±ÙˆÙŠØ³Ø© Ø§Ù„ÙƒØ´Ù (Ø¹Ù…ÙŠÙ„ØŒ Ø¨Ù†ÙƒØŒ ÙØªØ±Ø©) â€” Ù…Ø·Ø§Ø¨Ù‚Ø© Ø¨Ø±ÙˆÙ…Ø¨Øª InvokeLLM ÙÙŠ BankColumnMapper (Base44)
    */
-  async suggestBankStatementHeaderMetadata(raw: string[][]): Promise<{
-    customerName: string;
-    bankName: string;
-    periodFrom: string;
-    periodTo: string;
-  } | null> {
-    if (!this.apiKey || !raw?.length) return null;
-
-    const slice = raw.slice(0, Math.min(22, raw.length));
-    const headerText = slice
-      .map((row, idx) => {
-        const parts = (row || []).map((c, ci) => {
-          if (c === '' || c == null) return '';
-          const s = String(c).trim().slice(0, 120);
-          return s ? `[${ci}]${s}` : '';
-        });
-        return `سطر ${idx}: ${parts.filter(Boolean).join(' | ')}`;
-      })
-      .join('\n');
-
-    const prompt = `حلل ترويسة كشف الحساب البنكي التالي واستخرج المعلومات:
-
-${headerText}
-
-استخرج:
-- customer_name: اسم الشركة/المؤسسة/العميل صاحب الحساب (ليس اسم البنك!)
-- bank_name: اسم البنك
-- period_from: تاريخ بداية الفترة (صيغة YYYY-MM-DD)
-- period_to: تاريخ نهاية الفترة (صيغة YYYY-MM-DD)
-
-أرجع JSON فقط. إذا لم تجد معلومة اتركها فارغة "".`;
-
-    return this.geminiGate.with(async () => {
-    try {
-      const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.05, maxOutputTokens: 512, responseMimeType: 'application/json' },
-        }),
-      });
-      if (!response.ok) return null;
-      const data: GeminiGenerateContentResponse = await response.json();
-      const text = getGeminiCandidateText(data);
-      if (!text) return null;
-      const parsed = extractJson<{
-        customer_name?: string;
-        bank_name?: string;
-        period_from?: string;
-        period_to?: string;
-      }>(text);
-      if (!parsed) return null;
-      const norm = (s: unknown) => String(s ?? '').trim().slice(0, 200);
-      return {
-        customerName: norm(parsed.customer_name),
-        bankName: norm(parsed.bank_name),
-        periodFrom: toYmd(norm(parsed.period_from)),
-        periodTo: toYmd(norm(parsed.period_to)),
-      };
-    } catch (err) {
-      this.logger.warn(`suggestBankStatementHeaderMetadata: ${err instanceof Error ? err.message : String(err)}`);
-      return null;
-    }
+  async suggestBankStatementHeaderMetadata(raw: string[][]): Promise<BankStatementHeaderMetadata | null> {
+    return suggestBankStatementHeaderMetadataWithGemini({
+      apiKey: this.apiKey,
+      gate: this.geminiGate,
+      logger: this.logger,
+      raw,
     });
   }
 
-  /** تحليل كشف حساب — الطلب الموحد (Phase1 + Phase2) */
+  /** ØªØ­Ù„ÙŠÙ„ ÙƒØ´Ù Ø­Ø³Ø§Ø¨ â€” Ø§Ù„Ø·Ù„Ø¨ Ø§Ù„Ù…ÙˆØ­Ø¯ (Phase1 + Phase2) */
   async analyzeBankStatementStructure(raw: string[][]): Promise<{
     companyName: string;
     reportDate: string;
@@ -559,5 +315,4 @@ ${headerText}
       columnTypes: phase2 || {},
     };
   }
-
 }
