@@ -114,4 +114,26 @@ describe('itemsManageModel', () => {
       }],
     });
   });
+
+  it('keeps recipe rows for sale products and omits them for order products', () => {
+    const form = {
+      nameAr: 'Shisha',
+      nameEn: 'Shisha',
+      categoryId: 'c1',
+      sectionIds: ['bar'],
+      simpleLastPrice: '25',
+      variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
+      recipe: [
+        { materialType: 'tobacco' as const, materialProductId: 'tobacco-1', quantity: '20', unit: 'g' },
+        { materialType: 'hose' as const, materialProductId: 'hose-1', quantity: '1', unit: 'piece' },
+        { materialType: 'charcoal' as const, materialProductId: 'charcoal-1', quantity: '2', unit: 'piece' },
+      ],
+    };
+
+    expect(buildOrderProductPayload(form, 'sale')).toMatchObject({
+      productType: 'sale',
+      recipe: form.recipe,
+    });
+    expect(buildOrderProductPayload(form, 'order')).not.toHaveProperty('recipe');
+  });
 });

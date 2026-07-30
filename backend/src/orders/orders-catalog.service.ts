@@ -17,6 +17,13 @@ type ProductVariantInput = {
   quantityMultiplier?: string;
 };
 
+type ProductRecipeItemInput = {
+  materialType?: string;
+  materialProductId?: string;
+  quantity?: string;
+  unit?: string;
+};
+
 @Injectable()
 export class OrdersCatalogService {
   constructor(private readonly prisma: TenantPrismaService) {}
@@ -44,6 +51,7 @@ export class OrdersCatalogService {
     sectionIds?: string[];
     lastPrice?: string;
     variants?: ProductVariantInput[];
+    recipe?: ProductRecipeItemInput[];
   }>) {
     const tenantId = TenantContext.getTenantId();
     const sectionList = await this.loadSectionList(companyId);
@@ -80,6 +88,7 @@ export class OrdersCatalogService {
     sectionIds?: string[];
     productType?: string;
     variants?: ProductVariantInput[];
+    recipe?: ProductRecipeItemInput[];
   }) {
     const tenantId = TenantContext.getTenantId();
     if (!dto.nameAr?.trim()) throw new BadRequestException('اسم الصنف بالعربية مطلوب');
@@ -103,6 +112,7 @@ export class OrdersCatalogService {
     sectionIds?: string[] | null;
     productType?: string;
     variants?: ProductVariantInput[];
+    recipe?: ProductRecipeItemInput[];
     isActive?: boolean;
   }) {
     const product = await this.prisma.orderProduct.findFirst({ where: { id, companyId } });
@@ -259,6 +269,7 @@ export class OrdersCatalogService {
       sectionIds?: string[] | null;
       productType?: string;
       variants?: ProductVariantInput[];
+      recipe?: ProductRecipeItemInput[];
     },
     sectionList: Awaited<ReturnType<OrdersCatalogService['loadSectionList']>>,
   ): Prisma.OrderProductCreateManyInput {
@@ -266,6 +277,7 @@ export class OrdersCatalogService {
       sections: dto.sections ?? undefined,
       sectionIds: dto.sectionIds ?? undefined,
     });
+    const productType = dto.productType === 'sale' ? 'sale' : 'order';
     return {
       tenantId,
       companyId,
@@ -275,10 +287,11 @@ export class OrdersCatalogService {
       sizes: dto.sizes?.trim() || null,
       packaging: dto.packaging?.trim() || null,
       categoryId: dto.categoryId || null,
-      productType: dto.productType === 'sale' ? 'sale' : 'order',
+      productType,
       ...this.sectionJsonData(sections.sectionIds ?? [], sections.sections ?? []),
       lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
       variants: this.variantJson(dto.variants),
+      recipe: productType === 'sale' ? this.recipeJson(dto.recipe) : Prisma.DbNull,
     };
   }
 
@@ -295,6 +308,7 @@ export class OrdersCatalogService {
       sectionIds?: string[] | null;
       productType?: string;
       variants?: ProductVariantInput[];
+      recipe?: ProductRecipeItemInput[];
       isActive?: boolean;
     },
     sectionList: Awaited<ReturnType<OrdersCatalogService['loadSectionList']>>,
@@ -322,6 +336,11 @@ export class OrdersCatalogService {
       ...sectionData,
       ...(dto.productType !== undefined ? { productType: dto.productType } : {}),
       ...(dto.variants !== undefined ? { variants: this.variantJson(dto.variants) } : {}),
+      ...(dto.productType === 'order'
+        ? { recipe: Prisma.DbNull }
+        : dto.recipe !== undefined
+          ? { recipe: this.recipeJson(dto.recipe) }
+          : {}),
       ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
     };
   }
@@ -347,6 +366,38 @@ export class OrdersCatalogService {
       lastPrice: variant.lastPrice || '0',
       quantityMultiplier: variant.quantityMultiplier || '1',
     }));
+  }
+
+  private recipeJson(recipe?: ProductRecipeItemInput[]): Prisma.InputJsonValue | typeof Prisma.DbNull {
+    if (!recipe?.length) return Prisma.DbNull;
+    const rows = recipe.flatMap((item) => {
+      const materialType = item.materialType === 'tobacco' || item.materialType === 'hose' || item.materialType === 'charcoal'
+        ? item.materialType
+        : null;
+      const materialProductId = String(item.materialProductId ?? '').trim();
+      const quantity = String(item.quantity ?? '').trim();
+      if (!materialType || !materialProductId || !this.positiveDecimal(quantity)) return [];
+      return [{
+        materialType,
+        materialProductId,
+        quantity,
+        unit: String(item.unit ?? '').trim() || this.defaultRecipeUnit(materialType),
+      }];
+    });
+    return rows.length > 0 ? rows : Prisma.DbNull;
+  }
+
+  private positiveDecimal(value: string): boolean {
+    try {
+      return new Prisma.Decimal(value || 0).gt(0);
+    } catch {
+      return false;
+    }
+  }
+
+  private defaultRecipeUnit(materialType: 'tobacco' | 'hose' | 'charcoal') {
+    if (materialType === 'tobacco') return 'g';
+    return 'piece';
   }
 
   private sectionJsonData(sectionIds: string[], sections: string[]) {

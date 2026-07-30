@@ -1,7 +1,15 @@
 import React, { type ChangeEvent, useEffect, useState } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { AdaptiveSheet, Button, Checkbox, DialogActions, Input } from '../../../../ui';
-import type { OrderCategory, OrderProductType, OrderProductVariant, OrderSection } from '../../../../types/api';
+import type {
+  OrderCategory,
+  OrderProduct,
+  OrderProductRecipeItem,
+  OrderProductRecipeMaterialType,
+  OrderProductType,
+  OrderProductVariant,
+  OrderSection,
+} from '../../../../types/api';
 import { productHasAdvancedVariants } from './catalogProductUtils';
 import {
   buildStandardCharcoalVariants,
@@ -18,6 +26,7 @@ export type CatalogProductFormState = {
   productType: OrderProductType;
   simpleLastPrice: string;
   variants: OrderProductVariant[];
+  recipe: OrderProductRecipeItem[];
   _advanced?: boolean;
 };
 
@@ -36,6 +45,7 @@ type CatalogProductFormSheetProps = {
   sections: OrderSection[];
   sizesOptions: CatalogOption[];
   packagingOptions: CatalogOption[];
+  materialProducts: OrderProduct[];
   saving: boolean;
   onClose: () => void;
   onSave: () => void;
@@ -46,6 +56,134 @@ type CatalogProductFormSheetProps = {
   updateVariant: (idx: number, field: keyof OrderProductVariant, value: string) => void;
   removeVariant: (idx: number) => void;
 };
+
+type CatalogFormTab = 'details' | 'variants' | 'recipe';
+
+const recipeMaterialLabels: Record<OrderProductRecipeMaterialType, string> = {
+  tobacco: 'معسل',
+  hose: 'لي',
+  charcoal: 'فحم',
+};
+
+function recipeUnits(materialType: OrderProductRecipeMaterialType) {
+  if (materialType === 'tobacco') return [
+    { value: 'g', label: 'جرام' },
+    { value: 'kg', label: 'كيلو' },
+  ];
+  if (materialType === 'charcoal') return [
+    { value: 'piece', label: 'حبة' },
+    { value: 'pack', label: 'علبة' },
+    { value: 'carton', label: 'كرتون' },
+  ];
+  return [{ value: 'piece', label: 'حبة' }];
+}
+
+function createRecipeRow(materialProducts: OrderProduct[]): OrderProductRecipeItem {
+  return {
+    materialType: 'tobacco',
+    materialProductId: materialProducts[0]?.id ?? '',
+    quantity: '',
+    unit: 'g',
+  };
+}
+
+function RecipeEditor({
+  recipe,
+  materialProducts,
+  onChange,
+}: {
+  recipe: OrderProductRecipeItem[];
+  materialProducts: OrderProduct[];
+  onChange: (recipe: OrderProductRecipeItem[]) => void;
+}) {
+  function updateRow(index: number, patch: Partial<OrderProductRecipeItem>) {
+    onChange(recipe.map((row, rowIndex) => {
+      if (rowIndex !== index) return row;
+      const materialType = patch.materialType ?? row.materialType;
+      const nextUnit = patch.materialType && patch.materialType !== row.materialType
+        ? recipeUnits(materialType)[0]?.value ?? 'piece'
+        : row.unit;
+      return { ...row, ...patch, unit: patch.unit ?? nextUnit };
+    }));
+  }
+
+  return (
+    <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[13px] font-bold text-noorix-text">الرسبي</div>
+          <div className="text-[12px] text-noorix-muted">استهلاك كل وحدة مباعة من مواد المخزون.</div>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => onChange([...recipe, createRecipeRow(materialProducts)])}
+          disabled={materialProducts.length === 0}
+        >
+          + مادة
+        </Button>
+      </div>
+      {materialProducts.length === 0 ? (
+        <div className="rounded-lg border border-noorix-border bg-white p-3 text-center text-[13px] text-noorix-muted">
+          أضف أصناف مواد أولاً حتى يمكن ربطها بالرسبي.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {recipe.length === 0 && (
+            <div className="rounded-lg border border-dashed border-noorix-border bg-white p-3 text-center text-[13px] text-noorix-muted">
+              لا توجد مواد مرتبطة بهذا الصنف.
+            </div>
+          )}
+          {recipe.map((row, index) => (
+            <div key={`${row.materialProductId}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[120px_1fr_95px_95px_44px]">
+              <Input
+                type="select"
+                value={row.materialType}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                  updateRow(index, { materialType: event.target.value as OrderProductRecipeMaterialType })
+                }
+              >
+                {Object.entries(recipeMaterialLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </Input>
+              <Input
+                type="select"
+                value={row.materialProductId}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { materialProductId: event.target.value })}
+              >
+                <option value="">اختر الصنف</option>
+                {materialProducts.map((product) => (
+                  <option key={product.id} value={product.id}>{product.nameAr || product.nameEn || product.id}</option>
+                ))}
+              </Input>
+              <Input
+                type="number"
+                min="0"
+                step="0.001"
+                value={String(row.quantity ?? '')}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { quantity: event.target.value })}
+                placeholder="الكمية"
+              />
+              <Input
+                type="select"
+                value={String(row.unit || recipeUnits(row.materialType)[0]?.value || 'piece')}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { unit: event.target.value })}
+              >
+                {recipeUnits(row.materialType).map((unit) => (
+                  <option key={unit.value} value={unit.value}>{unit.label}</option>
+                ))}
+              </Input>
+              <Button type="button" size="sm" variant="danger" onClick={() => onChange(recipe.filter((_, rowIndex) => rowIndex !== index))}>
+                x
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function VariantsTable({
   t,
@@ -222,6 +360,7 @@ export function CatalogProductFormSheet({
   sections,
   sizesOptions,
   packagingOptions,
+  materialProducts,
   saving,
   onClose,
   onSave,
@@ -234,13 +373,15 @@ export function CatalogProductFormSheet({
 }: CatalogProductFormSheetProps) {
   const { t } = useTranslation();
   const [advanced, setAdvanced] = useState(false);
+  const [activeTab, setActiveTab] = useState<CatalogFormTab>('details');
   const charcoalMode = Boolean(form && isCharcoalCatalogProduct(form));
   const charcoalPurchaseMode = charcoalMode && form?.productType === 'order';
 
   useEffect(() => {
     if (!open || !form) return;
     setAdvanced(Boolean(form._advanced) || productHasAdvancedVariants(form));
-  }, [open, form]);
+    setActiveTab('details');
+  }, [open, form?.id]);
 
   useEffect(() => {
     if (!open || !charcoalMode) return;
@@ -308,47 +449,72 @@ export function CatalogProductFormSheet({
       )}
     >
       <div className="flex flex-col gap-4">
-        <Input
-          label={`${t('productNameAr')} *`}
-          value={form.nameAr}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => updateForm({ nameAr: event.target.value })}
-        />
-        <Input
-          label={t('productNameEn')}
-          value={form.nameEn}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => updateForm({ nameEn: event.target.value })}
-        />
-        <Input
-          type="select"
-          label={t('category')}
-          value={form.categoryId}
-          onChange={(event: ChangeEvent<HTMLSelectElement>) => updateForm({ categoryId: event.target.value })}
-        >
-          <option value="">-</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>{category.nameAr || category.nameEn}</option>
+        <div className="flex flex-wrap gap-2 rounded-xl border border-noorix-border bg-noorix-bg-muted p-1">
+          {[
+            { key: 'details' as const, label: 'البيانات' },
+            { key: 'variants' as const, label: 'الأحجام والأسعار' },
+            ...(form.productType === 'sale' ? [{ key: 'recipe' as const, label: 'الرسبي' }] : []),
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={`rounded-lg px-3 py-2 text-[13px] font-bold transition ${
+                activeTab === tab.key
+                  ? 'bg-emerald-700 text-white shadow-sm'
+                  : 'bg-white text-noorix-text hover:bg-emerald-50'
+              }`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </button>
           ))}
-        </Input>
+        </div>
 
-        {sections.length > 0 && (
-          <div>
-            <div className="mb-2 text-[12px] text-noorix-muted">{t('productSections')}</div>
-            <div className="flex flex-wrap gap-x-3 gap-y-2">
-              {sections.map((section) => (
-                <Checkbox
-                  key={section.id}
-                  checked={(form.sectionIds || []).includes(section.id)}
-                  onChange={(event) => toggleSection(section.id, event.target.checked)}
-                  label={section.nameAr}
-                  className="cursor-pointer"
-                  containerClassName="cursor-pointer text-[13px]"
-                />
+        {activeTab === 'details' && (
+          <>
+            <Input
+              label={`${t('productNameAr')} *`}
+              value={form.nameAr}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => updateForm({ nameAr: event.target.value })}
+            />
+            <Input
+              label={t('productNameEn')}
+              value={form.nameEn}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => updateForm({ nameEn: event.target.value })}
+            />
+            <Input
+              type="select"
+              label={t('category')}
+              value={form.categoryId}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => updateForm({ categoryId: event.target.value })}
+            >
+              <option value="">-</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>{category.nameAr || category.nameEn}</option>
               ))}
-            </div>
-          </div>
+            </Input>
+
+            {sections.length > 0 && (
+              <div>
+                <div className="mb-2 text-[12px] text-noorix-muted">{t('productSections')}</div>
+                <div className="flex flex-wrap gap-x-3 gap-y-2">
+                  {sections.map((section) => (
+                    <Checkbox
+                      key={section.id}
+                      checked={(form.sectionIds || []).includes(section.id)}
+                      onChange={(event) => toggleSection(section.id, event.target.checked)}
+                      label={section.nameAr}
+                      className="cursor-pointer"
+                      containerClassName="cursor-pointer text-[13px]"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        {!advanced ? (
+        {activeTab === 'variants' && (!advanced ? (
           <>
             <Input
               type="number"
@@ -383,6 +549,14 @@ export function CatalogProductFormSheet({
               </Button>
             )}
           </>
+        ))}
+
+        {activeTab === 'recipe' && form.productType === 'sale' && (
+          <RecipeEditor
+            recipe={form.recipe || []}
+            materialProducts={materialProducts}
+            onChange={(recipe) => updateForm({ recipe })}
+          />
         )}
       </div>
     </AdaptiveSheet>

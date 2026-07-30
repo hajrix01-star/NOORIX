@@ -43,6 +43,28 @@ describe('calculateShishaInventory', () => {
     expect(result.current.charcoalPiecesTotal).toBe(1120);
   });
 
+  it('uses product recipe consumption when sale events include explicit material usage', () => {
+    const result = calculateShishaInventory({
+      ...base,
+      endDate: '2026-07-01',
+      sales: [{
+        date: '2026-07-01',
+        operationKey: 'recipe-sale',
+        heads: 10,
+        changes: 2,
+        tobaccoGramsConsumed: 250,
+        hosesConsumed: 7,
+        charcoalPiecesConsumed: 128,
+      }],
+    });
+    expect(result.periodTotals.tobaccoHeadsConsumed).toBe(10);
+    expect(result.periodTotals.tobaccoConsumedKg).toBe(0.25);
+    expect(result.current.tobaccoKg).toBe(14.75);
+    expect(result.periodTotals.hosesConsumed).toBe(7);
+    expect(result.periodTotals.charcoalPiecesConsumed).toBe(128);
+    expect(result.periodTotals.charcoalBoxesConsumed).toBe(2);
+  });
+
   it('converts sixty registered heads into ten charcoal boxes', () => {
     const result = calculateShishaInventory({
       ...base,

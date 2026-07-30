@@ -111,6 +111,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
           productType: editingProduct.productType || catalogProductType,
           simpleLastPrice: editingProduct.simpleLastPrice || '',
           variants: editingProduct.variants || [],
+          recipe: editingProduct.recipe || [],
         }
       : null
     : newProduct;
@@ -139,6 +140,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         productType: current.productType || catalogProductType,
         simpleLastPrice: current.simpleLastPrice || '',
         variants: normalizeVariants(current.variants || []),
+        recipe: current.recipe || [],
       } : null));
       return;
     }
@@ -154,6 +156,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         productType: next.productType,
         simpleLastPrice: next.simpleLastPrice,
         variants: normalizeVariants(next.variants),
+        recipe: next.recipe || [],
       };
     });
   }
@@ -313,6 +316,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         sections={sections}
         sizesOptions={sizesOptions}
         packagingOptions={packagingOptions}
+        materialProducts={products.filter((product) => product.id !== activeForm?.id)}
         saving={sheetMode === 'edit' ? updateProduct.isPending : createProduct.isPending}
         onClose={closeSheet}
         onSave={handleSave}

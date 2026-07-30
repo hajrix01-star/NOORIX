@@ -57,6 +57,8 @@ export class ShishaInventoryService {
         end,
         settings.changeProductId,
         settings.charcoalConsumptionProductId,
+        settings.charcoalPiecesPerPack,
+        settings.charcoalPacksPerCarton,
       ),
       this.source.catalogCharcoalPurchases(
         companyId,

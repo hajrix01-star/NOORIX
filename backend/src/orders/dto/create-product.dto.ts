@@ -24,6 +24,25 @@ export class ProductVariantDto {
   quantityMultiplier?: string;
 }
 
+export class ProductRecipeItemDto {
+  @IsOptional()
+  @IsString()
+  materialType?: string;
+
+  @IsOptional()
+  @IsString()
+  materialProductId?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^(?:0*[1-9]\d*(?:\.\d{1,4})?|0*\.\d*[1-9]\d*)$/)
+  quantity?: string;
+
+  @IsOptional()
+  @IsString()
+  unit?: string;
+}
+
 export class CreateProductDto {
   @IsString()
   companyId: string;
@@ -74,4 +93,10 @@ export class CreateProductDto {
   @ValidateNested({ each: true })
   @Type(() => ProductVariantDto)
   variants?: ProductVariantDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductRecipeItemDto)
+  recipe?: ProductRecipeItemDto[];
 }

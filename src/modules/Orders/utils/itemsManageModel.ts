@@ -1,4 +1,12 @@
-import type { OrderCategory, OrderProduct, OrderProductPayload, OrderProductVariant, OrderProductType } from '../../../types/api';
+import type {
+  OrderCategory,
+  OrderProduct,
+  OrderProductPayload,
+  OrderProductRecipeItem,
+  OrderProductRecipeMaterialType,
+  OrderProductVariant,
+  OrderProductType,
+} from '../../../types/api';
 
 export type OrderProductForm = {
   nameAr: string;
@@ -8,6 +16,7 @@ export type OrderProductForm = {
   productType: OrderProductType;
   simpleLastPrice: string;
   variants: OrderProductVariant[];
+  recipe: OrderProductRecipeItem[];
 };
 
 export type EditableOrderProduct = OrderProductForm & {
@@ -22,6 +31,7 @@ export type OrderProductUpdateBody = {
   sectionIds: string[];
   productType: OrderProductType;
   variants?: OrderProductVariant[];
+  recipe?: OrderProductRecipeItem[];
   lastPrice?: string;
 };
 
@@ -38,7 +48,31 @@ export function createEmptyOrderProductForm(productType: OrderProductType): Orde
     productType,
     simpleLastPrice: '',
     variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
+    recipe: [],
   };
+}
+
+function isRecipeMaterialType(value: unknown): value is OrderProductRecipeMaterialType {
+  return value === 'tobacco' || value === 'hose' || value === 'charcoal';
+}
+
+function sanitizeRecipe(recipe: unknown): OrderProductRecipeItem[] {
+  if (!Array.isArray(recipe)) return [];
+  return recipe.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const row = item as Partial<OrderProductRecipeItem>;
+    if (!isRecipeMaterialType(row.materialType)) return [];
+    const materialProductId = String(row.materialProductId ?? '').trim();
+    const quantity = String(row.quantity ?? '').trim();
+    const parsedQuantity = Number.parseFloat(quantity);
+    if (!materialProductId || !Number.isFinite(parsedQuantity) || parsedQuantity <= 0) return [];
+    return [{
+      materialType: row.materialType,
+      materialProductId,
+      quantity,
+      unit: String(row.unit ?? '').trim() || (row.materialType === 'tobacco' ? 'g' : 'piece'),
+    }];
+  });
 }
 
 function hasOrderProductVariants(variants: OrderProductVariant[]): boolean {
@@ -65,6 +99,9 @@ export function buildEditableOrderProduct(
     sectionIds: Array.isArray(product.sectionIds) ? [...product.sectionIds] : [],
     productType: normalizeOrderProductType(product.productType, fallbackProductType),
     simpleLastPrice: hasVariants ? '' : String(product.lastPrice ?? ''),
+    recipe: normalizeOrderProductType(product.productType, fallbackProductType) === 'sale'
+      ? sanitizeRecipe(product.recipe)
+      : [],
     variants: hasVariants
       ? variants.map((variant) => ({
           size: variant.size || '',
@@ -97,6 +134,7 @@ export function buildOrderProductUpdateBody(
     categoryId: built.categoryId || null,
     sectionIds: built.sectionIds ?? [],
     productType: built.productType ?? fallbackProductType,
+    recipe: built.recipe ?? [],
     ...(validVariants.length > 0
       ? { variants: built.variants ?? [] }
       : { variants: [], lastPrice: built.lastPrice || '0' }),
@@ -163,12 +201,14 @@ export function buildOrderProductPayload(
       || Number.parseFloat(String(v.lastPrice ?? '')) > 0,
   );
   const sectionIds = Array.isArray(form.sectionIds) ? form.sectionIds.filter(Boolean) : [];
+  const recipe = productType === 'sale' ? sanitizeRecipe(form.recipe) : [];
   const base = {
     nameAr: String(form.nameAr ?? '').trim(),
     nameEn: form.nameEn?.trim() || undefined,
     categoryId: form.categoryId || undefined,
     sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
     productType,
+    ...(recipe.length > 0 ? { recipe } : {}),
   };
   if (validVariants.length > 0) {
     return {
