@@ -43,6 +43,25 @@ export class ProductRecipeItemDto {
   unit?: string;
 }
 
+export class ProductUnitConversionDto {
+  @IsOptional()
+  @IsString()
+  fromUnit?: string;
+
+  @IsOptional()
+  @IsString()
+  toUnit?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^(?:0*[1-9]\d*(?:\.\d{1,4})?|0*\.\d*[1-9]\d*)$/)
+  multiplier?: string;
+
+  @IsOptional()
+  @IsString()
+  label?: string;
+}
+
 export class CreateProductDto {
   @IsString()
   companyId: string;
@@ -93,6 +112,12 @@ export class CreateProductDto {
   @ValidateNested({ each: true })
   @Type(() => ProductVariantDto)
   variants?: ProductVariantDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductUnitConversionDto)
+  inventoryConversions?: ProductUnitConversionDto[];
 
   @IsOptional()
   @IsArray()

@@ -7,6 +7,10 @@ import {
   normalizeProductSections,
   parseStringArrayJson,
 } from './orders-product-sections.util';
+import {
+  type ProductUnitConversionInput,
+  unitConversionsJson,
+} from './orders-unit-conversions.util';
 
 type OrderProductWithSections = { sections?: unknown; sectionIds?: unknown };
 type ProductVariantInput = {
@@ -51,6 +55,7 @@ export class OrdersCatalogService {
     sectionIds?: string[];
     lastPrice?: string;
     variants?: ProductVariantInput[];
+    inventoryConversions?: ProductUnitConversionInput[];
     recipe?: ProductRecipeItemInput[];
   }>) {
     const tenantId = TenantContext.getTenantId();
@@ -92,6 +97,7 @@ export class OrdersCatalogService {
     sectionIds?: string[];
     productType?: string;
     variants?: ProductVariantInput[];
+    inventoryConversions?: ProductUnitConversionInput[];
     recipe?: ProductRecipeItemInput[];
   }) {
     const tenantId = TenantContext.getTenantId();
@@ -119,6 +125,7 @@ export class OrdersCatalogService {
     sectionIds?: string[] | null;
     productType?: string;
     variants?: ProductVariantInput[];
+    inventoryConversions?: ProductUnitConversionInput[];
     recipe?: ProductRecipeItemInput[];
     isActive?: boolean;
   }) {
@@ -280,6 +287,7 @@ export class OrdersCatalogService {
       sectionIds?: string[] | null;
       productType?: string;
       variants?: ProductVariantInput[];
+      inventoryConversions?: ProductUnitConversionInput[];
       recipe?: ProductRecipeItemInput[];
     },
     sectionList: Awaited<ReturnType<OrdersCatalogService['loadSectionList']>>,
@@ -302,6 +310,9 @@ export class OrdersCatalogService {
       ...this.sectionJsonData(sections.sectionIds ?? [], sections.sections ?? []),
       lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
       variants: this.variantJson(dto.variants),
+      inventoryConversions: productType === 'order'
+        ? unitConversionsJson(dto.inventoryConversions)
+        : Prisma.DbNull,
       recipe: productType === 'sale' ? this.recipeJson(dto.recipe) : Prisma.DbNull,
     };
   }
@@ -319,6 +330,7 @@ export class OrdersCatalogService {
       sectionIds?: string[] | null;
       productType?: string;
       variants?: ProductVariantInput[];
+      inventoryConversions?: ProductUnitConversionInput[];
       recipe?: ProductRecipeItemInput[];
       isActive?: boolean;
     },
@@ -347,6 +359,11 @@ export class OrdersCatalogService {
       ...sectionData,
       ...(dto.productType !== undefined ? { productType: dto.productType } : {}),
       ...(dto.variants !== undefined ? { variants: this.variantJson(dto.variants) } : {}),
+      ...(dto.productType === 'sale'
+        ? { inventoryConversions: Prisma.DbNull }
+        : dto.inventoryConversions !== undefined
+          ? { inventoryConversions: unitConversionsJson(dto.inventoryConversions) }
+          : {}),
       ...(dto.productType === 'order'
         ? { recipe: Prisma.DbNull }
         : dto.recipe !== undefined

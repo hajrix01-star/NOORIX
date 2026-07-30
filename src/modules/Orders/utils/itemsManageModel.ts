@@ -4,6 +4,7 @@ import type {
   OrderProductPayload,
   OrderProductRecipeItem,
   OrderProductRecipeMaterialType,
+  OrderProductUnitConversion,
   OrderProductVariant,
   OrderProductType,
 } from '../../../types/api';
@@ -16,6 +17,7 @@ export type OrderProductForm = {
   productType: OrderProductType;
   simpleLastPrice: string;
   variants: OrderProductVariant[];
+  inventoryConversions: OrderProductUnitConversion[];
   recipe: OrderProductRecipeItem[];
 };
 
@@ -31,6 +33,7 @@ export type OrderProductUpdateBody = {
   sectionIds: string[];
   productType: OrderProductType;
   variants?: OrderProductVariant[];
+  inventoryConversions?: OrderProductUnitConversion[];
   recipe?: OrderProductRecipeItem[];
   lastPrice?: string;
 };
@@ -48,6 +51,7 @@ export function createEmptyOrderProductForm(productType: OrderProductType): Orde
     productType,
     simpleLastPrice: '',
     variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
+    inventoryConversions: [],
     recipe: [],
   };
 }
@@ -84,6 +88,25 @@ function sanitizeRecipe(recipe: unknown): OrderProductRecipeItem[] {
   });
 }
 
+function sanitizeInventoryConversions(value: unknown): OrderProductUnitConversion[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const row = item as Partial<OrderProductUnitConversion>;
+    const fromUnit = String(row.fromUnit ?? '').trim();
+    const toUnit = String(row.toUnit ?? '').trim();
+    const multiplier = String(row.multiplier ?? '').trim();
+    const parsedMultiplier = Number.parseFloat(multiplier);
+    if (!fromUnit || !toUnit || !Number.isFinite(parsedMultiplier) || parsedMultiplier <= 0) return [];
+    return [{
+      fromUnit,
+      toUnit,
+      multiplier,
+      label: String(row.label ?? '').trim() || undefined,
+    }];
+  });
+}
+
 function hasOrderProductVariants(variants: OrderProductVariant[]): boolean {
   return variants.some(
     (variant) =>
@@ -108,6 +131,7 @@ export function buildEditableOrderProduct(
     sectionIds: Array.isArray(product.sectionIds) ? [...product.sectionIds] : [],
     productType: normalizeOrderProductType(product.productType, fallbackProductType),
     simpleLastPrice: hasVariants ? '' : String(product.lastPrice ?? ''),
+    inventoryConversions: sanitizeInventoryConversions(product.inventoryConversions),
     recipe: normalizeOrderProductType(product.productType, fallbackProductType) === 'sale'
       ? sanitizeRecipe(product.recipe)
       : [],
@@ -143,6 +167,7 @@ export function buildOrderProductUpdateBody(
     categoryId: built.categoryId || null,
     sectionIds: built.sectionIds ?? [],
     productType: built.productType ?? fallbackProductType,
+    inventoryConversions: built.inventoryConversions ?? [],
     recipe: built.recipe ?? [],
     ...(validVariants.length > 0
       ? { variants: built.variants ?? [] }
@@ -217,12 +242,16 @@ export function buildOrderProductPayload(
   );
   const sectionIds = Array.isArray(form.sectionIds) ? form.sectionIds.filter(Boolean) : [];
   const recipe = productType === 'sale' ? sanitizeRecipe(form.recipe) : [];
+  const inventoryConversions = productType === 'order'
+    ? sanitizeInventoryConversions(form.inventoryConversions)
+    : [];
   const base = {
     nameAr: String(form.nameAr ?? '').trim(),
     nameEn: form.nameEn?.trim() || undefined,
     categoryId: form.categoryId || undefined,
     sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
     productType,
+    ...(inventoryConversions.length > 0 ? { inventoryConversions } : {}),
     ...(recipe.length > 0 ? { recipe } : {}),
   };
   if (validVariants.length > 0) {

@@ -112,6 +112,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
           productType: editingProduct.productType || catalogProductType,
           simpleLastPrice: editingProduct.simpleLastPrice || '',
           variants: editingProduct.variants || [],
+          inventoryConversions: editingProduct.inventoryConversions || [],
           recipe: editingProduct.recipe || [],
         }
       : null
@@ -141,6 +142,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         productType: current.productType || catalogProductType,
         simpleLastPrice: current.simpleLastPrice || '',
         variants: normalizeVariants(current.variants || []),
+        inventoryConversions: current.inventoryConversions || [],
         recipe: current.recipe || [],
       } : null));
       return;
@@ -157,6 +159,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         productType: next.productType,
         simpleLastPrice: next.simpleLastPrice,
         variants: normalizeVariants(next.variants),
+        inventoryConversions: next.inventoryConversions || [],
         recipe: next.recipe || [],
       };
     });

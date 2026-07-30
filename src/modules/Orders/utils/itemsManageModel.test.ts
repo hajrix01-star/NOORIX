@@ -167,4 +167,27 @@ describe('itemsManageModel', () => {
       ],
     });
   });
+
+  it('keeps inventory conversions for order products only', () => {
+    const form = {
+      nameAr: 'Orange',
+      nameEn: 'Orange',
+      categoryId: 'fruit',
+      sectionIds: ['bar'],
+      simpleLastPrice: '',
+      variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
+      inventoryConversions: [
+        { fromUnit: 'kg', toUnit: 'piece', multiplier: '6', label: 'kilo to pieces' },
+      ],
+      recipe: [],
+    };
+
+    expect(buildOrderProductPayload(form, 'order')).toMatchObject({
+      productType: 'order',
+      inventoryConversions: [
+        { fromUnit: 'kg', toUnit: 'piece', multiplier: '6', label: 'kilo to pieces' },
+      ],
+    });
+    expect(buildOrderProductPayload(form, 'sale')).not.toHaveProperty('inventoryConversions');
+  });
 });

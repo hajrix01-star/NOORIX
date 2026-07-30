@@ -1258,6 +1258,7 @@ model OrderProduct {
   packaging   String?  @map("packaging")  // ط§ظ„طھط؛ظ„ظٹظپ (ظ„ظ„طھظˆط§ظپظ‚ ظ…ط¹ ط§ظ„ط¥طµط¯ط§ط±ط§طھ ط§ظ„ظ‚ط¯ظٹظ…ط©)
   lastPrice   Decimal  @default(0) @map("last_price") @db.Decimal(18, 4)  // ط³ط¹ط± ط§ظپطھط±ط§ط¶ظٹ ط¹ظ†ط¯ ط¹ط¯ظ… ظˆط¬ظˆط¯ variants
   variants    Json?    @map("variants")   // [{size,packaging,unit,lastPrice},...] â€” طھط±ظƒظٹط¨ط§طھ ظ…طھط¹ط¯ط¯ط© ط¨ط£ط³ط¹ط§ط±
+  inventoryConversions Json? @map("inventory_conversions")
   recipe      Json?    @map("recipe")
   sections    Json?    @map("sections")   // ["ظ…ط·ط¨ط®","ط¨ط§ط±",...] â€” ط£ط³ظ…ط§ط، ظ„ظ„ط¹ط±ط¶ ظˆط§ظ„ظپظ„ط§طھط± ط§ظ„ظ‚ط¯ظٹظ…ط©
   sectionIds  Json?    @map("section_ids") // ["cuid",...] â€” ظ…طµط¯ط± ط§ظ„ط±ط¨ط· ط§ظ„ط­ظ‚ظٹظ‚ظٹ

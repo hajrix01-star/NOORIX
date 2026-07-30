@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { normalizeUnit, resolveProductUnitMultiplier } from './orders-unit-conversions.util';
 
 type ItemRow = {
   productId: string;
@@ -54,6 +55,7 @@ type InventoryProduct = {
   nameAr: string;
   nameEn?: string | null;
   unit?: string | null;
+  inventoryConversions?: unknown;
   recipe?: unknown;
 };
 
@@ -342,9 +344,11 @@ export function aggregateRecipeInventoryStock(input: {
     for (const recipeItem of parseInventoryRecipe(sale.product.recipe)) {
       const materialProduct = materialById.get(recipeItem.materialProductId);
       if (!materialProduct) continue;
-      const row = ensureInventoryRow(rows, materialProduct, recipeItem.unit);
+      const rowUnit = normalizeUnit(materialProduct.unit, recipeItem.unit || 'piece');
+      const unitMultiplier = resolveProductUnitMultiplier(materialProduct, recipeItem.unit, rowUnit);
+      const row = ensureInventoryRow(rows, materialProduct, rowUnit);
       row.consumedBaseQuantity = row.consumedBaseQuantity.plus(
-        soldBaseQuantity.times(decimal(recipeItem.quantity)),
+        soldBaseQuantity.times(decimal(recipeItem.quantity)).times(unitMultiplier),
       );
     }
   }

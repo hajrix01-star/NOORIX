@@ -52,6 +52,25 @@ export class ProductRecipeBatchItemDto {
   unit?: string;
 }
 
+export class ProductUnitConversionBatchDto {
+  @IsOptional()
+  @IsString()
+  fromUnit?: string;
+
+  @IsOptional()
+  @IsString()
+  toUnit?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^(?:0*[1-9]\d*(?:\.\d{1,4})?|0*\.\d*[1-9]\d*)$/)
+  multiplier?: string;
+
+  @IsOptional()
+  @IsString()
+  label?: string;
+}
+
 export class CreateProductItemDto {
   @IsNotEmpty()
   @IsString()
@@ -96,6 +115,12 @@ export class CreateProductItemDto {
   @ValidateNested({ each: true })
   @Type(() => ProductVariantBatchDto)
   variants?: ProductVariantBatchDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductUnitConversionBatchDto)
+  inventoryConversions?: ProductUnitConversionBatchDto[];
 
   @IsOptional()
   @IsArray()

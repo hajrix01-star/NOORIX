@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { toYmd } from '../common/utils/to-ymd.util';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type { ShishaSaleEventInput } from './shisha-inventory-calculator.util';
+import { normalizeUnit, resolveProductUnitMultiplier } from './orders-unit-conversions.util';
 
 const ZERO = new Prisma.Decimal(0);
 
@@ -24,6 +25,14 @@ type ProductRecipeConsumption = {
   hasCharcoal: boolean;
 };
 
+type ProductRecipeMaterialProduct = {
+  id: string;
+  nameAr: string;
+  nameEn: string | null;
+  unit: string | null;
+  inventoryConversions?: unknown;
+};
+
 function decimal(value: unknown): Prisma.Decimal {
   try {
     return new Prisma.Decimal(String(value ?? 0));
@@ -39,6 +48,19 @@ function recipeItems(value: unknown): ProductRecipeItem[] {
 
 function isRecipeMaterialType(value: unknown): value is RecipeMaterialType {
   return value === 'tobacco' || value === 'hose' || value === 'charcoal';
+}
+
+function inferRecipeMaterialType(
+  item: ProductRecipeItem,
+  materialProduct: ProductRecipeMaterialProduct | undefined,
+): RecipeMaterialType | null {
+  if (isRecipeMaterialType(item.materialType)) return item.materialType;
+  const name = `${materialProduct?.nameAr ?? ''} ${materialProduct?.nameEn ?? ''}`.trim().toLowerCase();
+  if (!name) return null;
+  if (name.includes('معسل') || name.includes('tobacco') || name.includes('molasses')) return 'tobacco';
+  if (name.includes('فحم') || name.includes('charcoal') || name.includes('coal')) return 'charcoal';
+  if (name.includes('لي') || name.includes('hose')) return 'hose';
+  return null;
 }
 
 function recipeQuantityBase(
@@ -59,6 +81,7 @@ function recipeQuantityBase(
 function recipeConsumption(
   recipe: unknown,
   soldQuantity: Prisma.Decimal,
+  materialById: Map<string, ProductRecipeMaterialProduct>,
   charcoalPiecesPerPack: number,
   charcoalPacksPerCarton: number,
 ): ProductRecipeConsumption | null {
@@ -71,20 +94,31 @@ function recipeConsumption(
     hasCharcoal: false,
   };
   const result = recipeItems(recipe).reduce<ProductRecipeConsumption>((acc, item) => {
-    if (!isRecipeMaterialType(item.materialType)) return acc;
+    const materialProductId = String(item.materialProductId ?? '').trim();
+    const materialProduct = materialById.get(materialProductId);
+    const materialType = inferRecipeMaterialType(item, materialProduct);
+    if (!materialType) return acc;
     const quantity = decimal(item.quantity);
     if (!quantity.gt(0)) return acc;
+    const unit = String(item.unit ?? '').trim();
+    const convertedQuantity = materialProduct
+      ? quantity.times(resolveProductUnitMultiplier(
+          materialProduct,
+          unit,
+          normalizeUnit(materialProduct.unit, unit || 'piece'),
+        ))
+      : quantity;
     const baseQuantity = recipeQuantityBase(
-      item.materialType,
-      quantity,
-      String(item.unit ?? '').trim(),
+      materialType,
+      convertedQuantity,
+      normalizeUnit(materialProduct?.unit, unit || 'piece'),
       charcoalPiecesPerPack,
       charcoalPacksPerCarton,
     ).times(soldQuantity);
-    if (item.materialType === 'tobacco') {
+    if (materialType === 'tobacco') {
       return { ...acc, tobaccoGrams: acc.tobaccoGrams.plus(baseQuantity), hasTobacco: true };
     }
-    if (item.materialType === 'hose') {
+    if (materialType === 'hose') {
       return { ...acc, hoses: acc.hoses.plus(baseQuantity), hasHoses: true };
     }
     return { ...acc, charcoalPieces: acc.charcoalPieces.plus(baseQuantity), hasCharcoal: true };
@@ -121,7 +155,8 @@ export class ShishaInventorySourceService {
     charcoalPiecesPerPack: number,
     charcoalPacksPerCarton: number,
   ): Promise<ShishaSaleEventInput[]> {
-    const orders = await this.prisma.staffOrder.findMany({
+    const [orders, materialProducts] = await Promise.all([
+      this.prisma.staffOrder.findMany({
       where: {
         companyId,
         orderType: 'sale',
@@ -144,7 +179,13 @@ export class ShishaInventorySourceService {
         },
       },
       orderBy: [{ saleDate: 'asc' }, { createdAt: 'asc' }],
-    });
+      }),
+      this.prisma.orderProduct.findMany({
+        where: { companyId, productType: 'order', isActive: true },
+        select: { id: true, nameAr: true, nameEn: true, unit: true, inventoryConversions: true },
+      }),
+    ]);
+    const materialById = new Map(materialProducts.map((product) => [product.id, product]));
 
     const events: ShishaSaleEventInput[] = [];
     for (const order of orders) {
@@ -176,6 +217,7 @@ export class ShishaInventorySourceService {
         const consumption = recipeConsumption(
           item.product.recipe,
           soldQuantity,
+          materialById,
           charcoalPiecesPerPack,
           charcoalPacksPerCarton,
         );

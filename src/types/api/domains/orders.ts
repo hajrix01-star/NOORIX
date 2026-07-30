@@ -31,6 +31,13 @@ export type OrderProductVariant = {
   quantityMultiplier?: MoneyLike | null;
 };
 
+export type OrderProductUnitConversion = {
+  fromUnit: string;
+  toUnit: string;
+  multiplier: MoneyLike;
+  label?: string | null;
+};
+
 export type OrderProductRecipeMaterialType = 'material' | 'tobacco' | 'hose' | 'charcoal';
 export type OrderProductRecipeUnit = 'g' | 'kg' | 'ml' | 'l' | 'piece' | 'pack' | 'box' | 'carton';
 
@@ -71,6 +78,7 @@ export type OrderProduct = {
   productType?: OrderProductType | string | null;
   lastPrice?: MoneyLike | null;
   variants?: OrderProductVariant[] | unknown;
+  inventoryConversions?: OrderProductUnitConversion[] | unknown;
   recipe?: OrderProductRecipeItem[] | unknown;
   sections?: string[] | null;
   sectionIds?: string[] | null;
@@ -225,6 +233,7 @@ export type OrderProductPayload = {
   sectionIds?: string[] | null;
   productType?: OrderProductType;
   variants?: OrderProductVariant[];
+  inventoryConversions?: OrderProductUnitConversion[];
   recipe?: OrderProductRecipeItem[];
   isActive?: boolean;
 };

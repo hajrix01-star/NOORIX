@@ -315,6 +315,7 @@ export class OrdersService {
           nameAr: true,
           nameEn: true,
           unit: true,
+          inventoryConversions: true,
           recipe: true,
         },
       }),
@@ -332,6 +333,7 @@ export class OrdersService {
               nameAr: true,
               nameEn: true,
               unit: true,
+              inventoryConversions: true,
               recipe: true,
             },
           },
@@ -355,6 +357,7 @@ export class OrdersService {
               nameAr: true,
               nameEn: true,
               unit: true,
+              inventoryConversions: true,
               recipe: true,
             },
           },
@@ -445,7 +448,7 @@ export class OrdersService {
     return this.catalog.getProducts(companyId, section, productType);
   }
 
-  async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>; recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }> }>) {
+  async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>; inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }> }>) {
     return this.catalog.createProductsBatch(companyId, products);
   }
 
@@ -465,6 +468,7 @@ export class OrdersService {
     sectionIds?: string[];
     productType?: string;
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>;
+    inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>;
     recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }>;
   }) {
     return this.catalog.createProduct(companyId, dto);
@@ -482,6 +486,7 @@ export class OrdersService {
     sectionIds?: string[] | null;
     productType?: string;
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>;
+    inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>;
     recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }>;
     isActive?: boolean;
   }) {

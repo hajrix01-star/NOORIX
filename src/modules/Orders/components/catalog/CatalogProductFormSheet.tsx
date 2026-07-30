@@ -1,11 +1,11 @@
-import React, { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+﻿import React, { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { AdaptiveSheet, Button, Checkbox, DialogActions, Input, SearchableOptionsPicker } from '../../../../ui';
 import type {
   OrderCategory,
   OrderProduct,
   OrderProductRecipeItem,
-  OrderProductRecipeMaterialType,
+  OrderProductUnitConversion,
   OrderProductType,
   OrderProductVariant,
   OrderSection,
@@ -26,6 +26,7 @@ export type CatalogProductFormState = {
   productType: OrderProductType;
   simpleLastPrice: string;
   variants: OrderProductVariant[];
+  inventoryConversions: OrderProductUnitConversion[];
   recipe: OrderProductRecipeItem[];
   _advanced?: boolean;
 };
@@ -57,14 +58,7 @@ type CatalogProductFormSheetProps = {
   removeVariant: (idx: number) => void;
 };
 
-type CatalogFormTab = 'details' | 'variants' | 'recipe';
-
-const recipeMaterialLabels: Record<OrderProductRecipeMaterialType, string> = {
-  material: 'مادة عامة',
-  tobacco: 'معسل',
-  hose: 'لي',
-  charcoal: 'فحم',
-};
+type CatalogFormTab = 'details' | 'variants' | 'conversions' | 'recipe';
 
 const allRecipeUnitOptions = [
   { value: 'piece', label: 'حبة' },
@@ -77,20 +71,6 @@ const allRecipeUnitOptions = [
   { value: 'carton', label: 'كرتون' },
 ];
 
-function recipeUnits(materialType: OrderProductRecipeMaterialType) {
-  if (materialType === 'tobacco') return [
-    { value: 'g', label: 'جرام' },
-    { value: 'kg', label: 'كيلو' },
-  ];
-  if (materialType === 'charcoal') return [
-    { value: 'piece', label: 'حبة' },
-    { value: 'pack', label: 'علبة' },
-    { value: 'carton', label: 'كرتون' },
-  ];
-  if (materialType === 'hose') return [{ value: 'piece', label: 'حبة' }];
-  return allRecipeUnitOptions;
-}
-
 function searchableText(...values: unknown[]) {
   return values.map((value) => String(value ?? '')).join(' ').trim().toLowerCase();
 }
@@ -98,7 +78,6 @@ function searchableText(...values: unknown[]) {
 function productLabel(product: OrderProduct) {
   return product.nameAr || product.nameEn || product.id;
 }
-
 function productSearchableLabel(product: OrderProduct) {
   const categoryName = product.category?.nameAr || product.category?.nameEn || '';
   const label = productLabel(product);
@@ -145,11 +124,7 @@ function RecipeEditor({
   function updateRow(index: number, patch: Partial<OrderProductRecipeItem>) {
     onChange(recipe.map((row, rowIndex) => {
       if (rowIndex !== index) return row;
-      const materialType = patch.materialType ?? row.materialType;
-      const nextUnit = patch.materialType && patch.materialType !== row.materialType
-        ? recipeUnits(materialType)[0]?.value ?? 'piece'
-        : row.unit;
-      return { ...row, ...patch, unit: patch.unit ?? nextUnit };
+      return { ...row, ...patch, materialType: 'material', unit: patch.unit ?? row.unit ?? 'piece' };
     }));
   }
 
@@ -181,18 +156,7 @@ function RecipeEditor({
             </div>
           )}
           {recipe.map((row, index) => (
-            <div key={`${row.materialProductId}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[112px_1fr_88px_90px_44px]">
-              <Input
-                type="select"
-                value={row.materialType}
-                onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-                  updateRow(index, { materialType: event.target.value as OrderProductRecipeMaterialType })
-                }
-              >
-                {Object.entries(recipeMaterialLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </Input>
+            <div key={`${row.materialProductId}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[1fr_88px_90px_44px]">
               <SearchableOptionsPicker
                 value={row.materialProductId}
                 onChange={(materialProductId) => updateRow(index, { materialProductId })}
@@ -212,10 +176,10 @@ function RecipeEditor({
               />
               <Input
                 type="select"
-                value={String(row.unit || recipeUnits(row.materialType)[0]?.value || 'piece')}
+                value={String(row.unit || 'piece')}
                 onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { unit: event.target.value })}
               >
-                {recipeUnits(row.materialType).map((unit) => (
+                {allRecipeUnitOptions.map((unit) => (
                   <option key={unit.value} value={unit.value}>{unit.label}</option>
                 ))}
               </Input>
@@ -226,6 +190,97 @@ function RecipeEditor({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function createConversionRow(baseUnit: string): OrderProductUnitConversion {
+  return {
+    fromUnit: 'kg',
+    toUnit: baseUnit || 'piece',
+    multiplier: '',
+    label: '',
+  };
+}
+
+function ConversionEditor({
+  conversions,
+  baseUnit,
+  onChange,
+}: {
+  conversions: OrderProductUnitConversion[];
+  baseUnit: string;
+  onChange: (conversions: OrderProductUnitConversion[]) => void;
+}) {
+  function updateRow(index: number, patch: Partial<OrderProductUnitConversion>) {
+    onChange(conversions.map((row, rowIndex) => (
+      rowIndex === index ? { ...row, ...patch } : row
+    )));
+  }
+
+  return (
+    <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[13px] font-bold text-noorix-text">التحويلات</div>
+          <div className="text-[12px] text-noorix-muted">عرّف تحويلات هذا الصنف للمخزون والرسبي، مثل كيلو = 6 حبات.</div>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => onChange([...conversions, createConversionRow(baseUnit)])}
+        >
+          + تحويل
+        </Button>
+      </div>
+      <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
+        التحويلات القياسية محفوظة تلقائياً: 1 كيلو = 1000 جرام، 1 لتر = 1000 مل. أضف هنا فقط التحويلات الخاصة بالصنف.
+      </div>
+      <div className="flex flex-col gap-2">
+        {conversions.length === 0 && (
+          <div className="rounded-lg border border-dashed border-noorix-border bg-white p-3 text-center text-[13px] text-noorix-muted">
+            لا توجد تحويلات مخصصة لهذا الصنف.
+          </div>
+        )}
+        {conversions.map((row, index) => (
+          <div key={`${row.fromUnit}-${row.toUnit}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[1fr_96px_96px_110px_44px]">
+            <Input
+              value={String(row.label ?? '')}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { label: event.target.value })}
+              placeholder="وصف اختياري"
+            />
+            <Input
+              type="select"
+              value={String(row.fromUnit || 'kg')}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { fromUnit: event.target.value })}
+            >
+              {allRecipeUnitOptions.map((unit) => (
+                <option key={unit.value} value={unit.value}>{unit.label}</option>
+              ))}
+            </Input>
+            <Input
+              type="select"
+              value={String(row.toUnit || baseUnit || 'piece')}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { toUnit: event.target.value })}
+            >
+              {allRecipeUnitOptions.map((unit) => (
+                <option key={unit.value} value={unit.value}>{unit.label}</option>
+              ))}
+            </Input>
+            <Input
+              type="number"
+              min="0"
+              step="0.001"
+              value={String(row.multiplier ?? '')}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { multiplier: event.target.value })}
+              placeholder="المعامل"
+            />
+            <Button type="button" size="sm" variant="danger" onClick={() => onChange(conversions.filter((_, rowIndex) => rowIndex !== index))}>
+              x
+            </Button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -259,7 +314,7 @@ function VariantsTable({
     return (
       <div className="space-y-3">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
-          أحجام الفحم مرتبطة بمعادلات ثابتة: العلبة 64 حبة، والكرتون 10 علب. الوحدة ومعامل التحويل يحددهما النظام تلقائيًا.
+          أحجام الفحم مرتبطة بمعادلات ثابتة: العلبة 64 حبة، والكرتون 10 علب. الوحدة ومعامل التحويل يحددهما النظام تلقائياً.
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {variants.map((variant, index) => (
@@ -507,6 +562,7 @@ export function CatalogProductFormSheet({
           {[
             { key: 'details' as const, label: 'البيانات' },
             { key: 'variants' as const, label: 'الأحجام والأسعار' },
+            ...(form.productType === 'order' ? [{ key: 'conversions' as const, label: 'التحويلات' }] : []),
             ...(form.productType === 'sale' ? [{ key: 'recipe' as const, label: 'الرسبي' }] : []),
           ].map((tab) => (
             <button
@@ -612,6 +668,14 @@ export function CatalogProductFormSheet({
             )}
           </>
         ))}
+
+        {activeTab === 'conversions' && form.productType === 'order' && (
+          <ConversionEditor
+            conversions={form.inventoryConversions || []}
+            baseUnit={form.variants?.[0]?.unit || 'piece'}
+            onChange={(inventoryConversions) => updateForm({ inventoryConversions })}
+          />
+        )}
 
         {activeTab === 'recipe' && form.productType === 'sale' && (
           <RecipeEditor

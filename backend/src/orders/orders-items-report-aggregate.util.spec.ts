@@ -128,6 +128,57 @@ describe('aggregateRecipeInventoryStock', () => {
     ]);
   });
 
+  it('uses product unit conversions when recipes consume a different unit', () => {
+    const orange = {
+      id: 'orange',
+      nameAr: 'Orange',
+      nameEn: 'Orange',
+      unit: 'piece',
+      inventoryConversions: [
+        { fromUnit: 'kg', toUnit: 'piece', multiplier: '6' },
+      ],
+    };
+    const juice = {
+      id: 'orange-juice',
+      nameAr: 'Orange juice',
+      nameEn: 'Orange juice',
+      unit: 'cup',
+      recipe: [
+        { materialType: 'material', materialProductId: 'orange', quantity: '0.5', unit: 'kg' },
+      ],
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [orange],
+      purchases: [
+        {
+          productId: 'orange',
+          quantity: new Prisma.Decimal(2),
+          quantityMultiplier: new Prisma.Decimal(6),
+          product: orange,
+        },
+      ],
+      sales: [
+        {
+          productId: 'orange-juice',
+          quantity: new Prisma.Decimal(3),
+          quantityMultiplier: new Prisma.Decimal(1),
+          product: juice,
+        },
+      ],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: 'orange',
+        unit: 'piece',
+        purchasedBaseQuantity: '12',
+        consumedBaseQuantity: '9',
+        balanceBaseQuantity: '3',
+      }),
+    ]);
+  });
+
   it('reverses consumption when a sold item is cancelled', () => {
     const orange = {
       id: 'orange',

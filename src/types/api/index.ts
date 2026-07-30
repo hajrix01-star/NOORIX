@@ -22,6 +22,7 @@ export type {
   OrderLine,
   OrderProduct,
   OrderProductPayload,
+  OrderProductUnitConversion,
   OrderProductRecipeItem,
   OrderProductRecipeMaterialType,
   OrderProductRecipeUnit,
