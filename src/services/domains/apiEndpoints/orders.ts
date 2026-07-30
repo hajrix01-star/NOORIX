@@ -10,6 +10,7 @@ import type {
   OrderProductPayload,
   OrderPurchaseHistoryRow,
   OrderRangeSummary,
+  OrderRecipeInventoryStockRow,
   OrderRecord,
   OrderSection,
   OrderSectionPayload,
@@ -183,6 +184,12 @@ export async function getOrdersItemsReportRange(
     endDate,
   });
   return res;
+}
+export async function getOrdersRecipeInventoryStock(
+  companyId: string,
+): Promise<ApiParsedResult<OrderRecipeInventoryStockRow[]>> {
+  const res = await apiGet<OrderRecipeInventoryStockRow[]>('/api/v1/orders/recipe-inventory-stock', { companyId });
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 export async function getOrderProducts(companyId: string, section?: string, type?: string): Promise<ApiParsedResult<OrderProduct[]>> {
   const params: Record<string, string> = { companyId };

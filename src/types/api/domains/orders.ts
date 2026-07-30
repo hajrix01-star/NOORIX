@@ -167,6 +167,16 @@ export type OrderItemsReportResult = {
   };
 };
 
+export type OrderRecipeInventoryStockRow = {
+  productId: string;
+  productNameAr: string;
+  productNameEn: string | null;
+  unit: string;
+  purchasedBaseQuantity: MoneyLike;
+  consumedBaseQuantity: MoneyLike;
+  balanceBaseQuantity: MoneyLike;
+};
+
 export type OrderPurchaseHistoryRow = {
   orderId: string;
   orderNumber: string;

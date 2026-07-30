@@ -9,6 +9,7 @@ import { aggregateOrdersMonthSummary, aggregateOrdersRangeSummaryGroups } from '
 import {
   aggregateOrderItemsByProductForReport,
   aggregateOrderItemsForRangeReport,
+  aggregateRecipeInventoryStock,
 } from './orders-items-report-aggregate.util';
 import { OrdersCatalogService } from './orders-catalog.service';
 import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
@@ -303,6 +304,69 @@ export class OrdersService {
     });
 
     return aggregateOrderItemsForRangeReport(items);
+  }
+
+  async getRecipeInventoryStock(companyId: string) {
+    const [materialProducts, purchases, sales] = await Promise.all([
+      this.prisma.orderProduct.findMany({
+        where: { companyId, productType: 'order' },
+        select: {
+          id: true,
+          nameAr: true,
+          nameEn: true,
+          unit: true,
+          recipe: true,
+        },
+      }),
+      this.prisma.orderItem.findMany({
+        where: {
+          order: { companyId, status: 'active' },
+        },
+        select: {
+          productId: true,
+          quantity: true,
+          quantityMultiplier: true,
+          product: {
+            select: {
+              id: true,
+              nameAr: true,
+              nameEn: true,
+              unit: true,
+              recipe: true,
+            },
+          },
+        },
+      }),
+      this.prisma.staffOrderItem.findMany({
+        where: {
+          staffOrder: {
+            companyId,
+            orderType: 'sale',
+            status: 'sent',
+          },
+        },
+        select: {
+          productId: true,
+          quantity: true,
+          quantityMultiplier: true,
+          product: {
+            select: {
+              id: true,
+              nameAr: true,
+              nameEn: true,
+              unit: true,
+              recipe: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return aggregateRecipeInventoryStock({
+      materialProducts,
+      purchases,
+      sales,
+    });
   }
 
   async getProductPurchaseHistory(

@@ -127,4 +127,57 @@ describe('aggregateRecipeInventoryStock', () => {
       }),
     ]);
   });
+
+  it('reverses consumption when a sold item is cancelled', () => {
+    const orange = {
+      id: 'orange',
+      nameAr: 'Ø¨Ø±ØªÙ‚Ø§Ù„',
+      nameEn: 'Orange',
+      unit: 'piece',
+    };
+    const juice = {
+      id: 'orange-juice',
+      nameAr: 'Ø¹ØµÙŠØ± Ø¨Ø±ØªÙ‚Ø§Ù„',
+      nameEn: 'Orange juice',
+      unit: 'cup',
+      recipe: [
+        { materialType: 'material', materialProductId: 'orange', quantity: '3', unit: 'piece' },
+      ],
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [orange],
+      purchases: [
+        {
+          productId: 'orange',
+          quantity: new Prisma.Decimal(1),
+          quantityMultiplier: new Prisma.Decimal(10),
+          product: orange,
+        },
+      ],
+      sales: [
+        {
+          productId: 'orange-juice',
+          quantity: new Prisma.Decimal(2),
+          quantityMultiplier: new Prisma.Decimal(1),
+          product: juice,
+        },
+        {
+          productId: 'orange-juice',
+          quantity: new Prisma.Decimal(-1),
+          quantityMultiplier: new Prisma.Decimal(1),
+          product: juice,
+        },
+      ],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: 'orange',
+        purchasedBaseQuantity: '10',
+        consumedBaseQuantity: '3',
+        balanceBaseQuantity: '7',
+      }),
+    ]);
+  });
 });

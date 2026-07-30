@@ -221,6 +221,12 @@ export class OrdersController {
     );
   }
 
+  @Get('recipe-inventory-stock')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
+  getRecipeInventoryStock(@CompanyId() companyId: string) {
+    return this.ordersService.getRecipeInventoryStock(requireCompanyId(companyId));
+  }
+
   @Get('products')
   @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
   getProducts(

@@ -18,6 +18,7 @@ export type {
   OrderItemsReportRow,
   OrderItemsReportDailyRow,
   OrderItemsReportResult,
+  OrderRecipeInventoryStockRow,
   OrderLine,
   OrderProduct,
   OrderProductPayload,
