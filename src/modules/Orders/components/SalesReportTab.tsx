@@ -92,6 +92,10 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
   }
 
   function userName(u: StaffSaleReportUserRow | StaffSaleReportLogRow): string {
+    const displayName = (lang === 'en' ? (u.nameEn || u.nameAr) : (u.nameAr || u.nameEn))?.trim();
+    const username = u.username?.trim();
+    if (displayName && username && displayName !== username) return `${displayName} (${username})`;
+    if (displayName || username) return displayName || username || '';
     return u.username
       || (lang === 'en' ? (u.nameEn || u.nameAr) : (u.nameAr || u.nameEn))
       || '—';

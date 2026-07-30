@@ -20,6 +20,8 @@ import { resolveOrdersScreenMode } from './ordersScreenRouting';
 
 const ORDERS_TAB_ALIASES = { sales: 'sales-report' } as const;
 type OrdersTabDescriptor = { id: string; labelKey: string; shortLabelKey?: string };
+type OrdersTabGroupId = 'orders-workspace' | 'orders-reports' | 'orders-management';
+type OrdersTabGroup = { id: OrdersTabGroupId; labelKey: string; tabIds: string[] };
 
 function parseYearMonth(dateStr: unknown) {
   if (!dateStr || typeof dateStr !== 'string') return null;
@@ -95,13 +97,52 @@ function ManagerOrdersScreen({
 }) {
   const { t } = useTranslation();
 
-  const TAB_IDS = useMemo(() => {
-    const ids: string[] = [];
-    if (canSubmitInternalRegistration) ids.push('staff-sales');
-    if (hasManagerDataAccess) ids.push('orders', 'items-report', 'items-manage', 'shisha-inventory');
-    if (canViewSalesReport) ids.push('sales-report');
-    return ids;
+  const tabDescriptors = useMemo(() => {
+    const tabs: OrdersTabDescriptor[] = [];
+    if (hasManagerDataAccess) {
+      tabs.push(
+        { id: 'orders', labelKey: 'ordersTab', shortLabelKey: 'ordersTabShort' },
+      );
+    }
+    if (canSubmitInternalRegistration) {
+      tabs.push({ id: 'staff-sales', labelKey: 'staffSalesRecordTab', shortLabelKey: 'staffSalesRecordTabShort' });
+    }
+    if (hasManagerDataAccess) {
+      tabs.push(
+        { id: 'items-report', labelKey: 'ordersItemsReportTab', shortLabelKey: 'ordersItemsReportTabShort' },
+      );
+    }
+    if (canViewSalesReport) {
+      tabs.push({ id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' });
+    }
+    if (hasManagerDataAccess) {
+      tabs.push(
+        { id: 'items-manage', labelKey: 'ordersItemsManageTab', shortLabelKey: 'ordersItemsManageTabShort' },
+        { id: 'shisha-inventory', labelKey: 'shishaInventoryTab', shortLabelKey: 'shishaInventoryTabShort' },
+      );
+    }
+    return tabs;
   }, [canViewSalesReport, canSubmitInternalRegistration, hasManagerDataAccess]);
+
+  const tabGroups = useMemo<OrdersTabGroup[]>(() => {
+    const groups: OrdersTabGroup[] = [];
+    const orderTabIds = [
+      ...(hasManagerDataAccess ? ['orders'] : []),
+      ...(canSubmitInternalRegistration ? ['staff-sales'] : []),
+    ];
+    const reportTabIds = [
+      ...(hasManagerDataAccess ? ['items-report'] : []),
+      ...(canViewSalesReport ? ['sales-report'] : []),
+    ];
+    const managementTabIds = hasManagerDataAccess ? ['items-manage', 'shisha-inventory'] : [];
+
+    if (orderTabIds.length > 0) groups.push({ id: 'orders-workspace', labelKey: 'ordersWorkspaceTab', tabIds: orderTabIds });
+    if (reportTabIds.length > 0) groups.push({ id: 'orders-reports', labelKey: 'ordersReportsWorkspaceTab', tabIds: reportTabIds });
+    if (managementTabIds.length > 0) groups.push({ id: 'orders-management', labelKey: 'ordersManagementWorkspaceTab', tabIds: managementTabIds });
+    return groups;
+  }, [canViewSalesReport, canSubmitInternalRegistration, hasManagerDataAccess]);
+
+  const TAB_IDS = useMemo(() => tabDescriptors.map((tab) => tab.id), [tabDescriptors]);
 
   const defaultTab =
     prefersStaffSalesTab && canSubmitInternalRegistration && TAB_IDS.includes('staff-sales')
@@ -133,22 +174,7 @@ function ManagerOrdersScreen({
   }, [dateFilter.mode, dateFilter.selYear, dateFilter.selMonth, dateFilter.selDay, dateFilter.rangeStart, dateFilter.rangeEnd, dateFilter.startDate, dateFilter.endDate]);
 
   const tabItems = useMemo(() => {
-    const tabs: Array<{ id: string; labelKey: string; shortLabelKey?: string }> = [];
-    if (canSubmitInternalRegistration) {
-      tabs.push({ id: 'staff-sales', labelKey: 'staffSalesRecordTab', shortLabelKey: 'staffSalesRecordTabShort' });
-    }
-    if (hasManagerDataAccess) {
-      tabs.push(
-        { id: 'orders', labelKey: 'ordersTab', shortLabelKey: 'ordersTabShort' },
-        { id: 'items-report', labelKey: 'ordersItemsReportTab', shortLabelKey: 'ordersItemsReportTabShort' },
-        { id: 'items-manage', labelKey: 'ordersItemsManageTab', shortLabelKey: 'ordersItemsManageTabShort' },
-        { id: 'shisha-inventory', labelKey: 'shishaInventoryTab', shortLabelKey: 'shishaInventoryTabShort' },
-      );
-    }
-    if (canViewSalesReport) {
-      tabs.push({ id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' });
-    }
-    return tabs.map((tab) => {
+    return tabDescriptors.map((tab) => {
       const full = t(tab.labelKey);
       const short = tab.shortLabelKey ? t(tab.shortLabelKey) : full;
       const label =
@@ -162,7 +188,47 @@ function ManagerOrdersScreen({
         );
       return { id: tab.id, label };
     });
-  }, [t, canViewSalesReport, canSubmitInternalRegistration, hasManagerDataAccess]);
+  }, [t, tabDescriptors]);
+
+  const tabItemsById = useMemo(
+    () => new Map(tabItems.map((item) => [item.id, item])),
+    [tabItems],
+  );
+  const activeGroup = useMemo(
+    () => tabGroups.find((group) => group.tabIds.includes(activeTab)) ?? tabGroups[0],
+    [activeTab, tabGroups],
+  );
+  const groupItems = useMemo(
+    () => tabGroups.map((group) => ({ id: group.id, label: t(group.labelKey) })),
+    [t, tabGroups],
+  );
+
+  function setActiveGroup(groupId: string) {
+    const nextGroup = tabGroups.find((group) => group.id === groupId);
+    const nextTab = nextGroup?.tabIds[0];
+    if (nextTab) setActiveTab(nextTab);
+  }
+
+  function renderInnerTabs(group: OrdersTabGroup | undefined) {
+    if (!group || group.tabIds.length <= 1) return null;
+    const items = group.tabIds.reduce<Array<{ id: string; label: React.ReactNode }>>((acc, id) => {
+      const item = tabItemsById.get(id);
+      if (item) acc.push(item);
+      return acc;
+    }, []);
+
+    return (
+      <ScreenTabs
+        items={items}
+        value={activeTab}
+        onChange={setActiveTab}
+        variant="segmented"
+        segmentedFlat
+        className="nx-orders-inner-tabs"
+        contentClassName="hidden"
+      />
+    );
+  }
 
   return (
     <ScreenShell variant="data" className="min-w-0">
@@ -178,12 +244,13 @@ function ManagerOrdersScreen({
 
       {companyId && (
         <ScreenTabs
-          items={tabItems}
-          value={activeTab}
-          onChange={setActiveTab}
+          items={groupItems}
+          value={activeGroup?.id ?? ''}
+          onChange={setActiveGroup}
           shellClassName="nx-orders-tabs-shell"
           contentClassName="nx-tab-content nx-orders-tab-content min-h-[200px] px-1 py-2 sm:px-3 sm:py-3"
         >
+          {renderInnerTabs(activeGroup)}
           {activeTab === 'staff-sales' && canSubmitInternalRegistration && (
             <StaffOrdersView companyId={companyId} embedded salesOnly />
           )}

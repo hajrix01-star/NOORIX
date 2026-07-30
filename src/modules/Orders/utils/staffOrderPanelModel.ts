@@ -103,6 +103,26 @@ function staffOrderDateValue(order: Pick<StaffOrder, 'createdAt' | 'saleDate'>):
   return new Date(order.createdAt || order.saleDate || '').getTime() || 0;
 }
 
+export function filterStaffSaleOrdersToRecentWeek(
+  orders: StaffOrder[],
+  today = new Date(),
+): StaffOrder[] {
+  const end = new Date(today);
+  end.setHours(23, 59, 59, 999);
+
+  const start = new Date(end);
+  start.setDate(start.getDate() - 6);
+  start.setHours(0, 0, 0, 0);
+
+  const startMs = start.getTime();
+  const endMs = end.getTime();
+
+  return (orders ?? []).filter((order) => {
+    const value = new Date(order.saleDate || order.createdAt || '').getTime() || 0;
+    return value >= startMs && value <= endMs;
+  });
+}
+
 export function staffSaleOrderEditScopeKey(order: Pick<StaffOrder, 'id' | 'logRef'>): string {
   return order.logRef?.trim() || order.id;
 }

@@ -5,6 +5,7 @@ import {
   buildStaffQtyMap,
   canMutateStaffSaleOrder,
   filterStaffOrderProducts,
+  filterStaffSaleOrdersToRecentWeek,
   groupSentSaleOrders,
   latestEditableStaffSaleScope,
   mapStaffOrderToBasketLines,
@@ -130,6 +131,20 @@ describe('staffOrderPanelModel', () => {
     expect(canMutateStaffSaleOrder({ order: older, latestScope, isPrivileged: false })).toBe(false);
     expect(canMutateStaffSaleOrder({ order: latest, latestScope, isPrivileged: false })).toBe(true);
     expect(canMutateStaffSaleOrder({ order: older, latestScope, isPrivileged: true })).toBe(true);
+  });
+
+  it('shows only the recent week in the internal sales history', () => {
+    const visible = filterStaffSaleOrdersToRecentWeek(
+      [
+        staffOrder({ id: 'too-old', orderType: 'sale', createdAt: '2026-07-20T12:00:00.000Z' }),
+        staffOrder({ id: 'old-sale-date', orderType: 'sale', saleDate: '2026-07-20', createdAt: '2026-07-30T09:00:00.000Z' }),
+        staffOrder({ id: 'week-start', orderType: 'sale', createdAt: '2026-07-24T08:00:00.000Z' }),
+        staffOrder({ id: 'today', orderType: 'sale', createdAt: '2026-07-30T09:00:00.000Z' }),
+      ],
+      new Date('2026-07-30T12:00:00.000Z'),
+    );
+
+    expect(visible.map((order) => order.id)).toEqual(['week-start', 'today']);
   });
 
   it('builds a cancellation payload with per-line reasons while keeping the entered quantity positive', () => {

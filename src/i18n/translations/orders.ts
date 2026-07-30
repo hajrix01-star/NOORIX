@@ -4,6 +4,9 @@
 export default {
   ordersTitle: { ar: 'الطلبات', en: 'Orders' },
   ordersDesc: { ar: 'تتبع الطلبات حسب طريقة الدفع: عهدة، نقد، أو تحويل، مع تقارير الأصناف.', en: 'Track orders by payment method: petty cash, cash, or bank transfer, with item reports.' },
+  ordersWorkspaceTab: { ar: 'الطلبات', en: 'Orders' },
+  ordersReportsWorkspaceTab: { ar: 'التقارير', en: 'Reports' },
+  ordersManagementWorkspaceTab: { ar: 'الإدارة', en: 'Management' },
   ordersTab: { ar: 'الطلبات', en: 'Orders' },
   ordersTabShort: { ar: 'طلبات', en: 'Orders' },
   ordersTabDesc: { ar: 'قائمة الطلبات للشهر المحدد', en: 'Orders list for selected month' },
@@ -406,7 +409,7 @@ export default {
   staffSaleResend:          { ar: 'إرسال واتساب', en: 'Send WhatsApp' },
   staffSaleDeleteConfirm:   { ar: 'هل تريد حذف هذا السجل الداخلي؟', en: 'Delete this internal log?' },
   staffSaleEntryTab:        { ar: 'إدخال جديد', en: 'New entry' },
-  staffSaleHistoryTab:      { ar: 'سجل اليوم', en: 'Today log' },
+  staffSaleHistoryTab:      { ar: 'آخر أسبوع', en: 'Last week' },
   staffSaleLatestOnly:      { ar: 'يمكن تعديل آخر تسجيل داخلي فقط.', en: 'Only the latest internal log can be edited.' },
   staffSaleMySent:          { ar: 'سجلاتي الداخلية', en: 'My internal logs' },
   staffSaleNoRecords:       { ar: 'لا توجد سجلات داخلية بعد. سجّل أعلاه.', en: 'No internal logs yet. Record above.' },

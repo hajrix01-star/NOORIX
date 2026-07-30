@@ -20,6 +20,7 @@ import {
   buildStaffQtyMap,
   filterStaffOrderProducts,
   filterStaffOrdersByType,
+  filterStaffSaleOrdersToRecentWeek,
   groupSentSaleOrders,
   canMutateStaffSaleOrder,
   latestEditableStaffSaleScope,
@@ -107,7 +108,7 @@ export function StaffOrderPanel({
     [myOrders, productType],
   );
   const visibleOrders = useMemo(
-    () => (isSale ? myTypedOrders.filter((o) => o.status === 'sent') : myTypedOrders),
+    () => (isSale ? filterStaffSaleOrdersToRecentWeek(myTypedOrders.filter((o) => o.status === 'sent')) : myTypedOrders),
     [isSale, myTypedOrders],
   );
   const sentSaleGroups = useMemo(
