@@ -72,7 +72,12 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     key: 'orders', labelAr: 'الطلبات', labelEn: 'Orders', icon: '📦',
     permissions: {
       view: 'VIEW_ORDERS', read: 'ORDERS_READ', write: 'ORDERS_WRITE', delete: 'ORDERS_DELETE',
-      staffSubmit: 'STAFF_ORDERS_SUBMIT',
+    },
+  },
+  {
+    key: 'internalRegistration', labelAr: 'التسجيل الداخلي', labelEn: 'Internal Registration', icon: '🧾',
+    permissions: {
+      view: 'VIEW_INTERNAL_REGISTRATION', read: 'STAFF_ORDERS_READ', submit: 'STAFF_ORDERS_SUBMIT',
     },
   },
   {
@@ -129,7 +134,6 @@ export const PERMISSION_MODULES: PermissionModule[] = [
 ];
 
 export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
-  staffSubmit: { ar: 'إرسال طلب قسم', en: 'Submit Section Order' },
   view:       { ar: 'عرض الصفحة', en: 'View Page' },
   read:       { ar: 'قراءة البيانات', en: 'Read Data' },
   write:      { ar: 'إنشاء وتعديل', en: 'Create & Edit' },
@@ -145,7 +149,7 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   costApps:   { ar: 'تكلفة تطبيقات', en: 'Cost accounting apps' },
   taxReport:  { ar: 'تقرير الضريبة', en: 'Tax report' },
   bankStatement: { ar: 'تحليل كشف البنك', en: 'Bank statement' },
-  submit:     { ar: 'رفع كاشير', en: 'Cashier submit' },
+  submit:     { ar: 'تسجيل/إرسال', en: 'Submit' },
   chatAdv:    { ar: 'محادثة · سلف', en: 'Chat · Advances' },
   chatLeave:  { ar: 'محادثة · إجازات', en: 'Chat · Leaves' },
   chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
@@ -179,6 +183,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.VIEW_DASHBOARD, PERMISSIONS.VIEW_CHAT, PERMISSIONS.VIEW_INVOICES,
       PERMISSIONS.VIEW_SUPPLIERS, PERMISSIONS.VIEW_VAULTS, PERMISSIONS.VIEW_REPORTS,
       PERMISSIONS.VIEW_SALES, PERMISSIONS.VIEW_EMPLOYEES, PERMISSIONS.VIEW_ORDERS,
+      PERMISSIONS.VIEW_INTERNAL_REGISTRATION,
       PERMISSIONS.VIEW_EXPENSES, PERMISSIONS.VIEW_ASSETS,
       PERMISSIONS.INVOICES_READ, PERMISSIONS.INVOICES_WRITE, PERMISSIONS.INVOICES_ACTIONS,
       PERMISSIONS.INVOICES_VIEW_EXEC_SUMMARY,
@@ -189,7 +194,9 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.SUPPLIERS_READ, PERMISSIONS.VAULTS_READ,
       PERMISSIONS.EXPENSES_READ, PERMISSIONS.EXPENSES_WRITE,
       PERMISSIONS.ASSETS_READ, PERMISSIONS.ASSETS_WRITE,
-      PERMISSIONS.ORDERS_READ, PERMISSIONS.ORDERS_WRITE, PERMISSIONS.REPORTS_READ,
+      PERMISSIONS.ORDERS_READ, PERMISSIONS.ORDERS_WRITE,
+      PERMISSIONS.STAFF_ORDERS_READ,
+      PERMISSIONS.REPORTS_READ,
       PERMISSIONS.VIEW_REPORTS_GENERAL, PERMISSIONS.VIEW_REPORTS_COST_APPS,
       PERMISSIONS.VIEW_REPORTS_TAX, PERMISSIONS.VIEW_REPORTS_BANK,
       PERMISSIONS.VIEW_HAJRI_TAX, PERMISSIONS.HAJRI_TAX_READ, PERMISSIONS.HAJRI_TAX_WRITE,
@@ -210,7 +217,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
     nameAr: 'الكاشير',
     permissions: [
       PERMISSIONS.VIEW_CHAT, PERMISSIONS.VIEW_SALES, PERMISSIONS.VIEW_INVOICES,
-      PERMISSIONS.VIEW_ORDERS,
+      PERMISSIONS.VIEW_INTERNAL_REGISTRATION,
       PERMISSIONS.STAFF_ORDERS_SUBMIT,
       PERMISSIONS.SALES_READ, PERMISSIONS.SALES_WRITE, PERMISSIONS.SALES_ACTIONS,
       /** يسمح بعرض ملخصات المبيعات والتقارير لأي تاريخ (بدون قصّ آخر 7 أيام). */

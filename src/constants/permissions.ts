@@ -98,18 +98,25 @@ export const REPORTS_BANK_ACCESS = [PERMISSIONS.VIEW_REPORTS_BANK, PERMISSIONS.V
 /** دخول قسم الطلبات — مدير أو موظف Staff Orders */
 export const ORDERS_APP_ACCESS = [
   PERMISSIONS.VIEW_ORDERS,
+  PERMISSIONS.VIEW_INTERNAL_REGISTRATION,
+  PERMISSIONS.STAFF_ORDERS_READ,
   PERMISSIONS.STAFF_ORDERS_SUBMIT,
 ];
 
 /** جلب بيانات الطلبات — واجهة المدير الكاملة */
 export const ORDERS_MANAGER_DATA_ACCESS = [
-  PERMISSIONS.VIEW_SALES,
   PERMISSIONS.ORDERS_READ,
   PERMISSIONS.ORDERS_WRITE,
 ] as const;
 
-/** تقرير التسجيل الداخلي — حسب صلاحيات إدارة الطلبات */
-export const ORDERS_SALES_REPORT_ACCESS = [...ORDERS_MANAGER_DATA_ACCESS] as const;
+/** التسجيل الداخلي — مستقل عن إدارة الطلبات */
+export const ORDERS_INTERNAL_REGISTRATION_ACCESS = [
+  PERMISSIONS.STAFF_ORDERS_READ,
+  PERMISSIONS.STAFF_ORDERS_SUBMIT,
+] as const;
+
+/** تقرير التسجيل الداخلي — قراءة مستقلة عن الطلبات */
+export const ORDERS_SALES_REPORT_ACCESS = [PERMISSIONS.STAFF_ORDERS_READ] as const;
 
 /** تبويبات التقارير — ترتيب redirect الافتراضي */
 export const REPORT_TAB_SEQUENCE: Array<{ path: string; required: readonly string[] }> = [

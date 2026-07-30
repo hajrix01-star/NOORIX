@@ -15,7 +15,7 @@ export function resolveOrdersScreenMode(
   canSubmitStaff: boolean;
   hasManagerDataAccess: boolean;
   canViewSalesReport: boolean;
-  /** كاشير: VIEW_SALES + إرسال — يفتح تبويب تسجيل المبيعات افتراضياً */
+  /** مستخدم يملك الطلبات والتسجيل الداخلي: افتح التسجيل الداخلي افتراضياً عند عدم وجود قراءة/تعديل طلبات. */
   prefersStaffSalesTab: boolean;
 } {
   const role = String(userRole || '').toLowerCase();
@@ -34,7 +34,7 @@ export function resolveOrdersScreenMode(
       [PERMISSIONS.ORDERS_READ, PERMISSIONS.ORDERS_WRITE],
       userPermissions,
     );
-  const prefersStaffSalesTab = canSubmitStaff && hasManagerDataAccess && !hasOrdersReadWrite;
+  const prefersStaffSalesTab = canSubmitStaff && !hasOrdersReadWrite;
 
   const base = {
     canSubmitStaff,
@@ -43,7 +43,7 @@ export function resolveOrdersScreenMode(
     prefersStaffSalesTab,
   };
 
-  if (hasManagerDataAccess) {
+  if (hasManagerDataAccess || canViewSalesReport) {
     return { mode: 'manager-full', ...base };
   }
   if (canSubmitStaff) {

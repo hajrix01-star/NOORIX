@@ -68,7 +68,7 @@ export class OrdersController {
   }
 
   @Get('sales/report')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  @RequirePermission('STAFF_ORDERS_READ')
   getSalesReport(
     @CompanyId() companyId: string,
     @Query('days') days?: string,
@@ -125,7 +125,7 @@ export class OrdersController {
   }
 
   @Get()
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   findAll(
     @CompanyId() companyId: string,
     @Query('year') year: string,
@@ -137,7 +137,7 @@ export class OrdersController {
   }
 
   @Get('summary')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   getSummary(
     @CompanyId() companyId: string,
     @Query('year') year: string,
@@ -149,7 +149,7 @@ export class OrdersController {
   }
 
   @Get('range-summary')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   getRangeSummary(
     @CompanyId() companyId: string,
     @Query('startDate') startDate?: string,
@@ -161,7 +161,7 @@ export class OrdersController {
   }
 
   @Get('items-report')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   getItemsReport(
     @CompanyId() companyId: string,
     @Query('year') year: string,
@@ -173,7 +173,7 @@ export class OrdersController {
   }
 
   @Get('items-report-range')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   getItemsReportRange(
     @CompanyId() companyId: string,
     @Query('startDate') startDate?: string,
@@ -189,7 +189,7 @@ export class OrdersController {
   }
 
   @Get('products')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
   getProducts(
     @CompanyId() companyId: string,
     @Query('section') section?: string,
@@ -199,25 +199,25 @@ export class OrdersController {
   }
 
   @Post('products')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   createProduct(@Body() body: CreateProductDto) {
     return this.ordersService.createProduct(body.companyId, body);
   }
 
   @Post('products/batch')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   createProductsBatch(@Body() body: CreateProductsBatchDto) {
     return this.ordersService.createProductsBatch(body.companyId, body.products);
   }
 
   @Post('categories/batch')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   createCategoriesBatch(@Body() body: { companyId: string; categories: { nameAr: string; nameEn?: string; sortOrder?: number }[] }) {
     return this.ordersService.createCategoriesBatch(body.companyId, body.categories);
   }
 
   @Patch('products/:id')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   updateProduct(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -227,7 +227,7 @@ export class OrdersController {
   }
 
   @Get('product-history/:productId')
-  @RequirePermission('VIEW_SALES')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   getProductPurchaseHistory(
     @Param('productId') productId: string,
     @CompanyId() companyId: string,
@@ -253,7 +253,7 @@ export class OrdersController {
   }
 
   @Get('category-history/:categoryId')
-  @RequirePermission('VIEW_SALES')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   getCategoryPurchaseHistory(
     @Param('categoryId') categoryId: string,
     @CompanyId() companyId: string,
@@ -279,19 +279,19 @@ export class OrdersController {
   }
 
   @Get('categories')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
   getCategories(@CompanyId() companyId: string) {
     return this.ordersService.getCategories(requireCompanyId(companyId));
   }
 
   @Post('categories')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   createCategory(@Body() body: { companyId: string; nameAr: string; nameEn?: string; sortOrder?: number }) {
     return this.ordersService.createCategory(body.companyId, body);
   }
 
   @Patch('categories/:id')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   updateCategory(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -303,19 +303,19 @@ export class OrdersController {
   // ── Sections ──────────────────────────────────────────────────────
 
   @Get('sections')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
   getSections(@CompanyId() companyId: string) {
     return this.ordersService.getSections(requireCompanyId(companyId));
   }
 
   @Post('sections')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   createSection(@Body() body: { companyId: string; nameAr: string; nameEn?: string; sortOrder?: number }) {
     return this.ordersService.createSection(body.companyId, body);
   }
 
   @Patch('sections/:id')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   updateSection(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -325,13 +325,13 @@ export class OrdersController {
   }
 
   @Delete('sections/:id')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_DELETE')
   deleteSection(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.ordersService.deleteSection(id, requireCompanyId(companyId));
   }
 
   @Post('products/bulk-sections')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   bulkSetProductSections(
     @CompanyId() companyId: string,
     @Body() body: { productIds: string[]; sectionNames?: string[]; sectionIds?: string[]; mode?: 'replace' | 'add' },
@@ -344,13 +344,13 @@ export class OrdersController {
   }
 
   @Get(':id')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   findOne(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.ordersService.findOne(id, requireCompanyId(companyId));
   }
 
   @Patch(':id')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   update(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -366,13 +366,13 @@ export class OrdersController {
   }
 
   @Delete(':id')
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_DELETE')
   cancel(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.ordersService.cancel(id, requireCompanyId(companyId));
   }
 
   @Post()
-  @RequirePermission('VIEW_SALES')
+  @RequirePermission('ORDERS_WRITE')
   create(@Body() body: CreateOrderDto) {
     return this.ordersService.create(body.companyId, body);
   }

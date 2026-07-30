@@ -26,7 +26,7 @@ export class ShishaInventoryController {
   constructor(private readonly shishaInventoryService: ShishaInventoryService) {}
 
   @Get('shisha-inventory/summary')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   getShishaInventorySummary(
     @CompanyId() companyId: string,
     @Query('startDate') startDate?: string,

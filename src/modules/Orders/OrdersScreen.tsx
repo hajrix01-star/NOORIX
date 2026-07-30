@@ -65,6 +65,7 @@ export default function OrdersScreen() {
     companyId={companyId}
     dateFilter={dateFilter}
     canSubmitStaff={routing.canSubmitStaff}
+    hasManagerDataAccess={routing.hasManagerDataAccess}
     canViewSalesReport={routing.canViewSalesReport}
     prefersStaffSalesTab={routing.prefersStaffSalesTab}
   />;
@@ -74,12 +75,14 @@ function ManagerOrdersScreen({
   companyId,
   dateFilter,
   canSubmitStaff,
+  hasManagerDataAccess,
   canViewSalesReport,
   prefersStaffSalesTab,
 }: {
   companyId: string;
   dateFilter: ReturnType<typeof useDateFilter>;
   canSubmitStaff: boolean;
+  hasManagerDataAccess: boolean;
   canViewSalesReport: boolean;
   prefersStaffSalesTab: boolean;
 }) {
@@ -88,10 +91,10 @@ function ManagerOrdersScreen({
   const TAB_IDS = useMemo(() => {
     const ids: string[] = [];
     if (canSubmitStaff) ids.push('staff-sales');
-    ids.push('orders', 'items-report', 'items-manage', 'shisha-inventory');
+    if (hasManagerDataAccess) ids.push('orders', 'items-report', 'items-manage', 'shisha-inventory');
     if (canViewSalesReport) ids.push('sales-report');
     return ids;
-  }, [canViewSalesReport, canSubmitStaff]);
+  }, [canViewSalesReport, canSubmitStaff, hasManagerDataAccess]);
 
   const defaultTab =
     prefersStaffSalesTab && canSubmitStaff && TAB_IDS.includes('staff-sales')
@@ -127,12 +130,14 @@ function ManagerOrdersScreen({
     if (canSubmitStaff) {
       tabs.push({ id: 'staff-sales', labelKey: 'staffSalesRecordTab', shortLabelKey: 'staffSalesRecordTabShort' });
     }
-    tabs.push(
-      { id: 'orders', labelKey: 'ordersTab', shortLabelKey: 'ordersTabShort' },
-      { id: 'items-report', labelKey: 'ordersItemsReportTab', shortLabelKey: 'ordersItemsReportTabShort' },
-      { id: 'items-manage', labelKey: 'ordersItemsManageTab', shortLabelKey: 'ordersItemsManageTabShort' },
-      { id: 'shisha-inventory', labelKey: 'shishaInventoryTab', shortLabelKey: 'shishaInventoryTabShort' },
-    );
+    if (hasManagerDataAccess) {
+      tabs.push(
+        { id: 'orders', labelKey: 'ordersTab', shortLabelKey: 'ordersTabShort' },
+        { id: 'items-report', labelKey: 'ordersItemsReportTab', shortLabelKey: 'ordersItemsReportTabShort' },
+        { id: 'items-manage', labelKey: 'ordersItemsManageTab', shortLabelKey: 'ordersItemsManageTabShort' },
+        { id: 'shisha-inventory', labelKey: 'shishaInventoryTab', shortLabelKey: 'shishaInventoryTabShort' },
+      );
+    }
     if (canViewSalesReport) {
       tabs.push({ id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' });
     }
@@ -150,7 +155,7 @@ function ManagerOrdersScreen({
         );
       return { id: tab.id, label };
     });
-  }, [t, canViewSalesReport, canSubmitStaff]);
+  }, [t, canViewSalesReport, canSubmitStaff, hasManagerDataAccess]);
 
   return (
     <ScreenShell variant="data" className="min-w-0">
@@ -175,7 +180,7 @@ function ManagerOrdersScreen({
           {activeTab === 'staff-sales' && canSubmitStaff && (
             <StaffOrdersView companyId={companyId} embedded salesOnly />
           )}
-          {activeTab === 'orders' && (
+          {activeTab === 'orders' && hasManagerDataAccess && (
             <OrdersTab
               companyId={companyId}
               year={year}
@@ -185,7 +190,7 @@ function ManagerOrdersScreen({
               dateFilter={dateFilter}
             />
           )}
-          {activeTab === 'items-report' && (
+          {activeTab === 'items-report' && hasManagerDataAccess && (
             <ItemsReportTab
               companyId={companyId}
               year={year}
@@ -195,8 +200,8 @@ function ManagerOrdersScreen({
               dateFilter={dateFilter}
             />
           )}
-          {activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
-          {activeTab === 'shisha-inventory' && (
+          {activeTab === 'items-manage' && hasManagerDataAccess && <ItemsManageTab companyId={companyId} />}
+          {activeTab === 'shisha-inventory' && hasManagerDataAccess && (
             <ShishaInventoryTab
               companyId={companyId}
               startDate={startDate}

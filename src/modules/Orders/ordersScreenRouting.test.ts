@@ -3,8 +3,8 @@ import { PERMISSIONS } from '../../constants/permissions';
 import { resolveOrdersScreenMode } from './ordersScreenRouting';
 
 describe('resolveOrdersScreenMode', () => {
-  it('موظف إرسال طلب تشغيلي → staff', () => {
-    const perms = [PERMISSIONS.STAFF_ORDERS_SUBMIT, PERMISSIONS.VIEW_ORDERS];
+  it('موظف تسجيل داخلي فقط → staff', () => {
+    const perms = [PERMISSIONS.STAFF_ORDERS_SUBMIT, PERMISSIONS.VIEW_INTERNAL_REGISTRATION];
     expect(resolveOrdersScreenMode('staff', perms).mode).toBe('staff');
   });
 
@@ -18,19 +18,27 @@ describe('resolveOrdersScreenMode', () => {
     expect(resolveOrdersScreenMode('manager', perms).mode).toBe('manager-full');
   });
 
-  it('كاشير VIEW_SALES + إرسال → manager-full مع تبويب مبيعات افتراضي', () => {
+  it('كاشير VIEW_SALES + تسجيل داخلي → staff وليس طلبات إدارية', () => {
     const perms = [
-      PERMISSIONS.VIEW_ORDERS,
+      PERMISSIONS.VIEW_INTERNAL_REGISTRATION,
       PERMISSIONS.VIEW_SALES,
       PERMISSIONS.STAFF_ORDERS_SUBMIT,
     ];
     const r = resolveOrdersScreenMode('cashier', perms);
-    expect(r.mode).toBe('manager-full');
+    expect(r.mode).toBe('staff');
     expect(r.canSubmitStaff).toBe(true);
-    expect(r.prefersStaffSalesTab).toBe(true);
+    expect(r.hasManagerDataAccess).toBe(false);
   });
 
-  it('محاسب ORDERS_READ + إرسال → manager-full بدون تبويب مبيعات افتراضي', () => {
+  it('قراءة التسجيل الداخلي فقط → manager-full بدون طلبات إدارية', () => {
+    const perms = [PERMISSIONS.VIEW_INTERNAL_REGISTRATION, PERMISSIONS.STAFF_ORDERS_READ];
+    const r = resolveOrdersScreenMode('supervisor', perms);
+    expect(r.mode).toBe('manager-full');
+    expect(r.hasManagerDataAccess).toBe(false);
+    expect(r.canViewSalesReport).toBe(true);
+  });
+
+  it('محاسب ORDERS_READ + تسجيل داخلي → manager-full بدون فرض التسجيل الداخلي افتراضياً', () => {
     const perms = [PERMISSIONS.VIEW_ORDERS, PERMISSIONS.ORDERS_READ, PERMISSIONS.STAFF_ORDERS_SUBMIT];
     const r = resolveOrdersScreenMode('accountant', perms);
     expect(r.mode).toBe('manager-full');
