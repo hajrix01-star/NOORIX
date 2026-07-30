@@ -20,6 +20,10 @@ export type ShishaInventoryDailyRow = {
   charcoalPurchasedBoxes: number;
   charcoalConsumedBoxes: number;
   charcoalConsumedPieces: number;
+  charcoalExpectedBoxes: number;
+  charcoalActualBoxes: number | null;
+  charcoalVarianceBoxes: number | null;
+  charcoalStatus: 'legacy_expected' | 'missing_actual' | 'matched' | 'over' | 'under' | 'no_activity';
   openingCharcoalBoxes: number;
   closingCharcoalBoxes: number;
 };
@@ -60,6 +64,8 @@ export type ShishaInventorySummary = {
     charcoalPacksPerCarton: number;
     charcoalPiecesPerPack: number;
     charcoalShishaPerPack: number;
+    charcoalActualTrackingStartDate: string | null;
+    charcoalConsumptionProductId: string | null;
   };
   effectiveStart?: string;
   daily?: ShishaInventoryDailyRow[];
@@ -89,6 +95,11 @@ export type ShishaInventorySummary = {
     charcoalBoxesPurchased: number;
     charcoalPiecesConsumed: number;
     charcoalBoxesConsumed: number;
+    charcoalExpectedBoxes: number;
+    charcoalActualBoxes: number;
+    charcoalVarianceBoxes: number;
+    charcoalMissingDays: number;
+    charcoalAlertDays: number;
     tobaccoCorrectionKg: number;
   };
   latestStocktake?: ShishaStocktake | null;

@@ -46,6 +46,25 @@ function FieldGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>;
 }
 
+function CharcoalDailyAlert({ row }: { row: ShishaInventoryDailyRow }) {
+  if (row.charcoalStatus === 'missing_actual') {
+    return <Badge color="red" size="sm">لم يسجل الموظف الفحم</Badge>;
+  }
+  if (row.charcoalStatus === 'matched') {
+    return <Badge color="green" size="sm">مطابق</Badge>;
+  }
+  if (row.charcoalStatus === 'over') {
+    return <Badge color="red" size="sm">زائد {num(row.charcoalVarianceBoxes)} علبة</Badge>;
+  }
+  if (row.charcoalStatus === 'under') {
+    return <Badge color="amber" size="sm">أقل {num(Math.abs(row.charcoalVarianceBoxes ?? 0))} علبة</Badge>;
+  }
+  if (row.charcoalStatus === 'legacy_expected') {
+    return <Badge color="blue" size="sm">حساب نظامي سابق</Badge>;
+  }
+  return <Badge color="gray" size="sm">لا يوجد نشاط</Badge>;
+}
+
 function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
   const totals = useMemo(() => rows.reduce((sum, row) => ({
     operations: sum.operations + row.operations,
@@ -57,6 +76,11 @@ function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
     purchasedKg: sum.purchasedKg + row.tobaccoPurchasedKg,
     charcoalPurchased: sum.charcoalPurchased + row.charcoalPurchasedBoxes,
     charcoalConsumed: sum.charcoalConsumed + row.charcoalConsumedBoxes,
+    charcoalExpected: sum.charcoalExpected + (
+      row.charcoalStatus === 'legacy_expected' ? 0 : row.charcoalExpectedBoxes
+    ),
+    charcoalActual: sum.charcoalActual + (row.charcoalActualBoxes ?? 0),
+    charcoalAlerts: sum.charcoalAlerts + (['missing_actual', 'over', 'under'].includes(row.charcoalStatus) ? 1 : 0),
   }), {
     operations: 0,
     newShisha: 0,
@@ -67,6 +91,9 @@ function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
     purchasedKg: 0,
     charcoalPurchased: 0,
     charcoalConsumed: 0,
+    charcoalExpected: 0,
+    charcoalActual: 0,
+    charcoalAlerts: 0,
   }), [rows]);
   const columns = useMemo<SimpleTableColumn<ShishaInventoryDailyRow>[]>(() => [
     { key: 'date', label: 'التاريخ', minWidth: 110, render: (_v, row) => formatSaudiDate(row.date) },
@@ -78,7 +105,11 @@ function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
     { key: 'hosesConsumed', label: 'الليات المستهلكة', numeric: true, render: (v) => num(v as number, 0) },
     { key: 'tobaccoPurchasedKg', label: 'مشتريات المعسل كجم', numeric: true, cellClassName: 'text-emerald-600', render: (v) => num(v as number) },
     { key: 'charcoalPurchasedBoxes', label: 'مشتريات الفحم علبة', numeric: true, cellClassName: 'text-emerald-600', render: (v) => num(v as number) },
-    { key: 'charcoalConsumedBoxes', label: 'الفحم المستهلك علبة', numeric: true, cellClassName: 'text-orange-600', render: (v) => num(v as number) },
+    { key: 'charcoalExpectedBoxes', label: 'الفحم المتوقع علبة', numeric: true, render: (v) => num(v as number) },
+    { key: 'charcoalActualBoxes', label: 'الفحم الفعلي علبة', numeric: true, cellClassName: 'font-bold text-orange-600', render: (v) => v == null ? '—' : num(v as number) },
+    { key: 'charcoalVarianceBoxes', label: 'فرق الفحم علبة', numeric: true, render: (v) => v == null ? '—' : num(v as number) },
+    { key: 'charcoalStatus', label: 'تنبيه الفحم اليومي', minWidth: 165, render: (_v, row) => <CharcoalDailyAlert row={row} /> },
+    { key: 'charcoalConsumedBoxes', label: 'المخصوم من المخزون علبة', numeric: true, cellClassName: 'text-orange-600', render: (v) => num(v as number) },
     { key: 'openingTobaccoKg', label: 'مخزون أول اليوم كجم', numeric: true, render: (v) => num(v as number) },
     { key: 'closingTobaccoKg', label: 'مخزون آخر اليوم كجم', numeric: true, cellClassName: 'font-bold', render: (v) => num(v as number) },
     { key: 'closingTobaccoHeads', label: 'يكفي رؤوس', numeric: true, render: (v) => num(v as number, 0) },
@@ -87,14 +118,17 @@ function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
     { key: 'closingCharcoalBoxes', label: 'الفحم آخر اليوم علبة', numeric: true, cellClassName: 'font-bold', render: (v) => num(v as number) },
   ], []);
   return <div className="space-y-2">
-    <SimpleTable columns={columns} data={rows} tableMinWidth={1580} emptyMessage="لا توجد بيانات في الفترة المحددة." stickyHeader />
+    <SimpleTable columns={columns} data={rows} tableMinWidth={2050} emptyMessage="لا توجد بيانات في الفترة المحددة." stickyHeader />
     <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-noorix-bg-muted px-4 py-3 text-[12px] font-bold">
       <span>المجموع:</span><span>العمليات {num(totals.operations, 0)}</span><span>الجديدة {num(totals.newShisha, 0)}</span>
       <span>التغيير {num(totals.changes, 0)}</span><span>الرؤوس {num(totals.heads, 0)}</span>
       <span>المعسل {num(totals.consumedKg)} كجم</span><span>الليات {num(totals.hoses, 0)}</span>
       <span>المشتريات {num(totals.purchasedKg)} كجم</span>
       <span>الفحم المشترى {num(totals.charcoalPurchased)} علبة</span>
-      <span>الفحم المستهلك {num(totals.charcoalConsumed)} علبة</span>
+      <span>الفحم المتوقع {num(totals.charcoalExpected)} علبة</span>
+      <span>الفحم الفعلي المسجل {num(totals.charcoalActual)} علبة</span>
+      <span>المخصوم من المخزون {num(totals.charcoalConsumed)} علبة</span>
+      <span className={totals.charcoalAlerts > 0 ? 'text-red-600' : 'text-emerald-600'}>أيام التنبيه {num(totals.charcoalAlerts, 0)}</span>
     </div>
   </div>;
 }
@@ -216,6 +250,34 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
           <MetricCard color="#ea580c" className="min-h-[132px]"><MetricCard.Header label="الفحم المتوفر" subLabel={`${num(current?.charcoalPiecesTotal, 0)} حبة`} /><MetricCard.Value value={num(current?.charcoalBoxesTotal)} currency="علبة" /><MetricCard.Footer className="mt-auto border-t border-noorix-border py-2 text-[11px] text-noorix-muted"><span>64 حبة/علبة</span><span>علبة لكل 6 رؤوس</span></MetricCard.Footer></MetricCard>
           <MetricCard color="#16a34a" className="min-h-[132px]"><MetricCard.Header label="استهلاك الفترة" subLabel={`${num(data?.periodTotals?.changes, 0)} تغيير`} /><MetricCard.Value value={num(data?.periodTotals?.tobaccoHeadsConsumed, 0)} currency="رأس" /><MetricCard.Footer className="mt-auto border-t border-noorix-border py-2 text-[11px] text-noorix-muted"><span>معسل</span><span>{num(data?.periodTotals?.tobaccoConsumedKg)} كجم</span></MetricCard.Footer></MetricCard>
           <MetricCard color="#ca8a04" className="min-h-[132px]"><MetricCard.Header label="متوسط تكلفة المعسل" subLabel={current?.averageCostPerGram == null ? 'أدخل تكلفة المشتريات لحسابها' : `${num(current.averageCostPerGram, 4)} ر.س/جرام`} /><MetricCard.Value value={current?.averageCostPerHead == null ? '—' : num(current.averageCostPerHead, 2)} currency={current?.averageCostPerHead == null ? undefined : 'ر.س/رأس'} /></MetricCard>
+        </div>
+        <div className={`noorix-surface-card flex flex-col gap-3 border-s-4 p-4 ${
+          (data?.periodTotals?.charcoalAlertDays ?? 0) > 0 ? 'border-s-red-500' : 'border-s-emerald-500'
+        }`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-[14px] font-bold text-noorix-text">حاسبة الفحم اليومية</div>
+              <div className="mt-0.5 text-[11px] text-noorix-muted">
+                المتوقع = رؤوس الشيشة ÷ 6، والخصم من المخزون يعتمد على صنف «استهلاك الفحم الفعلي» الذي يسجله الموظف.
+              </div>
+            </div>
+            {(data?.periodTotals?.charcoalAlertDays ?? 0) > 0
+              ? <Badge color="red">{num(data?.periodTotals?.charcoalAlertDays, 0)} يوم يحتاج مراجعة</Badge>
+              : <Badge color="green">الاستهلاك اليومي مطابق</Badge>}
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-[12px]">
+            <span>المتوقع: <strong>{num(data?.periodTotals?.charcoalExpectedBoxes)} علبة</strong></span>
+            <span>الفعلي المسجل: <strong>{num(data?.periodTotals?.charcoalActualBoxes)} علبة</strong></span>
+            <span>الفرق: <strong>{num(data?.periodTotals?.charcoalVarianceBoxes)} علبة</strong></span>
+            <span className={(data?.periodTotals?.charcoalMissingDays ?? 0) > 0 ? 'text-red-600' : 'text-noorix-muted'}>
+              أيام بدون تسجيل: <strong>{num(data?.periodTotals?.charcoalMissingDays, 0)}</strong>
+            </span>
+            {data?.settings?.charcoalActualTrackingStartDate && (
+              <span className="text-noorix-muted">
+                بداية المقارنة الفعلية: <strong>{formatSaudiDate(data.settings.charcoalActualTrackingStartDate)}</strong>
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-[15px] font-bold text-noorix-text">التقرير اليومي للمخزون والاستهلاك</h3><p className="mt-0.5 text-[11px] text-noorix-muted">المخزون محسوب آلياً من الحركات المعتمدة وتسجيلات قسم الشيشة.</p></div><Badge color="gray">سجل غير قابل للتعديل</Badge></div>
         <InventoryTable rows={data?.daily ?? []} />

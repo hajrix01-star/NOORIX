@@ -1392,6 +1392,8 @@ model ShishaInventorySettings {
   charcoalPiecesPerPack  Int     @default(64) @map("charcoal_pieces_per_pack")
   shishaSectionId       String?  @map("shisha_section_id")
   changeProductId       String?  @map("change_product_id")
+  charcoalConsumptionProductId String?  @map("charcoal_consumption_product_id")
+  charcoalActualTrackingStartedAt DateTime? @map("charcoal_actual_tracking_started_at") @db.Date
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 

@@ -67,6 +67,7 @@ export function StaffBasketTable({
           const variant = formatVariantLabel(row.size, row.packaging, row.unit);
           const lineAmt = basketLineAmount(row);
           const isEditingQty = editingQtyId === row.lineId;
+          const quantityStep = row.unit === 'pack' ? 0.25 : 1;
           return (
             <tr key={row.lineId} className="border-b border-noorix-border last:border-b-0">
               <td className="py-1.5 px-2 align-middle text-start max-w-[9rem] sm:max-w-none">
@@ -80,13 +81,14 @@ export function StaffBasketTable({
                   <Button
                     variant="raw"
                     type="button"
-                    onClick={() => setLineQty(row.lineId, row.quantity - 1)}
+                    onClick={() => setLineQty(row.lineId, row.quantity - quantityStep)}
                     className="w-6 h-6 rounded-md border border-noorix-border text-[14px] leading-none flex items-center justify-center hover:bg-noorix-bg-muted shrink-0"
                   >−</Button>
                   {isEditingQty ? (
                     <EditableNumberCell
                       autoFocus
-                      min="1"
+                      min={quantityStep}
+                      step={quantityStep}
                       align="start"
                       className="w-8 h-6 text-center text-[12px] border border-noorix-blue rounded-md bg-noorix-bg focus:outline-none nx-font-numbers"
                       value={row.quantity}
@@ -104,7 +106,7 @@ export function StaffBasketTable({
                   <Button
                     variant="raw"
                     type="button"
-                    onClick={() => setLineQty(row.lineId, row.quantity + 1)}
+                    onClick={() => setLineQty(row.lineId, row.quantity + quantityStep)}
                     className="w-6 h-6 rounded-md border border-noorix-border text-[14px] leading-none flex items-center justify-center hover:bg-noorix-bg-muted shrink-0"
                   >+</Button>
                 </div>
@@ -171,6 +173,9 @@ export function ProductCard({
   const name = lang === 'en' ? (product.nameEn || product.nameAr) : (product.nameAr || product.nameEn);
   const selected = qty > 0;
   const priceLabel = displayProductPrice(product);
+  const unitLabel = product.unit === 'pack'
+    ? (lang === 'en' ? 'Pack' : 'علبة')
+    : product.unit;
 
   return (
     <div
@@ -203,7 +208,7 @@ export function ProductCard({
           <div className="text-[11px] text-noorix-muted mt-0.5 ltr">{fmt(priceLabel)} <span className="nx-sar">SR</span></div>
         )}
         {product.unit && !priceLabel && (
-          <div className="text-[11px] text-noorix-muted mt-0.5 capitalize">{product.unit}</div>
+          <div className="text-[11px] text-noorix-muted mt-0.5 capitalize">{unitLabel}</div>
         )}
         {freqCount > 0 && !selected && (
           <div className="text-[11px] text-noorix-blue/70 mt-0.5">×{freqCount}</div>
@@ -241,6 +246,7 @@ export function VariantPickModal({
     if (!product?.sizes) return [] as string[];
     return String(product.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean);
   }, [product]);
+  const quantityStep = variantModal.unit === 'pack' ? 0.25 : 1;
 
   return (
     <Modal open onClose={onClose} title={name} size="sm">
@@ -290,12 +296,16 @@ export function VariantPickModal({
               type="button"
               onClick={() => onChange({
                 ...variantModal,
-                quantity: String(Math.max(1, parseFloat(variantModal.quantity || '1') - 1)),
+                quantity: String(Math.max(
+                  quantityStep,
+                  parseFloat(variantModal.quantity || String(quantityStep)) - quantityStep,
+                )),
               })}
               className="w-9 h-9 rounded-full border-2 border-noorix-border text-[20px] flex items-center justify-center hover:border-noorix-blue"
             >−</Button>
             <EditableNumberCell
-              min="1"
+              min={quantityStep}
+              step={quantityStep}
               align="start"
               className="w-16 h-10 text-center text-[18px] font-bold border-2 border-noorix-border rounded-xl bg-noorix-bg focus:outline-none focus:border-noorix-blue"
               value={variantModal.quantity}
@@ -306,7 +316,7 @@ export function VariantPickModal({
               type="button"
               onClick={() => onChange({
                 ...variantModal,
-                quantity: String(parseFloat(variantModal.quantity || '0') + 1),
+                quantity: String(parseFloat(variantModal.quantity || '0') + quantityStep),
               })}
               className="w-9 h-9 rounded-full border-2 border-noorix-border text-[20px] flex items-center justify-center hover:border-noorix-blue"
             >+</Button>

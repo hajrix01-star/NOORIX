@@ -76,6 +76,7 @@ export default {
   ordersSelectProductAndAdd: { ar: 'اختر صنفاً واضغط إضافة', en: 'Select a product and click Add' },
   ordersUnitKg: { ar: 'كيلو', en: 'Kg' },
   ordersUnitBox: { ar: 'كرتون', en: 'Box' },
+  ordersUnitPack: { ar: 'علبة', en: 'Pack' },
   ordersUnitDozen: { ar: 'درزن', en: 'Dozen' },
   ordersFilterAll: { ar: 'الكل', en: 'All' },
   ordersFilterByType: { ar: 'نوع الطلب', en: 'Order type' },

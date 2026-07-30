@@ -124,6 +124,7 @@ function VariantsTable({
                     <option value="piece">{t('ordersUnitPiece')}</option>
                     <option value="kg">{t('ordersUnitKg')}</option>
                     <option value="box">{t('ordersUnitBox')}</option>
+                    <option value="pack">{t('ordersUnitPack')}</option>
                     <option value="dozen">{t('ordersUnitDozen')}</option>
                   </Input>
                 </td>

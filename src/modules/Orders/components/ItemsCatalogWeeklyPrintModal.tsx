@@ -77,6 +77,7 @@ export function ItemsCatalogWeeklyPrintModal({
       piece: t('ordersUnitPiece'),
       kg: t('ordersUnitKg'),
       box: t('ordersUnitBox'),
+      pack: t('ordersUnitPack'),
       dozen: t('ordersUnitDozen'),
     };
     return map[u] || u;

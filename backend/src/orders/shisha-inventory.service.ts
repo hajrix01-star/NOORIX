@@ -96,6 +96,7 @@ export class ShishaInventoryService {
     trackingStart: Date,
     endDate: Date,
     changeProductId: string | null,
+    charcoalConsumptionProductId: string | null,
   ): Promise<ShishaSaleEventInput[]> {
     const orders = await this.prisma.staffOrder.findMany({
       where: {
@@ -125,6 +126,16 @@ export class ShishaInventoryService {
     for (const order of orders) {
       if (!order.saleDate) continue;
       for (const item of order.items) {
+        if (item.productId === charcoalConsumptionProductId) {
+          events.push({
+            date: toYmd(order.saleDate),
+            operationKey: order.logRef ?? order.id,
+            heads: ZERO,
+            changes: ZERO,
+            actualCharcoalBoxes: item.quantity,
+          });
+          continue;
+        }
         const sections = Array.isArray(item.product.sections) ? item.product.sections : [];
         const belongsToShisha =
           isShishaSection(order.sectionName) ||
@@ -138,6 +149,7 @@ export class ShishaInventoryService {
           operationKey: order.logRef ?? order.id,
           heads: item.quantity,
           changes: isChange ? item.quantity : ZERO,
+          actualCharcoalBoxes: null,
         });
       }
     }
@@ -152,7 +164,13 @@ export class ShishaInventoryService {
         where: { companyId, transactionDate: { lte: end } },
         orderBy: [{ transactionDate: 'asc' }, { createdAt: 'asc' }],
       }),
-      this.saleEvents(companyId, settings.trackingStartedAt, end, settings.changeProductId),
+      this.saleEvents(
+        companyId,
+        settings.trackingStartedAt,
+        end,
+        settings.changeProductId,
+        settings.charcoalConsumptionProductId,
+      ),
     ]);
     const movementInputs: ShishaMovementInput[] = movements.map((movement) => ({
       date: toYmd(movement.transactionDate),
@@ -165,6 +183,9 @@ export class ShishaInventoryService {
       settings,
       calculation: calculateShishaInventory({
         trackingStartDate: toYmd(settings.trackingStartedAt),
+        charcoalActualTrackingStartDate: settings.charcoalActualTrackingStartedAt
+          ? toYmd(settings.charcoalActualTrackingStartedAt)
+          : null,
         startDate,
         endDate,
         headsPerKg: settings.headsPerKg,
@@ -213,6 +234,10 @@ export class ShishaInventoryService {
         charcoalPacksPerCarton: settings.charcoalPacksPerCarton,
         charcoalPiecesPerPack: settings.charcoalPiecesPerPack,
         charcoalShishaPerPack: CHARCOAL_SHISHAS_PER_PACK,
+        charcoalActualTrackingStartDate: settings.charcoalActualTrackingStartedAt
+          ? toYmd(settings.charcoalActualTrackingStartedAt)
+          : null,
+        charcoalConsumptionProductId: settings.charcoalConsumptionProductId,
       },
       ...calculation,
       latestStocktake,
@@ -255,6 +280,43 @@ export class ShishaInventoryService {
     ] as const;
 
     await this.prisma.withTenant(async (tx) => {
+      const existingCharcoalProduct = await tx.orderProduct.findFirst({
+        where: {
+          companyId,
+          productType: 'sale',
+          nameAr: 'استهلاك الفحم الفعلي',
+        },
+        select: { id: true },
+      });
+      const charcoalProduct = existingCharcoalProduct
+        ? await tx.orderProduct.update({
+            where: { id: existingCharcoalProduct.id },
+            data: {
+              nameEn: 'Actual charcoal consumption',
+              unit: 'pack',
+              lastPrice: ZERO,
+              sections: ['شيشة'],
+              sectionIds: [section.id],
+              isActive: true,
+              sortOrder: 999,
+            },
+            select: { id: true },
+          })
+        : await tx.orderProduct.create({
+            data: {
+              tenantId,
+              companyId,
+              nameAr: 'استهلاك الفحم الفعلي',
+              nameEn: 'Actual charcoal consumption',
+              unit: 'pack',
+              lastPrice: ZERO,
+              sections: ['شيشة'],
+              sectionIds: [section.id],
+              productType: 'sale',
+              sortOrder: 999,
+            },
+            select: { id: true },
+          });
       await tx.shishaInventorySettings.create({
         data: {
           tenantId,
@@ -265,6 +327,8 @@ export class ShishaInventoryService {
           charcoalPiecesPerPack: 64,
           shishaSectionId: section.id,
           changeProductId: changeProduct.id,
+          charcoalConsumptionProductId: charcoalProduct.id,
+          charcoalActualTrackingStartedAt: date,
         },
       });
       await tx.shishaInventoryMovement.createMany({

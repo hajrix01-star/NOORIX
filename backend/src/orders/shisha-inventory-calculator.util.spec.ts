@@ -53,6 +53,50 @@ describe('calculateShishaInventory', () => {
     expect(result.periodTotals.charcoalPiecesConsumed).toBe(640);
   });
 
+  it('deducts employee-recorded charcoal and compares it with the expected amount', () => {
+    const result = calculateShishaInventory({
+      ...base,
+      charcoalActualTrackingStartDate: '2026-07-01',
+      sales: [
+        { date: '2026-07-01', operationKey: 'L-1', heads: 10, changes: 2 },
+        { date: '2026-07-01', operationKey: 'L-1', heads: 0, changes: 0, actualCharcoalBoxes: 2 },
+        { date: '2026-07-02', operationKey: 'L-2', heads: 5, changes: 0 },
+      ],
+    });
+    expect(result.daily[0]).toMatchObject({
+      charcoalExpectedBoxes: 1.667,
+      charcoalActualBoxes: 2,
+      charcoalVarianceBoxes: 0.333,
+      charcoalConsumedBoxes: 2,
+      charcoalStatus: 'over',
+    });
+    expect(result.daily[1]).toMatchObject({
+      charcoalExpectedBoxes: 0.833,
+      charcoalActualBoxes: null,
+      charcoalVarianceBoxes: null,
+      charcoalConsumedBoxes: 0,
+      charcoalStatus: 'missing_actual',
+    });
+    expect(result.periodTotals.charcoalMissingDays).toBe(1);
+    expect(result.periodTotals.charcoalAlertDays).toBe(2);
+    expect(result.current.charcoalPiecesTotal).toBe(1152);
+  });
+
+  it('marks matching actual charcoal as a clean daily result', () => {
+    const result = calculateShishaInventory({
+      ...base,
+      endDate: '2026-07-01',
+      charcoalActualTrackingStartDate: '2026-07-01',
+      sales: [
+        { date: '2026-07-01', operationKey: 'L-60', heads: 60, changes: 0 },
+        { date: '2026-07-01', operationKey: 'L-60', heads: 0, changes: 0, actualCharcoalBoxes: 10 },
+      ],
+    });
+    expect(result.daily[0].charcoalStatus).toBe('matched');
+    expect(result.periodTotals.charcoalAlertDays).toBe(0);
+    expect(result.periodTotals.charcoalVarianceBoxes).toBe(0);
+  });
+
   it('applies stocktake corrections as immutable deltas', () => {
     const result = calculateShishaInventory({
       ...base,

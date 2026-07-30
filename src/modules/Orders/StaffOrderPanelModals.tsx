@@ -52,6 +52,7 @@ export function StaffQtyModal({
   onConfirm: () => void;
 }) {
   if (!qtyModal) return null;
+  const quantityStep = qtyModal.unit === 'pack' ? 0.25 : 1;
   return (
     <Modal
       open
@@ -69,22 +70,26 @@ export function StaffQtyModal({
               type="button"
               variant="raw"
               size="auto"
-              onClick={() => onChange({ ...qtyModal, qty: Math.max(1, qtyModal.qty - 1) })}
+              onClick={() => onChange({ ...qtyModal, qty: Math.max(quantityStep, qtyModal.qty - quantityStep) })}
               className="w-10 h-10 rounded-full border-2 border-noorix-border text-[22px] flex items-center justify-center hover:border-noorix-blue hover:text-noorix-blue transition-colors"
             >−</Button>
             <Input
               type="number"
-              min="1"
+              min={quantityStep}
+              step={quantityStep}
               containerClassName="contents"
               className="w-20 h-12 text-center text-[22px] font-bold border-2 border-noorix-border rounded-xl bg-noorix-bg text-noorix-text focus:outline-none focus:border-noorix-blue"
               value={qtyModal.qty}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...qtyModal, qty: Math.max(1, Number(e.target.value) || 1) })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({
+                ...qtyModal,
+                qty: Math.max(quantityStep, Number(e.target.value) || quantityStep),
+              })}
             />
             <Button
               type="button"
               variant="raw"
               size="auto"
-              onClick={() => onChange({ ...qtyModal, qty: qtyModal.qty + 1 })}
+              onClick={() => onChange({ ...qtyModal, qty: qtyModal.qty + quantityStep })}
               className="w-10 h-10 rounded-full border-2 border-noorix-border text-[22px] flex items-center justify-center hover:border-noorix-blue hover:text-noorix-blue transition-colors"
             >+</Button>
           </div>
@@ -95,6 +100,7 @@ export function StaffQtyModal({
           <option value="piece">{t('ordersUnitPiece')}</option>
           <option value="kg">{t('ordersUnitKg')}</option>
           <option value="box">{t('ordersUnitBox')}</option>
+          <option value="pack">{t('ordersUnitPack')}</option>
           <option value="dozen">{t('ordersUnitDozen')}</option>
         </Input>
         {qtyModal.product?.lastPrice != null && Number(qtyModal.product.lastPrice) > 0 ? (

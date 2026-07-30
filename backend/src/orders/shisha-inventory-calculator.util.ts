@@ -16,10 +16,20 @@ export type ShishaSaleEventInput = {
   operationKey: string;
   heads: Prisma.Decimal | number | string;
   changes: Prisma.Decimal | number | string;
+  actualCharcoalBoxes?: Prisma.Decimal | number | string | null;
 };
+
+export type ShishaCharcoalDailyStatus =
+  | 'legacy_expected'
+  | 'missing_actual'
+  | 'matched'
+  | 'over'
+  | 'under'
+  | 'no_activity';
 
 export type ShishaInventoryCalculationInput = {
   trackingStartDate: string;
+  charcoalActualTrackingStartDate?: string | null;
   startDate: string;
   endDate: string;
   headsPerKg: Prisma.Decimal | number | string;
@@ -46,9 +56,12 @@ type DailySale = {
   operations: Set<string>;
   heads: Prisma.Decimal;
   changes: Prisma.Decimal;
+  actualCharcoalBoxes: Prisma.Decimal;
+  hasActualCharcoalEntry: boolean;
 };
 
 const ZERO = new Prisma.Decimal(0);
+const CHARCOAL_MATCH_TOLERANCE_BOXES = new Prisma.Decimal(0.125);
 
 function decimal(value: Prisma.Decimal | number | string | null | undefined): Prisma.Decimal {
   return new Prisma.Decimal(value ?? 0);
@@ -83,6 +96,62 @@ function emptyMovement(): DailyMovement {
   };
 }
 
+function emptySale(): DailySale {
+  return {
+    operations: new Set<string>(),
+    heads: ZERO,
+    changes: ZERO,
+    actualCharcoalBoxes: ZERO,
+    hasActualCharcoalEntry: false,
+  };
+}
+
+function charcoalConsumptionForDay(
+  date: string,
+  sale: DailySale,
+  actualTrackingStartDate: string | null | undefined,
+  shishasPerBox: number,
+) {
+  const expectedBoxes = sale.heads.div(shishasPerBox);
+  const actualTrackingActive = Boolean(actualTrackingStartDate && date >= actualTrackingStartDate);
+  if (!actualTrackingActive) {
+    return {
+      expectedBoxes,
+      actualBoxes: null,
+      consumedBoxes: expectedBoxes,
+      varianceBoxes: null,
+      status: 'legacy_expected' as ShishaCharcoalDailyStatus,
+    };
+  }
+
+  const actualBoxes = sale.hasActualCharcoalEntry ? sale.actualCharcoalBoxes : null;
+  if (!sale.hasActualCharcoalEntry) {
+    return {
+      expectedBoxes,
+      actualBoxes,
+      consumedBoxes: ZERO,
+      varianceBoxes: null,
+      status: expectedBoxes.gt(0) ? 'missing_actual' as const : 'no_activity' as const,
+    };
+  }
+
+  const varianceBoxes = sale.actualCharcoalBoxes.minus(expectedBoxes);
+  const status: ShishaCharcoalDailyStatus = expectedBoxes.eq(0) && sale.actualCharcoalBoxes.eq(0)
+    ? 'no_activity'
+    : varianceBoxes.abs().lte(CHARCOAL_MATCH_TOLERANCE_BOXES)
+      ? 'matched'
+      : varianceBoxes.gt(0)
+        ? 'over'
+        : 'under';
+  return {
+    expectedBoxes,
+    actualBoxes: sale.actualCharcoalBoxes,
+    consumedBoxes: sale.actualCharcoalBoxes,
+    varianceBoxes,
+    status,
+  };
+}
+
 function movementBucket(materialType: ShishaMaterialType): 'Tobacco' | 'Hoses' | 'Charcoal' {
   if (materialType === 'tobacco') return 'Tobacco';
   if (materialType === 'hose') return 'Hoses';
@@ -111,10 +180,15 @@ export function calculateShishaInventory(input: ShishaInventoryCalculationInput)
   const saleByDay = new Map<string, DailySale>();
   for (const sale of input.sales) {
     if (sale.date < input.trackingStartDate || sale.date > input.endDate) continue;
-    const row = saleByDay.get(sale.date) ?? { operations: new Set<string>(), heads: ZERO, changes: ZERO };
-    row.operations.add(sale.operationKey);
-    row.heads = row.heads.plus(decimal(sale.heads));
+    const row = saleByDay.get(sale.date) ?? emptySale();
+    const heads = decimal(sale.heads);
+    if (heads.gt(0)) row.operations.add(sale.operationKey);
+    row.heads = row.heads.plus(heads);
     row.changes = row.changes.plus(decimal(sale.changes));
+    if (sale.actualCharcoalBoxes != null) {
+      row.actualCharcoalBoxes = row.actualCharcoalBoxes.plus(decimal(sale.actualCharcoalBoxes));
+      row.hasActualCharcoalEntry = true;
+    }
     saleByDay.set(sale.date, row);
   }
 
@@ -124,11 +198,15 @@ export function calculateShishaInventory(input: ShishaInventoryCalculationInput)
 
   const applyDay = (key: string) => {
     const movement = movementByDay.get(key) ?? emptyMovement();
-    const sale = saleByDay.get(key) ?? { operations: new Set<string>(), heads: ZERO, changes: ZERO };
+    const sale = saleByDay.get(key) ?? emptySale();
     const newShisha = sale.heads.minus(sale.changes);
-    const charcoalConsumed = sale.heads
-      .div(input.charcoalShishaPerPack)
-      .times(input.charcoalPiecesPerPack);
+    const charcoalDay = charcoalConsumptionForDay(
+      key,
+      sale,
+      input.charcoalActualTrackingStartDate,
+      input.charcoalShishaPerPack,
+    );
+    const charcoalConsumed = charcoalDay.consumedBoxes.times(input.charcoalPiecesPerPack);
     tobacco = tobacco
       .plus(movement.openingTobacco)
       .plus(movement.purchaseTobacco)
@@ -162,18 +240,28 @@ export function calculateShishaInventory(input: ShishaInventoryCalculationInput)
   let periodPurchasedHoses = ZERO;
   let periodPurchasedCharcoal = ZERO;
   let periodConsumedCharcoal = ZERO;
+  let periodComparableExpectedCharcoalBoxes = ZERO;
+  let periodActualCharcoalBoxes = ZERO;
+  let periodMissingCharcoalDays = 0;
+  let periodCharcoalAlertDays = 0;
   let periodCorrectionTobacco = ZERO;
 
   for (const key of dateKeys(effectiveStart, input.endDate)) {
     const movement = movementByDay.get(key) ?? emptyMovement();
-    const sale = saleByDay.get(key) ?? { operations: new Set<string>(), heads: ZERO, changes: ZERO };
+    const sale = saleByDay.get(key) ?? emptySale();
 
     const openingTobacco = tobacco.plus(movement.openingTobacco);
     const openingHoses = hoses.plus(movement.openingHoses);
     const openingCharcoal = charcoal.plus(movement.openingCharcoal);
     const newShisha = sale.heads.minus(sale.changes);
     const consumedGrams = sale.heads.times(gramsPerHead);
-    const consumedCharcoalBoxes = sale.heads.div(input.charcoalShishaPerPack);
+    const charcoalDay = charcoalConsumptionForDay(
+      key,
+      sale,
+      input.charcoalActualTrackingStartDate,
+      input.charcoalShishaPerPack,
+    );
+    const consumedCharcoalBoxes = charcoalDay.consumedBoxes;
     const consumedCharcoalPieces = consumedCharcoalBoxes.times(input.charcoalPiecesPerPack);
 
     tobacco = openingTobacco
@@ -196,6 +284,14 @@ export function calculateShishaInventory(input: ShishaInventoryCalculationInput)
     periodPurchasedHoses = periodPurchasedHoses.plus(movement.purchaseHoses);
     periodPurchasedCharcoal = periodPurchasedCharcoal.plus(movement.purchaseCharcoal);
     periodConsumedCharcoal = periodConsumedCharcoal.plus(consumedCharcoalPieces);
+    if (charcoalDay.status !== 'legacy_expected') {
+      periodComparableExpectedCharcoalBoxes = periodComparableExpectedCharcoalBoxes.plus(charcoalDay.expectedBoxes);
+    }
+    if (charcoalDay.actualBoxes) {
+      periodActualCharcoalBoxes = periodActualCharcoalBoxes.plus(charcoalDay.actualBoxes);
+    }
+    if (charcoalDay.status === 'missing_actual') periodMissingCharcoalDays++;
+    if (['missing_actual', 'over', 'under'].includes(charcoalDay.status)) periodCharcoalAlertDays++;
     periodCorrectionTobacco = periodCorrectionTobacco.plus(movement.correctionTobacco);
 
     daily.push({
@@ -218,6 +314,10 @@ export function calculateShishaInventory(input: ShishaInventoryCalculationInput)
       charcoalPurchasedBoxes: round(movement.purchaseCharcoal.div(input.charcoalPiecesPerPack), 3),
       charcoalConsumedBoxes: round(consumedCharcoalBoxes, 3),
       charcoalConsumedPieces: round(consumedCharcoalPieces, 3),
+      charcoalExpectedBoxes: round(charcoalDay.expectedBoxes, 3),
+      charcoalActualBoxes: charcoalDay.actualBoxes == null ? null : round(charcoalDay.actualBoxes, 3),
+      charcoalVarianceBoxes: charcoalDay.varianceBoxes == null ? null : round(charcoalDay.varianceBoxes, 3),
+      charcoalStatus: charcoalDay.status,
       openingCharcoalBoxes: round(openingCharcoal.div(input.charcoalPiecesPerPack), 3),
       closingCharcoalBoxes: round(charcoal.div(input.charcoalPiecesPerPack), 3),
     });
@@ -269,6 +369,11 @@ export function calculateShishaInventory(input: ShishaInventoryCalculationInput)
       charcoalBoxesPurchased: round(periodPurchasedCharcoal.div(input.charcoalPiecesPerPack), 3),
       charcoalPiecesConsumed: round(periodConsumedCharcoal, 3),
       charcoalBoxesConsumed: round(periodConsumedCharcoal.div(input.charcoalPiecesPerPack), 3),
+      charcoalExpectedBoxes: round(periodComparableExpectedCharcoalBoxes, 3),
+      charcoalActualBoxes: round(periodActualCharcoalBoxes, 3),
+      charcoalVarianceBoxes: round(periodActualCharcoalBoxes.minus(periodComparableExpectedCharcoalBoxes), 3),
+      charcoalMissingDays: periodMissingCharcoalDays,
+      charcoalAlertDays: periodCharcoalAlertDays,
       tobaccoCorrectionKg: round(periodCorrectionTobacco.div(1000), 3),
     },
   };

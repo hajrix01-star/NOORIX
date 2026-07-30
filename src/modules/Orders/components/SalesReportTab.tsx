@@ -87,10 +87,10 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
     byProduct.map((p, i) => [
       i + 1,
       productName(p),
-      fmt(p.qty, 0),
-      p.unit || '—',
+      fmt(p.qty, 2),
+      p.unit === 'pack' ? t('ordersUnitPack') : (p.unit || '—'),
       (p.sections || []).join(' · ') || '—',
-    ]), [byProduct, lang]);
+    ]), [byProduct, lang, t]);
 
   const sectionRows = useMemo(() =>
     bySection.map((s, i) => [
