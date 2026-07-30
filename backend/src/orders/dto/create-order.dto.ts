@@ -42,8 +42,8 @@ export class CreateOrderDto {
   @IsString()
   orderDate: string;
 
-  @IsIn(['external', 'internal'])
-  orderType: 'external' | 'internal';
+  @IsIn(['external', 'internal', 'transfer'])
+  orderType: 'external' | 'internal' | 'transfer';
 
   @IsOptional()
   @IsString()

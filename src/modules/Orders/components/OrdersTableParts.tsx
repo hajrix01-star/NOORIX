@@ -3,6 +3,7 @@ import { Badge, Button, FmtNum } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import type { OrderRecord } from '../../../types/api';
+import { isPettyCashOrderType, orderTypeLabel } from '../utils/ordersTabModel';
 
 type Translate = (key: string) => string;
 
@@ -11,6 +12,12 @@ type OrdersTablePartsInput = {
   cumulativeRemainingByOrderId: Map<string, number>;
   onView: (order: OrderRecord) => void;
 };
+
+function orderTypeBadgeColor(orderType: string | null | undefined): 'blue' | 'green' | 'gray' {
+  if (orderType === 'external') return 'blue';
+  if (orderType === 'transfer') return 'gray';
+  return 'green';
+}
 
 export function buildOrdersColumns({
   t,
@@ -50,10 +57,9 @@ export function buildOrdersColumns({
       align: 'center',
       shrink: true,
       render: (_value: unknown, row: OrderRecord) => {
-        const isExt = row.orderType === 'external';
         return (
-          <Badge color={isExt ? 'blue' : 'green'} size="sm">
-            {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
+          <Badge color={orderTypeBadgeColor(row.orderType)} size="sm">
+            {orderTypeLabel(row.orderType, t)}
           </Badge>
         );
       },
@@ -72,7 +78,7 @@ export function buildOrdersColumns({
       align: 'center',
       shrink: true,
       render: (_value: unknown, order: OrderRecord) =>
-        order.orderType === 'external' && order.pettyCashAmount != null ? (
+        isPettyCashOrderType(order.orderType) && order.pettyCashAmount != null ? (
           <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap"><FmtNum n={order.pettyCashAmount} /> SR</span>
         ) : (
           <span className="nx-cell-muted">-</span>
@@ -94,7 +100,7 @@ export function buildOrdersColumns({
       align: 'center',
       shrink: true,
       render: (_value: unknown, order: OrderRecord) => {
-        const cumRem = order.orderType === 'external' ? cumulativeRemainingByOrderId.get(order.id) : null;
+        const cumRem = isPettyCashOrderType(order.orderType) ? cumulativeRemainingByOrderId.get(order.id) : null;
         if (cumRem == null) return <span className="nx-cell-muted">-</span>;
         return (
           <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
@@ -125,15 +131,14 @@ export function renderOrdersMobileCard(
   order: OrderRecord,
   { t, cumulativeRemainingByOrderId, onView }: OrdersTablePartsInput,
 ) {
-  const pettyGiven = order.orderType === 'external' ? Number(order.pettyCashAmount ?? 0) : null;
-  const cumRem = order.orderType === 'external' ? cumulativeRemainingByOrderId.get(order.id) : null;
-  const isExt = order.orderType === 'external';
+  const pettyGiven = isPettyCashOrderType(order.orderType) ? Number(order.pettyCashAmount ?? 0) : null;
+  const cumRem = isPettyCashOrderType(order.orderType) ? cumulativeRemainingByOrderId.get(order.id) : null;
   return (
     <div className="flex cursor-pointer flex-col gap-2" onClick={() => onView(order)}>
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <span className="font-bold text-noorix-blue nx-font-numbers">#{order.orderNumber}</span>
-        <Badge color={isExt ? 'blue' : 'green'} size="sm">
-          {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
+        <Badge color={orderTypeBadgeColor(order.orderType)} size="sm">
+          {orderTypeLabel(order.orderType, t)}
         </Badge>
       </div>
       <div className="text-[12px] text-noorix-muted text-end">{formatSaudiDate(order.orderDate)}</div>
@@ -176,15 +181,15 @@ export function renderOrdersCompactRow(
   order: OrderRecord,
   { t, cumulativeRemainingByOrderId, onView }: OrdersTablePartsInput,
 ) {
-  const isExt = order.orderType === 'external';
+  const isExt = isPettyCashOrderType(order.orderType);
   const total = Number(order.totalAmount ?? 0);
   const cumRem = cumulativeRemainingByOrderId?.get(order.id);
   return (
     <div className="cursor-pointer" onClick={() => onView(order)}>
       <div className="nx-cr__line1">
         <span className="nx-cr__id">#{order.orderNumber}</span>
-        <Badge color={isExt ? 'blue' : 'green'} size="sm">
-          {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
+        <Badge color={orderTypeBadgeColor(order.orderType)} size="sm">
+          {orderTypeLabel(order.orderType, t)}
         </Badge>
         {cumRem != null && (
           <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">

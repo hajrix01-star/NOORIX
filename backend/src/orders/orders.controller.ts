@@ -389,7 +389,7 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Body() body: {
       orderDate?: string;
-      orderType?: 'external' | 'internal';
+      orderType?: 'external' | 'internal' | 'transfer';
       pettyCashAmount?: string;
       notes?: string;
       items?: { productId: string; size?: string; quantity: string; unitPrice: string }[];

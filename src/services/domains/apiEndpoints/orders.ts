@@ -105,7 +105,13 @@ export async function getOrdersSummary(
   month: string | number,
 ): Promise<ApiParsedResult<OrderSummary>> {
   const res = await apiGet<OrderSummary>('/api/v1/orders/summary', { companyId, year: String(year), month: String(month) });
-  const empty: OrderSummary = { pettyCashTotal: 0, delegatePurchasesTotal: 0, localPurchasesTotal: 0, delegateBalance: 0 };
+  const empty: OrderSummary = {
+    pettyCashTotal: 0,
+    delegatePurchasesTotal: 0,
+    localPurchasesTotal: 0,
+    transferPurchasesTotal: 0,
+    delegateBalance: 0,
+  };
   return res?.success ? { ...res, data: res.data ?? empty } : res;
 }
 export async function getOrdersRangeSummary(
@@ -118,6 +124,7 @@ export async function getOrdersRangeSummary(
     pettyCashTotal: 0,
     delegatePurchasesTotal: 0,
     localPurchasesTotal: 0,
+    transferPurchasesTotal: 0,
     delegateBalance: 0,
     cashSalesTotal: 0,
     cashRemaining: 0,

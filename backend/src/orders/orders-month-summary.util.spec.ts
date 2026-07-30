@@ -11,13 +11,15 @@ describe('orders summary aggregation', () => {
       aggregateOrdersMonthSummary([
         { orderType: 'external', pettyCashAmount: new Prisma.Decimal('100.50'), totalAmount: new Prisma.Decimal('75.25') },
         { orderType: 'internal', pettyCashAmount: null, totalAmount: new Prisma.Decimal('40.10') },
+        { orderType: 'transfer', pettyCashAmount: null, totalAmount: new Prisma.Decimal('30.20') },
       ]),
     ).toMatchObject({
       pettyCashTotal: '100.5',
       delegatePurchasesTotal: '75.25',
       localPurchasesTotal: '40.1',
+      transferPurchasesTotal: '30.2',
       delegateBalance: '25.25',
-      filteredTotal: '115.35',
+      filteredTotal: '145.55',
     });
   });
 
@@ -27,13 +29,15 @@ describe('orders summary aggregation', () => {
         [
           { orderType: 'internal', pettyCashAmount: null, totalAmount: new Prisma.Decimal('40') },
           { orderType: 'external', pettyCashAmount: new Prisma.Decimal('20'), totalAmount: new Prisma.Decimal('15') },
+          { orderType: 'transfer', pettyCashAmount: null, totalAmount: new Prisma.Decimal('90') },
         ],
         new Prisma.Decimal('150'),
       ),
     ).toMatchObject({
       cashSalesTotal: '150',
       cashRemaining: '110',
-      filteredTotal: '55',
+      transferPurchasesTotal: '90',
+      filteredTotal: '145',
     });
   });
 
@@ -55,6 +59,13 @@ describe('orders summary aggregation', () => {
               totalAmount: new Prisma.Decimal('40'),
             },
           },
+          {
+            orderType: 'transfer',
+            _sum: {
+              pettyCashAmount: null,
+              totalAmount: new Prisma.Decimal('90'),
+            },
+          },
         ],
         new Prisma.Decimal('150'),
       ),
@@ -62,10 +73,11 @@ describe('orders summary aggregation', () => {
       pettyCashTotal: '120',
       delegatePurchasesTotal: '75',
       localPurchasesTotal: '40',
+      transferPurchasesTotal: '90',
       delegateBalance: '45',
       cashSalesTotal: '150',
       cashRemaining: '110',
-      filteredTotal: '115',
+      filteredTotal: '205',
     });
   });
 });

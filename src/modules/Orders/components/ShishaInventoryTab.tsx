@@ -1,14 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 import {
-  useCreateShishaPurchasesMutation,
   useCreateShishaStocktakeMutation,
   useInitializeShishaInventoryMutation,
   useShishaInventory,
 } from '../../../hooks/useOrders';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type {
-  CreateShishaPurchaseBatchPayload,
   CreateShishaStocktakePayload,
   InitializeShishaInventoryPayload,
   ShishaInventoryDailyRow,
@@ -18,27 +16,7 @@ import type { ShishaInventoryMovement } from '../../../types/api';
 import type { SimpleTableColumn } from '../../../ui';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 
-type FormKind = 'opening' | 'purchase' | 'stocktake' | null;
-type PurchaseMaterial = CreateShishaPurchaseBatchPayload['items'][number]['materialType'];
-type PurchaseUnit = CreateShishaPurchaseBatchPayload['items'][number]['unit'];
-type PurchaseDraftRow = {
-  id: string;
-  materialType: PurchaseMaterial;
-  quantity: string;
-  unit: PurchaseUnit;
-  costInclVat: string;
-};
-
-let purchaseRowSequence = 0;
-const purchaseUnitFor = (materialType: PurchaseMaterial): PurchaseUnit =>
-  materialType === 'tobacco' ? 'kg' : materialType === 'charcoal' ? 'pack' : 'piece';
-const newPurchaseRow = (materialType: PurchaseMaterial = 'tobacco'): PurchaseDraftRow => ({
-  id: `purchase-row-${++purchaseRowSequence}`,
-  materialType,
-  quantity: '',
-  unit: purchaseUnitFor(materialType),
-  costInclVat: '',
-});
+type FormKind = 'opening' | 'stocktake' | null;
 const num = (value: number | string | null | undefined, digits = 3) =>
   Number(value ?? 0).toLocaleString('en-US', { maximumFractionDigits: digits });
 
@@ -166,32 +144,12 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
   const today = getSaudiToday();
   const [form, setForm] = useState<FormKind>(null);
   const [openingDate, setOpeningDate] = useState(today);
-  const [purchaseDate, setPurchaseDate] = useState(today);
   const [stocktakeDate, setStocktakeDate] = useState(today);
-  const [purchaseRows, setPurchaseRows] = useState<PurchaseDraftRow[]>(() => [newPurchaseRow()]);
-  useEffect(() => {
-    if (form) return;
-    setOpeningDate(today);
-    setPurchaseDate(today);
-    setStocktakeDate(today);
-    setPurchaseRows([newPurchaseRow()]);
-  }, [form, today]);
   const { data, isLoading, error } = useShishaInventory(companyId, normalizedStartDate, normalizedEndDate);
   const initialize = useInitializeShishaInventoryMutation();
-  const purchase = useCreateShishaPurchasesMutation();
   const stocktake = useCreateShishaStocktakeMutation();
   const initialized = Boolean(data?.initialized);
   const current = data?.current;
-  const charcoalPurchasesLinked = Boolean(data?.settings?.charcoalPurchaseProductId);
-
-  useEffect(() => {
-    if (!charcoalPurchasesLinked) return;
-    setPurchaseRows((rows) => rows.map((row) =>
-      row.materialType === 'charcoal'
-        ? { ...row, materialType: 'tobacco', unit: 'kg' }
-        : row
-    ));
-  }, [charcoalPurchasesLinked]);
 
   const submitOpening = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -204,31 +162,6 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
       notes: v.notes || undefined,
     };
     initialize.mutate(body, { onSuccess: () => setForm(null) });
-  };
-  const updatePurchaseRow = (id: string, patch: Partial<PurchaseDraftRow>) => {
-    setPurchaseRows((rows) => rows.map((row) => row.id === id ? { ...row, ...patch } : row));
-  };
-  const changePurchaseMaterial = (id: string, materialType: PurchaseMaterial) => {
-    updatePurchaseRow(id, { materialType, unit: purchaseUnitFor(materialType) });
-  };
-  const removePurchaseRow = (id: string) => {
-    setPurchaseRows((rows) => rows.length === 1 ? rows : rows.filter((row) => row.id !== id));
-  };
-  const submitPurchase = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const v = Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string>;
-    const body: CreateShishaPurchaseBatchPayload = {
-      companyId,
-      transactionDate: purchaseDate,
-      items: purchaseRows.map((row) => ({
-        materialType: row.materialType,
-        quantity: row.quantity,
-        unit: row.unit,
-        costInclVat: row.costInclVat || undefined,
-      })),
-      invoiceNumber: v.invoiceNumber || undefined, supplierName: v.supplierName || undefined, notes: v.notes || undefined,
-    };
-    purchase.mutate(body, { onSuccess: () => setForm(null) });
   };
   const submitStocktake = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -250,7 +183,6 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
         <DateFilterBar filter={dateFilter} className="min-w-0 flex-1" />
         {canWrite && <div className="flex flex-wrap gap-2">
           {!initialized && <Button variant="primary" onClick={() => setForm('opening')}>تسجيل مخزون البداية</Button>}
-          {initialized && <Button variant="primary" onClick={() => setForm('purchase')}>تسجيل شراء</Button>}
           {initialized && <Button variant="default" onClick={() => setForm('stocktake')}>جرد وتصحيح</Button>}
         </div>}
       </div>
@@ -307,30 +239,6 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800">هذه العملية تنفذ مرة واحدة ولا يمكن تعديلها لاحقاً. تأكد من الكميات قبل الحفظ.</div>
         <FieldGrid><DateField label="تاريخ بداية التتبع" value={openingDate} onValueChange={setOpeningDate} max={today} required /><Input name="headsPerKg" type="number" label="متوسط الرؤوس لكل كيلو" defaultValue="39" min="1" step="0.01" required /><Input name="tobaccoQuantity" type="number" label="المعسل (كجم)" defaultValue="15" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات (حبة)" defaultValue="0" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم (كرتون)" defaultValue="0" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم (علبة)" defaultValue="0" min="0" step="0.25" required /><Input name="charcoalPieces" type="number" label="الفحم (حبة)" defaultValue="0" min="0" step="1" required /><Input name="tobaccoCostInclVat" type="number" label="تكلفة المعسل شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="hoseCostInclVat" type="number" label="تكلفة الليات شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="charcoalCostInclVat" type="number" label="تكلفة الفحم شاملة الضريبة (اختياري)" min="0" step="0.01" /></FieldGrid>
         <Input name="notes" label="ملاحظات" multiline rows={2} /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'اعتماد مخزون البداية', role: 'save', type: 'submit', loading: initialize.isPending }]} />
-      </form></AdaptiveSheet>
-      <AdaptiveSheet open={form === 'purchase'} onClose={() => setForm(null)} title="تسجيل فاتورة شراء للمخزون" size="lg"><form onSubmit={submitPurchase} className="space-y-4">
-        <FieldGrid><DateField label="تاريخ الشراء" value={purchaseDate} onValueChange={setPurchaseDate} max={today} required /><Input name="invoiceNumber" label="رقم الفاتورة" /><Input name="supplierName" label="المورد" /></FieldGrid>
-        {charcoalPurchasesLinked && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
-            شراء الفحم مرتبط بصنف «فحم» في الطلبات ويضاف تلقائياً حسب التغليف المختار؛ لا يحتاج إدخاله مرة ثانية هنا.
-          </div>
-        )}
-        <div className="space-y-3 rounded-xl border border-noorix-border p-3">
-          <div className="flex items-center justify-between gap-2">
-            <div><div className="text-[13px] font-bold text-noorix-text">أصناف الفاتورة</div><div className="text-[11px] text-noorix-muted">يمكن إضافة المعسل والليات والفحم في فاتورة واحدة.</div></div>
-            <Button type="button" size="sm" onClick={() => setPurchaseRows((rows) => [...rows, newPurchaseRow()])}>إضافة صنف</Button>
-          </div>
-          {purchaseRows.map((row, index) => (
-            <div key={row.id} className="grid grid-cols-1 items-end gap-2 rounded-lg bg-noorix-bg-muted p-3 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1fr_auto]">
-              <Input type="select" label={`المادة ${index + 1}`} value={row.materialType} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => changePurchaseMaterial(row.id, event.target.value as PurchaseMaterial)} required><option value="tobacco">معسل</option><option value="hose">ليات</option>{!charcoalPurchasesLinked && <option value="charcoal">فحم</option>}</Input>
-              <Input type="number" label="الكمية" value={row.quantity} onChange={(event: React.ChangeEvent<HTMLInputElement>) => updatePurchaseRow(row.id, { quantity: event.target.value })} min="0.001" step={row.materialType === 'charcoal' ? '0.25' : '0.001'} required />
-              <Input type="select" label="الوحدة" value={row.unit} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => updatePurchaseRow(row.id, { unit: event.target.value as PurchaseUnit })} required>{row.materialType === 'tobacco' && <><option value="kg">كيلو</option><option value="g">جرام</option></>}{row.materialType === 'hose' && <option value="piece">حبة</option>}{row.materialType === 'charcoal' && <option value="pack">علبة (64 حبة)</option>}</Input>
-              <Input type="number" label="التكلفة شاملة الضريبة" value={row.costInclVat} onChange={(event: React.ChangeEvent<HTMLInputElement>) => updatePurchaseRow(row.id, { costInclVat: event.target.value })} min="0" step="0.01" />
-              <Button type="button" size="sm" variant="danger" disabled={purchaseRows.length === 1} onClick={() => removePurchaseRow(row.id)}>حذف</Button>
-            </div>
-          ))}
-        </div>
-        <Input name="notes" label="ملاحظات" multiline rows={2} /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'تسجيل الفاتورة', role: 'save', type: 'submit', loading: purchase.isPending }]} />
       </form></AdaptiveSheet>
       <AdaptiveSheet open={form === 'stocktake'} onClose={() => setForm(null)} title="الجرد واعتماد التصحيح" size="lg"><form onSubmit={submitStocktake} className="space-y-4">
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">أدخل الكميات الفعلية. سيحسب نوركس الفرق عن الرصيد الدفتري ويسجله كعملية تصحيح مستقلة غير قابلة للتعديل.</div>

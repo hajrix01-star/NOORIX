@@ -50,7 +50,9 @@ export function OrderFormModal({
   const [orderDate, setOrderDate] = useState(() =>
     (initialOrder?.orderDate ? toDateInputYmd(initialOrder.orderDate) || getSaudiToday() : getSaudiToday()));
   const [orderType, setOrderType] = useState<OrderType>(
-    initialOrder?.orderType === 'internal' ? 'internal' : 'external',
+    initialOrder?.orderType === 'internal' || initialOrder?.orderType === 'transfer'
+      ? initialOrder.orderType
+      : 'external',
   );
   const [pettyCashAmount, setPettyCashAmount] = useState(initialOrder?.pettyCashAmount ? String(initialOrder.pettyCashAmount) : '');
   const [notes, setNotes] = useState(initialOrder?.notes || '');

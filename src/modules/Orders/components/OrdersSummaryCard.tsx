@@ -1,4 +1,4 @@
-﻿/** ملخص الطلبات — كرت واحد: عهدة المندوب + نقد المحل (جداول داخلية) */
+﻿/** ملخص الطلبات — عهدة المندوب + نقد المحل + التحويل البنكي */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, FmtNum, SimpleTable } from '../../../ui';
@@ -8,6 +8,7 @@ export type OrdersSummaryMetrics = {
   pettyCashTotal?: MoneyLike;
   delegatePurchasesTotal?: MoneyLike;
   localPurchasesTotal?: MoneyLike;
+  transferPurchasesTotal?: MoneyLike;
   delegateBalance?: MoneyLike;
   cashRemaining?: MoneyLike;
 };
@@ -20,6 +21,7 @@ function SummaryPane({
   receivedLabel,
   spentLabel,
   resultLabel,
+  extraRows = [],
   accentTone,
   colItem,
   colAmount,
@@ -31,6 +33,7 @@ function SummaryPane({
   receivedLabel: string;
   spentLabel: string;
   resultLabel: string;
+  extraRows?: Array<{ id: string; item: string; amount: React.ReactNode }>;
   accentTone: 'sales' | 'profit';
   colItem: string;
   colAmount: string;
@@ -47,6 +50,7 @@ function SummaryPane({
       item: spentLabel,
       amount: <FmtNum n={Number(spent ?? 0)} className="nx-font-numbers font-semibold text-noorix-red" />,
     },
+    ...extraRows,
   ];
 
   return (
@@ -105,6 +109,7 @@ export function OrdersSummaryCard({
   const pettyCash = Number(summary.pettyCashTotal ?? 0);
   const delegatePurchases = Number(summary.delegatePurchasesTotal ?? 0);
   const localPurchases = Number(summary.localPurchasesTotal ?? 0);
+  const transferPurchases = Number(summary.transferPurchasesTotal ?? 0);
   const delegateBalance = Number(summary.delegateBalance ?? 0);
   const cashSales = Number(cashSalesTotal);
   const cashRemaining = Number(summary.cashRemaining ?? 0);
@@ -169,6 +174,11 @@ export function OrdersSummaryCard({
           receivedLabel={t('ordersCashSales')}
           spentLabel={t('ordersLocalPurchases')}
           resultLabel={t('ordersCashRemaining')}
+          extraRows={transferPurchases > 0 ? [{
+            id: 'transfer',
+            item: t('ordersTransferPurchases'),
+            amount: <FmtNum n={transferPurchases} className="nx-font-numbers font-semibold text-noorix-muted" />,
+          }] : []}
           accentTone="profit"
           colItem={colItem}
           colAmount={colAmount}

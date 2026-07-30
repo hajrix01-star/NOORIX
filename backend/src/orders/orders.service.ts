@@ -14,6 +14,8 @@ import { OrdersCatalogService } from './orders-catalog.service';
 import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
 
 type OrderItemInput = { productId: string; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
+type OrderPaymentMethod = 'external' | 'internal' | 'transfer';
+type OrderPaymentPatch = { orderType?: OrderPaymentMethod; pettyCashAmount?: string };
 
 @Injectable()
 export class OrdersService {
@@ -40,6 +42,24 @@ export class OrdersService {
       ...item,
       quantityMultiplier: resolveQuantityMultiplier(productMap.get(item.productId), item),
     }));
+  }
+
+  private paymentPatch(
+    dto: OrderPaymentPatch,
+    currentOrderType?: string | null,
+  ): { orderType?: OrderPaymentMethod; pettyCashAmount?: Prisma.Decimal | null } {
+    const patch: { orderType?: OrderPaymentMethod; pettyCashAmount?: Prisma.Decimal | null } = {};
+    const effectiveOrderType = dto.orderType ?? currentOrderType;
+    if (dto.orderType) {
+      patch.orderType = dto.orderType;
+      if (dto.orderType !== 'external') patch.pettyCashAmount = null;
+    }
+    if (effectiveOrderType === 'external' && dto.pettyCashAmount !== undefined) {
+      patch.pettyCashAmount = dto.pettyCashAmount ? new Prisma.Decimal(dto.pettyCashAmount) : null;
+    } else if (dto.pettyCashAmount !== undefined) {
+      patch.pettyCashAmount = null;
+    }
+    return patch;
   }
 
   async updateProductLastPrices(items: OrderItemInput[]) {
@@ -91,19 +111,19 @@ export class OrdersService {
         },
       },
     });
-    if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
+    if (!order) throw new NotFoundException('الطلب غير موجود');
     return order;
   }
 
   async create(companyId: string, dto: {
     orderDate: string;
-    orderType: 'external' | 'internal';
+    orderType: OrderPaymentMethod;
     pettyCashAmount?: string;
     notes?: string;
     items: { productId: string; size?: string; packaging?: string; unit?: string; quantity: string; unitPrice: string }[];
   }) {
     const tenantId = TenantContext.getTenantId();
-    if (!dto.items?.length) throw new BadRequestException('ÙŠØ¬Ø¨ Ø¥Ø¯Ø®Ø§Ù„ ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„');
+    if (!dto.items?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
 
     const items = await this.withQuantityMultipliers(companyId, mapDtoItemsToOrderLines(dto.items));
     const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
@@ -150,13 +170,13 @@ export class OrdersService {
 
   async update(companyId: string, id: string, dto: {
     orderDate?: string;
-    orderType?: 'external' | 'internal';
+    orderType?: OrderPaymentMethod;
     pettyCashAmount?: string;
     notes?: string;
     items?: { productId: string; size?: string; packaging?: string; unit?: string; quantity: string; unitPrice: string }[];
   }) {
     const existing = await this.prisma.order.findFirst({ where: { id, companyId, status: 'active' } });
-    if (!existing) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
+    if (!existing) throw new NotFoundException('الطلب غير موجود');
 
     if (dto.items?.length) {
       const items = await this.withQuantityMultipliers(companyId, mapDtoItemsToOrderLines(dto.items));
@@ -180,8 +200,7 @@ export class OrdersService {
         data: {
           totalAmount,
           ...(dto.orderDate && { orderDate: new Date(dto.orderDate) }),
-          ...(dto.orderType && { orderType: dto.orderType }),
-          ...(dto.pettyCashAmount !== undefined && { pettyCashAmount: dto.pettyCashAmount ? new Prisma.Decimal(dto.pettyCashAmount) : null }),
+          ...this.paymentPatch(dto, existing.orderType),
           ...(dto.notes !== undefined && { notes: dto.notes?.trim() || null }),
         },
       });
@@ -191,8 +210,7 @@ export class OrdersService {
         where: { id },
         data: {
           ...(dto.orderDate && { orderDate: new Date(dto.orderDate) }),
-          ...(dto.orderType && { orderType: dto.orderType }),
-          ...(dto.pettyCashAmount !== undefined && { pettyCashAmount: dto.pettyCashAmount ? new Prisma.Decimal(dto.pettyCashAmount) : null }),
+          ...this.paymentPatch(dto, existing.orderType),
           ...(dto.notes !== undefined && { notes: dto.notes?.trim() || null }),
         },
       });
@@ -203,7 +221,7 @@ export class OrdersService {
 
   async cancel(id: string, companyId: string) {
     const o = await this.prisma.order.findFirst({ where: { id, companyId } });
-    if (!o) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
+    if (!o) throw new NotFoundException('الطلب غير موجود');
     await this.prisma.order.update({ where: { id }, data: { status: 'cancelled' } });
     return { success: true };
   }

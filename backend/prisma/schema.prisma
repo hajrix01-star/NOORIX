@@ -1283,7 +1283,7 @@ model Order {
   companyId       String   @map("company_id")
   orderNumber     String   @map("order_number")   // ORD-20260315-001
   orderDate       DateTime @map("order_date")
-  orderType       String   @map("order_type")    // external | internal
+  orderType       String   @map("order_type")    // external | internal | transfer
   pettyCashAmount Decimal? @map("petty_cash_amount") @db.Decimal(18, 4)  // ظ„ظ„ط®ط§ط±ط¬ظٹ ظپظ‚ط·
   totalAmount     Decimal  @map("total_amount")  @db.Decimal(18, 4)
   notes               String?

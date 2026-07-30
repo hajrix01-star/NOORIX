@@ -29,6 +29,7 @@ const emptyOrderSummary: OrderSummary = {
   pettyCashTotal: 0,
   delegatePurchasesTotal: 0,
   localPurchasesTotal: 0,
+  transferPurchasesTotal: 0,
   delegateBalance: 0,
 };
 

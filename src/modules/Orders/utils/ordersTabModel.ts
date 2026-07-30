@@ -82,6 +82,16 @@ export function computeCumulativeRemainingByOrderId(dateFilteredOrders: OrderRec
 
 type TranslateFn = (key: string, ...args: string[]) => string;
 
+export function isPettyCashOrderType(orderType: string | null | undefined): boolean {
+  return orderType === 'external';
+}
+
+export function orderTypeLabel(orderType: string | null | undefined, t: TranslateFn): string {
+  if (orderType === 'external') return t('orderTypeExternal');
+  if (orderType === 'transfer') return t('orderTypeTransfer');
+  return t('orderTypeInternal');
+}
+
 export function buildWhatsAppText(order: OrderRecord, t: TranslateFn): string {
   const lines = (order.items || [])
     .map((it) => {
@@ -92,8 +102,8 @@ export function buildWhatsAppText(order: OrderRecord, t: TranslateFn): string {
     })
     .join('\n');
   const total = fmt(order.totalAmount ?? 0);
-  return `طلب ${order.orderNumber}\nالتاريخ: ${formatSaudiDate(order.orderDate)}\nالنوع: ${
-    order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')
+  return `طلب ${order.orderNumber}\nالتاريخ: ${formatSaudiDate(order.orderDate)}\nطريقة الدفع: ${
+    orderTypeLabel(order.orderType, t)
   }\n\n${lines}\n\nالإجمالي: ${total} SR`;
 }
 
@@ -111,9 +121,9 @@ export function buildOrderPrintHtml(order: OrderRecord, t: TranslateFn): string 
       total: `${fmt(it.amount ?? 0)} SR`,
     };
   });
-  const orderType = order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal');
+  const orderType = orderTypeLabel(order.orderType, t);
   const pettyRow =
-    order.orderType === 'external' && order.pettyCashAmount != null
+    isPettyCashOrderType(order.orderType) && order.pettyCashAmount != null
       ? `<p style="margin:6px 0"><strong>${t('ordersPettyCashGiven')}:</strong> ${fmt(
           order.pettyCashAmount ?? 0,
         )} SR</p>`
@@ -143,7 +153,7 @@ export function buildSingleOrderExportRows(order: OrderRecord, t: TranslateFn): 
   const rows: Record<string, string | number>[] = items.map((it) => ({
     [t('orderNumber')]: order.orderNumber,
     [t('orderDate')]: formatSaudiDate(order.orderDate),
-    [t('orderType')]: order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal'),
+    [t('orderType')]: orderTypeLabel(order.orderType, t),
     [t('product')]: it.product?.nameAr || it.product?.nameEn || '—',
     [t('ordersProductSize')]: it.size || '—',
     [t('ordersProductPackaging')]: it.packaging || '—',
@@ -156,7 +166,7 @@ export function buildSingleOrderExportRows(order: OrderRecord, t: TranslateFn): 
     rows.push({
       [t('orderNumber')]: order.orderNumber,
       [t('orderDate')]: formatSaudiDate(order.orderDate),
-      [t('orderType')]: order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal'),
+      [t('orderType')]: orderTypeLabel(order.orderType, t),
       [t('product')]: '—',
       [t('ordersProductSize')]: '—',
       [t('ordersProductPackaging')]: '—',

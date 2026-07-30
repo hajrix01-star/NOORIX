@@ -13,6 +13,7 @@ function buildOrdersRangeSummary(
   pettyCashTotal: Prisma.Decimal,
   delegatePurchasesTotal: Prisma.Decimal,
   localPurchasesTotal: Prisma.Decimal,
+  transferPurchasesTotal: Prisma.Decimal,
   filteredTotal: Prisma.Decimal,
   cashSalesTotalInput?: Prisma.Decimal.Value,
 ) {
@@ -21,6 +22,7 @@ function buildOrdersRangeSummary(
     pettyCashTotal: pettyCashTotal.toString(),
     delegatePurchasesTotal: delegatePurchasesTotal.toString(),
     localPurchasesTotal: localPurchasesTotal.toString(),
+    transferPurchasesTotal: transferPurchasesTotal.toString(),
     delegateBalance: pettyCashTotal.minus(delegatePurchasesTotal).toString(),
     cashSalesTotal: cashSalesTotal.toString(),
     cashRemaining: cashSalesTotal.minus(localPurchasesTotal).toString(),
@@ -36,12 +38,15 @@ export function aggregateOrdersRangeSummary(orders: OrderRow[], cashSalesTotalIn
   let pettyCashTotal = new Prisma.Decimal(0);
   let delegatePurchasesTotal = new Prisma.Decimal(0);
   let localPurchasesTotal = new Prisma.Decimal(0);
+  let transferPurchasesTotal = new Prisma.Decimal(0);
   let filteredTotal = new Prisma.Decimal(0);
   for (const o of orders) {
     filteredTotal = filteredTotal.plus(o.totalAmount);
     if (o.orderType === 'external') {
       pettyCashTotal = pettyCashTotal.plus(o.pettyCashAmount ?? 0);
       delegatePurchasesTotal = delegatePurchasesTotal.plus(o.totalAmount);
+    } else if (o.orderType === 'transfer') {
+      transferPurchasesTotal = transferPurchasesTotal.plus(o.totalAmount);
     } else {
       localPurchasesTotal = localPurchasesTotal.plus(o.totalAmount);
     }
@@ -50,6 +55,7 @@ export function aggregateOrdersRangeSummary(orders: OrderRow[], cashSalesTotalIn
     pettyCashTotal,
     delegatePurchasesTotal,
     localPurchasesTotal,
+    transferPurchasesTotal,
     filteredTotal,
     cashSalesTotalInput,
   );
@@ -62,6 +68,7 @@ export function aggregateOrdersRangeSummaryGroups(
   let pettyCashTotal = new Prisma.Decimal(0);
   let delegatePurchasesTotal = new Prisma.Decimal(0);
   let localPurchasesTotal = new Prisma.Decimal(0);
+  let transferPurchasesTotal = new Prisma.Decimal(0);
   let filteredTotal = new Prisma.Decimal(0);
 
   for (const group of groups) {
@@ -70,6 +77,8 @@ export function aggregateOrdersRangeSummaryGroups(
     if (group.orderType === 'external') {
       pettyCashTotal = pettyCashTotal.plus(group._sum.pettyCashAmount ?? 0);
       delegatePurchasesTotal = delegatePurchasesTotal.plus(totalAmount);
+    } else if (group.orderType === 'transfer') {
+      transferPurchasesTotal = transferPurchasesTotal.plus(totalAmount);
     } else {
       localPurchasesTotal = localPurchasesTotal.plus(totalAmount);
     }
@@ -79,6 +88,7 @@ export function aggregateOrdersRangeSummaryGroups(
     pettyCashTotal,
     delegatePurchasesTotal,
     localPurchasesTotal,
+    transferPurchasesTotal,
     filteredTotal,
     cashSalesTotalInput,
   );

@@ -1,5 +1,5 @@
 export type OrderProductType = 'order' | 'sale';
-export type OrderType = 'external' | 'internal';
+export type OrderType = 'external' | 'internal' | 'transfer';
 export type StaffOrderType = 'order' | 'sale';
 export type StaffOrderStatus = 'pending' | 'sent' | 'cancelled';
 export type StaffOrderEntryType = 'issue' | 'cancellation';
@@ -99,6 +99,7 @@ export type OrderSummary = {
   pettyCashTotal: MoneyLike;
   delegatePurchasesTotal: MoneyLike;
   localPurchasesTotal: MoneyLike;
+  transferPurchasesTotal: MoneyLike;
   delegateBalance: MoneyLike;
   cashRemaining?: MoneyLike;
 };

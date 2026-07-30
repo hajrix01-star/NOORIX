@@ -4,6 +4,14 @@ import type { OrderType } from '../../../types/api';
 
 type Translation = (key: string) => string;
 
+const orderPaymentMethods: OrderType[] = ['external', 'internal', 'transfer'];
+
+function orderPaymentLabel(type: OrderType, t: Translation): string {
+  if (type === 'external') return t('orderTypeExternal');
+  if (type === 'transfer') return t('orderTypeTransfer');
+  return t('orderTypeInternal');
+}
+
 export function OrderBasicFields({
   orderDate,
   orderType,
@@ -31,7 +39,7 @@ export function OrderBasicFields({
       <div className="flex flex-col gap-1">
         <label className="text-[11px] text-noorix-muted font-medium">{t('orderType')} *</label>
         <div className="inline-flex rounded-xl border border-noorix-border overflow-hidden text-[12px] h-[38px]">
-          {(['external', 'internal'] as const).map((type) => (
+          {orderPaymentMethods.map((type) => (
             <Button
               variant="raw"
               key={type}
@@ -42,7 +50,7 @@ export function OrderBasicFields({
                   ? 'bg-noorix-blue text-white'
                   : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
             >
-              {type === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
+              {orderPaymentLabel(type, t)}
             </Button>
           ))}
         </div>
