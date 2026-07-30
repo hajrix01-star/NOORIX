@@ -9,14 +9,6 @@ export interface StaffOrderItemInput {
   sectionName?: string;
 }
 
-export type SendStaffDigestOptions = {
-  lang?: 'ar' | 'en';
-  orderType?: 'external' | 'internal';
-  pettyCashAmount?: string;
-  orderDate?: string;
-  createPurchaseOrder?: boolean;
-};
-
 export interface CreateStaffOrderDto {
   companyId: string;
   sectionName?: string;

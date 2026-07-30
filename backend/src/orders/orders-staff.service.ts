@@ -8,19 +8,20 @@ import {
   staffSaleLogRefPrefix,
 } from './orders-staff-log-ref.util';
 import { buildSalesReportSince } from './orders-staff-sales-report.util';
-import { buildSalesWhatsAppTextCombined } from './orders-staff-whatsapp.util';
-import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
+import {
+  buildSalesWhatsAppTextCombined,
+  buildStaffPurchaseWhatsAppText,
+} from './orders-staff-whatsapp.util';
+import { dateToSaudiYmd, saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 import { parseSaleDateYmd } from './orders-staff-date.util';
 import { resolveProductSection } from './orders-staff-sections.util';
-import { CreateStaffOrderDto, SendStaffDigestOptions, StaffOrderItemInput } from './orders-staff.types';
-import { OrdersStaffDigestService } from './orders-staff-digest.service';
+import { CreateStaffOrderDto, StaffOrderItemInput } from './orders-staff.types';
 import { OrdersStaffReportService } from './orders-staff-report.service';
 
 @Injectable()
 export class OrdersStaffService {
   constructor(
     private readonly prisma: TenantPrismaService,
-    private readonly digest: OrdersStaffDigestService,
     private readonly report: OrdersStaffReportService,
   ) {}
 
@@ -132,7 +133,7 @@ export class OrdersStaffService {
         logRef,
         saleDate,
         notes: dto.notes?.trim() || null,
-        status: orderType === 'sale' ? 'sent' : 'pending',
+        status: 'sent',
         sentAt,
         items: {
           create: mapped,
@@ -155,7 +156,7 @@ export class OrdersStaffService {
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
     const isSale = orderType === 'sale';
     const saleDate = isSale ? parseSaleDateYmd(dto.saleDate || saudiDateYmd()) : null;
-    const sentAt = isSale ? new Date() : null;
+    const sentAt = new Date();
 
     const grouped = await this.groupItemsBySection(companyId, dto.items, dto.sectionName);
     const sectionEntries = [...grouped.entries()];
@@ -178,7 +179,19 @@ export class OrdersStaffService {
       );
     }
 
-    if (!isSale) return orders.length === 1 ? orders[0] : { orders, count: orders.length };
+    if (!isSale) {
+      const sections = orders.map((order) => ({
+        sectionName: order.sectionName,
+        orders: [order],
+      }));
+      const whatsAppText = buildStaffPurchaseWhatsAppText(
+        sections,
+        saudiDateYmd().replace(/-/g, '/'),
+        lang,
+      );
+      const primary = orders[0];
+      return { ...primary, orders, count: orders.length, whatsAppText };
+    }
 
     const whatsAppText = buildSalesWhatsAppTextCombined(orders, saleDate!, lang, saleLogRef);
     const primary = orders[0];
@@ -219,7 +232,7 @@ export class OrdersStaffService {
     if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† ØªØ¹Ø¯ÙŠÙ„ Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
 
     const isSale = order.orderType === 'sale';
-    if (!isSale && order.status !== 'pending') {
+    if (!isSale) {
       throw new BadRequestException('Ù„Ø§ ÙŠÙ…ÙƒÙ† ØªØ¹Ø¯ÙŠÙ„ Ø·Ù„Ø¨ ØªÙ… Ø¥Ø±Ø³Ø§Ù„Ù‡');
     }
 
@@ -263,10 +276,10 @@ export class OrdersStaffService {
     return { ...updated, whatsAppText };
   }
 
-  /** Ø¥Ø¹Ø§Ø¯Ø© ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨ Ù„Ù…Ø¨ÙŠØ¹Ø§Øª Ù…ÙØ³Ø¬Ù‘Ù„Ø© Ø¯ÙˆÙ† ØªØ¹Ø¯ÙŠÙ„ */
-  async resendStaffSale(id: string, companyId: string, userId: string, lang: 'ar' | 'en' = 'ar') {
+  /** Reopen WhatsApp for an operational section order or an internal log. */
+  async resendStaffOrder(id: string, companyId: string, userId: string, lang: 'ar' | 'en' = 'ar') {
     const order = await this.prisma.staffOrder.findFirst({
-      where: { id, companyId, orderType: 'sale' },
+      where: { id, companyId },
       include: {
         items: { include: { product: true } },
         user: { select: { nameAr: true, nameEn: true } },
@@ -274,6 +287,22 @@ export class OrdersStaffService {
     });
     if (!order) throw new NotFoundException('Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©');
     if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„ Ù…Ø¨ÙŠØ¹Ø§Øª Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
+
+    if (order.orderType !== 'sale') {
+      if (order.status !== 'sent') {
+        await this.prisma.staffOrder.update({
+          where: { id: order.id },
+          data: { status: 'sent', sentAt: new Date() },
+        });
+      }
+      const whatsAppText = buildStaffPurchaseWhatsAppText(
+        [{ sectionName: order.sectionName, orders: [order] }],
+        dateToSaudiYmd(order.createdAt).replace(/-/g, '/'),
+        lang,
+      );
+      return { whatsAppText, logRef: null };
+    }
+
     const saleDay = order.saleDate ?? order.createdAt;
     const orders = order.logRef
       ? await this.prisma.staffOrder.findMany({
@@ -293,24 +322,11 @@ export class OrdersStaffService {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
     if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
     if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
-    if (order.orderType !== 'sale' && order.status !== 'pending') {
+    if (order.orderType !== 'sale') {
       throw new BadRequestException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ ØªÙ… Ø¥Ø±Ø³Ø§Ù„Ù‡');
     }
     await this.prisma.staffOrder.delete({ where: { id } });
     return { deleted: true };
-  }
-
-  /** Ø§Ù„ÙƒØ§Ø´ÙŠØ±: ØªØ§Ø±ÙŠØ® Ø§Ù„Ø¥Ø±Ø³Ø§Ù„Ø§Øª â€” Ø¢Ø®Ø± 30 ÙŠÙˆÙ…Ø§Ù‹ Ù…Ø¬Ù…Ù‘Ø¹Ø© Ø¨ØªØ§Ø±ÙŠØ® Ø§Ù„Ø¥Ø±Ø³Ø§Ù„ */
-  async getDigestHistory(companyId: string, days = 30) {
-    return this.digest.getDigestHistory(companyId, days);
-  }
-
-  async getDigest(companyId: string) {
-    return this.digest.getDigest(companyId);
-  }
-
-  async sendDigest(companyId: string, orderIds?: string[], opts: SendStaffDigestOptions = {}) {
-    return this.digest.sendDigest(companyId, orderIds, opts);
   }
 
   async getSalesReport(

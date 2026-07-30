@@ -99,21 +99,17 @@ export const REPORTS_BANK_ACCESS = [PERMISSIONS.VIEW_REPORTS_BANK, PERMISSIONS.V
 export const ORDERS_APP_ACCESS = [
   PERMISSIONS.VIEW_ORDERS,
   PERMISSIONS.STAFF_ORDERS_SUBMIT,
-  PERMISSIONS.STAFF_ORDERS_DIGEST,
 ];
 
-/** جلب بيانات الطلبات — واجهة المدير الكاملة (ليس digest الموظف) */
+/** جلب بيانات الطلبات — واجهة المدير الكاملة */
 export const ORDERS_MANAGER_DATA_ACCESS = [
   PERMISSIONS.VIEW_SALES,
   PERMISSIONS.ORDERS_READ,
   PERMISSIONS.ORDERS_WRITE,
 ] as const;
 
-/** تقرير مبيعات الموظفين — مدير أو من لديه digest */
-export const ORDERS_SALES_REPORT_ACCESS = [
-  ...ORDERS_MANAGER_DATA_ACCESS,
-  PERMISSIONS.STAFF_ORDERS_DIGEST,
-] as const;
+/** تقرير التسجيل الداخلي — حسب صلاحيات إدارة الطلبات */
+export const ORDERS_SALES_REPORT_ACCESS = [...ORDERS_MANAGER_DATA_ACCESS] as const;
 
 /** تبويبات التقارير — ترتيب redirect الافتراضي */
 export const REPORT_TAB_SEQUENCE: Array<{ path: string; required: readonly string[] }> = [

@@ -33,14 +33,13 @@ import {
   StaffSectionFilter,
   StaffSentOrdersSection,
 } from './StaffOrderPanelSections';
-import { StaffOrdersPendingPanel } from './StaffOrdersPendingPanel';
 import {
   useMyStaffOrders,
   useStaffSaleNextLogRef,
   useCreateStaffOrderMutation,
   useUpdateStaffOrderMutation,
   useDeleteStaffOrderMutation,
-  useResendStaffSaleMutation,
+  useResendStaffOrderMutation,
   useOrderProducts,
   useOrderSections,
 } from '../../hooks/useOrders';
@@ -64,7 +63,7 @@ export function StaffOrderPanel({
   const createOrder = useCreateStaffOrderMutation(companyId);
   const updateOrder = useUpdateStaffOrderMutation(companyId);
   const deleteOrder = useDeleteStaffOrderMutation(companyId);
-  const resendSale = useResendStaffSaleMutation(companyId);
+  const resendOrder = useResendStaffOrderMutation(companyId);
 
   const isSale = productType === 'sale';
   const [sectionFilter, setSectionFilter] = useState('');
@@ -98,13 +97,18 @@ export function StaffOrderPanel({
     () => filterStaffOrdersByType(myOrders, productType),
     [myOrders, productType],
   );
-  const pendingOrders = useMemo(() => myTypedOrders.filter((o) => o.status === 'pending'), [myTypedOrders]);
-  const sentOrders   = useMemo(() => myTypedOrders.filter((o) => o.status === 'sent'),    [myTypedOrders]);
-  const sentSaleGroups = useMemo(() => groupSentSaleOrders(sentOrders, isSale), [isSale, sentOrders]);
+  const visibleOrders = useMemo(
+    () => (isSale ? myTypedOrders.filter((o) => o.status === 'sent') : myTypedOrders),
+    [isSale, myTypedOrders],
+  );
+  const sentSaleGroups = useMemo(
+    () => groupSentSaleOrders(visibleOrders, isSale),
+    [isSale, visibleOrders],
+  );
 
   const sentSalesSummary = useMemo(
-    () => summarizeSentSales({ isSale, sentSaleGroups, sentOrders }),
-    [isSale, sentSaleGroups, sentOrders],
+    () => summarizeSentSales({ isSale, sentSaleGroups, sentOrders: visibleOrders }),
+    [isSale, sentSaleGroups, visibleOrders],
   );
 
   const editingOrder = useMemo(
@@ -239,7 +243,6 @@ export function StaffOrderPanel({
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: orderKeys.staffMy(companyId) }),
           queryClient.invalidateQueries({ queryKey: ['salesReport', companyId] }),
-          queryClient.invalidateQueries({ queryKey: orderKeys.staffDigest(companyId) }),
         ]);
         resetForm();
 
@@ -250,14 +253,13 @@ export function StaffOrderPanel({
         return;
       }
 
-      if (editingId) {
-        await updateOrder.mutateAsync({ id: editingId, body: payload });
-        showToast(t('staffOrderUpdated'), 'success');
-      } else {
-        await createOrder.mutateAsync(payload);
-        showToast(t('staffOrderCreated'), 'success');
-      }
+      const res = await createOrder.mutateAsync(payload);
+      const saved = res.data && 'id' in res.data ? res.data : null;
+      if (!saved?.id) throw new Error(t('saveFailed'));
+      showToast(t('staffOrderCreated'), 'success');
       resetForm();
+      const waText = saved.whatsAppText?.trim();
+      if (waText) setSendWhatsAppPrompt(waText);
     } catch (error) {
       showToast(error instanceof Error ? error.message : t('saveFailed'), 'error');
     } finally {
@@ -265,9 +267,9 @@ export function StaffOrderPanel({
     }
   }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, companyId, productType, isSale, displayLang, t, showToast, createOrder, updateOrder, queryClient]);
 
-  const handleResendSale = useCallback(async (order: StaffOrder) => {
+  const handleResendOrder = useCallback(async (order: StaffOrder) => {
     try {
-      const res = await resendSale.mutateAsync({ id: order.id, lang: displayLang });
+      const res = await resendOrder.mutateAsync({ id: order.id, lang: displayLang });
       const data = res.data;
       const waText = data?.whatsAppText;
       if (waText) {
@@ -277,7 +279,7 @@ export function StaffOrderPanel({
     } catch (error) {
       showToast(error instanceof Error ? error.message : t('saveFailed'), 'error');
     }
-  }, [displayLang, resendSale, t, showToast]);
+  }, [displayLang, resendOrder, t, showToast]);
 
   const handleDelete = useCallback(async (order: StaffOrder) => {
     setDeleteTarget(order);
@@ -364,24 +366,14 @@ export function StaffOrderPanel({
         handleSubmit={handleSubmit}
       />
 
-      {!isSale && (
-        <StaffOrdersPendingPanel
-          orders={pendingOrders}
-          lang={lang}
-          t={t}
-          onEdit={loadForEdit}
-          onDelete={handleDelete}
-        />
-      )}
-
       <StaffSentOrdersSection
         isSale={isSale}
-        sentOrders={sentOrders}
+        sentOrders={visibleOrders}
         sentSaleGroups={sentSaleGroups}
         sentSalesSummary={sentSalesSummary}
         lang={lang}
         t={t}
-        handleResendSale={handleResendSale}
+        handleResendOrder={handleResendOrder}
         loadForEdit={loadForEdit}
         handleDelete={handleDelete}
       />

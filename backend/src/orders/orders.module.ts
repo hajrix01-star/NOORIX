@@ -6,7 +6,6 @@ import { OrdersStaffService } from './orders-staff.service';
 import { ShishaInventoryService } from './shisha-inventory.service';
 import { ShishaInventorySourceService } from './shisha-inventory-source.service';
 import { OrdersCatalogService } from './orders-catalog.service';
-import { OrdersStaffDigestService } from './orders-staff-digest.service';
 import { OrdersStaffReportService } from './orders-staff-report.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
@@ -20,7 +19,6 @@ import { AuthModule } from '../auth/auth.module';
     ShishaInventoryService,
     ShishaInventorySourceService,
     OrdersCatalogService,
-    OrdersStaffDigestService,
     OrdersStaffReportService,
   ],
   exports: [
@@ -28,7 +26,6 @@ import { AuthModule } from '../auth/auth.module';
     OrdersStaffService,
     ShishaInventoryService,
     OrdersCatalogService,
-    OrdersStaffDigestService,
     OrdersStaffReportService,
   ],
 })

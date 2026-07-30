@@ -3,19 +3,9 @@ import { PERMISSIONS } from '../../constants/permissions';
 import { resolveOrdersScreenMode } from './ordersScreenRouting';
 
 describe('resolveOrdersScreenMode', () => {
-  it('موظف إرسال فقط → staff (حتى مع STAFF_ORDERS_DIGEST)', () => {
-    const perms = [PERMISSIONS.STAFF_ORDERS_SUBMIT, PERMISSIONS.STAFF_ORDERS_DIGEST, PERMISSIONS.VIEW_ORDERS];
-    expect(resolveOrdersScreenMode('staff', perms).mode).toBe('staff');
-  });
-
-  it('موظف إرسال بدون digest → staff', () => {
+  it('موظف إرسال طلب تشغيلي → staff', () => {
     const perms = [PERMISSIONS.STAFF_ORDERS_SUBMIT, PERMISSIONS.VIEW_ORDERS];
     expect(resolveOrdersScreenMode('staff', perms).mode).toBe('staff');
-  });
-
-  it('كاشير digest فقط → manager-digest-only', () => {
-    const perms = [PERMISSIONS.STAFF_ORDERS_DIGEST, PERMISSIONS.VIEW_ORDERS];
-    expect(resolveOrdersScreenMode('staff', perms).mode).toBe('manager-digest-only');
   });
 
   it('محاسب ORDERS_READ → manager-full', () => {
@@ -33,7 +23,6 @@ describe('resolveOrdersScreenMode', () => {
       PERMISSIONS.VIEW_ORDERS,
       PERMISSIONS.VIEW_SALES,
       PERMISSIONS.STAFF_ORDERS_SUBMIT,
-      PERMISSIONS.STAFF_ORDERS_DIGEST,
     ];
     const r = resolveOrdersScreenMode('cashier', perms);
     expect(r.mode).toBe('manager-full');

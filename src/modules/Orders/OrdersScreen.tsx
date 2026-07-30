@@ -3,7 +3,6 @@
  *
  * STAFF_ORDERS_SUBMIT (بدون ORDERS_MANAGER_DATA_ACCESS) → StaffOrdersView
  * ORDERS_MANAGER_DATA_ACCESS → واجهة المدير الكاملة
- * STAFF_ORDERS_DIGEST فقط → تبويبا digest + تقرير المبيعات
  */
 import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
@@ -14,7 +13,6 @@ import { ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
 import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';
 import { ItemsManageTab } from './components/ItemsManageTab';
-import { StaffDigestTab } from './components/StaffDigestTab';
 import { SalesReportTab } from './components/SalesReportTab';
 import { ShishaInventoryTab } from './components/ShishaInventoryTab';
 import { StaffOrdersView } from './StaffOrdersView';
@@ -66,9 +64,7 @@ export default function OrdersScreen() {
   return <ManagerOrdersScreen
     companyId={companyId}
     dateFilter={dateFilter}
-    digestOnly={routing.mode === 'manager-digest-only'}
     canSubmitStaff={routing.canSubmitStaff}
-    canDigest={routing.canDigest}
     canViewSalesReport={routing.canViewSalesReport}
     prefersStaffSalesTab={routing.prefersStaffSalesTab}
   />;
@@ -77,36 +73,25 @@ export default function OrdersScreen() {
 function ManagerOrdersScreen({
   companyId,
   dateFilter,
-  digestOnly,
   canSubmitStaff,
-  canDigest,
   canViewSalesReport,
   prefersStaffSalesTab,
 }: {
   companyId: string;
   dateFilter: ReturnType<typeof useDateFilter>;
-  digestOnly: boolean;
   canSubmitStaff: boolean;
-  canDigest: boolean;
   canViewSalesReport: boolean;
   prefersStaffSalesTab: boolean;
 }) {
   const { t } = useTranslation();
 
   const TAB_IDS = useMemo(() => {
-    if (digestOnly) {
-      const ids: string[] = [];
-      if (canViewSalesReport) ids.push('sales-report');
-      if (canDigest) ids.push('staff-digest');
-      return ids.length ? ids : ['sales-report'];
-    }
     const ids: string[] = [];
     if (canSubmitStaff) ids.push('staff-sales');
     ids.push('orders', 'items-report', 'items-manage', 'shisha-inventory');
     if (canViewSalesReport) ids.push('sales-report');
-    if (canDigest) ids.push('staff-digest');
     return ids;
-  }, [digestOnly, canDigest, canViewSalesReport, canSubmitStaff]);
+  }, [canViewSalesReport, canSubmitStaff]);
 
   const defaultTab =
     prefersStaffSalesTab && canSubmitStaff && TAB_IDS.includes('staff-sales')
@@ -138,12 +123,6 @@ function ManagerOrdersScreen({
   }, [dateFilter.mode, dateFilter.selYear, dateFilter.selMonth, dateFilter.selDay, dateFilter.rangeStart, dateFilter.rangeEnd, dateFilter.startDate, dateFilter.endDate]);
 
   const tabItems = useMemo(() => {
-    if (digestOnly) {
-      const tabs: Array<{ id: string; labelKey: string; shortLabelKey?: string }> = [];
-      if (canViewSalesReport) tabs.push({ id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' });
-      if (canDigest) tabs.push({ id: 'staff-digest', labelKey: 'staffDigestTab', shortLabelKey: 'staffDigestTabShort' });
-      return tabs.map((tab) => ({ id: tab.id, label: t(tab.labelKey) }));
-    }
     const tabs: Array<{ id: string; labelKey: string; shortLabelKey?: string }> = [];
     if (canSubmitStaff) {
       tabs.push({ id: 'staff-sales', labelKey: 'staffSalesRecordTab', shortLabelKey: 'staffSalesRecordTabShort' });
@@ -157,7 +136,6 @@ function ManagerOrdersScreen({
     if (canViewSalesReport) {
       tabs.push({ id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' });
     }
-    if (canDigest) tabs.push({ id: 'staff-digest', labelKey: 'staffDigestTab', shortLabelKey: 'staffDigestTabShort' });
     return tabs.map((tab) => {
       const full = t(tab.labelKey);
       const short = tab.shortLabelKey ? t(tab.shortLabelKey) : full;
@@ -172,7 +150,7 @@ function ManagerOrdersScreen({
         );
       return { id: tab.id, label };
     });
-  }, [t, digestOnly, canDigest, canViewSalesReport, canSubmitStaff]);
+  }, [t, canViewSalesReport, canSubmitStaff]);
 
   return (
     <ScreenShell variant="data" className="min-w-0">
@@ -197,7 +175,7 @@ function ManagerOrdersScreen({
           {activeTab === 'staff-sales' && canSubmitStaff && (
             <StaffOrdersView companyId={companyId} embedded salesOnly />
           )}
-          {!digestOnly && activeTab === 'orders' && (
+          {activeTab === 'orders' && (
             <OrdersTab
               companyId={companyId}
               year={year}
@@ -207,7 +185,7 @@ function ManagerOrdersScreen({
               dateFilter={dateFilter}
             />
           )}
-          {!digestOnly && activeTab === 'items-report' && (
+          {activeTab === 'items-report' && (
             <ItemsReportTab
               companyId={companyId}
               year={year}
@@ -217,8 +195,8 @@ function ManagerOrdersScreen({
               dateFilter={dateFilter}
             />
           )}
-          {!digestOnly && activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
-          {!digestOnly && activeTab === 'shisha-inventory' && (
+          {activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
+          {activeTab === 'shisha-inventory' && (
             <ShishaInventoryTab
               companyId={companyId}
               startDate={startDate}
@@ -229,7 +207,6 @@ function ManagerOrdersScreen({
           {activeTab === 'sales-report' && canViewSalesReport && (
             <SalesReportTab companyId={companyId} dateFilter={dateFilter} />
           )}
-          {activeTab === 'staff-digest' && canDigest && <StaffDigestTab companyId={companyId} />}
         </ScreenTabs>
       )}
     </ScreenShell>

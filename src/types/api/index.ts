@@ -5,20 +5,10 @@ export type {
   AuthLoginRefreshPayload,
   RefreshAuthSessionResult,
 } from './auth';
-export type {
-  StaffDigestData,
-  StaffDigestSection,
-  StaffDigestOrder,
-  StaffDigestOrderItem,
-  StaffDigestSendResult,
-} from './domains/orders-staff';
 export type { CreateInvoiceBatchResult } from './domains/invoices-batch';
 export type {
   CreateOrderLinePayload,
   CreateOrderPayload,
-  DigestHistoryDay,
-  DigestHistoryItem,
-  DigestHistorySection,
   DisplayLanguage,
   MoneyLike,
   NamedDisplayRef,

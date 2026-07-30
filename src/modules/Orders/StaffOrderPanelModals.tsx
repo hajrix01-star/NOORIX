@@ -7,21 +7,28 @@ type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
 
 export function StaffWhatsAppPromptModal({
   text,
+  isSale,
   t,
   onClose,
   onConfirm,
 }: {
   text: string | null;
+  isSale: boolean;
   t: TranslateFn;
   onClose: () => void;
   onConfirm: (text: string) => void;
 }) {
   if (!text) return null;
   return (
-    <Modal open onClose={onClose} title={t('staffSaleSendConfirmTitle')} size="sm">
+    <Modal
+      open
+      onClose={onClose}
+      title={t(isSale ? 'staffSaleSendConfirmTitle' : 'staffOrderSendConfirmTitle')}
+      size="sm"
+    >
       <div className="flex flex-col gap-4 p-1">
         <p className="text-[13px] text-noorix-muted leading-relaxed m-0">
-          {t('staffSaleSendConfirmHint')}
+          {t(isSale ? 'staffSaleSendConfirmHint' : 'staffOrderSendConfirmHint')}
         </p>
         <div className="grid grid-cols-2 gap-2">
           <Button variant="ghost" size="md" onClick={onClose}>

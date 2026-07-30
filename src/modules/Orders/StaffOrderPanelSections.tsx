@@ -247,7 +247,7 @@ export function StaffSentOrdersSection({
   sentSalesSummary,
   lang,
   t,
-  handleResendSale,
+  handleResendOrder,
   loadForEdit,
   handleDelete,
 }: {
@@ -261,7 +261,7 @@ export function StaffSentOrdersSection({
   };
   lang: string;
   t: Translate;
-  handleResendSale: (order: StaffOrder) => void;
+  handleResendOrder: (order: StaffOrder) => void;
   loadForEdit: (order: StaffOrder) => void;
   handleDelete: (order: StaffOrder) => void;
 }) {
@@ -292,7 +292,7 @@ export function StaffSentOrdersSection({
               orders={group}
               lang={lang}
               t={t}
-              onResend={handleResendSale}
+              onResend={handleResendOrder}
               onEdit={loadForEdit}
               onDelete={handleDelete}
             />
@@ -305,9 +305,9 @@ export function StaffSentOrdersSection({
           isSale={isSale}
           lang={lang}
           t={t}
-          onResend={undefined}
-          onEdit={loadForEdit}
-          onDelete={handleDelete}
+          onResend={handleResendOrder}
+          onEdit={undefined}
+          onDelete={undefined}
         />
       ))}
     </section>
@@ -365,6 +365,7 @@ export function StaffOrderPanelDialogs({
       />
       <StaffWhatsAppPromptModal
         text={sendWhatsAppPrompt}
+        isSale={isSale}
         t={t}
         onClose={() => setSendWhatsAppPrompt(null)}
         onConfirm={(text) => {

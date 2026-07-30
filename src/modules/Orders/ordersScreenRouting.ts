@@ -5,7 +5,7 @@ import {
   hasAnyOfPermissions,
 } from '../../constants/permissions';
 
-export type OrdersScreenMode = 'staff' | 'manager-full' | 'manager-digest-only' | 'forbidden';
+export type OrdersScreenMode = 'staff' | 'manager-full' | 'forbidden';
 
 export function resolveOrdersScreenMode(
   userRole: unknown,
@@ -13,7 +13,6 @@ export function resolveOrdersScreenMode(
 ): {
   mode: OrdersScreenMode;
   canSubmitStaff: boolean;
-  canDigest: boolean;
   hasManagerDataAccess: boolean;
   canViewSalesReport: boolean;
   /** كاشير: VIEW_SALES + إرسال — يفتح تبويب تسجيل المبيعات افتراضياً */
@@ -24,7 +23,6 @@ export function resolveOrdersScreenMode(
   const perms = Array.isArray(userPermissions) ? userPermissions : [];
 
   const canSubmitStaff = isAdmin || perms.includes(PERMISSIONS.STAFF_ORDERS_SUBMIT);
-  const canDigest = isAdmin || perms.includes(PERMISSIONS.STAFF_ORDERS_DIGEST);
   const hasManagerDataAccess =
     isAdmin || hasAnyOfPermissions(userRole, ORDERS_MANAGER_DATA_ACCESS, userPermissions);
   const canViewSalesReport =
@@ -40,7 +38,6 @@ export function resolveOrdersScreenMode(
 
   const base = {
     canSubmitStaff,
-    canDigest,
     hasManagerDataAccess,
     canViewSalesReport,
     prefersStaffSalesTab,
@@ -51,9 +48,6 @@ export function resolveOrdersScreenMode(
   }
   if (canSubmitStaff) {
     return { mode: 'staff', ...base };
-  }
-  if (canDigest) {
-    return { mode: 'manager-digest-only', ...base };
   }
   return { mode: 'forbidden', ...base };
 }

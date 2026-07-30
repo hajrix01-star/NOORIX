@@ -40,8 +40,6 @@ export const orderKeys = {
   staffMyRoot: () => ['staff-orders-my'] as const,
   staffMy: (companyId: string) => ['staff-orders-my', companyId] as const,
 
-  staffDigestRoot: () => ['staff-orders-digest'] as const,
-  staffDigest: (companyId: string) => ['staff-orders-digest', companyId] as const,
   shishaInventory: (companyId: string, startDate: string, endDate: string) =>
     ['shisha-inventory', companyId, startDate, endDate] as const,
 };

@@ -53,23 +53,8 @@ export class OrdersController {
     return this.staffService.peekNextStaffSaleLogRef(resolvedCompanyId, saleDate.trim());
   }
 
-  @Get('staff/digest')
-  @RequirePermission('STAFF_ORDERS_DIGEST')
-  getStaffDigest(@CompanyId() companyId: string) {
-    return this.staffService.getDigest(requireCompanyId(companyId));
-  }
-
-  @Get('staff/digest/history')
-  @RequirePermission('STAFF_ORDERS_DIGEST')
-  getDigestHistory(
-    @CompanyId() companyId: string,
-    @Query('days') days?: string,
-  ) {
-    return this.staffService.getDigestHistory(requireCompanyId(companyId), parseDaysQuery(days));
-  }
-
   @Get('sales/report')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_DIGEST')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
   getSalesReport(
     @CompanyId() companyId: string,
     @Query('days') days?: string,
@@ -93,28 +78,6 @@ export class OrdersController {
     return this.staffService.createStaffOrder(requireCurrentUserId(user), { ...body, companyId: requireCompanyId(companyId) });
   }
 
-  @Post('staff/send-digest')
-  @RequirePermission('STAFF_ORDERS_DIGEST')
-  sendStaffDigest(
-    @CompanyId() companyId: string,
-    @Body() body: {
-      orderIds?: string[];
-      lang?: 'ar' | 'en';
-      orderType?: 'external' | 'internal';
-      pettyCashAmount?: string;
-      orderDate?: string;
-      createPurchaseOrder?: boolean;
-    },
-  ) {
-    return this.staffService.sendDigest(requireCompanyId(companyId), body?.orderIds, {
-      lang: body?.lang ?? 'ar',
-      orderType: body?.orderType,
-      pettyCashAmount: body?.pettyCashAmount,
-      orderDate: body?.orderDate,
-      createPurchaseOrder: body?.createPurchaseOrder,
-    });
-  }
-
   @Patch('staff/:id')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
   updateStaffOrder(
@@ -128,13 +91,13 @@ export class OrdersController {
 
   @Post('staff/:id/resend')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
-  resendStaffSale(
+  resendStaffOrder(
     @Param('id') id: string,
     @CompanyId() companyId: string,
     @CurrentUser() user: CurrentAuthUser,
     @Body() body: { lang?: 'ar' | 'en' },
   ) {
-    return this.staffService.resendStaffSale(id, requireCompanyId(companyId), requireCurrentUserId(user), body?.lang ?? 'ar');
+    return this.staffService.resendStaffOrder(id, requireCompanyId(companyId), requireCurrentUserId(user), body?.lang ?? 'ar');
   }
 
   @Delete('staff/:id')
@@ -196,7 +159,7 @@ export class OrdersController {
   }
 
   @Get('products')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
   getProducts(
     @CompanyId() companyId: string,
     @Query('section') section?: string,
@@ -266,7 +229,7 @@ export class OrdersController {
   }
 
   @Get('categories')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
   getCategories(@CompanyId() companyId: string) {
     return this.ordersService.getCategories(requireCompanyId(companyId));
   }
@@ -290,7 +253,7 @@ export class OrdersController {
   // ── Sections ──────────────────────────────────────────────────────
 
   @Get('sections')
-  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
   getSections(@CompanyId() companyId: string) {
     return this.ordersService.getSections(requireCompanyId(companyId));
   }

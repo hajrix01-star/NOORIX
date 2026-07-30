@@ -107,8 +107,8 @@ export function StaffSentOrderRow({
   lang: string;
   t: (key: string, ...args: unknown[]) => string;
   onResend?: (o: StaffOrder) => void;
-  onEdit: (o: StaffOrder) => void;
-  onDelete: (o: StaffOrder) => void;
+  onEdit?: (o: StaffOrder) => void;
+  onDelete?: (o: StaffOrder) => void;
 }) {
   const [open, setOpen] = useState(false);
   const items = order.items || [];
@@ -165,13 +165,13 @@ export function StaffSentOrderRow({
           </Button>
         </div>
         <div className="flex flex-wrap gap-1 justify-end ps-10">
-          {isSale && onResend ? (
+          {onResend ? (
             <Button size="sm" variant="ghost" onClick={() => onResend(order)}>
               {t('staffSaleResend')}
             </Button>
           ) : null}
-          <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
-          <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
+          {onEdit ? <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button> : null}
+          {onDelete ? <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button> : null}
         </div>
       </div>
       {open && (

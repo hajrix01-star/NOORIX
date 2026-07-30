@@ -1,7 +1,6 @@
 import type {
   ApiParsedResult,
   CreateOrderPayload,
-  DigestHistoryDay,
   OrderCatalogBatchCreateResult,
   OrderCategory,
   OrderCategoryPayload,
@@ -14,8 +13,6 @@ import type {
   OrderSection,
   OrderSectionPayload,
   OrderSummary,
-  StaffDigestData,
-  StaffDigestSendResult,
   StaffOrder,
   StaffOrderPayload,
   StaffSaleNextLogRef,
@@ -249,7 +246,7 @@ export async function deleteStaffOrder(id: string, companyId: string): Promise<A
   return apiDelete(`/api/v1/orders/staff/${id}?companyId=${companyId}`);
 }
 
-export async function resendStaffSale(
+export async function resendStaffOrder(
   id: string,
   companyId: string,
   lang?: 'ar' | 'en',
@@ -267,31 +264,6 @@ export async function getSalesReport(
   const res = await apiGet<StaffSaleReport>('/api/v1/orders/sales/report', params);
   const empty: StaffSaleReport = { summary: { totalOrders: 0, totalQty: 0, totalAmount: 0, avgPerOrder: 0, uniqueProducts: 0, uniqueSections: 0 }, byProduct: [], bySection: [], byUser: [], byDay: [], byLog: [] };
   return res?.success ? { ...res, data: res.data ?? empty } : res;
-}
-
-export async function getDigestHistory(companyId: string, days = 30): Promise<ApiParsedResult<DigestHistoryDay[]>> {
-  const res = await apiGet<DigestHistoryDay[]>('/api/v1/orders/staff/digest/history', { companyId, days: String(days) });
-  return res?.success ? { ...res, data: res.data ?? [] } : res;
-}
-
-export async function getStaffDigest(companyId: string): Promise<ApiParsedResult<StaffDigestData>> {
-  const res = await apiGet<StaffDigestData>('/api/v1/orders/staff/digest', { companyId });
-  const empty: StaffDigestData = { sections: [], totalOrders: 0, pendingCount: 0 };
-  return res?.success ? { ...res, data: res.data ?? empty } : res as ApiParsedResult<StaffDigestData>;
-}
-
-export async function sendStaffDigest(
-  companyId: string,
-  body: {
-    orderIds?: string[];
-    lang?: 'ar' | 'en';
-    orderType?: 'external' | 'internal';
-    pettyCashAmount?: string;
-    orderDate?: string;
-    createPurchaseOrder?: boolean;
-  } = {},
-): Promise<ApiParsedResult<StaffDigestSendResult>> {
-  return apiPost<StaffDigestSendResult>(`/api/v1/orders/staff/send-digest?companyId=${companyId}`, body);
 }
 
 // ── Sections ──────────────────────────────────────────────────────

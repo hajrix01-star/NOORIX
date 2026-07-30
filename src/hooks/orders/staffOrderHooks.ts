@@ -1,19 +1,14 @@
 import {
   createStaffOrder,
   deleteStaffOrder,
-  getDigestHistory,
   getMyStaffOrders,
   getSalesReport,
-  getStaffDigest,
   getStaffSaleNextLogRef,
-  resendStaffSale,
-  sendStaffDigest,
+  resendStaffOrder,
   updateStaffOrder,
 } from '../../services/api';
 import { orderKeys } from '../../services/queryKeys';
 import type {
-  DigestHistoryDay,
-  StaffDigestData,
   StaffOrder,
   StaffOrderPayload,
   StaffSaleNextLogRef,
@@ -23,12 +18,6 @@ import { useApiMutation } from '../useApiMutation';
 import { useApiListQuery, useApiQuery, useApiQueryOr } from '../useApiQuery';
 
 type MutationArgs<TBody> = { id: string; body: TBody };
-
-const emptyStaffDigest: StaffDigestData = {
-  sections: [],
-  totalOrders: 0,
-  pendingCount: 0,
-};
 
 const emptyStaffSaleReport: StaffSaleReport = {
   summary: {
@@ -71,7 +60,6 @@ export function useCreateStaffOrderMutation(companyId: string) {
     mutationFn: createStaffOrder,
     invalidateQueries: [
       orderKeys.staffMy(companyId),
-      orderKeys.staffDigest(companyId),
       ['salesReport', companyId],
       ['staffSaleNextLogRef', companyId],
       orderKeys.shishaInventoryRoot(),
@@ -85,7 +73,6 @@ export function useUpdateStaffOrderMutation(companyId: string) {
     mutationFn: ({ id, body }: MutationArgs<Partial<StaffOrderPayload>>) => updateStaffOrder(id, companyId, body),
     invalidateQueries: [
       orderKeys.staffMy(companyId),
-      orderKeys.staffDigest(companyId),
       ['salesReport', companyId],
       orderKeys.shishaInventoryRoot(),
     ],
@@ -98,7 +85,6 @@ export function useDeleteStaffOrderMutation(companyId: string) {
     mutationFn: (id: string) => deleteStaffOrder(id, companyId),
     invalidateQueries: [
       orderKeys.staffMy(companyId),
-      orderKeys.staffDigest(companyId),
       ['salesReport', companyId],
       orderKeys.shishaInventoryRoot(),
     ],
@@ -106,22 +92,12 @@ export function useDeleteStaffOrderMutation(companyId: string) {
   });
 }
 
-export function useResendStaffSaleMutation(companyId: string) {
+export function useResendStaffOrderMutation(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, lang }: { id: string; lang?: 'ar' | 'en' }) =>
-      resendStaffSale(id, companyId, lang),
+      resendStaffOrder(id, companyId, lang),
     invalidateQueries: [orderKeys.staffMy(companyId)],
     showErrorToast: false,
-  });
-}
-
-export function useStaffDigest(companyId: string) {
-  return useApiQueryOr<StaffDigestData>({
-    queryKey: orderKeys.staffDigest(companyId),
-    queryFn: () => getStaffDigest(companyId),
-    fallback: emptyStaffDigest,
-    fallbackMessage: 'Failed to load staff digest',
-    enabled: !!companyId,
   });
 }
 
@@ -139,36 +115,5 @@ export function useSalesReport(
     fallbackMessage: 'Failed to load sales report',
     enabled: !!companyId,
     staleTime: 60_000,
-  });
-}
-
-export function useDigestHistory(companyId: string, days = 30) {
-  return useApiListQuery<DigestHistoryDay>({
-    queryKey: ['digestHistory', companyId, days],
-    queryFn: () => getDigestHistory(companyId, days),
-    fallbackMessage: 'Failed to load digest history',
-    enabled: !!companyId,
-    staleTime: 60_000,
-  });
-}
-
-export function useSendStaffDigestMutation(companyId: string) {
-  return useApiMutation({
-    mutationFn: (body: {
-      orderIds?: string[];
-      lang?: 'ar' | 'en';
-      orderType?: 'external' | 'internal';
-      pettyCashAmount?: string;
-      orderDate?: string;
-      createPurchaseOrder?: boolean;
-    } = {}) => sendStaffDigest(companyId, body),
-    invalidateQueries: [
-      orderKeys.staffDigest(companyId),
-      orderKeys.staffMyRoot(),
-      orderKeys.listRoot(),
-      orderKeys.summaryRoot(),
-      orderKeys.rangeSummaryRoot(),
-    ],
-    showErrorToast: false,
   });
 }

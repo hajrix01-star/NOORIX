@@ -297,25 +297,6 @@ export type StaffSaleReport = {
   byLog: StaffSaleReportLogRow[];
 };
 
-export type DigestHistoryItem = {
-  nameAr?: string | null;
-  nameEn?: string | null;
-  qty: number;
-  unit?: string | null;
-};
-
-export type DigestHistorySection = {
-  sectionName: string;
-  ordersCount: number;
-  items: DigestHistoryItem[];
-};
-
-export type DigestHistoryDay = {
-  date: string;
-  sentAt: string;
-  sections: DigestHistorySection[];
-};
-
 export type OrderCatalogBatchCreateResult = {
   created?: number;
   count?: number;
