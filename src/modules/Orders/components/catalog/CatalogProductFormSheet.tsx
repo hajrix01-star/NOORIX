@@ -1,6 +1,6 @@
 import React, { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { AdaptiveSheet, Button, Checkbox, DialogActions, Input } from '../../../../ui';
+import { AdaptiveSheet, Button, Checkbox, DialogActions, Input, SearchableOptionsPicker } from '../../../../ui';
 import type {
   OrderCategory,
   OrderProduct,
@@ -99,6 +99,12 @@ function productLabel(product: OrderProduct) {
   return product.nameAr || product.nameEn || product.id;
 }
 
+function productSearchableLabel(product: OrderProduct) {
+  const categoryName = product.category?.nameAr || product.category?.nameEn || '';
+  const label = productLabel(product);
+  return categoryName ? `${label} - ${categoryName}` : label;
+}
+
 function filterWithSelected<T extends { id: string }>(
   rows: T[],
   selectedId: string | null | undefined,
@@ -128,7 +134,13 @@ function RecipeEditor({
   materialProducts: OrderProduct[];
   onChange: (recipe: OrderProductRecipeItem[]) => void;
 }) {
-  const [materialSearchByRow, setMaterialSearchByRow] = useState<Record<number, string>>({});
+  const materialOptions = useMemo(
+    () => materialProducts.map((product) => ({
+      value: product.id,
+      label: productSearchableLabel(product),
+    })),
+    [materialProducts],
+  );
 
   function updateRow(index: number, patch: Partial<OrderProductRecipeItem>) {
     onChange(recipe.map((row, rowIndex) => {
@@ -139,15 +151,6 @@ function RecipeEditor({
         : row.unit;
       return { ...row, ...patch, unit: patch.unit ?? nextUnit };
     }));
-  }
-
-  function materialOptionsForRow(row: OrderProductRecipeItem, index: number) {
-    const query = searchableText(materialSearchByRow[index]);
-    return filterWithSelected(materialProducts, row.materialProductId, (product) => {
-      if (!query) return true;
-      const categoryName = product.category?.nameAr || product.category?.nameEn || '';
-      return searchableText(product.nameAr, product.nameEn, categoryName, product.id).includes(query);
-    });
   }
 
   return (
@@ -178,7 +181,7 @@ function RecipeEditor({
             </div>
           )}
           {recipe.map((row, index) => (
-            <div key={`${row.materialProductId}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[112px_135px_1fr_88px_90px_44px]">
+            <div key={`${row.materialProductId}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[112px_1fr_88px_90px_44px]">
               <Input
                 type="select"
                 value={row.materialType}
@@ -190,23 +193,15 @@ function RecipeEditor({
                   <option key={value} value={value}>{label}</option>
                 ))}
               </Input>
-              <Input
-                value={materialSearchByRow[index] ?? ''}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  setMaterialSearchByRow((current) => ({ ...current, [index]: event.target.value }))
-                }
-                placeholder="بحث المادة"
-              />
-              <Input
-                type="select"
+              <SearchableOptionsPicker
                 value={row.materialProductId}
-                onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { materialProductId: event.target.value })}
-              >
-                <option value="">اختر الصنف</option>
-                {materialOptionsForRow(row, index).map((product) => (
-                  <option key={product.id} value={product.id}>{productLabel(product)}</option>
-                ))}
-              </Input>
+                onChange={(materialProductId) => updateRow(index, { materialProductId })}
+                options={materialOptions}
+                allowEmpty
+                emptyValue=""
+                emptyLabel="اختر المادة"
+                aria-label="اختيار مادة الرسبي"
+              />
               <Input
                 type="number"
                 min="0"
