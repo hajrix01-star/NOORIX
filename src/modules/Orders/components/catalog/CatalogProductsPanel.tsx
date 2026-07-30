@@ -12,6 +12,7 @@ import { CatalogProductFormSheet, type CatalogProductFormState } from './Catalog
 import { OrderConfirmModal } from '../OrderConfirmModal';
 import type { ItemsManageTabController } from '../../hooks/useItemsManageTab';
 import type { OrderProduct } from '../../../../types/api';
+import { filterRecipeMaterialProducts } from '../../utils/itemsManageModel';
 
 type DeactivateTarget = 'selected' | { id: string };
 
@@ -316,7 +317,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         sections={sections}
         sizesOptions={sizesOptions}
         packagingOptions={packagingOptions}
-        materialProducts={products.filter((product) => product.id !== activeForm?.id)}
+        materialProducts={filterRecipeMaterialProducts(products, activeForm?.id)}
         saving={sheetMode === 'edit' ? updateProduct.isPending : createProduct.isPending}
         onClose={closeSheet}
         onSave={handleSave}

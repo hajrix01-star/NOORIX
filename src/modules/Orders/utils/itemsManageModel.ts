@@ -200,6 +200,12 @@ export function filterOrderCategoriesForManageTab(categories: OrderCategory[], s
   });
 }
 
+export function filterRecipeMaterialProducts(products: OrderProduct[], currentProductId?: string) {
+  return products.filter((product) =>
+    product.id !== currentProductId && normalizeOrderProductType(product.productType, 'order') === 'order',
+  );
+}
+
 export function buildOrderProductPayload(
   form: Partial<OrderProductForm>,
   productType: OrderProductType,

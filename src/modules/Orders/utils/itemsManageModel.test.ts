@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildOrderProductPayload,
+  filterRecipeMaterialProducts,
   filterOrderCategoriesForManageTab,
   filterOrderProductsForManageTab,
 } from './itemsManageModel';
@@ -41,6 +42,15 @@ describe('itemsManageModel', () => {
     ];
     expect(filterOrderCategoriesForManageTab(categories, 'drink')).toEqual([categories[1]]);
     expect(filterOrderCategoriesForManageTab(categories, 'meal')).toEqual([categories[0]]);
+  });
+
+  it('limits recipe materials to inventory/order products', () => {
+    const material = { ...products[0], id: 'material-1', productType: 'order' as const };
+    const sold = { ...products[1], id: 'sale-1', productType: 'sale' as const };
+    const legacyMaterial = { ...products[1], id: 'legacy-material', productType: undefined };
+
+    expect(filterRecipeMaterialProducts([material, sold, legacyMaterial], 'material-1')).toEqual([legacyMaterial]);
+    expect(filterRecipeMaterialProducts([material, sold, legacyMaterial])).toEqual([material, legacyMaterial]);
   });
 
   it('builds a simple product payload when no real variants exist', () => {

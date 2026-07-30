@@ -55,6 +55,10 @@ export class OrdersCatalogService {
   }>) {
     const tenantId = TenantContext.getTenantId();
     const sectionList = await this.loadSectionList(companyId);
+    await this.assertRecipeMaterialProducts(
+      companyId,
+      products.flatMap((dto) => (dto.productType === 'sale' ? (dto.recipe ?? []) : [])),
+    );
     const data = products
       .filter((dto) => !!dto.nameAr?.trim())
       .map((dto) => this.buildProductCreateInput(tenantId, companyId, dto, sectionList));
@@ -93,6 +97,9 @@ export class OrdersCatalogService {
     const tenantId = TenantContext.getTenantId();
     if (!dto.nameAr?.trim()) throw new BadRequestException('اسم الصنف بالعربية مطلوب');
     const sectionList = await this.loadSectionList(companyId);
+    if (dto.productType === 'sale') {
+      await this.assertRecipeMaterialProducts(companyId, dto.recipe);
+    }
     const created = await this.prisma.orderProduct.create({
       data: this.buildProductCreateInput(tenantId, companyId, dto, sectionList),
       include: { category: true },
@@ -118,6 +125,10 @@ export class OrdersCatalogService {
     const product = await this.prisma.orderProduct.findFirst({ where: { id, companyId } });
     if (!product) throw new NotFoundException('الصنف غير موجود');
     const sectionList = await this.loadSectionList(companyId);
+    const nextProductType = dto.productType ?? product.productType;
+    if (nextProductType === 'sale' && dto.recipe !== undefined) {
+      await this.assertRecipeMaterialProducts(companyId, dto.recipe);
+    }
     const updated = await this.prisma.orderProduct.update({
       where: { id },
       data: this.buildProductUpdateInput(dto, sectionList),
@@ -383,6 +394,32 @@ export class OrdersCatalogService {
       }];
     });
     return rows.length > 0 ? rows : Prisma.DbNull;
+  }
+
+  private recipeMaterialIds(recipe?: ProductRecipeItemInput[]): string[] {
+    if (!recipe?.length) return [];
+    return [...new Set(recipe.flatMap((item) => {
+      const materialProductId = String(item.materialProductId ?? '').trim();
+      const quantity = String(item.quantity ?? '').trim();
+      return materialProductId && this.positiveDecimal(quantity) ? [materialProductId] : [];
+    }))];
+  }
+
+  private async assertRecipeMaterialProducts(companyId: string, recipe?: ProductRecipeItemInput[]) {
+    const materialIds = this.recipeMaterialIds(recipe);
+    if (materialIds.length === 0) return;
+    const validMaterials = await this.prisma.orderProduct.findMany({
+      where: {
+        companyId,
+        id: { in: materialIds },
+        isActive: true,
+        productType: 'order',
+      },
+      select: { id: true },
+    });
+    if (validMaterials.length !== materialIds.length) {
+      throw new BadRequestException('Recipe components must be purchase/inventory products only.');
+    }
   }
 
   private recipeMaterialType(value: string | null | undefined) {
