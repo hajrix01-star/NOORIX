@@ -21,6 +21,7 @@ import {
   parseRequiredDateRange,
   parseRequiredYearMonth,
   requireCurrentUserId,
+  resolveCurrentUserPermissions,
   resolveCurrentUserRole,
 } from './orders-controller-query.util';
 
@@ -38,9 +39,15 @@ export class OrdersController {
   // ══════════════════════════════════════════════════
 
   @Get('staff/my')
-  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_READ')
   getMyStaffOrders(@CompanyId() companyId: string, @CurrentUser() user: CurrentAuthUser) {
-    return this.staffService.getMyStaffOrders(requireCompanyId(companyId), requireCurrentUserId(user));
+    return this.staffService.getMyStaffOrders(
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      30,
+      resolveCurrentUserRole(user),
+      resolveCurrentUserPermissions(user),
+    );
   }
 
   @Get('staff/sale-next-ref')
@@ -84,17 +91,22 @@ export class OrdersController {
   }
 
   @Post('staff')
-  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
   createStaffOrder(
     @Body() body: CreateStaffOrderDto,
     @CompanyId() companyId: string,
     @CurrentUser() user: CurrentAuthUser,
   ) {
-    return this.staffService.createStaffOrder(requireCurrentUserId(user), { ...body, companyId: requireCompanyId(companyId) });
+    return this.staffService.createStaffOrder(
+      requireCurrentUserId(user),
+      { ...body, companyId: requireCompanyId(companyId) },
+      resolveCurrentUserRole(user),
+      resolveCurrentUserPermissions(user),
+    );
   }
 
   @Patch('staff/:id')
-  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
   updateStaffOrder(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -106,23 +118,31 @@ export class OrdersController {
       requireCompanyId(companyId),
       requireCurrentUserId(user),
       resolveCurrentUserRole(user),
+      resolveCurrentUserPermissions(user),
       body,
     );
   }
 
   @Post('staff/:id/resend')
-  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
   resendStaffOrder(
     @Param('id') id: string,
     @CompanyId() companyId: string,
     @CurrentUser() user: CurrentAuthUser,
     @Body() body: { lang?: 'ar' | 'en' },
   ) {
-    return this.staffService.resendStaffOrder(id, requireCompanyId(companyId), requireCurrentUserId(user), body?.lang ?? 'ar');
+    return this.staffService.resendStaffOrder(
+      id,
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      body?.lang ?? 'ar',
+      resolveCurrentUserRole(user),
+      resolveCurrentUserPermissions(user),
+    );
   }
 
   @Delete('staff/:id')
-  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
   deleteStaffOrder(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -133,6 +153,7 @@ export class OrdersController {
       requireCompanyId(companyId),
       requireCurrentUserId(user),
       resolveCurrentUserRole(user),
+      resolveCurrentUserPermissions(user),
     );
   }
 
@@ -201,7 +222,7 @@ export class OrdersController {
   }
 
   @Get('products')
-  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
   getProducts(
     @CompanyId() companyId: string,
     @Query('section') section?: string,
@@ -291,7 +312,7 @@ export class OrdersController {
   }
 
   @Get('categories')
-  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
   getCategories(@CompanyId() companyId: string) {
     return this.ordersService.getCategories(requireCompanyId(companyId));
   }
@@ -315,7 +336,7 @@ export class OrdersController {
   // ── Sections ──────────────────────────────────────────────────────
 
   @Get('sections')
-  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
   getSections(@CompanyId() companyId: string) {
     return this.ordersService.getSections(requireCompanyId(companyId));
   }

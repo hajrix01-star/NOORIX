@@ -13,16 +13,19 @@ export function resolveOrdersScreenMode(
 ): {
   mode: OrdersScreenMode;
   canSubmitStaff: boolean;
+  canSubmitDepartmentOrders: boolean;
+  canSubmitInternalRegistration: boolean;
   hasManagerDataAccess: boolean;
   canViewSalesReport: boolean;
-  /** مستخدم يملك الطلبات والتسجيل الداخلي: افتح التسجيل الداخلي افتراضياً عند عدم وجود قراءة/تعديل طلبات. */
   prefersStaffSalesTab: boolean;
 } {
   const role = String(userRole || '').toLowerCase();
   const isAdmin = role === 'owner' || role === 'super_admin';
   const perms = Array.isArray(userPermissions) ? userPermissions : [];
 
-  const canSubmitStaff = isAdmin || perms.includes(PERMISSIONS.STAFF_ORDERS_SUBMIT);
+  const canSubmitDepartmentOrders = isAdmin || perms.includes(PERMISSIONS.ORDERS_STAFF_SUBMIT);
+  const canSubmitInternalRegistration = isAdmin || perms.includes(PERMISSIONS.STAFF_ORDERS_SUBMIT);
+  const canSubmitStaff = canSubmitDepartmentOrders || canSubmitInternalRegistration;
   const hasManagerDataAccess =
     isAdmin || hasAnyOfPermissions(userRole, ORDERS_MANAGER_DATA_ACCESS, userPermissions);
   const canViewSalesReport =
@@ -34,10 +37,13 @@ export function resolveOrdersScreenMode(
       [PERMISSIONS.ORDERS_READ, PERMISSIONS.ORDERS_WRITE],
       userPermissions,
     );
-  const prefersStaffSalesTab = canSubmitStaff && !hasOrdersReadWrite;
+  const prefersStaffSalesTab =
+    canSubmitInternalRegistration && !canSubmitDepartmentOrders && !hasOrdersReadWrite;
 
   const base = {
     canSubmitStaff,
+    canSubmitDepartmentOrders,
+    canSubmitInternalRegistration,
     hasManagerDataAccess,
     canViewSalesReport,
     prefersStaffSalesTab,

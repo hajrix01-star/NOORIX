@@ -71,13 +71,14 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   {
     key: 'orders', labelAr: 'الطلبات', labelEn: 'Orders', icon: '📦',
     permissions: {
-      view: 'VIEW_ORDERS', read: 'ORDERS_READ', write: 'ORDERS_WRITE', delete: 'ORDERS_DELETE',
-    },
-  },
-  {
-    key: 'internalRegistration', labelAr: 'التسجيل الداخلي', labelEn: 'Internal Registration', icon: '🧾',
-    permissions: {
-      view: 'VIEW_INTERNAL_REGISTRATION', read: 'STAFF_ORDERS_READ', submit: 'STAFF_ORDERS_SUBMIT',
+      view: 'VIEW_ORDERS',
+      read: 'ORDERS_READ',
+      write: 'ORDERS_WRITE',
+      delete: 'ORDERS_DELETE',
+      staffSubmit: 'ORDERS_STAFF_SUBMIT',
+      internalView: 'VIEW_INTERNAL_REGISTRATION',
+      internalRead: 'STAFF_ORDERS_READ',
+      internalSubmit: 'STAFF_ORDERS_SUBMIT',
     },
   },
   {
@@ -150,6 +151,10 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   taxReport:  { ar: 'تقرير الضريبة', en: 'Tax report' },
   bankStatement: { ar: 'تحليل كشف البنك', en: 'Bank statement' },
   submit:     { ar: 'تسجيل/إرسال', en: 'Submit' },
+  staffSubmit: { ar: 'إرسال طلب قسم', en: 'Submit department order' },
+  internalView: { ar: 'عرض التسجيل الداخلي', en: 'View internal registration' },
+  internalRead: { ar: 'قراءة التسجيل الداخلي', en: 'Read internal registration' },
+  internalSubmit: { ar: 'تسجيل داخلي', en: 'Submit internal registration' },
   chatAdv:    { ar: 'محادثة · سلف', en: 'Chat · Advances' },
   chatLeave:  { ar: 'محادثة · إجازات', en: 'Chat · Leaves' },
   chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },

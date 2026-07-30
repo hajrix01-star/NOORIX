@@ -73,7 +73,7 @@ describe('OrdersStaffService direct operational orders', () => {
         orderType: 'order',
         lang: 'en',
         items: [{ productId: product.id, quantity: '2', unit: 'kg' }],
-      });
+      }, 'staff', ['ORDERS_STAFF_SUBMIT']);
     });
     const result = await resultPromise!;
 
@@ -183,7 +183,7 @@ describe('OrdersStaffService direct operational orders', () => {
           unit: 'piece',
           cancellationReasons: ['customer_disliked', 'replaced_item'],
         }],
-      });
+      }, 'staff', ['STAFF_ORDERS_SUBMIT']);
     });
     await resultPromise!;
 
@@ -257,7 +257,7 @@ describe('OrdersStaffService direct operational orders', () => {
           unit: 'piece',
           cancellationReasons: ['customer_disliked'],
         }],
-      });
+      }, 'staff', ['STAFF_ORDERS_SUBMIT']);
     });
 
     await expect(resultPromise!).rejects.toThrow('كمية الإلغاء');

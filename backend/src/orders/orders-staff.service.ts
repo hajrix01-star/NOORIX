@@ -2,6 +2,7 @@
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
+import { PERMISSIONS } from '../auth/constants/permissions';
 import { resolveStaffItemVariant } from './orders-staff-pricing.util';
 import {
   buildStaffSaleLogRef,
@@ -30,6 +31,40 @@ export class OrdersStaffService {
     private readonly prisma: TenantPrismaService,
     private readonly report: OrdersStaffReportService,
   ) {}
+
+  private isPrivilegedStaffOrderUser(userRole?: string): boolean {
+    const role = String(userRole || '').toLowerCase();
+    return role === 'owner' || role === 'super_admin';
+  }
+
+  private hasStaffPermission(userPermissions: string[] | undefined, permission: string): boolean {
+    return Array.isArray(userPermissions) && userPermissions.includes(permission);
+  }
+
+  private resolveAllowedStaffOrderTypes(
+    userRole?: string,
+    userPermissions?: string[],
+  ): { order: boolean; sale: boolean } {
+    if (this.isPrivilegedStaffOrderUser(userRole)) return { order: true, sale: true };
+    return {
+      order: this.hasStaffPermission(userPermissions, PERMISSIONS.ORDERS_STAFF_SUBMIT),
+      sale: this.hasStaffPermission(userPermissions, PERMISSIONS.STAFF_ORDERS_SUBMIT),
+    };
+  }
+
+  private assertStaffOrderTypeAccess(
+    orderType: 'order' | 'sale',
+    userRole?: string,
+    userPermissions?: string[],
+  ): void {
+    const allowed = this.resolveAllowedStaffOrderTypes(userRole, userPermissions);
+    if (allowed[orderType]) return;
+    throw new ForbiddenException(
+      orderType === 'sale'
+        ? 'لا تملك صلاحية التسجيل الداخلي.'
+        : 'لا تملك صلاحية إرسال طلبات الأقسام.',
+    );
+  }
 
   private async assertLatestEditableStaffSaleOrder(
     order: { id: string; companyId: string; userId: string; orderType?: string | null; logRef?: string | null },
@@ -288,13 +323,19 @@ export class OrdersStaffService {
     });
   }
 
-  async createStaffOrder(userId: string, dto: CreateStaffOrderDto) {
+  async createStaffOrder(
+    userId: string,
+    dto: CreateStaffOrderDto,
+    userRole?: string,
+    userPermissions?: string[],
+  ) {
     const tenantId = TenantContext.getTenantId();
     const companyId = String(dto.companyId ?? '').trim();
     if (!companyId) throw new BadRequestException('companyId Ù…Ø·Ù„ÙˆØ¨');
     if (!dto.items?.length) throw new BadRequestException('ÙŠØ¬Ø¨ Ø¥Ø¶Ø§ÙØ© ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„');
 
     const orderType = dto.orderType === 'sale' ? 'sale' : 'order';
+    this.assertStaffOrderTypeAccess(orderType, userRole, userPermissions);
     const entryType: StaffOrderEntryType = dto.entryType === 'cancellation' ? 'cancellation' : 'issue';
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
     const isSale = orderType === 'sale';
@@ -348,7 +389,13 @@ export class OrdersStaffService {
     return { ...primary, orders, count: orders.length, logRef: saleLogRef, whatsAppText };
   }
 
-  async getMyStaffOrders(companyId: string, userId: string, days = 30) {
+  async getMyStaffOrders(
+    companyId: string,
+    userId: string,
+    days = 30,
+    userRole?: string,
+    userPermissions?: string[],
+  ) {
     // Ù†ÙØ³ Ù†Ø§ÙØ°Ø© ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª â€” createdAt Ø£Ùˆ saleDate Ø¯Ø§Ø®Ù„ Ø§Ù„ÙØªØ±Ø©
     const since = buildSalesReportSince(days);
     const tenantId = TenantContext.tryGetTenantId();
@@ -357,6 +404,11 @@ export class OrdersStaffService {
       userId,
       OR: [{ createdAt: { gte: since } }, { saleDate: { gte: since } }],
     };
+    const allowed = this.resolveAllowedStaffOrderTypes(userRole, userPermissions);
+    if (!allowed.order && !allowed.sale) return [];
+    if (allowed.order !== allowed.sale) {
+      where.orderType = allowed.sale ? 'sale' : 'order';
+    }
     if (tenantId) where.tenantId = tenantId;
     return this.prisma.staffOrder.findMany({
       where,
@@ -370,6 +422,7 @@ export class OrdersStaffService {
     companyId: string,
     userId: string,
     userRole: string | undefined,
+    userPermissions: string[] | undefined,
     dto: {
       sectionName?: string;
       notes?: string;
@@ -381,6 +434,7 @@ export class OrdersStaffService {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
     if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
     if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† ØªØ¹Ø¯ÙŠÙ„ Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
+    this.assertStaffOrderTypeAccess(order.orderType === 'sale' ? 'sale' : 'order', userRole, userPermissions);
 
     const isSale = order.orderType === 'sale';
     if (!isSale) {
@@ -437,7 +491,14 @@ export class OrdersStaffService {
   }
 
   /** Reopen WhatsApp for an operational section order or an internal log. */
-  async resendStaffOrder(id: string, companyId: string, userId: string, lang: 'ar' | 'en' = 'ar') {
+  async resendStaffOrder(
+    id: string,
+    companyId: string,
+    userId: string,
+    lang: 'ar' | 'en' = 'ar',
+    userRole?: string,
+    userPermissions?: string[],
+  ) {
     const order = await this.prisma.staffOrder.findFirst({
       where: { id, companyId },
       include: {
@@ -447,6 +508,7 @@ export class OrdersStaffService {
     });
     if (!order) throw new NotFoundException('Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©');
     if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„ Ù…Ø¨ÙŠØ¹Ø§Øª Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
+    this.assertStaffOrderTypeAccess(order.orderType === 'sale' ? 'sale' : 'order', userRole, userPermissions);
 
     if (order.orderType !== 'sale') {
       if (order.status !== 'sent') {
@@ -478,10 +540,17 @@ export class OrdersStaffService {
     return { whatsAppText, logRef: order.logRef };
   }
 
-  async deleteStaffOrder(id: string, companyId: string, userId: string, userRole?: string) {
+  async deleteStaffOrder(
+    id: string,
+    companyId: string,
+    userId: string,
+    userRole?: string,
+    userPermissions?: string[],
+  ) {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
     if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
     if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
+    this.assertStaffOrderTypeAccess(order.orderType === 'sale' ? 'sale' : 'order', userRole, userPermissions);
     if (order.orderType !== 'sale') {
       throw new BadRequestException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ ØªÙ… Ø¥Ø±Ø³Ø§Ù„Ù‡');
     }

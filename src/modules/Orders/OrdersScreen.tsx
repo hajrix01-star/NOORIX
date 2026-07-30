@@ -40,7 +40,14 @@ export default function OrdersScreen() {
 
   if (routing.mode === 'staff') {
     return companyId
-      ? <StaffOrdersView companyId={companyId} />
+      ? (
+        <StaffOrdersView
+          companyId={companyId}
+          allowOrders={routing.canSubmitDepartmentOrders}
+          allowSales={routing.canSubmitInternalRegistration}
+          defaultTab={routing.prefersStaffSalesTab ? 'sale' : 'order'}
+        />
+      )
       : (
         <ScreenShell variant="data">
           <ScreenTitle>{t('ordersTitle')}</ScreenTitle>
@@ -64,7 +71,7 @@ export default function OrdersScreen() {
   return <ManagerOrdersScreen
     companyId={companyId}
     dateFilter={dateFilter}
-    canSubmitStaff={routing.canSubmitStaff}
+    canSubmitInternalRegistration={routing.canSubmitInternalRegistration}
     hasManagerDataAccess={routing.hasManagerDataAccess}
     canViewSalesReport={routing.canViewSalesReport}
     prefersStaffSalesTab={routing.prefersStaffSalesTab}
@@ -74,14 +81,14 @@ export default function OrdersScreen() {
 function ManagerOrdersScreen({
   companyId,
   dateFilter,
-  canSubmitStaff,
+  canSubmitInternalRegistration,
   hasManagerDataAccess,
   canViewSalesReport,
   prefersStaffSalesTab,
 }: {
   companyId: string;
   dateFilter: ReturnType<typeof useDateFilter>;
-  canSubmitStaff: boolean;
+  canSubmitInternalRegistration: boolean;
   hasManagerDataAccess: boolean;
   canViewSalesReport: boolean;
   prefersStaffSalesTab: boolean;
@@ -90,14 +97,14 @@ function ManagerOrdersScreen({
 
   const TAB_IDS = useMemo(() => {
     const ids: string[] = [];
-    if (canSubmitStaff) ids.push('staff-sales');
+    if (canSubmitInternalRegistration) ids.push('staff-sales');
     if (hasManagerDataAccess) ids.push('orders', 'items-report', 'items-manage', 'shisha-inventory');
     if (canViewSalesReport) ids.push('sales-report');
     return ids;
-  }, [canViewSalesReport, canSubmitStaff, hasManagerDataAccess]);
+  }, [canViewSalesReport, canSubmitInternalRegistration, hasManagerDataAccess]);
 
   const defaultTab =
-    prefersStaffSalesTab && canSubmitStaff && TAB_IDS.includes('staff-sales')
+    prefersStaffSalesTab && canSubmitInternalRegistration && TAB_IDS.includes('staff-sales')
       ? 'staff-sales'
       : (TAB_IDS[0] ?? 'orders');
   const [activeTab, setActiveTab] = useTabSearchParam(
@@ -127,7 +134,7 @@ function ManagerOrdersScreen({
 
   const tabItems = useMemo(() => {
     const tabs: Array<{ id: string; labelKey: string; shortLabelKey?: string }> = [];
-    if (canSubmitStaff) {
+    if (canSubmitInternalRegistration) {
       tabs.push({ id: 'staff-sales', labelKey: 'staffSalesRecordTab', shortLabelKey: 'staffSalesRecordTabShort' });
     }
     if (hasManagerDataAccess) {
@@ -155,7 +162,7 @@ function ManagerOrdersScreen({
         );
       return { id: tab.id, label };
     });
-  }, [t, canViewSalesReport, canSubmitStaff, hasManagerDataAccess]);
+  }, [t, canViewSalesReport, canSubmitInternalRegistration, hasManagerDataAccess]);
 
   return (
     <ScreenShell variant="data" className="min-w-0">
@@ -177,7 +184,7 @@ function ManagerOrdersScreen({
           shellClassName="nx-orders-tabs-shell"
           contentClassName="nx-tab-content nx-orders-tab-content min-h-[200px] px-1 py-2 sm:px-3 sm:py-3"
         >
-          {activeTab === 'staff-sales' && canSubmitStaff && (
+          {activeTab === 'staff-sales' && canSubmitInternalRegistration && (
             <StaffOrdersView companyId={companyId} embedded salesOnly />
           )}
           {activeTab === 'orders' && hasManagerDataAccess && (

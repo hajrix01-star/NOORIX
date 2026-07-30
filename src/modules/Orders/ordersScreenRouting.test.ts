@@ -1,52 +1,61 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { PERMISSIONS } from '../../constants/permissions';
 import { resolveOrdersScreenMode } from './ordersScreenRouting';
 
 describe('resolveOrdersScreenMode', () => {
-  it('موظف تسجيل داخلي فقط → staff', () => {
+  it('routes internal-registration-only staff to staff sale mode', () => {
     const perms = [PERMISSIONS.STAFF_ORDERS_SUBMIT, PERMISSIONS.VIEW_INTERNAL_REGISTRATION];
-    expect(resolveOrdersScreenMode('staff', perms).mode).toBe('staff');
+    const r = resolveOrdersScreenMode('staff', perms);
+
+    expect(r.mode).toBe('staff');
+    expect(r.canSubmitDepartmentOrders).toBe(false);
+    expect(r.canSubmitInternalRegistration).toBe(true);
+    expect(r.prefersStaffSalesTab).toBe(true);
   });
 
-  it('محاسب ORDERS_READ → manager-full', () => {
+  it('routes department-order-only staff to staff order mode', () => {
+    const perms = [PERMISSIONS.VIEW_ORDERS, PERMISSIONS.ORDERS_STAFF_SUBMIT];
+    const r = resolveOrdersScreenMode('staff', perms);
+
+    expect(r.mode).toBe('staff');
+    expect(r.canSubmitDepartmentOrders).toBe(true);
+    expect(r.canSubmitInternalRegistration).toBe(false);
+    expect(r.prefersStaffSalesTab).toBe(false);
+  });
+
+  it('routes orders read to manager-full', () => {
     const perms = [PERMISSIONS.VIEW_ORDERS, PERMISSIONS.ORDERS_READ];
     expect(resolveOrdersScreenMode('accountant', perms).mode).toBe('manager-full');
   });
 
-  it('ORDERS_WRITE فقط → manager-full', () => {
+  it('routes orders write to manager-full', () => {
     const perms = [PERMISSIONS.VIEW_ORDERS, PERMISSIONS.ORDERS_WRITE];
     expect(resolveOrdersScreenMode('manager', perms).mode).toBe('manager-full');
   });
 
-  it('كاشير VIEW_SALES + تسجيل داخلي → staff وليس طلبات إدارية', () => {
-    const perms = [
-      PERMISSIONS.VIEW_INTERNAL_REGISTRATION,
-      PERMISSIONS.VIEW_SALES,
-      PERMISSIONS.STAFF_ORDERS_SUBMIT,
-    ];
-    const r = resolveOrdersScreenMode('cashier', perms);
-    expect(r.mode).toBe('staff');
-    expect(r.canSubmitStaff).toBe(true);
-    expect(r.hasManagerDataAccess).toBe(false);
-  });
-
-  it('قراءة التسجيل الداخلي فقط → manager-full بدون طلبات إدارية', () => {
+  it('routes internal report read to manager-full without orders manager access', () => {
     const perms = [PERMISSIONS.VIEW_INTERNAL_REGISTRATION, PERMISSIONS.STAFF_ORDERS_READ];
     const r = resolveOrdersScreenMode('supervisor', perms);
+
     expect(r.mode).toBe('manager-full');
     expect(r.hasManagerDataAccess).toBe(false);
     expect(r.canViewSalesReport).toBe(true);
   });
 
-  it('محاسب ORDERS_READ + تسجيل داخلي → manager-full بدون فرض التسجيل الداخلي افتراضياً', () => {
-    const perms = [PERMISSIONS.VIEW_ORDERS, PERMISSIONS.ORDERS_READ, PERMISSIONS.STAFF_ORDERS_SUBMIT];
+  it('keeps accountant with orders read and internal submit on manager screen', () => {
+    const perms = [
+      PERMISSIONS.VIEW_ORDERS,
+      PERMISSIONS.ORDERS_READ,
+      PERMISSIONS.STAFF_ORDERS_SUBMIT,
+    ];
     const r = resolveOrdersScreenMode('accountant', perms);
+
     expect(r.mode).toBe('manager-full');
-    expect(r.canSubmitStaff).toBe(true);
+    expect(r.canSubmitInternalRegistration).toBe(true);
     expect(r.prefersStaffSalesTab).toBe(false);
   });
 
-  it('VIEW_ORDERS فقط → forbidden', () => {
+  it('does not grant app access from VIEW_ORDERS alone', () => {
     const perms = [PERMISSIONS.VIEW_ORDERS];
     expect(resolveOrdersScreenMode('staff', perms).mode).toBe('forbidden');
   });

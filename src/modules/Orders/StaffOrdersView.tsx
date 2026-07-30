@@ -1,30 +1,39 @@
-/**
- * StaffOrdersView — واجهة الموظف لإرسال طلبات القسم
- * تجربة POS: شبكة كروت، ضغطة تضيف للطلب، ملخص أسفل الشاشة
- * تبويبان: طلبات | مبيعات
- */
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { ScreenShell, ScreenTabs, ScreenTitle } from '../../ui';
 import { StaffOrderPanel } from './StaffOrderPanel';
+
+type StaffOrderTabId = 'order' | 'sale';
+
 export function StaffOrdersView({
   companyId,
   embedded = false,
   salesOnly = false,
   defaultTab = 'order',
+  allowOrders = true,
+  allowSales = true,
 }: {
   companyId: string;
   embedded?: boolean;
-  /** داخل واجهة المدير — تبويب مبيعات فقط (كاشير) */
   salesOnly?: boolean;
-  defaultTab?: 'order' | 'sale';
+  defaultTab?: StaffOrderTabId;
+  allowOrders?: boolean;
+  allowSales?: boolean;
 }) {
   const { t } = useTranslation();
-  const STAFF_VIEW_TAB_IDS = useMemo(() => ['order', 'sale'] as const, []);
+  const tabIds = useMemo<StaffOrderTabId[]>(() => {
+    if (salesOnly) return ['sale'];
+    const ids: StaffOrderTabId[] = [];
+    if (allowOrders) ids.push('order');
+    if (allowSales) ids.push('sale');
+    return ids.length ? ids : ['order'];
+  }, [allowOrders, allowSales, salesOnly]);
+
+  const resolvedDefaultTab = tabIds.includes(defaultTab) ? defaultTab : tabIds[0];
   const [activeTab, setActiveTab] = useTabSearchParam(
-    STAFF_VIEW_TAB_IDS,
-    defaultTab,
+    tabIds,
+    resolvedDefaultTab,
     'staffOrderTab',
     null,
     undefined,
@@ -32,22 +41,22 @@ export function StaffOrdersView({
   );
 
   const tabs = useMemo(() => [
-    { id: 'order', label: t('staffOrdersTabOrders') },
-    { id: 'sale',  label: t('staffOrdersTabSales') },
-  ], [t]);
+    ...(allowOrders && !salesOnly ? [{ id: 'order', label: t('staffOrdersTabOrders') }] : []),
+    ...(allowSales || salesOnly ? [{ id: 'sale', label: t('staffOrdersTabSales') }] : []),
+  ], [allowOrders, allowSales, salesOnly, t]);
 
-  if (salesOnly) {
-    return <StaffOrderPanel companyId={companyId} productType="sale" />;
-  }
+  const singlePanel = tabIds.length === 1
+    ? <StaffOrderPanel companyId={companyId} productType={tabIds[0]} />
+    : null;
 
-  const tabContent = (
+  const tabContent = singlePanel ?? (
     <ScreenTabs
       items={tabs}
       value={activeTab}
-      onChange={(v) => setActiveTab(v as 'order' | 'sale')}
+      onChange={(v) => setActiveTab(v as StaffOrderTabId)}
       contentClassName="px-3 pt-3 pb-4 sm:px-4"
     >
-      <StaffOrderPanel key={activeTab} companyId={companyId} productType={activeTab as 'order' | 'sale'} />
+      <StaffOrderPanel key={activeTab} companyId={companyId} productType={activeTab as StaffOrderTabId} />
     </ScreenTabs>
   );
 

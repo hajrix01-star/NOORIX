@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-export type CurrentAuthUser = { sub?: string; userId?: string; role?: string };
+export type CurrentAuthUser = { sub?: string; userId?: string; role?: string; permissions?: unknown };
 
 export function requireCurrentUserId(user: CurrentAuthUser): string {
   const userId = user.sub ?? user.userId;
@@ -12,6 +12,12 @@ export function requireCurrentUserId(user: CurrentAuthUser): string {
 
 export function resolveCurrentUserRole(user: CurrentAuthUser): string | undefined {
   return user.role;
+}
+
+export function resolveCurrentUserPermissions(user: CurrentAuthUser): string[] {
+  return Array.isArray(user.permissions)
+    ? user.permissions.filter((permission): permission is string => typeof permission === 'string')
+    : [];
 }
 
 export function parseDaysQuery(days: string | undefined, fallback = 30): number {
