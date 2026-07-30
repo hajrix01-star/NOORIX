@@ -6,7 +6,10 @@ import { utcBoundsForGregorianMonth } from './orders-month-range.util';
 import { mapDtoItemsToOrderLines, orderLinesToLastPriceInputs } from './orders-lines.util';
 import { orderGregorianDateToNumberPrefix, buildOrderNumberFromPrefix } from './orders-order-number.util';
 import { aggregateOrdersMonthSummary, aggregateOrdersRangeSummaryGroups } from './orders-month-summary.util';
-import { aggregateOrderItemsByProductForReport } from './orders-items-report-aggregate.util';
+import {
+  aggregateOrderItemsByProductForReport,
+  aggregateOrderItemsForRangeReport,
+} from './orders-items-report-aggregate.util';
 import { OrdersCatalogService } from './orders-catalog.service';
 import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
 
@@ -254,9 +257,51 @@ export class OrdersService {
     return aggregateOrderItemsByProductForReport(items);
   }
 
-  async getProductPurchaseHistory(companyId: string, productId: string, year?: number, month?: number) {
+  async getItemsReportRange(companyId: string, startDate: string, endDate: string) {
+    const start = new Date(`${startDate}T00:00:00.000Z`);
+    const end = new Date(`${endDate}T23:59:59.999Z`);
+    const items = await this.prisma.orderItem.findMany({
+      where: {
+        order: {
+          companyId,
+          status: 'active',
+          orderDate: { gte: start, lte: end },
+        },
+      },
+      include: {
+        product: { include: { category: true } },
+        order: {
+          select: {
+            id: true,
+            orderDate: true,
+            orderType: true,
+          },
+        },
+      },
+      orderBy: [
+        { order: { orderDate: 'asc' } },
+        { product: { nameAr: 'asc' } },
+      ],
+    });
+
+    return aggregateOrderItemsForRangeReport(items);
+  }
+
+  async getProductPurchaseHistory(
+    companyId: string,
+    productId: string,
+    year?: number,
+    month?: number,
+    startDate?: string,
+    endDate?: string,
+  ) {
     const orderWhere: Record<string, unknown> = { companyId, status: 'active' };
-    if (year && month) {
+    if (startDate && endDate) {
+      orderWhere.orderDate = {
+        gte: new Date(`${startDate}T00:00:00.000Z`),
+        lte: new Date(`${endDate}T23:59:59.999Z`),
+      };
+    } else if (year && month) {
       const { start, end } = utcBoundsForGregorianMonth(year, month);
       orderWhere.orderDate = { gte: start, lte: end };
     }
@@ -277,9 +322,21 @@ export class OrdersService {
     }));
   }
 
-  async getCategoryPurchaseHistory(companyId: string, categoryId: string, year?: number, month?: number) {
+  async getCategoryPurchaseHistory(
+    companyId: string,
+    categoryId: string,
+    year?: number,
+    month?: number,
+    startDate?: string,
+    endDate?: string,
+  ) {
     const orderWhere: Record<string, unknown> = { companyId, status: 'active' };
-    if (year && month) {
+    if (startDate && endDate) {
+      orderWhere.orderDate = {
+        gte: new Date(`${startDate}T00:00:00.000Z`),
+        lte: new Date(`${endDate}T23:59:59.999Z`),
+      };
+    } else if (year && month) {
       const { start, end } = utcBoundsForGregorianMonth(year, month);
       orderWhere.orderDate = { gte: start, lte: end };
     }

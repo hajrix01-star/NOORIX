@@ -108,9 +108,40 @@ export type OrderItemsReportRow = {
   categoryNameAr?: string | null;
   categoryNameEn?: string | null;
   unit?: string | null;
+  baseUnit?: string | null;
+  size?: string | null;
+  packaging?: string | null;
+  sectionName?: string | null;
+  sectionNames?: string[];
+  sectionIds?: string[];
   quantity: MoneyLike;
+  normalizedQuantity?: MoneyLike;
   amount: MoneyLike;
   orderCount: number;
+  orderIds?: string[];
+  orderTypes?: string[];
+  averageUnitPrice?: MoneyLike;
+  lastOrderDate?: string | null;
+  daily?: OrderItemsReportDailyRow[];
+};
+
+export type OrderItemsReportDailyRow = {
+  date: string;
+  quantity: MoneyLike;
+  normalizedQuantity: MoneyLike;
+  amount: MoneyLike;
+  orderCount: number;
+  orderIds?: string[];
+};
+
+export type OrderItemsReportResult = {
+  rows: OrderItemsReportRow[];
+  summary: {
+    totalAmount: MoneyLike;
+    distinctOrders: number;
+    distinctProducts: number;
+    sectionsCount: number;
+  };
 };
 
 export type OrderPurchaseHistoryRow = {

@@ -16,6 +16,8 @@ export type {
   OrderCategory,
   OrderCategoryPayload,
   OrderItemsReportRow,
+  OrderItemsReportDailyRow,
+  OrderItemsReportResult,
   OrderLine,
   OrderProduct,
   OrderProductPayload,

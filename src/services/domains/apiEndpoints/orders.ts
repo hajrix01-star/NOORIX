@@ -5,6 +5,7 @@ import type {
   OrderCategory,
   OrderCategoryPayload,
   OrderItemsReportRow,
+  OrderItemsReportResult,
   OrderProduct,
   OrderProductPayload,
   OrderPurchaseHistoryRow,
@@ -129,10 +130,14 @@ export async function getProductPurchaseHistory(
   productId: string,
   year: string | number | null | undefined,
   month: string | number | null | undefined,
+  startDate?: string,
+  endDate?: string,
 ): Promise<ApiParsedResult<OrderPurchaseHistoryRow[]>> {
   const params: Record<string, string> = { companyId: String(companyId) };
   if (year != null && year !== '') params.year = String(year);
   if (month != null && month !== '') params.month = String(month);
+  if (startDate) params.startDate = startDate;
+  if (endDate) params.endDate = endDate;
   const res = await apiGet<OrderPurchaseHistoryRow[]>(`/api/v1/orders/product-history/${productId}`, params);
   return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
@@ -141,10 +146,14 @@ export async function getCategoryPurchaseHistory(
   categoryId: string,
   year: string | number | null | undefined,
   month: string | number | null | undefined,
+  startDate?: string,
+  endDate?: string,
 ): Promise<ApiParsedResult<OrderPurchaseHistoryRow[]>> {
   const params: Record<string, string> = { companyId: String(companyId) };
   if (year != null && year !== '') params.year = String(year);
   if (month != null && month !== '') params.month = String(month);
+  if (startDate) params.startDate = startDate;
+  if (endDate) params.endDate = endDate;
   const res = await apiGet<OrderPurchaseHistoryRow[]>(`/api/v1/orders/category-history/${categoryId}`, params);
   return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
@@ -155,6 +164,18 @@ export async function getOrdersItemsReport(
 ): Promise<ApiParsedResult<OrderItemsReportRow[]>> {
   const res = await apiGet<OrderItemsReportRow[]>('/api/v1/orders/items-report', { companyId, year: String(year), month: String(month) });
   return res?.success ? { ...res, data: res.data ?? [] } : res;
+}
+export async function getOrdersItemsReportRange(
+  companyId: string,
+  startDate: string,
+  endDate: string,
+): Promise<ApiParsedResult<OrderItemsReportResult>> {
+  const res = await apiGet<OrderItemsReportResult>('/api/v1/orders/items-report-range', {
+    companyId,
+    startDate,
+    endDate,
+  });
+  return res;
 }
 export async function getOrderProducts(companyId: string, section?: string, type?: string): Promise<ApiParsedResult<OrderProduct[]>> {
   const params: Record<string, string> = { companyId };

@@ -58,6 +58,21 @@ export function useProductPurchaseHistory(
   });
 }
 
+export function useProductPurchaseHistoryRange(
+  companyId: string,
+  productId: string,
+  startDate: string,
+  endDate: string,
+  enabled = true,
+) {
+  return useApiListQuery<OrderPurchaseHistoryRow>({
+    queryKey: [...orderKeys.productPurchaseHistory(companyId, productId, startDate, endDate), 'range'],
+    queryFn: () => getProductPurchaseHistory(companyId, productId, undefined, undefined, startDate, endDate),
+    fallbackMessage: 'Failed to load product purchase history range',
+    enabled: !!companyId && !!productId && !!startDate && !!endDate && enabled,
+  });
+}
+
 export function useCategoryPurchaseHistory(
   companyId: string,
   categoryId: string,
@@ -70,6 +85,21 @@ export function useCategoryPurchaseHistory(
     queryFn: () => getCategoryPurchaseHistory(companyId, categoryId, year, month),
     fallbackMessage: 'Failed to load category purchase history',
     enabled: !!companyId && !!categoryId && enabled,
+  });
+}
+
+export function useCategoryPurchaseHistoryRange(
+  companyId: string,
+  categoryId: string,
+  startDate: string,
+  endDate: string,
+  enabled = true,
+) {
+  return useApiListQuery<OrderPurchaseHistoryRow>({
+    queryKey: [...orderKeys.categoryPurchaseHistory(companyId, categoryId, startDate, endDate), 'range'],
+    queryFn: () => getCategoryPurchaseHistory(companyId, categoryId, undefined, undefined, startDate, endDate),
+    fallbackMessage: 'Failed to load category purchase history range',
+    enabled: !!companyId && !!categoryId && !!startDate && !!endDate && enabled,
   });
 }
 

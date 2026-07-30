@@ -172,6 +172,22 @@ export class OrdersController {
     return this.ordersService.getItemsReport(resolvedCompanyId, ym.year, ym.month);
   }
 
+  @Get('items-report-range')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  getItemsReportRange(
+    @CompanyId() companyId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const resolvedCompanyId = requireCompanyId(companyId);
+    const range = parseRequiredDateRange(startDate, endDate);
+    return this.ordersService.getItemsReportRange(
+      resolvedCompanyId,
+      range.startDate,
+      range.endDate,
+    );
+  }
+
   @Get('products')
   @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT')
   getProducts(
@@ -217,13 +233,23 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Query('year') year?: string,
     @Query('month') month?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
     if (!productId?.trim()) {
       throw new BadRequestException('productId is required.');
     }
     const ym = parseOptionalYearMonth(year, month);
-    return this.ordersService.getProductPurchaseHistory(resolvedCompanyId, productId, ym.year, ym.month);
+    const range = startDate || endDate ? parseRequiredDateRange(startDate, endDate) : undefined;
+    return this.ordersService.getProductPurchaseHistory(
+      resolvedCompanyId,
+      productId,
+      ym.year,
+      ym.month,
+      range?.startDate,
+      range?.endDate,
+    );
   }
 
   @Get('category-history/:categoryId')
@@ -233,13 +259,23 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Query('year') year?: string,
     @Query('month') month?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
     if (!categoryId?.trim()) {
       throw new BadRequestException('categoryId is required.');
     }
     const ym = parseOptionalYearMonth(year, month);
-    return this.ordersService.getCategoryPurchaseHistory(resolvedCompanyId, categoryId, ym.year, ym.month);
+    const range = startDate || endDate ? parseRequiredDateRange(startDate, endDate) : undefined;
+    return this.ordersService.getCategoryPurchaseHistory(
+      resolvedCompanyId,
+      categoryId,
+      ym.year,
+      ym.month,
+      range?.startDate,
+      range?.endDate,
+    );
   }
 
   @Get('categories')
