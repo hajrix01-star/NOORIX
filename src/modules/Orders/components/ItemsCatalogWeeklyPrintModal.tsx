@@ -78,6 +78,7 @@ export function ItemsCatalogWeeklyPrintModal({
       kg: t('ordersUnitKg'),
       box: t('ordersUnitBox'),
       pack: t('ordersUnitPack'),
+      half_pack: t('ordersUnitHalfPack'),
       carton: t('ordersUnitCarton'),
       dozen: t('ordersUnitDozen'),
     };

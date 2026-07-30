@@ -108,6 +108,7 @@ export function StaffQtyModal({
           <option value="kg">{t('ordersUnitKg')}</option>
           <option value="box">{t('ordersUnitBox')}</option>
           <option value="pack">{t('ordersUnitPack')}</option>
+          <option value="half_pack">{t('ordersUnitHalfPack')}</option>
           <option value="carton">{t('ordersUnitCarton')}</option>
           <option value="dozen">{t('ordersUnitDozen')}</option>
         </Input>

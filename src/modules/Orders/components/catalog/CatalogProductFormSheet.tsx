@@ -161,12 +161,19 @@ function VariantsTable({
                   <Input
                     type="select"
                     value={variant.unit}
-                    onChange={(event: ChangeEvent<HTMLSelectElement>) => updateVariant(index, 'unit', event.target.value)}
+                    onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                      const unit = event.target.value;
+                      updateVariant(index, 'unit', unit);
+                      if (unit === 'half_pack') {
+                        updateVariant(index, 'quantityMultiplier', '0.5');
+                      }
+                    }}
                   >
                     <option value="piece">{t('ordersUnitPiece')}</option>
                     <option value="kg">{t('ordersUnitKg')}</option>
                     <option value="box">{t('ordersUnitBox')}</option>
                     <option value="pack">{t('ordersUnitPack')}</option>
+                    <option value="half_pack">{t('ordersUnitHalfPack')}</option>
                     <option value="carton">{t('ordersUnitCarton')}</option>
                     <option value="dozen">{t('ordersUnitDozen')}</option>
                   </Input>

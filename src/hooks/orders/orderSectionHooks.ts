@@ -3,6 +3,7 @@ import {
   createOrderSection,
   deleteOrderSection,
   getOrderSections,
+  updateOrderSection,
 } from '../../services/api';
 import { orderKeys } from '../../services/queryKeys';
 import type { OrderSection, OrderSectionPayload } from '../../types/api';
@@ -22,6 +23,15 @@ export function useCreateOrderSectionMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (body: OrderSectionPayload & { companyId: string }) => createOrderSection(body),
     invalidateQueries: [['orderSections', companyId]],
+    showErrorToast: false,
+  });
+}
+
+export function useUpdateOrderSectionMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: ({ id, body }: { id: string; body: Partial<OrderSectionPayload> }) =>
+      updateOrderSection(id, body, companyId),
+    invalidateQueries: [['orderSections', companyId], orderKeys.products(companyId)],
     showErrorToast: false,
   });
 }

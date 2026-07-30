@@ -45,9 +45,15 @@ export function CatalogProductTable({
             aria-label={nameAr || t('ordersSelectAll')}
           />
           <div className="flex-1 min-w-0 flex flex-col gap-1">
-            <div className="font-bold text-[14px] leading-snug text-noorix-text break-words">
+            <Button
+              type="button"
+              variant="raw"
+              size="auto"
+              className="w-fit max-w-full text-start font-bold text-[14px] leading-snug text-noorix-blue break-words hover:underline"
+              onClick={() => onEdit(row)}
+            >
               {nameAr}
-            </div>
+            </Button>
             {nameEn ? (
               <div className="text-[12px] leading-snug text-noorix-muted break-words ltr text-start">
                 {nameEn}
@@ -87,15 +93,12 @@ export function CatalogProductTable({
           </div>
         )}
         <div className="flex items-center justify-between gap-2 min-w-0 ps-7">
-          <Button
-            variant="raw"
-            size="auto"
-            className="text-[13px] font-bold nx-font-numbers ltr min-w-0 flex-1 break-all text-noorix-blue hover:underline"
+          <span
+            className="text-[13px] font-bold nx-font-numbers ltr min-w-0 flex-1 break-all text-noorix-text"
             title={priceFull}
-            onClick={() => onEdit(row)}
           >
             {priceShort}
-          </Button>
+          </span>
         </div>
       </div>
     );
@@ -126,7 +129,16 @@ export function CatalogProductTable({
       key: 'nameAr',
       label: t('productNameAr'),
       render: (_: unknown, row: OrderProduct) => (
-        <span className="font-semibold text-[13px] truncate block max-w-[200px]" title={row.nameAr}>{row.nameAr || '—'}</span>
+        <Button
+          type="button"
+          variant="raw"
+          size="auto"
+          className="font-semibold text-[13px] truncate block max-w-[200px] text-noorix-blue hover:underline"
+          title={row.nameAr}
+          onClick={() => onEdit(row)}
+        >
+          {row.nameAr || '—'}
+        </Button>
       ),
     },
     {
@@ -159,14 +171,9 @@ export function CatalogProductTable({
       label: t('ordersVariantPrice'),
       numeric: true,
       render: (_: unknown, row: OrderProduct) => (
-        <Button
-          variant="raw"
-          size="auto"
-          className="nx-font-numbers ltr text-noorix-blue hover:underline"
-          onClick={() => onEdit(row)}
-        >
+        <span className="nx-font-numbers ltr text-noorix-text" title={productVariantsSummary(row)}>
           {productVariantsSummary(row)}
-        </Button>
+        </span>
       ),
     },
   ], [allSelected, allIds, selectedIds, onToggleSelect, onToggleAll, onEdit, t]);

@@ -13,6 +13,7 @@ import {
   useDeleteOrderProductsMutation,
   useDeleteOrderCategoriesMutation,
   useCreateOrderSectionMutation,
+  useUpdateOrderSectionMutation,
   useDeleteOrderSectionMutation,
   useBulkSetProductSectionsMutation,
 } from '../../../hooks/useOrders';
@@ -69,6 +70,7 @@ export function useItemsManageTab(companyId: string) {
   const updateCategory = useUpdateOrderCategoryMutation(companyId);
   const deleteCategoriesMutation = useDeleteOrderCategoriesMutation(companyId);
   const createSection = useCreateOrderSectionMutation(companyId);
+  const updateSection = useUpdateOrderSectionMutation(companyId);
   const deleteSection = useDeleteOrderSectionMutation(companyId);
   const bulkSetSections = useBulkSetProductSectionsMutation(companyId);
   const catalogIo = useItemsManageTabCatalogIo({
@@ -162,7 +164,7 @@ export function useItemsManageTab(companyId: string) {
   function openEditProduct(p: OrderProduct) {
     setEditingProduct(buildEditableOrderProduct(p, catalogProductType));
   }
-  function handleCreateCategory() {
+  function handleCreateCategory(onDone?: () => void) {
     if (!newCategory.nameAr?.trim()) {
       showToast(t('ordersCategoryNameRequired'), 'error');
       return;
@@ -173,6 +175,7 @@ export function useItemsManageTab(companyId: string) {
         onSuccess: () => {
           showToast(t('ordersCategoryAdded'), 'success');
           setNewCategory({ nameAr: '', nameEn: '' });
+          onDone?.();
         },
         onError: (e: Error) => showToast(e?.message || t('addFailed'), 'error'),
       },
@@ -205,7 +208,7 @@ export function useItemsManageTab(companyId: string) {
     showToast(t('ordersPackagingAdded'), 'success');
   }
 
-  function handleUpdateCategory() {
+  function handleUpdateCategory(onDone?: () => void) {
     if (!editingCategory?.id) return;
     updateCategory.mutate(
       { id: editingCategory.id, body: { nameAr: editingCategory.nameAr, nameEn: editingCategory.nameEn ?? null } },
@@ -213,6 +216,7 @@ export function useItemsManageTab(companyId: string) {
         onSuccess: () => {
           showToast(t('ordersCategoryUpdated'), 'success');
           setEditingCategory(null);
+          onDone?.();
         },
         onError: (e: Error) => showToast(e?.message || t('updateFailed'), 'error'),
       },
@@ -312,6 +316,7 @@ export function useItemsManageTab(companyId: string) {
     createProductsBatch,
     updateProduct: updateProductMutation,
     createCategory,
+    updateCategory,
     createCategoriesBatch,
     handleInsertPresetCatalog,
     handleDownloadProductsImportTemplate,
@@ -331,6 +336,7 @@ export function useItemsManageTab(companyId: string) {
     removeEditingVariant,
     sections,
     createSection,
+    updateSection,
     deleteSection,
     bulkSetSections,
   };

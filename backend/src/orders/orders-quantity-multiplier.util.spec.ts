@@ -25,6 +25,10 @@ describe('resolveQuantityMultiplier', () => {
     }, { packaging: 'legacy', unit: 'piece' }).toNumber()).toBe(1);
   });
 
+  it('treats half-pack as half of the charcoal base box', () => {
+    expect(resolveQuantityMultiplier({ variants: [] }, { unit: 'half_pack' }).toNumber()).toBe(0.5);
+  });
+
   it('derives every purchase packaging price from the carton price', () => {
     const variants = standardCharcoalVariants('145');
     expect(variants.find((variant) => variant.packaging === 'علبة')).toMatchObject({

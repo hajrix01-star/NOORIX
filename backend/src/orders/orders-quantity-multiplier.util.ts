@@ -48,6 +48,7 @@ export function resolveQuantityMultiplier(
     && (normalized(variant.unit) || 'piece') === unit,
   );
   if (match) return positiveQuantityMultiplier(match.quantityMultiplier);
+  if (unit === 'half_pack') return new Prisma.Decimal('0.5');
   if (variants.length > 0 && !size && !packaging) {
     return positiveQuantityMultiplier(variants[0].quantityMultiplier);
   }

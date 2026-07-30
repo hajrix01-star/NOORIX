@@ -274,6 +274,13 @@ export async function getOrderSections(companyId: string): Promise<ApiParsedResu
 export async function createOrderSection(body: OrderSectionPayload & { companyId: string }): Promise<ApiParsedResult<OrderSection>> {
   return apiPost<OrderSection>('/api/v1/orders/sections', body);
 }
+export async function updateOrderSection(
+  id: string,
+  body: Partial<OrderSectionPayload>,
+  companyId: string,
+): Promise<ApiParsedResult<OrderSection>> {
+  return apiPatch<OrderSection>(`/api/v1/orders/sections/${id}?companyId=${companyId}`, body);
+}
 export async function deleteOrderSection(id: string, companyId: string): Promise<ApiParsedResult<{ deleted: boolean }>> {
   return apiDelete(`/api/v1/orders/sections/${id}?companyId=${companyId}`);
 }

@@ -90,6 +90,8 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
       fmt(p.qty, 2),
       p.unit === 'pack'
         ? t('ordersUnitPack')
+        : p.unit === 'half_pack'
+          ? t('ordersUnitHalfPack')
         : p.unit === 'carton'
           ? t('ordersUnitCarton')
           : (p.unit || '—'),
