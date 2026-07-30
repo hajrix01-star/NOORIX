@@ -18,7 +18,7 @@ import {
   useProductPurchaseHistoryRange,
 } from '../../../hooks/useOrders';
 import { fmt } from '../../../utils/format';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { DateFilterBar } from '../../../ui/date';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintTableHtml } from '../../../utils/printTableHtml';
@@ -296,8 +296,8 @@ export function ItemsReportTab({
     category?: { id?: string; nameAr?: string | null; nameEn?: string | null };
   } | null>(null);
 
-  const startDate = propStartDate || `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = propEndDate || `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
+  const startDate = toYmd(propStartDate) || `${year}-${String(month).padStart(2, '0')}-01`;
+  const endDate = toYmd(propEndDate) || `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
   const { data: reportResult, isLoading } = useOrdersItemsReportRange(companyId, startDate, endDate);
   const { data: catalogSections = [] } = useOrderSections(companyId);
   const report = reportResult?.rows ?? [];

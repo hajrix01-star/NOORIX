@@ -19,6 +19,7 @@ import type {
   UpdateOrderPayload,
 } from '../../types/api';
 import { listYearMonthsInRange } from '../../utils/datePeriod';
+import { toYmd } from '../../utils/saudiDate';
 import { useApiMutation } from '../useApiMutation';
 import { useApiListQuery, useApiQueries, useApiQuery, useApiQueryOr } from '../useApiQuery';
 
@@ -129,11 +130,15 @@ export function useOrdersItemsReport(companyId: string, year: string | number, m
 }
 
 export function useOrdersItemsReportRange(companyId: string, startDate: string, endDate: string) {
+  const normalizedStartDate = toYmd(startDate);
+  const normalizedEndDate = toYmd(endDate);
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-  const hasValidRange = datePattern.test(startDate) && datePattern.test(endDate) && startDate <= endDate;
+  const hasValidRange = datePattern.test(normalizedStartDate)
+    && datePattern.test(normalizedEndDate)
+    && normalizedStartDate <= normalizedEndDate;
   return useApiQuery<OrderItemsReportResult>({
-    queryKey: orderKeys.itemsReportRange(companyId, startDate, endDate),
-    queryFn: () => getOrdersItemsReportRange(companyId, startDate, endDate),
+    queryKey: orderKeys.itemsReportRange(companyId, normalizedStartDate, normalizedEndDate),
+    queryFn: () => getOrdersItemsReportRange(companyId, normalizedStartDate, normalizedEndDate),
     fallbackMessage: 'Failed to load orders items report range',
     enabled: !!companyId && hasValidRange,
   });
