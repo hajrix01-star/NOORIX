@@ -75,7 +75,7 @@ export default {
   ordersPackagingNameRequired: { ar: 'اسم التغليف بالعربية مطلوب', en: 'Packaging name in Arabic is required' },
   ordersSelectProductAndAdd: { ar: 'اختر صنفاً واضغط إضافة', en: 'Select a product and click Add' },
   ordersUnitKg: { ar: 'كيلو', en: 'Kg' },
-  ordersUnitBox: { ar: 'كرتون', en: 'Box' },
+  ordersUnitBox: { ar: 'صندوق', en: 'Box' },
   ordersUnitPack: { ar: 'علبة', en: 'Pack' },
   ordersUnitCarton: { ar: 'كرتون', en: 'Carton' },
   ordersUnitDozen: { ar: 'درزن', en: 'Dozen' },

@@ -10,6 +10,18 @@ function isShishaSection(value: string | null | undefined): boolean {
   return String(value ?? '').trim() === 'شيشة';
 }
 
+export function isCharcoalConsumptionProduct(
+  product: { nameAr: string; nameEn: string | null },
+  productId: string,
+  linkedProductId: string | null,
+): boolean {
+  const arabicName = product.nameAr.trim();
+  const englishName = String(product.nameEn ?? '').trim().toLowerCase();
+  return productId === linkedProductId
+    || arabicName.includes('فحم')
+    || englishName.includes('charcoal');
+}
+
 @Injectable()
 export class ShishaInventorySourceService {
   constructor(private readonly prisma: TenantPrismaService) {}
@@ -38,7 +50,7 @@ export class ShishaInventorySourceService {
             quantityMultiplier: true,
             productId: true,
             product: {
-              select: { nameAr: true, productType: true, sections: true },
+              select: { nameAr: true, nameEn: true, productType: true, sections: true },
             },
           },
         },
@@ -50,7 +62,11 @@ export class ShishaInventorySourceService {
     for (const order of orders) {
       if (!order.saleDate) continue;
       for (const item of order.items) {
-        if (item.productId === charcoalConsumptionProductId) {
+        if (isCharcoalConsumptionProduct(
+          item.product,
+          item.productId,
+          charcoalConsumptionProductId,
+        )) {
           events.push({
             date: toYmd(order.saleDate),
             operationKey: order.logRef ?? order.id,

@@ -11,6 +11,7 @@ import {
   resolveVariantFromModal,
   staffBasketLineKey,
 } from './utils/staffOrderBasketUtils';
+import { withStandardCharcoalVariants } from './utils/charcoalPackaging';
 import {
   buildProductsById,
   createDraftLineId,
@@ -115,12 +116,13 @@ export function StaffOrderPanel({
   const basketLogRef = isSale ? (editingOrder?.logRef || nextLogRef || null) : null;
 
   function tapProduct(product: OrderProduct) {
-    if (productHasVariants(product)) {
-      setVariantModal(defaultVariantModalState(product));
+    const resolvedProduct = withStandardCharcoalVariants(product);
+    if (productHasVariants(resolvedProduct)) {
+      setVariantModal(defaultVariantModalState(resolvedProduct));
       return;
     }
-    const unit = product.unit || 'piece';
-    const key = staffBasketLineKey({ productId: product.id, size: '', packaging: '', unit });
+    const unit = resolvedProduct.unit || 'piece';
+    const key = staffBasketLineKey({ productId: resolvedProduct.id, size: '', packaging: '', unit });
     const idx = basketLines.findIndex((l) => staffBasketLineKey(l) === key);
     if (idx >= 0) {
       setBasketLines((prev) => {
@@ -129,7 +131,7 @@ export function StaffOrderPanel({
         return next;
       });
     } else {
-      setQtyModal({ product, qty: 1, unit });
+      setQtyModal({ product: resolvedProduct, qty: 1, unit });
     }
   }
 

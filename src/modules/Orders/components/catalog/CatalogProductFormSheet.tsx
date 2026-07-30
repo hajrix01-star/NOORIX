@@ -3,6 +3,11 @@ import { useTranslation } from '../../../../i18n/useTranslation';
 import { AdaptiveSheet, Button, Checkbox, DialogActions, Input } from '../../../../ui';
 import type { OrderCategory, OrderProductType, OrderProductVariant, OrderSection } from '../../../../types/api';
 import { productHasAdvancedVariants } from './catalogProductUtils';
+import {
+  buildStandardCharcoalVariants,
+  charcoalConversionLabel,
+  isCharcoalCatalogProduct,
+} from '../../utils/charcoalPackaging';
 
 export type CatalogProductFormState = {
   id?: string;
@@ -52,6 +57,8 @@ function VariantsTable({
   onAddSize,
   onAddPackaging,
   addVariant,
+  charcoalMode,
+  charcoalPurchaseMode,
 }: {
   t: (key: string) => string;
   variants: OrderProductVariant[];
@@ -62,7 +69,41 @@ function VariantsTable({
   onAddSize: () => void;
   onAddPackaging: () => void;
   addVariant: () => void;
+  charcoalMode: boolean;
+  charcoalPurchaseMode: boolean;
 }) {
+  if (charcoalMode) {
+    return (
+      <div className="space-y-3">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
+          أحجام الفحم مرتبطة بمعادلات ثابتة: العلبة 64 حبة، والكرتون 10 علب. الوحدة ومعامل التحويل يحددهما النظام تلقائيًا.
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {variants.map((variant, index) => (
+            <div key={String(variant.packaging || index)} className="rounded-xl border border-noorix-border bg-noorix-bg-muted p-3">
+              <div className="mb-1 text-[13px] font-bold text-noorix-text">{String(variant.packaging || 'فحم')}</div>
+              <div className="mb-3 text-[11px] font-semibold text-emerald-700">
+                {charcoalConversionLabel(variant)}
+              </div>
+              {charcoalPurchaseMode && (
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  label={t('ordersVariantPrice')}
+                  value={variant.lastPrice}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                    updateVariant(index, 'lastPrice', event.target.value)
+                  }
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
@@ -186,11 +227,40 @@ export function CatalogProductFormSheet({
 }: CatalogProductFormSheetProps) {
   const { t } = useTranslation();
   const [advanced, setAdvanced] = useState(false);
+  const charcoalMode = Boolean(form && isCharcoalCatalogProduct(form));
+  const charcoalPurchaseMode = charcoalMode && form?.productType === 'order';
 
   useEffect(() => {
     if (!open || !form) return;
     setAdvanced(Boolean(form._advanced) || productHasAdvancedVariants(form));
   }, [open, form]);
+
+  useEffect(() => {
+    if (!open || !charcoalMode) return;
+    setAdvanced(true);
+    setForm((current) => {
+      if (!current || !isCharcoalCatalogProduct(current)) return current;
+      const standardized = buildStandardCharcoalVariants(
+        current.variants || [],
+        current.productType === 'order',
+      );
+      const currentFingerprint = JSON.stringify((current.variants || []).map((variant) => [
+        variant.packaging,
+        variant.unit,
+        String(variant.quantityMultiplier ?? '1'),
+        String(variant.lastPrice ?? ''),
+      ]));
+      const nextFingerprint = JSON.stringify(standardized.map((variant) => [
+        variant.packaging,
+        variant.unit,
+        String(variant.quantityMultiplier ?? '1'),
+        String(variant.lastPrice ?? ''),
+      ]));
+      return currentFingerprint === nextFingerprint
+        ? current
+        : { ...current, variants: standardized, _advanced: true };
+    });
+  }, [charcoalMode, open, setForm]);
 
   if (!form) return null;
 
@@ -297,10 +367,14 @@ export function CatalogProductFormSheet({
               onAddSize={onAddSize}
               onAddPackaging={onAddPackaging}
               addVariant={addVariant}
+              charcoalMode={charcoalMode}
+              charcoalPurchaseMode={charcoalPurchaseMode}
             />
-            <Button type="button" size="sm" variant="ghost" onClick={() => setAdvanced(false)}>
-              {t('ordersProductSimplePrice')}
-            </Button>
+            {!charcoalMode && (
+              <Button type="button" size="sm" variant="ghost" onClick={() => setAdvanced(false)}>
+                {t('ordersProductSimplePrice')}
+              </Button>
+            )}
           </>
         )}
       </div>

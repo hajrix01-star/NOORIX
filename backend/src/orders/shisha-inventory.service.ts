@@ -172,6 +172,16 @@ export class ShishaInventoryService {
         where: {
           companyId,
           productType: 'sale',
+          OR: [
+            { nameAr: { in: ['فحم', 'الفحم'] } },
+            { nameEn: { equals: 'Charcoal', mode: 'insensitive' } },
+          ],
+        },
+        select: { id: true },
+      }) ?? await tx.orderProduct.findFirst({
+        where: {
+          companyId,
+          productType: 'sale',
           nameAr: 'استهلاك الفحم الفعلي',
         },
         select: { id: true },
@@ -180,6 +190,7 @@ export class ShishaInventoryService {
         ? await tx.orderProduct.update({
             where: { id: existingCharcoalProduct.id },
             data: {
+              nameAr: 'فحم',
               nameEn: 'Actual charcoal consumption',
               unit: 'pack',
               lastPrice: ZERO,
@@ -195,7 +206,7 @@ export class ShishaInventoryService {
             data: {
               tenantId,
               companyId,
-              nameAr: 'استهلاك الفحم الفعلي',
+              nameAr: 'فحم',
               nameEn: 'Actual charcoal consumption',
               unit: 'pack',
               lastPrice: ZERO,
