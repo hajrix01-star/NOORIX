@@ -34,6 +34,7 @@ export class OrdersStaffReportService {
       select: {
         id: true,
         logRef: true,
+        entryType: true,
         userId: true,
         sectionName: true,
         saleDate: true,
@@ -64,7 +65,7 @@ export class OrdersStaffReportService {
     return {
       ...buildStaffSalesReportModel({ orders, users, products }),
       registrationCoverage: buildStaffRegistrationCoverage({
-        orders: allSaleOrders,
+        orders: allSaleOrders.filter((order) => order.entryType === 'issue'),
         sectionNames: sections.map((section) => section.nameAr),
         startDate: toYmd(period.start),
         endDate: toYmd(period.end),

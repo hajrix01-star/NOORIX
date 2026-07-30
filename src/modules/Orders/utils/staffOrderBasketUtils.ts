@@ -1,5 +1,9 @@
 import Decimal from 'decimal.js';
-import type { OrderProduct, OrderProductVariant } from '../../../types/api';
+import type {
+  OrderProduct,
+  OrderProductVariant,
+  StaffCancellationReason,
+} from '../../../types/api';
 
 export type StaffBasketLine = {
   lineId: string;
@@ -10,6 +14,8 @@ export type StaffBasketLine = {
   packaging: string;
   unitPrice: string;
   sectionName?: string;
+  cancellationReasons?: StaffCancellationReason[];
+  cancellationNote?: string;
 };
 
 export function staffBasketLineKey(line: Pick<StaffBasketLine, 'productId' | 'size' | 'packaging' | 'unit'>) {
@@ -38,6 +44,8 @@ export function defaultVariantModalState(product: OrderProduct) {
     unit: v0?.unit || 'piece',
     quantity: '1',
     unitPrice: v0?.lastPrice ? String(v0.lastPrice) : (product?.lastPrice ? String(product.lastPrice) : ''),
+    cancellationReasons: [] as StaffCancellationReason[],
+    cancellationNote: '',
   };
 }
 

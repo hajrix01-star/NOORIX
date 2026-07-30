@@ -7,6 +7,7 @@ import {
   staffItemLineAmount,
 } from '../utils/staffOrderBasketUtils';
 import type { StaffOrderItem } from '../../../types/api';
+import { STAFF_CANCELLATION_REASON_LABEL_KEYS } from '../constants/staffCancellationReasons';
 
 export function StaffSaleItemsTable({
   items,
@@ -37,6 +38,14 @@ export function StaffSaleItemsTable({
                 <div className="font-medium text-noorix-text break-words leading-snug">{name}</div>
                 {variant ? (
                   <div className="text-[11px] text-noorix-muted ltr mt-0.5 truncate" title={variant}>{variant}</div>
+                ) : null}
+                {it.cancellationReasons?.length ? (
+                  <div className="mt-1 text-[10px] leading-snug text-noorix-red">
+                    {it.cancellationReasons
+                      .map((reason) => t(STAFF_CANCELLATION_REASON_LABEL_KEYS[reason]))
+                      .join('، ')}
+                    {it.notes ? ` — ${it.notes}` : ''}
+                  </div>
                 ) : null}
               </div>
             );
@@ -75,7 +84,7 @@ export function StaffSaleItemsTable({
             const p = it.product;
             const amountItem = { ...it, product: p };
             const lineAmt = staffItemLineAmount(amountItem);
-            return lineAmt.gt(0) ? (
+            return !lineAmt.isZero() ? (
               <>{fmt(lineAmt.toNumber())} <span className="nx-sar">SR</span></>
             ) : (
               <span className="text-noorix-muted">—</span>

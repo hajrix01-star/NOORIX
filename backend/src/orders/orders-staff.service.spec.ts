@@ -34,6 +34,7 @@ describe('OrdersStaffService direct operational orders', () => {
       userId: 'user-1',
       sectionName: 'مطبخ',
       orderType: 'order',
+      entryType: 'issue',
       status: 'sent',
       sentAt: now,
       createdAt: now,
@@ -53,6 +54,7 @@ describe('OrdersStaffService direct operational orders', () => {
         unit: 'kg',
         unitPrice: new Prisma.Decimal(5),
         notes: null,
+        cancellationReasons: null,
         createdAt: now,
         product,
       }],
@@ -89,5 +91,176 @@ describe('OrdersStaffService direct operational orders', () => {
       whatsAppText: expect.stringContaining('Purchase list'),
     }));
     expect(result.whatsAppText).toContain('Tomato');
+  });
+
+  it('stores an internal cancellation as a negative immutable movement with line reasons', async () => {
+    const now = new Date('2026-07-30T18:00:00.000Z');
+    const saleDate = new Date('2026-07-30T00:00:00.000Z');
+    const product = {
+      id: 'juice-1',
+      tenantId: 'tenant-1',
+      companyId: 'company-1',
+      categoryId: null,
+      nameAr: 'عصير برتقال',
+      nameEn: 'Orange juice',
+      lastPrice: new Prisma.Decimal(12),
+      variants: null,
+      unit: 'piece',
+      sizes: null,
+      packaging: null,
+      sections: ['بار'],
+      sectionIds: [],
+      productType: 'sale',
+      isActive: true,
+      sortOrder: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const prisma = new TenantPrismaService();
+    jest.spyOn(prisma.orderProduct, 'findMany').mockResolvedValue([product]);
+    jest.spyOn(prisma.staffOrder, 'findMany').mockResolvedValue([]);
+    jest.spyOn(prisma.staffOrderItem, 'findMany').mockResolvedValue([{
+      id: 'recorded-item-1',
+      staffOrderId: 'recorded-order-1',
+      productId: product.id,
+      quantity: new Prisma.Decimal(3),
+      quantityMultiplier: new Prisma.Decimal(1),
+      size: null,
+      packaging: null,
+      unit: 'piece',
+      unitPrice: new Prisma.Decimal(12),
+      notes: null,
+      cancellationReasons: null,
+      createdAt: now,
+    }]);
+    const savedCancellation = {
+      id: 'cancel-1',
+      tenantId: 'tenant-1',
+      companyId: 'company-1',
+      userId: 'user-1',
+      sectionName: 'بار',
+      orderType: 'sale',
+      entryType: 'cancellation',
+      status: 'sent',
+      saleDate,
+      logRef: 'L-260730-001',
+      notes: null,
+      sentAt: now,
+      purchaseOrderId: null,
+      createdAt: now,
+      updatedAt: now,
+      items: [{
+        id: 'cancel-item-1',
+        staffOrderId: 'cancel-1',
+        productId: product.id,
+        quantity: new Prisma.Decimal(-1),
+        quantityMultiplier: new Prisma.Decimal(1),
+        size: null,
+        packaging: null,
+        unit: 'piece',
+        unitPrice: new Prisma.Decimal(12),
+        notes: null,
+        cancellationReasons: ['customer_disliked', 'replaced_item'],
+        createdAt: now,
+        product,
+      }],
+      user: { nameAr: 'موظف البار', nameEn: null },
+    };
+    const createSpy = jest.spyOn(prisma.staffOrder, 'create').mockResolvedValue(savedCancellation);
+    const service = new OrdersStaffService(prisma, new OrdersStaffReportService(prisma));
+
+    let resultPromise: ReturnType<OrdersStaffService['createStaffOrder']> | undefined;
+    TenantContext.run('tenant-1', 'user-1', () => {
+      resultPromise = service.createStaffOrder('user-1', {
+        companyId: 'company-1',
+        sectionName: 'بار',
+        orderType: 'sale',
+        entryType: 'cancellation',
+        saleDate: '2026-07-30',
+        items: [{
+          productId: product.id,
+          quantity: '1',
+          unit: 'piece',
+          cancellationReasons: ['customer_disliked', 'replaced_item'],
+        }],
+      });
+    });
+    await resultPromise!;
+
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        entryType: 'cancellation',
+        items: {
+          create: [expect.objectContaining({
+            productId: product.id,
+            quantity: new Prisma.Decimal(-1),
+            cancellationReasons: ['customer_disliked', 'replaced_item'],
+          })],
+        },
+      }),
+    }));
+  });
+
+  it('rejects cancelling more than the recorded net quantity', async () => {
+    const now = new Date('2026-07-30T18:00:00.000Z');
+    const product = {
+      id: 'juice-1',
+      tenantId: 'tenant-1',
+      companyId: 'company-1',
+      categoryId: null,
+      nameAr: 'عصير برتقال',
+      nameEn: 'Orange juice',
+      lastPrice: new Prisma.Decimal(12),
+      variants: null,
+      unit: 'piece',
+      sizes: null,
+      packaging: null,
+      sections: ['بار'],
+      sectionIds: [],
+      productType: 'sale',
+      isActive: true,
+      sortOrder: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const prisma = new TenantPrismaService();
+    jest.spyOn(prisma.orderProduct, 'findMany').mockResolvedValue([product]);
+    jest.spyOn(prisma.staffOrder, 'findMany').mockResolvedValue([]);
+    jest.spyOn(prisma.staffOrderItem, 'findMany').mockResolvedValue([{
+      id: 'recorded-item-1',
+      staffOrderId: 'recorded-order-1',
+      productId: product.id,
+      quantity: new Prisma.Decimal(1),
+      quantityMultiplier: new Prisma.Decimal(1),
+      size: null,
+      packaging: null,
+      unit: 'piece',
+      unitPrice: new Prisma.Decimal(12),
+      notes: null,
+      cancellationReasons: null,
+      createdAt: now,
+    }]);
+    const createSpy = jest.spyOn(prisma.staffOrder, 'create');
+    const service = new OrdersStaffService(prisma, new OrdersStaffReportService(prisma));
+
+    let resultPromise: ReturnType<OrdersStaffService['createStaffOrder']> | undefined;
+    TenantContext.run('tenant-1', 'user-1', () => {
+      resultPromise = service.createStaffOrder('user-1', {
+        companyId: 'company-1',
+        sectionName: 'بار',
+        orderType: 'sale',
+        entryType: 'cancellation',
+        saleDate: '2026-07-30',
+        items: [{
+          productId: product.id,
+          quantity: '2',
+          unit: 'piece',
+          cancellationReasons: ['customer_disliked'],
+        }],
+      });
+    });
+
+    await expect(resultPromise!).rejects.toThrow('كمية الإلغاء');
+    expect(createSpy).not.toHaveBeenCalled();
   });
 });

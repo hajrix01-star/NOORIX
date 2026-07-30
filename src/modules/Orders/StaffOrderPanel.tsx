@@ -28,6 +28,7 @@ import {
 import { resolveItemSection } from './StaffOrdersViewParts';
 import {
   StaffBasketSummary,
+  StaffCancellationModeControl,
   StaffOrderPanelDialogs,
   StaffProductPicker,
   StaffSectionFilter,
@@ -45,6 +46,7 @@ import {
   useOrderSections,
 } from '../../hooks/useOrders';
 import type { OrderProduct, StaffOrder } from '../../types/api';
+import type { StaffQtyModalState } from './StaffOrderPanelModals';
 
 export function StaffOrderPanel({
   companyId,
@@ -72,11 +74,12 @@ export function StaffOrderPanel({
   const [notes, setNotes] = useState('');
   const [search, setSearch] = useState('');
   const [basketLines, setBasketLines] = useState<StaffBasketLine[]>([]);
+  const [entryType, setEntryType] = useState<'issue' | 'cancellation'>('issue');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [sendWhatsAppPrompt, setSendWhatsAppPrompt] = useState<string | null>(null);
-  const [qtyModal, setQtyModal] = useState<{ product: OrderProduct; qty: number; unit: string } | null>(null);
+  const [qtyModal, setQtyModal] = useState<StaffQtyModalState | null>(null);
   const [variantModal, setVariantModal] = useState<ReturnType<typeof defaultVariantModalState> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StaffOrder | null>(null);
 
@@ -140,14 +143,20 @@ export function StaffOrderPanel({
     const unit = resolvedProduct.unit || 'piece';
     const key = staffBasketLineKey({ productId: resolvedProduct.id, size: '', packaging: '', unit });
     const idx = basketLines.findIndex((l) => staffBasketLineKey(l) === key);
-    if (idx >= 0) {
+    if (idx >= 0 && entryType === 'issue') {
       setBasketLines((prev) => {
         const next = [...prev];
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       });
     } else {
-      setQtyModal({ product: resolvedProduct, qty: 1, unit });
+      setQtyModal({
+        product: resolvedProduct,
+        qty: 1,
+        unit,
+        cancellationReasons: [],
+        cancellationNote: '',
+      });
     }
   }
 
@@ -155,6 +164,30 @@ export function StaffOrderPanel({
     if (!qtyModal) return;
     const { product, qty, unit } = qtyModal;
     if (qty <= 0) { setQtyModal(null); return; }
+    if (entryType === 'cancellation') {
+      if (qtyModal.cancellationReasons.length === 0) {
+        showToast(t('staffCancellationReasonRequired'), 'error');
+        return;
+      }
+      if (qtyModal.cancellationReasons.includes('other') && !qtyModal.cancellationNote.trim()) {
+        showToast(t('staffCancellationOtherNoteRequired'), 'error');
+        return;
+      }
+      setBasketLines((prev) => [...prev, {
+        lineId: createDraftLineId(product.id),
+        productId: product.id,
+        quantity: qty,
+        unit,
+        size: '',
+        packaging: '',
+        unitPrice: product.lastPrice ? String(product.lastPrice) : '0',
+        sectionName: resolveItemSection(product, sectionFilter),
+        cancellationReasons: qtyModal.cancellationReasons,
+        cancellationNote: qtyModal.cancellationNote.trim(),
+      }]);
+      setQtyModal(null);
+      return;
+    }
     setBasketLines((prev) => {
       return upsertPlainStaffBasketLine({
         currentLines: prev,
@@ -172,6 +205,16 @@ export function StaffOrderPanel({
     if (!variantModal) return;
     const { product, quantity, unitPrice } = variantModal;
     if (!quantity || parseFloat(quantity) <= 0) { setVariantModal(null); return; }
+    if (entryType === 'cancellation') {
+      if (variantModal.cancellationReasons.length === 0) {
+        showToast(t('staffCancellationReasonRequired'), 'error');
+        return;
+      }
+      if (variantModal.cancellationReasons.includes('other') && !variantModal.cancellationNote.trim()) {
+        showToast(t('staffCancellationOtherNoteRequired'), 'error');
+        return;
+      }
+    }
     const v = resolveVariantFromModal(product, variantModal);
     const sec = resolveItemSection(product, sectionFilter);
     setBasketLines((prev) => [...prev, {
@@ -183,6 +226,8 @@ export function StaffOrderPanel({
       packaging: v.packaging,
       unitPrice: v.unitPrice,
       sectionName: sec,
+      cancellationReasons: entryType === 'cancellation' ? variantModal.cancellationReasons : undefined,
+      cancellationNote: entryType === 'cancellation' ? variantModal.cancellationNote.trim() : undefined,
     }]);
     setVariantModal(null);
   }
@@ -206,6 +251,7 @@ export function StaffOrderPanel({
     setNotes('');
     setSearch('');
     setBasketLines([]);
+    setEntryType('issue');
     setEditingId(null);
     setEditingQtyId(null);
   }
@@ -221,6 +267,7 @@ export function StaffOrderPanel({
     setNotes(order.notes || '');
     setSearch('');
     setBasketLines(mapStaffOrderToBasketLines(order));
+    setEntryType(order.entryType === 'cancellation' ? 'cancellation' : 'issue');
     setEditingId(order.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -256,6 +303,7 @@ export function StaffOrderPanel({
         productsById,
         sectionFilter,
         editingId,
+        entryType,
       });
 
       if (isSale) {
@@ -266,7 +314,12 @@ export function StaffOrderPanel({
         if (!saved?.id) throw new Error(t('saveFailed'));
 
         const savedLogRef = saved.logRef;
-        showToast(savedLogRef ? t('staffSaleSavedWithRef', savedLogRef) : t('staffSaleSaved'), 'success');
+        showToast(
+          entryType === 'cancellation'
+            ? t('staffCancellationSaved')
+            : (savedLogRef ? t('staffSaleSavedWithRef', savedLogRef) : t('staffSaleSaved')),
+          'success',
+        );
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: orderKeys.staffMy(companyId) }),
           queryClient.invalidateQueries({ queryKey: ['salesReport', companyId] }),
@@ -292,7 +345,7 @@ export function StaffOrderPanel({
     } finally {
       setSubmitting(false);
     }
-  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, companyId, productType, isSale, displayLang, t, showToast, createOrder, updateOrder, queryClient]);
+  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, entryType, companyId, productType, isSale, displayLang, t, showToast, createOrder, updateOrder, queryClient]);
 
   const handleResendOrder = useCallback(async (order: StaffOrder) => {
     try {
@@ -335,6 +388,7 @@ export function StaffOrderPanel({
         sendWhatsAppPrompt={sendWhatsAppPrompt}
         qtyModal={qtyModal}
         variantModal={variantModal}
+        isCancellation={entryType === 'cancellation'}
         setDeleteTarget={setDeleteTarget}
         confirmDelete={confirmDelete}
         setSendWhatsAppPrompt={setSendWhatsAppPrompt}
@@ -352,6 +406,18 @@ export function StaffOrderPanel({
         setSectionFilter={setSectionFilter}
         setSearch={setSearch}
       />
+      {isSale ? (
+        <StaffCancellationModeControl
+          isCancellation={entryType === 'cancellation'}
+          t={t}
+          onChange={(nextEntryType) => {
+            setEntryType(nextEntryType);
+            setBasketLines([]);
+            setEditingId(null);
+            setEditingQtyId(null);
+          }}
+        />
+      ) : null}
 
       <StaffProductPicker
         products={products}
@@ -378,6 +444,7 @@ export function StaffOrderPanel({
         lang={lang}
         t={t}
         isSale={isSale}
+        isCancellation={entryType === 'cancellation'}
         basketLogRef={basketLogRef}
         saleDateHint={isSale && sectionFilter
           ? (saleDateStatus?.lastSectionDate

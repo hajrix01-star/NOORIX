@@ -31,6 +31,8 @@ export type {
   OrderSummary,
   OrderType,
   StaffOrder,
+  StaffCancellationReason,
+  StaffOrderEntryType,
   StaffOrderItem,
   StaffOrderLinePayload,
   StaffOrderPayload,

@@ -1,9 +1,78 @@
 import React from 'react';
 import { fmt } from '../../utils/format';
 import { Button, Input, Modal } from '../../ui';
-import type { OrderProduct } from '../../types/api';
+import type { OrderProduct, StaffCancellationReason } from '../../types/api';
+import {
+  STAFF_CANCELLATION_REASONS,
+  STAFF_CANCELLATION_REASON_LABEL_KEYS,
+} from './constants/staffCancellationReasons';
 
 type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
+
+export type StaffQtyModalState = {
+  product: OrderProduct;
+  qty: number;
+  unit: string;
+  cancellationReasons: StaffCancellationReason[];
+  cancellationNote: string;
+};
+
+export function StaffCancellationReasonButtons({
+  reasons,
+  note,
+  t,
+  onReasonsChange,
+  onNoteChange,
+}: {
+  reasons: StaffCancellationReason[];
+  note: string;
+  t: TranslateFn;
+  onReasonsChange: (reasons: StaffCancellationReason[]) => void;
+  onNoteChange: (note: string) => void;
+}) {
+  const selected = new Set(reasons);
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className="text-[13px] font-semibold text-noorix-text">{t('staffCancellationReasons')}</div>
+      <div className="flex flex-wrap gap-2">
+        {STAFF_CANCELLATION_REASONS.map((reason) => {
+          const active = selected.has(reason);
+          return (
+            <Button
+              key={reason}
+              type="button"
+              variant="raw"
+              size="auto"
+              aria-pressed={active}
+              onClick={() => {
+                onReasonsChange(
+                  active
+                    ? reasons.filter((value) => value !== reason)
+                    : [...reasons, reason],
+                );
+              }}
+              className={`min-h-9 rounded-xl border px-3 py-2 text-[12px] font-semibold transition-colors ${
+                active
+                  ? 'border-noorix-red bg-noorix-red text-white'
+                  : 'border-noorix-border bg-noorix-surface text-noorix-text hover:border-noorix-red/60'
+              }`}
+            >
+              {t(STAFF_CANCELLATION_REASON_LABEL_KEYS[reason])}
+            </Button>
+          );
+        })}
+      </div>
+      {selected.has('other') ? (
+        <Input
+          label={t('staffCancellationOtherNote')}
+          value={note}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onNoteChange(event.target.value)}
+          required
+        />
+      ) : null}
+    </div>
+  );
+}
 
 export function StaffWhatsAppPromptModal({
   text,
@@ -50,13 +119,15 @@ export function StaffQtyModal({
   onChange,
   onClose,
   onConfirm,
+  isCancellation = false,
 }: {
-  qtyModal: { product: OrderProduct; qty: number; unit: string } | null;
+  qtyModal: StaffQtyModalState | null;
   lang: string;
   t: TranslateFn;
-  onChange: (next: { product: OrderProduct; qty: number; unit: string } | null) => void;
+  onChange: (next: StaffQtyModalState | null) => void;
   onClose: () => void;
   onConfirm: () => void;
+  isCancellation?: boolean;
 }) {
   if (!qtyModal) return null;
   const quantityStep = ['pack', 'carton'].includes(qtyModal.unit) ? 0.25 : 1;
@@ -112,6 +183,15 @@ export function StaffQtyModal({
           <option value="carton">{t('ordersUnitCarton')}</option>
           <option value="dozen">{t('ordersUnitDozen')}</option>
         </Input>
+        {isCancellation ? (
+          <StaffCancellationReasonButtons
+            reasons={qtyModal.cancellationReasons}
+            note={qtyModal.cancellationNote}
+            t={t}
+            onReasonsChange={(cancellationReasons) => onChange({ ...qtyModal, cancellationReasons })}
+            onNoteChange={(cancellationNote) => onChange({ ...qtyModal, cancellationNote })}
+          />
+        ) : null}
         {qtyModal.product?.lastPrice != null && Number(qtyModal.product.lastPrice) > 0 ? (
           <div className="text-center text-[12px] text-noorix-muted ltr">
             {t('unitPrice')}: {fmt(qtyModal.product.lastPrice)} <span className="nx-sar">SR</span>
@@ -119,7 +199,17 @@ export function StaffQtyModal({
         ) : null}
         <div className="grid grid-cols-2 gap-2 pt-1">
           <Button variant="ghost" size="md" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="success" size="md" onClick={onConfirm}>{t('staffOrderAddItem')}</Button>
+          <Button
+            variant={isCancellation ? 'danger' : 'success'}
+            size="md"
+            onClick={onConfirm}
+            disabled={isCancellation && (
+              qtyModal.cancellationReasons.length === 0
+              || (qtyModal.cancellationReasons.includes('other') && !qtyModal.cancellationNote.trim())
+            )}
+          >
+            {t(isCancellation ? 'staffCancellationAddItem' : 'staffOrderAddItem')}
+          </Button>
         </div>
       </div>
     </Modal>

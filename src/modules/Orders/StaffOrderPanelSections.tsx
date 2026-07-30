@@ -12,7 +12,11 @@ import {
   StaffSentOrderRow,
   StaffSentSaleGroup,
 } from './StaffOrdersSentPanels';
-import { StaffQtyModal, StaffWhatsAppPromptModal } from './StaffOrderPanelModals';
+import {
+  StaffQtyModal,
+  StaffWhatsAppPromptModal,
+  type StaffQtyModalState,
+} from './StaffOrderPanelModals';
 import { OrderConfirmModal } from './components/OrderConfirmModal';
 
 type Translate = (key: string, ...args: unknown[]) => string;
@@ -57,6 +61,45 @@ export function StaffSectionFilter({
           </Button>
         );
       })}
+    </div>
+  );
+}
+
+export function StaffCancellationModeControl({
+  isCancellation,
+  t,
+  onChange,
+}: {
+  isCancellation: boolean;
+  t: Translate;
+  onChange: (entryType: 'issue' | 'cancellation') => void;
+}) {
+  if (!isCancellation) {
+    return (
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="border border-noorix-red/30 text-noorix-red hover:bg-noorix-red/5"
+          onClick={() => onChange('cancellation')}
+        >
+          {t('staffCancellationStart')}
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-noorix-red/30 bg-noorix-red/5 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="font-bold text-noorix-red">{t('staffCancellationModeTitle')}</div>
+        <Button type="button" variant="ghost" size="sm" onClick={() => onChange('issue')}>
+          {t('staffCancellationExit')}
+        </Button>
+      </div>
+      <p className="m-0 text-[12px] leading-relaxed text-noorix-muted">
+        {t('staffCancellationModeHint')}
+      </p>
     </div>
   );
 }
@@ -131,6 +174,7 @@ export function StaffBasketSummary({
   lang,
   t,
   isSale,
+  isCancellation,
   basketLogRef,
   saleDateHint,
   editingQtyId,
@@ -151,6 +195,7 @@ export function StaffBasketSummary({
   lang: string;
   t: Translate;
   isSale: boolean;
+  isCancellation: boolean;
   basketLogRef: string | null;
   saleDateHint?: string;
   editingQtyId: string | null;
@@ -177,7 +222,11 @@ export function StaffBasketSummary({
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
           </svg>
           <span className="text-[14px] font-bold">
-            {isSale ? t('staffSaleBasket') : t('staffOrderBasket')} ({basketLines.length})
+            {isCancellation
+              ? t('staffCancellationBasket')
+              : isSale
+                ? t('staffSaleBasket')
+                : t('staffOrderBasket')} ({basketLines.length})
           </span>
         </div>
         {isSale && basketLogRef ? (
@@ -199,6 +248,7 @@ export function StaffBasketSummary({
           setEditingQtyId={setEditingQtyId}
           setLineQty={setLineQty}
           removeLine={removeLine}
+          isCancellation={isCancellation}
         />
       </div>
 
@@ -225,7 +275,7 @@ export function StaffBasketSummary({
           <Button variant="ghost" size="md" onClick={resetForm} disabled={submitting}>{t('cancel')}</Button>
         )}
         <Button
-          variant={isSale ? 'success' : 'primary'}
+          variant={isCancellation ? 'danger' : isSale ? 'success' : 'primary'}
           size="md"
           className={isSale ? 'min-h-[44px] w-full' : undefined}
           onClick={handleSubmit}
@@ -234,7 +284,7 @@ export function StaffBasketSummary({
           {submitting
             ? (isSale ? t('staffSaleSaving') : t('saving'))
             : isSale
-              ? t('staffSaleSave')
+              ? t(isCancellation ? 'staffCancellationSave' : 'staffSaleSave')
               : editingId
                 ? t('staffOrderUpdate')
                 : t('staffOrderSubmit')}
@@ -332,6 +382,7 @@ export function StaffOrderPanelDialogs({
   sendWhatsAppPrompt,
   qtyModal,
   variantModal,
+  isCancellation,
   setDeleteTarget,
   confirmDelete,
   setSendWhatsAppPrompt,
@@ -348,14 +399,15 @@ export function StaffOrderPanelDialogs({
   lang: string;
   deleteBusy: boolean;
   sendWhatsAppPrompt: string | null;
-  qtyModal: { product: OrderProduct; qty: number; unit: string } | null;
+  qtyModal: StaffQtyModalState | null;
   variantModal: ReturnType<typeof defaultVariantModalState> | null;
+  isCancellation: boolean;
   setDeleteTarget: (order: StaffOrder | null) => void;
   confirmDelete: () => void;
   setSendWhatsAppPrompt: (text: string | null) => void;
   openWhatsApp: (text: string) => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
-  setQtyModal: (value: { product: OrderProduct; qty: number; unit: string } | null) => void;
+  setQtyModal: (value: StaffQtyModalState | null) => void;
   confirmQtyModal: () => void;
   setVariantModal: (value: ReturnType<typeof defaultVariantModalState> | null) => void;
   confirmVariantModal: () => void;
@@ -390,6 +442,7 @@ export function StaffOrderPanelDialogs({
         onChange={setQtyModal}
         onClose={() => setQtyModal(null)}
         onConfirm={confirmQtyModal}
+        isCancellation={isCancellation}
       />
       {variantModal && (
         <VariantPickModal
@@ -399,6 +452,7 @@ export function StaffOrderPanelDialogs({
           onClose={() => setVariantModal(null)}
           onChange={setVariantModal}
           onConfirm={confirmVariantModal}
+          isCancellation={isCancellation}
         />
       )}
     </>

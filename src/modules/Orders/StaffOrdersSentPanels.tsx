@@ -49,11 +49,11 @@ export function StaffSaleLogMetrics({
   t: (key: string, ...args: unknown[]) => string;
   showDivider?: boolean;
 }) {
-  const showMoney = totalAmount.gt(0);
-  if (totalQty <= 0 && !showMoney) return null;
+  const showMoney = !totalAmount.isZero();
+  if (totalQty === 0 && !showMoney) return null;
 
   const parts: React.ReactNode[] = [];
-  if (totalQty > 0) {
+  if (totalQty !== 0) {
     parts.push(
       <span key="qty" className="ltr whitespace-nowrap">
         <span className="text-noorix-muted">{t('staffSaleTotalQty')}: </span>
@@ -240,6 +240,7 @@ export function StaffSentSaleGroup({
   const totalAmount = staffOrdersTotal(orders);
   const totalQty = staffOrdersQty(orders);
   const avgPerOrder = staffSaleAvgPerOrder(totalAmount, totalQty);
+  const isCancellation = primary.entryType === 'cancellation';
 
   return (
     <article className="p-3 sm:p-4 flex flex-col gap-2 overflow-x-auto">
@@ -272,13 +273,18 @@ export function StaffSentSaleGroup({
             <div className="flex flex-wrap items-center gap-2 min-w-0">
               <span className="font-bold text-[15px] text-noorix-blue ltr leading-tight">{logRef || dateLabel}</span>
               <StatusBadge status={primary.status} />
+              {isCancellation ? (
+                <Badge color="red" size="sm">{t('staffCancellationRecord')}</Badge>
+              ) : null}
               {sectionsCount > 1 ? (
                 <Badge color="violet" size="sm">{t('staffSaleSectionsCount', sectionsCount)}</Badge>
               ) : null}
             </div>
-            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => onResend(primary)}>
-              {t('staffSaleResend')}
-            </Button>
+            {!isCancellation ? (
+              <Button size="sm" variant="ghost" className="shrink-0" onClick={() => onResend(primary)}>
+                {t('staffSaleResend')}
+              </Button>
+            ) : null}
           </div>
           <div className="text-[11px] text-noorix-muted flex flex-wrap items-center gap-x-1.5">
             {logRef ? <span>{dateLabel}</span> : null}
@@ -305,14 +311,16 @@ export function StaffSentSaleGroup({
           {sectionsCount > 1 ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-[12px] font-bold text-noorix-text">{order.sectionName || '—'}</span>
-              <div className="flex flex-wrap gap-1">
-                <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
-                <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
-              </div>
+              {order.entryType !== 'cancellation' ? (
+                <div className="flex flex-wrap gap-1">
+                  <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
+                  <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
+                </div>
+              ) : null}
             </div>
           ) : null}
           <StaffSaleItemsTable items={order.items || []} lang={lang} t={t} />
-          {sectionsCount === 1 ? (
+          {sectionsCount === 1 && order.entryType !== 'cancellation' ? (
             <div className="flex flex-wrap gap-1 justify-end">
               <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
               <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>

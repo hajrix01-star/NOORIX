@@ -15,6 +15,8 @@ import {
   isCharcoalCatalogProduct,
 } from './utils/charcoalPackaging';
 import type { OrderProduct, OrderProductVariant } from '../../types/api';
+import { StaffCancellationReasonButtons } from './StaffOrderPanelModals';
+import { STAFF_CANCELLATION_REASON_LABEL_KEYS } from './constants/staffCancellationReasons';
 
 type SelectableOrderProductVariant = OrderProductVariant & { _key: string };
 
@@ -36,6 +38,7 @@ export function StaffBasketTable({
   setEditingQtyId,
   setLineQty,
   removeLine,
+  isCancellation = false,
 }: {
   basketLines: StaffBasketLine[];
   productsById: Map<string, OrderProduct>;
@@ -46,9 +49,11 @@ export function StaffBasketTable({
   setEditingQtyId: (id: string | null) => void;
   setLineQty: (lineId: string, qty: number) => void;
   removeLine: (lineId: string) => void;
+  isCancellation?: boolean;
 }) {
-  const totalQty = basketLines.reduce((n, l) => n + (l.quantity || 0), 0);
-  const totalAmount = basketTotal(basketLines);
+  const quantitySign = isCancellation ? -1 : 1;
+  const totalQty = basketLines.reduce((n, l) => n + (l.quantity || 0), 0) * quantitySign;
+  const totalAmount = basketTotal(basketLines).times(quantitySign);
 
   return (
     <table className="w-full text-[12px] border-collapse min-w-[300px] border border-noorix-border rounded-lg overflow-hidden">
@@ -70,7 +75,7 @@ export function StaffBasketTable({
           const p = productsById.get(row.productId);
           const name = (p ? (lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn)) : row.productId) || '—';
           const variant = formatVariantLabel(row.size, row.packaging, row.unit);
-          const lineAmt = basketLineAmount(row);
+          const lineAmt = basketLineAmount(row).times(quantitySign);
           const isEditingQty = editingQtyId === row.lineId;
           const quantityStep = ['pack', 'carton'].includes(row.unit) ? 0.25 : 1;
           return (
@@ -79,6 +84,13 @@ export function StaffBasketTable({
                 <div className="font-medium text-noorix-text leading-tight truncate" title={name}>{name}</div>
                 {variant ? (
                   <div className="text-[11px] text-noorix-muted ltr truncate" title={variant}>{variant}</div>
+                ) : null}
+                {row.cancellationReasons?.length ? (
+                  <div className="mt-0.5 text-[10px] leading-snug text-noorix-red">
+                    {row.cancellationReasons
+                      .map((reason) => t(STAFF_CANCELLATION_REASON_LABEL_KEYS[reason]))
+                      .join('، ')}
+                  </div>
                 ) : null}
               </td>
               <td className="py-1.5 px-1 align-middle">
@@ -106,7 +118,7 @@ export function StaffBasketTable({
                       type="button"
                       onClick={() => setEditingQtyId(row.lineId)}
                       className="min-w-[1.25rem] h-6 px-0.5 text-[12px] font-bold text-noorix-blue nx-font-numbers"
-                    >{row.quantity}</Button>
+                    >{isCancellation ? `-${row.quantity}` : row.quantity}</Button>
                   )}
                   <Button
                     variant="raw"
@@ -126,7 +138,7 @@ export function StaffBasketTable({
                     )}
                   </td>
                   <td className="py-1.5 px-2 text-end nx-font-numbers ltr font-bold text-noorix-green align-middle whitespace-nowrap">
-                    {lineAmt.gt(0) ? (
+                    {!lineAmt.isZero() ? (
                       <>{fmt(lineAmt.toNumber())} <span className="nx-sar">SR</span></>
                     ) : (
                       <span className="text-noorix-muted">—</span>
@@ -147,7 +159,7 @@ export function StaffBasketTable({
           );
         })}
       </tbody>
-      {showPrices && totalAmount.gt(0) ? (
+      {showPrices && !totalAmount.isZero() ? (
         <tfoot>
           <tr className="bg-noorix-bg-muted/60 border-t border-noorix-border">
             <td className="py-2 px-2 text-[11px] font-semibold text-noorix-muted whitespace-nowrap">
@@ -232,6 +244,7 @@ export function VariantPickModal({
   onClose,
   onChange,
   onConfirm,
+  isCancellation = false,
 }: {
   variantModal: NonNullable<ReturnType<typeof defaultVariantModalState>>;
   lang: string;
@@ -239,6 +252,7 @@ export function VariantPickModal({
   onClose: () => void;
   onChange: (v: ReturnType<typeof defaultVariantModalState>) => void;
   onConfirm: () => void;
+  isCancellation?: boolean;
 }) {
   const product = variantModal.product;
   const name = lang === 'en' ? (product.nameEn || product.nameAr) : (product.nameAr || product.nameEn);
@@ -349,9 +363,28 @@ export function VariantPickModal({
             placeholder="0"
           />
         )}
+        {isCancellation ? (
+          <StaffCancellationReasonButtons
+            reasons={variantModal.cancellationReasons}
+            note={variantModal.cancellationNote}
+            t={t}
+            onReasonsChange={(cancellationReasons) => onChange({ ...variantModal, cancellationReasons })}
+            onNoteChange={(cancellationNote) => onChange({ ...variantModal, cancellationNote })}
+          />
+        ) : null}
         <div className="grid grid-cols-2 gap-2 pt-1">
           <Button variant="ghost" size="md" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="success" size="md" onClick={onConfirm}>{t('staffOrderAddItem')}</Button>
+          <Button
+            variant={isCancellation ? 'danger' : 'success'}
+            size="md"
+            onClick={onConfirm}
+            disabled={isCancellation && (
+              variantModal.cancellationReasons.length === 0
+              || (variantModal.cancellationReasons.includes('other') && !variantModal.cancellationNote.trim())
+            )}
+          >
+            {t(isCancellation ? 'staffCancellationAddItem' : 'staffOrderAddItem')}
+          </Button>
         </div>
       </div>
     </Modal>

@@ -119,4 +119,39 @@ describe('staffOrderPanelModel', () => {
     expect(payload).toMatchObject({ companyId: 'c1', orderType: 'sale', saleDate: '2026-06-29', notes: 'note', sectionName: 'fresh' });
     expect(payload.items[0]).toMatchObject({ productId: 'p1', quantity: '2', unitPrice: '12' });
   });
+
+  it('builds a cancellation payload with per-line reasons while keeping the entered quantity positive', () => {
+    const baseProduct = product({ id: 'p1', unit: 'piece', sections: ['bar'] });
+    const payload = buildStaffOrderPayload({
+      companyId: 'c1',
+      productType: 'sale',
+      isSale: true,
+      entryType: 'cancellation',
+      saleDate: '2026-07-30',
+      lang: 'ar',
+      notes: '',
+      basketLines: [{
+        lineId: 'cancel-line-1',
+        productId: 'p1',
+        quantity: 2,
+        unit: 'piece',
+        size: '',
+        packaging: '',
+        unitPrice: '12',
+        sectionName: 'bar',
+        cancellationReasons: ['customer_disliked', 'replaced_item'],
+        cancellationNote: '',
+      }],
+      productsById: new Map([['p1', baseProduct]]),
+      sectionFilter: 'bar',
+      editingId: null,
+    });
+
+    expect(payload.entryType).toBe('cancellation');
+    expect(payload.items[0]).toMatchObject({
+      productId: 'p1',
+      quantity: '2',
+      cancellationReasons: ['customer_disliked', 'replaced_item'],
+    });
+  });
 });

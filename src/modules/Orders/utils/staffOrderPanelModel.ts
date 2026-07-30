@@ -6,7 +6,13 @@ import {
   staffOrdersTotal,
 } from './staffOrderBasketUtils';
 import { resolveItemSection } from '../StaffOrdersViewParts';
-import type { DisplayLanguage, OrderProduct, StaffOrder, StaffOrderPayload } from '../../../types/api';
+import type {
+  DisplayLanguage,
+  OrderProduct,
+  StaffOrder,
+  StaffOrderEntryType,
+  StaffOrderPayload,
+} from '../../../types/api';
 
 export function createDraftLineId(productId: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -126,6 +132,8 @@ export function mapStaffOrderToBasketLines(order: StaffOrder): StaffBasketLine[]
     packaging: item.packaging || '',
     unitPrice: item.unitPrice != null ? String(item.unitPrice) : '0',
     sectionName: order.sectionName || undefined,
+    cancellationReasons: item.cancellationReasons || undefined,
+    cancellationNote: item.notes || undefined,
   }));
 }
 
@@ -178,6 +186,7 @@ export function buildStaffOrderPayload({
   productsById,
   sectionFilter,
   editingId,
+  entryType = 'issue',
 }: {
   companyId: string;
   productType: 'order' | 'sale';
@@ -189,10 +198,12 @@ export function buildStaffOrderPayload({
   productsById: Map<string, OrderProduct>;
   sectionFilter: string;
   editingId: string | null;
+  entryType?: StaffOrderEntryType;
 }): StaffOrderPayload {
   const payload: StaffOrderPayload = {
     companyId,
     orderType: productType,
+    entryType: isSale ? entryType : 'issue',
     saleDate: isSale ? saleDate : undefined,
     lang,
     notes: notes.trim() || undefined,
@@ -206,6 +217,8 @@ export function buildStaffOrderPayload({
         size: item.size || undefined,
         packaging: item.packaging || undefined,
         unitPrice: item.unitPrice || undefined,
+        notes: item.cancellationNote?.trim() || undefined,
+        cancellationReasons: item.cancellationReasons,
         sectionName: sectionName || undefined,
       };
     }),

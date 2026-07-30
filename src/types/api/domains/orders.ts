@@ -2,6 +2,17 @@ export type OrderProductType = 'order' | 'sale';
 export type OrderType = 'external' | 'internal';
 export type StaffOrderType = 'order' | 'sale';
 export type StaffOrderStatus = 'pending' | 'sent' | 'cancelled';
+export type StaffOrderEntryType = 'issue' | 'cancellation';
+export type StaffCancellationReason =
+  | 'customer_disliked'
+  | 'replaced_item'
+  | 'order_error'
+  | 'registration_error'
+  | 'delayed_order'
+  | 'duplicate_order'
+  | 'customer_changed_mind'
+  | 'item_unavailable'
+  | 'other';
 export type DisplayLanguage = 'ar' | 'en';
 export type MoneyLike = string | number;
 
@@ -221,6 +232,7 @@ export type StaffOrderItem = {
   packaging?: string | null;
   unitPrice?: MoneyLike | null;
   notes?: string | null;
+  cancellationReasons?: StaffCancellationReason[] | null;
   sectionName?: string | null;
 };
 
@@ -230,6 +242,7 @@ export type StaffOrder = {
   userId?: string;
   sectionName: string;
   orderType?: StaffOrderType | string;
+  entryType?: StaffOrderEntryType | string;
   status?: StaffOrderStatus | string;
   logRef?: string | null;
   whatsAppText?: string | null;
@@ -250,6 +263,7 @@ export type StaffOrderLinePayload = {
   packaging?: string;
   unitPrice?: string;
   notes?: string;
+  cancellationReasons?: StaffCancellationReason[];
   sectionName?: string;
 };
 
@@ -257,6 +271,7 @@ export type StaffOrderPayload = {
   companyId: string;
   sectionName?: string;
   orderType: StaffOrderType;
+  entryType?: StaffOrderEntryType;
   saleDate?: string;
   notes?: string;
   items: StaffOrderLinePayload[];

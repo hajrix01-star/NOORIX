@@ -1334,7 +1334,8 @@ model StaffOrder {
   companyId   String    @map("company_id")
   userId      String    @map("user_id")
   sectionName String    @map("section_name")   // ظ…ط·ط¨ط® | ط¨ط§ط± | ظƒط§ط´ظٹط± | ...
-  orderType   String    @default("order") @map("order_type")  // order | sale
+    orderType   String    @default("order") @map("order_type")  // order | sale
+    entryType   String    @default("issue") @map("entry_type")  // issue | cancellation
   status      String    @default("pending")     // pending | sent
   logRef      String?   @map("log_ref")         // ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ظ…ط®طھطµط± ظ„ظ„طھط³ط¬ظٹظ„ ط§ظ„ط¯ط§ط®ظ„ظٹ (L-YYMMDD-NNN)
   saleDate    DateTime? @map("sale_date") @db.Date  // ظٹظˆظ… ط§ظ„ظ…ط¨ظٹط¹ط§طھ (ظ„ظ€ orderType=sale)
@@ -1351,7 +1352,8 @@ model StaffOrder {
 
   @@index([tenantId])
   @@index([companyId])
-  @@index([companyId, status])
+    @@index([companyId, status])
+    @@index([companyId, orderType, entryType, saleDate])
   @@index([companyId, logRef])
   @@index([userId])
   @@map("staff_orders")
@@ -1367,7 +1369,8 @@ model StaffOrderItem {
   packaging    String?  @map("packaging")
   unit         String?
   unitPrice    Decimal  @default(0) @map("unit_price") @db.Decimal(18, 4)
-  notes        String?
+    notes        String?
+    cancellationReasons Json? @map("cancellation_reasons")
   createdAt    DateTime @default(now()) @map("created_at")
 
   staffOrder StaffOrder   @relation(fields: [staffOrderId], references: [id], onDelete: Cascade)

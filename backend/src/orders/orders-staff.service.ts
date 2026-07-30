@@ -16,8 +16,12 @@ import { dateToSaudiYmd, saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 import { parseSaleDateYmd } from './orders-staff-date.util';
 import { suggestNextStaffRegistrationDate } from './orders-staff-registration-coverage.util';
 import { resolveProductSection } from './orders-staff-sections.util';
-import { CreateStaffOrderDto, StaffOrderItemInput } from './orders-staff.types';
+import { CreateStaffOrderDto, StaffOrderItemInput, StaffOrderEntryType } from './orders-staff.types';
 import { OrdersStaffReportService } from './orders-staff-report.service';
+import {
+  normalizeCancellationReasons,
+  staffCancellationVariantKey,
+} from './orders-staff-cancellation.util';
 
 @Injectable()
 export class OrdersStaffService {
@@ -65,6 +69,7 @@ export class OrdersStaffService {
     const baseWhere: Prisma.StaffOrderWhereInput = {
       companyId,
       orderType: 'sale',
+      entryType: 'issue',
       sectionName,
       ...(tenantId ? { tenantId } : {}),
     };
@@ -127,7 +132,11 @@ export class OrdersStaffService {
     });
   }
 
-  private async mapStaffItemsForCreate(companyId: string, items: StaffOrderItemInput[]) {
+  private async mapStaffItemsForCreate(
+    companyId: string,
+    items: StaffOrderItemInput[],
+    entryType: StaffOrderEntryType,
+  ) {
     const productIds = [...new Set(items.map((it) => it.productId).filter(Boolean))];
     const products = productIds.length
       ? await this.prisma.orderProduct.findMany({ where: { companyId, id: { in: productIds } } })
@@ -140,6 +149,7 @@ export class OrdersStaffService {
     const qty = this.validateItemQuantities(items);
     return items.map((it, i) => {
       const v = resolveStaffItemVariant(pmap.get(it.productId), it);
+      const cancellationReasons = normalizeCancellationReasons(it, entryType === 'cancellation');
       return {
         productId: it.productId,
         quantity: qty[i],
@@ -149,8 +159,60 @@ export class OrdersStaffService {
         unit: v.unit,
         unitPrice: v.unitPrice,
         notes: it.notes?.trim() || null,
+        cancellationReasons,
       };
     });
+  }
+
+  private async assertCancellationAvailability(
+    companyId: string,
+    sectionName: string,
+    saleDate: Date,
+    items: Awaited<ReturnType<OrdersStaffService['mapStaffItemsForCreate']>>,
+  ) {
+    const recordedItems = await this.prisma.staffOrderItem.findMany({
+      where: {
+        staffOrder: {
+          companyId,
+          orderType: 'sale',
+          sectionName,
+          saleDate,
+        },
+      },
+      select: {
+        productId: true,
+        quantity: true,
+        size: true,
+        packaging: true,
+        unit: true,
+      },
+    });
+    const availableByVariant = new Map<string, Prisma.Decimal>();
+    for (const item of recordedItems) {
+      const key = staffCancellationVariantKey(item);
+      availableByVariant.set(
+        key,
+        (availableByVariant.get(key) ?? new Prisma.Decimal(0)).plus(item.quantity),
+      );
+    }
+
+    const requestedByVariant = new Map<string, Prisma.Decimal>();
+    for (const item of items) {
+      const key = staffCancellationVariantKey(item);
+      requestedByVariant.set(
+        key,
+        (requestedByVariant.get(key) ?? new Prisma.Decimal(0)).plus(item.quantity),
+      );
+    }
+
+    for (const [key, requested] of requestedByVariant) {
+      const available = availableByVariant.get(key) ?? new Prisma.Decimal(0);
+      if (requested.gt(available)) {
+        throw new BadRequestException(
+          `كمية الإلغاء (${requested.toString()}) أكبر من الكمية المسجلة المتاحة (${available.toString()}) لهذا الصنف.`,
+        );
+      }
+    }
   }
 
   private async createStaffOrderRecord(
@@ -163,8 +225,13 @@ export class OrdersStaffService {
     saleDate: Date | null,
     sentAt: Date | null,
     logRef: string | null = null,
+    entryType: StaffOrderEntryType = 'issue',
   ) {
-    const mapped = await this.mapStaffItemsForCreate(dto.companyId, items);
+    const mapped = await this.mapStaffItemsForCreate(dto.companyId, items, entryType);
+    if (entryType === 'cancellation') {
+      if (!saleDate) throw new BadRequestException('تاريخ الإلغاء مطلوب.');
+      await this.assertCancellationAvailability(dto.companyId, sectionName, saleDate, mapped);
+    }
     return this.prisma.staffOrder.create({
       data: {
         tenantId,
@@ -172,13 +239,20 @@ export class OrdersStaffService {
         userId,
         sectionName,
         orderType,
+        entryType,
         logRef,
         saleDate,
         notes: dto.notes?.trim() || null,
         status: 'sent',
         sentAt,
         items: {
-          create: mapped,
+          create: mapped.map((item) => ({
+            ...item,
+            quantity: entryType === 'cancellation'
+              ? new Prisma.Decimal(item.quantity).negated()
+              : item.quantity,
+            cancellationReasons: item.cancellationReasons ?? Prisma.JsonNull,
+          })),
         },
       },
       include: {
@@ -195,8 +269,12 @@ export class OrdersStaffService {
     if (!dto.items?.length) throw new BadRequestException('ÙŠØ¬Ø¨ Ø¥Ø¶Ø§ÙØ© ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„');
 
     const orderType = dto.orderType === 'sale' ? 'sale' : 'order';
+    const entryType: StaffOrderEntryType = dto.entryType === 'cancellation' ? 'cancellation' : 'issue';
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
     const isSale = orderType === 'sale';
+    if (!isSale && entryType === 'cancellation') {
+      throw new BadRequestException('الإلغاء متاح في التسجيل الداخلي فقط.');
+    }
     const saleDate = isSale ? parseSaleDateYmd(dto.saleDate || saudiDateYmd()) : null;
     const sentAt = new Date();
 
@@ -220,6 +298,7 @@ export class OrdersStaffService {
           saleDate,
           sentAt,
           saleLogRef,
+          entryType,
         ),
       );
     }
@@ -280,6 +359,9 @@ export class OrdersStaffService {
     if (!isSale) {
       throw new BadRequestException('Ù„Ø§ ÙŠÙ…ÙƒÙ† ØªØ¹Ø¯ÙŠÙ„ Ø·Ù„Ø¨ ØªÙ… Ø¥Ø±Ø³Ø§Ù„Ù‡');
     }
+    if (order.entryType === 'cancellation') {
+      throw new BadRequestException('عملية الإلغاء محفوظة كسجل رقابي ولا يمكن تعديلها.');
+    }
 
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
     const data: Prisma.StaffOrderUpdateInput = {};
@@ -298,9 +380,14 @@ export class OrdersStaffService {
       }
       const [[sectionName, sectionItems]] = grouped.entries();
       data.sectionName = sectionName;
-      const mapped = await this.mapStaffItemsForCreate(companyId, sectionItems);
+      const mapped = await this.mapStaffItemsForCreate(companyId, sectionItems, 'issue');
       await this.prisma.staffOrderItem.deleteMany({ where: { staffOrderId: id } });
-      data.items = { create: mapped };
+      data.items = {
+        create: mapped.map((item) => ({
+          ...item,
+          cancellationReasons: item.cancellationReasons ?? Prisma.JsonNull,
+        })),
+      };
     } else if (dto.sectionName?.trim()) {
       data.sectionName = dto.sectionName.trim();
     }
@@ -369,6 +456,9 @@ export class OrdersStaffService {
     if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
     if (order.orderType !== 'sale') {
       throw new BadRequestException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ ØªÙ… Ø¥Ø±Ø³Ø§Ù„Ù‡');
+    }
+    if (order.entryType === 'cancellation') {
+      throw new BadRequestException('عملية الإلغاء محفوظة كسجل رقابي ولا يمكن حذفها.');
     }
     await this.prisma.staffOrder.delete({ where: { id } });
     return { deleted: true };
