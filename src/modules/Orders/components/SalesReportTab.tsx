@@ -36,6 +36,7 @@ function SimpleTable({ headers, rows, emptyMsg }: { headers: string[]; rows: (st
   const columns: SimpleTableColumn<(typeof data)[number]>[] = headers.map((header, index) => ({
     key: `c${index}`,
     label: header,
+    align: 'center',
     render: (_value, row) => row.cells[index] ?? '—',
   }));
   return (
@@ -91,7 +92,9 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
   }
 
   function userName(u: StaffSaleReportUserRow | StaffSaleReportLogRow): string {
-    return (lang === 'en' ? (u.nameEn || u.nameAr) : (u.nameAr || u.nameEn)) || '—';
+    return u.username
+      || (lang === 'en' ? (u.nameEn || u.nameAr) : (u.nameAr || u.nameEn))
+      || '—';
   }
 
   // بيانات كل جدول
@@ -281,7 +284,7 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
             <div className="p-2">
               {activeView === 'log' && (
                 <SimpleTable
-                  headers={['#', t('staffSaleLogRef'), t('date'), t('employee'), t('salesReportSections'), t('quantity'), t('total'), t('avgPerOrder'), t('productSections')]}
+                  headers={['#', t('staffSaleLogRef'), t('date'), t('staffSaleUsername'), t('salesReportSections'), t('quantity'), t('total'), t('avgPerOrder'), t('productSections')]}
                   rows={logRows}
                   emptyMsg={t('salesReportEmpty')}
                 />
@@ -314,7 +317,7 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
               )}
               {activeView === 'user' && (
                 <SimpleTable
-                  headers={['#', t('employee'), t('ordersCount'), t('quantity')]}
+                  headers={['#', t('staffSaleUsername'), t('ordersCount'), t('quantity')]}
                   rows={userRows}
                   emptyMsg={t('salesReportEmpty')}
                 />

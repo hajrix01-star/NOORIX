@@ -27,7 +27,7 @@ describe('buildStaffSalesReportModel', () => {
           ],
         },
       ],
-      users: [{ id: 'user-1', nameAr: 'مستخدم', nameEn: 'User' }],
+      users: [{ id: 'user-1', email: 'operator@noorix.local', nameAr: 'مستخدم', nameEn: 'User' }],
       products: [
         { id: 'product-1', nameAr: 'منتج 1', nameEn: 'Product 1', unit: 'piece' },
         { id: 'product-2', nameAr: 'منتج 2', nameEn: 'Product 2', unit: 'cup' },
@@ -42,11 +42,17 @@ describe('buildStaffSalesReportModel', () => {
       uniqueProducts: 2,
       uniqueSections: 2,
     });
-    expect(model.byUser).toMatchObject([{ userId: 'user-1', ordersCount: 1, qty: 5 }]);
+    expect(model.byUser).toMatchObject([{
+      userId: 'user-1',
+      username: 'operator@noorix.local',
+      ordersCount: 1,
+      qty: 5,
+    }]);
     expect(model.byDay).toEqual([{ date: '2026-06-29', ordersCount: 1, qty: 5 }]);
     expect(model.byLog).toMatchObject([
       {
         operationKey: '29-06-2026-A',
+        username: 'operator@noorix.local',
         qty: 5,
         totalAmount: 35,
         sectionsCount: 2,

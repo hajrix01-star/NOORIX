@@ -342,6 +342,7 @@ export type StaffSaleReportSectionRow = {
 
 export type StaffSaleReportUserRow = {
   userId: string;
+  username?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
   ordersCount: number;
@@ -359,6 +360,7 @@ export type StaffSaleReportLogRow = {
   logRef?: string | null;
   date: string;
   userId: string;
+  username?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
   qty: number;

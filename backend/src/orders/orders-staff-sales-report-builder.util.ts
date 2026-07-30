@@ -22,6 +22,7 @@ type StaffSalesReportOrder = {
 
 type StaffSalesReportUser = {
   id: string;
+  email?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
 };
@@ -51,7 +52,14 @@ export function buildStaffSalesReportModel(params: {
   const dayOps: Record<string, Set<string>> = {};
   const byProduct: Record<string, { productId: string; nameAr: string; nameEn: string | null; qty: number; unit: string; sections: Set<string> }> = {};
   const bySection: Record<string, { sectionName: string; qty: number; ordersCount: number }> = {};
-  const byUser: Record<string, { userId: string; nameAr: string; nameEn: string | null; ordersCount: number; qty: number }> = {};
+  const byUser: Record<string, {
+    userId: string;
+    username: string | null;
+    nameAr: string | null;
+    nameEn: string | null;
+    ordersCount: number;
+    qty: number;
+  }> = {};
   const byDay: Record<string, { date: string; ordersCount: number; qty: number }> = {};
   const byLog: Record<string, {
     operationKey: string;
@@ -91,7 +99,8 @@ export function buildStaffSalesReportModel(params: {
     if (!byUser[uid]) {
       byUser[uid] = {
         userId: uid,
-        nameAr: user?.nameAr || '—',
+        username: user?.email || null,
+        nameAr: user?.nameAr || null,
         nameEn: user?.nameEn || null,
         ordersCount: 0,
         qty: 0,
@@ -147,7 +156,8 @@ export function buildStaffSalesReportModel(params: {
         logRef: row.logRef,
         date: row.date,
         userId: row.userId,
-        nameAr: user?.nameAr || '—',
+        username: user?.email || null,
+        nameAr: user?.nameAr || null,
         nameEn: user?.nameEn || null,
         qty: row.qty,
         totalAmount: Number(row.totalAmount),

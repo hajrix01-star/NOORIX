@@ -447,6 +447,7 @@ export default {
   salesReportNotRegistered: { ar: 'لم يتم التسجيل', en: 'Not registered' },
   salesReportNoMissingDays: { ar: 'لا توجد أيام بلا تسجيل في الفترة المحددة', en: 'No missing log days in the selected period' },
   staffSaleLogRef:          { ar: 'رقم العملية', en: 'Op. ref' },
+  staffSaleUsername:        { ar: 'اسم المستخدم', en: 'Username' },
   staffSaleSectionsCount:   { ar: '{0} أقسام', en: '{0} sections' },
   staffSaleTotalQty:        { ar: 'إجمالي الكمية', en: 'Total qty' },
   staffSaleGrandTotal:      { ar: 'المجموع', en: 'Grand total' },

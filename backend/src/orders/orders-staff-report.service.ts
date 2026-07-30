@@ -79,7 +79,7 @@ export class OrdersStaffReportService {
     return userIds.length
       ? this.prisma.user.findMany({
           where: { ...(tenantId ? { tenantId } : {}), id: { in: userIds } },
-          select: { id: true, nameAr: true, nameEn: true },
+          select: { id: true, email: true, nameAr: true, nameEn: true },
         })
       : [];
   }
