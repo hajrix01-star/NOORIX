@@ -44,6 +44,19 @@ describe('filterProductsForCatalogPrint', () => {
     });
     expect(result.map((product) => product.id)).toEqual(['4']);
   });
+
+  it('filters uncategorized products and applies free-text search', () => {
+    const result = filterProductsForCatalogPrint(
+      [...products, { id: '5', nameAr: 'فحم كرتون', productType: 'order', categoryId: null, sections: ['shisha'] }],
+      {
+        section: '',
+        categoryId: '__none__',
+        productType: 'order',
+        search: 'فحم',
+      },
+    );
+    expect(result.map((product) => product.id)).toEqual(['5']);
+  });
 });
 
 describe('groupProductsByCategory', () => {
@@ -94,7 +107,7 @@ describe('buildItemsCatalogPdfFilename', () => {
 });
 
 describe('expandProductsToPrintRows', () => {
-  it('uses one row per product with combined variant specs', () => {
+  it('uses one detailed row per variant', () => {
     const rows = expandProductsToPrintRows(
       [
         {
@@ -111,10 +124,10 @@ describe('expandProductsToPrintRows', () => {
       unitLabel,
     );
 
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(3);
     expect(rows[0].nameAr).toBe('Chicken');
-    expect(rows[0].spec).toContain('small / bag / kg');
-    expect(rows[0].spec).toContain('·');
-    expect(rows[1].spec).toBe('piece');
+    expect(rows[0]).toMatchObject({ size: 'small', packaging: 'bag', unit: 'kg' });
+    expect(rows[1]).toMatchObject({ size: 'large', packaging: 'box', unit: 'box' });
+    expect(rows[2]).toMatchObject({ nameAr: 'Salt', unit: 'piece' });
   });
 });

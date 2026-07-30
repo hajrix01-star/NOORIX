@@ -125,7 +125,9 @@ export function filterOrderProductsForManageTab(
     });
   }
 
-  if (categoryFilter) {
+  if (categoryFilter === '__none__') {
+    result = result.filter((p) => !p.categoryId);
+  } else if (categoryFilter) {
     result = result.filter((p) => p.categoryId === categoryFilter);
   }
 

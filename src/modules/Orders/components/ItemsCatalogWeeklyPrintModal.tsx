@@ -19,6 +19,7 @@ type Props = {
   productTypeFilter: OrderProductType;
   initialSection?: string;
   initialCategoryId?: string;
+  initialSearch?: string;
 };
 
 export function ItemsCatalogWeeklyPrintModal({
@@ -31,6 +32,7 @@ export function ItemsCatalogWeeklyPrintModal({
   productTypeFilter,
   initialSection = '',
   initialCategoryId = '',
+  initialSearch = '',
 }: Props) {
   const { t, lang } = useTranslation();
   const { companies = [] } = useApp();
@@ -43,21 +45,24 @@ export function ItemsCatalogWeeklyPrintModal({
 
   const [printSection, setPrintSection] = useState(initialSection);
   const [printCategory, setPrintCategory] = useState(initialCategoryId);
+  const [printSearch, setPrintSearch] = useState(initialSearch);
 
   React.useEffect(() => {
     if (open) {
       setPrintSection(initialSection);
       setPrintCategory(initialCategoryId);
+      setPrintSearch(initialSearch);
     }
-  }, [open, initialSection, initialCategoryId]);
+  }, [open, initialSection, initialCategoryId, initialSearch]);
 
   const filters: ItemsCatalogPrintFilters = useMemo(
     () => ({
       section: printSection,
       categoryId: printCategory,
       productType: productTypeFilter,
+      search: printSearch,
     }),
-    [printSection, printCategory, productTypeFilter],
+    [printSection, printCategory, productTypeFilter, printSearch],
   );
 
   const matchCount = useMemo(
@@ -111,7 +116,7 @@ export function ItemsCatalogWeeklyPrintModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t('ordersPrintWeeklySheet')} size="sm">
+    <Modal open={open} onClose={onClose} title={t('ordersPrintWeeklySheet')} size="md">
       {printPreviewModal}
       <div className="flex flex-col gap-4">
         <p className="m-0 text-[13px] text-noorix-muted leading-[1.5]">
@@ -119,34 +124,45 @@ export function ItemsCatalogWeeklyPrintModal({
         </p>
 
         <Input
-          type="select"
-          label={t('ordersPrintCatalogSection')}
-          value={printSection}
-          onChange={(event: ChangeEvent<HTMLSelectElement>) => setPrintSection(event.target.value)}
-        >
-          <option value="">{t('filterAllSections')}</option>
-          <option value="__none__">{t('filterNoSection')}</option>
-          {sections.map((s) => (
-            <option key={s.id} value={s.nameAr}>
-              {s.nameAr}
-              {s.nameEn ? ` / ${s.nameEn}` : ''}
-            </option>
-          ))}
-        </Input>
+          type="search"
+          label={t('ordersPrintCatalogSearch')}
+          value={printSearch}
+          placeholder={t('ordersPrintCatalogSearchPlaceholder')}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setPrintSearch(event.target.value)}
+        />
 
-        <Input
-          type="select"
-          label={t('category')}
-          value={printCategory}
-          onChange={(event: ChangeEvent<HTMLSelectElement>) => setPrintCategory(event.target.value)}
-        >
-          <option value="">{t('filterAllCategories')}</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nameAr || c.nameEn}
-            </option>
-          ))}
-        </Input>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input
+            type="select"
+            label={t('ordersPrintCatalogSection')}
+            value={printSection}
+            onChange={(event: ChangeEvent<HTMLSelectElement>) => setPrintSection(event.target.value)}
+          >
+            <option value="">{t('filterAllSections')}</option>
+            <option value="__none__">{t('filterNoSection')}</option>
+            {sections.map((s) => (
+              <option key={s.id} value={s.nameAr}>
+                {s.nameAr}
+                {s.nameEn ? ` / ${s.nameEn}` : ''}
+              </option>
+            ))}
+          </Input>
+
+          <Input
+            type="select"
+            label={t('category')}
+            value={printCategory}
+            onChange={(event: ChangeEvent<HTMLSelectElement>) => setPrintCategory(event.target.value)}
+          >
+            <option value="">{t('filterAllCategories')}</option>
+            <option value="__none__">{t('ordersPrintCatalogNoCategory')}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nameAr || c.nameEn}
+              </option>
+            ))}
+          </Input>
+        </div>
 
         <div className="text-[12px] text-noorix-muted">
           {t('ordersPrintCatalogMatchCount').replace('{0}', String(matchCount))}

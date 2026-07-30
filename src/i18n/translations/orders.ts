@@ -181,6 +181,7 @@ export default {
   ordersViewOrder: { ar: 'عرض الطلب', en: 'View order' },
   ordersPrintOrder: { ar: 'طباعة الطلب', en: 'Print order' },
   ordersPrintCatalog: { ar: 'طباعة قائمة الأصناف', en: 'Print items list' },
+  ordersItemsReport: { ar: 'تقرير الأصناف', en: 'Items report' },
   ordersPrintCatalogTitle: { ar: 'قائمة الأصناف', en: 'Items list' },
   ordersPrintCatalogHint: {
     ar: 'اختر القسم و/أو الفئة ثم اطبع القائمة — يُستخدمها موظف القسم لتسجيل الكميات المطلوبة.',
@@ -197,6 +198,14 @@ export default {
   ordersPrintCatalogMatchCount: { ar: '{0} صنف جاهز للطباعة', en: '{0} items ready to print' },
   ordersPrintCatalogNoCategory: { ar: 'بدون فئة', en: 'Uncategorized' },
   ordersPrintCatalogSpec: { ar: 'المواصفات', en: 'Specs' },
+  ordersPrintCatalogSearch: { ar: 'بحث في التقرير', en: 'Search report' },
+  ordersPrintCatalogSearchPlaceholder: { ar: 'اسم الصنف أو الفئة أو المواصفات...', en: 'Item, category, or specs...' },
+  ordersPrintCatalogCoverage: { ar: 'اكتمال بيانات التقرير', en: 'Report data coverage' },
+  ordersPrintCatalogItemsCount: { ar: 'صنف', en: 'Items' },
+  ordersPrintCatalogVariantsCount: { ar: 'التركيبات', en: 'Variants' },
+  ordersPrintCatalogMissingCategory: { ar: 'بدون فئة', en: 'Missing category' },
+  ordersPrintCatalogMissingSection: { ar: 'بدون قسم', en: 'Missing section' },
+  ordersPrintCatalogMissingPrice: { ar: 'بدون سعر', en: 'Missing price' },
   ordersPrintCatalogPdfHint: {
     ar: 'اختر «حفظ كـ PDF» من نافذة الطباعة.',
     en: 'Choose «Save as PDF» in the print dialog.',

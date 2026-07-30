@@ -26,12 +26,24 @@ export function CatalogProductTable({
   isLoading,
 }: CatalogProductTableProps) {
   const { t } = useTranslation();
+  const unitLabel = useCallback((unit: string) => {
+    const map: Record<string, string> = {
+      piece: t('ordersUnitPiece'),
+      kg: t('ordersUnitKg'),
+      box: t('ordersUnitBox'),
+      pack: t('ordersUnitPack'),
+      half_pack: t('ordersUnitHalfPack'),
+      carton: t('ordersUnitCarton'),
+      dozen: t('ordersUnitDozen'),
+    };
+    return map[unit] || unit;
+  }, [t]);
   const allIds = useMemo(() => rows.map((r) => r.id), [rows]);
   const allSelected = allIds.length > 0 && selectedIds.size === allIds.length;
 
   const renderMobileCard = useCallback((row: OrderProduct) => {
     const secs = Array.isArray(row.sections) && row.sections.length > 0 ? row.sections : [];
-    const priceFull = productVariantsSummary(row);
+    const specs = productVariantsSummary(row, unitLabel);
     const priceShort = productPriceLineShort(row);
     const categoryLabel = row.category?.nameAr || row.category?.nameEn || null;
     const { nameAr, nameEn, brand } = parseProductDisplayNames(row);
@@ -92,17 +104,20 @@ export function CatalogProductTable({
             ))}
           </div>
         )}
-        <div className="flex items-center justify-between gap-2 min-w-0 ps-7">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 min-w-0 ps-7">
+          <span className="text-[12px] leading-snug text-noorix-muted break-words min-w-0">
+            {specs}
+          </span>
           <span
-            className="text-[13px] font-bold nx-font-numbers ltr min-w-0 flex-1 break-all text-noorix-text"
-            title={priceFull}
+            className="text-[13px] font-bold nx-font-numbers ltr whitespace-nowrap text-noorix-text"
+            title={priceShort}
           >
             {priceShort}
           </span>
         </div>
       </div>
     );
-  }, [selectedIds, onToggleSelect, onEdit, t]);
+  }, [selectedIds, onToggleSelect, onEdit, t, unitLabel]);
 
   const columns = useMemo(() => [
     {
@@ -167,16 +182,28 @@ export function CatalogProductTable({
       },
     },
     {
+      key: 'spec',
+      label: t('ordersPrintCatalogSpec'),
+      render: (_: unknown, row: OrderProduct) => {
+        const spec = productVariantsSummary(row, unitLabel);
+        return (
+          <span className="text-[12px] text-noorix-muted block max-w-[230px] truncate" title={spec}>
+            {spec}
+          </span>
+        );
+      },
+    },
+    {
       key: 'price',
       label: t('ordersVariantPrice'),
       numeric: true,
       render: (_: unknown, row: OrderProduct) => (
-        <span className="nx-font-numbers ltr text-noorix-text" title={productVariantsSummary(row)}>
-          {productVariantsSummary(row)}
+        <span className="nx-font-numbers ltr whitespace-nowrap font-semibold text-noorix-text">
+          {productPriceLineShort(row)}
         </span>
       ),
     },
-  ], [allSelected, allIds, selectedIds, onToggleSelect, onToggleAll, onEdit, t]);
+  ], [allSelected, allIds, selectedIds, onToggleSelect, onToggleAll, onEdit, t, unitLabel]);
 
   return (
     <SmartTable
@@ -189,7 +216,7 @@ export function CatalogProductTable({
       emptyMessage={t('ordersNoProductsYet')}
       renderMobileCard={renderMobileCard}
       stripeMobileCards
-      tableMinWidth={900}
+      tableMinWidth={1060}
       getRowClassName={(row) => (selectedIds.has(row.id) ? 'bg-noorix-bg-muted/60' : undefined)}
     />
   );

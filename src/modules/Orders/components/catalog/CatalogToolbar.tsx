@@ -67,8 +67,6 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
     { key: 'template', label: t('ordersDownloadImportTemplate'), onClick: onDownloadTemplate },
     { key: 'import', label: t('import'), onClick: onImport, disabled: importPending },
     { key: 'export', label: t('exportExcel'), onClick: onExport, hidden: exportDisabled },
-    { key: 'print', label: t('ordersPrintCatalog'), onClick: onPrintCatalog, hidden: printDisabled },
-    { key: 'weekly', label: t('ordersPrintWeeklySheet'), onClick: onPrintWeekly, hidden: printDisabled },
     ...(productType === 'order' && onPreset
       ? [{ key: 'preset', label: presetBusy ? t('saving') : t('ordersPresetCatalogButton'), onClick: onPreset, disabled: presetBusy }]
       : []),
@@ -81,6 +79,12 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
           + {t('ordersAddProduct')}
         </Button>
         <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="ghost" onClick={onPrintCatalog} disabled={printDisabled}>
+            {t('ordersItemsReport')}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onPrintWeekly} disabled={printDisabled}>
+            {t('ordersPrintWeeklySheet')}
+          </Button>
           {selectedCount > 0 && (
             <>
               <Button size="sm" variant="ghost" onClick={onBulkSections}>
@@ -131,7 +135,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
             options={categories.map((c) => ({
               value: c.id,
               label: c.nameAr || c.nameEn || c.id,
-            }))}
+            })).concat([{ value: '__none__', label: t('ordersPrintCatalogNoCategory') }])}
             aria-label={t('category')}
           />
         </div>
@@ -144,7 +148,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
             ✕ {t('clearFilters')}
           </Button>
         )}
-        <span className="text-[12px] text-noorix-muted shrink-0 sm:ms-auto">
+        <span className="inline-flex h-8 items-center rounded-full border border-noorix-border bg-noorix-bg-muted px-3 text-[12px] text-noorix-muted shrink-0 sm:ms-auto">
           {filteredCount} / {totalCount}
         </span>
       </FilterToolbar>

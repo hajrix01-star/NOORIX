@@ -6,13 +6,20 @@ export type ItemsCatalogPrintFilters = {
   section: string;
   categoryId: string;
   productType: OrderProductType;
+  search?: string;
 };
 
-type PrintRow = {
+export type PrintRow = {
   num: number;
   nameAr: string;
   nameEn: string;
-  spec: string;
+  category: string;
+  sections: string;
+  size: string;
+  packaging: string;
+  unit: string;
+  multiplier: string;
+  lastPrice: string;
 };
 
 export function buildProductSpec(p: OrderProduct, unitLabel: (u: string) => string): string {
@@ -21,7 +28,7 @@ export function buildProductSpec(p: OrderProduct, unitLabel: (u: string) => stri
     return variants
       .map((v: OrderProductVariant) => {
         const parts = [v.size, v.packaging, unitLabel(v.unit || 'piece')].filter((x) => x && x !== '—');
-        if (Number(v.quantityMultiplier ?? 1) !== 1) parts.push(`×${v.quantityMultiplier} علبة`);
+        if (Number(v.quantityMultiplier ?? 1) !== 1) parts.push(`×${v.quantityMultiplier}`);
         return parts.join(' / ') || '—';
       })
       .join(' · ');
@@ -42,7 +49,13 @@ function buildPrintRow(r: PrintRow): PrintHtmlTableRow {
     cells: [
       { value: r.num, className: 'col-num' },
       { html: renderCatalogProductName(r.nameAr, r.nameEn), className: 'col-name' },
-      { value: r.spec, className: 'col-spec' },
+      { value: r.category, className: 'col-category' },
+      { value: r.sections, className: 'col-sections' },
+      { value: r.size, className: 'col-size' },
+      { value: r.packaging, className: 'col-packaging' },
+      { value: r.unit, className: 'col-unit' },
+      { value: r.multiplier, className: 'col-multiplier' },
+      { value: r.lastPrice, className: 'col-price' },
       { value: '', className: 'col-qty' },
       { value: '', className: 'col-notes' },
     ],
@@ -62,7 +75,9 @@ function esc(v: unknown) {
 export function filterProductsForCatalogPrint(products: OrderProduct[], filters: ItemsCatalogPrintFilters) {
   let result = (products || []).filter((p) => (p.productType || 'order') === filters.productType);
 
-  if (filters.categoryId) {
+  if (filters.categoryId === '__none__') {
+    result = result.filter((p) => !p.categoryId);
+  } else if (filters.categoryId) {
     result = result.filter((p) => p.categoryId === filters.categoryId);
   }
 
@@ -72,6 +87,28 @@ export function filterProductsForCatalogPrint(products: OrderProduct[], filters:
     result = result.filter((p) => {
       const secs = p.sections as string[] | null;
       return secs && secs.includes(filters.section);
+    });
+  }
+
+  const query = String(filters.search || '').trim().toLocaleLowerCase();
+  if (query) {
+    result = result.filter((p) => {
+      const variants = Array.isArray(p.variants) ? p.variants : [];
+      const haystack = [
+        p.nameAr,
+        p.nameEn,
+        p.category?.nameAr,
+        p.category?.nameEn,
+        ...(p.sections || []),
+        ...variants.flatMap((variant) => [
+          variant.size,
+          variant.packaging,
+          variant.unit,
+          variant.quantityMultiplier,
+          variant.lastPrice,
+        ]),
+      ].filter(Boolean).join(' ').toLocaleLowerCase();
+      return haystack.includes(query);
     });
   }
 
@@ -123,13 +160,47 @@ export function groupProductsByCategory(
   return groups;
 }
 
-export function expandProductsToPrintRows(products: OrderProduct[], unitLabel: (u: string) => string): PrintRow[] {
-  return products.map((p, idx) => ({
-    num: idx + 1,
-    nameAr: p.nameAr || '—',
-    nameEn: p.nameEn || '',
-    spec: buildProductSpec(p, unitLabel),
-  }));
+export function expandProductsToPrintRows(
+  products: OrderProduct[],
+  unitLabel: (u: string) => string,
+  categories: OrderCategory[] = [],
+): PrintRow[] {
+  let num = 0;
+  return products.flatMap((p) => {
+    const variants = Array.isArray(p.variants) && p.variants.length > 0
+      ? p.variants
+      : [{
+          size: p.sizes || '',
+          packaging: p.packaging || '',
+          unit: p.unit || 'piece',
+          quantityMultiplier: 1,
+          lastPrice: p.lastPrice,
+        }];
+    const category = p.category?.nameAr
+      || p.category?.nameEn
+      || categories.find((item) => item.id === p.categoryId)?.nameAr
+      || categories.find((item) => item.id === p.categoryId)?.nameEn
+      || '—';
+    const sections = Array.isArray(p.sections) && p.sections.length > 0 ? p.sections.join(' · ') : '—';
+
+    return variants.map((variant) => {
+      num += 1;
+      const multiplier = Number(variant.quantityMultiplier ?? 1);
+      const price = Number(variant.lastPrice ?? p.lastPrice ?? 0);
+      return {
+        num,
+        nameAr: p.nameAr || '—',
+        nameEn: p.nameEn || '',
+        category,
+        sections,
+        size: variant.size || '—',
+        packaging: variant.packaging || '—',
+        unit: unitLabel(variant.unit || p.unit || 'piece'),
+        multiplier: Number.isFinite(multiplier) ? `×${multiplier}` : '×1',
+        lastPrice: Number.isFinite(price) && price > 0 ? String(price) : '—',
+      };
+    });
+  });
 }
 
 export function buildItemsCatalogPrintSubtitle(
@@ -147,9 +218,15 @@ export function buildItemsCatalogPrintSubtitle(
     parts.push(`${t('ordersPrintCatalogSection')}: ${sec?.nameAr || filters.section}`);
   }
 
-  if (filters.categoryId) {
+  if (filters.categoryId === '__none__') {
+    parts.push(`${t('category')}: ${t('ordersPrintCatalogNoCategory')}`);
+  } else if (filters.categoryId) {
     const cat = categories.find((c) => c.id === filters.categoryId);
     parts.push(`${t('category')}: ${cat?.nameAr || cat?.nameEn || ''}`);
+  }
+
+  if (filters.search) {
+    parts.push(`${t('ordersPrintCatalogSearch')}: ${filters.search}`);
   }
 
   return parts.join(' · ') || t('ordersPrintCatalogAllItems');
@@ -160,6 +237,7 @@ export function buildItemsCatalogPrintHtml(
   t: (key: string) => string,
   unitLabel: (u: string) => string,
   groupByCategory: boolean,
+  categories: OrderCategory[] = [],
 ) {
   let num = 0;
   const bodyRows: PrintHtmlTableRow[] = [];
@@ -168,23 +246,38 @@ export function buildItemsCatalogPrintHtml(
     if (groupByCategory) {
       bodyRows.push({
         className: 'cat-header',
-        cells: [{ value: `${t('category')}: ${group.categoryName}`, colSpan: 5 }],
+        cells: [{ value: `${t('category')}: ${group.categoryName}`, colSpan: 11 }],
       });
     }
 
-    const groupRows = group.products.map((p) => ({
-      nameAr: p.nameAr || '—',
-      nameEn: p.nameEn || '',
-      spec: buildProductSpec(p, unitLabel),
-    }));
-
+    const groupRows = expandProductsToPrintRows(group.products, unitLabel, categories);
     groupRows.forEach((row) => {
       num += 1;
-      bodyRows.push(buildPrintRow({ num, ...row }));
+      bodyRows.push(buildPrintRow({ ...row, num }));
     });
   }
 
-  return `<p class="print-hint">${esc(t('ordersPrintCatalogFillQty'))}</p>
+  const allProducts = groups.flatMap((group) => group.products);
+  const variantsCount = allProducts.reduce((total, product) => {
+    const count = Array.isArray(product.variants) && product.variants.length > 0 ? product.variants.length : 1;
+    return total + count;
+  }, 0);
+  const missingCategory = allProducts.filter((product) => !product.categoryId).length;
+  const missingSection = allProducts.filter((product) => !product.sections?.length).length;
+  const missingPrice = allProducts.filter((product) => {
+    const variants = Array.isArray(product.variants) ? product.variants : [];
+    if (variants.length > 0) return variants.every((variant) => Number(variant.lastPrice || 0) <= 0);
+    return Number(product.lastPrice || 0) <= 0;
+  }).length;
+
+  return `<div class="report-summary" aria-label="${esc(t('ordersPrintCatalogCoverage'))}">
+  <span><strong>${allProducts.length}</strong> ${esc(t('ordersPrintCatalogItemsCount'))}</span>
+  <span><strong>${variantsCount}</strong> ${esc(t('ordersPrintCatalogVariantsCount'))}</span>
+  <span><strong>${missingCategory}</strong> ${esc(t('ordersPrintCatalogMissingCategory'))}</span>
+  <span><strong>${missingSection}</strong> ${esc(t('ordersPrintCatalogMissingSection'))}</span>
+  <span><strong>${missingPrice}</strong> ${esc(t('ordersPrintCatalogMissingPrice'))}</span>
+</div>
+<p class="print-hint">${esc(t('ordersPrintCatalogFillQty'))}</p>
 ${buildPrintHtmlTable({
   tableClassName: 'catalog-table',
   wrapperClassName: null,
@@ -192,13 +285,19 @@ ${buildPrintHtmlTable({
     cells: [
       { value: '#', className: 'col-num' },
       { value: t('productNameAr'), className: 'col-name' },
-      { value: t('ordersPrintCatalogSpec'), className: 'col-spec' },
+      { value: t('category'), className: 'col-category' },
+      { value: t('productSections'), className: 'col-sections' },
+      { value: t('ordersProductSize'), className: 'col-size' },
+      { value: t('ordersProductPackaging'), className: 'col-packaging' },
+      { value: t('unit'), className: 'col-unit' },
+      { value: t('ordersVariantMultiplier'), className: 'col-multiplier' },
+      { value: t('ordersVariantPrice'), className: 'col-price' },
       { value: t('quantity'), className: 'col-qty' },
       { value: t('ordersPrintCatalogNotes'), className: 'col-notes' },
     ],
   }],
   bodyRows,
-  emptyColSpan: 5,
+  emptyColSpan: 11,
 })}`;
 }
 
@@ -217,6 +316,22 @@ body { font-size: 11px; line-height: 1.35; }
   color: #475569;
   line-height: 1.35;
 }
+.report-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 7px;
+}
+.report-summary span {
+  padding: 4px 7px;
+  border: 1px solid #dbe3ec;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.report-summary strong { color: #0f172a; }
 .catalog-table { font-size: 11px; }
 .catalog-table th,
 .catalog-table td {
@@ -226,12 +341,18 @@ body { font-size: 11px; line-height: 1.35; }
 }
 .catalog-table th { font-size: 11px; font-weight: 700; }
 .col-num { width: 26px; min-width: 26px; text-align: center; }
-.col-name { min-width: 110px; }
-.col-spec { font-size: 10px; color: #334155; }
+.col-name { width: 145px; min-width: 120px; }
+.col-category { width: 76px; }
+.col-sections { width: 86px; }
+.col-size { width: 58px; }
+.col-packaging { width: 68px; }
+.col-unit { width: 50px; }
+.col-multiplier { width: 54px; text-align: center; }
+.col-price { width: 56px; text-align: center; direction: ltr; }
 .name-ar { font-weight: 600; font-size: 11px; }
 .name-en { font-size: 10px; color: #64748b; font-weight: 400; }
 .col-qty { width: 52px; min-width: 52px; height: 22px; }
-.col-notes { width: 64px; min-width: 64px; height: 22px; }
+.col-notes { width: 72px; min-width: 64px; height: 22px; }
 tr.cat-header td {
   background: #e8f0fa;
   color: #185FA5;
@@ -281,7 +402,9 @@ export function buildItemsCatalogPdfFilename(
     parts.push(slugPart(sec?.nameAr || sec?.nameEn || filters.section));
   }
 
-  if (filters.categoryId) {
+  if (filters.categoryId === '__none__') {
+    parts.push('no-category');
+  } else if (filters.categoryId) {
     const cat = categories.find((c) => c.id === filters.categoryId);
     parts.push(slugPart(cat?.nameAr || cat?.nameEn || 'category'));
   }
@@ -314,7 +437,7 @@ function prepareItemsCatalogDocument(opts: ItemsCatalogOutputOpts) {
   return {
     empty: false as const,
     subtitle,
-    body: buildItemsCatalogPrintHtml(groups, opts.t, opts.unitLabel, groupByCategory),
+    body: buildItemsCatalogPrintHtml(groups, opts.t, opts.unitLabel, groupByCategory, opts.categories),
     pdfFilename: buildItemsCatalogPdfFilename(opts.filters, opts.categories, opts.sections),
   };
 }
@@ -334,9 +457,9 @@ export function buildItemsCatalogDocumentHtml(
     subtitle: doc.subtitle,
     body: doc.body,
     extraCss: CATALOG_PRINT_EXTRA_CSS,
-    landscape: false,
+    landscape: true,
     pageMarginMm: 8,
-    showPageCounter: false,
+    showPageCounter: true,
     htmlLang: opts.lang === 'en' ? 'en' : 'ar',
     htmlDir: opts.lang === 'en' ? 'ltr' : 'rtl',
   });

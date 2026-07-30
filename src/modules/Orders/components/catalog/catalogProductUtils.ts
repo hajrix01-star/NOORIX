@@ -24,33 +24,49 @@ export function parseProductDisplayNames(row: { nameAr?: string | null; nameEn?:
   };
 }
 
-export function productVariantsSummary(p: OrderProduct): string {
+export function productVariantsSummary(
+  p: OrderProduct,
+  unitLabel: (unit: string) => string = (unit) => unit,
+): string {
   const variants = Array.isArray(p?.variants) ? p.variants : [];
   if (variants.length > 0) {
     return variants
-      .map((v: OrderProductVariant) =>
-        `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'} ×${fmt(v.quantityMultiplier ?? 1)}: ${fmt(v.lastPrice ?? 0)}`
-      )
-      .join(' | ');
+      .map((v: OrderProductVariant) => {
+        const parts = [
+          v.size,
+          v.packaging,
+          unitLabel(v.unit || 'piece'),
+        ].filter((value, index, values) => (
+          value
+          && value !== '—'
+          && values.findIndex((candidate) => String(candidate).trim() === String(value).trim()) === index
+        ));
+        const multiplier = Number(v.quantityMultiplier ?? 1);
+        if (Number.isFinite(multiplier) && multiplier !== 1) {
+          parts.push(`×${fmt(multiplier, 2)}`);
+        }
+        return parts.join(' / ') || unitLabel('piece');
+      })
+      .join(' · ');
   }
-  if (p?.lastPrice != null && Number(p.lastPrice) > 0) return fmt(p.lastPrice);
-  return '—';
+  return unitLabel(p.unit || 'piece') || '—';
 }
 
-/** ملخص سعر مختصر للجوال (سطر واحد) */
+/** السعر فقط، دون خلطه بالحجم أو التغليف أو الوحدة. */
 export function productPriceLineShort(p: OrderProduct): string {
   const variants = Array.isArray(p?.variants) ? p.variants : [];
-  if (variants.length > 1) {
-    const prices = variants
-      .map((v: OrderProductVariant) => Number.parseFloat(String(v.lastPrice ?? '')))
-      .filter((n: number) => !Number.isNaN(n) && n > 0);
-    if (prices.length > 0) {
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
-      return min === max ? fmt(min) : `${fmt(min)} – ${fmt(max)}`;
-    }
+  const prices = variants
+    .map((v: OrderProductVariant) => Number.parseFloat(String(v.lastPrice ?? '')))
+    .filter((n: number) => Number.isFinite(n) && n > 0);
+
+  if (prices.length > 0) {
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    return min === max ? fmt(min, 2) : `${fmt(min, 2)} – ${fmt(max, 2)}`;
   }
-  return productVariantsSummary(p);
+
+  const simplePrice = Number.parseFloat(String(p?.lastPrice ?? ''));
+  return Number.isFinite(simplePrice) && simplePrice > 0 ? fmt(simplePrice, 2) : '—';
 }
 
 export function productHasAdvancedVariants(p: { variants?: OrderProductVariant[] | unknown }): boolean {

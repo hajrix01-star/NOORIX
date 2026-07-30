@@ -208,6 +208,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         productTypeFilter={catalogProductType}
         initialSection={productFilterSection}
         initialCategoryId={productFilterCategory}
+        initialSearch={productSearchQuery}
       />
       <ItemsCatalogWeeklyPrintModal
         open={showWeeklyPrintModal}
@@ -219,6 +220,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         productTypeFilter={catalogProductType}
         initialSection={productFilterSection}
         initialCategoryId={productFilterCategory}
+        initialSearch={productSearchQuery}
       />
       {showImportModal && (
         <OrdersImportModal
