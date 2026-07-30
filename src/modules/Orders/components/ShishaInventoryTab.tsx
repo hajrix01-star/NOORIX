@@ -17,11 +17,19 @@ import type { SimpleTableColumn } from '../../../ui';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 
 type FormKind = 'opening' | 'stocktake' | null;
-const num = (value: number | string | null | undefined, digits = 3) =>
+const num = (value: number | string | null | undefined, digits = 1) =>
   Number(value ?? 0).toLocaleString('en-US', { maximumFractionDigits: digits });
+const centerColumns = <TRow extends object>(columns: SimpleTableColumn<TRow>[]): SimpleTableColumn<TRow>[] =>
+  columns.map((column) => ({ align: 'center', ...column }));
+const centeredFieldClassName = 'text-center';
 
 function FieldGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>;
+}
+
+function CenteredInput(props: React.ComponentProps<typeof Input>) {
+  const { className = '', ...rest } = props;
+  return <Input {...rest} className={`${centeredFieldClassName} ${className}`.trim()} />;
 }
 
 function CharcoalDailyAlert({ row }: { row: ShishaInventoryDailyRow }) {
@@ -73,7 +81,7 @@ function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
     charcoalActual: 0,
     charcoalAlerts: 0,
   }), [rows]);
-  const columns = useMemo<SimpleTableColumn<ShishaInventoryDailyRow>[]>(() => [
+  const columns = useMemo<SimpleTableColumn<ShishaInventoryDailyRow>[]>(() => centerColumns([
     { key: 'date', label: 'التاريخ', minWidth: 110, render: (_v, row) => formatSaudiDate(row.date) },
     { key: 'operations', label: 'العمليات', numeric: true, render: (v) => num(v as number, 0) },
     { key: 'newShisha', label: 'شيشة جديدة', numeric: true, render: (v) => num(v as number, 0) },
@@ -94,7 +102,7 @@ function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
     { key: 'closingHoses', label: 'الليات آخر اليوم', numeric: true, render: (v) => num(v as number, 0) },
     { key: 'openingCharcoalBoxes', label: 'الفحم أول اليوم علبة', numeric: true, render: (v) => num(v as number) },
     { key: 'closingCharcoalBoxes', label: 'الفحم آخر اليوم علبة', numeric: true, cellClassName: 'font-bold', render: (v) => num(v as number) },
-  ], []);
+  ]), []);
   return <div className="space-y-2">
     <SimpleTable columns={columns} data={rows} tableMinWidth={2050} emptyMessage="لا توجد بيانات في الفترة المحددة." stickyHeader />
     <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-noorix-bg-muted px-4 py-3 text-[12px] font-bold">
@@ -112,12 +120,12 @@ function InventoryTable({ rows }: { rows: ShishaInventoryDailyRow[] }) {
 }
 
 function MovementTable({ rows }: { rows: ShishaInventoryMovement[] }) {
-  const columns = useMemo<SimpleTableColumn<ShishaInventoryMovement>[]>(() => [
+  const columns = useMemo<SimpleTableColumn<ShishaInventoryMovement>[]>(() => centerColumns([
     { key: 'transactionDate', label: 'التاريخ', render: (v) => formatSaudiDate(String(v)) },
     { key: 'movementType', label: 'نوع العملية', render: (v) => v === 'opening' ? 'رصيد افتتاحي' : v === 'purchase' ? 'شراء' : 'تصحيح جرد' },
     { key: 'materialType', label: 'المادة', render: (v) => v === 'tobacco' ? 'معسل (جرام)' : v === 'hose' ? 'ليات (حبة)' : 'فحم (حبة)' },
     { key: 'quantityBase', label: 'الكمية', numeric: true, cellClassName: 'font-semibold', render: (v, row) => row.materialType === 'charcoal' ? `${num(Number(v) / 64)} علبة (${num(v as string, 0)} حبة)` : num(v as string) },
-    { key: 'costInclVat', label: 'التكلفة', numeric: true, render: (v) => v == null ? '—' : `${num(v as string, 2)} ر.س` },
+    { key: 'costInclVat', label: 'التكلفة', numeric: true, render: (v) => v == null ? '—' : `${num(v as string)} ر.س` },
     { key: 'invoiceNumber', label: 'الفاتورة', render: (v) => String(v || '—') },
     {
       key: 'createdBy',
@@ -126,7 +134,7 @@ function MovementTable({ rows }: { rows: ShishaInventoryMovement[] }) {
         ? 'الطلبات (آلي)'
         : row.createdBy?.nameAr || row.createdBy?.nameEn || '—',
     },
-  ], []);
+  ]), []);
   return <SimpleTable columns={columns} data={rows} tableMinWidth={760} emptyMessage="لا توجد حركات في الفترة المحددة." />;
 }
 
@@ -197,7 +205,7 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
           <MetricCard color="#0891b2" className="min-h-[132px]"><MetricCard.Header label="الليات المتوفرة" subLabel="لي واحد لكل شيشة جديدة فقط" /><MetricCard.Value value={num(current?.hoses, 0)} currency="لي" /></MetricCard>
           <MetricCard color="#ea580c" className="min-h-[132px]"><MetricCard.Header label="الفحم المتوفر" subLabel={`${num(current?.charcoalPiecesTotal, 0)} حبة`} /><MetricCard.Value value={num(current?.charcoalBoxesTotal)} currency="علبة" /><MetricCard.Footer className="mt-auto border-t border-noorix-border py-2 text-[11px] text-noorix-muted"><span>64 حبة/علبة</span><span>علبة لكل 6 رؤوس</span></MetricCard.Footer></MetricCard>
           <MetricCard color="#16a34a" className="min-h-[132px]"><MetricCard.Header label="استهلاك الفترة" subLabel={`${num(data?.periodTotals?.changes, 0)} تغيير`} /><MetricCard.Value value={num(data?.periodTotals?.tobaccoHeadsConsumed, 0)} currency="رأس" /><MetricCard.Footer className="mt-auto border-t border-noorix-border py-2 text-[11px] text-noorix-muted"><span>معسل</span><span>{num(data?.periodTotals?.tobaccoConsumedKg)} كجم</span></MetricCard.Footer></MetricCard>
-          <MetricCard color="#ca8a04" className="min-h-[132px]"><MetricCard.Header label="متوسط تكلفة المعسل" subLabel={current?.averageCostPerGram == null ? 'أدخل تكلفة المشتريات لحسابها' : `${num(current.averageCostPerGram, 4)} ر.س/جرام`} /><MetricCard.Value value={current?.averageCostPerHead == null ? '—' : num(current.averageCostPerHead, 2)} currency={current?.averageCostPerHead == null ? undefined : 'ر.س/رأس'} /></MetricCard>
+          <MetricCard color="#ca8a04" className="min-h-[132px]"><MetricCard.Header label="متوسط تكلفة المعسل" subLabel={current?.averageCostPerGram == null ? 'أدخل تكلفة المشتريات لحسابها' : `${num(current.averageCostPerGram)} ر.س/جرام`} /><MetricCard.Value value={current?.averageCostPerHead == null ? '—' : num(current.averageCostPerHead)} currency={current?.averageCostPerHead == null ? undefined : 'ر.س/رأس'} /></MetricCard>
         </div>
         <div className={`noorix-surface-card flex flex-col gap-3 border-s-4 p-4 ${
           (data?.periodTotals?.charcoalAlertDays ?? 0) > 0 ? 'border-s-red-500' : 'border-s-emerald-500'
@@ -237,13 +245,13 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
 
       <AdaptiveSheet open={form === 'opening'} onClose={() => setForm(null)} title="تسجيل مخزون البداية" size="lg"><form onSubmit={submitOpening} className="space-y-4">
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800">هذه العملية تنفذ مرة واحدة ولا يمكن تعديلها لاحقاً. تأكد من الكميات قبل الحفظ.</div>
-        <FieldGrid><DateField label="تاريخ بداية التتبع" value={openingDate} onValueChange={setOpeningDate} max={today} required /><Input name="headsPerKg" type="number" label="متوسط الرؤوس لكل كيلو" defaultValue="39" min="1" step="0.01" required /><Input name="tobaccoQuantity" type="number" label="المعسل (كجم)" defaultValue="15" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات (حبة)" defaultValue="0" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم (كرتون)" defaultValue="0" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم (علبة)" defaultValue="0" min="0" step="0.25" required /><Input name="charcoalPieces" type="number" label="الفحم (حبة)" defaultValue="0" min="0" step="1" required /><Input name="tobaccoCostInclVat" type="number" label="تكلفة المعسل شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="hoseCostInclVat" type="number" label="تكلفة الليات شاملة الضريبة (اختياري)" min="0" step="0.01" /><Input name="charcoalCostInclVat" type="number" label="تكلفة الفحم شاملة الضريبة (اختياري)" min="0" step="0.01" /></FieldGrid>
-        <Input name="notes" label="ملاحظات" multiline rows={2} /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'اعتماد مخزون البداية', role: 'save', type: 'submit', loading: initialize.isPending }]} />
+        <FieldGrid><DateField className={centeredFieldClassName} label="تاريخ بداية التتبع" value={openingDate} onValueChange={setOpeningDate} max={today} required /><CenteredInput name="headsPerKg" type="number" label="متوسط الرؤوس لكل كيلو" defaultValue="39" min="1" step="0.01" required /><CenteredInput name="tobaccoQuantity" type="number" label="المعسل (كجم)" defaultValue="15" min="0" step="0.001" required /><CenteredInput name="hoses" type="number" label="الليات (حبة)" defaultValue="0" min="0" step="1" required /><CenteredInput name="charcoalCartons" type="number" label="الفحم (كرتون)" defaultValue="0" min="0" step="1" required /><CenteredInput name="charcoalPacks" type="number" label="الفحم (علبة)" defaultValue="0" min="0" step="0.25" required /><CenteredInput name="charcoalPieces" type="number" label="الفحم (حبة)" defaultValue="0" min="0" step="1" required /><CenteredInput name="tobaccoCostInclVat" type="number" label="تكلفة المعسل شاملة الضريبة (اختياري)" min="0" step="0.01" /><CenteredInput name="hoseCostInclVat" type="number" label="تكلفة الليات شاملة الضريبة (اختياري)" min="0" step="0.01" /><CenteredInput name="charcoalCostInclVat" type="number" label="تكلفة الفحم شاملة الضريبة (اختياري)" min="0" step="0.01" /></FieldGrid>
+        <CenteredInput name="notes" label="ملاحظات" multiline rows={2} /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'اعتماد مخزون البداية', role: 'save', type: 'submit', loading: initialize.isPending }]} />
       </form></AdaptiveSheet>
       <AdaptiveSheet open={form === 'stocktake'} onClose={() => setForm(null)} title="الجرد واعتماد التصحيح" size="lg"><form onSubmit={submitStocktake} className="space-y-4">
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">أدخل الكميات الفعلية. سيحسب نوركس الفرق عن الرصيد الدفتري ويسجله كعملية تصحيح مستقلة غير قابلة للتعديل.</div>
-        <FieldGrid><DateField label="تاريخ الجرد" value={stocktakeDate} onValueChange={setStocktakeDate} max={today} required /><Input name="tobaccoQuantity" type="number" label="المعسل الفعلي (كجم)" min="0" step="0.001" required /><Input name="hoses" type="number" label="الليات الفعلية (حبة)" min="0" step="1" required /><Input name="charcoalCartons" type="number" label="الفحم الفعلي (كرتون)" min="0" step="1" required /><Input name="charcoalPacks" type="number" label="الفحم الفعلي (علبة)" min="0" step="0.25" required /><Input name="charcoalPieces" type="number" label="الفحم الفعلي (حبة)" min="0" step="1" required /></FieldGrid>
-        <Input name="notes" label="سبب أو ملاحظات الجرد" multiline rows={2} required /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'اعتماد الجرد والتصحيح', role: 'save', type: 'submit', loading: stocktake.isPending }]} />
+        <FieldGrid><DateField className={centeredFieldClassName} label="تاريخ الجرد" value={stocktakeDate} onValueChange={setStocktakeDate} max={today} required /><CenteredInput name="tobaccoQuantity" type="number" label="المعسل الفعلي (كجم)" min="0" step="0.001" required /><CenteredInput name="hoses" type="number" label="الليات الفعلية (حبة)" min="0" step="1" required /><CenteredInput name="charcoalCartons" type="number" label="الفحم الفعلي (كرتون)" min="0" step="1" required /><CenteredInput name="charcoalPacks" type="number" label="الفحم الفعلي (علبة)" min="0" step="0.25" required /><CenteredInput name="charcoalPieces" type="number" label="الفحم الفعلي (حبة)" min="0" step="1" required /></FieldGrid>
+        <CenteredInput name="notes" label="سبب أو ملاحظات الجرد" multiline rows={2} required /><DialogActions actions={[{ key: 'cancel', label: t('cancel'), role: 'cancel', onClick: () => setForm(null) }, { key: 'save', label: 'اعتماد الجرد والتصحيح', role: 'save', type: 'submit', loading: stocktake.isPending }]} />
       </form></AdaptiveSheet>
     </div>
   );
