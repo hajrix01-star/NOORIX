@@ -22,6 +22,7 @@ import {
   normalizeCancellationReasons,
   staffCancellationVariantKey,
 } from './orders-staff-cancellation.util';
+import { canEditStaffSaleRecordByLatest } from './orders-staff-edit-policy.util';
 
 @Injectable()
 export class OrdersStaffService {
@@ -29,6 +30,31 @@ export class OrdersStaffService {
     private readonly prisma: TenantPrismaService,
     private readonly report: OrdersStaffReportService,
   ) {}
+
+  private async assertLatestEditableStaffSaleOrder(
+    order: { id: string; companyId: string; userId: string; orderType?: string | null; logRef?: string | null },
+    userRole?: string,
+  ): Promise<void> {
+    if (order.orderType !== 'sale') return;
+
+    const where: Prisma.StaffOrderWhereInput = {
+      companyId: order.companyId,
+      userId: order.userId,
+      orderType: 'sale',
+    };
+    const tenantId = TenantContext.tryGetTenantId();
+    if (tenantId) where.tenantId = tenantId;
+
+    const latest = await this.prisma.staffOrder.findFirst({
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      select: { id: true, logRef: true },
+    });
+
+    if (!canEditStaffSaleRecordByLatest({ target: order, latest, role: userRole })) {
+      throw new ForbiddenException('يمكن تعديل آخر تسجيل داخلي فقط.');
+    }
+  }
 
   private async countStaffSaleOperationsForDay(companyId: string, saleDate: Date): Promise<number> {
     const prefix = staffSaleLogRefPrefix(saleDate);
@@ -343,6 +369,7 @@ export class OrdersStaffService {
     id: string,
     companyId: string,
     userId: string,
+    userRole: string | undefined,
     dto: {
       sectionName?: string;
       notes?: string;
@@ -362,6 +389,7 @@ export class OrdersStaffService {
     if (order.entryType === 'cancellation') {
       throw new BadRequestException('عملية الإلغاء محفوظة كسجل رقابي ولا يمكن تعديلها.');
     }
+    await this.assertLatestEditableStaffSaleOrder(order, userRole);
 
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
     const data: Prisma.StaffOrderUpdateInput = {};
@@ -450,7 +478,7 @@ export class OrdersStaffService {
     return { whatsAppText, logRef: order.logRef };
   }
 
-  async deleteStaffOrder(id: string, companyId: string, userId: string) {
+  async deleteStaffOrder(id: string, companyId: string, userId: string, userRole?: string) {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
     if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
     if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
@@ -460,6 +488,7 @@ export class OrdersStaffService {
     if (order.entryType === 'cancellation') {
       throw new BadRequestException('عملية الإلغاء محفوظة كسجل رقابي ولا يمكن حذفها.');
     }
+    await this.assertLatestEditableStaffSaleOrder(order, userRole);
     await this.prisma.staffOrder.delete({ where: { id } });
     return { deleted: true };
   }

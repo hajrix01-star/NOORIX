@@ -192,6 +192,7 @@ export function StaffSentSaleGroup({
   onResend,
   onEdit,
   onDelete,
+  canMutateOrder,
 }: {
   orders: StaffOrder[];
   lang: string;
@@ -199,6 +200,7 @@ export function StaffSentSaleGroup({
   onResend: (o: StaffOrder) => void;
   onEdit: (o: StaffOrder) => void;
   onDelete: (o: StaffOrder) => void;
+  canMutateOrder?: (o: StaffOrder) => boolean;
 }) {
   const [open, setOpen] = useState(false);
   const primary = orders[0];
@@ -209,6 +211,7 @@ export function StaffSentSaleGroup({
   const sectionsCount = orders.length;
   const totalQty = staffOrdersQty(orders);
   const isCancellation = primary.entryType === 'cancellation';
+  const canMutate = (order: StaffOrder) => canMutateOrder?.(order) ?? order.entryType !== 'cancellation';
 
   return (
     <article className="p-3 sm:p-4 flex flex-col gap-2 overflow-x-auto">
@@ -277,7 +280,7 @@ export function StaffSentSaleGroup({
           {sectionsCount > 1 ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-[12px] font-bold text-noorix-text">{order.sectionName || '—'}</span>
-              {order.entryType !== 'cancellation' ? (
+              {canMutate(order) ? (
                 <div className="flex flex-wrap gap-1">
                   <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
                   <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
@@ -286,7 +289,7 @@ export function StaffSentSaleGroup({
             </div>
           ) : null}
           <StaffSaleItemsTable items={order.items || []} lang={lang} t={t} showPrices={false} />
-          {sectionsCount === 1 && order.entryType !== 'cancellation' ? (
+          {sectionsCount === 1 && canMutate(order) ? (
             <div className="flex flex-wrap gap-1 justify-end">
               <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
               <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>

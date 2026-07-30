@@ -3,8 +3,10 @@ import {
   buildStaffOrderFrequencyMap,
   buildStaffOrderPayload,
   buildStaffQtyMap,
+  canMutateStaffSaleOrder,
   filterStaffOrderProducts,
   groupSentSaleOrders,
+  latestEditableStaffSaleScope,
   mapStaffOrderToBasketLines,
   summarizeSentSales,
   upsertPlainStaffBasketLine,
@@ -118,6 +120,16 @@ describe('staffOrderPanelModel', () => {
     });
     expect(payload).toMatchObject({ companyId: 'c1', orderType: 'sale', saleDate: '2026-06-29', notes: 'note', sectionName: 'fresh' });
     expect(payload.items[0]).toMatchObject({ productId: 'p1', quantity: '2', unitPrice: '12' });
+  });
+
+  it('limits non-owner sale edits to the latest internal log scope', () => {
+    const older = staffOrder({ id: 'old-section', orderType: 'sale', logRef: 'DS-001', createdAt: '2026-07-01' });
+    const latest = staffOrder({ id: 'latest-section', orderType: 'sale', logRef: 'DS-002', createdAt: '2026-07-02' });
+    const latestScope = latestEditableStaffSaleScope([older, latest]);
+
+    expect(canMutateStaffSaleOrder({ order: older, latestScope, isPrivileged: false })).toBe(false);
+    expect(canMutateStaffSaleOrder({ order: latest, latestScope, isPrivileged: false })).toBe(true);
+    expect(canMutateStaffSaleOrder({ order: older, latestScope, isPrivileged: true })).toBe(true);
   });
 
   it('builds a cancellation payload with per-line reasons while keeping the entered quantity positive', () => {

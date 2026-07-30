@@ -309,6 +309,7 @@ export function StaffSentOrdersSection({
   handleResendOrder,
   loadForEdit,
   handleDelete,
+  canMutateOrder,
 }: {
   isSale: boolean;
   sentOrders: StaffOrder[];
@@ -323,6 +324,7 @@ export function StaffSentOrdersSection({
   handleResendOrder: (order: StaffOrder) => void;
   loadForEdit: (order: StaffOrder) => void;
   handleDelete: (order: StaffOrder) => void;
+  canMutateOrder?: (order: StaffOrder) => boolean;
 }) {
   if (sentOrders.length === 0) return null;
 
@@ -352,6 +354,7 @@ export function StaffSentOrdersSection({
               onResend={handleResendOrder}
               onEdit={loadForEdit}
               onDelete={handleDelete}
+              canMutateOrder={canMutateOrder}
             />
           ))}
         </div>

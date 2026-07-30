@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-export type CurrentAuthUser = { sub?: string; userId?: string };
+export type CurrentAuthUser = { sub?: string; userId?: string; role?: string };
 
 export function requireCurrentUserId(user: CurrentAuthUser): string {
   const userId = user.sub ?? user.userId;
@@ -8,6 +8,10 @@ export function requireCurrentUserId(user: CurrentAuthUser): string {
     throw new BadRequestException('Authenticated user id is required.');
   }
   return userId;
+}
+
+export function resolveCurrentUserRole(user: CurrentAuthUser): string | undefined {
+  return user.role;
 }
 
 export function parseDaysQuery(days: string | undefined, fallback = 30): number {

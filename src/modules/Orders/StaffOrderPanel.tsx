@@ -21,10 +21,13 @@ import {
   filterStaffOrderProducts,
   filterStaffOrdersByType,
   groupSentSaleOrders,
+  canMutateStaffSaleOrder,
+  latestEditableStaffSaleScope,
   mapStaffOrderToBasketLines,
   summarizeSentSales,
   upsertPlainStaffBasketLine,
 } from './utils/staffOrderPanelModel';
+import { useApp } from '../../context/AppContext';
 import { resolveItemSection } from './StaffOrdersViewParts';
 import {
   StaffBasketSummary,
@@ -59,6 +62,7 @@ export function StaffOrderPanel({
   const displayLang = lang === 'en' ? 'en' : 'ar';
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { userRole } = useApp();
 
   const { data: myOrders = [], isLoading, isError: ordersError } = useMyStaffOrders(companyId);
   const { data: allProducts = [] } = useOrderProducts(companyId, productType);
@@ -69,6 +73,7 @@ export function StaffOrderPanel({
   const resendOrder = useResendStaffOrderMutation(companyId);
 
   const isSale = productType === 'sale';
+  const [saleWorkspaceTab, setSaleWorkspaceTab] = useState<'entry' | 'history'>('entry');
   const [sectionFilter, setSectionFilter] = useState('');
   const [saleDate, setSaleDate] = useState(() => getSaudiToday());
   const [notes, setNotes] = useState('');
@@ -113,6 +118,23 @@ export function StaffOrderPanel({
   const sentSalesSummary = useMemo(
     () => summarizeSentSales({ isSale, sentSaleGroups, sentOrders: visibleOrders }),
     [isSale, sentSaleGroups, visibleOrders],
+  );
+  const saleHistoryCount = isSale ? sentSaleGroups.length : visibleOrders.length;
+  const isPrivilegedStaffOrderUser = useMemo(() => {
+    const role = String(userRole || '').toLowerCase();
+    return role === 'owner' || role === 'super_admin';
+  }, [userRole]);
+  const latestEditableSaleScope = useMemo(
+    () => latestEditableStaffSaleScope(visibleOrders),
+    [visibleOrders],
+  );
+  const canMutateSaleOrder = useCallback(
+    (order: StaffOrder) => canMutateStaffSaleOrder({
+      order,
+      latestScope: latestEditableSaleScope,
+      isPrivileged: isPrivilegedStaffOrderUser,
+    }),
+    [isPrivilegedStaffOrderUser, latestEditableSaleScope],
   );
 
   const editingOrder = useMemo(
@@ -272,6 +294,15 @@ export function StaffOrderPanel({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  const loadEditableOrder = useCallback((order: StaffOrder) => {
+    if (isSale && !canMutateSaleOrder(order)) {
+      showToast(t('staffSaleLatestOnly'), 'warning');
+      return;
+    }
+    loadForEdit(order);
+    if (isSale) setSaleWorkspaceTab('entry');
+  }, [canMutateSaleOrder, isSale, showToast, t]);
+
   const handleSubmit = useCallback(async () => {
     if (basketLines.length === 0) { showToast(t('staffOrderItemsRequired'), 'error'); return; }
     if (isSale && !sectionFilter.trim()) {
@@ -362,8 +393,12 @@ export function StaffOrderPanel({
   }, [displayLang, resendOrder, t, showToast]);
 
   const handleDelete = useCallback(async (order: StaffOrder) => {
+    if (isSale && !canMutateSaleOrder(order)) {
+      showToast(t('staffSaleLatestOnly'), 'warning');
+      return;
+    }
     setDeleteTarget(order);
-  }, []);
+  }, [canMutateSaleOrder, isSale, showToast, t]);
 
   const confirmDelete = useCallback(async () => {
     if (!deleteTarget) return;
@@ -376,6 +411,9 @@ export function StaffOrderPanel({
       showToast(error instanceof Error ? error.message : t('deleteFailed'), 'error');
     }
   }, [deleteTarget, isSale, editingId, t, showToast, deleteOrder]);
+
+  const showEntryWorkspace = !isSale || saleWorkspaceTab === 'entry';
+  const showHistoryWorkspace = !isSale || saleWorkspaceTab === 'history';
 
   return (
     <div className="flex flex-col gap-4">
@@ -399,38 +437,72 @@ export function StaffOrderPanel({
         setVariantModal={setVariantModal}
         confirmVariantModal={confirmVariantModal}
       />
-      <StaffSectionFilter
-        sections={sections}
-        sectionFilter={sectionFilter}
-        lang={lang}
-        setSectionFilter={setSectionFilter}
-        setSearch={setSearch}
-      />
       {isSale ? (
-        <StaffCancellationModeControl
-          isCancellation={entryType === 'cancellation'}
-          t={t}
-          onChange={(nextEntryType) => {
-            setEntryType(nextEntryType);
-            setBasketLines([]);
-            setEditingId(null);
-            setEditingQtyId(null);
-          }}
-        />
+        <div className="noorix-surface-card p-1 flex items-center gap-1 overflow-x-auto">
+          <button
+            type="button"
+            className={`min-h-9 rounded-lg px-4 text-[13px] font-bold transition whitespace-nowrap ${
+              saleWorkspaceTab === 'entry'
+                ? 'bg-noorix-green text-white shadow-sm'
+                : 'text-noorix-muted hover:bg-noorix-soft'
+            }`}
+            onClick={() => setSaleWorkspaceTab('entry')}
+          >
+            {t('staffSaleEntryTab')}
+          </button>
+          <button
+            type="button"
+            className={`min-h-9 rounded-lg px-4 text-[13px] font-bold transition whitespace-nowrap ${
+              saleWorkspaceTab === 'history'
+                ? 'bg-noorix-green text-white shadow-sm'
+                : 'text-noorix-muted hover:bg-noorix-soft'
+            }`}
+            onClick={() => setSaleWorkspaceTab('history')}
+          >
+            {t('staffSaleHistoryTab')}
+            <span className="ms-2 rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-noorix-green">
+              {saleHistoryCount}
+            </span>
+          </button>
+        </div>
       ) : null}
 
-      <StaffProductPicker
-        products={products}
-        lang={lang}
-        t={t}
-        search={search}
-        sectionFilter={sectionFilter}
-        qtyMap={qtyMap}
-        freqMap={freqMap}
-        setSearch={setSearch}
-        tapProduct={tapProduct}
-        removeProduct={removeProduct}
-      />
+      {showEntryWorkspace ? (
+        <>
+          <StaffSectionFilter
+            sections={sections}
+            sectionFilter={sectionFilter}
+            lang={lang}
+            setSectionFilter={setSectionFilter}
+            setSearch={setSearch}
+          />
+          {isSale ? (
+            <StaffCancellationModeControl
+              isCancellation={entryType === 'cancellation'}
+              t={t}
+              onChange={(nextEntryType) => {
+                setEntryType(nextEntryType);
+                setBasketLines([]);
+                setEditingId(null);
+                setEditingQtyId(null);
+              }}
+            />
+          ) : null}
+
+          <StaffProductPicker
+            products={products}
+            lang={lang}
+            t={t}
+            search={search}
+            sectionFilter={sectionFilter}
+            qtyMap={qtyMap}
+            freqMap={freqMap}
+            setSearch={setSearch}
+            tapProduct={tapProduct}
+            removeProduct={removeProduct}
+          />
+        </>
+      ) : null}
 
       {ordersError && (
         <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-4 py-3 text-[13px] text-noorix-red">
@@ -438,48 +510,58 @@ export function StaffOrderPanel({
         </div>
       )}
 
-      <StaffBasketSummary
-        basketLines={basketLines}
-        productsById={productsById}
-        lang={lang}
-        t={t}
-        isSale={isSale}
-        isCancellation={entryType === 'cancellation'}
-        basketLogRef={basketLogRef}
-        saleDateHint={isSale && sectionFilter
-          ? (saleDateStatus?.lastSectionDate
-              ? t('staffSaleAutoDateHint', sectionFilter, saleDateStatus.lastSectionDate)
-              : t('staffSaleAutoDateFirstHint', sectionFilter))
-          : undefined}
-        editingQtyId={editingQtyId}
-        saleDate={saleDate}
-        notes={notes}
-        submitting={submitting}
-        editingId={editingId}
-        setEditingQtyId={setEditingQtyId}
-        setLineQty={setLineQty}
-        removeLine={removeLine}
-        setSaleDate={setSaleDate}
-        setNotes={setNotes}
-        resetForm={resetForm}
-        handleSubmit={handleSubmit}
-      />
+      {showEntryWorkspace ? (
+        <StaffBasketSummary
+          basketLines={basketLines}
+          productsById={productsById}
+          lang={lang}
+          t={t}
+          isSale={isSale}
+          isCancellation={entryType === 'cancellation'}
+          basketLogRef={basketLogRef}
+          saleDateHint={isSale && sectionFilter
+            ? (saleDateStatus?.lastSectionDate
+                ? t('staffSaleAutoDateHint', sectionFilter, saleDateStatus.lastSectionDate)
+                : t('staffSaleAutoDateFirstHint', sectionFilter))
+            : undefined}
+          editingQtyId={editingQtyId}
+          saleDate={saleDate}
+          notes={notes}
+          submitting={submitting}
+          editingId={editingId}
+          setEditingQtyId={setEditingQtyId}
+          setLineQty={setLineQty}
+          removeLine={removeLine}
+          setSaleDate={setSaleDate}
+          setNotes={setNotes}
+          resetForm={resetForm}
+          handleSubmit={handleSubmit}
+        />
+      ) : null}
 
-      <StaffSentOrdersSection
-        isSale={isSale}
-        sentOrders={visibleOrders}
-        sentSaleGroups={sentSaleGroups}
-        sentSalesSummary={sentSalesSummary}
-        lang={lang}
-        t={t}
-        handleResendOrder={handleResendOrder}
-        loadForEdit={loadForEdit}
-        handleDelete={handleDelete}
-      />
+      {showHistoryWorkspace ? (
+        <StaffSentOrdersSection
+          isSale={isSale}
+          sentOrders={visibleOrders}
+          sentSaleGroups={sentSaleGroups}
+          sentSalesSummary={sentSalesSummary}
+          lang={lang}
+          t={t}
+          handleResendOrder={handleResendOrder}
+          loadForEdit={loadEditableOrder}
+          handleDelete={handleDelete}
+          canMutateOrder={canMutateSaleOrder}
+        />
+      ) : null}
 
-      {!isLoading && myTypedOrders.length === 0 && basketLines.length === 0 && (
+      {!isLoading && !isSale && myTypedOrders.length === 0 && basketLines.length === 0 && (
         <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
-          {isSale ? t('staffSaleNoRecords') : t('staffOrderNoOrders')}
+          {t('staffOrderNoOrders')}
+        </div>
+      )}
+      {!isLoading && isSale && saleWorkspaceTab === 'history' && visibleOrders.length === 0 && (
+        <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
+          {t('staffSaleNoRecords')}
         </div>
       )}
     </div>

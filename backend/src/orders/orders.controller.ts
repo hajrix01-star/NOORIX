@@ -21,6 +21,7 @@ import {
   parseRequiredDateRange,
   parseRequiredYearMonth,
   requireCurrentUserId,
+  resolveCurrentUserRole,
 } from './orders-controller-query.util';
 
 @Controller('orders')
@@ -100,7 +101,13 @@ export class OrdersController {
     @CurrentUser() user: CurrentAuthUser,
     @Body() body: Partial<CreateStaffOrderDto>,
   ) {
-    return this.staffService.updateStaffOrder(id, requireCompanyId(companyId), requireCurrentUserId(user), body);
+    return this.staffService.updateStaffOrder(
+      id,
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      resolveCurrentUserRole(user),
+      body,
+    );
   }
 
   @Post('staff/:id/resend')
@@ -121,7 +128,12 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @CurrentUser() user: CurrentAuthUser,
   ) {
-    return this.staffService.deleteStaffOrder(id, requireCompanyId(companyId), requireCurrentUserId(user));
+    return this.staffService.deleteStaffOrder(
+      id,
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      resolveCurrentUserRole(user),
+    );
   }
 
   @Get()

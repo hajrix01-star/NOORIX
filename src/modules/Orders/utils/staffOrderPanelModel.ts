@@ -99,6 +99,37 @@ export function groupSentSaleOrders(sentOrders: StaffOrder[], isSale: boolean): 
   );
 }
 
+function staffOrderDateValue(order: Pick<StaffOrder, 'createdAt' | 'saleDate'>): number {
+  return new Date(order.createdAt || order.saleDate || '').getTime() || 0;
+}
+
+export function staffSaleOrderEditScopeKey(order: Pick<StaffOrder, 'id' | 'logRef'>): string {
+  return order.logRef?.trim() || order.id;
+}
+
+export function latestEditableStaffSaleScope(sentOrders: StaffOrder[]): string | null {
+  const latest = [...(sentOrders ?? [])]
+    .filter((order) => (order.orderType || 'order') === 'sale')
+    .sort((a, b) => staffOrderDateValue(b) - staffOrderDateValue(a))[0];
+  return latest ? staffSaleOrderEditScopeKey(latest) : null;
+}
+
+export function canMutateStaffSaleOrder({
+  order,
+  latestScope,
+  isPrivileged,
+}: {
+  order: StaffOrder;
+  latestScope: string | null;
+  isPrivileged: boolean;
+}): boolean {
+  if ((order.orderType || 'order') !== 'sale') return false;
+  if (order.entryType === 'cancellation') return false;
+  if (isPrivileged) return true;
+  if (!latestScope) return true;
+  return staffSaleOrderEditScopeKey(order) === latestScope;
+}
+
 export function summarizeSentSales({
   isSale,
   sentSaleGroups,
