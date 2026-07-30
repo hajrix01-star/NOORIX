@@ -119,6 +119,8 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
       s.sectionName,
       fmt(s.qty, 0),
       s.ordersCount,
+      Number(s.totalAmount) !== 0 ? fmt(s.totalAmount) : '—',
+      Number(s.averageAmount) !== 0 ? fmt(s.averageAmount) : '—',
     ]), [bySection]);
 
   const userRows = useMemo(() =>
@@ -310,7 +312,14 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
               )}
               {activeView === 'section' && (
                 <SimpleTable
-                  headers={['#', t('staffOrderSection'), t('quantity'), t('ordersCount')]}
+                  headers={[
+                    '#',
+                    t('staffOrderSection'),
+                    t('quantity'),
+                    t('ordersCount'),
+                    t('salesReportTotalValue'),
+                    t('salesReportAverageValue'),
+                  ]}
                   rows={sectionRows}
                   emptyMsg={t('salesReportEmpty')}
                 />

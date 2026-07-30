@@ -456,6 +456,8 @@ export default {
   salesReportSections:      { ar: 'أقسام', en: 'Sections' },
   salesReportByProduct:     { ar: 'بالصنف', en: 'By Product' },
   salesReportBySection:     { ar: 'بالقسم', en: 'By Section' },
+  salesReportTotalValue:    { ar: 'إجمالي القيمة', en: 'Total value' },
+  salesReportAverageValue:  { ar: 'المعدل', en: 'Average' },
   salesReportByUser:        { ar: 'بالموظف', en: 'By Employee' },
   salesReportByDay:         { ar: 'يومياً', en: 'Daily' },
   salesReportEmpty:         { ar: 'لا توجد سجلات داخلية في هذه الفترة', en: 'No internal logs in this period' },

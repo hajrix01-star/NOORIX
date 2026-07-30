@@ -36,6 +36,13 @@ type StaffSalesReportProduct = {
   variants?: unknown;
 };
 
+function staffSalesReportUsername(email?: string | null): string | null {
+  const normalizedEmail = String(email || '').trim();
+  if (!normalizedEmail) return null;
+  const separatorIndex = normalizedEmail.indexOf('@');
+  return separatorIndex > 0 ? normalizedEmail.slice(0, separatorIndex) : normalizedEmail;
+}
+
 export function buildStaffSalesReportModel(params: {
   orders: StaffSalesReportOrder[];
   users: StaffSalesReportUser[];
@@ -51,7 +58,12 @@ export function buildStaffSalesReportModel(params: {
   const userOps: Record<string, Set<string>> = {};
   const dayOps: Record<string, Set<string>> = {};
   const byProduct: Record<string, { productId: string; nameAr: string; nameEn: string | null; qty: number; unit: string; sections: Set<string> }> = {};
-  const bySection: Record<string, { sectionName: string; qty: number; ordersCount: number }> = {};
+  const bySection: Record<string, {
+    sectionName: string;
+    qty: number;
+    ordersCount: number;
+    totalAmount: Prisma.Decimal;
+  }> = {};
   const byUser: Record<string, {
     userId: string;
     username: string | null;
@@ -90,7 +102,12 @@ export function buildStaffSalesReportModel(params: {
     byLog[opKey].sections.add(order.sectionName);
 
     if (!bySection[order.sectionName]) {
-      bySection[order.sectionName] = { sectionName: order.sectionName, qty: 0, ordersCount: 0 };
+      bySection[order.sectionName] = {
+        sectionName: order.sectionName,
+        qty: 0,
+        ordersCount: 0,
+        totalAmount: new Prisma.Decimal(0),
+      };
     }
     bySection[order.sectionName].ordersCount++;
 
@@ -99,7 +116,7 @@ export function buildStaffSalesReportModel(params: {
     if (!byUser[uid]) {
       byUser[uid] = {
         userId: uid,
-        username: user?.email || null,
+        username: staffSalesReportUsername(user?.email),
         nameAr: user?.nameAr || null,
         nameEn: user?.nameEn || null,
         ordersCount: 0,
@@ -121,6 +138,7 @@ export function buildStaffSalesReportModel(params: {
       totalQty += qty;
       totalAmount = totalAmount.plus(lineAmount);
       bySection[order.sectionName].qty += qty;
+      bySection[order.sectionName].totalAmount = bySection[order.sectionName].totalAmount.plus(lineAmount);
       byUser[uid].qty += qty;
       byDay[day].qty += qty;
       byLog[opKey].qty += qty;
@@ -156,7 +174,7 @@ export function buildStaffSalesReportModel(params: {
         logRef: row.logRef,
         date: row.date,
         userId: row.userId,
-        username: user?.email || null,
+        username: staffSalesReportUsername(user?.email),
         nameAr: user?.nameAr || null,
         nameEn: user?.nameEn || null,
         qty: row.qty,
@@ -180,7 +198,13 @@ export function buildStaffSalesReportModel(params: {
     byProduct: Object.values(byProduct)
       .map((product) => ({ ...product, sections: Array.from(product.sections) }))
       .sort((a, b) => b.qty - a.qty),
-    bySection: Object.values(bySection).sort((a, b) => b.qty - a.qty),
+    bySection: Object.values(bySection)
+      .map((section) => ({
+        ...section,
+        totalAmount: Number(section.totalAmount),
+        averageAmount: Number(staffSaleAvgPerOrder(section.totalAmount, section.qty)),
+      }))
+      .sort((a, b) => b.qty - a.qty),
     byUser: Object.values(byUser).sort((a, b) => b.qty - a.qty),
     byDay: Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date)),
     byLog: byLogRows,

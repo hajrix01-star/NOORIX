@@ -338,6 +338,8 @@ export type StaffSaleReportSectionRow = {
   sectionName: string;
   qty: number;
   ordersCount: number;
+  totalAmount: number;
+  averageAmount: number;
 };
 
 export type StaffSaleReportUserRow = {
