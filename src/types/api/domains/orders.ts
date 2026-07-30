@@ -31,8 +31,8 @@ export type OrderProductVariant = {
   quantityMultiplier?: MoneyLike | null;
 };
 
-export type OrderProductRecipeMaterialType = 'tobacco' | 'hose' | 'charcoal';
-export type OrderProductRecipeUnit = 'g' | 'kg' | 'piece' | 'pack' | 'box' | 'carton';
+export type OrderProductRecipeMaterialType = 'material' | 'tobacco' | 'hose' | 'charcoal';
+export type OrderProductRecipeUnit = 'g' | 'kg' | 'ml' | 'l' | 'piece' | 'pack' | 'box' | 'carton';
 
 export type OrderProductRecipeItem = {
   materialType: OrderProductRecipeMaterialType;

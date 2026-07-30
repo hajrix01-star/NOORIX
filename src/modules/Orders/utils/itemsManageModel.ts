@@ -53,7 +53,16 @@ export function createEmptyOrderProductForm(productType: OrderProductType): Orde
 }
 
 function isRecipeMaterialType(value: unknown): value is OrderProductRecipeMaterialType {
-  return value === 'tobacco' || value === 'hose' || value === 'charcoal';
+  return value === 'material' || value === 'tobacco' || value === 'hose' || value === 'charcoal';
+}
+
+function normalizeRecipeMaterialType(value: unknown): OrderProductRecipeMaterialType {
+  return isRecipeMaterialType(value) ? value : 'material';
+}
+
+function defaultRecipeUnit(materialType: OrderProductRecipeMaterialType): string {
+  if (materialType === 'tobacco') return 'g';
+  return 'piece';
 }
 
 function sanitizeRecipe(recipe: unknown): OrderProductRecipeItem[] {
@@ -61,16 +70,16 @@ function sanitizeRecipe(recipe: unknown): OrderProductRecipeItem[] {
   return recipe.flatMap((item) => {
     if (!item || typeof item !== 'object') return [];
     const row = item as Partial<OrderProductRecipeItem>;
-    if (!isRecipeMaterialType(row.materialType)) return [];
+    const materialType = normalizeRecipeMaterialType(row.materialType);
     const materialProductId = String(row.materialProductId ?? '').trim();
     const quantity = String(row.quantity ?? '').trim();
     const parsedQuantity = Number.parseFloat(quantity);
     if (!materialProductId || !Number.isFinite(parsedQuantity) || parsedQuantity <= 0) return [];
     return [{
-      materialType: row.materialType,
+      materialType,
       materialProductId,
       quantity,
-      unit: String(row.unit ?? '').trim() || (row.materialType === 'tobacco' ? 'g' : 'piece'),
+      unit: String(row.unit ?? '').trim() || defaultRecipeUnit(materialType),
     }];
   });
 }

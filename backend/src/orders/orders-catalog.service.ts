@@ -371,12 +371,10 @@ export class OrdersCatalogService {
   private recipeJson(recipe?: ProductRecipeItemInput[]): Prisma.InputJsonValue | typeof Prisma.DbNull {
     if (!recipe?.length) return Prisma.DbNull;
     const rows = recipe.flatMap((item) => {
-      const materialType = item.materialType === 'tobacco' || item.materialType === 'hose' || item.materialType === 'charcoal'
-        ? item.materialType
-        : null;
+      const materialType = this.recipeMaterialType(item.materialType);
       const materialProductId = String(item.materialProductId ?? '').trim();
       const quantity = String(item.quantity ?? '').trim();
-      if (!materialType || !materialProductId || !this.positiveDecimal(quantity)) return [];
+      if (!materialProductId || !this.positiveDecimal(quantity)) return [];
       return [{
         materialType,
         materialProductId,
@@ -387,6 +385,12 @@ export class OrdersCatalogService {
     return rows.length > 0 ? rows : Prisma.DbNull;
   }
 
+  private recipeMaterialType(value: string | null | undefined) {
+    const materialType = String(value ?? '').trim();
+    if (materialType === 'tobacco' || materialType === 'hose' || materialType === 'charcoal') return materialType;
+    return 'material';
+  }
+
   private positiveDecimal(value: string): boolean {
     try {
       return new Prisma.Decimal(value || 0).gt(0);
@@ -395,7 +399,7 @@ export class OrdersCatalogService {
     }
   }
 
-  private defaultRecipeUnit(materialType: 'tobacco' | 'hose' | 'charcoal') {
+  private defaultRecipeUnit(materialType: string) {
     if (materialType === 'tobacco') return 'g';
     return 'piece';
   }

@@ -49,9 +49,98 @@ type ReportAccumulator = {
   daily: Map<string, DailyAccumulator>;
 };
 
+type InventoryProduct = {
+  id: string;
+  nameAr: string;
+  nameEn?: string | null;
+  unit?: string | null;
+  recipe?: unknown;
+};
+
+type InventoryPurchaseInput = {
+  productId: string;
+  quantity: Prisma.Decimal | string | number;
+  quantityMultiplier?: Prisma.Decimal | string | number | null;
+  product: InventoryProduct;
+};
+
+type InventorySaleInput = {
+  productId: string;
+  quantity: Prisma.Decimal | string | number;
+  quantityMultiplier?: Prisma.Decimal | string | number | null;
+  product: InventoryProduct;
+};
+
+type InventoryRecipeItem = {
+  materialProductId: string;
+  quantity: string;
+  unit: string;
+};
+
+type InventoryAccumulator = {
+  productId: string;
+  productNameAr: string;
+  productNameEn: string | null;
+  unit: string;
+  purchasedBaseQuantity: Prisma.Decimal;
+  consumedBaseQuantity: Prisma.Decimal;
+};
+
 function parseStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.map((entry) => String(entry ?? '').trim()).filter(Boolean))];
+}
+
+function decimal(value: Prisma.Decimal | string | number | null | undefined): Prisma.Decimal {
+  try {
+    return new Prisma.Decimal(value ?? 0);
+  } catch {
+    return new Prisma.Decimal(0);
+  }
+}
+
+function normalizedQuantity(
+  quantity: Prisma.Decimal | string | number,
+  quantityMultiplier?: Prisma.Decimal | string | number | null,
+): Prisma.Decimal {
+  const qty = decimal(quantity);
+  const multiplier = decimal(quantityMultiplier ?? 1);
+  return qty.times(multiplier.gt(0) ? multiplier : 1);
+}
+
+function parseInventoryRecipe(value: unknown): InventoryRecipeItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const row = entry as Partial<InventoryRecipeItem>;
+    const materialProductId = String(row.materialProductId ?? '').trim();
+    const quantity = String(row.quantity ?? '').trim();
+    if (!materialProductId || !decimal(quantity).gt(0)) return [];
+    return [{
+      materialProductId,
+      quantity,
+      unit: String(row.unit ?? '').trim() || 'piece',
+    }];
+  });
+}
+
+function ensureInventoryRow(
+  rows: Map<string, InventoryAccumulator>,
+  product: InventoryProduct,
+  unitFallback: string,
+) {
+  const existing = rows.get(product.id);
+  if (existing) return existing;
+  const row = {
+    productId: product.id,
+    productNameAr: product.nameAr,
+    productNameEn: product.nameEn ?? null,
+    unit: String(product.unit || unitFallback || 'piece').trim() || 'piece',
+    purchasedBaseQuantity: new Prisma.Decimal(0),
+    consumedBaseQuantity: new Prisma.Decimal(0),
+  };
+  rows.set(product.id, row);
+  return row;
 }
 
 function selectedUnit(item: ItemRow): string {
@@ -225,4 +314,50 @@ export function aggregateOrderItemsForRangeReport(items: ItemRow[]) {
       sectionsCount: sectionNames.size,
     },
   };
+}
+
+/**
+ * دفتر مخزون عام مشتق من المصدر:
+ * - طلبات الشراء تضيف كمية المنتج المشترى بعد معامل التحويل.
+ * - تسجيلات بيع الأصناف تسحب مواد الرسبي المرتبطة بالصنف المباع.
+ * لا يكتب في قاعدة البيانات، حتى يبقى التقرير مطابقاً للحركات الفعلية.
+ */
+export function aggregateRecipeInventoryStock(input: {
+  purchases: InventoryPurchaseInput[];
+  sales: InventorySaleInput[];
+  materialProducts: InventoryProduct[];
+}) {
+  const rows = new Map<string, InventoryAccumulator>();
+  const materialById = new Map(input.materialProducts.map((product) => [product.id, product]));
+
+  for (const purchase of input.purchases) {
+    const row = ensureInventoryRow(rows, purchase.product, purchase.product.unit || 'piece');
+    row.purchasedBaseQuantity = row.purchasedBaseQuantity.plus(
+      normalizedQuantity(purchase.quantity, purchase.quantityMultiplier),
+    );
+  }
+
+  for (const sale of input.sales) {
+    const soldBaseQuantity = normalizedQuantity(sale.quantity, sale.quantityMultiplier);
+    for (const recipeItem of parseInventoryRecipe(sale.product.recipe)) {
+      const materialProduct = materialById.get(recipeItem.materialProductId);
+      if (!materialProduct) continue;
+      const row = ensureInventoryRow(rows, materialProduct, recipeItem.unit);
+      row.consumedBaseQuantity = row.consumedBaseQuantity.plus(
+        soldBaseQuantity.times(decimal(recipeItem.quantity)),
+      );
+    }
+  }
+
+  return Array.from(rows.values())
+    .map((row) => ({
+      productId: row.productId,
+      productNameAr: row.productNameAr,
+      productNameEn: row.productNameEn,
+      unit: row.unit,
+      purchasedBaseQuantity: row.purchasedBaseQuantity.toString(),
+      consumedBaseQuantity: row.consumedBaseQuantity.toString(),
+      balanceBaseQuantity: row.purchasedBaseQuantity.minus(row.consumedBaseQuantity).toString(),
+    }))
+    .sort((a, b) => a.productNameAr.localeCompare(b.productNameAr, 'ar'));
 }

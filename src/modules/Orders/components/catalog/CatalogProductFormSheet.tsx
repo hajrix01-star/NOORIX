@@ -1,4 +1,4 @@
-import React, { type ChangeEvent, useEffect, useState } from 'react';
+import React, { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { AdaptiveSheet, Button, Checkbox, DialogActions, Input } from '../../../../ui';
 import type {
@@ -60,10 +60,22 @@ type CatalogProductFormSheetProps = {
 type CatalogFormTab = 'details' | 'variants' | 'recipe';
 
 const recipeMaterialLabels: Record<OrderProductRecipeMaterialType, string> = {
+  material: 'مادة عامة',
   tobacco: 'معسل',
   hose: 'لي',
   charcoal: 'فحم',
 };
+
+const allRecipeUnitOptions = [
+  { value: 'piece', label: 'حبة' },
+  { value: 'g', label: 'جرام' },
+  { value: 'kg', label: 'كيلو' },
+  { value: 'ml', label: 'مل' },
+  { value: 'l', label: 'لتر' },
+  { value: 'pack', label: 'علبة' },
+  { value: 'box', label: 'صندوق' },
+  { value: 'carton', label: 'كرتون' },
+];
 
 function recipeUnits(materialType: OrderProductRecipeMaterialType) {
   if (materialType === 'tobacco') return [
@@ -75,15 +87,35 @@ function recipeUnits(materialType: OrderProductRecipeMaterialType) {
     { value: 'pack', label: 'علبة' },
     { value: 'carton', label: 'كرتون' },
   ];
-  return [{ value: 'piece', label: 'حبة' }];
+  if (materialType === 'hose') return [{ value: 'piece', label: 'حبة' }];
+  return allRecipeUnitOptions;
+}
+
+function searchableText(...values: unknown[]) {
+  return values.map((value) => String(value ?? '')).join(' ').trim().toLowerCase();
+}
+
+function productLabel(product: OrderProduct) {
+  return product.nameAr || product.nameEn || product.id;
+}
+
+function filterWithSelected<T extends { id: string }>(
+  rows: T[],
+  selectedId: string | null | undefined,
+  matches: (row: T) => boolean,
+) {
+  const filtered = rows.filter(matches);
+  const selected = rows.find((row) => row.id === selectedId);
+  if (selected && !filtered.some((row) => row.id === selected.id)) return [selected, ...filtered];
+  return filtered;
 }
 
 function createRecipeRow(materialProducts: OrderProduct[]): OrderProductRecipeItem {
   return {
-    materialType: 'tobacco',
+    materialType: 'material',
     materialProductId: materialProducts[0]?.id ?? '',
     quantity: '',
-    unit: 'g',
+    unit: 'piece',
   };
 }
 
@@ -96,6 +128,8 @@ function RecipeEditor({
   materialProducts: OrderProduct[];
   onChange: (recipe: OrderProductRecipeItem[]) => void;
 }) {
+  const [materialSearchByRow, setMaterialSearchByRow] = useState<Record<number, string>>({});
+
   function updateRow(index: number, patch: Partial<OrderProductRecipeItem>) {
     onChange(recipe.map((row, rowIndex) => {
       if (rowIndex !== index) return row;
@@ -105,6 +139,15 @@ function RecipeEditor({
         : row.unit;
       return { ...row, ...patch, unit: patch.unit ?? nextUnit };
     }));
+  }
+
+  function materialOptionsForRow(row: OrderProductRecipeItem, index: number) {
+    const query = searchableText(materialSearchByRow[index]);
+    return filterWithSelected(materialProducts, row.materialProductId, (product) => {
+      if (!query) return true;
+      const categoryName = product.category?.nameAr || product.category?.nameEn || '';
+      return searchableText(product.nameAr, product.nameEn, categoryName, product.id).includes(query);
+    });
   }
 
   return (
@@ -135,7 +178,7 @@ function RecipeEditor({
             </div>
           )}
           {recipe.map((row, index) => (
-            <div key={`${row.materialProductId}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[120px_1fr_95px_95px_44px]">
+            <div key={`${row.materialProductId}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[112px_135px_1fr_88px_90px_44px]">
               <Input
                 type="select"
                 value={row.materialType}
@@ -148,13 +191,20 @@ function RecipeEditor({
                 ))}
               </Input>
               <Input
+                value={materialSearchByRow[index] ?? ''}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  setMaterialSearchByRow((current) => ({ ...current, [index]: event.target.value }))
+                }
+                placeholder="بحث المادة"
+              />
+              <Input
                 type="select"
                 value={row.materialProductId}
                 onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { materialProductId: event.target.value })}
               >
                 <option value="">اختر الصنف</option>
-                {materialProducts.map((product) => (
-                  <option key={product.id} value={product.id}>{product.nameAr || product.nameEn || product.id}</option>
+                {materialOptionsForRow(row, index).map((product) => (
+                  <option key={product.id} value={product.id}>{productLabel(product)}</option>
                 ))}
               </Input>
               <Input
@@ -374,13 +424,22 @@ export function CatalogProductFormSheet({
   const { t } = useTranslation();
   const [advanced, setAdvanced] = useState(false);
   const [activeTab, setActiveTab] = useState<CatalogFormTab>('details');
+  const [categorySearch, setCategorySearch] = useState('');
   const charcoalMode = Boolean(form && isCharcoalCatalogProduct(form));
   const charcoalPurchaseMode = charcoalMode && form?.productType === 'order';
+  const visibleCategories = useMemo(() => {
+    const query = searchableText(categorySearch);
+    return filterWithSelected(categories, form?.categoryId, (category) => {
+      if (!query) return true;
+      return searchableText(category.nameAr, category.nameEn, category.id).includes(query);
+    });
+  }, [categories, categorySearch, form?.categoryId]);
 
   useEffect(() => {
     if (!open || !form) return;
     setAdvanced(Boolean(form._advanced) || productHasAdvancedVariants(form));
     setActiveTab('details');
+    setCategorySearch('');
   }, [open, form?.id]);
 
   useEffect(() => {
@@ -482,17 +541,25 @@ export function CatalogProductFormSheet({
               value={form.nameEn}
               onChange={(event: ChangeEvent<HTMLInputElement>) => updateForm({ nameEn: event.target.value })}
             />
-            <Input
-              type="select"
-              label={t('category')}
-              value={form.categoryId}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => updateForm({ categoryId: event.target.value })}
-            >
-              <option value="">-</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>{category.nameAr || category.nameEn}</option>
-              ))}
-            </Input>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1.25fr]">
+              <Input
+                label="بحث الفئة"
+                value={categorySearch}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => setCategorySearch(event.target.value)}
+                placeholder="ابحث باسم الفئة..."
+              />
+              <Input
+                type="select"
+                label={t('category')}
+                value={form.categoryId}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => updateForm({ categoryId: event.target.value })}
+              >
+                <option value="">-</option>
+                {visibleCategories.map((category) => (
+                  <option key={category.id} value={category.id}>{category.nameAr || category.nameEn}</option>
+                ))}
+              </Input>
+            </div>
 
             {sections.length > 0 && (
               <div>

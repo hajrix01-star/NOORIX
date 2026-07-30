@@ -1,5 +1,8 @@
 import { Prisma } from '@prisma/client';
-import { aggregateOrderItemsForRangeReport } from './orders-items-report-aggregate.util';
+import {
+  aggregateOrderItemsForRangeReport,
+  aggregateRecipeInventoryStock,
+} from './orders-items-report-aggregate.util';
 
 describe('aggregateOrderItemsForRangeReport', () => {
   const product = {
@@ -72,6 +75,55 @@ describe('aggregateOrderItemsForRangeReport', () => {
         date: '2026-07-01',
         normalizedQuantity: '15',
         orderCount: 1,
+      }),
+    ]);
+  });
+});
+
+describe('aggregateRecipeInventoryStock', () => {
+  it('adds purchased material stock and consumes it from sold item recipes', () => {
+    const orange = {
+      id: 'orange',
+      nameAr: 'برتقال',
+      nameEn: 'Orange',
+      unit: 'piece',
+    };
+    const juice = {
+      id: 'orange-juice',
+      nameAr: 'عصير برتقال',
+      nameEn: 'Orange juice',
+      unit: 'cup',
+      recipe: [
+        { materialType: 'material', materialProductId: 'orange', quantity: '3', unit: 'piece' },
+      ],
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [orange],
+      purchases: [
+        {
+          productId: 'orange',
+          quantity: new Prisma.Decimal(1),
+          quantityMultiplier: new Prisma.Decimal(10),
+          product: orange,
+        },
+      ],
+      sales: [
+        {
+          productId: 'orange-juice',
+          quantity: new Prisma.Decimal(2),
+          quantityMultiplier: new Prisma.Decimal(1),
+          product: juice,
+        },
+      ],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: 'orange',
+        purchasedBaseQuantity: '10',
+        consumedBaseQuantity: '6',
+        balanceBaseQuantity: '4',
       }),
     ]);
   });

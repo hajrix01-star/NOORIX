@@ -136,4 +136,25 @@ describe('itemsManageModel', () => {
     });
     expect(buildOrderProductPayload(form, 'order')).not.toHaveProperty('recipe');
   });
+
+  it('keeps generic material recipe rows for sold products', () => {
+    const payload = buildOrderProductPayload({
+      nameAr: 'Orange Juice',
+      nameEn: 'Orange Juice',
+      categoryId: 'juice',
+      sectionIds: ['bar'],
+      simpleLastPrice: '12',
+      variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
+      recipe: [
+        { materialType: 'material', materialProductId: 'orange-kg', quantity: '3', unit: 'piece' },
+      ],
+    }, 'sale');
+
+    expect(payload).toMatchObject({
+      productType: 'sale',
+      recipe: [
+        { materialType: 'material', materialProductId: 'orange-kg', quantity: '3', unit: 'piece' },
+      ],
+    });
+  });
 });
