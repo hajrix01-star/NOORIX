@@ -1,11 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { formatVariantLabel, resolveStaffItemVariant, staffLineAggregateKey } from './orders-staff-pricing.util';
 import {
-  resolveStaffItemUnitPrice,
-  staffItemLineAmount,
   staffOrdersQty,
-  staffOrdersTotal,
-  staffSaleAvgPerOrder,
 } from './orders-staff-amount.util';
 
 type StaffWhatsAppItem = {
@@ -52,8 +48,6 @@ export function buildSalesWhatsAppTextCombined(
     : null;
   const lines: string[] = [header, dateLine, ...(refLine ? [refLine] : []), '──────────────'];
   const totalQty = staffOrdersQty(orders);
-  const totalAmount = staffOrdersTotal(orders);
-  const avgPerOrder = staffSaleAvgPerOrder(totalAmount, totalQty);
 
   for (const order of orders) {
     if (multi) lines.push(`▪ ${order.sectionName || '—'}`);
@@ -63,33 +57,15 @@ export function buildSalesWhatsAppTextCombined(
         : (it.product?.nameAr || it.product?.nameEn || '—');
       const q = Number(it.quantity);
       const prefix = multi ? '  ' : '';
-      const unitPrice = resolveStaffItemUnitPrice(it);
-      if (unitPrice.gt(0)) {
-        const amount = staffItemLineAmount(it);
-        const variant = formatVariantLabel(it.size ?? null, it.packaging ?? null, it.unit ?? null);
-        const variantPart = variant ? ` (${variant})` : '';
-        lines.push(
-          `${prefix}• ${name}${variantPart}: ${fmtStaffWaMoney(q)} × ${fmtStaffWaMoney(unitPrice.toNumber())} = ${fmtStaffWaMoney(amount)} SR`,
-        );
-      } else {
-        lines.push(`${prefix}• ${name}: ${q}`);
-      }
+      const variant = formatVariantLabel(it.size ?? null, it.packaging ?? null, it.unit ?? null);
+      const variantPart = variant ? ` (${variant})` : '';
+      lines.push(`${prefix}• ${name}${variantPart}: ${fmtStaffWaMoney(q)}`);
     }
     if (multi) lines.push('');
   }
 
   lines.push('──────────────');
   lines.push(lang === 'en' ? `Total qty: ${totalQty}` : `إجمالي الكمية: ${totalQty}`);
-  if (totalAmount.gt(0)) {
-    lines.push(lang === 'en' ? `Grand total: ${fmtStaffWaMoney(totalAmount)} SR` : `المجموع: ${fmtStaffWaMoney(totalAmount)} SR`);
-    if (totalQty > 0) {
-      lines.push(
-        lang === 'en'
-          ? `Avg per order: ${fmtStaffWaMoney(avgPerOrder)} SR`
-          : `معدل الطلب: ${fmtStaffWaMoney(avgPerOrder)} SR`,
-      );
-    }
-  }
   const notes = orders[0]?.notes?.trim();
   if (notes) {
     lines.push(lang === 'en' ? `Notes: ${notes}` : `ملاحظات: ${notes}`);

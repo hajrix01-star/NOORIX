@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Decimal from 'decimal.js';
 import { useTranslation } from '../../i18n/useTranslation';
 import { fmt } from '../../utils/format';
 import { formatSaudiDate } from '../../utils/saudiDate';
@@ -8,9 +7,7 @@ import {
   resolveStaffItemUnitPrice,
   staffItemLineAmount,
   formatVariantLabel,
-  staffOrdersTotal,
   staffOrdersQty,
-  staffSaleAvgPerOrder,
 } from './utils/staffOrderBasketUtils';
 import type { OrderProduct, StaffOrder, StaffOrderItem } from '../../types/api';
 import { StaffSaleItemsTable } from './components/StaffSaleItemsTable';
@@ -38,49 +35,22 @@ export function StaffItemPriceSuffix({ it, product }: { it: StaffOrderItem; prod
 /** ملخص كمية / مجموع / معدل — سطر واحد داخل الكرت */
 export function StaffSaleLogMetrics({
   totalQty,
-  totalAmount,
-  avgPerOrder,
   t,
   showDivider = true,
 }: {
   totalQty: number;
-  totalAmount: Decimal;
-  avgPerOrder: Decimal;
   t: (key: string, ...args: unknown[]) => string;
   showDivider?: boolean;
 }) {
-  const showMoney = !totalAmount.isZero();
-  if (totalQty === 0 && !showMoney) return null;
+  if (totalQty === 0) return null;
 
   const parts: React.ReactNode[] = [];
-  if (totalQty !== 0) {
-    parts.push(
-      <span key="qty" className="ltr whitespace-nowrap">
-        <span className="text-noorix-muted">{t('staffSaleTotalQty')}: </span>
-        <span className="font-bold text-noorix-blue nx-font-numbers">{fmt(totalQty, 0)}</span>
-      </span>,
-    );
-  }
-  if (showMoney) {
-    parts.push(
-      <span key="sum" className="ltr whitespace-nowrap">
-        <span className="text-noorix-muted">{t('staffSaleGrandTotal')}: </span>
-        <span className="font-bold text-noorix-green nx-font-numbers">
-          {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
-        </span>
-      </span>,
-    );
-    if (totalQty > 0) {
-      parts.push(
-        <span key="avg" className="ltr whitespace-nowrap">
-          <span className="text-noorix-muted">{t('avgPerOrder')}: </span>
-          <span className="font-bold text-noorix-violet nx-font-numbers">
-            {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
-          </span>
-        </span>,
-      );
-    }
-  }
+  parts.push(
+    <span key="qty" className="ltr whitespace-nowrap">
+      <span className="text-noorix-muted">{t('staffSaleTotalQty')}: </span>
+      <span className="font-bold text-noorix-blue nx-font-numbers">{fmt(totalQty, 0)}</span>
+    </span>,
+  );
 
   return (
     <div className={cn(
@@ -237,9 +207,7 @@ export function StaffSentSaleGroup({
   const dateLabel = primary.saleDate ? formatSaudiDate(primary.saleDate) : formatSaudiDate(primary.createdAt || '');
   const totalItems = orders.reduce((n, o) => n + ((o.items || []).length), 0);
   const sectionsCount = orders.length;
-  const totalAmount = staffOrdersTotal(orders);
   const totalQty = staffOrdersQty(orders);
-  const avgPerOrder = staffSaleAvgPerOrder(totalAmount, totalQty);
   const isCancellation = primary.entryType === 'cancellation';
 
   return (
@@ -293,8 +261,6 @@ export function StaffSentSaleGroup({
           </div>
           <StaffSaleLogMetrics
             totalQty={totalQty}
-            totalAmount={totalAmount}
-            avgPerOrder={avgPerOrder}
             t={t}
           />
         </div>
@@ -319,7 +285,7 @@ export function StaffSentSaleGroup({
               ) : null}
             </div>
           ) : null}
-          <StaffSaleItemsTable items={order.items || []} lang={lang} t={t} />
+          <StaffSaleItemsTable items={order.items || []} lang={lang} t={t} showPrices={false} />
           {sectionsCount === 1 && order.entryType !== 'cancellation' ? (
             <div className="flex flex-wrap gap-1 justify-end">
               <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>

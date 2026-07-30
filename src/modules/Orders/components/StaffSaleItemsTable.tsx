@@ -13,10 +13,12 @@ export function StaffSaleItemsTable({
   items,
   lang,
   t,
+  showPrices = true,
 }: {
   items: StaffOrderItem[];
   lang: string;
   t: (key: string, ...args: unknown[]) => string;
+  showPrices?: boolean;
 }) {
   if (!items?.length) return null;
   return (
@@ -58,8 +60,9 @@ export function StaffSaleItemsTable({
           width: '3.5rem',
           render: (_value: unknown, item: StaffOrderItem) => <span className="font-semibold">{fmt(item.quantity, 0)}</span>,
         },
-        {
-          key: 'unitPrice',
+        ...(showPrices ? [
+          {
+            key: 'unitPrice',
           label: t('unitPrice'),
           numeric: true,
           width: '4rem',
@@ -89,8 +92,9 @@ export function StaffSaleItemsTable({
             ) : (
               <span className="text-noorix-muted">—</span>
             );
+            },
           },
-        },
+        ] : []),
       ]}
     />
   );

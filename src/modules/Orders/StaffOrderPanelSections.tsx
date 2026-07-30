@@ -243,7 +243,7 @@ export function StaffBasketSummary({
           productsById={productsById}
           lang={lang}
           t={t}
-          showPrices={isSale}
+          showPrices={false}
           editingQtyId={editingQtyId}
           setEditingQtyId={setEditingQtyId}
           setLineQty={setLineQty}
@@ -334,11 +334,9 @@ export function StaffSentOrdersSection({
         </span>
         <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
       </div>
-      {isSale && sentSaleGroups.length > 1 && (sentSalesSummary.totalQty > 0 || sentSalesSummary.totalAmount.gt(0)) ? (
+      {isSale && sentSaleGroups.length > 1 && sentSalesSummary.totalQty > 0 ? (
         <StaffSaleLogMetrics
           totalQty={sentSalesSummary.totalQty}
-          totalAmount={sentSalesSummary.totalAmount}
-          avgPerOrder={sentSalesSummary.avgPerOrder}
           t={t}
           showDivider={false}
         />
