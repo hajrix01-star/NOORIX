@@ -8,6 +8,7 @@ import { orderGregorianDateToNumberPrefix, buildOrderNumberFromPrefix } from './
 import { aggregateOrdersMonthSummary, aggregateOrdersRangeSummaryGroups } from './orders-month-summary.util';
 import { aggregateOrderItemsByProductForReport } from './orders-items-report-aggregate.util';
 import { OrdersCatalogService } from './orders-catalog.service';
+import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
 
 type OrderItemInput = { productId: string; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
 
@@ -17,6 +18,26 @@ export class OrdersService {
     private readonly prisma: TenantPrismaService,
     private readonly catalog: OrdersCatalogService,
   ) {}
+
+  private async withQuantityMultipliers<T extends {
+    productId: string;
+    size?: string | null;
+    packaging?: string | null;
+    unit?: string | null;
+  }>(companyId: string, items: T[]) {
+    const productIds = [...new Set(items.map((item) => item.productId))];
+    const products = await this.prisma.orderProduct.findMany({
+      where: { companyId, id: { in: productIds } },
+      select: { id: true, variants: true },
+    });
+    const productMap = new Map(products.map((product) => [product.id, product]));
+    const missing = productIds.filter((productId) => !productMap.has(productId));
+    if (missing.length > 0) throw new BadRequestException('صنف غير موجود أو لا ينتمي لهذه الشركة');
+    return items.map((item) => ({
+      ...item,
+      quantityMultiplier: resolveQuantityMultiplier(productMap.get(item.productId), item),
+    }));
+  }
 
   async updateProductLastPrices(items: OrderItemInput[]) {
     for (const it of items) {
@@ -81,7 +102,7 @@ export class OrdersService {
     const tenantId = TenantContext.getTenantId();
     if (!dto.items?.length) throw new BadRequestException('ÙŠØ¬Ø¨ Ø¥Ø¯Ø®Ø§Ù„ ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„');
 
-    const items = mapDtoItemsToOrderLines(dto.items);
+    const items = await this.withQuantityMultipliers(companyId, mapDtoItemsToOrderLines(dto.items));
     const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
 
     const dateStr = orderGregorianDateToNumberPrefix(dto.orderDate);
@@ -107,6 +128,7 @@ export class OrdersService {
             packaging: i.packaging,
             unit: i.unit,
             quantity: i.quantity,
+            quantityMultiplier: i.quantityMultiplier,
             unitPrice: i.unitPrice,
             amount: i.amount,
           })),
@@ -134,8 +156,8 @@ export class OrdersService {
     if (!existing) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
 
     if (dto.items?.length) {
+      const items = await this.withQuantityMultipliers(companyId, mapDtoItemsToOrderLines(dto.items));
       await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
-      const items = mapDtoItemsToOrderLines(dto.items);
       const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
       await this.prisma.orderItem.createMany({
         data: items.map((i) => ({
@@ -145,6 +167,7 @@ export class OrdersService {
           packaging: i.packaging,
           unit: i.unit,
           quantity: i.quantity,
+          quantityMultiplier: i.quantityMultiplier,
           unitPrice: i.unitPrice,
           amount: i.amount,
         })),
@@ -283,7 +306,7 @@ export class OrdersService {
     return this.catalog.getProducts(companyId, section, productType);
   }
 
-  async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }> }>) {
+  async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }> }>) {
     return this.catalog.createProductsBatch(companyId, products);
   }
 
@@ -302,7 +325,7 @@ export class OrdersService {
     sections?: string[];
     sectionIds?: string[];
     productType?: string;
-    variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }>;
+    variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>;
   }) {
     return this.catalog.createProduct(companyId, dto);
   }
@@ -318,7 +341,7 @@ export class OrdersService {
     sections?: string[] | null;
     sectionIds?: string[] | null;
     productType?: string;
-    variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }>;
+    variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>;
     isActive?: boolean;
   }) {
     return this.catalog.updateProduct(id, companyId, dto);

@@ -100,6 +100,7 @@ export class OrdersStaffService {
       return {
         productId: it.productId,
         quantity: qty[i],
+        quantityMultiplier: v.quantityMultiplier,
         size: v.size,
         packaging: v.packaging,
         unit: v.unit,

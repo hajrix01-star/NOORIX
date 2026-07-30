@@ -21,6 +21,7 @@ export function buildProductSpec(p: OrderProduct, unitLabel: (u: string) => stri
     return variants
       .map((v: OrderProductVariant) => {
         const parts = [v.size, v.packaging, unitLabel(v.unit || 'piece')].filter((x) => x && x !== '—');
+        if (Number(v.quantityMultiplier ?? 1) !== 1) parts.push(`×${v.quantityMultiplier} علبة`);
         return parts.join(' / ') || '—';
       })
       .join(' · ');

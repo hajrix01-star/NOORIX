@@ -17,6 +17,7 @@ export type OrderProductVariant = {
   packaging?: string | null;
   unit?: string | null;
   lastPrice?: MoneyLike | null;
+  quantityMultiplier?: MoneyLike | null;
 };
 
 export type OrderCategory = {
@@ -64,6 +65,7 @@ export type OrderLine = {
   packaging?: string | null;
   unit?: string | null;
   quantity: MoneyLike;
+  quantityMultiplier?: MoneyLike | null;
   unitPrice: MoneyLike;
   amount: MoneyLike;
 };
@@ -182,6 +184,7 @@ export type StaffOrderItem = {
   productId: string;
   product?: OrderProduct | null;
   quantity: MoneyLike;
+  quantityMultiplier?: MoneyLike | null;
   unit?: string | null;
   size?: string | null;
   packaging?: string | null;

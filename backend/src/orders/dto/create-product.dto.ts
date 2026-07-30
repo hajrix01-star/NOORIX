@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsArray, Matches, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ProductVariantDto {
@@ -17,6 +17,11 @@ export class ProductVariantDto {
   @IsOptional()
   @IsString()
   lastPrice?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^(?:0*[1-9]\d*(?:\.\d{1,4})?|0*\.\d*[1-9]\d*)$/)
+  quantityMultiplier?: string;
 }
 
 export class CreateProductDto {

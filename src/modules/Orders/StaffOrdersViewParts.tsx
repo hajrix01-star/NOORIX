@@ -67,7 +67,7 @@ export function StaffBasketTable({
           const variant = formatVariantLabel(row.size, row.packaging, row.unit);
           const lineAmt = basketLineAmount(row);
           const isEditingQty = editingQtyId === row.lineId;
-          const quantityStep = row.unit === 'pack' ? 0.25 : 1;
+          const quantityStep = ['pack', 'carton'].includes(row.unit) ? 0.25 : 1;
           return (
             <tr key={row.lineId} className="border-b border-noorix-border last:border-b-0">
               <td className="py-1.5 px-2 align-middle text-start max-w-[9rem] sm:max-w-none">
@@ -175,6 +175,8 @@ export function ProductCard({
   const priceLabel = displayProductPrice(product);
   const unitLabel = product.unit === 'pack'
     ? (lang === 'en' ? 'Pack' : 'علبة')
+    : product.unit === 'carton'
+      ? (lang === 'en' ? 'Carton' : 'كرتون')
     : product.unit;
 
   return (
@@ -246,7 +248,7 @@ export function VariantPickModal({
     if (!product?.sizes) return [] as string[];
     return String(product.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean);
   }, [product]);
-  const quantityStep = variantModal.unit === 'pack' ? 0.25 : 1;
+  const quantityStep = ['pack', 'carton'].includes(variantModal.unit) ? 0.25 : 1;
 
   return (
     <Modal open onClose={onClose} title={name} size="sm">

@@ -37,7 +37,7 @@ export function createEmptyOrderProductForm(productType: OrderProductType): Orde
     sectionIds: [],
     productType,
     simpleLastPrice: '',
-    variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
+    variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
   };
 }
 
@@ -46,6 +46,7 @@ function hasOrderProductVariants(variants: OrderProductVariant[]): boolean {
     (variant) =>
       variant.size ||
       variant.packaging ||
+      Number.parseFloat(String(variant.quantityMultiplier ?? '1')) !== 1 ||
       Number.parseFloat(String(variant.lastPrice ?? '')) > 0,
   );
 }
@@ -70,8 +71,9 @@ export function buildEditableOrderProduct(
           packaging: variant.packaging || '',
           unit: variant.unit || 'piece',
           lastPrice: variant.lastPrice ? String(variant.lastPrice) : '',
+          quantityMultiplier: String(variant.quantityMultiplier ?? '1'),
         }))
-      : [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
+      : [{ size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
     _advanced: hasVariants,
   };
 }
@@ -86,6 +88,7 @@ export function buildOrderProductUpdateBody(
       variant.size ||
       variant.packaging ||
       (variant.unit && variant.unit !== 'piece') ||
+      Number.parseFloat(String(variant.quantityMultiplier ?? '1')) !== 1 ||
       Number.parseFloat(String(variant.lastPrice ?? '')) > 0,
   );
   return {
@@ -115,7 +118,7 @@ export function filterOrderProductsForManageTab(
       const ne = String(p.nameEn || '').toLowerCase();
       const variants = Array.isArray(p.variants) ? p.variants : [];
       const vtxt = variants
-        .map((v) => `${v.size || ''} ${v.packaging || ''} ${v.unit || ''} ${v.lastPrice ?? ''}`)
+        .map((v) => `${v.size || ''} ${v.packaging || ''} ${v.unit || ''} ${v.lastPrice ?? ''} ${v.quantityMultiplier ?? ''}`)
         .join(' ')
         .toLowerCase();
       return na.includes(q) || ne.includes(q) || cat.includes(q) || vtxt.includes(q);
@@ -153,7 +156,9 @@ export function buildOrderProductPayload(
   productType: OrderProductType,
 ): OrderProductPayload {
   const validVariants = (form.variants || []).filter(
-    (v) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || Number.parseFloat(String(v.lastPrice ?? '')) > 0,
+    (v) => v.size || v.packaging || (v.unit && v.unit !== 'piece')
+      || Number.parseFloat(String(v.quantityMultiplier ?? '1')) !== 1
+      || Number.parseFloat(String(v.lastPrice ?? '')) > 0,
   );
   const sectionIds = Array.isArray(form.sectionIds) ? form.sectionIds.filter(Boolean) : [];
   const base = {
@@ -171,6 +176,7 @@ export function buildOrderProductPayload(
         packaging: v.packaging || '',
         unit: v.unit || 'piece',
         lastPrice: v.lastPrice || '0',
+        quantityMultiplier: String(v.quantityMultiplier ?? '1'),
       })),
     };
   }

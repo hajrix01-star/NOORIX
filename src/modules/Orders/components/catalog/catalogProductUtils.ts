@@ -28,7 +28,9 @@ export function productVariantsSummary(p: OrderProduct): string {
   const variants = Array.isArray(p?.variants) ? p.variants : [];
   if (variants.length > 0) {
     return variants
-      .map((v: OrderProductVariant) => `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0)}`)
+      .map((v: OrderProductVariant) =>
+        `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'} ×${fmt(v.quantityMultiplier ?? 1)}: ${fmt(v.lastPrice ?? 0)}`
+      )
       .join(' | ');
   }
   if (p?.lastPrice != null && Number(p.lastPrice) > 0) return fmt(p.lastPrice);
@@ -53,5 +55,10 @@ export function productPriceLineShort(p: OrderProduct): string {
 
 export function productHasAdvancedVariants(p: { variants?: OrderProductVariant[] | unknown }): boolean {
   const variants = Array.isArray(p?.variants) ? p.variants : [];
-  return variants.some((v: OrderProductVariant) => v.size || v.packaging || Number.parseFloat(String(v.lastPrice ?? '')) > 0);
+  return variants.some((v: OrderProductVariant) =>
+    v.size
+    || v.packaging
+    || Number.parseFloat(String(v.quantityMultiplier ?? '1')) !== 1
+    || Number.parseFloat(String(v.lastPrice ?? '')) > 0
+  );
 }

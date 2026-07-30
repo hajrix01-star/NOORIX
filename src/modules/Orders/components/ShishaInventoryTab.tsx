@@ -141,7 +141,13 @@ function MovementTable({ rows }: { rows: ShishaInventoryMovement[] }) {
     { key: 'quantityBase', label: 'الكمية', numeric: true, cellClassName: 'font-semibold', render: (v, row) => row.materialType === 'charcoal' ? `${num(Number(v) / 64)} علبة (${num(v as string, 0)} حبة)` : num(v as string) },
     { key: 'costInclVat', label: 'التكلفة', numeric: true, render: (v) => v == null ? '—' : `${num(v as string, 2)} ر.س` },
     { key: 'invoiceNumber', label: 'الفاتورة', render: (v) => String(v || '—') },
-    { key: 'createdBy', label: 'بواسطة', render: (_v, row) => row.createdBy?.nameAr || row.createdBy?.nameEn || '—' },
+    {
+      key: 'createdBy',
+      label: 'بواسطة',
+      render: (_v, row) => row.source === 'order_catalog'
+        ? 'الطلبات (آلي)'
+        : row.createdBy?.nameAr || row.createdBy?.nameEn || '—',
+    },
   ], []);
   return <SimpleTable columns={columns} data={rows} tableMinWidth={760} emptyMessage="لا توجد حركات في الفترة المحددة." />;
 }
@@ -176,6 +182,16 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
   const stocktake = useCreateShishaStocktakeMutation();
   const initialized = Boolean(data?.initialized);
   const current = data?.current;
+  const charcoalPurchasesLinked = Boolean(data?.settings?.charcoalPurchaseProductId);
+
+  useEffect(() => {
+    if (!charcoalPurchasesLinked) return;
+    setPurchaseRows((rows) => rows.map((row) =>
+      row.materialType === 'charcoal'
+        ? { ...row, materialType: 'tobacco', unit: 'kg' }
+        : row
+    ));
+  }, [charcoalPurchasesLinked]);
 
   const submitOpening = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -294,6 +310,11 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
       </form></AdaptiveSheet>
       <AdaptiveSheet open={form === 'purchase'} onClose={() => setForm(null)} title="تسجيل فاتورة شراء للمخزون" size="lg"><form onSubmit={submitPurchase} className="space-y-4">
         <FieldGrid><DateField label="تاريخ الشراء" value={purchaseDate} onValueChange={setPurchaseDate} max={today} required /><Input name="invoiceNumber" label="رقم الفاتورة" /><Input name="supplierName" label="المورد" /></FieldGrid>
+        {charcoalPurchasesLinked && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
+            شراء الفحم مرتبط بصنف «فحم» في الطلبات ويضاف تلقائياً حسب التغليف المختار؛ لا يحتاج إدخاله مرة ثانية هنا.
+          </div>
+        )}
         <div className="space-y-3 rounded-xl border border-noorix-border p-3">
           <div className="flex items-center justify-between gap-2">
             <div><div className="text-[13px] font-bold text-noorix-text">أصناف الفاتورة</div><div className="text-[11px] text-noorix-muted">يمكن إضافة المعسل والليات والفحم في فاتورة واحدة.</div></div>
@@ -301,7 +322,7 @@ export function ShishaInventoryTab({ companyId, startDate, endDate, dateFilter }
           </div>
           {purchaseRows.map((row, index) => (
             <div key={row.id} className="grid grid-cols-1 items-end gap-2 rounded-lg bg-noorix-bg-muted p-3 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1fr_auto]">
-              <Input type="select" label={`المادة ${index + 1}`} value={row.materialType} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => changePurchaseMaterial(row.id, event.target.value as PurchaseMaterial)} required><option value="tobacco">معسل</option><option value="hose">ليات</option><option value="charcoal">فحم</option></Input>
+              <Input type="select" label={`المادة ${index + 1}`} value={row.materialType} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => changePurchaseMaterial(row.id, event.target.value as PurchaseMaterial)} required><option value="tobacco">معسل</option><option value="hose">ليات</option>{!charcoalPurchasesLinked && <option value="charcoal">فحم</option>}</Input>
               <Input type="number" label="الكمية" value={row.quantity} onChange={(event: React.ChangeEvent<HTMLInputElement>) => updatePurchaseRow(row.id, { quantity: event.target.value })} min="0.001" step={row.materialType === 'charcoal' ? '0.25' : '0.001'} required />
               <Input type="select" label="الوحدة" value={row.unit} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => updatePurchaseRow(row.id, { unit: event.target.value as PurchaseUnit })} required>{row.materialType === 'tobacco' && <><option value="kg">كيلو</option><option value="g">جرام</option></>}{row.materialType === 'hose' && <option value="piece">حبة</option>}{row.materialType === 'charcoal' && <option value="pack">علبة (64 حبة)</option>}</Input>
               <Input type="number" label="التكلفة شاملة الضريبة" value={row.costInclVat} onChange={(event: React.ChangeEvent<HTMLInputElement>) => updatePurchaseRow(row.id, { costInclVat: event.target.value })} min="0" step="0.01" />

@@ -40,6 +40,7 @@ export type ShishaInventoryMovement = {
   notes?: string | null;
   createdAt: string;
   createdBy?: NamedDisplayRef | null;
+  source?: 'inventory' | 'order_catalog';
 };
 
 export type ShishaStocktake = {
@@ -66,6 +67,8 @@ export type ShishaInventorySummary = {
     charcoalShishaPerPack: number;
     charcoalActualTrackingStartDate: string | null;
     charcoalConsumptionProductId: string | null;
+    charcoalPurchaseTrackingStartDate: string | null;
+    charcoalPurchaseProductId: string | null;
   };
   effectiveStart?: string;
   daily?: ShishaInventoryDailyRow[];

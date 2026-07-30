@@ -70,12 +70,13 @@ function VariantsTable({
         <Button type="button" size="sm" onClick={addVariant}>+ {t('ordersAddVariant')}</Button>
       </div>
       <div className="overflow-x-auto rounded-lg border border-noorix-border">
-        <table className="w-full min-w-[400px] border-collapse text-[12px]">
+        <table className="w-full min-w-[560px] border-collapse text-[12px]">
           <thead>
             <tr className="border-b border-noorix-border bg-noorix-bg-muted">
               <th className="px-2.5 py-2 text-right font-semibold">{t('ordersProductSize')}</th>
               <th className="px-2.5 py-2 text-right font-semibold">{t('ordersProductPackaging')}</th>
               <th className="px-2.5 py-2 text-right font-semibold">{t('unit')}</th>
+              <th className="px-2.5 py-2 text-right font-semibold">{t('ordersVariantMultiplier')}</th>
               <th className="px-2.5 py-2 text-right font-semibold">{t('ordersVariantPrice')}</th>
               <th className="w-10 px-1 py-2" />
             </tr>
@@ -125,8 +126,22 @@ function VariantsTable({
                     <option value="kg">{t('ordersUnitKg')}</option>
                     <option value="box">{t('ordersUnitBox')}</option>
                     <option value="pack">{t('ordersUnitPack')}</option>
+                    <option value="carton">{t('ordersUnitCarton')}</option>
                     <option value="dozen">{t('ordersUnitDozen')}</option>
                   </Input>
+                </td>
+                <td className="px-2 py-1.5">
+                  <Input
+                    type="number"
+                    min="0.0001"
+                    step="0.25"
+                    value={variant.quantityMultiplier ?? '1'}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                      updateVariant(index, 'quantityMultiplier', event.target.value)
+                    }
+                    className="w-20"
+                    title={t('ordersVariantMultiplierHint')}
+                  />
                 </td>
                 <td className="px-2 py-1.5">
                   <Input

@@ -222,7 +222,7 @@ export function useItemsManageTab(companyId: string) {
   function addVariantToProduct() {
     setNewProduct((p) => ({
       ...p,
-      variants: [...(p.variants || []), { size: '', packaging: '', unit: 'piece', lastPrice: '' }],
+      variants: [...(p.variants || []), { size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
     }));
   }
 

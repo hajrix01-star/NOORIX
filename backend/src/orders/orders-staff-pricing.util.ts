@@ -1,10 +1,12 @@
 import { Prisma } from '@prisma/client';
+import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
 
 export type ProductVariantRow = {
   size?: string;
   packaging?: string;
   unit?: string;
   lastPrice?: string | number;
+  quantityMultiplier?: string | number;
 };
 
 export type StaffItemVariantInput = {
@@ -22,7 +24,13 @@ export function resolveStaffItemVariant(
     unit?: string | null;
   } | null | undefined,
   input: StaffItemVariantInput,
-): { size: string | null; packaging: string | null; unit: string | null; unitPrice: Prisma.Decimal } {
+): {
+  size: string | null;
+  packaging: string | null;
+  unit: string | null;
+  unitPrice: Prisma.Decimal;
+  quantityMultiplier: Prisma.Decimal;
+} {
   const size = input.size?.trim() || null;
   const packaging = input.packaging?.trim() || null;
   const unit = input.unit?.trim() || 'piece';
@@ -34,6 +42,7 @@ export function resolveStaffItemVariant(
       packaging,
       unit,
       unitPrice: new Prisma.Decimal(input.unitPrice),
+      quantityMultiplier: resolveQuantityMultiplier(product, { size, packaging, unit }),
     };
   }
 
@@ -41,7 +50,13 @@ export function resolveStaffItemVariant(
     (v) => (v.size || '') === (size || '') && (v.packaging || '') === (packaging || '') && (v.unit || 'piece') === unit,
   );
   if (match?.lastPrice != null && String(match.lastPrice).trim() !== '') {
-    return { size, packaging, unit, unitPrice: new Prisma.Decimal(match.lastPrice) };
+    return {
+      size,
+      packaging,
+      unit,
+      unitPrice: new Prisma.Decimal(match.lastPrice),
+      quantityMultiplier: resolveQuantityMultiplier(product, { size, packaging, unit }),
+    };
   }
   if (variants.length > 0 && !size && !packaging) {
     const v0 = variants[0];
@@ -50,6 +65,11 @@ export function resolveStaffItemVariant(
       packaging: v0.packaging?.trim() || null,
       unit: v0.unit?.trim() || 'piece',
       unitPrice: new Prisma.Decimal(v0.lastPrice ?? 0),
+      quantityMultiplier: resolveQuantityMultiplier(product, {
+        size: v0.size,
+        packaging: v0.packaging,
+        unit: v0.unit,
+      }),
     };
   }
 
@@ -58,6 +78,7 @@ export function resolveStaffItemVariant(
     packaging,
     unit,
     unitPrice: new Prisma.Decimal(product?.lastPrice ?? 0),
+    quantityMultiplier: resolveQuantityMultiplier(product, { size, packaging, unit }),
   };
 }
 

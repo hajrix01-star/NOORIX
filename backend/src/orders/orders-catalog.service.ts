@@ -9,7 +9,13 @@ import {
 } from './orders-product-sections.util';
 
 type OrderProductWithSections = { sections?: unknown; sectionIds?: unknown };
-type ProductVariantInput = { size?: string; packaging?: string; unit?: string; lastPrice?: string };
+type ProductVariantInput = {
+  size?: string;
+  packaging?: string;
+  unit?: string;
+  lastPrice?: string;
+  quantityMultiplier?: string;
+};
 
 @Injectable()
 export class OrdersCatalogService {
@@ -339,6 +345,7 @@ export class OrdersCatalogService {
       packaging: variant.packaging || '',
       unit: variant.unit || 'piece',
       lastPrice: variant.lastPrice || '0',
+      quantityMultiplier: variant.quantityMultiplier || '1',
     }));
   }
 

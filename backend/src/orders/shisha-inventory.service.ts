@@ -10,78 +10,29 @@ import {
   InitializeShishaInventoryDto,
 } from './dto/shisha-inventory.dto';
 import { parseSaleDateYmd } from './orders-staff-date.util';
+import { standardCharcoalVariants } from './orders-quantity-multiplier.util';
 import {
   calculateShishaInventory,
   type ShishaMaterialType,
   type ShishaMovementInput,
-  type ShishaSaleEventInput,
 } from './shisha-inventory-calculator.util';
+import {
+  assertManualCharcoalPurchaseAllowed,
+  charcoalPieces,
+  normalizeShishaText,
+  purchaseQuantityBase,
+  serializeShishaInventorySettings,
+  shishaDecimal,
+  tobaccoGrams,
+} from './shisha-inventory-input.util';
+import { ShishaInventorySourceService } from './shisha-inventory-source.service';
 
 const ZERO = new Prisma.Decimal(0);
 const CHARCOAL_SHISHAS_PER_PACK = 6;
 
-function decimal(value: string | number | Prisma.Decimal): Prisma.Decimal {
-  return new Prisma.Decimal(value);
-}
-
-function tobaccoGrams(quantity: string, unit: 'kg' | 'g'): Prisma.Decimal {
-  const value = decimal(quantity);
-  return unit === 'kg' ? value.times(1000) : value;
-}
-
-function charcoalPieces(
-  cartons: string,
-  packs: string,
-  pieces: string,
-  packsPerCarton: number,
-  piecesPerPack: number,
-): Prisma.Decimal {
-  return decimal(cartons)
-    .times(packsPerCarton)
-    .times(piecesPerPack)
-    .plus(decimal(packs).times(piecesPerPack))
-    .plus(decimal(pieces));
-}
-
-function purchaseQuantityBase(
-  settings: { charcoalPacksPerCarton: number; charcoalPiecesPerPack: number },
-  item: { materialType: 'tobacco' | 'hose' | 'charcoal'; quantity: string; unit: string },
-): Prisma.Decimal {
-  if (item.materialType === 'tobacco') {
-    if (item.unit !== 'kg' && item.unit !== 'g') {
-      throw new BadRequestException('وحدة المعسل يجب أن تكون كيلو أو جرام.');
-    }
-    return tobaccoGrams(item.quantity, item.unit);
-  }
-  if (item.materialType === 'hose') {
-    if (item.unit !== 'piece') {
-      throw new BadRequestException('وحدة اللي يجب أن تكون حبة.');
-    }
-    return decimal(item.quantity);
-  }
-  if (!['piece', 'pack', 'carton'].includes(item.unit)) {
-    throw new BadRequestException('وحدة الفحم يجب أن تكون حبة أو علبة أو كرتون.');
-  }
-  const multiplier = item.unit === 'carton'
-    ? settings.charcoalPacksPerCarton * settings.charcoalPiecesPerPack
-    : item.unit === 'pack'
-      ? settings.charcoalPiecesPerPack
-      : 1;
-  return decimal(item.quantity).times(multiplier);
-}
-
-function normalizeText(value?: string): string | null {
-  const normalized = value?.trim();
-  return normalized ? normalized : null;
-}
-
-function isShishaSection(value: string | null | undefined): boolean {
-  return String(value ?? '').trim() === 'شيشة';
-}
-
 @Injectable()
 export class ShishaInventoryService {
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(private readonly prisma: TenantPrismaService, private readonly source: ShishaInventorySourceService) {}
 
   private async requireSettings(companyId: string) {
     const settings = await this.prisma.shishaInventorySettings.findUnique({ where: { companyId } });
@@ -91,96 +42,56 @@ export class ShishaInventoryService {
     return settings;
   }
 
-  private async saleEvents(
-    companyId: string,
-    trackingStart: Date,
-    endDate: Date,
-    changeProductId: string | null,
-    charcoalConsumptionProductId: string | null,
-  ): Promise<ShishaSaleEventInput[]> {
-    const orders = await this.prisma.staffOrder.findMany({
-      where: {
-        companyId,
-        orderType: 'sale',
-        saleDate: { gte: trackingStart, lte: endDate },
-      },
-      select: {
-        id: true,
-        logRef: true,
-        saleDate: true,
-        sectionName: true,
-        items: {
-          select: {
-            quantity: true,
-            productId: true,
-            product: {
-              select: { nameAr: true, productType: true, sections: true },
-            },
-          },
-        },
-      },
-      orderBy: [{ saleDate: 'asc' }, { createdAt: 'asc' }],
-    });
-
-    const events: ShishaSaleEventInput[] = [];
-    for (const order of orders) {
-      if (!order.saleDate) continue;
-      for (const item of order.items) {
-        if (item.productId === charcoalConsumptionProductId) {
-          events.push({
-            date: toYmd(order.saleDate),
-            operationKey: order.logRef ?? order.id,
-            heads: ZERO,
-            changes: ZERO,
-            actualCharcoalBoxes: item.quantity,
-          });
-          continue;
-        }
-        const sections = Array.isArray(item.product.sections) ? item.product.sections : [];
-        const belongsToShisha =
-          isShishaSection(order.sectionName) ||
-          sections.some((section) => isShishaSection(String(section)));
-        if (!belongsToShisha || item.product.productType !== 'sale') continue;
-        const isChange =
-          item.productId === changeProductId ||
-          item.product.nameAr.trim() === 'تغيير';
-        events.push({
-          date: toYmd(order.saleDate),
-          operationKey: order.logRef ?? order.id,
-          heads: item.quantity,
-          changes: isChange ? item.quantity : ZERO,
-          actualCharcoalBoxes: null,
-        });
-      }
-    }
-    return events;
-  }
-
   private async calculation(companyId: string, startDate: string, endDate: string) {
     const settings = await this.requireSettings(companyId);
     const end = parseSaleDateYmd(endDate);
-    const [movements, sales] = await Promise.all([
+    const [movements, sales, catalogPurchases] = await Promise.all([
       this.prisma.shishaInventoryMovement.findMany({
         where: { companyId, transactionDate: { lte: end } },
         orderBy: [{ transactionDate: 'asc' }, { createdAt: 'asc' }],
+        include: { createdBy: { select: { nameAr: true, nameEn: true } } },
       }),
-      this.saleEvents(
+      this.source.saleEvents(
         companyId,
         settings.trackingStartedAt,
         end,
         settings.changeProductId,
         settings.charcoalConsumptionProductId,
       ),
+      this.source.catalogCharcoalPurchases(
+        companyId,
+        settings.charcoalPurchaseProductId,
+        settings.charcoalPurchaseTrackingStartedAt,
+        end,
+        settings.charcoalPiecesPerPack,
+      ),
     ]);
-    const movementInputs: ShishaMovementInput[] = movements.map((movement) => ({
+    const manualMovements = movements;
+    const movementInputs: ShishaMovementInput[] = manualMovements.map((movement) => ({
       date: toYmd(movement.transactionDate),
       movementType: movement.movementType as ShishaMovementInput['movementType'],
       materialType: movement.materialType as ShishaMaterialType,
       quantityBase: movement.quantityBase,
       costInclVat: movement.costInclVat,
     }));
+    movementInputs.push(...catalogPurchases.map((movement) => ({
+      date: toYmd(movement.transactionDate),
+      movementType: movement.movementType,
+      materialType: movement.materialType,
+      quantityBase: movement.quantityBase,
+      costInclVat: movement.costInclVat,
+    })));
+    const displayStart = parseSaleDateYmd(startDate);
+    const displayMovements = [...manualMovements, ...catalogPurchases]
+      .filter((movement) => movement.transactionDate >= displayStart && movement.transactionDate <= end)
+      .sort((left, right) =>
+        right.transactionDate.getTime() - left.transactionDate.getTime()
+        || right.createdAt.getTime() - left.createdAt.getTime()
+      )
+      .slice(0, 100);
     return {
       settings,
+      displayMovements,
       calculation: calculateShishaInventory({
         trackingStartDate: toYmd(settings.trackingStartedAt),
         charcoalActualTrackingStartDate: settings.charcoalActualTrackingStartedAt
@@ -203,23 +114,11 @@ export class ShishaInventoryService {
     if (!settings) {
       return { initialized: false, startDate, endDate };
     }
-    const [{ calculation }, latestStocktake, movements] = await Promise.all([
+    const [{ calculation, displayMovements }, latestStocktake] = await Promise.all([
       this.calculation(companyId, startDate, endDate),
       this.prisma.shishaStocktake.findFirst({
         where: { companyId },
         orderBy: [{ stocktakeDate: 'desc' }, { createdAt: 'desc' }],
-        include: { createdBy: { select: { nameAr: true, nameEn: true } } },
-      }),
-      this.prisma.shishaInventoryMovement.findMany({
-        where: {
-          companyId,
-          transactionDate: {
-            gte: parseSaleDateYmd(startDate),
-            lte: parseSaleDateYmd(endDate),
-          },
-        },
-        orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }],
-        take: 100,
         include: { createdBy: { select: { nameAr: true, nameEn: true } } },
       }),
     ]);
@@ -227,21 +126,10 @@ export class ShishaInventoryService {
       initialized: true,
       startDate,
       endDate,
-      settings: {
-        trackingStartDate: toYmd(settings.trackingStartedAt),
-        headsPerKg: Number(settings.headsPerKg),
-        gramsPerHead: Number(new Prisma.Decimal(1000).div(settings.headsPerKg).toDecimalPlaces(3)),
-        charcoalPacksPerCarton: settings.charcoalPacksPerCarton,
-        charcoalPiecesPerPack: settings.charcoalPiecesPerPack,
-        charcoalShishaPerPack: CHARCOAL_SHISHAS_PER_PACK,
-        charcoalActualTrackingStartDate: settings.charcoalActualTrackingStartedAt
-          ? toYmd(settings.charcoalActualTrackingStartedAt)
-          : null,
-        charcoalConsumptionProductId: settings.charcoalConsumptionProductId,
-      },
+      settings: serializeShishaInventorySettings(settings, CHARCOAL_SHISHAS_PER_PACK),
       ...calculation,
       latestStocktake,
-      movements,
+      movements: displayMovements,
     };
   }
 
@@ -265,17 +153,17 @@ export class ShishaInventoryService {
       {
         materialType: 'tobacco',
         quantityBase: tobaccoGrams(dto.tobaccoQuantity, dto.tobaccoUnit),
-        costInclVat: dto.tobaccoCostInclVat ? decimal(dto.tobaccoCostInclVat) : null,
+        costInclVat: dto.tobaccoCostInclVat ? shishaDecimal(dto.tobaccoCostInclVat) : null,
       },
       {
         materialType: 'hose',
-        quantityBase: decimal(dto.hoses),
-        costInclVat: dto.hoseCostInclVat ? decimal(dto.hoseCostInclVat) : null,
+        quantityBase: shishaDecimal(dto.hoses),
+        costInclVat: dto.hoseCostInclVat ? shishaDecimal(dto.hoseCostInclVat) : null,
       },
       {
         materialType: 'charcoal',
         quantityBase: charcoalPieces(dto.charcoalCartons, dto.charcoalPacks, dto.charcoalPieces, 10, 64),
-        costInclVat: dto.charcoalCostInclVat ? decimal(dto.charcoalCostInclVat) : null,
+        costInclVat: dto.charcoalCostInclVat ? shishaDecimal(dto.charcoalCostInclVat) : null,
       },
     ] as const;
 
@@ -297,6 +185,7 @@ export class ShishaInventoryService {
               lastPrice: ZERO,
               sections: ['شيشة'],
               sectionIds: [section.id],
+              variants: standardCharcoalVariants(),
               isActive: true,
               sortOrder: 999,
             },
@@ -312,8 +201,57 @@ export class ShishaInventoryService {
               lastPrice: ZERO,
               sections: ['شيشة'],
               sectionIds: [section.id],
+              variants: standardCharcoalVariants(),
               productType: 'sale',
               sortOrder: 999,
+            },
+            select: { id: true },
+          });
+      const existingCharcoalPurchaseProduct = await tx.orderProduct.findFirst({
+        where: {
+          companyId,
+          productType: 'order',
+          OR: [
+            { nameAr: { in: ['فحم', 'الفحم'] } },
+            { nameEn: { equals: 'Charcoal', mode: 'insensitive' } },
+          ],
+        },
+        select: { id: true, lastPrice: true, variants: true },
+      });
+      const existingPurchaseVariants = Array.isArray(existingCharcoalPurchaseProduct?.variants)
+        ? existingCharcoalPurchaseProduct.variants as Array<{ packaging?: string; lastPrice?: string | number }>
+        : [];
+      const previousCartonPrice = existingPurchaseVariants.find((variant) =>
+        ['كرتون', 'كرتن', 'carton'].includes(String(variant.packaging ?? '').trim().toLowerCase())
+      )?.lastPrice ?? existingCharcoalPurchaseProduct?.lastPrice ?? ZERO;
+      const charcoalPurchaseProduct = existingCharcoalPurchaseProduct
+        ? await tx.orderProduct.update({
+            where: { id: existingCharcoalPurchaseProduct.id },
+            data: {
+              nameAr: 'فحم',
+              nameEn: 'Charcoal',
+              unit: 'pack',
+              sections: ['شيشة'],
+              sectionIds: [section.id],
+              variants: standardCharcoalVariants(String(previousCartonPrice)),
+              isActive: true,
+              sortOrder: 998,
+            },
+            select: { id: true },
+          })
+        : await tx.orderProduct.create({
+            data: {
+              tenantId,
+              companyId,
+              nameAr: 'فحم',
+              nameEn: 'Charcoal',
+              unit: 'pack',
+              lastPrice: ZERO,
+              sections: ['شيشة'],
+              sectionIds: [section.id],
+              variants: standardCharcoalVariants(),
+              productType: 'order',
+              sortOrder: 998,
             },
             select: { id: true },
           });
@@ -322,13 +260,15 @@ export class ShishaInventoryService {
           tenantId,
           companyId,
           trackingStartedAt: date,
-          headsPerKg: decimal(dto.headsPerKg),
+          headsPerKg: shishaDecimal(dto.headsPerKg),
           charcoalPacksPerCarton: 10,
           charcoalPiecesPerPack: 64,
           shishaSectionId: section.id,
           changeProductId: changeProduct.id,
           charcoalConsumptionProductId: charcoalProduct.id,
           charcoalActualTrackingStartedAt: date,
+          charcoalPurchaseProductId: charcoalPurchaseProduct.id,
+          charcoalPurchaseTrackingStartedAt: new Date(),
         },
       });
       await tx.shishaInventoryMovement.createMany({
@@ -341,7 +281,7 @@ export class ShishaInventoryService {
           quantityBase: row.quantityBase,
           costInclVat: row.costInclVat,
           sourceKey: `shisha-opening:${companyId}:${row.materialType}`,
-          notes: normalizeText(dto.notes),
+          notes: normalizeShishaText(dto.notes),
           createdByUserId: userId,
         })),
       });
@@ -356,26 +296,10 @@ export class ShishaInventoryService {
       throw new BadRequestException('تاريخ الشراء لا يمكن أن يسبق تاريخ بداية التتبع.');
     }
 
-    let quantityBase: Prisma.Decimal;
-    if (dto.materialType === 'tobacco') {
-      if (dto.unit !== 'kg' && dto.unit !== 'g') throw new BadRequestException('وحدة المعسل يجب أن تكون كيلو أو جرام.');
-      quantityBase = tobaccoGrams(dto.quantity, dto.unit);
-    } else if (dto.materialType === 'hose') {
-      if (dto.unit !== 'piece') throw new BadRequestException('وحدة اللي يجب أن تكون حبة.');
-      quantityBase = decimal(dto.quantity);
-    } else {
-      if (!['piece', 'pack', 'carton'].includes(dto.unit)) {
-        throw new BadRequestException('وحدة الفحم يجب أن تكون حبة أو باكت أو كرتون.');
-      }
-      const multiplier = dto.unit === 'carton'
-        ? settings.charcoalPacksPerCarton * settings.charcoalPiecesPerPack
-        : dto.unit === 'pack'
-          ? settings.charcoalPiecesPerPack
-          : 1;
-      quantityBase = decimal(dto.quantity).times(multiplier);
-    }
+    assertManualCharcoalPurchaseAllowed(settings, date, [dto.materialType]);
+    const quantityBase = purchaseQuantityBase(settings, dto);
 
-    const invoiceNumber = normalizeText(dto.invoiceNumber);
+    const invoiceNumber = normalizeShishaText(dto.invoiceNumber);
     const sourceKey = invoiceNumber
       ? `shisha-purchase:${companyId}:${dto.materialType}:${invoiceNumber!.toLocaleLowerCase('en')}`
       : null;
@@ -391,11 +315,11 @@ export class ShishaInventoryService {
         movementType: 'purchase',
         materialType: dto.materialType,
         quantityBase,
-        costInclVat: dto.costInclVat ? decimal(dto.costInclVat) : null,
+        costInclVat: dto.costInclVat ? shishaDecimal(dto.costInclVat) : null,
         invoiceNumber,
-        supplierName: normalizeText(dto.supplierName),
+        supplierName: normalizeShishaText(dto.supplierName),
         sourceKey,
-        notes: normalizeText(dto.notes),
+        notes: normalizeShishaText(dto.notes),
         createdByUserId: userId,
       },
     });
@@ -409,7 +333,13 @@ export class ShishaInventoryService {
       throw new BadRequestException('تاريخ الشراء لا يمكن أن يسبق تاريخ بداية التتبع.');
     }
 
-    const invoiceNumber = normalizeText(dto.invoiceNumber);
+    assertManualCharcoalPurchaseAllowed(
+      settings,
+      date,
+      dto.items.map((item) => item.materialType),
+    );
+
+    const invoiceNumber = normalizeShishaText(dto.invoiceNumber);
     if (invoiceNumber) {
       const duplicate = await this.prisma.shishaInventoryMovement.findFirst({
         where: {
@@ -423,8 +353,8 @@ export class ShishaInventoryService {
     }
 
     const tenantId = TenantContext.getTenantId();
-    const supplierName = normalizeText(dto.supplierName);
-    const notes = normalizeText(dto.notes);
+    const supplierName = normalizeShishaText(dto.supplierName);
+    const notes = normalizeShishaText(dto.notes);
     const invoiceKey = invoiceNumber?.toLocaleLowerCase('en') ?? null;
     const rows = dto.items.map((item, index) => ({
       tenantId,
@@ -433,7 +363,7 @@ export class ShishaInventoryService {
       movementType: 'purchase',
       materialType: item.materialType,
       quantityBase: purchaseQuantityBase(settings, item),
-      costInclVat: item.costInclVat ? decimal(item.costInclVat) : null,
+      costInclVat: item.costInclVat ? shishaDecimal(item.costInclVat) : null,
       invoiceNumber,
       supplierName,
       sourceKey: invoiceKey
@@ -459,11 +389,11 @@ export class ShishaInventoryService {
     if (duplicate) throw new ConflictException('يوجد جرد مسجل لهذا التاريخ.');
 
     const { calculation } = await this.calculation(companyId, dto.stocktakeDate, dto.stocktakeDate);
-    const expectedTobacco = decimal(calculation.current.tobaccoGrams);
-    const expectedHoses = decimal(calculation.current.hoses);
-    const expectedCharcoal = decimal(calculation.current.charcoalPiecesTotal);
+    const expectedTobacco = shishaDecimal(calculation.current.tobaccoGrams);
+    const expectedHoses = shishaDecimal(calculation.current.hoses);
+    const expectedCharcoal = shishaDecimal(calculation.current.charcoalPiecesTotal);
     const physicalTobacco = tobaccoGrams(dto.tobaccoQuantity, dto.tobaccoUnit);
-    const physicalHoses = decimal(dto.hoses);
+    const physicalHoses = shishaDecimal(dto.hoses);
     const physicalCharcoal = charcoalPieces(
       dto.charcoalCartons,
       dto.charcoalPacks,
@@ -493,7 +423,7 @@ export class ShishaInventoryService {
           expectedCharcoalPieces: expectedCharcoal,
           physicalCharcoalPieces: physicalCharcoal,
           charcoalVariancePieces: physicalCharcoal.minus(expectedCharcoal),
-          notes: normalizeText(dto.notes),
+          notes: normalizeShishaText(dto.notes),
           createdByUserId: userId,
         },
       });
@@ -507,7 +437,7 @@ export class ShishaInventoryService {
           quantityBase: variance.quantityBase,
           sourceKey: `shisha-stocktake:${created.id}:${variance.materialType}`,
           stocktakeId: created.id,
-          notes: normalizeText(dto.notes),
+          notes: normalizeShishaText(dto.notes),
           createdByUserId: userId,
         })),
       });

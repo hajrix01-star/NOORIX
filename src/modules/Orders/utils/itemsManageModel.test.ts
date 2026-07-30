@@ -77,7 +77,41 @@ describe('itemsManageModel', () => {
       categoryId: 'c1',
       sectionIds: ['hot'],
       productType: 'order',
-      variants: [{ size: 'large', packaging: '', unit: 'piece', lastPrice: '25' }],
+      variants: [{
+        size: 'large',
+        packaging: '',
+        unit: 'piece',
+        lastPrice: '25',
+        quantityMultiplier: '1',
+      }],
+    });
+  });
+
+  it('preserves packaging conversion multipliers in the catalog payload', () => {
+    expect(buildOrderProductPayload({
+      nameAr: 'فحم',
+      nameEn: 'Charcoal',
+      categoryId: '',
+      sectionIds: ['shisha'],
+      variants: [
+        {
+          size: '',
+          packaging: 'نصف كرتون',
+          unit: 'carton',
+          lastPrice: '72.5',
+          quantityMultiplier: '5',
+        },
+      ],
+    }, 'order')).toMatchObject({
+      nameAr: 'فحم',
+      productType: 'order',
+      variants: [{
+        size: '',
+        packaging: 'نصف كرتون',
+        unit: 'carton',
+        lastPrice: '72.5',
+        quantityMultiplier: '5',
+      }],
     });
   });
 });

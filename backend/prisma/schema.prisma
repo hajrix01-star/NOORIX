@@ -1311,6 +1311,7 @@ model OrderItem {
   packaging  String?  @map("packaging")  // ط§ظ„طھط؛ظ„ظٹظپ ط§ظ„ظ…ط®طھط§ط±
   unit       String?  @map("unit")       // ط§ظ„ظˆط­ط¯ط© ط§ظ„ظ…ط®طھط§ط±ط© (piece|kg|box|dozen)
   quantity   Decimal  @db.Decimal(18, 4)
+  quantityMultiplier Decimal @default(1) @map("quantity_multiplier") @db.Decimal(18, 4)
   unitPrice  Decimal  @map("unit_price") @db.Decimal(18, 4)
   amount     Decimal  @db.Decimal(18, 4)
 
@@ -1361,6 +1362,7 @@ model StaffOrderItem {
   staffOrderId String   @map("staff_order_id")
   productId    String   @map("product_id")
   quantity     Decimal  @db.Decimal(18, 4)
+  quantityMultiplier Decimal @default(1) @map("quantity_multiplier") @db.Decimal(18, 4)
   size         String?  @map("size")
   packaging    String?  @map("packaging")
   unit         String?
@@ -1394,6 +1396,8 @@ model ShishaInventorySettings {
   changeProductId       String?  @map("change_product_id")
   charcoalConsumptionProductId String?  @map("charcoal_consumption_product_id")
   charcoalActualTrackingStartedAt DateTime? @map("charcoal_actual_tracking_started_at") @db.Date
+  charcoalPurchaseProductId String? @map("charcoal_purchase_product_id")
+  charcoalPurchaseTrackingStartedAt DateTime? @map("charcoal_purchase_tracking_started_at")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 

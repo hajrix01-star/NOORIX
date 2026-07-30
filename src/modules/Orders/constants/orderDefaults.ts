@@ -15,8 +15,14 @@ export const DEFAULT_SIZES = [
 ];
 
 export const DEFAULT_PACKAGING = [
+  { ar: 'ربع علبة', en: 'Quarter box' },
+  { ar: 'نصف علبة', en: 'Half box' },
   { ar: 'علبة', en: 'Box' },
+  { ar: 'علبة ونصف', en: 'One and a half boxes' },
+  { ar: 'ربع كرتون', en: 'Quarter carton' },
+  { ar: 'نصف كرتون', en: 'Half carton' },
   { ar: 'كرتون', en: 'Carton' },
+  { ar: 'كرتون ونصف', en: 'One and a half cartons' },
   { ar: 'كيس', en: 'Bag' },
   { ar: 'صندوق', en: 'Crate' },
   { ar: 'حزمة', en: 'Bundle' },

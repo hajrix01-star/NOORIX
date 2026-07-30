@@ -52,7 +52,7 @@ export function StaffQtyModal({
   onConfirm: () => void;
 }) {
   if (!qtyModal) return null;
-  const quantityStep = qtyModal.unit === 'pack' ? 0.25 : 1;
+  const quantityStep = ['pack', 'carton'].includes(qtyModal.unit) ? 0.25 : 1;
   return (
     <Modal
       open
@@ -101,6 +101,7 @@ export function StaffQtyModal({
           <option value="kg">{t('ordersUnitKg')}</option>
           <option value="box">{t('ordersUnitBox')}</option>
           <option value="pack">{t('ordersUnitPack')}</option>
+          <option value="carton">{t('ordersUnitCarton')}</option>
           <option value="dozen">{t('ordersUnitDozen')}</option>
         </Input>
         {qtyModal.product?.lastPrice != null && Number(qtyModal.product.lastPrice) > 0 ? (
