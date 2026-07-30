@@ -35,6 +35,7 @@ import {
 } from './StaffOrderPanelSections';
 import {
   useMyStaffOrders,
+  useStaffSaleDateStatus,
   useStaffSaleNextLogRef,
   useCreateStaffOrderMutation,
   useUpdateStaffOrderMutation,
@@ -117,7 +118,18 @@ export function StaffOrderPanel({
   );
   const previewNextLogRef = isSale && basketLines.length > 0 && !editingId && !!saleDate;
   const { data: nextLogRef } = useStaffSaleNextLogRef(companyId, saleDate, previewNextLogRef);
+  const { data: saleDateStatus } = useStaffSaleDateStatus(
+    companyId,
+    sectionFilter,
+    isSale && !!sectionFilter && !editingId,
+  );
   const basketLogRef = isSale ? (editingOrder?.logRef || nextLogRef || null) : null;
+
+  React.useEffect(() => {
+    if (isSale && !editingId && sectionFilter && saleDateStatus?.suggestedDate) {
+      setSaleDate(saleDateStatus.suggestedDate);
+    }
+  }, [isSale, editingId, sectionFilter, saleDateStatus?.suggestedDate]);
 
   function tapProduct(product: OrderProduct) {
     const resolvedProduct = withStandardCharcoalVariants(product);
@@ -215,6 +227,21 @@ export function StaffOrderPanel({
 
   const handleSubmit = useCallback(async () => {
     if (basketLines.length === 0) { showToast(t('staffOrderItemsRequired'), 'error'); return; }
+    if (isSale && !sectionFilter.trim()) {
+      showToast(t('staffSaleSectionRequired'), 'error');
+      return;
+    }
+    if (isSale) {
+      const basketSections = new Set(
+        basketLines
+          .map((line) => String(line.sectionName || '').trim())
+          .filter(Boolean),
+      );
+      if (basketSections.size !== 1 || !basketSections.has(sectionFilter.trim())) {
+        showToast(t('staffSaleSingleSectionRequired'), 'error');
+        return;
+      }
+    }
     if (isSale && !saleDate) { showToast(t('staffSaleDateRequired'), 'error'); return; }
     setSubmitting(true);
     try {
@@ -352,6 +379,11 @@ export function StaffOrderPanel({
         t={t}
         isSale={isSale}
         basketLogRef={basketLogRef}
+        saleDateHint={isSale && sectionFilter
+          ? (saleDateStatus?.lastSectionDate
+              ? t('staffSaleAutoDateHint', sectionFilter, saleDateStatus.lastSectionDate)
+              : t('staffSaleAutoDateFirstHint', sectionFilter))
+          : undefined}
         editingQtyId={editingQtyId}
         saleDate={saleDate}
         notes={notes}

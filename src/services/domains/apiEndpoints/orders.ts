@@ -15,6 +15,7 @@ import type {
   OrderSummary,
   StaffOrder,
   StaffOrderPayload,
+  StaffSaleDateStatus,
   StaffSaleNextLogRef,
   StaffSaleReport,
   UpdateOrderPayload,
@@ -232,6 +233,16 @@ export async function getStaffSaleNextLogRef(
   return res?.success ? { ...res, data: res.data ?? { logRef: '' } } : res;
 }
 
+export async function getStaffSaleDateStatus(
+  companyId: string,
+  sectionName: string,
+): Promise<ApiParsedResult<StaffSaleDateStatus>> {
+  return apiGet<StaffSaleDateStatus>('/api/v1/orders/staff/sale-date-status', {
+    companyId,
+    sectionName,
+  });
+}
+
 export async function createStaffOrder(body: StaffOrderPayload): Promise<ApiParsedResult<StaffOrder | { orders: StaffOrder[]; count: number; logRef?: string | null; whatsAppText?: string }>> {
   const companyId = body.companyId;
   const q = companyId ? `?companyId=${encodeURIComponent(String(companyId))}` : '';
@@ -262,8 +273,29 @@ export async function getSalesReport(
     ? { companyId, days: String(period) }
     : { companyId, startDate: toYmd(period.startDate), endDate: toYmd(period.endDate) };
   const res = await apiGet<StaffSaleReport>('/api/v1/orders/sales/report', params);
-  const empty: StaffSaleReport = { summary: { totalOrders: 0, totalQty: 0, totalAmount: 0, avgPerOrder: 0, uniqueProducts: 0, uniqueSections: 0 }, byProduct: [], bySection: [], byUser: [], byDay: [], byLog: [] };
+  const empty = emptyStaffSaleReport();
   return res?.success ? { ...res, data: res.data ?? empty } : res;
+}
+
+function emptyStaffSaleReport(): StaffSaleReport {
+  return {
+    summary: { totalOrders: 0, totalQty: 0, totalAmount: 0, avgPerOrder: 0, uniqueProducts: 0, uniqueSections: 0 },
+    byProduct: [],
+    bySection: [],
+    byUser: [],
+    byDay: [],
+    byLog: [],
+    registrationCoverage: {
+      startDate: '',
+      endDate: '',
+      expectedSectionDays: 0,
+      registeredSectionDays: 0,
+      missingSectionDays: 0,
+      affectedSections: 0,
+      sections: [],
+      missingDays: [],
+    },
+  };
 }
 
 // ── Sections ──────────────────────────────────────────────────────

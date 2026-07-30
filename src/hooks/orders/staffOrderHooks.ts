@@ -3,6 +3,7 @@ import {
   deleteStaffOrder,
   getMyStaffOrders,
   getSalesReport,
+  getStaffSaleDateStatus,
   getStaffSaleNextLogRef,
   resendStaffOrder,
   updateStaffOrder,
@@ -11,6 +12,7 @@ import { orderKeys } from '../../services/queryKeys';
 import type {
   StaffOrder,
   StaffOrderPayload,
+  StaffSaleDateStatus,
   StaffSaleNextLogRef,
   StaffSaleReport,
 } from '../../types/api';
@@ -33,6 +35,16 @@ const emptyStaffSaleReport: StaffSaleReport = {
   byUser: [],
   byDay: [],
   byLog: [],
+  registrationCoverage: {
+    startDate: '',
+    endDate: '',
+    expectedSectionDays: 0,
+    registeredSectionDays: 0,
+    missingSectionDays: 0,
+    affectedSections: 0,
+    sections: [],
+    missingDays: [],
+  },
 };
 
 export function useMyStaffOrders(companyId: string) {
@@ -55,6 +67,16 @@ export function useStaffSaleNextLogRef(companyId: string, saleDate: string, enab
   });
 }
 
+export function useStaffSaleDateStatus(companyId: string, sectionName: string, enabled = true) {
+  return useApiQuery<StaffSaleDateStatus>({
+    queryKey: ['staffSaleDateStatus', companyId, sectionName],
+    queryFn: () => getStaffSaleDateStatus(companyId, sectionName),
+    fallbackMessage: 'Failed to load staff sale date status',
+    enabled: !!companyId && !!sectionName && enabled,
+    staleTime: 15_000,
+  });
+}
+
 export function useCreateStaffOrderMutation(companyId: string) {
   return useApiMutation({
     mutationFn: createStaffOrder,
@@ -62,6 +84,7 @@ export function useCreateStaffOrderMutation(companyId: string) {
       orderKeys.staffMy(companyId),
       ['salesReport', companyId],
       ['staffSaleNextLogRef', companyId],
+      ['staffSaleDateStatus', companyId],
       orderKeys.shishaInventoryRoot(),
     ],
     showErrorToast: false,
@@ -74,6 +97,7 @@ export function useUpdateStaffOrderMutation(companyId: string) {
     invalidateQueries: [
       orderKeys.staffMy(companyId),
       ['salesReport', companyId],
+      ['staffSaleDateStatus', companyId],
       orderKeys.shishaInventoryRoot(),
     ],
     showErrorToast: false,
@@ -86,6 +110,7 @@ export function useDeleteStaffOrderMutation(companyId: string) {
     invalidateQueries: [
       orderKeys.staffMy(companyId),
       ['salesReport', companyId],
+      ['staffSaleDateStatus', companyId],
       orderKeys.shishaInventoryRoot(),
     ],
     showErrorToast: false,

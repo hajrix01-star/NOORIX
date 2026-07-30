@@ -5,6 +5,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
+import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useSalesReport } from '../../../hooks/useOrders';
 import { useTabSearchParam } from '../../../hooks/useTabSearchParam';
 import { Button, DataBar, FilterToolbar, SimpleTable as UiSimpleTable, Spinner } from '../../../ui';
@@ -17,7 +18,7 @@ import type {
   StaffSaleReportUserRow,
 } from '../../../types/api';
 
-const REPORT_VIEW_IDS = ['log', 'product', 'section', 'user', 'day'] as const;
+const REPORT_VIEW_IDS = ['log', 'missing', 'product', 'section', 'user', 'day'] as const;
 
 // ── بطاقة KPI صغيرة ─────────────────────────────────────────────
 function KpiCard({ label, value, color }: { label: string; value: string | number; color: string }) {
@@ -73,6 +74,17 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
   const byUser    = typedReport?.byUser ?? [];
   const byDay     = typedReport?.byDay ?? [];
   const byLog     = typedReport?.byLog ?? [];
+  const registrationCoverage = typedReport?.registrationCoverage ?? {
+    startDate: '',
+    endDate: '',
+    expectedSectionDays: 0,
+    registeredSectionDays: 0,
+    missingSectionDays: 0,
+    affectedSections: 0,
+    sections: [],
+    missingDays: [],
+  };
+  const coverageHasStarted = registrationCoverage.sections.length > 0;
 
   function productName(p: StaffSaleReportProductRow): string {
     return (lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn)) || '—';
@@ -134,8 +146,17 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
       (row.sections || []).join(' · ') || '—',
     ]), [byLog, lang]);
 
+  const missingDayRows = useMemo(() =>
+    registrationCoverage.missingDays.map((row, index) => [
+      index + 1,
+      formatSaudiDate(row.date),
+      row.sectionName,
+      t('salesReportNotRegistered'),
+    ]), [registrationCoverage.missingDays, t]);
+
   const views = [
     { id: 'log',     label: t('salesReportByLog') },
+    { id: 'missing', label: t('salesReportMissingDaysTab') },
     { id: 'product', label: t('salesReportByProduct') },
     { id: 'section', label: t('salesReportBySection') },
     { id: 'user',    label: t('salesReportByUser') },
@@ -164,6 +185,47 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
         </div>
       ) : (
         <>
+          <div className={`rounded-xl border px-4 py-3 ${
+            !coverageHasStarted
+              ? 'border-noorix-border bg-noorix-bg-muted/40'
+              : registrationCoverage.missingSectionDays > 0
+              ? 'border-noorix-amber/35 bg-noorix-amber/5'
+              : 'border-noorix-green/30 bg-noorix-green/5'
+          }`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[13px] font-bold text-noorix-text">
+                  {t('salesReportRegistrationCoverage')}
+                </div>
+                <div className="mt-1 text-[12px] leading-relaxed text-noorix-muted">
+                  {!coverageHasStarted
+                    ? t('salesReportRegistrationNotStarted')
+                    : registrationCoverage.missingSectionDays > 0
+                    ? t(
+                        'salesReportMissingDaysSummary',
+                        registrationCoverage.missingSectionDays,
+                        registrationCoverage.affectedSections,
+                      )
+                    : t('salesReportRegistrationComplete')}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2 text-center">
+                  <div className="text-[18px] font-bold nx-font-numbers text-noorix-amber">
+                    {registrationCoverage.missingSectionDays}
+                  </div>
+                  <div className="text-[10px] text-noorix-muted">{t('salesReportMissingDays')}</div>
+                </div>
+                <div className="rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2 text-center">
+                  <div className="text-[18px] font-bold nx-font-numbers text-noorix-blue">
+                    {registrationCoverage.affectedSections}
+                  </div>
+                  <div className="text-[10px] text-noorix-muted">{t('salesReportAffectedSections')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* ── بطاقات KPI ── */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <KpiCard label={t('salesReportOrders')}   value={fmt(summary.totalOrders ?? 0, 0)}   color="text-noorix-blue" />
@@ -222,6 +284,18 @@ export function SalesReportTab({ companyId, dateFilter }: { companyId: string; d
                   headers={['#', t('staffSaleLogRef'), t('date'), t('employee'), t('salesReportSections'), t('quantity'), t('total'), t('avgPerOrder'), t('productSections')]}
                   rows={logRows}
                   emptyMsg={t('salesReportEmpty')}
+                />
+              )}
+              {activeView === 'missing' && (
+                <SimpleTable
+                  headers={[
+                    '#',
+                    t('date'),
+                    t('staffOrderSection'),
+                    t('status'),
+                  ]}
+                  rows={missingDayRows}
+                  emptyMsg={t('salesReportNoMissingDays')}
                 />
               )}
               {activeView === 'product' && (

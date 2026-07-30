@@ -132,6 +132,7 @@ export function StaffBasketSummary({
   t,
   isSale,
   basketLogRef,
+  saleDateHint,
   editingQtyId,
   saleDate,
   notes,
@@ -151,6 +152,7 @@ export function StaffBasketSummary({
   t: Translate;
   isSale: boolean;
   basketLogRef: string | null;
+  saleDateHint?: string;
   editingQtyId: string | null;
   saleDate: string;
   notes: string;
@@ -202,11 +204,18 @@ export function StaffBasketSummary({
 
       <div className="flex flex-col gap-2">
         {isSale && (
-          <TransactionDatePicker
-            label={t('staffSaleDate')}
-            value={saleDate}
-            onValueChange={setSaleDate}
-          />
+          <div className="flex flex-col gap-1.5">
+            <TransactionDatePicker
+              label={t('staffSaleDate')}
+              value={saleDate}
+              onValueChange={setSaleDate}
+            />
+            {saleDateHint ? (
+              <div className="rounded-lg border border-noorix-blue/20 bg-noorix-blue/5 px-3 py-2 text-[11px] leading-relaxed text-noorix-muted">
+                {saleDateHint}
+              </div>
+            ) : null}
+          </div>
         )}
         <Input label={t('notes')} value={notes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)} placeholder={t('optional')} />
       </div>

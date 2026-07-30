@@ -236,6 +236,40 @@ export type StaffSaleNextLogRef = {
   logRef: string;
 };
 
+export type StaffSaleDateStatus = {
+  sectionName: string;
+  today: string;
+  suggestedDate: string;
+  lastSectionDate: string | null;
+  lastUserDate: string | null;
+};
+
+export type StaffRegistrationMissingDay = {
+  date: string;
+  sectionName: string;
+};
+
+export type StaffRegistrationSectionCoverage = {
+  sectionName: string;
+  firstRegisteredDate: string | null;
+  lastRegisteredDate: string | null;
+  expectedDays: number;
+  registeredDays: number;
+  missingDays: number;
+  missingDates: string[];
+};
+
+export type StaffRegistrationCoverage = {
+  startDate: string;
+  endDate: string;
+  expectedSectionDays: number;
+  registeredSectionDays: number;
+  missingSectionDays: number;
+  affectedSections: number;
+  sections: StaffRegistrationSectionCoverage[];
+  missingDays: StaffRegistrationMissingDay[];
+};
+
 export type StaffSaleReportSummary = {
   totalOrders: number;
   totalQty: number;
@@ -295,6 +329,7 @@ export type StaffSaleReport = {
   byUser: StaffSaleReportUserRow[];
   byDay: StaffSaleReportDayRow[];
   byLog: StaffSaleReportLogRow[];
+  registrationCoverage: StaffRegistrationCoverage;
 };
 
 export type OrderCatalogBatchCreateResult = {

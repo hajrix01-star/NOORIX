@@ -14,6 +14,7 @@ import {
 } from './orders-staff-whatsapp.util';
 import { dateToSaudiYmd, saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 import { parseSaleDateYmd } from './orders-staff-date.util';
+import { suggestNextStaffRegistrationDate } from './orders-staff-registration-coverage.util';
 import { resolveProductSection } from './orders-staff-sections.util';
 import { CreateStaffOrderDto, StaffOrderItemInput } from './orders-staff.types';
 import { OrdersStaffReportService } from './orders-staff-report.service';
@@ -45,6 +46,47 @@ export class OrdersStaffService {
     const saleDate = parseSaleDateYmd(saleDateYmd);
     const nextSeq = (await this.countStaffSaleOperationsForDay(companyId, saleDate)) + 1;
     return { logRef: buildStaffSaleLogRef(saleDate, nextSeq) };
+  }
+
+  async getStaffSaleDateStatus(companyId: string, userId: string, sectionNameInput?: string) {
+    const today = saudiDateYmd();
+    const sectionName = String(sectionNameInput || '').trim();
+    if (!sectionName) {
+      return {
+        sectionName: '',
+        today,
+        suggestedDate: today,
+        lastSectionDate: null,
+        lastUserDate: null,
+      };
+    }
+
+    const tenantId = TenantContext.tryGetTenantId();
+    const baseWhere: Prisma.StaffOrderWhereInput = {
+      companyId,
+      orderType: 'sale',
+      sectionName,
+      ...(tenantId ? { tenantId } : {}),
+    };
+    const sectionRows = await this.prisma.staffOrder.findMany({
+      where: baseWhere,
+      select: { userId: true, saleDate: true, createdAt: true },
+    });
+    const sectionDates = sectionRows.map((row) => dateToSaudiYmd(row.saleDate ?? row.createdAt)).sort();
+    const userDates = sectionRows
+      .filter((row) => row.userId === userId)
+      .map((row) => dateToSaudiYmd(row.saleDate ?? row.createdAt))
+      .sort();
+    const lastSectionDate = sectionDates.at(-1) ?? null;
+    const lastUserDate = userDates.at(-1) ?? null;
+
+    return {
+      sectionName,
+      today,
+      suggestedDate: suggestNextStaffRegistrationDate(lastSectionDate, today),
+      lastSectionDate,
+      lastUserDate,
+    };
   }
 
   private async groupItemsBySection(
@@ -160,6 +202,9 @@ export class OrdersStaffService {
 
     const grouped = await this.groupItemsBySection(companyId, dto.items, dto.sectionName);
     const sectionEntries = [...grouped.entries()];
+    if (isSale && sectionEntries.length !== 1) {
+      throw new BadRequestException('يجب تسجيل كل قسم بشكل مستقل في التسجيل الداخلي.');
+    }
     const saleLogRef = isSale && saleDate ? await this.allocateStaffSaleLogRef(companyId, saleDate) : null;
 
     const orders: Awaited<ReturnType<typeof this.createStaffOrderRecord>>[] = [];

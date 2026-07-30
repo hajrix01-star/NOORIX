@@ -9,6 +9,9 @@ import {
   type StaffSalesReportPeriod,
 } from './orders-staff-sales-report.util';
 import { buildStaffSalesReportModel } from './orders-staff-sales-report-builder.util';
+import { buildStaffRegistrationCoverage } from './orders-staff-registration-coverage.util';
+import { toYmd } from '../common/utils/to-ymd.util';
+import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 
 @Injectable()
 export class OrdersStaffReportService {
@@ -48,12 +51,26 @@ export class OrdersStaffReportService {
       },
     });
     const orders = allSaleOrders.filter((order) => staffSaleMatchesReportPeriod(order, period));
-    const [users, products] = await Promise.all([
+    const [users, products, sections] = await Promise.all([
       this.loadReportUsers(orders.map((order) => order.userId), tenantId),
       this.loadReportProducts(companyId, orders.flatMap((order) => order.items.map((item) => item.productId)), tenantId),
+      this.prisma.orderSection.findMany({
+        where: { companyId, ...(tenantId ? { tenantId } : {}) },
+        orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+        select: { nameAr: true },
+      }),
     ]);
 
-    return buildStaffSalesReportModel({ orders, users, products });
+    return {
+      ...buildStaffSalesReportModel({ orders, users, products }),
+      registrationCoverage: buildStaffRegistrationCoverage({
+        orders: allSaleOrders,
+        sectionNames: sections.map((section) => section.nameAr),
+        startDate: toYmd(period.start),
+        endDate: toYmd(period.end),
+        today: saudiDateYmd(),
+      }),
+    };
   }
 
   private async loadReportUsers(userIdsInput: string[], tenantId: string | null) {

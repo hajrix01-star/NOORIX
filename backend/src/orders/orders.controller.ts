@@ -53,6 +53,20 @@ export class OrdersController {
     return this.staffService.peekNextStaffSaleLogRef(resolvedCompanyId, saleDate.trim());
   }
 
+  @Get('staff/sale-date-status')
+  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  getStaffSaleDateStatus(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: CurrentAuthUser,
+    @Query('sectionName') sectionName?: string,
+  ) {
+    return this.staffService.getStaffSaleDateStatus(
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      sectionName,
+    );
+  }
+
   @Get('sales/report')
   @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
   getSalesReport(
