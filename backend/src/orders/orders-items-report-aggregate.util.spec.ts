@@ -78,6 +78,90 @@ describe('aggregateOrderItemsForRangeReport', () => {
       }),
     ]);
   });
+
+  it('keeps range report quantities on the stored line multiplier snapshot', () => {
+    const charcoal = {
+      id: 'charcoal-converted',
+      nameAr: 'Charcoal',
+      nameEn: 'Charcoal',
+      categoryId: 'category-charcoal',
+      unit: 'piece',
+      sections: ['bar'],
+      sectionIds: ['section-bar'],
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+      category: { nameAr: 'Charcoal', nameEn: 'Charcoal' },
+    };
+
+    const report = aggregateOrderItemsForRangeReport([
+      {
+        productId: charcoal.id,
+        packaging: 'carton',
+        unit: 'carton',
+        quantity: new Prisma.Decimal(2),
+        quantityMultiplier: new Prisma.Decimal(600),
+        unitPrice: new Prisma.Decimal(145),
+        amount: new Prisma.Decimal(290),
+        order: { id: 'order-1', orderDate: new Date('2026-07-01T00:00:00.000Z'), orderType: 'external' },
+        product: charcoal,
+      },
+    ]);
+
+    expect(report.rows).toEqual([
+      expect.objectContaining({
+        productId: 'charcoal-converted',
+        quantity: '2',
+        normalizedQuantity: '1200',
+        baseUnit: 'piece',
+      }),
+    ]);
+    expect(report.rows[0]?.daily).toEqual([
+      expect.objectContaining({
+        normalizedQuantity: '1200',
+      }),
+    ]);
+  });
+
+  it('falls back to product conversions only when a stored multiplier is missing', () => {
+    const charcoal = {
+      id: 'charcoal-fallback',
+      nameAr: 'Charcoal',
+      nameEn: 'Charcoal',
+      categoryId: 'category-charcoal',
+      unit: 'piece',
+      sections: ['bar'],
+      sectionIds: ['section-bar'],
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+      category: { nameAr: 'Charcoal', nameEn: 'Charcoal' },
+    };
+
+    const report = aggregateOrderItemsForRangeReport([
+      {
+        productId: charcoal.id,
+        packaging: 'carton',
+        unit: 'carton',
+        quantity: new Prisma.Decimal(2),
+        quantityMultiplier: null,
+        unitPrice: new Prisma.Decimal(145),
+        amount: new Prisma.Decimal(290),
+        order: { id: 'order-1', orderDate: new Date('2026-07-01T00:00:00.000Z'), orderType: 'external' },
+        product: charcoal,
+      },
+    ]);
+
+    expect(report.rows).toEqual([
+      expect.objectContaining({
+        productId: 'charcoal-fallback',
+        normalizedQuantity: '1280',
+        baseUnit: 'piece',
+      }),
+    ]);
+  });
 });
 
 describe('aggregateRecipeInventoryStock', () => {
@@ -231,7 +315,7 @@ describe('aggregateRecipeInventoryStock', () => {
     ]);
   });
 
-  it('uses selected purchase unit conversions instead of relying on a stored multiplier', () => {
+  it('keeps purchased material stock on the stored line multiplier snapshot', () => {
     const charcoal = {
       id: 'charcoal',
       nameAr: 'Charcoal',
@@ -251,7 +335,7 @@ describe('aggregateRecipeInventoryStock', () => {
           productId: 'charcoal',
           quantity: new Prisma.Decimal(2),
           unit: 'carton',
-          quantityMultiplier: new Prisma.Decimal(1),
+          quantityMultiplier: new Prisma.Decimal(600),
           product: charcoal,
         },
       ],
@@ -261,6 +345,82 @@ describe('aggregateRecipeInventoryStock', () => {
     expect(rows).toEqual([
       expect.objectContaining({
         productId: 'charcoal',
+        unit: 'piece',
+        purchasedBaseQuantity: '1200',
+        consumedBaseQuantity: '0',
+        balanceBaseQuantity: '1200',
+      }),
+    ]);
+  });
+
+  it('uses selected purchase unit conversions when the stored multiplier is missing', () => {
+    const charcoal = {
+      id: 'charcoal',
+      nameAr: 'Charcoal',
+      nameEn: 'Charcoal',
+      productType: 'order',
+      unit: 'piece',
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [charcoal],
+      purchases: [
+        {
+          productId: 'charcoal',
+          quantity: new Prisma.Decimal(2),
+          unit: 'carton',
+          quantityMultiplier: null,
+          product: charcoal,
+        },
+      ],
+      sales: [],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: 'charcoal',
+        unit: 'piece',
+        purchasedBaseQuantity: '1280',
+        consumedBaseQuantity: '0',
+        balanceBaseQuantity: '1280',
+      }),
+    ]);
+  });
+
+  it('uses product conversions for legacy rows with a default multiplier of one and a non-base unit', () => {
+    const charcoal = {
+      id: 'charcoal-legacy',
+      nameAr: 'Charcoal',
+      nameEn: 'Charcoal',
+      productType: 'order',
+      unit: 'piece',
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [charcoal],
+      purchases: [
+        {
+          productId: 'charcoal-legacy',
+          quantity: new Prisma.Decimal(2),
+          unit: 'carton',
+          quantityMultiplier: new Prisma.Decimal(1),
+          product: charcoal,
+        },
+      ],
+      sales: [],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: 'charcoal-legacy',
         unit: 'piece',
         purchasedBaseQuantity: '1280',
         consumedBaseQuantity: '0',

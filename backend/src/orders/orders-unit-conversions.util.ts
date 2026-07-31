@@ -16,7 +16,7 @@ type ProductWithUnitConversions = {
 };
 
 export type ProductUnitConversionValidationIssue = {
-  code: 'duplicate' | 'same-unit' | 'invalid-row';
+  code: 'duplicate' | 'same-unit' | 'invalid-row' | 'ambiguous-source';
   fromUnit?: string;
   toUnit?: string;
   message: string;
@@ -142,6 +142,7 @@ export function validateProductUnitConversions(
   if (!conversions?.length) return [];
   const issues: ProductUnitConversionValidationIssue[] = [];
   const seen = new Set<string>();
+  const sourceTargets = new Map<string, string>();
 
   for (const conversion of conversions) {
     const fromUnit = normalizeUnit(conversion.fromUnit, '');
@@ -175,6 +176,16 @@ export function validateProductUnitConversions(
         message: 'Duplicate or reversed conversion rows are not allowed for the same unit pair.',
       });
     }
+    const previousTarget = sourceTargets.get(fromUnit);
+    if (previousTarget && previousTarget !== toUnit) {
+      issues.push({
+        code: 'ambiguous-source',
+        fromUnit,
+        toUnit,
+        message: 'Each source unit can convert to one next unit only. Add conversion steps as a single chain.',
+      });
+    }
+    sourceTargets.set(fromUnit, toUnit);
     seen.add(key);
   }
 

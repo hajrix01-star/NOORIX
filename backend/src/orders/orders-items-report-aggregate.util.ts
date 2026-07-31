@@ -118,6 +118,14 @@ function normalizedQuantity(
   return qty.times(multiplier.gt(0) ? multiplier : 1);
 }
 
+function storedQuantityMultiplier(
+  quantityMultiplier?: Prisma.Decimal | string | number | null,
+): Prisma.Decimal | null {
+  if (quantityMultiplier == null || String(quantityMultiplier).trim() === '') return null;
+  const multiplier = decimal(quantityMultiplier);
+  return multiplier.gt(0) ? multiplier : null;
+}
+
 function inventoryBaseQuantity(item: {
   quantity: Prisma.Decimal | string | number;
   unit?: string | null;
@@ -130,13 +138,17 @@ function inventoryBaseQuantity(item: {
   const multiplierFromUnit = unit
     ? resolveProductUnitMultiplierOrNull(item.product, unit, baseUnit)
     : null;
+  const storedMultiplier = storedQuantityMultiplier(item.quantityMultiplier);
+  if (storedMultiplier && (!unit || unit === baseUnit || !storedMultiplier.eq(1))) {
+    return qty.times(storedMultiplier);
+  }
   if (multiplierFromUnit) return qty.times(multiplierFromUnit);
-  const legacyMultiplier = decimal(item.quantityMultiplier ?? 1);
-  if (unit && unit !== baseUnit && legacyMultiplier.eq(1)) {
+  if (unit && unit !== baseUnit) {
     throw new Error(
       `Missing inventory conversion for "${item.product.nameAr}" from "${unit}" to "${baseUnit}".`,
     );
   }
+  if (storedMultiplier) return qty.times(storedMultiplier);
   return normalizedQuantity(item.quantity, item.quantityMultiplier);
 }
 
@@ -236,10 +248,7 @@ export function aggregateOrderItemsForRangeReport(items: ItemRow[]) {
   for (const item of items) {
     const key = selectedVariantKey(item);
     const quantity = new Prisma.Decimal(item.quantity);
-    const multiplier = item.quantityMultiplier == null
-      ? new Prisma.Decimal(1)
-      : new Prisma.Decimal(item.quantityMultiplier);
-    const normalizedQuantity = quantity.times(multiplier.gt(0) ? multiplier : 1);
+    const normalizedQuantity = inventoryBaseQuantity(item);
     const amount = new Prisma.Decimal(item.amount);
     const orderId = item.order?.id;
     const date = reportDate(item);
