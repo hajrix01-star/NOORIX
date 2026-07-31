@@ -511,6 +511,9 @@ function ConversionEditor({
       {conversions.length > 0 && (
         <div className="mt-3 rounded-xl border border-noorix-border bg-white p-3">
           <div className="mb-2 text-[12px] font-bold text-noorix-text">معادلة الصنف</div>
+          <div className="mb-2 text-[12px] text-noorix-muted">
+            وحدة الشراء في الفاتورة: <b className="text-noorix-text">{unitLabel(purchaseUnit || baseUnit || 'piece', unitOptions)}</b>
+          </div>
           {formulaLines.length > 0 ? (
             <div className="flex flex-col gap-1 text-[12px] font-semibold text-emerald-800">
               {formulaLines.map((line) => <div key={line}>{line}</div>)}
