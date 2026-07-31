@@ -320,6 +320,7 @@ export class OrdersService {
           id: true,
           nameAr: true,
           nameEn: true,
+          productType: true,
           sections: true,
           sectionIds: true,
           unit: true,
@@ -335,12 +336,14 @@ export class OrdersService {
         select: {
           productId: true,
           quantity: true,
+          unit: true,
           quantityMultiplier: true,
           product: {
             select: {
               id: true,
               nameAr: true,
               nameEn: true,
+              productType: true,
               sections: true,
               sectionIds: true,
               unit: true,
@@ -362,12 +365,14 @@ export class OrdersService {
         select: {
           productId: true,
           quantity: true,
+          unit: true,
           quantityMultiplier: true,
           product: {
             select: {
               id: true,
               nameAr: true,
               nameEn: true,
+              productType: true,
               sections: true,
               sectionIds: true,
               unit: true,

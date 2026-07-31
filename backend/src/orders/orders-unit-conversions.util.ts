@@ -15,6 +15,13 @@ type ProductWithUnitConversions = {
   conversionTemplate?: { conversions?: unknown } | null;
 };
 
+export type ProductUnitConversionValidationIssue = {
+  code: 'duplicate' | 'same-unit' | 'invalid-row';
+  fromUnit?: string;
+  toUnit?: string;
+  message: string;
+};
+
 function decimal(value: unknown): Prisma.Decimal | null {
   try {
     const parsed = new Prisma.Decimal(String(value ?? ''));
@@ -110,6 +117,14 @@ export function resolveProductUnitMultiplier(
   fromUnitValue: unknown,
   toUnitValue?: unknown,
 ): Prisma.Decimal {
+  return resolveProductUnitMultiplierOrNull(product, fromUnitValue, toUnitValue) ?? ONE;
+}
+
+export function resolveProductUnitMultiplierOrNull(
+  product: ProductWithUnitConversions,
+  fromUnitValue: unknown,
+  toUnitValue?: unknown,
+): Prisma.Decimal | null {
   const fromUnit = normalizeUnit(fromUnitValue);
   const toUnit = normalizeUnit(toUnitValue ?? product.unit ?? fromUnit);
   const directCommon = unitPairMultiplier(fromUnit, toUnit);
@@ -118,7 +133,52 @@ export function resolveProductUnitMultiplier(
   const pathMultiplier = resolveConversionPath(product, fromUnit, toUnit);
   if (pathMultiplier) return pathMultiplier;
 
-  return ONE;
+  return null;
+}
+
+export function validateProductUnitConversions(
+  conversions?: ProductUnitConversionInput[] | null,
+): ProductUnitConversionValidationIssue[] {
+  if (!conversions?.length) return [];
+  const issues: ProductUnitConversionValidationIssue[] = [];
+  const seen = new Set<string>();
+
+  for (const conversion of conversions) {
+    const fromUnit = normalizeUnit(conversion.fromUnit, '');
+    const toUnit = normalizeUnit(conversion.toUnit, '');
+    const multiplier = decimal(conversion.multiplier);
+    if (!fromUnit || !toUnit || !multiplier) {
+      issues.push({
+        code: 'invalid-row',
+        fromUnit,
+        toUnit,
+        message: 'Conversion rows must include source unit, target unit, and a positive multiplier.',
+      });
+      continue;
+    }
+    if (fromUnit === toUnit) {
+      issues.push({
+        code: 'same-unit',
+        fromUnit,
+        toUnit,
+        message: 'Conversion source and target units must be different.',
+      });
+      continue;
+    }
+    const key = `${fromUnit}->${toUnit}`;
+    const reverseKey = `${toUnit}->${fromUnit}`;
+    if (seen.has(key) || seen.has(reverseKey)) {
+      issues.push({
+        code: 'duplicate',
+        fromUnit,
+        toUnit,
+        message: 'Duplicate or reversed conversion rows are not allowed for the same unit pair.',
+      });
+    }
+    seen.add(key);
+  }
+
+  return issues;
 }
 
 export function unitConversionsJson(

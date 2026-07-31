@@ -231,6 +231,78 @@ describe('aggregateRecipeInventoryStock', () => {
     ]);
   });
 
+  it('uses selected purchase unit conversions instead of relying on a stored multiplier', () => {
+    const charcoal = {
+      id: 'charcoal',
+      nameAr: 'Charcoal',
+      nameEn: 'Charcoal',
+      productType: 'order',
+      unit: 'piece',
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [charcoal],
+      purchases: [
+        {
+          productId: 'charcoal',
+          quantity: new Prisma.Decimal(2),
+          unit: 'carton',
+          quantityMultiplier: new Prisma.Decimal(1),
+          product: charcoal,
+        },
+      ],
+      sales: [],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: 'charcoal',
+        unit: 'piece',
+        purchasedBaseQuantity: '1280',
+        consumedBaseQuantity: '0',
+        balanceBaseQuantity: '1280',
+      }),
+    ]);
+  });
+
+  it('rejects recipe consumption when the material unit has no conversion path', () => {
+    const orange = {
+      id: 'orange',
+      nameAr: 'Orange',
+      nameEn: 'Orange',
+      productType: 'order',
+      unit: 'piece',
+    };
+    const juice = {
+      id: 'orange-juice',
+      nameAr: 'Orange juice',
+      nameEn: 'Orange juice',
+      productType: 'sale',
+      unit: 'cup',
+      recipe: [
+        { materialType: 'material', materialProductId: 'orange', quantity: '0.5', unit: 'box' },
+      ],
+    };
+
+    expect(() => aggregateRecipeInventoryStock({
+      materialProducts: [orange],
+      purchases: [],
+      sales: [
+        {
+          productId: 'orange-juice',
+          quantity: new Prisma.Decimal(1),
+          unit: 'cup',
+          quantityMultiplier: new Prisma.Decimal(1),
+          product: juice,
+        },
+      ],
+    })).toThrow('Missing inventory conversion');
+  });
+
   it('reverses consumption when a sold item is cancelled', () => {
     const orange = {
       id: 'orange',

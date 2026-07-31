@@ -9,7 +9,9 @@ import {
 } from './orders-product-sections.util';
 import {
   type ProductUnitConversionInput,
+  resolveProductUnitMultiplierOrNull,
   unitConversionsJson,
+  validateProductUnitConversions,
 } from './orders-unit-conversions.util';
 
 type OrderProductWithSections = { sections?: unknown; sectionIds?: unknown };
@@ -91,6 +93,11 @@ export class OrdersCatalogService {
         .map((dto) => this.cleanNullableId(dto.conversionTemplateId))
         .filter((id): id is string => Boolean(id)),
     );
+    for (const dto of products) {
+      if ((dto.productType === 'sale' ? 'sale' : 'order') === 'order') {
+        this.assertUnitConversionRows(dto.inventoryConversions);
+      }
+    }
     const data = products
       .filter((dto) => !!dto.nameAr?.trim())
       .map((dto) => this.buildProductCreateInput(tenantId, companyId, dto, sectionList));
@@ -136,6 +143,7 @@ export class OrdersCatalogService {
     }
     if ((dto.productType === 'sale' ? 'sale' : 'order') === 'order') {
       await this.assertConversionTemplates(companyId, this.cleanNullableId(dto.conversionTemplateId) ? [this.cleanNullableId(dto.conversionTemplateId)] : []);
+      this.assertUnitConversionRows(dto.inventoryConversions);
     }
     const created = await this.prisma.orderProduct.create({
       data: this.buildProductCreateInput(tenantId, companyId, dto, sectionList),
@@ -170,6 +178,9 @@ export class OrdersCatalogService {
     }
     if (nextProductType === 'order' && dto.conversionTemplateId !== undefined) {
       await this.assertConversionTemplates(companyId, this.cleanNullableId(dto.conversionTemplateId) ? [this.cleanNullableId(dto.conversionTemplateId)] : []);
+    }
+    if (nextProductType === 'order' && dto.inventoryConversions !== undefined) {
+      this.assertUnitConversionRows(dto.inventoryConversions);
     }
     const updated = await this.prisma.orderProduct.update({
       where: { id },
@@ -366,6 +377,7 @@ export class OrdersCatalogService {
     const tenantId = TenantContext.getTenantId();
     const code = this.cleanCode(dto.code || dto.nameEn || dto.nameAr);
     if (!code || !dto.nameAr?.trim()) throw new BadRequestException('Conversion template code and Arabic name are required.');
+    this.assertUnitConversionRows(dto.conversions);
     return this.prisma.orderConversionTemplate.create({
       data: {
         tenantId,
@@ -383,6 +395,7 @@ export class OrdersCatalogService {
 
   async updateConversionTemplate(id: string, companyId: string, dto: ConversionTemplateInput) {
     await this.assertConversionTemplates(companyId, [id]);
+    if (dto.conversions !== undefined) this.assertUnitConversionRows(dto.conversions);
     return this.prisma.orderConversionTemplate.update({
       where: { id },
       data: {
@@ -631,6 +644,12 @@ export class OrdersCatalogService {
     }
   }
 
+  private assertUnitConversionRows(conversions?: ProductUnitConversionInput[] | null) {
+    const issues = validateProductUnitConversions(conversions);
+    if (issues.length === 0) return;
+    throw new BadRequestException(issues.map((issue) => issue.message).join(' '));
+  }
+
   private variantJson(variants?: ProductVariantInput[]): Prisma.InputJsonValue | typeof Prisma.DbNull {
     if (!variants?.length) return Prisma.DbNull;
     return variants.map((variant) => ({
@@ -678,10 +697,31 @@ export class OrdersCatalogService {
         isActive: true,
         productType: 'order',
       },
-      select: { id: true },
+      select: {
+        id: true,
+        nameAr: true,
+        unit: true,
+        inventoryConversions: true,
+        conversionTemplate: { select: { conversions: true } },
+      },
     });
     if (validMaterials.length !== materialIds.length) {
       throw new BadRequestException('Recipe components must be purchase/inventory products only.');
+    }
+    const materialById = new Map(validMaterials.map((material) => [material.id, material]));
+    for (const item of recipe ?? []) {
+      const materialProductId = String(item.materialProductId ?? '').trim();
+      const quantity = String(item.quantity ?? '').trim();
+      if (!materialProductId || !this.positiveDecimal(quantity)) continue;
+      const material = materialById.get(materialProductId);
+      if (!material) continue;
+      const recipeUnit = String(item.unit ?? '').trim() || this.defaultRecipeUnit(this.recipeMaterialType(item.materialType));
+      const baseUnit = String(material.unit || recipeUnit || 'piece').trim() || 'piece';
+      if (!resolveProductUnitMultiplierOrNull(material, recipeUnit, baseUnit)) {
+        throw new BadRequestException(
+          `Recipe material "${material.nameAr}" cannot convert from "${recipeUnit}" to stock unit "${baseUnit}".`,
+        );
+      }
     }
   }
 

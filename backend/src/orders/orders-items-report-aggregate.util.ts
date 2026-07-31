@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { normalizeUnit, resolveProductUnitMultiplier } from './orders-unit-conversions.util';
+import { normalizeUnit, resolveProductUnitMultiplierOrNull } from './orders-unit-conversions.util';
 
 type ItemRow = {
   productId: string;
@@ -54,6 +54,7 @@ type InventoryProduct = {
   id: string;
   nameAr: string;
   nameEn?: string | null;
+  productType?: string | null;
   sections?: unknown;
   sectionIds?: unknown;
   unit?: string | null;
@@ -65,6 +66,7 @@ type InventoryProduct = {
 type InventoryPurchaseInput = {
   productId: string;
   quantity: Prisma.Decimal | string | number;
+  unit?: string | null;
   quantityMultiplier?: Prisma.Decimal | string | number | null;
   product: InventoryProduct;
 };
@@ -72,6 +74,7 @@ type InventoryPurchaseInput = {
 type InventorySaleInput = {
   productId: string;
   quantity: Prisma.Decimal | string | number;
+  unit?: string | null;
   quantityMultiplier?: Prisma.Decimal | string | number | null;
   product: InventoryProduct;
 };
@@ -113,6 +116,28 @@ function normalizedQuantity(
   const qty = decimal(quantity);
   const multiplier = decimal(quantityMultiplier ?? 1);
   return qty.times(multiplier.gt(0) ? multiplier : 1);
+}
+
+function inventoryBaseQuantity(item: {
+  quantity: Prisma.Decimal | string | number;
+  unit?: string | null;
+  quantityMultiplier?: Prisma.Decimal | string | number | null;
+  product: InventoryProduct;
+}): Prisma.Decimal {
+  const qty = decimal(item.quantity);
+  const unit = normalizeUnit(item.unit, '');
+  const baseUnit = normalizeUnit(item.product.unit, unit || 'piece');
+  const multiplierFromUnit = unit
+    ? resolveProductUnitMultiplierOrNull(item.product, unit, baseUnit)
+    : null;
+  if (multiplierFromUnit) return qty.times(multiplierFromUnit);
+  const legacyMultiplier = decimal(item.quantityMultiplier ?? 1);
+  if (unit && unit !== baseUnit && legacyMultiplier.eq(1)) {
+    throw new Error(
+      `Missing inventory conversion for "${item.product.nameAr}" from "${unit}" to "${baseUnit}".`,
+    );
+  }
+  return normalizedQuantity(item.quantity, item.quantityMultiplier);
 }
 
 function parseInventoryRecipe(value: unknown): InventoryRecipeItem[] {
@@ -340,19 +365,24 @@ export function aggregateRecipeInventoryStock(input: {
   const materialById = new Map(input.materialProducts.map((product) => [product.id, product]));
 
   for (const purchase of input.purchases) {
+    if (purchase.product.productType && purchase.product.productType !== 'order') continue;
     const row = ensureInventoryRow(rows, purchase.product, purchase.product.unit || 'piece');
-    row.purchasedBaseQuantity = row.purchasedBaseQuantity.plus(
-      normalizedQuantity(purchase.quantity, purchase.quantityMultiplier),
-    );
+    row.purchasedBaseQuantity = row.purchasedBaseQuantity.plus(inventoryBaseQuantity(purchase));
   }
 
   for (const sale of input.sales) {
-    const soldBaseQuantity = normalizedQuantity(sale.quantity, sale.quantityMultiplier);
+    if (sale.product.productType && sale.product.productType !== 'sale') continue;
+    const soldBaseQuantity = inventoryBaseQuantity(sale);
     for (const recipeItem of parseInventoryRecipe(sale.product.recipe)) {
       const materialProduct = materialById.get(recipeItem.materialProductId);
       if (!materialProduct) continue;
       const rowUnit = normalizeUnit(materialProduct.unit, recipeItem.unit || 'piece');
-      const unitMultiplier = resolveProductUnitMultiplier(materialProduct, recipeItem.unit, rowUnit);
+      const unitMultiplier = resolveProductUnitMultiplierOrNull(materialProduct, recipeItem.unit, rowUnit);
+      if (!unitMultiplier) {
+        throw new Error(
+          `Missing inventory conversion for recipe material "${materialProduct.nameAr}" from "${recipeItem.unit}" to "${rowUnit}".`,
+        );
+      }
       const row = ensureInventoryRow(rows, materialProduct, rowUnit);
       row.consumedBaseQuantity = row.consumedBaseQuantity.plus(
         soldBaseQuantity.times(decimal(recipeItem.quantity)).times(unitMultiplier),
