@@ -221,6 +221,8 @@ function RecipeEditor({
   unitOptions: UnitOption[];
   onChange: (recipe: OrderProductRecipeItem[]) => void;
 }) {
+  const [draft, setDraft] = useState<OrderProductRecipeItem>(() => createRecipeRow(materialProducts));
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const materialById = useMemo(
     () => new Map(materialProducts.map((product) => [product.id, product])),
     [materialProducts],
@@ -233,33 +235,64 @@ function RecipeEditor({
     [materialProducts],
   );
 
-  function updateRow(index: number, patch: Partial<OrderProductRecipeItem>) {
-    onChange(recipe.map((row, rowIndex) => {
-      if (rowIndex !== index) return row;
-      const nextMaterialId = patch.materialProductId ?? row.materialProductId;
+  useEffect(() => {
+    setDraft((currentDraft) => {
+      if (currentDraft.materialProductId && materialById.has(currentDraft.materialProductId)) return currentDraft;
+      return createRecipeRow(materialProducts);
+    });
+  }, [materialById, materialProducts]);
+
+  function normalizeRecipeRow(row: OrderProductRecipeItem, patch: Partial<OrderProductRecipeItem> = {}) {
+    const nextMaterialId = patch.materialProductId ?? row.materialProductId;
       const nextMaterial = materialById.get(nextMaterialId);
-      const nextUnit = patch.materialProductId && patch.materialProductId !== row.materialProductId
-        ? nextMaterial?.unit || 'piece'
-        : patch.unit ?? row.unit ?? nextMaterial?.unit ?? 'piece';
-      return { ...row, ...patch, materialType: 'material', unit: nextUnit };
-    }));
+    const nextUnit = patch.materialProductId && patch.materialProductId !== row.materialProductId
+      ? nextMaterial?.unit || 'piece'
+      : patch.unit ?? row.unit ?? nextMaterial?.unit ?? 'piece';
+    return { ...row, ...patch, materialType: 'material' as const, unit: nextUnit };
+  }
+
+  function updateDraft(patch: Partial<OrderProductRecipeItem>) {
+    setDraft((currentDraft) => normalizeRecipeRow(currentDraft, patch));
+  }
+
+  function resetDraft() {
+    setDraft(createRecipeRow(materialProducts));
+    setEditingIndex(null);
+  }
+
+  function saveDraft() {
+    if (materialProducts.length === 0) return;
+    const normalizedDraft = normalizeRecipeRow(draft);
+    const quantity = String(normalizedDraft.quantity ?? '').trim();
+    if (!normalizedDraft.materialProductId || !quantity) return;
+    if (editingIndex === null) {
+      onChange([...recipe, normalizedDraft]);
+    } else {
+      onChange(recipe.map((row, rowIndex) => (rowIndex === editingIndex ? normalizedDraft : row)));
+    }
+    resetDraft();
+  }
+
+  function editRow(index: number) {
+    const row = recipe[index];
+    if (!row) return;
+    setDraft(normalizeRecipeRow(row));
+    setEditingIndex(index);
+  }
+
+  function removeRow(index: number) {
+    onChange(recipe.filter((_, rowIndex) => rowIndex !== index));
+    if (editingIndex === index) resetDraft();
+    if (editingIndex !== null && editingIndex > index) setEditingIndex(editingIndex - 1);
   }
 
   return (
     <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3">
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3">
         <div>
           <div className="text-[13px] font-bold text-noorix-text">الرسبي</div>
           <div className="text-[12px] text-noorix-muted">استهلاك كل وحدة مباعة من مواد المخزون.</div>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => onChange([...recipe, createRecipeRow(materialProducts)])}
-          disabled={materialProducts.length === 0}
-        >
-          + مادة
-        </Button>
       </div>
       {materialProducts.length === 0 ? (
         <div className="rounded-lg border border-noorix-border bg-white p-3 text-center text-[13px] text-noorix-muted">
@@ -267,16 +300,11 @@ function RecipeEditor({
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {recipe.length === 0 && (
-            <div className="rounded-lg border border-dashed border-noorix-border bg-white p-3 text-center text-[13px] text-noorix-muted">
-              لا توجد مواد مرتبطة بهذا الصنف.
-            </div>
-          )}
-          {recipe.map((row, index) => (
-            <div key={`${row.materialProductId}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[1fr_88px_90px_44px]">
+          <div className="rounded-lg border border-noorix-border bg-white p-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_96px_110px_auto]">
               <SearchableOptionsPicker
-                value={row.materialProductId}
-                onChange={(materialProductId) => updateRow(index, { materialProductId })}
+                value={draft.materialProductId}
+                onChange={(materialProductId) => updateDraft({ materialProductId })}
                 options={materialOptions}
                 allowEmpty
                 emptyValue=""
@@ -287,24 +315,72 @@ function RecipeEditor({
                 type="number"
                 min="0"
                 step="0.001"
-                value={String(row.quantity ?? '')}
-                onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { quantity: event.target.value })}
+                value={String(draft.quantity ?? '')}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => updateDraft({ quantity: event.target.value })}
                 placeholder="الكمية"
               />
               <Input
                 type="select"
-                value={String(row.unit || 'piece')}
-                onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { unit: event.target.value })}
+                value={String(draft.unit || 'piece')}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => updateDraft({ unit: event.target.value })}
               >
-                {unitOptionsForProduct(materialById.get(row.materialProductId), unitOptions).map((unit) => (
+                {unitOptionsForProduct(materialById.get(draft.materialProductId), unitOptions).map((unit) => (
                   <option key={unit.value} value={unit.value}>{unit.label}</option>
                 ))}
               </Input>
-              <Button type="button" size="sm" variant="danger" onClick={() => onChange(recipe.filter((_, rowIndex) => rowIndex !== index))}>
-                x
+              <Button
+                type="button"
+                size="sm"
+                onClick={saveDraft}
+                disabled={!draft.materialProductId || !String(draft.quantity ?? '').trim()}
+              >
+                {editingIndex === null ? 'حفظ المكون' : 'حفظ التعديل'}
               </Button>
             </div>
-          ))}
+            {editingIndex !== null && (
+              <div className="mt-2 flex justify-end">
+                <Button type="button" size="sm" variant="ghost" onClick={resetDraft}>
+                  إلغاء التعديل
+                </Button>
+              </div>
+            )}
+          </div>
+          {recipe.length === 0 && (
+            <div className="rounded-lg border border-dashed border-noorix-border bg-white p-3 text-center text-[13px] text-noorix-muted">
+              لا توجد مواد مرتبطة بهذا الصنف.
+            </div>
+          )}
+          {recipe.length > 0 && (
+            <div className="overflow-hidden rounded-lg border border-noorix-border bg-white">
+              <div className="grid grid-cols-[1fr_92px_82px_96px] border-b border-noorix-border bg-noorix-bg-muted px-3 py-2 text-center text-[12px] font-bold text-noorix-text">
+                <span>المادة</span>
+                <span>الكمية</span>
+                <span>الوحدة</span>
+                <span>الإجراءات</span>
+              </div>
+              {recipe.map((row, index) => {
+                const material = materialById.get(row.materialProductId);
+                return (
+                  <div
+                    key={`${row.materialProductId}-${index}`}
+                    className="grid grid-cols-[1fr_92px_82px_96px] items-center border-b border-noorix-border px-3 py-2 text-center text-[13px] last:border-b-0"
+                  >
+                    <span className="truncate font-bold text-noorix-text">{material ? productLabel(material) : 'مادة غير محددة'}</span>
+                    <span className="font-bold text-noorix-text">{String(row.quantity ?? '') || '-'}</span>
+                    <span className="text-noorix-muted">{unitLabel(String(row.unit || 'piece'), unitOptionsForProduct(material, unitOptions))}</span>
+                    <span className="flex items-center justify-center gap-1">
+                      <Button type="button" size="sm" variant="ghost" onClick={() => editRow(index)}>
+                        تعديل
+                      </Button>
+                      <Button type="button" size="sm" variant="danger" onClick={() => removeRow(index)}>
+                        حذف
+                      </Button>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
