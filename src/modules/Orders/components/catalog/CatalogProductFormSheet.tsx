@@ -305,6 +305,31 @@ function createConversionRow(baseUnit: string): OrderProductUnitConversion {
   };
 }
 
+type ConversionUnitField = 'fromUnit' | 'toUnit';
+
+function conversionUnitOptionsForField(
+  unitOptions: UnitOption[],
+  conversions: OrderProductUnitConversion[],
+  rowIndex: number,
+  field: ConversionUnitField,
+  oppositeUnit: string,
+) {
+  const currentUnit = String(conversions[rowIndex]?.[field] ?? '').trim();
+  const selectedInOtherRows = new Set(
+    conversions.flatMap((row, index) => {
+      if (index === rowIndex) return [];
+      const selectedUnit = String(row[field] ?? '').trim();
+      return selectedUnit ? [selectedUnit] : [];
+    }),
+  );
+  const blockedOppositeUnit = String(oppositeUnit || '').trim();
+
+  return unitOptions.filter((unit) => (
+    unit.value === currentUnit
+    || (!selectedInOtherRows.has(unit.value) && unit.value !== blockedOppositeUnit)
+  ));
+}
+
 function ConversionEditor({
   conversions,
   conversionTemplateId,
@@ -375,44 +400,53 @@ function ConversionEditor({
           </div>
         )}
         {conversions.map((row, index) => (
-          <div key={`${row.fromUnit}-${row.toUnit}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[1fr_110px_110px_120px_44px]">
-            <Input
-              value={String(row.label ?? '')}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { label: event.target.value })}
-              placeholder="اسم الوحدة اختياري"
-            />
-            <Input
-              type="select"
-              aria-label="الوحدة الأكبر"
-              value={String(row.fromUnit || 'kg')}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { fromUnit: event.target.value })}
-            >
-              {unitOptions.map((unit) => (
-                <option key={unit.value} value={unit.value}>{unit.label}</option>
-              ))}
-            </Input>
-            <Input
-              type="select"
-              aria-label="تتحول إلى"
-              value={String(row.toUnit || baseUnit || 'piece')}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { toUnit: event.target.value })}
-            >
-              {unitOptions.map((unit) => (
-                <option key={unit.value} value={unit.value}>{unit.label}</option>
-              ))}
-            </Input>
-            <Input
-              type="number"
-              min="0"
-              step="0.001"
-              value={String(row.multiplier ?? '')}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { multiplier: event.target.value })}
-              placeholder="العدد"
-            />
-            <Button type="button" size="sm" variant="danger" onClick={() => onChange(conversions.filter((_, rowIndex) => rowIndex !== index))}>
-              x
-            </Button>
-          </div>
+          (() => {
+            const fromUnit = String(row.fromUnit || 'kg');
+            const toUnit = String(row.toUnit || baseUnit || 'piece');
+            const fromUnitOptions = conversionUnitOptionsForField(unitOptions, conversions, index, 'fromUnit', toUnit);
+            const toUnitOptions = conversionUnitOptionsForField(unitOptions, conversions, index, 'toUnit', fromUnit);
+
+            return (
+              <div key={`${row.fromUnit}-${row.toUnit}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[1fr_110px_110px_120px_44px]">
+                <Input
+                  value={String(row.label ?? '')}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { label: event.target.value })}
+                  placeholder="اسم الوحدة اختياري"
+                />
+                <Input
+                  type="select"
+                  aria-label="الوحدة الأكبر"
+                  value={fromUnit}
+                  onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { fromUnit: event.target.value })}
+                >
+                  {fromUnitOptions.map((unit) => (
+                    <option key={unit.value} value={unit.value}>{unit.label}</option>
+                  ))}
+                </Input>
+                <Input
+                  type="select"
+                  aria-label="تتحول إلى"
+                  value={toUnit}
+                  onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { toUnit: event.target.value })}
+                >
+                  {toUnitOptions.map((unit) => (
+                    <option key={unit.value} value={unit.value}>{unit.label}</option>
+                  ))}
+                </Input>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={String(row.multiplier ?? '')}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { multiplier: event.target.value })}
+                  placeholder="العدد"
+                />
+                <Button type="button" size="sm" variant="danger" onClick={() => onChange(conversions.filter((_, rowIndex) => rowIndex !== index))}>
+                  x
+                </Button>
+              </div>
+            );
+          })()
         ))}
       </div>
       {conversions.length > 0 && (
