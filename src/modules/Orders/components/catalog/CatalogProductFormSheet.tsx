@@ -372,6 +372,7 @@ function ConversionEditor({
   conversionTemplateId,
   conversionTemplates,
   baseUnit,
+  purchasePackaging,
   purchaseUnit,
   unitOptions,
   onBaseUnitChange,
@@ -382,6 +383,7 @@ function ConversionEditor({
   conversionTemplateId: string;
   conversionTemplates: OrderConversionTemplate[];
   baseUnit: string;
+  purchasePackaging: string;
   purchaseUnit: string;
   unitOptions: UnitOption[];
   onBaseUnitChange: (unit: string) => void;
@@ -389,6 +391,7 @@ function ConversionEditor({
   onChange: (conversions: OrderProductUnitConversion[]) => void;
 }) {
   const formulaLines = conversionFormulaLines(baseUnit, conversions, unitOptions);
+  const visiblePackaging = String(purchasePackaging || '').trim();
 
   function updateRow(index: number, patch: Partial<OrderProductUnitConversion>) {
     onChange(conversions.map((row, rowIndex) => (
@@ -512,6 +515,8 @@ function ConversionEditor({
         <div className="mt-3 rounded-xl border border-noorix-border bg-white p-3">
           <div className="mb-2 text-[12px] font-bold text-noorix-text">معادلة الصنف</div>
           <div className="mb-2 text-[12px] text-noorix-muted">
+            التغليف: <b className="text-noorix-text">{visiblePackaging || '-'}</b>
+            <span className="mx-1 text-noorix-muted">·</span>
             يأتي من المورد: <b className="text-noorix-text">{unitLabel(purchaseUnit || baseUnit || 'piece', unitOptions)}</b>
             <span className="mx-1 text-noorix-muted">·</span>
             وحدة المخزون والخصم: <b className="text-noorix-text">{unitLabel(baseUnit || 'piece', unitOptions)}</b>
@@ -861,6 +866,7 @@ export function CatalogProductFormSheet({
             conversionTemplateId={form.conversionTemplateId || ''}
             conversionTemplates={activeConversionTemplates}
             baseUnit={form.unit || 'piece'}
+            purchasePackaging={form.variants?.[0]?.packaging || ''}
             purchaseUnit={form.variants?.[0]?.unit || 'piece'}
             unitOptions={unitOptions}
             onBaseUnitChange={(unit) => updateForm({ unit })}
