@@ -4,7 +4,7 @@ import {
   usePreviewOrderCategoryTranslationsMutation,
 } from '../../../../hooks/orders/orderCatalogHooks';
 import { useToast } from '../../../../context/ToastContext';
-import { Button, Checkbox, Input, Modal } from '../../../../ui';
+import { Checkbox, DialogActions, Input, Modal } from '../../../../ui';
 import type { OrderCategoryTranslationSuggestion } from '../../../../types/api';
 
 type CategoryTranslationModalProps = {
@@ -77,18 +77,19 @@ export function CategoryTranslationModal({ open, onClose, companyId }: CategoryT
       title="مراجعة ترجمة الفئات"
       size="lg"
       footer={(
-        <>
-          <Button variant="ghost" size="sm" onClick={onClose}>إلغاء</Button>
-          <Button
-            variant="primary"
-            size="sm"
-            loading={applyMutation.isPending}
-            disabled={selectedRows.length === 0}
-            onClick={applySelected}
-          >
-            اعتماد المحدد ({selectedRows.length})
-          </Button>
-        </>
+        <DialogActions
+          actions={[
+            { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose },
+            {
+              key: 'apply',
+              label: `اعتماد المحدد (${selectedRows.length})`,
+              role: 'save',
+              loading: applyMutation.isPending,
+              disabled: selectedRows.length === 0,
+              onClick: applySelected,
+            },
+          ]}
+        />
       )}
     >
       <div className="flex flex-col gap-3" dir="rtl">
