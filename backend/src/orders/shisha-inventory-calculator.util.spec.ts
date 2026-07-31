@@ -20,27 +20,29 @@ describe('calculateShishaInventory', () => {
     ],
   };
 
-  it('uses the approved 39 heads per kilogram conversion', () => {
+  it('keeps tobacco stock unchanged when sales have no explicit recipe usage', () => {
     const result = calculateShishaInventory(base);
-    expect(result.current.tobaccoKg).toBeCloseTo(15 - 15 / 39, 3);
+    expect(result.current.tobaccoKg).toBe(15);
     expect(result.periodTotals.tobaccoHeadsConsumed).toBe(15);
-    expect(result.current.tobaccoHeads).toBe(570);
+    expect(result.periodTotals.tobaccoConsumedKg).toBe(0);
+    expect(result.current.tobaccoHeads).toBe(585);
   });
 
-  it('counts a change as tobacco consumption without consuming a hose', () => {
+  it('counts a change operationally without consuming hose stock implicitly', () => {
     const result = calculateShishaInventory(base);
     expect(result.periodTotals.changes).toBe(2);
-    expect(result.periodTotals.hosesConsumed).toBe(13);
-    expect(result.current.hoses).toBe(87);
+    expect(result.periodTotals.hosesConsumed).toBe(0);
+    expect(result.current.hoses).toBe(100);
   });
 
-  it('deducts one charcoal box for every six registered heads', () => {
+  it('keeps charcoal stock unchanged when sales have no explicit recipe usage', () => {
     const result = calculateShishaInventory(base);
-    expect(result.periodTotals.charcoalBoxesConsumed).toBe(2.5);
-    expect(result.current.charcoalCartons).toBe(1);
-    expect(result.current.charcoalPacks).toBe(7);
-    expect(result.current.charcoalPieces).toBe(32);
-    expect(result.current.charcoalPiecesTotal).toBe(1120);
+    expect(result.periodTotals.charcoalBoxesConsumed).toBe(0);
+    expect(result.periodTotals.charcoalPiecesConsumed).toBe(0);
+    expect(result.current.charcoalCartons).toBe(2);
+    expect(result.current.charcoalPacks).toBe(0);
+    expect(result.current.charcoalPieces).toBe(0);
+    expect(result.current.charcoalPiecesTotal).toBe(1280);
   });
 
   it('uses product recipe consumption when sale events include explicit material usage', () => {
@@ -65,17 +67,23 @@ describe('calculateShishaInventory', () => {
     expect(result.periodTotals.charcoalBoxesConsumed).toBe(2);
   });
 
-  it('converts sixty registered heads into ten charcoal boxes', () => {
+  it('converts explicit recipe charcoal pieces into boxes for reporting', () => {
     const result = calculateShishaInventory({
       ...base,
       endDate: '2026-07-01',
-      sales: [{ date: '2026-07-01', operationKey: 'L-60', heads: 60, changes: 0 }],
+      sales: [{
+        date: '2026-07-01',
+        operationKey: 'recipe-charcoal',
+        heads: 60,
+        changes: 0,
+        charcoalPiecesConsumed: 640,
+      }],
     });
     expect(result.periodTotals.charcoalBoxesConsumed).toBe(10);
     expect(result.periodTotals.charcoalPiecesConsumed).toBe(640);
   });
 
-  it('deducts employee-recorded charcoal and compares it with the expected amount', () => {
+  it('compares employee-recorded charcoal with expected usage without deducting it from stock', () => {
     const result = calculateShishaInventory({
       ...base,
       charcoalActualTrackingStartDate: '2026-07-01',
@@ -89,7 +97,7 @@ describe('calculateShishaInventory', () => {
       charcoalExpectedBoxes: 1.667,
       charcoalActualBoxes: 2,
       charcoalVarianceBoxes: 0.333,
-      charcoalConsumedBoxes: 2,
+      charcoalConsumedBoxes: 0,
       charcoalStatus: 'over',
     });
     expect(result.daily[1]).toMatchObject({
@@ -101,7 +109,7 @@ describe('calculateShishaInventory', () => {
     });
     expect(result.periodTotals.charcoalMissingDays).toBe(1);
     expect(result.periodTotals.charcoalAlertDays).toBe(2);
-    expect(result.current.charcoalPiecesTotal).toBe(1152);
+    expect(result.current.charcoalPiecesTotal).toBe(1280);
   });
 
   it('marks matching actual charcoal as a clean daily result', () => {
@@ -133,6 +141,6 @@ describe('calculateShishaInventory', () => {
       ],
     });
     expect(result.periodTotals.tobaccoCorrectionKg).toBe(-0.1);
-    expect(result.current.tobaccoKg).toBeCloseTo(15 - 15 / 39 - 0.1, 3);
+    expect(result.current.tobaccoKg).toBeCloseTo(14.9, 3);
   });
 });

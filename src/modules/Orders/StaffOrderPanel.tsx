@@ -11,7 +11,6 @@ import {
   resolveVariantFromModal,
   staffBasketLineKey,
 } from './utils/staffOrderBasketUtils';
-import { withStandardCharcoalVariants } from './utils/charcoalPackaging';
 import {
   buildProductsById,
   createDraftLineId,
@@ -158,13 +157,12 @@ export function StaffOrderPanel({
   }, [isSale, editingId, sectionFilter, saleDateStatus?.suggestedDate]);
 
   function tapProduct(product: OrderProduct) {
-    const resolvedProduct = withStandardCharcoalVariants(product);
-    if (productHasVariants(resolvedProduct)) {
-      setVariantModal(defaultVariantModalState(resolvedProduct));
+    if (productHasVariants(product)) {
+      setVariantModal(defaultVariantModalState(product));
       return;
     }
-    const unit = resolvedProduct.unit || 'piece';
-    const key = staffBasketLineKey({ productId: resolvedProduct.id, size: '', packaging: '', unit });
+    const unit = product.unit || 'piece';
+    const key = staffBasketLineKey({ productId: product.id, size: '', packaging: '', unit });
     const idx = basketLines.findIndex((l) => staffBasketLineKey(l) === key);
     if (idx >= 0 && entryType === 'issue') {
       setBasketLines((prev) => {
@@ -174,7 +172,7 @@ export function StaffOrderPanel({
       });
     } else {
       setQtyModal({
-        product: resolvedProduct,
+        product,
         qty: 1,
         unit,
         cancellationReasons: [],

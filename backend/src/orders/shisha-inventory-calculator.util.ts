@@ -232,19 +232,15 @@ export function calculateShishaInventory(input: ShishaInventoryCalculationInput)
     const movement = movementByDay.get(key) ?? emptyMovement();
     const sale = saleByDay.get(key) ?? emptySale();
     const newShisha = sale.heads.minus(sale.changes);
-    const consumedGrams = sale.hasExplicitTobacco
-      ? sale.tobaccoGramsConsumed
-      : sale.heads.times(gramsPerHead);
-    const consumedHoses = sale.hasExplicitHoses ? sale.hosesConsumed : newShisha;
+    const consumedGrams = sale.hasExplicitTobacco ? sale.tobaccoGramsConsumed : ZERO;
+    const consumedHoses = sale.hasExplicitHoses ? sale.hosesConsumed : ZERO;
     const charcoalDay = charcoalConsumptionForDay(
       key,
       sale,
       input.charcoalActualTrackingStartDate,
       input.charcoalShishaPerPack,
     );
-    const charcoalConsumed = sale.hasExplicitCharcoal
-      ? sale.charcoalPiecesConsumed
-      : charcoalDay.consumedBoxes.times(input.charcoalPiecesPerPack);
+    const charcoalConsumed = sale.hasExplicitCharcoal ? sale.charcoalPiecesConsumed : ZERO;
     tobacco = tobacco
       .plus(movement.openingTobacco)
       .plus(movement.purchaseTobacco)
@@ -294,19 +290,15 @@ export function calculateShishaInventory(input: ShishaInventoryCalculationInput)
     const openingHoses = hoses.plus(movement.openingHoses);
     const openingCharcoal = charcoal.plus(movement.openingCharcoal);
     const newShisha = sale.heads.minus(sale.changes);
-    const consumedGrams = sale.hasExplicitTobacco
-      ? sale.tobaccoGramsConsumed
-      : sale.heads.times(gramsPerHead);
-    const consumedHoses = sale.hasExplicitHoses ? sale.hosesConsumed : newShisha;
+    const consumedGrams = sale.hasExplicitTobacco ? sale.tobaccoGramsConsumed : ZERO;
+    const consumedHoses = sale.hasExplicitHoses ? sale.hosesConsumed : ZERO;
     const charcoalDay = charcoalConsumptionForDay(
       key,
       sale,
       input.charcoalActualTrackingStartDate,
       input.charcoalShishaPerPack,
     );
-    const consumedCharcoalPieces = sale.hasExplicitCharcoal
-      ? sale.charcoalPiecesConsumed
-      : charcoalDay.consumedBoxes.times(input.charcoalPiecesPerPack);
+    const consumedCharcoalPieces = sale.hasExplicitCharcoal ? sale.charcoalPiecesConsumed : ZERO;
     const consumedCharcoalBoxes = consumedCharcoalPieces.div(input.charcoalPiecesPerPack);
 
     tobacco = openingTobacco

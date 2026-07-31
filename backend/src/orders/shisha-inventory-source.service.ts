@@ -131,18 +131,6 @@ function isShishaSection(value: string | null | undefined): boolean {
   return String(value ?? '').trim() === 'شيشة';
 }
 
-export function isCharcoalConsumptionProduct(
-  product: { nameAr: string; nameEn: string | null },
-  productId: string,
-  linkedProductId: string | null,
-): boolean {
-  const arabicName = product.nameAr.trim();
-  const englishName = String(product.nameEn ?? '').trim().toLowerCase();
-  return productId === linkedProductId
-    || arabicName.includes('فحم')
-    || englishName.includes('charcoal');
-}
-
 @Injectable()
 export class ShishaInventorySourceService {
   constructor(private readonly prisma: TenantPrismaService) {}
@@ -152,7 +140,6 @@ export class ShishaInventorySourceService {
     trackingStart: Date,
     endDate: Date,
     changeProductId: string | null,
-    charcoalConsumptionProductId: string | null,
     charcoalPiecesPerPack: number,
     charcoalPacksPerCarton: number,
   ): Promise<ShishaSaleEventInput[]> {
@@ -199,20 +186,6 @@ export class ShishaInventorySourceService {
     for (const order of orders) {
       if (!order.saleDate) continue;
       for (const item of order.items) {
-        if (isCharcoalConsumptionProduct(
-          item.product,
-          item.productId,
-          charcoalConsumptionProductId,
-        )) {
-          events.push({
-            date: toYmd(order.saleDate),
-            operationKey: order.logRef ?? order.id,
-            heads: ZERO,
-            changes: ZERO,
-            actualCharcoalBoxes: item.quantity.times(item.quantityMultiplier),
-          });
-          continue;
-        }
         const sections = Array.isArray(item.product.sections) ? item.product.sections : [];
         const belongsToShisha =
           isShishaSection(order.sectionName) ||
@@ -244,29 +217,38 @@ export class ShishaInventorySourceService {
     return events;
   }
 
-  async catalogCharcoalPurchases(
+  async catalogRecipeMaterialPurchases(
     companyId: string,
-    productId: string | null,
     trackingStartedAt: Date | null,
     endDate: Date,
-    piecesPerPack: number,
+    charcoalPiecesPerPack: number,
+    charcoalPacksPerCarton: number,
   ) {
-    if (!productId || !trackingStartedAt) return [];
+    if (!trackingStartedAt) return [];
     const items = await this.prisma.orderItem.findMany({
       where: {
-        productId,
         order: {
           companyId,
           status: 'active',
-          createdAt: { gte: trackingStartedAt },
-          orderDate: { lte: endDate },
+          orderDate: { gte: trackingStartedAt, lte: endDate },
         },
+        product: { productType: 'order', isActive: true },
       },
       select: {
         id: true,
         quantity: true,
         quantityMultiplier: true,
         amount: true,
+        product: {
+          select: {
+            id: true,
+            nameAr: true,
+            nameEn: true,
+            unit: true,
+            inventoryConversions: true,
+            conversionTemplate: { select: { conversions: true } },
+          },
+        },
         order: {
           select: {
             orderDate: true,
@@ -277,19 +259,32 @@ export class ShishaInventorySourceService {
       },
       orderBy: [{ order: { orderDate: 'asc' } }, { id: 'asc' }],
     });
-    return items.map((item) => ({
-      id: `catalog-charcoal:${item.id}`,
-      transactionDate: item.order.orderDate,
-      movementType: 'purchase' as const,
-      materialType: 'charcoal' as const,
-      quantityBase: item.quantity.times(item.quantityMultiplier).times(piecesPerPack),
-      costInclVat: item.amount,
-      invoiceNumber: item.order.orderNumber,
-      supplierName: null,
-      notes: 'شراء آلي من صنف فحم في الطلبات',
-      createdAt: item.order.createdAt,
-      createdBy: null,
-      source: 'order_catalog' as const,
-    }));
+    return items.flatMap((item) => {
+      const materialType = inferRecipeMaterialType({}, item.product);
+      if (!materialType) return [];
+      const productUnit = normalizeUnit(item.product.unit, 'piece');
+      const quantityBase = recipeQuantityBase(
+        materialType,
+        item.quantity.times(item.quantityMultiplier),
+        productUnit,
+        charcoalPiecesPerPack,
+        charcoalPacksPerCarton,
+      );
+      if (!quantityBase.gt(0)) return [];
+      return [{
+        id: `catalog-recipe-material:${item.id}`,
+        transactionDate: item.order.orderDate,
+        movementType: 'purchase' as const,
+        materialType,
+        quantityBase,
+        costInclVat: item.amount,
+        invoiceNumber: item.order.orderNumber,
+        supplierName: null,
+        notes: null,
+        createdAt: item.order.createdAt,
+        createdBy: null,
+        source: 'order_recipe_material' as const,
+      }];
+    });
   }
 }

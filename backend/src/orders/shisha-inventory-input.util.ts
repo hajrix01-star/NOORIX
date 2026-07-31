@@ -1,5 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { BadRequestException } from '@nestjs/common';
 import { toYmd } from '../common/utils/to-ymd.util';
 
 export function shishaDecimal(value: string | number | Prisma.Decimal): Prisma.Decimal {
@@ -55,26 +55,6 @@ export function purchaseQuantityBase(
 export function normalizeShishaText(value?: string): string | null {
   const normalized = value?.trim();
   return normalized ? normalized : null;
-}
-
-export function assertManualCharcoalPurchaseAllowed(
-  settings: {
-    charcoalPurchaseProductId: string | null;
-    charcoalPurchaseTrackingStartedAt: Date | null;
-  },
-  date: Date,
-  materialTypes: Array<'tobacco' | 'hose' | 'charcoal'>,
-) {
-  if (
-    settings.charcoalPurchaseProductId
-    && settings.charcoalPurchaseTrackingStartedAt
-    && toYmd(date) >= toYmd(settings.charcoalPurchaseTrackingStartedAt)
-    && materialTypes.includes('charcoal')
-  ) {
-    throw new BadRequestException(
-      'شراء الفحم مرتبط بصنف «فحم» في الطلبات ويضاف للمخزون تلقائياً؛ لا تسجله مرة ثانية هنا.',
-    );
-  }
 }
 
 export function serializeShishaInventorySettings(

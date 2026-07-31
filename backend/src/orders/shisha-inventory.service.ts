@@ -10,14 +10,12 @@ import {
   InitializeShishaInventoryDto,
 } from './dto/shisha-inventory.dto';
 import { parseSaleDateYmd } from './orders-staff-date.util';
-import { standardCharcoalVariants } from './orders-quantity-multiplier.util';
 import {
   calculateShishaInventory,
   type ShishaMaterialType,
   type ShishaMovementInput,
 } from './shisha-inventory-calculator.util';
 import {
-  assertManualCharcoalPurchaseAllowed,
   charcoalPieces,
   normalizeShishaText,
   purchaseQuantityBase,
@@ -56,16 +54,15 @@ export class ShishaInventoryService {
         settings.trackingStartedAt,
         end,
         settings.changeProductId,
-        settings.charcoalConsumptionProductId,
         settings.charcoalPiecesPerPack,
         settings.charcoalPacksPerCarton,
       ),
-      this.source.catalogCharcoalPurchases(
+      this.source.catalogRecipeMaterialPurchases(
         companyId,
-        settings.charcoalPurchaseProductId,
-        settings.charcoalPurchaseTrackingStartedAt,
+        settings.trackingStartedAt,
         end,
         settings.charcoalPiecesPerPack,
+        settings.charcoalPacksPerCarton,
       ),
     ]);
     const manualMovements = movements;
@@ -170,104 +167,6 @@ export class ShishaInventoryService {
     ] as const;
 
     await this.prisma.withTenant(async (tx) => {
-      const existingCharcoalProduct = await tx.orderProduct.findFirst({
-        where: {
-          companyId,
-          productType: 'sale',
-          OR: [
-            { nameAr: { in: ['فحم', 'الفحم'] } },
-            { nameEn: { equals: 'Charcoal', mode: 'insensitive' } },
-          ],
-        },
-        select: { id: true },
-      }) ?? await tx.orderProduct.findFirst({
-        where: {
-          companyId,
-          productType: 'sale',
-          nameAr: 'استهلاك الفحم الفعلي',
-        },
-        select: { id: true },
-      });
-      const charcoalProduct = existingCharcoalProduct
-        ? await tx.orderProduct.update({
-            where: { id: existingCharcoalProduct.id },
-            data: {
-              nameAr: 'فحم',
-              nameEn: 'Actual charcoal consumption',
-              unit: 'pack',
-              lastPrice: ZERO,
-              sections: ['شيشة'],
-              sectionIds: [section.id],
-              variants: standardCharcoalVariants(),
-              isActive: true,
-              sortOrder: 999,
-            },
-            select: { id: true },
-          })
-        : await tx.orderProduct.create({
-            data: {
-              tenantId,
-              companyId,
-              nameAr: 'فحم',
-              nameEn: 'Actual charcoal consumption',
-              unit: 'pack',
-              lastPrice: ZERO,
-              sections: ['شيشة'],
-              sectionIds: [section.id],
-              variants: standardCharcoalVariants(),
-              productType: 'sale',
-              sortOrder: 999,
-            },
-            select: { id: true },
-          });
-      const existingCharcoalPurchaseProduct = await tx.orderProduct.findFirst({
-        where: {
-          companyId,
-          productType: 'order',
-          OR: [
-            { nameAr: { in: ['فحم', 'الفحم'] } },
-            { nameEn: { equals: 'Charcoal', mode: 'insensitive' } },
-          ],
-        },
-        select: { id: true, lastPrice: true, variants: true },
-      });
-      const existingPurchaseVariants = Array.isArray(existingCharcoalPurchaseProduct?.variants)
-        ? existingCharcoalPurchaseProduct.variants as Array<{ packaging?: string; lastPrice?: string | number }>
-        : [];
-      const previousCartonPrice = existingPurchaseVariants.find((variant) =>
-        ['كرتون', 'كرتن', 'carton'].includes(String(variant.packaging ?? '').trim().toLowerCase())
-      )?.lastPrice ?? existingCharcoalPurchaseProduct?.lastPrice ?? ZERO;
-      const charcoalPurchaseProduct = existingCharcoalPurchaseProduct
-        ? await tx.orderProduct.update({
-            where: { id: existingCharcoalPurchaseProduct.id },
-            data: {
-              nameAr: 'فحم',
-              nameEn: 'Charcoal',
-              unit: 'pack',
-              sections: ['شيشة'],
-              sectionIds: [section.id],
-              variants: standardCharcoalVariants(String(previousCartonPrice)),
-              isActive: true,
-              sortOrder: 998,
-            },
-            select: { id: true },
-          })
-        : await tx.orderProduct.create({
-            data: {
-              tenantId,
-              companyId,
-              nameAr: 'فحم',
-              nameEn: 'Charcoal',
-              unit: 'pack',
-              lastPrice: ZERO,
-              sections: ['شيشة'],
-              sectionIds: [section.id],
-              variants: standardCharcoalVariants(),
-              productType: 'order',
-              sortOrder: 998,
-            },
-            select: { id: true },
-          });
       await tx.shishaInventorySettings.create({
         data: {
           tenantId,
@@ -278,10 +177,10 @@ export class ShishaInventoryService {
           charcoalPiecesPerPack: 64,
           shishaSectionId: section.id,
           changeProductId: changeProduct.id,
-          charcoalConsumptionProductId: charcoalProduct.id,
-          charcoalActualTrackingStartedAt: date,
-          charcoalPurchaseProductId: charcoalPurchaseProduct.id,
-          charcoalPurchaseTrackingStartedAt: new Date(),
+          charcoalConsumptionProductId: null,
+          charcoalActualTrackingStartedAt: null,
+          charcoalPurchaseProductId: null,
+          charcoalPurchaseTrackingStartedAt: null,
         },
       });
       await tx.shishaInventoryMovement.createMany({
@@ -309,7 +208,6 @@ export class ShishaInventoryService {
       throw new BadRequestException('تاريخ الشراء لا يمكن أن يسبق تاريخ بداية التتبع.');
     }
 
-    assertManualCharcoalPurchaseAllowed(settings, date, [dto.materialType]);
     const quantityBase = purchaseQuantityBase(settings, dto);
 
     const invoiceNumber = normalizeShishaText(dto.invoiceNumber);
@@ -345,12 +243,6 @@ export class ShishaInventoryService {
     if (date < settings.trackingStartedAt) {
       throw new BadRequestException('تاريخ الشراء لا يمكن أن يسبق تاريخ بداية التتبع.');
     }
-
-    assertManualCharcoalPurchaseAllowed(
-      settings,
-      date,
-      dto.items.map((item) => item.materialType),
-    );
 
     const invoiceNumber = normalizeShishaText(dto.invoiceNumber);
     if (invoiceNumber) {

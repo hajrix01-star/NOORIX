@@ -305,7 +305,6 @@ export function OrdersTab({
         open={showShishaPurchase}
         companyId={companyId}
         initialized={Boolean(shishaInventory?.initialized)}
-        charcoalPurchasesLinked={Boolean(shishaInventory?.settings?.charcoalPurchaseProductId)}
         onClose={() => setShowShishaPurchase(false)}
       />
 

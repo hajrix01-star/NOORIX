@@ -1,7 +1,4 @@
-import {
-  resolveQuantityMultiplier,
-  standardCharcoalVariants,
-} from './orders-quantity-multiplier.util';
+import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
 
 describe('resolveQuantityMultiplier', () => {
   const product = {
@@ -41,21 +38,5 @@ describe('resolveQuantityMultiplier', () => {
 
     expect(resolveQuantityMultiplier(material, { unit: 'carton' }).toNumber()).toBe(640);
     expect(resolveQuantityMultiplier(material, { unit: 'box' }).toNumber()).toBe(64);
-  });
-
-  it('derives every purchase packaging price from the carton price', () => {
-    const variants = standardCharcoalVariants('145');
-    expect(variants.find((variant) => variant.packaging === 'علبة')).toMatchObject({
-      lastPrice: '14.5',
-      quantityMultiplier: '1',
-    });
-    expect(variants.find((variant) => variant.packaging === 'نصف كرتون')).toMatchObject({
-      lastPrice: '72.5',
-      quantityMultiplier: '5',
-    });
-    expect(variants.find((variant) => variant.packaging === 'كرتون ونصف')).toMatchObject({
-      lastPrice: '217.5',
-      quantityMultiplier: '15',
-    });
   });
 });

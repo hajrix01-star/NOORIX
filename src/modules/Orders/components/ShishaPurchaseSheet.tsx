@@ -19,7 +19,6 @@ type Props = {
   open: boolean;
   companyId: string;
   initialized: boolean;
-  charcoalPurchasesLinked: boolean;
   onClose: () => void;
 };
 
@@ -45,7 +44,6 @@ export function ShishaPurchaseSheet({
   open,
   companyId,
   initialized,
-  charcoalPurchasesLinked,
   onClose,
 }: Props) {
   const today = getSaudiToday();
@@ -58,17 +56,6 @@ export function ShishaPurchaseSheet({
     setPurchaseDate(today);
     setRows([newRow()]);
   }, [open, today]);
-
-  useEffect(() => {
-    if (!charcoalPurchasesLinked) return;
-    setRows((current) =>
-      current.map((row) =>
-        row.materialType === 'charcoal'
-          ? { ...row, materialType: 'tobacco', unit: unitFor('tobacco') }
-          : row,
-      ),
-    );
-  }, [charcoalPurchasesLinked]);
 
   const updateRow = (id: string, patch: Partial<PurchaseDraftRow>) => {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -126,17 +113,11 @@ export function ShishaPurchaseSheet({
             <Input name="supplierName" label="المورد" />
           </div>
 
-          {charcoalPurchasesLinked && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
-              مشتريات الفحم مربوطة بصنف الفحم في الطلبات وتضاف تلقائيا للمخزون، لذلك لا تحتاج تسجيلها هنا.
-            </div>
-          )}
-
           <div className="space-y-3 rounded-xl border border-noorix-border p-3">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <div className="text-[13px] font-bold text-noorix-text">أصناف الفاتورة</div>
-                <div className="text-[11px] text-noorix-muted">سجل المعسل والليات، والفحم فقط إذا لم يكن مربوطا بصنف طلبات.</div>
+                <div className="text-[11px] text-noorix-muted">إدخال يدوي اختياري للمعسل والليات والفحم. المسار الرسمي للمخزون يأتي من الطلبات والرسبي.</div>
               </div>
               <Button type="button" size="sm" onClick={() => setRows((current) => [...current, newRow()])}>
                 إضافة صنف
@@ -157,7 +138,7 @@ export function ShishaPurchaseSheet({
                 >
                   <option value="tobacco">معسل</option>
                   <option value="hose">ليات</option>
-                  {!charcoalPurchasesLinked && <option value="charcoal">فحم</option>}
+                  <option value="charcoal">فحم</option>
                 </Input>
                 <Input
                   type="number"

@@ -9,11 +9,6 @@ import {
   formatVariantLabel,
   defaultVariantModalState,
 } from './utils/staffOrderBasketUtils';
-import {
-  charcoalConversionLabel,
-  charcoalVariantLabel,
-  isCharcoalCatalogProduct,
-} from './utils/charcoalPackaging';
 import type { OrderProduct, OrderProductVariant } from '../../types/api';
 import { StaffCancellationReasonButtons } from './StaffOrderPanelModals';
 import { STAFF_CANCELLATION_REASON_LABEL_KEYS } from './constants/staffCancellationReasons';
@@ -256,7 +251,6 @@ export function VariantPickModal({
 }) {
   const product = variantModal.product;
   const name = lang === 'en' ? (product.nameEn || product.nameAr) : (product.nameAr || product.nameEn);
-  const charcoalProduct = isCharcoalCatalogProduct(product);
   const variants = useMemo(() => {
     const raw = Array.isArray(product?.variants) ? product.variants : [];
     return (raw as OrderProductVariant[]).map<SelectableOrderProductVariant>((v, i) => ({
@@ -294,18 +288,11 @@ export function VariantPickModal({
           >
             {variants.map((v) => (
               <option key={v._key} value={v._key}>
-                {charcoalProduct
-                  ? charcoalVariantLabel(v)
-                  : ([v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—')}
-                {!charcoalProduct && v.lastPrice ? ` — ${fmt(v.lastPrice)} SR` : ''}
+                {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'}
+                {v.lastPrice ? ` — ${fmt(v.lastPrice)} SR` : ''}
               </option>
             ))}
           </Input>
-        )}
-        {charcoalProduct && selectedVariant && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-center text-[12px] font-semibold text-emerald-800">
-            سيُسجل الاستهلاك: {charcoalConversionLabel(selectedVariant)}
-          </div>
         )}
         {variants.length === 0 && sizes.length > 0 && (
           <Input
@@ -352,17 +339,15 @@ export function VariantPickModal({
             >+</Button>
           </div>
         </div>
-        {!charcoalProduct && (
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            label={`${t('unitPrice')} SR`}
-            value={variantModal.unitPrice}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...variantModal, unitPrice: e.target.value })}
-            placeholder="0"
-          />
-        )}
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          label={`${t('unitPrice')} SR`}
+          value={variantModal.unitPrice}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...variantModal, unitPrice: e.target.value })}
+          placeholder="0"
+        />
         {isCancellation ? (
           <StaffCancellationReasonButtons
             reasons={variantModal.cancellationReasons}
