@@ -165,6 +165,38 @@ describe('aggregateOrderItemsForRangeReport', () => {
 });
 
 describe('aggregateRecipeInventoryStock', () => {
+  it('combines database aggregates with legacy rows without changing stock arithmetic', () => {
+    const material = {
+      id: 'material-aggregate',
+      nameAr: 'Material',
+      nameEn: 'Material',
+      unit: 'piece',
+      productType: 'order',
+    };
+
+    const [row] = aggregateRecipeInventoryStock({
+      materialProducts: [material],
+      purchases: [{
+        productId: material.id,
+        quantity: new Prisma.Decimal(5),
+        unit: 'piece',
+        quantityMultiplier: new Prisma.Decimal(1),
+        product: material,
+      }],
+      sales: [],
+      aggregatedPurchases: [{ productId: material.id, quantityBase: '100' }],
+      aggregatedConsumption: [{ productId: material.id, quantityBase: '30' }],
+      adjustments: [{ productId: material.id, quantityBase: '-2' }],
+    });
+
+    expect(row).toEqual(expect.objectContaining({
+      purchasedBaseQuantity: '105',
+      consumedBaseQuantity: '30',
+      adjustmentBaseQuantity: '-2',
+      balanceBaseQuantity: '73',
+    }));
+  });
+
   it('adds purchased material stock and consumes it from sold item recipes', () => {
     const orange = {
       id: 'orange',

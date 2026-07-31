@@ -23,6 +23,10 @@ function transactionFixture(existingProductIds: string[] = []) {
     inventoryStocktakeLine: {
       findMany: jest.fn().mockResolvedValue(existingProductIds.map((productId) => ({ productId }))),
     },
+    $queryRaw: jest.fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ count: 0 }]),
     orderProduct: {
       findMany: jest.fn()
         .mockResolvedValueOnce([{ id: 'product-1', unit: 'piece' }])
@@ -84,6 +88,13 @@ describe('OrdersInventoryService', () => {
     }));
     const saleWhere = tx.staffOrderItem.findMany.mock.calls[0][0].where.staffOrder;
     expect(saleWhere).not.toHaveProperty('saleDate');
+    expect(tx.orderItem.findMany.mock.calls[0][0].where).toEqual(expect.objectContaining({
+      inventoryBaseQuantitySnapshot: null,
+    }));
+    expect(tx.staffOrderItem.findMany.mock.calls[0][0].where).toEqual(expect.objectContaining({
+      inventoryConsumptionSnapshot: { equals: Prisma.DbNull },
+    }));
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(3);
     expect(tx.inventoryStocktake.create).toHaveBeenCalledTimes(1);
     expect(tx.inventoryMovement.createMany).toHaveBeenCalledTimes(1);
   });

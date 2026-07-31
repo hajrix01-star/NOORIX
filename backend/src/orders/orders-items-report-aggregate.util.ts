@@ -421,6 +421,8 @@ export function aggregateRecipeInventoryStock(input: {
   purchases: InventoryPurchaseInput[];
   sales: InventorySaleInput[];
   materialProducts: InventoryProduct[];
+  aggregatedPurchases?: InventoryAdjustmentInput[];
+  aggregatedConsumption?: InventoryAdjustmentInput[];
   adjustments?: InventoryAdjustmentInput[];
 }) {
   const rows = new Map<string, InventoryAccumulator>();
@@ -434,6 +436,15 @@ export function aggregateRecipeInventoryStock(input: {
     if (purchase.product.productType && purchase.product.productType !== 'order') continue;
     const row = ensureInventoryRow(rows, purchase.product, purchase.product.unit || 'piece');
     row.purchasedBaseQuantity = row.purchasedBaseQuantity.plus(inventoryBaseQuantity(purchase));
+  }
+
+  for (const purchase of input.aggregatedPurchases ?? []) {
+    const materialProduct = materialById.get(purchase.productId);
+    if (!materialProduct) continue;
+    const row = ensureInventoryRow(rows, materialProduct, materialProduct.unit || 'piece');
+    row.purchasedBaseQuantity = row.purchasedBaseQuantity.plus(
+      decimal(purchase.quantityBase),
+    );
   }
 
   for (const sale of input.sales) {
@@ -472,6 +483,15 @@ export function aggregateRecipeInventoryStock(input: {
         soldBaseQuantity.times(decimal(recipeItem.quantity)).times(unitMultiplier),
       );
     }
+  }
+
+  for (const consumption of input.aggregatedConsumption ?? []) {
+    const materialProduct = materialById.get(consumption.productId);
+    if (!materialProduct) continue;
+    const row = ensureInventoryRow(rows, materialProduct, materialProduct.unit || 'piece');
+    row.consumedBaseQuantity = row.consumedBaseQuantity.plus(
+      decimal(consumption.quantityBase),
+    );
   }
 
   for (const adjustment of input.adjustments ?? []) {

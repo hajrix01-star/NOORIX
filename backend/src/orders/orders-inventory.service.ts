@@ -19,15 +19,24 @@ import {
 
 type InventoryClient = Pick<
   TenantPrismaService,
-  'orderProduct' | 'orderItem' | 'staffOrderItem' | 'inventoryMovement'
+  'orderProduct' | 'orderItem' | 'staffOrderItem' | 'inventoryMovement' | '$queryRaw'
 >;
+
+type AggregatedInventoryQuantity = {
+  productId: string;
+  quantityBase: Prisma.Decimal | null;
+};
+
+type InvalidInventorySnapshotCount = {
+  count: number;
+};
 
 @Injectable()
 export class OrdersInventoryService {
   constructor(private readonly prisma: TenantPrismaService) {}
 
   async getStock(companyId: string) {
-    return this.projectStock(this.prisma, companyId);
+    return this.prisma.withTenant((tx) => this.projectStock(tx, companyId));
   }
 
   async listStocktakes(companyId: string) {
@@ -202,13 +211,44 @@ export class OrdersInventoryService {
       recipe: true,
     } satisfies Prisma.OrderProductSelect;
 
-    const [materialProducts, purchases, sales, adjustments] = await Promise.all([
+    const purchaseDateFilter = throughDate
+      ? Prisma.sql`AND o."order_date" <= ${throughDate}`
+      : Prisma.empty;
+    const saleDateFilter = throughDate
+      ? Prisma.sql`AND (
+          so."sale_date" <= ${throughDate}
+          OR (so."sale_date" IS NULL AND so."created_at" <= ${throughDate})
+        )`
+      : Prisma.empty;
+
+    const [
+      materialProducts,
+      aggregatedPurchases,
+      legacyPurchases,
+      aggregatedConsumption,
+      invalidConsumptionSnapshots,
+      legacySales,
+      adjustments,
+    ] = await Promise.all([
       client.orderProduct.findMany({
         where: { companyId, productType: 'order' },
         select: productSelect,
       }),
+      client.$queryRaw<AggregatedInventoryQuantity[]>(Prisma.sql`
+        SELECT
+          oi."product_id" AS "productId",
+          SUM(oi."inventory_base_quantity_snapshot") AS "quantityBase"
+        FROM "order_items" oi
+        INNER JOIN "orders" o ON o."id" = oi."order_id"
+        WHERE o."company_id" = ${companyId}
+          AND o."status" = 'active'
+          AND oi."inventory_base_quantity_snapshot" IS NOT NULL
+          ${purchaseDateFilter}
+        GROUP BY oi."product_id"
+      `),
       client.orderItem.findMany({
         where: {
+          inventoryBaseQuantitySnapshot: null,
           order: {
             companyId,
             status: 'active',
@@ -221,11 +261,39 @@ export class OrdersInventoryService {
           unit: true,
           quantityMultiplier: true,
           inventoryBaseQuantitySnapshot: true,
-          product: { select: productSelect },
         },
       }),
+      client.$queryRaw<AggregatedInventoryQuantity[]>(Prisma.sql`
+        SELECT
+          component->>'materialProductId' AS "productId",
+          SUM((component->>'quantityBase')::numeric) AS "quantityBase"
+        FROM "staff_order_items" soi
+        INNER JOIN "staff_orders" so ON so."id" = soi."staff_order_id"
+        CROSS JOIN LATERAL jsonb_array_elements(
+          soi."inventory_consumption_snapshot"->'components'
+        ) AS component
+        WHERE so."company_id" = ${companyId}
+          AND so."order_type" = 'sale'
+          AND so."status" = 'sent'
+          AND soi."inventory_consumption_snapshot" IS NOT NULL
+          AND soi."inventory_consumption_snapshot"->>'version' = '1'
+          ${saleDateFilter}
+        GROUP BY component->>'materialProductId'
+      `),
+      client.$queryRaw<InvalidInventorySnapshotCount[]>(Prisma.sql`
+        SELECT COUNT(*)::int AS "count"
+        FROM "staff_order_items" soi
+        INNER JOIN "staff_orders" so ON so."id" = soi."staff_order_id"
+        WHERE so."company_id" = ${companyId}
+          AND so."order_type" = 'sale'
+          AND so."status" = 'sent'
+          AND soi."inventory_consumption_snapshot" IS NOT NULL
+          AND COALESCE(soi."inventory_consumption_snapshot"->>'version', '') <> '1'
+          ${saleDateFilter}
+      `),
       client.staffOrderItem.findMany({
         where: {
+          inventoryConsumptionSnapshot: { equals: Prisma.DbNull },
           staffOrder: {
             companyId,
             orderType: 'sale',
@@ -244,7 +312,6 @@ export class OrdersInventoryService {
           unit: true,
           quantityMultiplier: true,
           inventoryConsumptionSnapshot: true,
-          product: { select: productSelect },
         },
       }),
       client.inventoryMovement.groupBy({
@@ -257,10 +324,40 @@ export class OrdersInventoryService {
       }),
     ]);
 
+    if ((invalidConsumptionSnapshots[0]?.count ?? 0) > 0) {
+      throw new Error('Unsupported inventory consumption snapshot version.');
+    }
+
+    const materialById = new Map(materialProducts.map((product) => [product.id, product]));
+    const purchases = legacyPurchases.flatMap((purchase) => {
+      const product = materialById.get(purchase.productId);
+      return product ? [{ ...purchase, product }] : [];
+    });
+    const soldProductIds = Array.from(new Set(legacySales.map((sale) => sale.productId)));
+    const soldProducts = soldProductIds.length > 0
+      ? await client.orderProduct.findMany({
+          where: { companyId, productType: 'sale', id: { in: soldProductIds } },
+          select: productSelect,
+        })
+      : [];
+    const soldProductById = new Map(soldProducts.map((product) => [product.id, product]));
+    const sales = legacySales.flatMap((sale) => {
+      const product = soldProductById.get(sale.productId);
+      return product ? [{ ...sale, product }] : [];
+    });
+
     return aggregateRecipeInventoryStock({
       materialProducts,
       purchases,
       sales,
+      aggregatedPurchases: aggregatedPurchases.map((purchase) => ({
+        productId: purchase.productId,
+        quantityBase: purchase.quantityBase ?? 0,
+      })),
+      aggregatedConsumption: aggregatedConsumption.map((consumption) => ({
+        productId: consumption.productId,
+        quantityBase: consumption.quantityBase ?? 0,
+      })),
       adjustments: adjustments.map((adjustment) => ({
         productId: adjustment.productId,
         quantityBase: adjustment._sum.quantityBase ?? 0,
