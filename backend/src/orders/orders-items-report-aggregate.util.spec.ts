@@ -461,6 +461,66 @@ describe('aggregateRecipeInventoryStock', () => {
     ]);
   });
 
+  it('recovers a legacy purchase with a drifted unit from its stored multiplier', () => {
+    const cream = {
+      id: 'legacy-cream',
+      nameAr: 'Legacy cream',
+      nameEn: 'Legacy cream',
+      productType: 'order',
+      unit: 'piece',
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [cream],
+      purchases: [
+        {
+          productId: cream.id,
+          quantity: new Prisma.Decimal(3),
+          unit: 'piece/ml',
+          quantityMultiplier: new Prisma.Decimal(1),
+          inventoryBaseQuantitySnapshot: null,
+          product: cream,
+        },
+      ],
+      sales: [],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: cream.id,
+        unit: 'piece',
+        purchasedBaseQuantity: '3',
+        consumedBaseQuantity: '0',
+        balanceBaseQuantity: '3',
+      }),
+    ]);
+  });
+
+  it('still rejects a legacy purchase when neither conversion nor stored multiplier exists', () => {
+    const material = {
+      id: 'unrecoverable-legacy-material',
+      nameAr: 'Unrecoverable material',
+      nameEn: 'Unrecoverable material',
+      productType: 'order',
+      unit: 'piece',
+    };
+
+    expect(() => aggregateRecipeInventoryStock({
+      materialProducts: [material],
+      purchases: [
+        {
+          productId: material.id,
+          quantity: new Prisma.Decimal(3),
+          unit: 'piece/ml',
+          quantityMultiplier: null,
+          inventoryBaseQuantitySnapshot: null,
+          product: material,
+        },
+      ],
+      sales: [],
+    })).toThrow('Missing inventory conversion');
+  });
+
   it('rejects recipe consumption when the material unit has no conversion path', () => {
     const orange = {
       id: 'orange',
