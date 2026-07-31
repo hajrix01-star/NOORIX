@@ -5,6 +5,7 @@ import { getSaudiNow } from '../../utils/saudiDate';
 import {
   buildDatePeriodLabel,
   type DatePeriodMode,
+  type DatePeriodState,
 } from './datePeriod';
 import DateRangeField from './DateRangeField';
 import { DayRangeCalendar, MonthRangeCalendar, QuarterCalendar, YearRangeCalendar } from './PeriodCalendars';
@@ -25,6 +26,7 @@ export type DateFilterBarProps = {
   modes?: DatePeriodMode[];
   showBadge?: boolean;
   showActions?: boolean;
+  onApply?: (state: DatePeriodState) => void;
   className?: string;
 };
 
@@ -35,6 +37,7 @@ export default function DateFilterBar({
   modes = DEFAULT_MODES,
   showBadge = true,
   showActions = true,
+  onApply,
   className = '',
 }: DateFilterBarProps) {
   const { t, lang } = useTranslation();
@@ -137,7 +140,13 @@ export default function DateFilterBar({
   }, [lang, openPanel]);
 
   const apply = () => {
+    if (!isDirty) {
+      setPopoverStyle(null);
+      setOpenPanel(null);
+      return;
+    }
     applyDatePeriodDraft(filter, draft);
+    onApply?.(draft);
     setPopoverStyle(null);
     setOpenPanel(null);
   };

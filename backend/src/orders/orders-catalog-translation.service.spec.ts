@@ -9,7 +9,7 @@ describe('OrdersCatalogTranslationService', () => {
       {
         id: 'product-1',
         nameAr: 'منظف ارضيات',
-        nameEn: null,
+        nameEn: '—',
         unit: 'عبوة',
         productType: 'order',
         category: { nameAr: 'نظافة', nameEn: 'Cleaning' },
@@ -72,12 +72,17 @@ describe('OrdersCatalogTranslationService', () => {
   });
 
   it('atomically updates only active untranslated products in the same company', async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      { id: 'product-1', nameEn: '—' },
+      { id: 'product-2', nameEn: 'Floor Cleaner' },
+    ]);
     const updateMany = jest.fn()
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 0 });
-    type Transaction = { orderProduct: { updateMany: typeof updateMany } };
+      .mockResolvedValueOnce({ count: 1 });
+    type Transaction = {
+      orderProduct: { findMany: typeof findMany; updateMany: typeof updateMany };
+    };
     const withTenant = jest.fn((callback: (tx: Transaction) => Promise<number>) => (
-      callback({ orderProduct: { updateMany } })
+      callback({ orderProduct: { findMany, updateMany } })
     ));
     const prisma = Object.create(TenantPrismaService.prototype) as TenantPrismaService;
     Object.defineProperty(prisma, 'withTenant', { value: withTenant });
@@ -94,10 +99,11 @@ describe('OrdersCatalogTranslationService', () => {
         id: 'product-1',
         companyId: 'company-1',
         isActive: true,
-        OR: [{ nameEn: null }, { nameEn: '' }],
+        nameEn: '—',
       },
       data: { nameEn: 'Orange Juice' },
     });
+    expect(updateMany).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ updatedCount: 1, skippedCount: 1 });
   });
 

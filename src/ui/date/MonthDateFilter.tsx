@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import DateFilterBar from './DateFilterBar';
 import { getGregorianMonthNames } from './dateLocale';
+import type { DatePeriodState } from './datePeriod';
 import { useDateFilter } from './useDateFilter';
 
 export type MonthDateFilterProps = {
@@ -14,7 +15,6 @@ export type MonthDateFilterProps = {
 export default function MonthDateFilter({ year, month, onChange, className }: MonthDateFilterProps) {
   const { lang } = useTranslation();
   const filter = useDateFilter();
-  const state = filter.state;
   const lastSyncedPropKeyRef = useRef('');
   const lastEmittedPropKeyRef = useRef('');
   const monthNames = getGregorianMonthNames(lang);
@@ -45,7 +45,7 @@ export default function MonthDateFilter({ year, month, onChange, className }: Mo
     year,
   ]);
 
-  useEffect(() => {
+  const handleApply = useCallback((state: DatePeriodState) => {
     if (state.mode !== 'month' && state.mode !== 'months') return;
     const singleMonth =
       state.monthRangeStartYear === state.monthRangeEndYear &&
@@ -61,20 +61,17 @@ export default function MonthDateFilter({ year, month, onChange, className }: Mo
       lastEmittedPropKeyRef.current = nextKey;
       onChange(next);
     }
-  }, [
-    month,
-    onChange,
-    state.mode,
-    state.monthRangeEndMonth,
-    state.monthRangeEndYear,
-    state.monthRangeStartMonth,
-    state.monthRangeStartYear,
-    year,
-  ]);
+  }, [month, onChange, year]);
 
   return (
     <div className="ndfb-controlled-month-filter">
-      <DateFilterBar filter={filter} modes={['month']} showBadge={false} className={className} />
+      <DateFilterBar
+        filter={filter}
+        modes={['month']}
+        showBadge={false}
+        onApply={handleApply}
+        className={className}
+      />
       <span className="ndfb-period-badge ndfb-period-badge--applied" title={appliedLabel}>
         {appliedLabel}
       </span>

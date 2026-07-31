@@ -4,6 +4,11 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 
 const CATALOG_TRANSLATION_BATCH_SIZE = 15;
 
+function isMissingCatalogTranslation(value: string | null | undefined) {
+  const normalized = value?.trim();
+  return !normalized || normalized === '-' || normalized === '—';
+}
+
 @Injectable()
 export class OrdersCatalogTranslationService {
   constructor(
@@ -17,7 +22,7 @@ export class OrdersCatalogTranslationService {
       orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
       include: { category: true },
     });
-    const missing = products.filter((product) => !product.nameEn?.trim());
+    const missing = products.filter((product) => isMissingCatalogTranslation(product.nameEn));
     const requestedLimit = Math.min(Math.max(limit, 1), 50);
     const selected = missing.slice(0, Math.min(requestedLimit, CATALOG_TRANSLATION_BATCH_SIZE));
     if (!selected.length) return { suggestions: [], totalMissing: 0, truncated: false };
@@ -72,17 +77,30 @@ export class OrdersCatalogTranslationService {
     if (!unique.size) return { updatedCount: 0, skippedCount: translations.length };
 
     const updatedCount = await this.prisma.withTenant(async (tx) => {
-      const updates = await Promise.all([...unique].map(([productId, nameEn]) => (
-        tx.orderProduct.updateMany({
+      const currentProducts = await tx.orderProduct.findMany({
+        where: {
+          companyId,
+          isActive: true,
+          id: { in: [...unique.keys()] },
+        },
+        select: { id: true, nameEn: true },
+      });
+      const missingTranslations = currentProducts.filter((product) => (
+        isMissingCatalogTranslation(product.nameEn)
+      ));
+      const updates = await Promise.all(missingTranslations.map((product) => {
+        const nameEn = unique.get(product.id);
+        if (!nameEn) return Promise.resolve({ count: 0 });
+        return tx.orderProduct.updateMany({
           where: {
-            id: productId,
+            id: product.id,
             companyId,
             isActive: true,
-            OR: [{ nameEn: null }, { nameEn: '' }],
+            nameEn: product.nameEn,
           },
           data: { nameEn },
-        })
-      )));
+        });
+      }));
       return updates.reduce((total, update) => total + update.count, 0);
     });
 
@@ -97,7 +115,7 @@ export class OrdersCatalogTranslationService {
       where: { companyId, isActive: true },
       orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
     });
-    const missing = categories.filter((category) => !category.nameEn?.trim());
+    const missing = categories.filter((category) => isMissingCatalogTranslation(category.nameEn));
     const requestedLimit = Math.min(Math.max(limit, 1), 50);
     const selected = missing.slice(0, Math.min(requestedLimit, CATALOG_TRANSLATION_BATCH_SIZE));
     if (!selected.length) return { suggestions: [], totalMissing: 0, truncated: false };
@@ -150,7 +168,9 @@ export class OrdersCatalogTranslationService {
         },
         select: { id: true, nameEn: true },
       });
-      const missingTranslations = currentCategories.filter((category) => !category.nameEn?.trim());
+      const missingTranslations = currentCategories.filter((category) => (
+        isMissingCatalogTranslation(category.nameEn)
+      ));
       const updates = await Promise.all(missingTranslations.map((category) => (
         tx.orderCategory.updateMany({
           where: {
