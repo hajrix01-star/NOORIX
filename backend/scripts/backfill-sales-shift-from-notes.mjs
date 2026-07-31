@@ -2,7 +2,7 @@
  * يحدّث عمود shift من وسم الملاحظات `[شفت: …]` للملخصات المحفوظة كـ all.
  * Usage: node backend/scripts/backfill-sales-shift-from-notes.mjs [--dry-run]
  */
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 const dryRun = process.argv.includes('--dry-run');
 const prisma = new PrismaClient();

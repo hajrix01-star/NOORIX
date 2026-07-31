@@ -63,6 +63,25 @@ describe('OrdersInventoryService', () => {
 
   afterEach(() => jest.restoreAllMocks());
 
+  it('projects stock through the tenant boundary with the grouped query contract', async () => {
+    const tx = transactionFixture();
+    const prisma = {
+      withTenant: jest.fn((callback) => callback(tx)),
+    };
+    const service = inventoryService(prisma);
+
+    await expect(service.getStock('company-1')).resolves.toEqual([
+      expect.objectContaining({
+        productId: 'product-1',
+        purchasedBaseQuantity: '0',
+        consumedBaseQuantity: '0',
+        balanceBaseQuantity: '0',
+      }),
+    ]);
+    expect(prisma.withTenant).toHaveBeenCalledTimes(1);
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(4);
+  });
+
   it('rejects a stocktake outside the current Saudi day before opening a transaction', async () => {
     const prisma = { $transaction: jest.fn() };
     const service = inventoryService(prisma);
