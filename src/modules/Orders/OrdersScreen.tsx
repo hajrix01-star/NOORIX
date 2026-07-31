@@ -14,13 +14,13 @@ import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';
 import { ItemsManageTab } from './components/ItemsManageTab';
 import { SalesReportTab } from './components/SalesReportTab';
-import { ShishaInventoryTab } from './components/ShishaInventoryTab';
+import { InventoryCostTab } from './components/InventoryCostTab';
 import { StaffOrdersView } from './StaffOrdersView';
 import { resolveOrdersScreenMode } from './ordersScreenRouting';
 
-const ORDERS_TAB_ALIASES = { sales: 'sales-report' } as const;
+const ORDERS_TAB_ALIASES = { sales: 'sales-report', 'shisha-inventory': 'inventory-cost' } as const;
 type OrdersTabDescriptor = { id: string; labelKey: string; shortLabelKey?: string };
-type OrdersTabGroupId = 'orders' | 'staff-sales' | 'orders-reports' | 'items-manage' | 'shisha-inventory';
+type OrdersTabGroupId = 'orders' | 'staff-sales' | 'orders-reports' | 'items-manage' | 'inventory-cost';
 type OrdersTabGroup = { id: OrdersTabGroupId; labelKey: string; tabIds: string[] };
 
 function parseYearMonth(dateStr: unknown) {
@@ -118,7 +118,7 @@ function ManagerOrdersScreen({
     if (hasManagerDataAccess) {
       tabs.push(
         { id: 'items-manage', labelKey: 'ordersItemsManageTab', shortLabelKey: 'ordersItemsManageTabShort' },
-        { id: 'shisha-inventory', labelKey: 'shishaInventoryTab', shortLabelKey: 'shishaInventoryTabShort' },
+        { id: 'inventory-cost', labelKey: 'inventoryCostTab', shortLabelKey: 'inventoryCostTabShort' },
       );
     }
     return tabs;
@@ -137,7 +137,7 @@ function ManagerOrdersScreen({
     if (hasManagerDataAccess) {
       groups.push(
         { id: 'items-manage', labelKey: 'ordersItemsManageTab', tabIds: ['items-manage'] },
-        { id: 'shisha-inventory', labelKey: 'shishaInventoryTab', tabIds: ['shisha-inventory'] },
+        { id: 'inventory-cost', labelKey: 'inventoryCostTab', tabIds: ['inventory-cost'] },
       );
     }
     return groups;
@@ -276,8 +276,8 @@ function ManagerOrdersScreen({
             />
           )}
           {activeTab === 'items-manage' && hasManagerDataAccess && <ItemsManageTab companyId={companyId} />}
-          {activeTab === 'shisha-inventory' && hasManagerDataAccess && (
-            <ShishaInventoryTab
+          {activeTab === 'inventory-cost' && hasManagerDataAccess && (
+            <InventoryCostTab
               companyId={companyId}
               startDate={startDate}
               endDate={endDate}

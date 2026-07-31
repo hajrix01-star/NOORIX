@@ -4,7 +4,7 @@ import type { OrderRecipeInventoryStockRow, OrderSection } from '../../../types/
 import { Badge, SimpleTable, Spinner } from '../../../ui';
 import type { SimpleTableColumn } from '../../../ui';
 
-type ShishaInventoryTabProps = {
+type InventoryCostTabProps = {
   companyId: string;
   startDate?: string;
   endDate?: string;
@@ -152,7 +152,7 @@ function SummaryTile({
   );
 }
 
-export function ShishaInventoryTab({ companyId }: ShishaInventoryTabProps) {
+export function InventoryCostTab({ companyId }: InventoryCostTabProps) {
   const [selectedSectionId, setSelectedSectionId] = useState(ALL_SECTIONS);
   const stockQuery = useOrdersRecipeInventoryStock(companyId);
   const sectionsQuery = useOrderSections(companyId);
@@ -324,4 +324,4 @@ export function ShishaInventoryTab({ companyId }: ShishaInventoryTabProps) {
   );
 }
 
-export default ShishaInventoryTab;
+export default InventoryCostTab;
