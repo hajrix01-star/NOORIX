@@ -329,6 +329,43 @@ export type OrderProductPayload = {
   isActive?: boolean;
 };
 
+export type CatalogTranslationClassification =
+  | 'ingredient'
+  | 'beverage'
+  | 'cleaning'
+  | 'packaging'
+  | 'equipment'
+  | 'brand'
+  | 'other';
+
+export type OrderProductTranslationSuggestion = {
+  productId: string;
+  nameAr: string;
+  categoryAr?: string | null;
+  unit?: string | null;
+  productType?: string | null;
+  suggestedNameEn: string;
+  classification: CatalogTranslationClassification;
+  confidence: number;
+  needsReview: boolean;
+};
+
+export type OrderProductTranslationPreview = {
+  suggestions: OrderProductTranslationSuggestion[];
+  totalMissing: number;
+  truncated: boolean;
+};
+
+export type ApplyOrderProductTranslationItem = {
+  productId: string;
+  nameEn: string;
+};
+
+export type ApplyOrderProductTranslationsResult = {
+  updatedCount: number;
+  skippedCount: number;
+};
+
 export type OrderCategoryPayload = {
   companyId?: string;
   nameAr: string;

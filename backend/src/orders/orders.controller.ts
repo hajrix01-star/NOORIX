@@ -15,6 +15,10 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductsBatchDto } from './dto/create-products-batch.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
+import {
+  ApplyProductTranslationsDto,
+  PreviewProductTranslationsDto,
+} from './dto/product-translation.dto';
 import { CreateStaffOrderDto } from './orders-staff.types';
 import {
   type CurrentAuthUser,
@@ -332,6 +336,31 @@ export class OrdersController {
   @RequirePermission('ORDERS_WRITE')
   createProductsBatch(@Body() body: CreateProductsBatchDto) {
     return this.ordersService.createProductsBatch(body.companyId, body.products);
+  }
+
+  @Post('products/translation-preview')
+  @RequirePermission('ORDERS_WRITE')
+  previewProductTranslations(
+    @CompanyId() companyId: string,
+    @Body() body: PreviewProductTranslationsDto,
+  ) {
+    return this.ordersService.previewMissingProductTranslations(
+      requireCompanyId(companyId),
+      body.productType,
+      body.limit,
+    );
+  }
+
+  @Post('products/translation-apply')
+  @RequirePermission('ORDERS_WRITE')
+  applyProductTranslations(
+    @CompanyId() companyId: string,
+    @Body() body: ApplyProductTranslationsDto,
+  ) {
+    return this.ordersService.applyProductTranslations(
+      requireCompanyId(companyId),
+      body.translations,
+    );
   }
 
   @Post('categories/batch')

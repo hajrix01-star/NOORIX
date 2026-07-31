@@ -1,5 +1,7 @@
 import type {
   ApiParsedResult,
+  ApplyOrderProductTranslationItem,
+  ApplyOrderProductTranslationsResult,
   CreateInventoryStocktakePayload,
   CreateOrderPayload,
   OrderCatalogBatchCreateResult,
@@ -14,6 +16,8 @@ import type {
   InventoryStocktake,
   OrderProduct,
   OrderProductPayload,
+  OrderProductTranslationPreview,
+  OrderProductType,
   OrderPurchaseHistoryRow,
   OrderRangeSummary,
   OrderRecipeInventoryStockRow,
@@ -156,6 +160,24 @@ export async function getOrderProducts(companyId: string, section?: string, type
   if (type) params.type = type;
   const res = await apiGet<OrderProduct[]>('/api/v1/orders/products', params);
   return res?.success ? { ...res, data: res.data ?? [] } : res;
+}
+export async function previewOrderProductTranslations(
+  companyId: string,
+  productType: OrderProductType,
+): Promise<ApiParsedResult<OrderProductTranslationPreview>> {
+  return apiPost<OrderProductTranslationPreview>(
+    `/api/v1/orders/products/translation-preview?companyId=${encodeURIComponent(companyId)}`,
+    { productType, limit: 50 },
+  );
+}
+export async function applyOrderProductTranslations(
+  companyId: string,
+  translations: ApplyOrderProductTranslationItem[],
+): Promise<ApiParsedResult<ApplyOrderProductTranslationsResult>> {
+  return apiPost<ApplyOrderProductTranslationsResult>(
+    `/api/v1/orders/products/translation-apply?companyId=${encodeURIComponent(companyId)}`,
+    { translations },
+  );
 }
 export async function createOrderProduct(body: OrderProductPayload & { companyId: string }): Promise<ApiParsedResult<OrderProduct>> {
   return apiPost<OrderProduct>('/api/v1/orders/products', body);

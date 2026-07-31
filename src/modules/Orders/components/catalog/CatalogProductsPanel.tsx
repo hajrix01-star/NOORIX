@@ -9,6 +9,7 @@ import { CatalogTypeSegment } from './CatalogTypeSegment';
 import { CatalogToolbar } from './CatalogToolbar';
 import { CatalogProductTable } from './CatalogProductTable';
 import { CatalogProductFormSheet, type CatalogProductFormState } from './CatalogProductFormSheet';
+import { CatalogTranslationModal } from './CatalogTranslationModal';
 import { OrderConfirmModal } from '../OrderConfirmModal';
 import type { ItemsManageTabController } from '../../hooks/useItemsManageTab';
 import type { OrderProduct } from '../../../../types/api';
@@ -78,6 +79,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetMode, setSheetMode] = useState<'create' | 'edit'>('create');
   const [deactivateTarget, setDeactivateTarget] = useState<DeactivateTarget | null>(null);
+  const [translationModalOpen, setTranslationModalOpen] = useState(false);
 
   const totalOfType = products.filter((p) => (p.productType || 'order') === catalogProductType).length;
 
@@ -267,6 +269,12 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
           setDeactivateTarget(null);
         }}
       />
+      <CatalogTranslationModal
+        open={translationModalOpen}
+        onClose={() => setTranslationModalOpen(false)}
+        companyId={companyId}
+        productType={catalogProductType}
+      />
 
       <Modal
         open={bulkSectionModal}
@@ -373,6 +381,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
             totalCount={totalOfType}
             selectedCount={selectedProductIds.size}
             onAddProduct={openCreateSheet}
+            onTranslateMissing={() => setTranslationModalOpen(true)}
             onBulkSections={() => { setBulkSelectedSections([]); setBulkSectionModal(true); }}
             onDeactivateSelected={() => setDeactivateTarget('selected')}
             deactivatePending={deleteProductsMutation.isPending}

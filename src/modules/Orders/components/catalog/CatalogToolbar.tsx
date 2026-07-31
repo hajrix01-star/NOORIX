@@ -17,6 +17,7 @@ type CatalogToolbarProps = {
   totalCount: number;
   selectedCount: number;
   onAddProduct: () => void;
+  onTranslateMissing: () => void;
   onBulkSections: () => void;
   onDeactivateSelected: () => void;
   deactivatePending: boolean;
@@ -48,6 +49,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
     totalCount,
     selectedCount,
     onAddProduct,
+    onTranslateMissing,
     onBulkSections,
     onDeactivateSelected,
     deactivatePending,
@@ -75,9 +77,14 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button variant="primary" size="sm" onClick={onAddProduct}>
-          + {t('ordersAddProduct')}
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="primary" size="sm" onClick={onAddProduct}>
+            + {t('ordersAddProduct')}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onTranslateMissing}>
+            ترجمة الأسماء الناقصة
+          </Button>
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="ghost" onClick={onPrintCatalog} disabled={printDisabled}>
             {t('ordersItemsReport')}

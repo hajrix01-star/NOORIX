@@ -17,6 +17,13 @@ import {
   getGeminiCandidateText,
   type GeminiGenerateContentResponse,
 } from './gemini-response.util';
+import {
+  buildCatalogTranslationPrompt,
+  normalizeCatalogTranslations,
+  type CatalogTranslationInput,
+  type CatalogTranslationSuggestion,
+  type RawCatalogTranslation,
+} from './gemini-catalog-translation.util';
 
 export type { GeminiIntent, GeminiPeriod, GeminiParseResult } from './gemini-types';
 export { DASHBOARD_INSIGHTS_LLM_SYSTEM_PROMPT } from './gemini-dashboard-insights-prompt.util';
@@ -247,6 +254,62 @@ export class GeminiService {
       console.warn('[GeminiService] answerGeneral error:', err);
       return null;
     }
+    });
+  }
+
+  async translateRestaurantCatalogItems(
+    items: CatalogTranslationInput[],
+  ): Promise<CatalogTranslationSuggestion[] | null> {
+    if (!this.apiKey || !items.length || items.length > 50) return null;
+
+    return this.geminiGate.with(async () => {
+      try {
+        const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: buildCatalogTranslationPrompt(items) }] }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 4096,
+              responseMimeType: 'application/json',
+              responseJsonSchema: {
+                type: 'object',
+                properties: {
+                  translations: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        suggestedNameEn: { type: 'string' },
+                        classification: {
+                          type: 'string',
+                          enum: ['ingredient', 'beverage', 'cleaning', 'packaging', 'equipment', 'brand', 'other'],
+                        },
+                        confidence: { type: 'number' },
+                        needsReview: { type: 'boolean' },
+                      },
+                      required: ['id', 'suggestedNameEn', 'classification', 'confidence', 'needsReview'],
+                    },
+                  },
+                },
+                required: ['translations'],
+              },
+            },
+          }),
+        });
+        if (!response.ok) return null;
+
+        const data: GeminiGenerateContentResponse = await response.json();
+        const text = getGeminiCandidateText(data);
+        if (!text) return null;
+        const parsed = extractJson<{ translations?: RawCatalogTranslation[] }>(text);
+        return normalizeCatalogTranslations(parsed?.translations, items);
+      } catch (error) {
+        this.logger.warn(`Catalog translation failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+        return null;
+      }
     });
   }
 

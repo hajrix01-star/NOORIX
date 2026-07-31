@@ -1,4 +1,5 @@
 import {
+  applyOrderProductTranslations,
   createOrderCatalogUnit,
   createOrderCategoriesBatch,
   createOrderCategory,
@@ -15,6 +16,7 @@ import {
   getOrderConversionTemplates,
   getOrderProducts,
   getProductPurchaseHistory,
+  previewOrderProductTranslations,
   updateOrderCatalogUnit,
   updateOrderCategory,
   updateOrderConversionTemplate,
@@ -22,6 +24,7 @@ import {
 } from '../../services/api';
 import { orderKeys } from '../../services/queryKeys';
 import type {
+  ApplyOrderProductTranslationItem,
   OrderCategory,
   OrderCategoryPayload,
   OrderCatalogUnit,
@@ -30,6 +33,7 @@ import type {
   OrderConversionTemplatePayload,
   OrderProduct,
   OrderProductPayload,
+  OrderProductType,
   OrderPurchaseHistoryRow,
 } from '../../types/api';
 import { useApiMutation } from '../useApiMutation';
@@ -138,6 +142,22 @@ export function useCreateOrderProductMutation(companyId: string) {
     mutationFn: createOrderProduct,
     invalidateQueries: [orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
+  });
+}
+
+export function usePreviewOrderProductTranslationsMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: (productType: OrderProductType) => previewOrderProductTranslations(companyId, productType),
+    showErrorToast: true,
+  });
+}
+
+export function useApplyOrderProductTranslationsMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: (translations: ApplyOrderProductTranslationItem[]) =>
+      applyOrderProductTranslations(companyId, translations),
+    invalidateQueries: [orderKeys.products(companyId)],
+    showErrorToast: true,
   });
 }
 

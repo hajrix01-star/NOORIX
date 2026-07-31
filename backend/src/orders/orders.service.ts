@@ -394,6 +394,17 @@ export class OrdersService {
     return this.catalog.getProducts(companyId, section, productType);
   }
 
+  async previewMissingProductTranslations(companyId: string, productType?: string, limit?: number) {
+    return this.catalog.previewMissingProductTranslations(companyId, productType, limit);
+  }
+
+  async applyProductTranslations(
+    companyId: string,
+    translations: Array<{ productId: string; nameEn: string }>,
+  ) {
+    return this.catalog.applyProductTranslations(companyId, translations);
+  }
+
   async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>; inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; conversionTemplateId?: string | null; recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }> }>) {
     return this.catalog.createProductsBatch(companyId, products);
   }
