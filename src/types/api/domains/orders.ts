@@ -471,14 +471,3 @@ export type OrderCatalogBatchCreateResult = {
   items?: Array<OrderProduct | OrderCategory>;
   [key: string]: unknown;
 } | Array<OrderProduct | OrderCategory>;
-
-export type {
-  CreateShishaPurchaseBatchPayload,
-  CreateShishaPurchasePayload,
-  CreateShishaStocktakePayload,
-  InitializeShishaInventoryPayload,
-  ShishaInventoryDailyRow,
-  ShishaInventoryMovement,
-  ShishaInventorySummary,
-  ShishaStocktake,
-} from './orders-shisha';

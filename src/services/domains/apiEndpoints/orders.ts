@@ -25,68 +25,10 @@ import type {
   StaffSaleNextLogRef,
   StaffSaleReport,
   UpdateOrderPayload,
-  ShishaInventorySummary,
-  InitializeShishaInventoryPayload,
-  CreateShishaPurchaseBatchPayload,
-  CreateShishaPurchasePayload,
-  CreateShishaStocktakePayload,
 } from '../../../types/api';
 import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
-export async function getShishaInventorySummary(
-  companyId: string,
-  startDate: string,
-  endDate: string,
-): Promise<ApiParsedResult<ShishaInventorySummary>> {
-  return apiGet<ShishaInventorySummary>('/api/v1/orders/shisha-inventory/summary', {
-    companyId,
-    startDate: toYmd(startDate),
-    endDate: toYmd(endDate),
-  });
-}
-
-export async function initializeShishaInventory(
-  body: InitializeShishaInventoryPayload,
-): Promise<ApiParsedResult<ShishaInventorySummary>> {
-  const { companyId, ...payload } = body;
-  return apiPost<ShishaInventorySummary>(
-    `/api/v1/orders/shisha-inventory/initialize?companyId=${encodeURIComponent(companyId)}`,
-    payload,
-  );
-}
-
-export async function createShishaInventoryPurchase(
-  body: CreateShishaPurchasePayload,
-): Promise<ApiParsedResult<{ id: string; createdAt: string }>> {
-  const { companyId, ...payload } = body;
-  return apiPost(
-    `/api/v1/orders/shisha-inventory/purchases?companyId=${encodeURIComponent(companyId)}`,
-    payload,
-  );
-}
-
-export async function createShishaInventoryPurchases(
-  body: CreateShishaPurchaseBatchPayload,
-): Promise<ApiParsedResult<{ count: number }>> {
-  const { companyId, ...payload } = body;
-  return apiPost(
-    `/api/v1/orders/shisha-inventory/purchases/batch?companyId=${encodeURIComponent(companyId)}`,
-    payload,
-  );
-}
-
-export async function createShishaInventoryStocktake(
-  body: CreateShishaStocktakePayload,
-): Promise<ApiParsedResult<{ id: string; stocktakeDate: string; status: string }>> {
-  const { companyId, ...payload } = body;
-  return apiPost(
-    `/api/v1/orders/shisha-inventory/stocktakes?companyId=${encodeURIComponent(companyId)}`,
-    payload,
-  );
-}
-
-// ——— الطلبات ———
 export async function getOrders(
   companyId: string,
   year: string | number,

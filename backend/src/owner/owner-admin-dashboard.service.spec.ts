@@ -12,7 +12,7 @@ function report(yearOffset: number): GeneralProfitLossModel {
     groups: [
       {
         key: 'sales',
-        labelAr: 'المبيعات',
+        labelAr: 'Sales',
         labelEn: 'Sales',
         months: values,
         total: '0',
@@ -22,7 +22,7 @@ function report(yearOffset: number): GeneralProfitLossModel {
       },
       {
         key: 'purchases',
-        labelAr: 'المشتريات',
+        labelAr: 'Purchases',
         labelEn: 'Purchases',
         months: values.map((value) => String(Number(value) * 2)),
         total: '0',
@@ -32,7 +32,7 @@ function report(yearOffset: number): GeneralProfitLossModel {
       },
       {
         key: 'expenses',
-        labelAr: 'المصروفات',
+        labelAr: 'Expenses',
         labelEn: 'Expenses',
         months: values.map((value) => String(Number(value) * 3)),
         total: '0',
@@ -91,7 +91,7 @@ describe('OwnerAdminDashboardService', () => {
         return [] as T;
       },
       company: {
-        findMany: jest.fn(async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: 'Company 1' }]),
+        findMany: jest.fn(async () => [{ id: 'company-1', nameAr: 'Company 1', nameEn: 'Company 1' }]),
       },
     };
     const reports = {
@@ -100,38 +100,9 @@ describe('OwnerAdminDashboardService', () => {
         startDate === '2026-07-01' ? { sales: '190', purchases: '50', expenses: '30' } : { sales: '170', purchases: '40', expenses: '23' },
       ),
     };
-    const shishaInventory = {
-      getSummary: jest.fn(async () => ({
-        initialized: true,
-        startDate: '2026-07-01',
-        effectiveStart: '2026-07-18',
-        endDate: '2026-07-19',
-        settings: {
-          trackingStartDate: '2026-07-18',
-          headsPerKg: 40,
-          gramsPerHead: 25,
-        },
-        current: {
-          tobaccoKg: 10,
-          tobaccoHeads: 400,
-          hoses: 150,
-          charcoalPiecesTotal: 600,
-          averageCostPerHead: 3.25,
-        },
-        periodTotals: {
-          newShisha: 30,
-          changes: 2,
-          tobaccoHeadsConsumed: 32,
-          tobaccoConsumedKg: 0.8,
-          tobaccoPurchasedKg: 0,
-        },
-        daily: [],
-      })),
-    };
     const service = new OwnerAdminDashboardService(
       prisma,
       reports,
-      shishaInventory,
     );
 
     const snapshot = await service.getSnapshot('tenant-1');
@@ -178,21 +149,6 @@ describe('OwnerAdminDashboardService', () => {
       monthEndForecast: 0,
       salesChannels: [],
     });
-    expect(snapshot.companies[0]?.shishaInventory).toMatchObject({
-      state: 'ready',
-      current: {
-        tobaccoKg: 10,
-        tobaccoHeads: 400,
-        hoses: 150,
-        charcoalPieces: 600,
-        averageCostPerHead: 3.25,
-      },
-    });
-    expect(shishaInventory.getSummary).toHaveBeenCalledWith(
-      'company-1',
-      '2026-07-01',
-      '2026-07-19',
-    );
     expect(reports.getGeneralProfitLossPeriodTotals).toHaveBeenNthCalledWith(1, 'company-1', '2026-07-01', '2026-07-19');
     expect(reports.getGeneralProfitLossPeriodTotals).toHaveBeenNthCalledWith(2, 'company-1', '2026-06-01', '2026-06-19');
     expect(prisma.company.findMany).toHaveBeenCalledWith({
@@ -214,7 +170,7 @@ describe('OwnerAdminDashboardService', () => {
       {
         $queryRaw: async <T>() => [] as T,
         company: {
-          findMany: async () => [{ id: 'company-1', nameAr: 'شركة 1', nameEn: null }],
+          findMany: async () => [{ id: 'company-1', nameAr: 'Company 1', nameEn: null }],
         },
       },
       {
@@ -223,13 +179,6 @@ describe('OwnerAdminDashboardService', () => {
           sales: '0',
           purchases: '0',
           expenses: '0',
-        }),
-      },
-      {
-        getSummary: async () => ({
-          initialized: false,
-          startDate: '2026-07-01',
-          endDate: '2026-07-19',
         }),
       },
     );

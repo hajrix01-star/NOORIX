@@ -1,12 +1,6 @@
-/**
- * مفاتيح React Query — الطلبات والمنتجات المرتبطة
- */
 export const orderKeys = {
-  /** بادئة إبطال كل استعلامات قائمة الطلبات */
   listRoot: () => ['orders'] as const,
-  /** بادئة إبطال ملخص الطلبات */
   summaryRoot: () => ['orders-summary'] as const,
-  /** بادئة إبطال ملخص الطلبات بحسب نطاق التاريخ */
   rangeSummaryRoot: () => ['orders-range-summary'] as const,
   itemsReportRoot: () => ['orders-items-report'] as const,
   productsRoot: () => ['order-products'] as const,
@@ -15,7 +9,6 @@ export const orderKeys = {
   conversionTemplatesRoot: () => ['order-conversion-templates'] as const,
   productPurchaseHistoryRoot: () => ['product-purchase-history'] as const,
   categoryPurchaseHistoryRoot: () => ['category-purchase-history'] as const,
-  shishaInventoryRoot: () => ['shisha-inventory'] as const,
   recipeInventoryStockRoot: () => ['orders-recipe-inventory-stock'] as const,
 
   list: (companyId: string, year: unknown, month: unknown) =>
@@ -49,9 +42,6 @@ export const orderKeys = {
 
   staffMyRoot: () => ['staff-orders-my'] as const,
   staffMy: (companyId: string) => ['staff-orders-my', companyId] as const,
-
-  shishaInventory: (companyId: string, startDate: string, endDate: string) =>
-    ['shisha-inventory', companyId, startDate, endDate] as const,
 
   recipeInventoryStock: (companyId: string) =>
     ['orders-recipe-inventory-stock', companyId] as const,

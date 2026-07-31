@@ -21,6 +21,26 @@ const requiredFiles = [
   'backend/src/orders/orders-month-summary.util.ts',
 ];
 
+const legacyRuntimeTargets = [
+  'src/modules/Orders',
+  'src/hooks/useOrders.ts',
+  'src/hooks/orders',
+  'src/services/domains/apiEndpoints/orders.ts',
+  'src/services/queryKeys/orders.ts',
+  'src/types/api',
+  'backend/src/orders',
+  'backend/src/owner/owner-admin-dashboard.service.ts',
+  'backend/src/owner/owner-admin-dashboard.service.spec.ts',
+];
+
+const legacyShishaRuntimeChecks = [
+  { pattern: /shishaInventory/, message: 'legacy shisha inventory runtime is removed; use recipe inventory instead' },
+  { pattern: /ShishaInventory/, message: 'legacy shisha inventory runtime is removed; use recipe inventory instead' },
+  { pattern: /shisha-inventory/, message: 'legacy shisha inventory endpoint is removed; use recipe inventory instead' },
+  { pattern: /ShishaPurchaseSheet/, message: 'legacy shisha purchase sheet is removed; use orders purchase flow instead' },
+  { pattern: /useShishaInventory/, message: 'legacy shisha inventory hook is removed; use recipe inventory hooks instead' },
+];
+
 function walk(target, acc = []) {
   const full = path.join(root, target);
   if (!fs.existsSync(full)) return acc;
@@ -63,6 +83,13 @@ for (const file of strictTargets.flatMap((target) => walk(target))) {
     { pattern: /window\.confirm|window\.print\(/, message: 'direct browser confirm/print is not allowed in orders closure scope' },
   ];
   for (const check of checks) {
+    if (check.pattern.test(source)) fail(file, check.message);
+  }
+}
+
+for (const file of legacyRuntimeTargets.flatMap((target) => walk(target))) {
+  const source = read(file);
+  for (const check of legacyShishaRuntimeChecks) {
     if (check.pattern.test(source)) fail(file, check.message);
   }
 }

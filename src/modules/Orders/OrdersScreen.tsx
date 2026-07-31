@@ -18,7 +18,7 @@ import { InventoryCostTab } from './components/InventoryCostTab';
 import { StaffOrdersView } from './StaffOrdersView';
 import { resolveOrdersScreenMode } from './ordersScreenRouting';
 
-const ORDERS_TAB_ALIASES = { sales: 'sales-report', 'shisha-inventory': 'inventory-cost' } as const;
+const ORDERS_TAB_ALIASES = { sales: 'sales-report' } as const;
 type OrdersTabDescriptor = { id: string; labelKey: string; shortLabelKey?: string };
 type OrdersTabGroupId = 'orders' | 'staff-sales' | 'orders-reports' | 'items-manage' | 'inventory-cost';
 type OrdersTabGroup = { id: OrdersTabGroupId; labelKey: string; tabIds: string[] };

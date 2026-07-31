@@ -12,7 +12,6 @@ import {
   useCancelOrderMutation,
   useOrderProducts,
   useOrdersRangeSummary,
-  useShishaInventory,
 } from '../../../hooks/useOrders';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
@@ -34,7 +33,6 @@ import { DateFilterBar } from '../../../ui/date';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
 import { OrderConfirmModal } from './OrderConfirmModal';
-import { ShishaPurchaseSheet } from './ShishaPurchaseSheet';
 import { Button, AdaptiveSheet, DialogActions, FilterToolbar, SmartTable, FmtNum, usePrintPreview } from '../../../ui';
 import type { OrderLine, OrderProduct, OrderRecord } from '../../../types/api';
 import {
@@ -62,7 +60,6 @@ export function OrdersTab({
   const { t } = useTranslation();
   const { companies = [] } = useApp();
   const [showModal, setShowModal] = useState(false);
-  const [showShishaPurchase, setShowShishaPurchase] = useState(false);
   const [editingOrder, setEditingOrder] = useState<OrderRecord | null>(null);
   const { showToast } = useToast();
   const [orderTypeFilter, setOrderTypeFilter] = useState('all');
@@ -75,7 +72,6 @@ export function OrdersTab({
   );
 
   const { data: orders = [], isLoading, error: ordersError } = useOrdersRange(companyId, startDate, endDate);
-  const { data: shishaInventory } = useShishaInventory(companyId, startDate, endDate);
   const { data: orderCatalog = [] } = useOrderProducts(companyId, 'order');
   /** طلبات المشتريات — أصناف «طلبات» فقط؛ عند التعديل نُبقي أصناف السطر الحالية حتى لو كانت مبيعات قديماً */
   const products = useMemo<OrderProduct[]>(() => mergeOrderCatalogProducts(orderCatalog, editingOrder), [orderCatalog, editingOrder]);
@@ -217,14 +213,6 @@ export function OrdersTab({
           >
             + {t('ordersNewOrder')}
           </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="noorix-print-hide w-full min-h-11 sm:w-auto sm:min-h-0"
-            onClick={() => setShowShishaPurchase(true)}
-          >
-            تسجيل شراء شيشة
-          </Button>
           </>
         )}
       >
@@ -300,13 +288,6 @@ export function OrdersTab({
           onWhatsApp={handleWhatsApp}
         />
       )}
-
-      <ShishaPurchaseSheet
-        open={showShishaPurchase}
-        companyId={companyId}
-        initialized={Boolean(shishaInventory?.initialized)}
-        onClose={() => setShowShishaPurchase(false)}
-      />
 
       {viewingOrder && (
         <AdaptiveSheet

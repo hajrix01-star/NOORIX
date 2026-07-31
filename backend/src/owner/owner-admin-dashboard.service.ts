@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import moment from 'moment-timezone';
 import { toYmd } from '../common/utils/to-ymd.util';
-import { ShishaInventoryService } from '../orders/shisha-inventory.service';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ReportsService } from '../reports/reports.service';
 import type { GeneralProfitLossModel } from '../reports/reports-general-profit-loss-model.util';
@@ -12,7 +11,6 @@ import {
   type DashboardDailyMetricRow,
 } from '../sales/sales-dashboard-metrics.util';
 import { buildOwnerAdminDashboardExecutiveSnapshot, type OwnerExecutiveDailySalesSource, type OwnerExecutiveSalesChannelSource } from './owner-admin-dashboard-executive-snapshot.util';
-import { buildOwnerAdminDashboardShishaSnapshot } from './owner-admin-dashboard-shisha-snapshot.util';
 
 type MetricKey = 'sales' | 'purchases' | 'expenses';
 type Direction = 'up' | 'down' | 'stable';
@@ -98,8 +96,6 @@ export class OwnerAdminDashboardService {
     @Inject(TenantPrismaService) private readonly prisma: AdminDashboardPrisma,
     @Inject(ReportsService)
     private readonly reportsService: AdminDashboardReports,
-    @Inject(ShishaInventoryService)
-    private readonly shishaInventoryService: Pick<ShishaInventoryService, 'getSummary'>,
   ) {}
 
   private async loadExecutiveDailySales(companyId: string, startDate: Date, endDate: Date): Promise<OwnerExecutiveDailySalesSource[]> {
@@ -234,7 +230,6 @@ export class OwnerAdminDashboardService {
           executiveSalesChannels,
           currentCustomerDailyMetrics,
           previousCustomerDailyMetrics,
-          shishaInventory,
         ] = await Promise.all([
           Promise.all(
             reportYears.map(async (year) => ({
@@ -256,14 +251,6 @@ export class OwnerAdminDashboardService {
             utcDateBoundary(previousStart),
             utcDateBoundary(previousComparableEnd, true),
           ),
-          this.shishaInventoryService
-            .getSummary(
-              company.id,
-              currentStart.format('YYYY-MM-DD'),
-              now.format('YYYY-MM-DD'),
-            )
-            .then(buildOwnerAdminDashboardShishaSnapshot)
-            .catch(() => ({ state: 'unavailable' as const })),
         ]);
         const reportByYear = new Map(reports.map((entry) => [entry.year, entry.report]));
         const currentRef = monthReference(now);
@@ -313,7 +300,6 @@ export class OwnerAdminDashboardService {
             latestCompleteDate: latestCompleteDay.format('YYYY-MM-DD'),
             salesChannels: executiveSalesChannels,
           }),
-          shishaInventory,
           monthlyPerformance: history.map(({ year, month }, index) => {
             const report = reportByYear.get(year);
             const previousMonth = historyWithComparison[index + 1];
