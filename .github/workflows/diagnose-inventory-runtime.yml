@@ -1,0 +1,22 @@
+name: Diagnose Inventory Runtime
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/diagnose-inventory-runtime.yml
+
+jobs:
+  diagnose:
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - name: Read recent inventory backend errors
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo journalctl -u noorix-backend --since "2 hours ago" --no-pager \
+            | grep -E -A30 -B4 'HttpExceptionFilter|OrdersInventoryService|recipe-inventory-stock|Unhandled:|PrismaKnown' \
+            | tail -n 240 \
+            || true
