@@ -40,16 +40,36 @@ function sectionLabel(section: OrderSection | undefined, fallback = 'قسم'): s
   return section?.nameAr || section?.nameEn || fallback;
 }
 
+function uniqueStrings(values: readonly string[]): string[] {
+  return Array.from(new Set(values.map((value) => String(value ?? '').trim()).filter(Boolean)));
+}
+
+function rowSectionPairs(
+  row: OrderRecipeInventoryStockRow,
+  sectionsById: Map<string, OrderSection>,
+): SectionOption[] {
+  const sectionIds = uniqueStrings(row.sectionIds);
+  if (sectionIds.length > 0) {
+    return sectionIds.map((sectionId, index) => ({
+      id: sectionId,
+      label: sectionLabel(sectionsById.get(sectionId), row.sections[index] || sectionId),
+      count: 1,
+    }));
+  }
+
+  return uniqueStrings(row.sections).map((label) => ({
+    id: `name:${label}`,
+    label,
+    count: 1,
+  }));
+}
+
 function rowSectionLabels(
   row: OrderRecipeInventoryStockRow,
   sectionsById: Map<string, OrderSection>,
 ): string[] {
-  const labels = row.sectionIds
-    .map((sectionId, index) => sectionLabel(sectionsById.get(sectionId), row.sections[index] || sectionId))
-    .filter(Boolean);
-  const looseLabels = row.sections.filter((label) => label && !labels.includes(label));
-  const merged = [...labels, ...looseLabels];
-  return merged.length > 0 ? merged : ['بدون قسم'];
+  const labels = rowSectionPairs(row, sectionsById).map((section) => section.label);
+  return labels.length > 0 ? labels : ['بدون قسم'];
 }
 
 function buildSectionOptions(
@@ -60,7 +80,8 @@ function buildSectionOptions(
   const sectionsById = new Map(sections.map((section) => [section.id, section]));
 
   for (const row of rows) {
-    if (row.sectionIds.length === 0 && row.sections.length === 0) {
+    const rowSections = rowSectionPairs(row, sectionsById);
+    if (rowSections.length === 0) {
       const existing = byId.get(UNCATEGORIZED_SECTION);
       byId.set(UNCATEGORIZED_SECTION, {
         id: UNCATEGORIZED_SECTION,
@@ -70,26 +91,14 @@ function buildSectionOptions(
       continue;
     }
 
-    row.sectionIds.forEach((sectionId, index) => {
-      const existing = byId.get(sectionId);
-      byId.set(sectionId, {
-        id: sectionId,
-        label: sectionLabel(sectionsById.get(sectionId), row.sections[index] || sectionId),
+    rowSections.forEach((section) => {
+      const existing = byId.get(section.id);
+      byId.set(section.id, {
+        id: section.id,
+        label: section.label,
         count: (existing?.count ?? 0) + 1,
       });
     });
-
-    row.sections
-      .filter((label) => label && !row.sectionIds.includes(label))
-      .forEach((label) => {
-        const key = `name:${label}`;
-        const existing = byId.get(key);
-        byId.set(key, {
-          id: key,
-          label,
-          count: (existing?.count ?? 0) + 1,
-        });
-      });
   }
 
   const options = Array.from(byId.values()).sort((a, b) => a.label.localeCompare(b.label, 'ar'));
@@ -98,13 +107,15 @@ function buildSectionOptions(
 
 function rowMatchesSection(row: OrderRecipeInventoryStockRow, sectionId: string): boolean {
   if (sectionId === ALL_SECTIONS) return true;
+  const rowSectionIds = uniqueStrings(row.sectionIds);
+  const rowSections = uniqueStrings(row.sections);
   if (sectionId === UNCATEGORIZED_SECTION) {
-    return row.sectionIds.length === 0 && row.sections.length === 0;
+    return rowSectionIds.length === 0 && rowSections.length === 0;
   }
   if (sectionId.startsWith('name:')) {
-    return row.sections.includes(sectionId.slice(5));
+    return rowSections.includes(sectionId.slice(5));
   }
-  return row.sectionIds.includes(sectionId);
+  return rowSectionIds.includes(sectionId);
 }
 
 function stockStatus(row: OrderRecipeInventoryStockRow): StockStatus {
