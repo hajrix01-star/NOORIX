@@ -3,8 +3,11 @@ import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import {
+  canonicalOrderSections,
+  cleanOrderSectionName,
   enrichProductWithSectionIds,
   normalizeProductSections,
+  orderSectionIdentity,
   parseStringArrayJson,
 } from './orders-product-sections.util';
 import {
@@ -282,12 +285,14 @@ export class OrdersCatalogService {
 
   async createSection(companyId: string, dto: { nameAr: string; nameEn?: string; sortOrder?: number }) {
     const tenantId = TenantContext.getTenantId();
-    if (!dto.nameAr?.trim()) throw new BadRequestException('اسم القسم بالعربية مطلوب');
+    const nameAr = cleanOrderSectionName(dto.nameAr);
+    if (!nameAr) throw new BadRequestException('اسم القسم بالعربية مطلوب');
+    await this.assertSectionNameAvailable(companyId, nameAr);
     return this.prisma.orderSection.create({
       data: {
         tenantId,
         companyId,
-        nameAr: dto.nameAr.trim(),
+        nameAr,
         nameEn: dto.nameEn?.trim() || null,
         sortOrder: dto.sortOrder ?? 0,
       },
@@ -297,15 +302,20 @@ export class OrdersCatalogService {
   async updateSection(id: string, companyId: string, dto: { nameAr?: string; nameEn?: string | null; sortOrder?: number }) {
     const section = await this.prisma.orderSection.findFirst({ where: { id, companyId } });
     if (!section) throw new NotFoundException('القسم غير موجود');
+    const nameAr = dto.nameAr === undefined ? undefined : cleanOrderSectionName(dto.nameAr);
+    if (nameAr !== undefined && !nameAr) throw new BadRequestException('اسم القسم بالعربية مطلوب');
+    if (nameAr !== undefined && orderSectionIdentity(nameAr) !== orderSectionIdentity(section.nameAr)) {
+      await this.assertSectionNameAvailable(companyId, nameAr, id);
+    }
     const updated = await this.prisma.orderSection.update({
       where: { id },
       data: {
-        ...(dto.nameAr !== undefined ? { nameAr: dto.nameAr.trim() } : {}),
+        ...(nameAr !== undefined ? { nameAr } : {}),
         ...(dto.nameEn !== undefined ? { nameEn: dto.nameEn?.trim() || null } : {}),
         ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
       },
     });
-    if (dto.nameAr !== undefined && dto.nameAr.trim() !== section.nameAr) {
+    if (nameAr !== undefined && nameAr !== section.nameAr) {
       await this.renameSectionInProducts(companyId, id, section.nameAr, updated.nameAr);
     }
     return updated;
@@ -335,15 +345,19 @@ export class OrdersCatalogService {
       products.map((product) => {
         const existingIds = parseStringArrayJson(product.sectionIds);
         const existingNames = parseStringArrayJson(product.sections);
-        const nextIds = mode === 'add'
+        const requestedIds = mode === 'add'
           ? [...new Set([...existingIds, ...(normalized.sectionIds ?? [])])]
           : (normalized.sectionIds ?? []);
-        const nextNames = mode === 'add'
+        const requestedNames = mode === 'add'
           ? [...new Set([...existingNames, ...(normalized.sections ?? [])])]
           : (normalized.sections ?? []);
+        const next = normalizeProductSections(sectionList, {
+          sectionIds: requestedIds,
+          sections: requestedNames,
+        });
         return this.prisma.orderProduct.update({
           where: { id: product.id },
-          data: this.sectionJsonData(nextIds, nextNames),
+          data: this.sectionJsonData(next.sectionIds ?? [], next.sections ?? []),
         });
       }),
     );
@@ -557,10 +571,25 @@ export class OrdersCatalogService {
   }
 
   private async loadSectionList(companyId: string) {
-    return this.prisma.orderSection.findMany({
+    const sections = await this.prisma.orderSection.findMany({
       where: { companyId },
-      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
     });
+    return canonicalOrderSections(sections);
+  }
+
+  private async assertSectionNameAvailable(companyId: string, nameAr: string, excludeId?: string) {
+    const sections = await this.prisma.orderSection.findMany({
+      where: {
+        companyId,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true, nameAr: true },
+    });
+    const identity = orderSectionIdentity(nameAr);
+    if (sections.some((section) => orderSectionIdentity(section.nameAr) === identity)) {
+      throw new BadRequestException('يوجد قسم آخر بالاسم نفسه');
+    }
   }
 
   private async ensureCatalogDefaults(companyId: string) {
@@ -784,12 +813,18 @@ export class OrdersCatalogService {
   }
 
   private async renameSectionInProducts(companyId: string, sectionId: string, oldName: string, newName: string) {
-    const products = await this.prisma.orderProduct.findMany({ where: { companyId, isActive: true } });
+    const products = await this.prisma.orderProduct.findMany({ where: { companyId } });
+    const oldIdentity = orderSectionIdentity(oldName);
     await Promise.all(
       products.map((product) => {
         const ids = parseStringArrayJson(product.sectionIds);
-        if (!ids.includes(sectionId)) return Promise.resolve();
-        const names = parseStringArrayJson(product.sections).map((name) => (name === oldName ? newName : name));
+        const existingNames = parseStringArrayJson(product.sections);
+        if (!ids.includes(sectionId) && !existingNames.some((name) => orderSectionIdentity(name) === oldIdentity)) {
+          return Promise.resolve();
+        }
+        const names = existingNames.map((name) => (
+          orderSectionIdentity(name) === oldIdentity ? newName : name
+        ));
         return this.prisma.orderProduct.update({
           where: { id: product.id },
           data: { sections: names.length > 0 ? names : Prisma.DbNull },
@@ -799,13 +834,14 @@ export class OrdersCatalogService {
   }
 
   private async removeSectionFromProducts(companyId: string, sectionId: string, sectionName: string) {
-    const products = await this.prisma.orderProduct.findMany({ where: { companyId, isActive: true } });
+    const products = await this.prisma.orderProduct.findMany({ where: { companyId } });
+    const sectionIdentity = orderSectionIdentity(sectionName);
     await Promise.all(
       products.map((product) => {
         const existingIds = parseStringArrayJson(product.sectionIds);
         const existingNames = parseStringArrayJson(product.sections);
         const ids = existingIds.filter((id) => id !== sectionId);
-        const names = existingNames.filter((name) => name !== sectionName);
+        const names = existingNames.filter((name) => orderSectionIdentity(name) !== sectionIdentity);
         if (ids.length === existingIds.length && names.length === existingNames.length) {
           return Promise.resolve();
         }

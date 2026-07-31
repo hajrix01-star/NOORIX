@@ -6,6 +6,12 @@ import { useOrderSections, useOrdersRecipeInventoryStock } from '../../../hooks/
 import type { OrderRecipeInventoryStockRow, OrderSection } from '../../../types/api';
 import { Badge, Button, SimpleTable, Spinner, useIsNarrow700 } from '../../../ui';
 import type { SimpleTableColumn } from '../../../ui';
+import {
+  ALL_INVENTORY_SECTIONS,
+  buildInventorySectionOptions,
+  inventoryRowMatchesSection,
+  inventoryRowSectionLabels,
+} from '../inventorySectionFilterModel';
 import InventoryStocktakeSheet from './InventoryStocktakeSheet';
 
 type InventoryCostTabProps = {
@@ -15,21 +21,12 @@ type InventoryCostTabProps = {
   dateFilter?: unknown;
 };
 
-type SectionOption = {
-  id: string;
-  label: string;
-  count: number;
-};
-
 type StockStatus = {
   label: string;
   color: 'green' | 'amber' | 'red' | 'gray';
 };
 
 type StocktakeSheetMode = 'create' | 'history';
-
-const ALL_SECTIONS = 'all';
-const UNCATEGORIZED_SECTION = '__uncategorized';
 
 function decimalOrZero(value: unknown): Decimal {
   try {
@@ -49,88 +46,6 @@ function formatQuantity(value: unknown, maximumFractionDigits = 3): string {
   const integer = sign ? signedInteger.slice(1) : signedInteger;
   const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return `${sign}${grouped}${fraction ? `.${fraction}` : ''}`;
-}
-
-function sectionLabel(section: OrderSection | undefined, fallback = 'قسم'): string {
-  return section?.nameAr || section?.nameEn || fallback;
-}
-
-function uniqueStrings(values: readonly string[]): string[] {
-  return Array.from(new Set(values.map((value) => String(value ?? '').trim()).filter(Boolean)));
-}
-
-function rowSectionPairs(
-  row: OrderRecipeInventoryStockRow,
-  sectionsById: Map<string, OrderSection>,
-): SectionOption[] {
-  const sectionIds = uniqueStrings(row.sectionIds);
-  if (sectionIds.length > 0) {
-    return sectionIds.map((sectionId, index) => ({
-      id: sectionId,
-      label: sectionLabel(sectionsById.get(sectionId), row.sections[index] || sectionId),
-      count: 1,
-    }));
-  }
-
-  return uniqueStrings(row.sections).map((label) => ({
-    id: `name:${label}`,
-    label,
-    count: 1,
-  }));
-}
-
-function rowSectionLabels(
-  row: OrderRecipeInventoryStockRow,
-  sectionsById: Map<string, OrderSection>,
-): string[] {
-  const labels = rowSectionPairs(row, sectionsById).map((section) => section.label);
-  return labels.length > 0 ? labels : ['بدون قسم'];
-}
-
-function buildSectionOptions(
-  rows: OrderRecipeInventoryStockRow[],
-  sections: OrderSection[],
-): SectionOption[] {
-  const byId = new Map<string, SectionOption>();
-  const sectionsById = new Map(sections.map((section) => [section.id, section]));
-
-  for (const row of rows) {
-    const rowSections = rowSectionPairs(row, sectionsById);
-    if (rowSections.length === 0) {
-      const existing = byId.get(UNCATEGORIZED_SECTION);
-      byId.set(UNCATEGORIZED_SECTION, {
-        id: UNCATEGORIZED_SECTION,
-        label: 'بدون قسم',
-        count: (existing?.count ?? 0) + 1,
-      });
-      continue;
-    }
-
-    rowSections.forEach((section) => {
-      const existing = byId.get(section.id);
-      byId.set(section.id, {
-        id: section.id,
-        label: section.label,
-        count: (existing?.count ?? 0) + 1,
-      });
-    });
-  }
-
-  const options = Array.from(byId.values()).sort((a, b) => a.label.localeCompare(b.label, 'ar'));
-  return [{ id: ALL_SECTIONS, label: 'كل الأقسام', count: rows.length }, ...options];
-}
-
-function rowMatchesSection(row: OrderRecipeInventoryStockRow, sectionId: string): boolean {
-  if (sectionId === ALL_SECTIONS) return true;
-  const rowSectionIds = uniqueStrings(row.sectionIds);
-  const rowSections = uniqueStrings(row.sections);
-  if (sectionId === UNCATEGORIZED_SECTION) {
-    return rowSectionIds.length === 0 && rowSections.length === 0;
-  }
-  if (sectionId.startsWith('name:')) {
-    return rowSections.includes(sectionId.slice(5));
-  }
-  return rowSectionIds.includes(sectionId);
 }
 
 function stockStatus(row: OrderRecipeInventoryStockRow): StockStatus {
@@ -174,10 +89,10 @@ function SummaryTile({
 
 function MobileStockCard({
   row,
-  sectionsById,
+  sections,
 }: {
   row: OrderRecipeInventoryStockRow;
-  sectionsById: Map<string, OrderSection>;
+  sections: OrderSection[];
 }) {
   const status = stockStatus(row);
   const adjustment = decimalOrZero(row.adjustmentBaseQuantity);
@@ -191,7 +106,7 @@ function MobileStockCard({
         <Badge color={status.color} size="sm">{status.label}</Badge>
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
-        {rowSectionLabels(row, sectionsById).map((label) => <Badge key={label} color="gray" size="sm">{label}</Badge>)}
+        {inventoryRowSectionLabels(row, sections).map((label) => <Badge key={label} color="gray" size="sm">{label}</Badge>)}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2 text-center text-[12px]">
         <div className="rounded bg-noorix-bg-muted px-2 py-2"><div className="text-noorix-muted">الوارد</div><strong className="text-emerald-700">{formatQuantity(row.purchasedBaseQuantity)}</strong></div>
@@ -207,22 +122,23 @@ export function InventoryCostTab({ companyId }: InventoryCostTabProps) {
   const { user } = useAuth();
   const narrow = useIsNarrow700();
   const canWriteInventory = hasPermission(user?.role, PERMISSIONS.ORDERS_WRITE, user?.permissions);
-  const [selectedSectionId, setSelectedSectionId] = useState(ALL_SECTIONS);
+  const [selectedSectionId, setSelectedSectionId] = useState(ALL_INVENTORY_SECTIONS);
   const [stocktakeSheetMode, setStocktakeSheetMode] = useState<StocktakeSheetMode | null>(null);
   const stockQuery = useOrdersRecipeInventoryStock(companyId);
   const sectionsQuery = useOrderSections(companyId);
 
   const rows = stockQuery.data ?? [];
   const sections = sectionsQuery.data ?? [];
-  const sectionsById = useMemo(() => new Map(sections.map((section) => [section.id, section])), [sections]);
-  const sectionOptions = useMemo(() => buildSectionOptions(rows, sections), [rows, sections]);
+  const sectionOptions = useMemo(() => buildInventorySectionOptions(rows, sections), [rows, sections]);
   const visibleRows = useMemo(
-    () => rows.filter((row) => rowMatchesSection(row, selectedSectionId)),
-    [rows, selectedSectionId],
+    () => rows.filter((row) => inventoryRowMatchesSection(row, selectedSectionId, sections)),
+    [rows, sections, selectedSectionId],
   );
 
   useEffect(() => {
-    if (!sectionOptions.some((option) => option.id === selectedSectionId)) setSelectedSectionId(ALL_SECTIONS);
+    if (!sectionOptions.some((option) => option.id === selectedSectionId)) {
+      setSelectedSectionId(ALL_INVENTORY_SECTIONS);
+    }
   }, [sectionOptions, selectedSectionId]);
 
   const summary = useMemo(() => {
@@ -357,7 +273,7 @@ export function InventoryCostTab({ companyId }: InventoryCostTabProps) {
       {narrow ? (
         visibleRows.length > 0 ? (
           <div className="space-y-2">
-            {visibleRows.map((row) => <MobileStockCard key={row.productId} row={row} sectionsById={sectionsById} />)}
+            {visibleRows.map((row) => <MobileStockCard key={row.productId} row={row} sections={sections} />)}
           </div>
         ) : <div className="rounded-md border border-dashed border-noorix-border p-8 text-center text-noorix-muted">لا توجد مواد مخزون مطابقة للفلتر.</div>
       ) : (
