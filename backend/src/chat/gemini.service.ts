@@ -25,6 +25,8 @@ import {
   type RawCatalogTranslation,
 } from './gemini-catalog-translation.util';
 
+const CATALOG_TRANSLATION_TIMEOUT_MS = 75_000;
+
 export type { GeminiIntent, GeminiPeriod, GeminiParseResult } from './gemini-types';
 export { DASHBOARD_INSIGHTS_LLM_SYSTEM_PROMPT } from './gemini-dashboard-insights-prompt.util';
 
@@ -267,6 +269,7 @@ export class GeminiService {
         const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(CATALOG_TRANSLATION_TIMEOUT_MS),
           body: JSON.stringify({
             contents: [{ parts: [{ text: buildCatalogTranslationPrompt(items) }] }],
             generationConfig: {

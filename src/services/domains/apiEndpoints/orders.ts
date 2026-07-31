@@ -168,6 +168,7 @@ export async function previewOrderProductTranslations(
   return apiPost<OrderProductTranslationPreview>(
     `/api/v1/orders/products/translation-preview?companyId=${encodeURIComponent(companyId)}`,
     { productType, limit: 50 },
+    { timeout: 90_000 },
   );
 }
 export async function applyOrderProductTranslations(
