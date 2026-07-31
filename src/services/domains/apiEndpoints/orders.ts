@@ -1,5 +1,6 @@
 import type {
   ApiParsedResult,
+  CreateInventoryStocktakePayload,
   CreateOrderPayload,
   OrderCatalogBatchCreateResult,
   OrderCatalogUnit,
@@ -10,6 +11,7 @@ import type {
   OrderConversionTemplatePayload,
   OrderItemsReportRow,
   OrderItemsReportResult,
+  InventoryStocktake,
   OrderProduct,
   OrderProductPayload,
   OrderPurchaseHistoryRow,
@@ -136,6 +138,17 @@ export async function getOrdersRecipeInventoryStock(
 ): Promise<ApiParsedResult<OrderRecipeInventoryStockRow[]>> {
   const res = await apiGet<OrderRecipeInventoryStockRow[]>('/api/v1/orders/recipe-inventory-stock', { companyId });
   return res?.success ? { ...res, data: res.data ?? [] } : res;
+}
+export async function getInventoryStocktakes(
+  companyId: string,
+): Promise<ApiParsedResult<InventoryStocktake[]>> {
+  const res = await apiGet<InventoryStocktake[]>('/api/v1/orders/inventory-stocktakes', { companyId });
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
+}
+export async function createInventoryStocktake(
+  body: CreateInventoryStocktakePayload,
+): Promise<ApiParsedResult<InventoryStocktake>> {
+  return apiPost<InventoryStocktake>('/api/v1/orders/inventory-stocktakes', body);
 }
 export async function getOrderProducts(companyId: string, section?: string, type?: string): Promise<ApiParsedResult<OrderProduct[]>> {
   const params: Record<string, string> = { companyId };

@@ -82,6 +82,8 @@ model User {
   staffOrders          StaffOrder[]
   shishaInventoryMovements ShishaInventoryMovement[] @relation("ShishaInventoryMovementCreatedBy")
   shishaStocktakes          ShishaStocktake[]          @relation("ShishaStocktakeCreatedBy")
+  inventoryMovements        InventoryMovement[]        @relation("InventoryMovementCreatedBy")
+  inventoryStocktakes       InventoryStocktake[]       @relation("InventoryStocktakeCreatedBy")
 
   @@index([tenantId])
   @@map("users")
@@ -137,6 +139,9 @@ model Company {
   shishaInventorySettings  ShishaInventorySettings?
   shishaInventoryMovements ShishaInventoryMovement[]
   shishaStocktakes          ShishaStocktake[]
+  inventoryMovements        InventoryMovement[]
+  inventoryStocktakes       InventoryStocktake[]
+  inventoryStocktakeLines   InventoryStocktakeLine[]
   bankStatements      BankStatement[]
   bankStatementCategories BankStatementCategory[]
   bankTreeCategories  BankTreeCategory[]
@@ -1322,12 +1327,85 @@ model OrderProduct {
   conversionTemplate OrderConversionTemplate? @relation(fields: [conversionTemplateId], references: [id], onDelete: SetNull)
   items      OrderItem[]
   staffItems StaffOrderItem[]
+  inventoryMovements      InventoryMovement[]
+  inventoryStocktakeLines InventoryStocktakeLine[]
 
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, categoryId])
   @@index([companyId, conversionTemplateId])
+  @@unique([companyId, id])
   @@map("order_products")
+}
+
+model InventoryStocktake {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  stocktakeDate   DateTime @map("stocktake_date") @db.Date
+  status          String   @default("approved")
+  notes           String?  @db.Text
+  createdByUserId String?  @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  company   Company                  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdBy User?                    @relation("InventoryStocktakeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  lines     InventoryStocktakeLine[]
+  movements InventoryMovement[]
+
+  @@index([tenantId])
+  @@index([companyId, stocktakeDate])
+  @@unique([companyId, id])
+  @@unique([companyId, id, stocktakeDate])
+  @@map("inventory_stocktakes")
+}
+
+model InventoryStocktakeLine {
+  id               String  @id @default(cuid())
+  tenantId         String  @map("tenant_id")
+  companyId        String  @map("company_id")
+  stocktakeId      String  @map("stocktake_id")
+  stocktakeDate    DateTime @map("stocktake_date") @db.Date
+  productId        String  @map("product_id")
+  unit             String
+  expectedQuantity Decimal @map("expected_quantity") @db.Decimal(18, 6)
+  physicalQuantity Decimal @map("physical_quantity") @db.Decimal(18, 6)
+  varianceQuantity Decimal @map("variance_quantity") @db.Decimal(18, 6)
+
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  stocktake InventoryStocktake @relation(fields: [stocktakeId], references: [id], onDelete: Restrict)
+  product   OrderProduct       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([stocktakeId, productId])
+  @@unique([companyId, productId, stocktakeDate])
+  @@index([tenantId])
+  @@index([companyId, productId])
+  @@map("inventory_stocktake_lines")
+}
+
+model InventoryMovement {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  productId       String   @map("product_id")
+  transactionDate DateTime @map("transaction_date") @db.Date
+  movementType    String   @map("movement_type")
+  quantityBase    Decimal  @map("quantity_base") @db.Decimal(18, 6)
+  stocktakeId     String?  @map("stocktake_id")
+  sourceKey       String   @unique @map("source_key")
+  notes           String?  @db.Text
+  createdByUserId String?  @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  company   Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  product   OrderProduct        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  stocktake InventoryStocktake? @relation(fields: [stocktakeId], references: [id], onDelete: Restrict)
+  createdBy User?               @relation("InventoryMovementCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([companyId, productId, transactionDate])
+  @@index([stocktakeId])
+  @@map("inventory_movements")
 }
 
 model Order {
@@ -1365,6 +1443,7 @@ model OrderItem {
   unit       String?  @map("unit")       // ط§ظ„ظˆط­ط¯ط© ط§ظ„ظ…ط®طھط§ط±ط© (piece|kg|box|dozen)
   quantity   Decimal  @db.Decimal(18, 4)
   quantityMultiplier Decimal @default(1) @map("quantity_multiplier") @db.Decimal(18, 4)
+  inventoryBaseQuantitySnapshot Decimal? @map("inventory_base_quantity_snapshot") @db.Decimal(18, 6)
   unitPrice  Decimal  @map("unit_price") @db.Decimal(18, 4)
   amount     Decimal  @db.Decimal(18, 4)
 
@@ -1418,6 +1497,7 @@ model StaffOrderItem {
   productId    String   @map("product_id")
   quantity     Decimal  @db.Decimal(18, 4)
   quantityMultiplier Decimal @default(1) @map("quantity_multiplier") @db.Decimal(18, 4)
+  inventoryConsumptionSnapshot Json? @map("inventory_consumption_snapshot")
   size         String?  @map("size")
   packaging    String?  @map("packaging")
   unit         String?

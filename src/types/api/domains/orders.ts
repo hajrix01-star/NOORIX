@@ -232,7 +232,47 @@ export type OrderRecipeInventoryStockRow = {
   unit: string;
   purchasedBaseQuantity: MoneyLike;
   consumedBaseQuantity: MoneyLike;
+  adjustmentBaseQuantity: MoneyLike;
   balanceBaseQuantity: MoneyLike;
+};
+
+export type InventoryStocktakeLine = {
+  id: string;
+  productId: string;
+  unit: string;
+  expectedQuantity: MoneyLike;
+  physicalQuantity: MoneyLike;
+  varianceQuantity: MoneyLike;
+  product: {
+    id: string;
+    nameAr: string;
+    nameEn: string | null;
+  };
+};
+
+export type InventoryStocktake = {
+  id: string;
+  stocktakeDate: string;
+  status: string;
+  notes: string | null;
+  createdAt: string;
+  createdBy: {
+    id: string;
+    nameAr: string | null;
+    nameEn: string | null;
+    email: string;
+  } | null;
+  lines: InventoryStocktakeLine[];
+};
+
+export type CreateInventoryStocktakePayload = {
+  companyId: string;
+  stocktakeDate: string;
+  notes?: string;
+  lines: Array<{
+    productId: string;
+    physicalQuantity: string;
+  }>;
 };
 
 export type OrderPurchaseHistoryRow = {

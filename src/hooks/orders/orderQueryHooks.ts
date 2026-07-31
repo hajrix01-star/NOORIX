@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import {
   cancelOrder,
+  createInventoryStocktake,
   createOrder,
   getOrders,
   getOrdersItemsReport,
   getOrdersItemsReportRange,
+  getInventoryStocktakes,
   getOrdersRecipeInventoryStock,
   getOrdersRangeSummary,
   getOrdersSummary,
@@ -14,6 +16,8 @@ import { orderKeys } from '../../services/queryKeys';
 import type {
   OrderItemsReportRow,
   OrderItemsReportResult,
+  CreateInventoryStocktakePayload,
+  InventoryStocktake,
   OrderRecipeInventoryStockRow,
   OrderRangeSummary,
   OrderRecord,
@@ -160,5 +164,27 @@ export function useOrdersRecipeInventoryStock(companyId: string) {
     queryFn: () => getOrdersRecipeInventoryStock(companyId),
     fallbackMessage: 'Failed to load recipe inventory stock',
     enabled: !!companyId,
+  });
+}
+
+export function useInventoryStocktakes(companyId: string) {
+  return useApiListQuery<InventoryStocktake>({
+    queryKey: orderKeys.inventoryStocktakes(companyId),
+    queryFn: () => getInventoryStocktakes(companyId),
+    fallbackMessage: 'تعذر تحميل سجل الجرد',
+    enabled: !!companyId,
+  });
+}
+
+export function useCreateInventoryStocktakeMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: (body: Omit<CreateInventoryStocktakePayload, 'companyId'>) => (
+      createInventoryStocktake({ ...body, companyId })
+    ),
+    invalidateQueries: [
+      orderKeys.recipeInventoryStock(companyId),
+      orderKeys.inventoryStocktakes(companyId),
+    ],
+    successToast: 'تم اعتماد الجرد وتسجيل الفروقات',
   });
 }

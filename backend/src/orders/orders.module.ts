@@ -4,6 +4,7 @@ import { OrdersService } from './orders.service';
 import { OrdersStaffService } from './orders-staff.service';
 import { OrdersCatalogService } from './orders-catalog.service';
 import { OrdersStaffReportService } from './orders-staff-report.service';
+import { OrdersInventoryService } from './orders-inventory.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -15,12 +16,14 @@ import { AuthModule } from '../auth/auth.module';
     OrdersStaffService,
     OrdersCatalogService,
     OrdersStaffReportService,
+    OrdersInventoryService,
   ],
   exports: [
     OrdersService,
     OrdersStaffService,
     OrdersCatalogService,
     OrdersStaffReportService,
+    OrdersInventoryService,
   ],
 })
 export class OrdersModule {}

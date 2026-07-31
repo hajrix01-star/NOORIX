@@ -9,6 +9,7 @@ export type { CreateInvoiceBatchResult } from './domains/invoices-batch';
 export type {
   CreateOrderLinePayload,
   CreateOrderPayload,
+  CreateInventoryStocktakePayload,
   DisplayLanguage,
   MoneyLike,
   NamedDisplayRef,
@@ -22,6 +23,8 @@ export type {
   OrderItemsReportRow,
   OrderItemsReportDailyRow,
   OrderItemsReportResult,
+  InventoryStocktake,
+  InventoryStocktakeLine,
   OrderRecipeInventoryStockRow,
   OrderLine,
   OrderProduct,

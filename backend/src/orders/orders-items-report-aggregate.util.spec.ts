@@ -515,4 +515,167 @@ describe('aggregateRecipeInventoryStock', () => {
       }),
     ]);
   });
+
+  it('applies immutable stocktake adjustments to the projected inventory balance', () => {
+    const material = {
+      id: 'material-adjusted',
+      nameAr: 'Material',
+      nameEn: 'Material',
+      productType: 'order',
+      unit: 'piece',
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [material],
+      purchases: [
+        {
+          productId: material.id,
+          quantity: new Prisma.Decimal(10),
+          quantityMultiplier: new Prisma.Decimal(1),
+          product: material,
+        },
+      ],
+      sales: [],
+      adjustments: [
+        { productId: material.id, quantityBase: new Prisma.Decimal(-2) },
+        { productId: material.id, quantityBase: new Prisma.Decimal(1) },
+      ],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: material.id,
+        purchasedBaseQuantity: '10',
+        consumedBaseQuantity: '0',
+        adjustmentBaseQuantity: '-1',
+        balanceBaseQuantity: '9',
+      }),
+    ]);
+  });
+
+  it('keeps zero-movement materials available for a complete stocktake', () => {
+    const material = {
+      id: 'material-zero',
+      nameAr: 'Zero material',
+      nameEn: 'Zero material',
+      productType: 'order',
+      unit: 'piece',
+    };
+
+    expect(aggregateRecipeInventoryStock({
+      materialProducts: [material],
+      purchases: [],
+      sales: [],
+    })).toEqual([
+      expect.objectContaining({
+        productId: material.id,
+        adjustmentBaseQuantity: '0',
+        balanceBaseQuantity: '0',
+      }),
+    ]);
+  });
+
+  it('keeps purchase history on the immutable base quantity snapshot', () => {
+    const material = {
+      id: 'material-purchase-snapshot',
+      nameAr: 'Material',
+      nameEn: 'Material',
+      productType: 'order',
+      unit: 'piece',
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'piece', multiplier: '999' },
+      ],
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [material],
+      purchases: [{
+        productId: material.id,
+        quantity: new Prisma.Decimal(2),
+        unit: 'carton',
+        quantityMultiplier: new Prisma.Decimal(999),
+        inventoryBaseQuantitySnapshot: new Prisma.Decimal(128),
+        product: material,
+      }],
+      sales: [],
+    });
+
+    expect(rows[0]).toEqual(expect.objectContaining({
+      purchasedBaseQuantity: '128',
+      balanceBaseQuantity: '128',
+    }));
+  });
+
+  it('keeps sale history on the immutable recipe consumption snapshot', () => {
+    const material = {
+      id: 'material-sale-snapshot',
+      nameAr: 'Material',
+      nameEn: 'Material',
+      productType: 'order',
+      unit: 'piece',
+    };
+    const soldProduct = {
+      id: 'sale-snapshot',
+      nameAr: 'Sold product',
+      nameEn: 'Sold product',
+      productType: 'sale',
+      unit: 'piece',
+      recipe: [{ materialProductId: material.id, quantity: '999', unit: 'piece' }],
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [material],
+      purchases: [],
+      sales: [{
+        productId: soldProduct.id,
+        quantity: new Prisma.Decimal(5),
+        unit: 'piece',
+        quantityMultiplier: new Prisma.Decimal(1),
+        inventoryConsumptionSnapshot: {
+          version: 1,
+          soldBaseQuantity: '5',
+          components: [{
+            materialProductId: material.id,
+            materialBaseUnit: 'piece',
+            quantityBase: '50',
+          }],
+        },
+        product: soldProduct,
+      }],
+    });
+
+    expect(rows[0]).toEqual(expect.objectContaining({
+      consumedBaseQuantity: '50',
+      balanceBaseQuantity: '-50',
+    }));
+  });
+
+  it('rejects malformed inventory consumption snapshots', () => {
+    const material = {
+      id: 'material-invalid-snapshot',
+      nameAr: 'Material',
+      nameEn: 'Material',
+      productType: 'order',
+      unit: 'piece',
+    };
+    const soldProduct = {
+      id: 'sale-invalid-snapshot',
+      nameAr: 'Sold product',
+      nameEn: 'Sold product',
+      productType: 'sale',
+      unit: 'piece',
+      recipe: [],
+    };
+
+    expect(() => aggregateRecipeInventoryStock({
+      materialProducts: [material],
+      purchases: [],
+      sales: [{
+        productId: soldProduct.id,
+        quantity: new Prisma.Decimal(1),
+        inventoryConsumptionSnapshot: { version: 2, components: [] },
+        product: soldProduct,
+      }],
+    })).toThrow('Unsupported inventory consumption snapshot');
+  });
 });

@@ -9,7 +9,6 @@ import { aggregateOrdersMonthSummary, aggregateOrdersRangeSummaryGroups } from '
 import {
   aggregateOrderItemsByProductForReport,
   aggregateOrderItemsForRangeReport,
-  aggregateRecipeInventoryStock,
 } from './orders-items-report-aggregate.util';
 import { OrdersCatalogService } from './orders-catalog.service';
 import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
@@ -27,6 +26,7 @@ export class OrdersService {
 
   private async withQuantityMultipliers<T extends {
     productId: string;
+    quantity: Prisma.Decimal;
     size?: string | null;
     packaging?: string | null;
     unit?: string | null;
@@ -45,10 +45,14 @@ export class OrdersService {
     const productMap = new Map(products.map((product) => [product.id, product]));
     const missing = productIds.filter((productId) => !productMap.has(productId));
     if (missing.length > 0) throw new BadRequestException('صنف غير موجود أو لا ينتمي لهذه الشركة');
-    return items.map((item) => ({
-      ...item,
-      quantityMultiplier: resolveQuantityMultiplier(productMap.get(item.productId), item),
-    }));
+    return items.map((item) => {
+      const quantityMultiplier = resolveQuantityMultiplier(productMap.get(item.productId), item);
+      return {
+        ...item,
+        quantityMultiplier,
+        inventoryBaseQuantitySnapshot: item.quantity.times(quantityMultiplier).toDecimalPlaces(6),
+      };
+    });
   }
 
   private paymentPatch(
@@ -159,6 +163,7 @@ export class OrdersService {
             unit: i.unit,
             quantity: i.quantity,
             quantityMultiplier: i.quantityMultiplier,
+            inventoryBaseQuantitySnapshot: i.inventoryBaseQuantitySnapshot,
             unitPrice: i.unitPrice,
             amount: i.amount,
           })),
@@ -198,6 +203,7 @@ export class OrdersService {
           unit: i.unit,
           quantity: i.quantity,
           quantityMultiplier: i.quantityMultiplier,
+          inventoryBaseQuantitySnapshot: i.inventoryBaseQuantitySnapshot,
           unitPrice: i.unitPrice,
           amount: i.amount,
         })),
@@ -310,86 +316,6 @@ export class OrdersService {
     });
 
     return aggregateOrderItemsForRangeReport(items);
-  }
-
-  async getRecipeInventoryStock(companyId: string) {
-    const [materialProducts, purchases, sales] = await Promise.all([
-      this.prisma.orderProduct.findMany({
-        where: { companyId, productType: 'order' },
-        select: {
-          id: true,
-          nameAr: true,
-          nameEn: true,
-          productType: true,
-          sections: true,
-          sectionIds: true,
-          unit: true,
-          inventoryConversions: true,
-          conversionTemplate: { select: { conversions: true } },
-          recipe: true,
-        },
-      }),
-      this.prisma.orderItem.findMany({
-        where: {
-          order: { companyId, status: 'active' },
-        },
-        select: {
-          productId: true,
-          quantity: true,
-          unit: true,
-          quantityMultiplier: true,
-          product: {
-            select: {
-              id: true,
-              nameAr: true,
-              nameEn: true,
-              productType: true,
-              sections: true,
-              sectionIds: true,
-              unit: true,
-              inventoryConversions: true,
-              conversionTemplate: { select: { conversions: true } },
-              recipe: true,
-            },
-          },
-        },
-      }),
-      this.prisma.staffOrderItem.findMany({
-        where: {
-          staffOrder: {
-            companyId,
-            orderType: 'sale',
-            status: 'sent',
-          },
-        },
-        select: {
-          productId: true,
-          quantity: true,
-          unit: true,
-          quantityMultiplier: true,
-          product: {
-            select: {
-              id: true,
-              nameAr: true,
-              nameEn: true,
-              productType: true,
-              sections: true,
-              sectionIds: true,
-              unit: true,
-              inventoryConversions: true,
-              conversionTemplate: { select: { conversions: true } },
-              recipe: true,
-            },
-          },
-        },
-      }),
-    ]);
-
-    return aggregateRecipeInventoryStock({
-      materialProducts,
-      purchases,
-      sales,
-    });
   }
 
   async getProductPurchaseHistory(

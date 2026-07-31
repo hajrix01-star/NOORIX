@@ -68,6 +68,7 @@ type InventoryPurchaseInput = {
   quantity: Prisma.Decimal | string | number;
   unit?: string | null;
   quantityMultiplier?: Prisma.Decimal | string | number | null;
+  inventoryBaseQuantitySnapshot?: Prisma.Decimal | string | number | null;
   product: InventoryProduct;
 };
 
@@ -76,7 +77,23 @@ type InventorySaleInput = {
   quantity: Prisma.Decimal | string | number;
   unit?: string | null;
   quantityMultiplier?: Prisma.Decimal | string | number | null;
+  inventoryConsumptionSnapshot?: unknown;
   product: InventoryProduct;
+};
+
+type InventoryConsumptionSnapshot = {
+  version: 1;
+  soldBaseQuantity: string;
+  components: Array<{
+    materialProductId: string;
+    materialBaseUnit: string;
+    quantityBase: string;
+  }>;
+};
+
+type InventoryAdjustmentInput = {
+  productId: string;
+  quantityBase: Prisma.Decimal | string | number;
 };
 
 type InventoryRecipeItem = {
@@ -94,6 +111,7 @@ type InventoryAccumulator = {
   unit: string;
   purchasedBaseQuantity: Prisma.Decimal;
   consumedBaseQuantity: Prisma.Decimal;
+  adjustmentBaseQuantity: Prisma.Decimal;
 };
 
 function parseStringArray(value: unknown): string[] {
@@ -130,8 +148,12 @@ function inventoryBaseQuantity(item: {
   quantity: Prisma.Decimal | string | number;
   unit?: string | null;
   quantityMultiplier?: Prisma.Decimal | string | number | null;
+  inventoryBaseQuantitySnapshot?: Prisma.Decimal | string | number | null;
   product: InventoryProduct;
 }): Prisma.Decimal {
+  if (item.inventoryBaseQuantitySnapshot != null) {
+    return decimal(item.inventoryBaseQuantitySnapshot);
+  }
   const qty = decimal(item.quantity);
   const unit = normalizeUnit(item.unit, '');
   const baseUnit = normalizeUnit(item.product.unit, unit || 'piece');
@@ -150,6 +172,35 @@ function inventoryBaseQuantity(item: {
   }
   if (storedMultiplier) return qty.times(storedMultiplier);
   return normalizedQuantity(item.quantity, item.quantityMultiplier);
+}
+
+function parseInventoryConsumptionSnapshot(value: unknown): InventoryConsumptionSnapshot | null {
+  if (value == null) return null;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Invalid inventory consumption snapshot.');
+  }
+  const snapshot = value as Record<string, unknown>;
+  if (snapshot.version !== 1 || !Array.isArray(snapshot.components)) {
+    throw new Error('Unsupported inventory consumption snapshot.');
+  }
+  const soldBaseQuantity = String(snapshot.soldBaseQuantity ?? '').trim();
+  if (!soldBaseQuantity || !decimal(soldBaseQuantity).isFinite()) {
+    throw new Error('Invalid sold quantity in inventory consumption snapshot.');
+  }
+  const components = snapshot.components.map((entry) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new Error('Invalid component in inventory consumption snapshot.');
+    }
+    const component = entry as Record<string, unknown>;
+    const materialProductId = String(component.materialProductId ?? '').trim();
+    const materialBaseUnit = String(component.materialBaseUnit ?? '').trim();
+    const quantityBase = String(component.quantityBase ?? '').trim();
+    if (!materialProductId || !materialBaseUnit || !quantityBase || !decimal(quantityBase).isFinite()) {
+      throw new Error('Incomplete component in inventory consumption snapshot.');
+    }
+    return { materialProductId, materialBaseUnit, quantityBase };
+  });
+  return { version: 1, soldBaseQuantity, components };
 }
 
 function parseInventoryRecipe(value: unknown): InventoryRecipeItem[] {
@@ -184,6 +235,7 @@ function ensureInventoryRow(
     unit: String(product.unit || unitFallback || 'piece').trim() || 'piece',
     purchasedBaseQuantity: new Prisma.Decimal(0),
     consumedBaseQuantity: new Prisma.Decimal(0),
+    adjustmentBaseQuantity: new Prisma.Decimal(0),
   };
   rows.set(product.id, row);
   return row;
@@ -369,9 +421,14 @@ export function aggregateRecipeInventoryStock(input: {
   purchases: InventoryPurchaseInput[];
   sales: InventorySaleInput[];
   materialProducts: InventoryProduct[];
+  adjustments?: InventoryAdjustmentInput[];
 }) {
   const rows = new Map<string, InventoryAccumulator>();
   const materialById = new Map(input.materialProducts.map((product) => [product.id, product]));
+
+  for (const product of input.materialProducts) {
+    ensureInventoryRow(rows, product, product.unit || 'piece');
+  }
 
   for (const purchase of input.purchases) {
     if (purchase.product.productType && purchase.product.productType !== 'order') continue;
@@ -381,6 +438,24 @@ export function aggregateRecipeInventoryStock(input: {
 
   for (const sale of input.sales) {
     if (sale.product.productType && sale.product.productType !== 'sale') continue;
+    const consumptionSnapshot = parseInventoryConsumptionSnapshot(
+      sale.inventoryConsumptionSnapshot,
+    );
+    if (consumptionSnapshot) {
+      for (const component of consumptionSnapshot.components) {
+        const materialProduct = materialById.get(component.materialProductId);
+        if (!materialProduct) {
+          throw new Error(
+            `Inventory snapshot material "${component.materialProductId}" is missing.`,
+          );
+        }
+        const row = ensureInventoryRow(rows, materialProduct, component.materialBaseUnit);
+        row.consumedBaseQuantity = row.consumedBaseQuantity.plus(
+          decimal(component.quantityBase),
+        );
+      }
+      continue;
+    }
     const soldBaseQuantity = inventoryBaseQuantity(sale);
     for (const recipeItem of parseInventoryRecipe(sale.product.recipe)) {
       const materialProduct = materialById.get(recipeItem.materialProductId);
@@ -399,17 +474,28 @@ export function aggregateRecipeInventoryStock(input: {
     }
   }
 
+  for (const adjustment of input.adjustments ?? []) {
+    const materialProduct = materialById.get(adjustment.productId);
+    if (!materialProduct) continue;
+    const row = ensureInventoryRow(rows, materialProduct, materialProduct.unit || 'piece');
+    row.adjustmentBaseQuantity = row.adjustmentBaseQuantity.plus(decimal(adjustment.quantityBase));
+  }
+
   return Array.from(rows.values())
-        .map((row) => ({
-          productId: row.productId,
-          productNameAr: row.productNameAr,
-          productNameEn: row.productNameEn,
-          sections: row.sections,
-          sectionIds: row.sectionIds,
-          unit: row.unit,
-          purchasedBaseQuantity: row.purchasedBaseQuantity.toString(),
-          consumedBaseQuantity: row.consumedBaseQuantity.toString(),
-      balanceBaseQuantity: row.purchasedBaseQuantity.minus(row.consumedBaseQuantity).toString(),
+    .map((row) => ({
+      productId: row.productId,
+      productNameAr: row.productNameAr,
+      productNameEn: row.productNameEn,
+      sections: row.sections,
+      sectionIds: row.sectionIds,
+      unit: row.unit,
+      purchasedBaseQuantity: row.purchasedBaseQuantity.toString(),
+      consumedBaseQuantity: row.consumedBaseQuantity.toString(),
+      adjustmentBaseQuantity: row.adjustmentBaseQuantity.toString(),
+      balanceBaseQuantity: row.purchasedBaseQuantity
+        .minus(row.consumedBaseQuantity)
+        .plus(row.adjustmentBaseQuantity)
+        .toString(),
     }))
     .sort((a, b) => a.productNameAr.localeCompare(b.productNameAr, 'ar'));
 }

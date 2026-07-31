@@ -24,6 +24,14 @@ import {
   staffCancellationVariantKey,
 } from './orders-staff-cancellation.util';
 import { canEditStaffSaleRecordByLatest } from './orders-staff-edit-policy.util';
+import {
+  buildCancellationConsumptionSnapshot,
+  buildInventoryConsumptionSnapshot,
+  inventoryConsumptionSnapshotJson,
+  inventoryRecipeMaterialIds,
+  InventoryConsumptionSnapshotError,
+  parseInventoryConsumptionSnapshot,
+} from './orders-inventory-consumption-snapshot.util';
 
 @Injectable()
 export class OrdersStaffService {
@@ -185,11 +193,15 @@ export class OrdersStaffService {
     return groups;
   }
 
-  private validateItemQuantities(items: StaffOrderItemInput[]): number[] {
+  private validateItemQuantities(items: StaffOrderItemInput[]): Prisma.Decimal[] {
     return items.map((it) => {
-      const q = parseFloat(it.quantity);
-      if (!it.productId || isNaN(q) || q <= 0) throw new BadRequestException('Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ØµÙ†Ù ØºÙŠØ± ØµØ­ÙŠØ­Ø©');
-      return q;
+      try {
+        const quantity = new Prisma.Decimal(it.quantity);
+        if (it.productId && quantity.isFinite() && quantity.gt(0)) return quantity;
+      } catch {
+        // Converted below into the existing request validation error.
+      }
+      throw new BadRequestException('Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ØµÙ†Ù ØºÙŠØ± ØµØ­ÙŠØ­Ø©');
     });
   }
 
@@ -197,10 +209,14 @@ export class OrdersStaffService {
     companyId: string,
     items: StaffOrderItemInput[],
     entryType: StaffOrderEntryType,
+    orderType: 'order' | 'sale',
   ) {
     const productIds = [...new Set(items.map((it) => it.productId).filter(Boolean))];
     const products = productIds.length
-      ? await this.prisma.orderProduct.findMany({ where: { companyId, id: { in: productIds } } })
+      ? await this.prisma.orderProduct.findMany({
+          where: { companyId, id: { in: productIds } },
+          include: { conversionTemplate: { select: { conversions: true } } },
+        })
       : [];
     const pmap = new Map(products.map((p) => [p.id, p]));
     const missing = productIds.filter((id) => !pmap.has(id));
@@ -208,21 +224,54 @@ export class OrdersStaffService {
       throw new BadRequestException('ØµÙ†Ù ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯ Ø£Ùˆ Ù„Ø§ ÙŠÙ†ØªÙ…ÙŠ Ù„Ù‡Ø°Ù‡ Ø§Ù„Ø´Ø±ÙƒØ©');
     }
     const qty = this.validateItemQuantities(items);
-    return items.map((it, i) => {
-      const v = resolveStaffItemVariant(pmap.get(it.productId), it);
-      const cancellationReasons = normalizeCancellationReasons(it, entryType === 'cancellation');
-      return {
-        productId: it.productId,
-        quantity: qty[i],
-        quantityMultiplier: v.quantityMultiplier,
-        size: v.size,
-        packaging: v.packaging,
-        unit: v.unit,
-        unitPrice: v.unitPrice,
-        notes: it.notes?.trim() || null,
-        cancellationReasons,
-      };
-    });
+    try {
+      const materialIds = orderType === 'sale'
+        ? [...new Set(products.flatMap((product) => inventoryRecipeMaterialIds(product.recipe)))]
+        : [];
+      const materials = materialIds.length > 0
+        ? await this.prisma.orderProduct.findMany({
+            where: {
+              companyId,
+              id: { in: materialIds },
+              productType: 'order',
+              isActive: true,
+            },
+            include: { conversionTemplate: { select: { conversions: true } } },
+          })
+        : [];
+      const materialById = new Map(materials.map((material) => [material.id, material]));
+
+      return items.map((it, i) => {
+        const product = pmap.get(it.productId)!;
+        const v = resolveStaffItemVariant(product, it);
+        const cancellationReasons = normalizeCancellationReasons(it, entryType === 'cancellation');
+        const inventoryConsumptionSnapshot = orderType === 'sale'
+          ? inventoryConsumptionSnapshotJson(buildInventoryConsumptionSnapshot({
+              saleProduct: product,
+              soldQuantity: qty[i],
+              soldQuantityMultiplier: v.quantityMultiplier,
+              materialById,
+            }))
+          : Prisma.JsonNull;
+        return {
+          productId: it.productId,
+          quantity: qty[i],
+          quantityMultiplier: v.quantityMultiplier,
+          inventoryConsumptionSnapshot,
+          size: v.size,
+          packaging: v.packaging,
+          unit: v.unit,
+          unitPrice: v.unitPrice,
+          notes: it.notes?.trim() || null,
+          cancellationReasons,
+        };
+      });
+    } catch (error) {
+      if (error instanceof InventoryConsumptionSnapshotError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
   }
 
   private async assertCancellationAvailability(
@@ -230,7 +279,7 @@ export class OrdersStaffService {
     sectionName: string,
     saleDate: Date,
     items: Awaited<ReturnType<OrdersStaffService['mapStaffItemsForCreate']>>,
-  ) {
+  ): Promise<Prisma.InputJsonObject[]> {
     const recordedItems = await this.prisma.staffOrderItem.findMany({
       where: {
         staffOrder: {
@@ -246,11 +295,15 @@ export class OrdersStaffService {
         size: true,
         packaging: true,
         unit: true,
+        quantityMultiplier: true,
+        inventoryConsumptionSnapshot: true,
       },
     });
+    const recordedByVariant = new Map<string, typeof recordedItems>();
     const availableByVariant = new Map<string, Prisma.Decimal>();
     for (const item of recordedItems) {
       const key = staffCancellationVariantKey(item);
+      recordedByVariant.set(key, [...(recordedByVariant.get(key) ?? []), item]);
       availableByVariant.set(
         key,
         (availableByVariant.get(key) ?? new Prisma.Decimal(0)).plus(item.quantity),
@@ -274,6 +327,30 @@ export class OrdersStaffService {
         );
       }
     }
+
+    try {
+      return items.map((item) => {
+        const key = staffCancellationVariantKey(item);
+        const estimatedCurrentSnapshot = parseInventoryConsumptionSnapshot(
+          item.inventoryConsumptionSnapshot,
+        );
+        if (!estimatedCurrentSnapshot) {
+          throw new InventoryConsumptionSnapshotError('Cancellation snapshot could not be estimated.');
+        }
+        return inventoryConsumptionSnapshotJson(buildCancellationConsumptionSnapshot({
+          requestedSoldBaseQuantity: item.quantity.times(item.quantityMultiplier),
+          recordedSnapshots: (recordedByVariant.get(key) ?? []).map(
+            (recorded) => recorded.inventoryConsumptionSnapshot,
+          ),
+          estimatedCurrentSnapshot,
+        }));
+      });
+    } catch (error) {
+      if (error instanceof InventoryConsumptionSnapshotError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
   }
 
   private async createStaffOrderRecord(
@@ -288,10 +365,16 @@ export class OrdersStaffService {
     logRef: string | null = null,
     entryType: StaffOrderEntryType = 'issue',
   ) {
-    const mapped = await this.mapStaffItemsForCreate(dto.companyId, items, entryType);
+    const mapped = await this.mapStaffItemsForCreate(dto.companyId, items, entryType, orderType);
+    let cancellationSnapshots: Prisma.InputJsonObject[] | null = null;
     if (entryType === 'cancellation') {
       if (!saleDate) throw new BadRequestException('تاريخ الإلغاء مطلوب.');
-      await this.assertCancellationAvailability(dto.companyId, sectionName, saleDate, mapped);
+      cancellationSnapshots = await this.assertCancellationAvailability(
+        dto.companyId,
+        sectionName,
+        saleDate,
+        mapped,
+      );
     }
     return this.prisma.staffOrder.create({
       data: {
@@ -307,11 +390,13 @@ export class OrdersStaffService {
         status: 'sent',
         sentAt,
         items: {
-          create: mapped.map((item) => ({
+          create: mapped.map((item, index) => ({
             ...item,
             quantity: entryType === 'cancellation'
               ? new Prisma.Decimal(item.quantity).negated()
               : item.quantity,
+            inventoryConsumptionSnapshot: cancellationSnapshots?.[index]
+              ?? item.inventoryConsumptionSnapshot,
             cancellationReasons: item.cancellationReasons ?? Prisma.JsonNull,
           })),
         },
@@ -462,7 +547,7 @@ export class OrdersStaffService {
       }
       const [[sectionName, sectionItems]] = grouped.entries();
       data.sectionName = sectionName;
-      const mapped = await this.mapStaffItemsForCreate(companyId, sectionItems, 'issue');
+      const mapped = await this.mapStaffItemsForCreate(companyId, sectionItems, 'issue', 'sale');
       await this.prisma.staffOrderItem.deleteMany({ where: { staffOrderId: id } });
       data.items = {
         create: mapped.map((item) => ({

@@ -171,8 +171,18 @@ export class OrdersCatalogService {
   }) {
     const product = await this.prisma.orderProduct.findFirst({ where: { id, companyId } });
     if (!product) throw new NotFoundException('الصنف غير موجود');
-    const sectionList = await this.loadSectionList(companyId);
+    const nextUnit = dto.unit?.trim();
     const nextProductType = dto.productType ?? product.productType;
+    const changesInventoryIdentity = (
+      (nextUnit !== undefined && nextUnit !== product.unit)
+      || nextProductType !== product.productType
+    );
+    if (changesInventoryIdentity && await this.hasProductInventoryHistory(id, companyId)) {
+      throw new BadRequestException(
+        'Inventory base unit or product type cannot change after inventory activity. Create a new product to preserve the historical ledger.',
+      );
+    }
+    const sectionList = await this.loadSectionList(companyId);
     if (nextProductType === 'sale' && dto.recipe !== undefined) {
       await this.assertRecipeMaterialProducts(companyId, dto.recipe);
     }
@@ -188,6 +198,21 @@ export class OrdersCatalogService {
       include: { category: true, conversionTemplate: true },
     });
     return enrichProductWithSectionIds(updated, sectionList);
+  }
+
+  private async hasProductInventoryHistory(productId: string, companyId: string) {
+    const [purchaseCount, saleCount, movementCount] = await Promise.all([
+      this.prisma.orderItem.count({
+        where: { productId, order: { companyId } },
+      }),
+      this.prisma.staffOrderItem.count({
+        where: { productId, staffOrder: { companyId } },
+      }),
+      this.prisma.inventoryMovement.count({
+        where: { productId, companyId },
+      }),
+    ]);
+    return purchaseCount + saleCount + movementCount > 0;
   }
 
   async getCategories(companyId: string) {

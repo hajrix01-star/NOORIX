@@ -9,6 +9,8 @@ import { RequireAnyPermission } from '../auth/decorators/require-any-permission.
 import { requireCompanyId } from '../common/utils/require-company-id';
 import { OrdersService } from './orders.service';
 import { OrdersStaffService } from './orders-staff.service';
+import { OrdersInventoryService } from './orders-inventory.service';
+import { CreateInventoryStocktakeDto } from './dto/create-inventory-stocktake.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductsBatchDto } from './dto/create-products-batch.dto';
@@ -31,6 +33,7 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly staffService: OrdersStaffService,
+    private readonly inventoryService: OrdersInventoryService,
   ) {}
 
   // ══════════════════════════════════════════════════
@@ -224,7 +227,27 @@ export class OrdersController {
   @Get('recipe-inventory-stock')
   @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   getRecipeInventoryStock(@CompanyId() companyId: string) {
-    return this.ordersService.getRecipeInventoryStock(requireCompanyId(companyId));
+    return this.inventoryService.getStock(requireCompanyId(companyId));
+  }
+
+  @Get('inventory-stocktakes')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
+  listInventoryStocktakes(@CompanyId() companyId: string) {
+    return this.inventoryService.listStocktakes(requireCompanyId(companyId));
+  }
+
+  @Post('inventory-stocktakes')
+  @RequirePermission('ORDERS_WRITE')
+  createInventoryStocktake(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: CurrentAuthUser,
+    @Body() body: CreateInventoryStocktakeDto,
+  ) {
+    return this.inventoryService.createStocktake(
+      requireCompanyId(companyId),
+      requireCurrentUserId(user),
+      body,
+    );
   }
 
   @Get('catalog-units')
