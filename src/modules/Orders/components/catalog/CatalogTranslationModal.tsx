@@ -152,7 +152,7 @@ export function CatalogTranslationModal({
           </div>
           {truncated && (
             <p className="mt-2 mb-0 text-[12px] text-noorix-warning">
-              عُرضت أول 50 نتيجة. اعتمدها ثم افتح النافذة مجدداً لإكمال البقية.
+              عُرضت أول {rows.length} نتيجة. اعتمدها ثم افتح النافذة مجدداً لإكمال البقية.
             </p>
           )}
         </div>

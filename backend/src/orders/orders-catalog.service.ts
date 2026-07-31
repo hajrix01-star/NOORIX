@@ -50,6 +50,8 @@ type ConversionTemplateInput = {
   sortOrder?: number;
 };
 
+const CATALOG_TRANSLATION_BATCH_SIZE = 15;
+
 @Injectable()
 export class OrdersCatalogService {
   constructor(
@@ -75,7 +77,8 @@ export class OrdersCatalogService {
       include: { category: true },
     });
     const missing = products.filter((product) => !product.nameEn?.trim());
-    const selected = missing.slice(0, Math.min(Math.max(limit, 1), 50));
+    const requestedLimit = Math.min(Math.max(limit, 1), 50);
+    const selected = missing.slice(0, Math.min(requestedLimit, CATALOG_TRANSLATION_BATCH_SIZE));
     if (!selected.length) return { suggestions: [], totalMissing: 0, truncated: false };
 
     const suggestions = await this.gemini.translateRestaurantCatalogItems(selected.map((product) => ({
@@ -88,6 +91,9 @@ export class OrdersCatalogService {
     })));
     if (!suggestions) {
       throw new ServiceUnavailableException('Catalog translation service is currently unavailable.');
+    }
+    if (suggestions.length === 0) {
+      throw new ServiceUnavailableException('Catalog translation service returned no usable suggestions.');
     }
 
     const byId = new Map(selected.map((product) => [product.id, product]));
