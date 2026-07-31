@@ -3,6 +3,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -40,8 +41,38 @@ type AggregatedInventoryConsumption = {
   invalidCount: number;
 };
 
+const INVENTORY_NUMERIC_PATTERN =
+  '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?$';
+
+function inventoryConsumptionSnapshotValidity(snapshot: Prisma.Sql): Prisma.Sql {
+  return Prisma.sql`
+    CASE
+      WHEN jsonb_typeof(${snapshot}) IS DISTINCT FROM 'object' THEN false
+      WHEN ${snapshot}->>'version' IS DISTINCT FROM '1' THEN false
+      WHEN jsonb_typeof(${snapshot}->'components') IS DISTINCT FROM 'array' THEN false
+      WHEN EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(
+          CASE
+            WHEN jsonb_typeof(${snapshot}->'components') = 'array'
+              THEN ${snapshot}->'components'
+            ELSE '[]'::jsonb
+          END
+        ) AS component
+        WHERE jsonb_typeof(component) IS DISTINCT FROM 'object'
+          OR BTRIM(COALESCE(component->>'materialProductId', '')) = ''
+          OR BTRIM(COALESCE(component->>'materialBaseUnit', '')) = ''
+          OR COALESCE(component->>'quantityBase', '') !~ ${INVENTORY_NUMERIC_PATTERN}
+      ) THEN false
+      ELSE true
+    END
+  `;
+}
+
 @Injectable()
 export class OrdersInventoryService {
+  private readonly logger = new Logger(OrdersInventoryService.name);
+
   constructor(private readonly prisma: TenantPrismaService) {}
 
   async getStock(companyId: string) {
@@ -278,13 +309,20 @@ export class OrdersInventoryService {
             AND so."status" = 'sent'
             AND soi."inventory_consumption_snapshot" IS NOT NULL
             ${saleDateFilter}
+        ), classified_snapshots AS MATERIALIZED (
+          SELECT
+            snapshot,
+            ${inventoryConsumptionSnapshotValidity(Prisma.sql`snapshot`)} AS "isValid"
+          FROM scoped_snapshots
         ), valid_consumption AS (
           SELECT
             component->>'materialProductId' AS "productId",
             SUM((component->>'quantityBase')::numeric) AS "quantityBase"
-          FROM scoped_snapshots
-          CROSS JOIN LATERAL jsonb_array_elements(snapshot->'components') AS component
-          WHERE snapshot->>'version' = '1'
+          FROM classified_snapshots
+          CROSS JOIN LATERAL jsonb_array_elements(
+            CASE WHEN "isValid" THEN snapshot->'components' ELSE '[]'::jsonb END
+          ) AS component
+          WHERE "isValid"
           GROUP BY component->>'materialProductId'
         )
         SELECT
@@ -297,23 +335,35 @@ export class OrdersInventoryService {
           NULL AS "productId",
           NULL AS "quantityBase",
           COUNT(*)::int AS "invalidCount"
-        FROM scoped_snapshots
-        WHERE COALESCE(snapshot->>'version', '') <> '1'
+        FROM classified_snapshots
+        WHERE NOT "isValid"
       `),
       client.$queryRaw<AggregatedLegacyInventoryQuantity[]>(Prisma.sql`
+        WITH classified_sales AS MATERIALIZED (
+          SELECT
+            soi."product_id" AS "productId",
+            soi."quantity" AS "quantity",
+            soi."unit" AS "unit",
+            soi."quantity_multiplier" AS "quantityMultiplier",
+            soi."inventory_consumption_snapshot" AS snapshot,
+            ${inventoryConsumptionSnapshotValidity(
+              Prisma.sql`soi."inventory_consumption_snapshot"`,
+            )} AS "isValidSnapshot"
+          FROM "staff_order_items" soi
+          INNER JOIN "staff_orders" so ON so."id" = soi."staff_order_id"
+          WHERE so."company_id" = ${companyId}
+            AND so."order_type" = 'sale'
+            AND so."status" = 'sent'
+            ${saleDateFilter}
+        )
         SELECT
-          soi."product_id" AS "productId",
-          SUM(soi."quantity") AS "quantity",
-          soi."unit" AS "unit",
-          soi."quantity_multiplier" AS "quantityMultiplier"
-        FROM "staff_order_items" soi
-        INNER JOIN "staff_orders" so ON so."id" = soi."staff_order_id"
-        WHERE so."company_id" = ${companyId}
-          AND so."order_type" = 'sale'
-          AND so."status" = 'sent'
-          AND soi."inventory_consumption_snapshot" IS NULL
-          ${saleDateFilter}
-        GROUP BY soi."product_id", soi."unit", soi."quantity_multiplier"
+          "productId",
+          SUM("quantity") AS "quantity",
+          "unit",
+          "quantityMultiplier"
+        FROM classified_sales
+        WHERE NOT "isValidSnapshot"
+        GROUP BY "productId", "unit", "quantityMultiplier"
       `),
       client.inventoryMovement.groupBy({
         by: ['productId'],
@@ -325,8 +375,14 @@ export class OrdersInventoryService {
       }),
     ]);
 
-    if (aggregatedConsumption.some((row) => row.invalidCount > 0)) {
-      throw new Error('Unsupported inventory consumption snapshot version.');
+    const estimatedSnapshotCount = aggregatedConsumption.reduce(
+      (total, row) => total + Math.max(0, Number(row.invalidCount) || 0),
+      0,
+    );
+    if (estimatedSnapshotCount > 0) {
+      this.logger.warn(
+        `Inventory projection estimated ${estimatedSnapshotCount} historical sale item(s) from the current recipe for company ${companyId}.`,
+      );
     }
 
     const materialById = new Map(materialProducts.map((product) => [product.id, product]));

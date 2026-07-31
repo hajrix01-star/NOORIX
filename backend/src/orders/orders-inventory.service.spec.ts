@@ -14,6 +14,14 @@ function inventoryService(prisma: object) {
 }
 
 function transactionFixture(existingProductIds: string[] = [], invalidSnapshotCount = 0) {
+  const estimatedLegacySales = invalidSnapshotCount > 0
+    ? [{
+        productId: 'sale-product-1',
+        quantity: new Prisma.Decimal(1),
+        unit: 'piece',
+        quantityMultiplier: new Prisma.Decimal(1),
+      }]
+    : [];
   return {
     $executeRaw: jest.fn().mockResolvedValue(1),
     company: { findFirst: jest.fn().mockResolvedValue({ id: 'company-1' }) },
@@ -31,7 +39,7 @@ function transactionFixture(existingProductIds: string[] = [], invalidSnapshotCo
         quantityBase: null,
         invalidCount: invalidSnapshotCount,
       }])
-      .mockResolvedValueOnce([]),
+      .mockResolvedValueOnce(estimatedLegacySales),
     orderProduct: {
       findMany: jest.fn()
         .mockResolvedValueOnce([{ id: 'product-1', unit: 'piece' }])
@@ -46,6 +54,22 @@ function transactionFixture(existingProductIds: string[] = [], invalidSnapshotCo
           inventoryConversions: null,
           conversionTemplate: null,
           recipe: null,
+        }])
+        .mockResolvedValueOnce([{
+          id: 'sale-product-1',
+          nameAr: 'Sale product',
+          nameEn: 'Sale product',
+          productType: 'sale',
+          sections: [],
+          sectionIds: [],
+          unit: 'piece',
+          inventoryConversions: null,
+          conversionTemplate: null,
+          recipe: [{
+            materialProductId: 'product-1',
+            quantity: 1,
+            unit: 'piece',
+          }],
         }]),
     },
     inventoryMovement: {
@@ -135,7 +159,7 @@ describe('OrdersInventoryService', () => {
     })).resolves.toEqual(expect.objectContaining({ id: 'stocktake-1' }));
   });
 
-  it('rejects unsupported consumption snapshots without creating a stocktake', async () => {
+  it('estimates unsupported historical snapshots from the current recipe', async () => {
     const tx = transactionFixture([], 1);
     const prisma = { $transaction: jest.fn((callback) => callback(tx)) };
     const service = inventoryService(prisma);
@@ -143,8 +167,14 @@ describe('OrdersInventoryService', () => {
     await expect(service.createStocktake('company-1', 'user-1', {
       stocktakeDate: saudiDateYmd(),
       lines: [{ productId: 'product-1', physicalQuantity: '1' }],
-    })).rejects.toThrow('Unsupported inventory consumption snapshot version.');
-    expect(tx.inventoryStocktake.create).not.toHaveBeenCalled();
+    })).resolves.toEqual(expect.objectContaining({ id: 'stocktake-1' }));
+    expect(tx.inventoryStocktake.create).toHaveBeenCalledTimes(1);
+    expect(tx.inventoryMovement.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({
+        productId: 'product-1',
+        quantityBase: expect.objectContaining({ d: [2] }),
+      })],
+    });
   });
 
   it.each([
