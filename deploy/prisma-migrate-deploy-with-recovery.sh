@@ -19,7 +19,9 @@ first_migration_from_log() {
   grep -oE '[0-9]{14}_[A-Za-z0-9_-]+' "$LOG" | head -1 || true
 }
 
-for attempt in $(seq 1 100); do
+MAX_MIGRATION_ATTEMPTS="${MAX_MIGRATION_ATTEMPTS:-5}"
+
+for attempt in $(seq 1 "$MAX_MIGRATION_ATTEMPTS"); do
   echo "==> [prisma] migrate deploy attempt $attempt"
   if attempt_migrate; then
     echo "==> [prisma] migrate deploy succeeded"
@@ -44,10 +46,21 @@ for attempt in $(seq 1 100); do
     continue
   fi
 
-  if grep -qE 'P3009|P3018' "$LOG"; then
+  if grep -qE 'P3009' "$LOG"; then
     echo "==> [prisma] failed migration state detected for $failed_migration"
     npx prisma migrate resolve --rolled-back "$failed_migration" || true
     continue
+  fi
+
+  if grep -qE 'P3018' "$LOG"; then
+    if grep -q 'already exists' "$LOG"; then
+      echo "==> [prisma] existing database object detected for $failed_migration"
+      npx prisma migrate resolve --applied "$failed_migration"
+      continue
+    fi
+
+    echo "==> [prisma] unrecoverable migration error for $failed_migration; fix migration SQL and redeploy" >&2
+    break
   fi
 
   break

@@ -41,7 +41,7 @@ BEGIN
   ) THEN
     ALTER TABLE "order_catalog_units"
     ADD CONSTRAINT "order_catalog_units_company_id_fkey"
-    FOREIGN KEY ("company_id") REFERENCES "Company"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 
   IF NOT EXISTS (
@@ -49,7 +49,7 @@ BEGIN
   ) THEN
     ALTER TABLE "order_conversion_templates"
     ADD CONSTRAINT "order_conversion_templates_company_id_fkey"
-    FOREIGN KEY ("company_id") REFERENCES "Company"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 
   IF NOT EXISTS (
