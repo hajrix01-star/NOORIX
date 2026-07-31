@@ -25,3 +25,50 @@ jobs:
           SAFE="${SAFE//$'\r'/'%0D'}"
           SAFE="${SAFE//$'\n'/'%0A'}"
           printf '::notice title=Inventory runtime log::%s\n' "$SAFE"
+
+      - name: Inspect legacy inventory rows with unresolved units
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /var/www/noorix/backend
+          ROWS="$(node <<'NODE'
+          require('dotenv').config();
+          const { PrismaClient } = require('@prisma/client');
+          const prisma = new PrismaClient();
+
+          async function main() {
+            const rows = await prisma.$queryRawUnsafe(`
+              SELECT
+                p."name_ar" AS "productName",
+                p."unit" AS "productUnit",
+                oi."quantity"::text AS "quantity",
+                oi."unit" AS "itemUnit",
+                oi."quantity_multiplier"::text AS "quantityMultiplier",
+                oi."size" AS "size",
+                oi."packaging" AS "packaging",
+                o."order_date"::text AS "orderDate"
+              FROM "order_items" oi
+              INNER JOIN "orders" o ON o."id" = oi."order_id"
+              INNER JOIN "order_products" p ON p."id" = oi."product_id"
+              WHERE o."status" = 'active'
+                AND oi."inventory_base_quantity_snapshot" IS NULL
+                AND oi."unit" = 'piece/ml'
+              ORDER BY o."order_date" ASC
+              LIMIT 20
+            `);
+            process.stdout.write(JSON.stringify(rows));
+          }
+
+          main()
+            .finally(() => prisma.$disconnect())
+            .catch((error) => {
+              console.error(error);
+              process.exitCode = 1;
+            });
+          NODE
+          )"
+          printf '%s\n' "$ROWS"
+          SAFE="${ROWS//'%'/'%25'}"
+          SAFE="${SAFE//$'\r'/'%0D'}"
+          SAFE="${SAFE//$'\n'/'%0A'}"
+          printf '::notice title=Legacy inventory rows::%s\n' "$SAFE"
