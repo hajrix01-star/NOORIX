@@ -181,6 +181,11 @@ function inventoryBaseQuantity(item: {
   return normalizedQuantity(item.quantity, item.quantityMultiplier);
 }
 
+function soldRecipeBatchQuantity(item: InventorySaleInput): Prisma.Decimal {
+  const quantityMultiplier = storedQuantityMultiplier(item.quantityMultiplier);
+  return decimal(item.quantity).times(quantityMultiplier ?? 1);
+}
+
 function parseInventoryConsumptionSnapshot(value: unknown): InventoryConsumptionSnapshot | null {
   if (value == null) return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -476,7 +481,7 @@ export function aggregateRecipeInventoryStock(input: {
       }
       continue;
     }
-    const soldBaseQuantity = inventoryBaseQuantity(sale);
+    const soldBaseQuantity = soldRecipeBatchQuantity(sale);
     for (const recipeItem of parseInventoryRecipe(sale.product.recipe)) {
       const materialProduct = materialById.get(recipeItem.materialProductId);
       if (!materialProduct) continue;

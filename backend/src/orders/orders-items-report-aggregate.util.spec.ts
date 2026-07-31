@@ -496,6 +496,41 @@ describe('aggregateRecipeInventoryStock', () => {
     ]);
   });
 
+  it('aggregates legacy Arabic unit labels against canonical product units', () => {
+    const material = {
+      id: 'legacy-arabic-piece',
+      nameAr: 'مادة قديمة',
+      nameEn: 'Legacy material',
+      productType: 'order',
+      unit: 'piece',
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [material],
+      purchases: [
+        {
+          productId: material.id,
+          quantity: new Prisma.Decimal(45),
+          unit: 'حبة',
+          quantityMultiplier: new Prisma.Decimal(1),
+          inventoryBaseQuantitySnapshot: null,
+          product: material,
+        },
+      ],
+      sales: [],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: material.id,
+        unit: 'piece',
+        purchasedBaseQuantity: '45',
+        consumedBaseQuantity: '0',
+        balanceBaseQuantity: '45',
+      }),
+    ]);
+  });
+
   it('still rejects a legacy purchase when neither conversion nor stored multiplier exists', () => {
     const material = {
       id: 'unrecoverable-legacy-material',

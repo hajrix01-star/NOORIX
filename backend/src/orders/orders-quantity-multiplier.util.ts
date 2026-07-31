@@ -1,5 +1,8 @@
 import { Prisma } from '@prisma/client';
-import { resolveProductUnitMultiplierOrNull } from './orders-unit-conversions.util';
+import {
+  normalizeUnit,
+  resolveProductUnitMultiplierOrNull,
+} from './orders-unit-conversions.util';
 
 export type QuantityMultiplierVariant = {
   size?: string | null;
@@ -46,8 +49,8 @@ export function resolveQuantityMultiplier(
     : [];
   const size = normalized(selection.size);
   const packaging = normalized(selection.packaging);
-  const unit = normalized(selection.unit) || 'piece';
-  const baseUnit = normalized(product?.unit) || unit;
+  const unit = normalizeUnit(selection.unit);
+  const baseUnit = normalizeUnit(product?.unit, unit);
   const unitMultiplier = unit !== baseUnit
     ? resolveProductUnitMultiplierOrNull(product ?? {}, unit, baseUnit)
     : null;
@@ -56,7 +59,7 @@ export function resolveQuantityMultiplier(
   const match = variants.find((variant) =>
     normalized(variant.size) === size
     && normalized(variant.packaging) === packaging
-    && (normalized(variant.unit) || 'piece') === unit,
+    && normalizeUnit(variant.unit) === unit,
   );
   if (match) return positiveQuantityMultiplier(match.quantityMultiplier);
   if (unit === 'half_pack') return new Prisma.Decimal('0.5');

@@ -1,5 +1,7 @@
 import {
+  normalizeUnit,
   resolveProductUnitMultiplier,
+  resolveProductUnitMultiplierOrNull,
   validateProductUnitConversions,
 } from './orders-unit-conversions.util';
 
@@ -35,5 +37,19 @@ describe('orders unit conversions', () => {
 
     expect(resolveProductUnitMultiplier(product, 'carton', 'piece').toNumber()).toBe(640);
     expect(resolveProductUnitMultiplier(product, 'box', 'piece').toNumber()).toBe(64);
+  });
+
+  it('normalizes persisted Arabic labels to the canonical inventory unit', () => {
+    expect(normalizeUnit(' حبة ')).toBe('piece');
+    expect(normalizeUnit('علبة')).toBe('pack');
+    expect(normalizeUnit('كرتون')).toBe('carton');
+    expect(normalizeUnit('كيلو')).toBe('kg');
+    expect(normalizeUnit('جرام')).toBe('g');
+    expect(normalizeUnit('لتر')).toBe('l');
+  });
+
+  it('treats Arabic and canonical labels as the same unit', () => {
+    expect(resolveProductUnitMultiplierOrNull({ unit: 'piece' }, 'حبة', 'piece')?.toNumber()).toBe(1);
+    expect(resolveProductUnitMultiplierOrNull({ unit: 'جرام' }, 'كيلو', 'جرام')?.toNumber()).toBe(1000);
   });
 });

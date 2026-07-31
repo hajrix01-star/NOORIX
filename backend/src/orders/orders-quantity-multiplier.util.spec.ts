@@ -39,4 +39,8 @@ describe('resolveQuantityMultiplier', () => {
     expect(resolveQuantityMultiplier(material, { unit: 'carton' }).toNumber()).toBe(640);
     expect(resolveQuantityMultiplier(material, { unit: 'box' }).toNumber()).toBe(64);
   });
+
+  it('does not require a conversion when selection and base unit are semantic aliases', () => {
+    expect(resolveQuantityMultiplier({ unit: 'piece', variants: [] }, { unit: 'حبة' }).toNumber()).toBe(1);
+  });
 });

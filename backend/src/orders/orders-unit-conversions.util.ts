@@ -2,6 +2,58 @@ import { Prisma } from '@prisma/client';
 
 const ONE = new Prisma.Decimal(1);
 
+const UNIT_ALIASES = new Map<string, string>([
+  ['piece', 'piece'],
+  ['pieces', 'piece'],
+  ['pc', 'piece'],
+  ['pcs', 'piece'],
+  ['each', 'piece'],
+  ['حبة', 'piece'],
+  ['قطعة', 'piece'],
+  ['pack', 'pack'],
+  ['علبة', 'pack'],
+  ['عبوة', 'pack'],
+  ['half_pack', 'half_pack'],
+  ['half pack', 'half_pack'],
+  ['نصف علبة', 'half_pack'],
+  ['box', 'box'],
+  ['صندوق', 'box'],
+  ['carton', 'carton'],
+  ['كرتون', 'carton'],
+  ['dozen', 'dozen'],
+  ['درزن', 'dozen'],
+  ['bottle', 'bottle'],
+  ['قارورة', 'bottle'],
+  ['cup', 'cup'],
+  ['كوب', 'cup'],
+  ['kg', 'kg'],
+  ['kilogram', 'kg'],
+  ['kilograms', 'kg'],
+  ['كيلو', 'kg'],
+  ['كيلوجرام', 'kg'],
+  ['كجم', 'kg'],
+  ['كج', 'kg'],
+  ['كغ', 'kg'],
+  ['g', 'g'],
+  ['gm', 'g'],
+  ['gram', 'g'],
+  ['grams', 'g'],
+  ['جرام', 'g'],
+  ['غرام', 'g'],
+  ['جم', 'g'],
+  ['l', 'l'],
+  ['lt', 'l'],
+  ['liter', 'l'],
+  ['litre', 'l'],
+  ['لتر', 'l'],
+  ['ml', 'ml'],
+  ['milliliter', 'ml'],
+  ['millilitre', 'ml'],
+  ['مل', 'ml'],
+  ['مليلتر', 'ml'],
+  ['ملليلتر', 'ml'],
+]);
+
 export type ProductUnitConversionInput = {
   fromUnit?: unknown;
   toUnit?: unknown;
@@ -31,9 +83,14 @@ function decimal(value: unknown): Prisma.Decimal | null {
   }
 }
 
+function canonicalUnit(value: unknown): string {
+  const unit = String(value ?? '').trim().replace(/\s+/g, ' ');
+  if (!unit) return '';
+  return UNIT_ALIASES.get(unit.toLowerCase()) ?? unit;
+}
+
 export function normalizeUnit(value: unknown, fallback = 'piece') {
-  const unit = String(value ?? '').trim();
-  return unit || fallback;
+  return canonicalUnit(value) || canonicalUnit(fallback) || 'piece';
 }
 
 function unitPairMultiplier(fromUnit: string, toUnit: string): Prisma.Decimal | null {
