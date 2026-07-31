@@ -13,7 +13,7 @@ function inventoryService(prisma: object) {
   return new OrdersInventoryService(client);
 }
 
-function transactionFixture(existingProductIds: string[] = []) {
+function transactionFixture(existingProductIds: string[] = [], invalidSnapshotCount = 0) {
   return {
     $executeRaw: jest.fn().mockResolvedValue(1),
     company: { findFirst: jest.fn().mockResolvedValue({ id: 'company-1' }) },
@@ -26,7 +26,12 @@ function transactionFixture(existingProductIds: string[] = []) {
     $queryRaw: jest.fn()
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ count: 0 }]),
+      .mockResolvedValueOnce([{
+        productId: null,
+        quantityBase: null,
+        invalidCount: invalidSnapshotCount,
+      }])
+      .mockResolvedValueOnce([]),
     orderProduct: {
       findMany: jest.fn()
         .mockResolvedValueOnce([{ id: 'product-1', unit: 'piece' }])
@@ -43,8 +48,6 @@ function transactionFixture(existingProductIds: string[] = []) {
           recipe: null,
         }]),
     },
-    orderItem: { findMany: jest.fn().mockResolvedValue([]) },
-    staffOrderItem: { findMany: jest.fn().mockResolvedValue([]) },
     inventoryMovement: {
       groupBy: jest.fn().mockResolvedValue([]),
       createMany: jest.fn().mockResolvedValue({ count: 1 }),
@@ -86,15 +89,7 @@ describe('OrdersInventoryService', () => {
     expect(prisma.$transaction.mock.calls[0][1]).toEqual(expect.objectContaining({
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     }));
-    const saleWhere = tx.staffOrderItem.findMany.mock.calls[0][0].where.staffOrder;
-    expect(saleWhere).not.toHaveProperty('saleDate');
-    expect(tx.orderItem.findMany.mock.calls[0][0].where).toEqual(expect.objectContaining({
-      inventoryBaseQuantitySnapshot: null,
-    }));
-    expect(tx.staffOrderItem.findMany.mock.calls[0][0].where).toEqual(expect.objectContaining({
-      inventoryConsumptionSnapshot: { equals: Prisma.DbNull },
-    }));
-    expect(tx.$queryRaw).toHaveBeenCalledTimes(3);
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(4);
     expect(tx.inventoryStocktake.create).toHaveBeenCalledTimes(1);
     expect(tx.inventoryMovement.createMany).toHaveBeenCalledTimes(1);
   });
@@ -119,6 +114,18 @@ describe('OrdersInventoryService', () => {
       stocktakeDate: saudiDateYmd(),
       lines: [{ productId: 'product-1', physicalQuantity: '1' }],
     })).resolves.toEqual(expect.objectContaining({ id: 'stocktake-1' }));
+  });
+
+  it('rejects unsupported consumption snapshots without creating a stocktake', async () => {
+    const tx = transactionFixture([], 1);
+    const prisma = { $transaction: jest.fn((callback) => callback(tx)) };
+    const service = inventoryService(prisma);
+
+    await expect(service.createStocktake('company-1', 'user-1', {
+      stocktakeDate: saudiDateYmd(),
+      lines: [{ productId: 'product-1', physicalQuantity: '1' }],
+    })).rejects.toThrow('Unsupported inventory consumption snapshot version.');
+    expect(tx.inventoryStocktake.create).not.toHaveBeenCalled();
   });
 
   it.each([

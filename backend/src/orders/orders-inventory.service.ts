@@ -19,7 +19,7 @@ import {
 
 type InventoryClient = Pick<
   TenantPrismaService,
-  'orderProduct' | 'orderItem' | 'staffOrderItem' | 'inventoryMovement' | '$queryRaw'
+  'orderProduct' | 'inventoryMovement' | '$queryRaw'
 >;
 
 type AggregatedInventoryQuantity = {
@@ -27,8 +27,17 @@ type AggregatedInventoryQuantity = {
   quantityBase: Prisma.Decimal | null;
 };
 
-type InvalidInventorySnapshotCount = {
-  count: number;
+type AggregatedLegacyInventoryQuantity = {
+  productId: string;
+  quantity: Prisma.Decimal;
+  unit: string | null;
+  quantityMultiplier: Prisma.Decimal | null;
+};
+
+type AggregatedInventoryConsumption = {
+  productId: string | null;
+  quantityBase: Prisma.Decimal | null;
+  invalidCount: number;
 };
 
 @Injectable()
@@ -226,7 +235,6 @@ export class OrdersInventoryService {
       aggregatedPurchases,
       legacyPurchases,
       aggregatedConsumption,
-      invalidConsumptionSnapshots,
       legacySales,
       adjustments,
     ] = await Promise.all([
@@ -246,74 +254,67 @@ export class OrdersInventoryService {
           ${purchaseDateFilter}
         GROUP BY oi."product_id"
       `),
-      client.orderItem.findMany({
-        where: {
-          inventoryBaseQuantitySnapshot: null,
-          order: {
-            companyId,
-            status: 'active',
-            ...(throughDate ? { orderDate: { lte: throughDate } } : {}),
-          },
-        },
-        select: {
-          productId: true,
-          quantity: true,
-          unit: true,
-          quantityMultiplier: true,
-          inventoryBaseQuantitySnapshot: true,
-        },
-      }),
-      client.$queryRaw<AggregatedInventoryQuantity[]>(Prisma.sql`
+      client.$queryRaw<AggregatedLegacyInventoryQuantity[]>(Prisma.sql`
         SELECT
-          component->>'materialProductId' AS "productId",
-          SUM((component->>'quantityBase')::numeric) AS "quantityBase"
+          oi."product_id" AS "productId",
+          SUM(oi."quantity") AS "quantity",
+          oi."unit" AS "unit",
+          oi."quantity_multiplier" AS "quantityMultiplier"
+        FROM "order_items" oi
+        INNER JOIN "orders" o ON o."id" = oi."order_id"
+        WHERE o."company_id" = ${companyId}
+          AND o."status" = 'active'
+          AND oi."inventory_base_quantity_snapshot" IS NULL
+          ${purchaseDateFilter}
+        GROUP BY oi."product_id", oi."unit", oi."quantity_multiplier"
+      `),
+      client.$queryRaw<AggregatedInventoryConsumption[]>(Prisma.sql`
+        WITH scoped_snapshots AS MATERIALIZED (
+          SELECT soi."inventory_consumption_snapshot" AS snapshot
+          FROM "staff_order_items" soi
+          INNER JOIN "staff_orders" so ON so."id" = soi."staff_order_id"
+          WHERE so."company_id" = ${companyId}
+            AND so."order_type" = 'sale'
+            AND so."status" = 'sent'
+            AND soi."inventory_consumption_snapshot" IS NOT NULL
+            ${saleDateFilter}
+        ), valid_consumption AS (
+          SELECT
+            component->>'materialProductId' AS "productId",
+            SUM((component->>'quantityBase')::numeric) AS "quantityBase"
+          FROM scoped_snapshots
+          CROSS JOIN LATERAL jsonb_array_elements(snapshot->'components') AS component
+          WHERE snapshot->>'version' = '1'
+          GROUP BY component->>'materialProductId'
+        )
+        SELECT
+          "productId",
+          "quantityBase",
+          0::int AS "invalidCount"
+        FROM valid_consumption
+        UNION ALL
+        SELECT
+          NULL AS "productId",
+          NULL AS "quantityBase",
+          COUNT(*)::int AS "invalidCount"
+        FROM scoped_snapshots
+        WHERE COALESCE(snapshot->>'version', '') <> '1'
+      `),
+      client.$queryRaw<AggregatedLegacyInventoryQuantity[]>(Prisma.sql`
+        SELECT
+          soi."product_id" AS "productId",
+          SUM(soi."quantity") AS "quantity",
+          soi."unit" AS "unit",
+          soi."quantity_multiplier" AS "quantityMultiplier"
         FROM "staff_order_items" soi
         INNER JOIN "staff_orders" so ON so."id" = soi."staff_order_id"
-        CROSS JOIN LATERAL jsonb_array_elements(
-          soi."inventory_consumption_snapshot"->'components'
-        ) AS component
         WHERE so."company_id" = ${companyId}
           AND so."order_type" = 'sale'
           AND so."status" = 'sent'
-          AND soi."inventory_consumption_snapshot" IS NOT NULL
-          AND soi."inventory_consumption_snapshot"->>'version' = '1'
+          AND soi."inventory_consumption_snapshot" IS NULL
           ${saleDateFilter}
-        GROUP BY component->>'materialProductId'
+        GROUP BY soi."product_id", soi."unit", soi."quantity_multiplier"
       `),
-      client.$queryRaw<InvalidInventorySnapshotCount[]>(Prisma.sql`
-        SELECT COUNT(*)::int AS "count"
-        FROM "staff_order_items" soi
-        INNER JOIN "staff_orders" so ON so."id" = soi."staff_order_id"
-        WHERE so."company_id" = ${companyId}
-          AND so."order_type" = 'sale'
-          AND so."status" = 'sent'
-          AND soi."inventory_consumption_snapshot" IS NOT NULL
-          AND COALESCE(soi."inventory_consumption_snapshot"->>'version', '') <> '1'
-          ${saleDateFilter}
-      `),
-      client.staffOrderItem.findMany({
-        where: {
-          inventoryConsumptionSnapshot: { equals: Prisma.DbNull },
-          staffOrder: {
-            companyId,
-            orderType: 'sale',
-            status: 'sent',
-            ...(throughDate ? {
-              OR: [
-                { saleDate: { lte: throughDate } },
-                { saleDate: null, createdAt: { lte: throughDate } },
-              ],
-            } : {}),
-          },
-        },
-        select: {
-          productId: true,
-          quantity: true,
-          unit: true,
-          quantityMultiplier: true,
-          inventoryConsumptionSnapshot: true,
-        },
-      }),
       client.inventoryMovement.groupBy({
         by: ['productId'],
         where: {
@@ -324,7 +325,7 @@ export class OrdersInventoryService {
       }),
     ]);
 
-    if ((invalidConsumptionSnapshots[0]?.count ?? 0) > 0) {
+    if (aggregatedConsumption.some((row) => row.invalidCount > 0)) {
       throw new Error('Unsupported inventory consumption snapshot version.');
     }
 
@@ -354,10 +355,14 @@ export class OrdersInventoryService {
         productId: purchase.productId,
         quantityBase: purchase.quantityBase ?? 0,
       })),
-      aggregatedConsumption: aggregatedConsumption.map((consumption) => ({
-        productId: consumption.productId,
-        quantityBase: consumption.quantityBase ?? 0,
-      })),
+      aggregatedConsumption: aggregatedConsumption.flatMap((consumption) => (
+        consumption.productId
+          ? [{
+              productId: consumption.productId,
+              quantityBase: consumption.quantityBase ?? 0,
+            }]
+          : []
+      )),
       adjustments: adjustments.map((adjustment) => ({
         productId: adjustment.productId,
         quantityBase: adjustment._sum.quantityBase ?? 0,
