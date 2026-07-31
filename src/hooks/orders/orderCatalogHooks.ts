@@ -1,5 +1,6 @@
 import {
   applyOrderProductTranslations,
+  applyOrderCategoryTranslations,
   createOrderCatalogUnit,
   createOrderCategoriesBatch,
   createOrderCategory,
@@ -17,6 +18,7 @@ import {
   getOrderProducts,
   getProductPurchaseHistory,
   previewOrderProductTranslations,
+  previewOrderCategoryTranslations,
   updateOrderCatalogUnit,
   updateOrderCategory,
   updateOrderConversionTemplate,
@@ -25,6 +27,7 @@ import {
 import { orderKeys } from '../../services/queryKeys';
 import type {
   ApplyOrderProductTranslationItem,
+  ApplyOrderCategoryTranslationItem,
   OrderCategory,
   OrderCategoryPayload,
   OrderCatalogUnit,
@@ -157,6 +160,22 @@ export function useApplyOrderProductTranslationsMutation(companyId: string) {
     mutationFn: (translations: ApplyOrderProductTranslationItem[]) =>
       applyOrderProductTranslations(companyId, translations),
     invalidateQueries: [orderKeys.products(companyId)],
+    showErrorToast: true,
+  });
+}
+
+export function usePreviewOrderCategoryTranslationsMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: () => previewOrderCategoryTranslations(companyId),
+    showErrorToast: true,
+  });
+}
+
+export function useApplyOrderCategoryTranslationsMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: (translations: ApplyOrderCategoryTranslationItem[]) =>
+      applyOrderCategoryTranslations(companyId, translations),
+    invalidateQueries: [orderKeys.categories(companyId)],
     showErrorToast: true,
   });
 }

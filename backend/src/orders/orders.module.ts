@@ -5,6 +5,7 @@ import { OrdersStaffService } from './orders-staff.service';
 import { OrdersCatalogService } from './orders-catalog.service';
 import { OrdersStaffReportService } from './orders-staff-report.service';
 import { OrdersInventoryService } from './orders-inventory.service';
+import { OrdersCatalogTranslationService } from './orders-catalog-translation.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { ChatModule } from '../chat/chat.module';
@@ -16,6 +17,7 @@ import { ChatModule } from '../chat/chat.module';
     OrdersService,
     OrdersStaffService,
     OrdersCatalogService,
+    OrdersCatalogTranslationService,
     OrdersStaffReportService,
     OrdersInventoryService,
   ],
@@ -23,6 +25,7 @@ import { ChatModule } from '../chat/chat.module';
     OrdersService,
     OrdersStaffService,
     OrdersCatalogService,
+    OrdersCatalogTranslationService,
     OrdersStaffReportService,
     OrdersInventoryService,
   ],

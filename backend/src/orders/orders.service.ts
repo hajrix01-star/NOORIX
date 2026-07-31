@@ -11,6 +11,7 @@ import {
   aggregateOrderItemsForRangeReport,
 } from './orders-items-report-aggregate.util';
 import { OrdersCatalogService } from './orders-catalog.service';
+import { OrdersCatalogTranslationService } from './orders-catalog-translation.service';
 import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
 
 type OrderItemInput = { productId: string; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
@@ -22,6 +23,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly catalog: OrdersCatalogService,
+    private readonly catalogTranslations: OrdersCatalogTranslationService,
   ) {}
 
   private async withQuantityMultipliers<T extends {
@@ -395,14 +397,25 @@ export class OrdersService {
   }
 
   async previewMissingProductTranslations(companyId: string, productType?: string, limit?: number) {
-    return this.catalog.previewMissingProductTranslations(companyId, productType, limit);
+    return this.catalogTranslations.previewMissingProductTranslations(companyId, productType, limit);
   }
 
   async applyProductTranslations(
     companyId: string,
     translations: Array<{ productId: string; nameEn: string }>,
   ) {
-    return this.catalog.applyProductTranslations(companyId, translations);
+    return this.catalogTranslations.applyProductTranslations(companyId, translations);
+  }
+
+  async previewMissingCategoryTranslations(companyId: string, limit?: number) {
+    return this.catalogTranslations.previewMissingCategoryTranslations(companyId, limit);
+  }
+
+  async applyCategoryTranslations(
+    companyId: string,
+    translations: Array<{ categoryId: string; nameEn: string }>,
+  ) {
+    return this.catalogTranslations.applyCategoryTranslations(companyId, translations);
   }
 
   async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>; inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; conversionTemplateId?: string | null; recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }> }>) {

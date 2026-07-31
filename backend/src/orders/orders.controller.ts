@@ -16,7 +16,9 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductsBatchDto } from './dto/create-products-batch.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import {
+  ApplyCategoryTranslationsDto,
   ApplyProductTranslationsDto,
+  PreviewCategoryTranslationsDto,
   PreviewProductTranslationsDto,
 } from './dto/product-translation.dto';
 import { CreateStaffOrderDto } from './orders-staff.types';
@@ -367,6 +369,24 @@ export class OrdersController {
   @RequirePermission('ORDERS_WRITE')
   createCategoriesBatch(@Body() body: { companyId: string; categories: { nameAr: string; nameEn?: string; sortOrder?: number }[] }) {
     return this.ordersService.createCategoriesBatch(body.companyId, body.categories);
+  }
+
+  @Post('categories/translation-preview')
+  @RequirePermission('ORDERS_WRITE')
+  previewCategoryTranslations(
+    @CompanyId() companyId: string,
+    @Body() body: PreviewCategoryTranslationsDto,
+  ) {
+    return this.ordersService.previewMissingCategoryTranslations(requireCompanyId(companyId), body.limit);
+  }
+
+  @Post('categories/translation-apply')
+  @RequirePermission('ORDERS_WRITE')
+  applyCategoryTranslations(
+    @CompanyId() companyId: string,
+    @Body() body: ApplyCategoryTranslationsDto,
+  ) {
+    return this.ordersService.applyCategoryTranslations(requireCompanyId(companyId), body.translations);
   }
 
   @Patch('products/:id')

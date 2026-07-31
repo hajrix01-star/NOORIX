@@ -1,8 +1,7 @@
-import { BadRequestException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { GeminiService } from '../chat/gemini.service';
 import {
   enrichProductWithSectionIds,
   normalizeProductSections,
@@ -50,14 +49,9 @@ type ConversionTemplateInput = {
   sortOrder?: number;
 };
 
-const CATALOG_TRANSLATION_BATCH_SIZE = 15;
-
 @Injectable()
 export class OrdersCatalogService {
-  constructor(
-    private readonly prisma: TenantPrismaService,
-    private readonly gemini: GeminiService,
-  ) {}
+  constructor(private readonly prisma: TenantPrismaService) {}
 
   async getProducts(companyId: string, section?: string, productType?: string) {
     const all = await this.prisma.orderProduct.findMany({
@@ -68,87 +62,6 @@ export class OrdersCatalogService {
     const enriched = await this.enrichProductsList(companyId, all);
     if (!section) return enriched;
     return enriched.filter((product) => parseStringArrayJson(product.sections).includes(section));
-  }
-
-  async previewMissingProductTranslations(companyId: string, productType?: string, limit = 30) {
-    const products = await this.prisma.orderProduct.findMany({
-      where: { companyId, isActive: true, ...(productType ? { productType } : {}) },
-      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
-      include: { category: true },
-    });
-    const missing = products.filter((product) => !product.nameEn?.trim());
-    const requestedLimit = Math.min(Math.max(limit, 1), 50);
-    const selected = missing.slice(0, Math.min(requestedLimit, CATALOG_TRANSLATION_BATCH_SIZE));
-    if (!selected.length) return { suggestions: [], totalMissing: 0, truncated: false };
-
-    const suggestions = await this.gemini.translateRestaurantCatalogItems(selected.map((product) => ({
-      id: product.id,
-      nameAr: product.nameAr,
-      categoryAr: product.category?.nameAr,
-      categoryEn: product.category?.nameEn,
-      unit: product.unit,
-      productType: product.productType,
-    })));
-    if (!suggestions) {
-      throw new ServiceUnavailableException('Catalog translation service is currently unavailable.');
-    }
-    if (suggestions.length === 0) {
-      throw new ServiceUnavailableException('Catalog translation service returned no usable suggestions.');
-    }
-
-    const byId = new Map(selected.map((product) => [product.id, product]));
-    return {
-      suggestions: suggestions.map((suggestion) => {
-        const product = byId.get(suggestion.id);
-        return {
-          productId: suggestion.id,
-          nameAr: product?.nameAr ?? '',
-          categoryAr: product?.category?.nameAr ?? null,
-          unit: product?.unit ?? null,
-          productType: product?.productType ?? null,
-          suggestedNameEn: suggestion.suggestedNameEn,
-          classification: suggestion.classification,
-          confidence: suggestion.confidence,
-          needsReview: suggestion.needsReview,
-        };
-      }),
-      totalMissing: missing.length,
-      truncated: missing.length > selected.length,
-    };
-  }
-
-  async applyProductTranslations(
-    companyId: string,
-    translations: Array<{ productId: string; nameEn: string }>,
-  ) {
-    const unique = new Map<string, string>();
-    for (const translation of translations) {
-      const productId = translation.productId.trim();
-      const nameEn = translation.nameEn.replace(/\s+/g, ' ').trim();
-      if (!productId || !nameEn || nameEn.length > 80) continue;
-      unique.set(productId, nameEn);
-    }
-    if (!unique.size) return { updatedCount: 0, skippedCount: translations.length };
-
-    const updatedCount = await this.prisma.withTenant(async (tx) => {
-      const updates = await Promise.all([...unique].map(([productId, nameEn]) => (
-        tx.orderProduct.updateMany({
-          where: {
-            id: productId,
-            companyId,
-            isActive: true,
-            OR: [{ nameEn: null }, { nameEn: '' }],
-          },
-          data: { nameEn },
-        })
-      )));
-      return updates.reduce((total, update) => total + update.count, 0);
-    });
-
-    return {
-      updatedCount,
-      skippedCount: translations.length - updatedCount,
-    };
   }
 
   async createProductsBatch(companyId: string, products: Array<{
@@ -303,10 +216,17 @@ export class OrdersCatalogService {
   }
 
   async getCategories(companyId: string) {
-    return this.prisma.orderCategory.findMany({
+    const categories = await this.prisma.orderCategory.findMany({
       where: { companyId, isActive: true },
       orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+      include: {
+        _count: { select: { products: { where: { isActive: true } } } },
+      },
     });
+    return categories.map(({ _count, ...category }) => ({
+      ...category,
+      productCount: _count.products,
+    }));
   }
 
   async createCategoriesBatch(companyId: string, categories: Array<{ nameAr: string; nameEn?: string; sortOrder?: number }>) {

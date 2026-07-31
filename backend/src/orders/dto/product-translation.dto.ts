@@ -32,3 +32,30 @@ export class ApplyProductTranslationsDto {
   @Type(() => ApplyProductTranslationItemDto)
   translations: ApplyProductTranslationItemDto[];
 }
+
+export class PreviewCategoryTranslationsDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
+}
+
+export class ApplyCategoryTranslationItemDto {
+  @IsString()
+  @MaxLength(64)
+  categoryId: string;
+
+  @IsString()
+  @MaxLength(80)
+  nameEn: string;
+}
+
+export class ApplyCategoryTranslationsDto {
+  @IsArray()
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => ApplyCategoryTranslationItemDto)
+  translations: ApplyCategoryTranslationItemDto[];
+}

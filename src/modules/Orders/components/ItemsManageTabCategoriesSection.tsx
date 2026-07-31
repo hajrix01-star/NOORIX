@@ -1,11 +1,14 @@
-import React, { type ChangeEvent, useState } from 'react';
+import React, { type ChangeEvent, useMemo, useState } from 'react';
 import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
 import { OrdersImportModal } from './OrdersImportModal';
-import { AdaptiveSheet, Button, Checkbox, DialogActions, Input } from '../../../ui';
-import type { OrderCategory } from '../../../types/api';
+import { AdaptiveSheet, Button, Checkbox, DialogActions, Input, SimpleTable } from '../../../ui';
+import type { SimpleTableColumn } from '../../../ui';
+import type { OrderCategory, OrderProduct } from '../../../types/api';
 import type { ItemsManageTabController } from '../hooks/useItemsManageTab';
+import { CategoryTranslationModal } from './catalog/CategoryTranslationModal';
 
 type CategoryFormMode = 'create' | 'edit' | null;
+type CategoryTableRow = OrderCategory & { resolvedProductCount: number };
 
 export function ItemsManageTabCategoriesSection({ ctrl }: { ctrl: ItemsManageTabController }) {
   const {
@@ -36,13 +39,124 @@ export function ItemsManageTabCategoriesSection({ ctrl }: { ctrl: ItemsManageTab
   } = ctrl;
 
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showTranslationModal, setShowTranslationModal] = useState(false);
   const [formMode, setFormMode] = useState<CategoryFormMode>(null);
+  const [viewingCategory, setViewingCategory] = useState<OrderCategory | null>(null);
 
   const allFilteredIds = filteredCategories.map((category) => category.id);
   const allSelected = allFilteredIds.length > 0 && selectedCategoryIds.size === allFilteredIds.length;
   const someSelected = selectedCategoryIds.size > 0;
   const form = formMode === 'edit' ? editingCategory : newCategory;
   const saving = formMode === 'edit' ? updateCategory.isPending : createCategory.isPending;
+  const productsByCategory = useMemo(() => {
+    const grouped = new Map<string, OrderProduct[]>();
+    for (const product of products) {
+      if (!product.isActive || !product.categoryId) continue;
+      const rows = grouped.get(product.categoryId) ?? [];
+      rows.push(product);
+      grouped.set(product.categoryId, rows);
+    }
+    return grouped;
+  }, [products]);
+  const categoryRows = useMemo<CategoryTableRow[]>(
+    () => filteredCategories.map((category) => ({
+      ...category,
+      resolvedProductCount: category.productCount ?? productsByCategory.get(category.id)?.length ?? 0,
+    })),
+    [filteredCategories, productsByCategory],
+  );
+  const viewingProducts = useMemo(
+    () => (viewingCategory ? productsByCategory.get(viewingCategory.id) ?? [] : []),
+    [productsByCategory, viewingCategory],
+  );
+
+  const categoryColumns = useMemo<SimpleTableColumn<CategoryTableRow>[]>(() => [
+    {
+      key: 'selected',
+      label: (
+        <Checkbox
+          checked={allSelected}
+          onChange={() => toggleAllCategories(allFilteredIds)}
+          aria-label={t('ordersSelectAll')}
+        />
+      ),
+      width: 54,
+      align: 'center',
+      render: (_value, row) => (
+        <span onClick={(event) => event.stopPropagation()}>
+          <Checkbox
+            checked={selectedCategoryIds.has(row.id)}
+            onChange={() => toggleCategorySelection(row.id)}
+            aria-label={`${t('ordersCategories')}: ${row.nameAr}`}
+          />
+        </span>
+      ),
+    },
+    {
+      key: 'nameAr',
+      label: t('categoryNameAr'),
+      minWidth: 180,
+      render: (_value, row) => <strong>{row.nameAr}</strong>,
+    },
+    {
+      key: 'nameEn',
+      label: t('categoryNameEn'),
+      minWidth: 180,
+      render: (_value, row) => <span className="text-noorix-muted">{row.nameEn || '-'}</span>,
+    },
+    {
+      key: 'resolvedProductCount',
+      label: t('ordersCategoryItemCount'),
+      width: 130,
+      numeric: true,
+      render: (_value, row) => <strong>{row.resolvedProductCount}</strong>,
+    },
+    {
+      key: 'actions',
+      label: t('actions'),
+      width: 110,
+      align: 'center',
+      render: (_value, row) => (
+        <span onClick={(event) => event.stopPropagation()}>
+          <Button type="button" size="sm" onClick={() => openEditForm(row)}>{t('edit')}</Button>
+        </span>
+      ),
+    },
+  ], [
+    allFilteredIds,
+    allSelected,
+    selectedCategoryIds,
+    t,
+    toggleAllCategories,
+    toggleCategorySelection,
+  ]);
+
+  const categoryProductColumns = useMemo<SimpleTableColumn<OrderProduct>[]>(() => [
+    {
+      key: 'nameAr',
+      label: t('productNameAr'),
+      minWidth: 190,
+      render: (_value, row) => <strong>{row.nameAr}</strong>,
+    },
+    {
+      key: 'nameEn',
+      label: t('productNameEn'),
+      minWidth: 180,
+      render: (_value, row) => <span className="text-noorix-muted">{row.nameEn || '-'}</span>,
+    },
+    {
+      key: 'productType',
+      label: t('type'),
+      width: 150,
+      render: (_value, row) => (row.productType === 'sale' ? t('salesProducts') : t('ordersProducts')),
+    },
+    {
+      key: 'unit',
+      label: t('unit'),
+      width: 120,
+      render: (_value, row) => row.unit || '-',
+    },
+  ], [t]);
 
   function openCreateForm() {
     setEditingCategory(null);
@@ -91,6 +205,27 @@ export function ItemsManageTabCategoriesSection({ ctrl }: { ctrl: ItemsManageTab
         />
       )}
 
+      <CategoryTranslationModal
+        open={showTranslationModal}
+        companyId={companyId}
+        onClose={() => setShowTranslationModal(false)}
+      />
+
+      <AdaptiveSheet
+        open={viewingCategory !== null}
+        onClose={() => setViewingCategory(null)}
+        title={viewingCategory ? `${t('ordersCategoryDetails')}: ${viewingCategory.nameAr}` : t('ordersCategoryDetails')}
+        size="lg"
+        side="start"
+      >
+        <SimpleTable
+          columns={categoryProductColumns}
+          data={viewingProducts}
+          tableMinWidth={640}
+          emptyMessage={t('ordersNoCategoryItems')}
+        />
+      </AdaptiveSheet>
+
       <AdaptiveSheet
         open={formMode !== null}
         onClose={closeForm}
@@ -129,6 +264,9 @@ export function ItemsManageTabCategoriesSection({ ctrl }: { ctrl: ItemsManageTab
             + {t('ordersAddCategory')}
           </Button>
           <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" size="sm" onClick={() => setShowTranslationModal(true)}>
+              {t('ordersTranslateCategories')}
+            </Button>
             <OrdersImportHelpTrigger t={t} variant="categories" />
             <Button type="button" size="sm" onClick={handleDownloadCategoriesImportTemplate}>
               {t('ordersDownloadImportTemplate')}
@@ -168,46 +306,14 @@ export function ItemsManageTabCategoriesSection({ ctrl }: { ctrl: ItemsManageTab
               className="max-w-[320px]"
             />
           </div>
-          <table className="w-full border-collapse text-[13px]">
-            <thead>
-              <tr className="border-b-2 border-noorix-border">
-                <th className="w-10 px-3 py-[10px] text-center">
-                  <Checkbox
-                    checked={allSelected}
-                    onChange={() => toggleAllCategories(allFilteredIds)}
-                    aria-label={t('ordersSelectAll')}
-                    className="cursor-pointer"
-                  />
-                </th>
-                <th className="px-3 py-[10px] text-right font-bold">{t('categoryNameAr')}</th>
-                <th className="px-3 py-[10px] text-right font-bold">{t('categoryNameEn')}</th>
-                <th className="px-3 py-[10px] text-center font-bold">{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCategories.map((category) => (
-                <tr
-                  key={category.id}
-                  className={`border-b border-noorix-border${selectedCategoryIds.has(category.id) ? ' bg-noorix-bg-muted' : ''}`}
-                >
-                  <td className="px-3 py-[10px] text-center">
-                    <Checkbox
-                      checked={selectedCategoryIds.has(category.id)}
-                      onChange={() => toggleCategorySelection(category.id)}
-                      className="cursor-pointer"
-                    />
-                  </td>
-                  <td className="px-3 py-[10px]">{category.nameAr || '-'}</td>
-                  <td className="nx-cell-muted px-3 py-[10px]">{category.nameEn || '-'}</td>
-                  <td className="px-3 py-[10px] text-center">
-                    <Button type="button" size="sm" onClick={() => openEditForm(category)}>{t('edit')}</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {categories.length === 0 && <div className="p-[30px] text-center text-noorix-muted">{t('ordersNoCategoriesYet')}</div>}
-          {categories.length > 0 && filteredCategories.length === 0 && <div className="p-[30px] text-center text-noorix-muted">{t('ordersNoSearchResults')}</div>}
+          <SimpleTable
+            columns={categoryColumns}
+            data={categoryRows}
+            tableMinWidth={720}
+            emptyMessage={categories.length === 0 ? t('ordersNoCategoriesYet') : t('ordersNoSearchResults')}
+            getRowClassName={(row) => selectedCategoryIds.has(row.id) ? 'bg-noorix-bg-muted cursor-pointer' : 'cursor-pointer'}
+            onRowClick={(row) => setViewingCategory(row)}
+          />
         </div>
       </div>
     </>

@@ -52,11 +52,6 @@
       "decision": "leave",
       "reason": "staff basket table includes quantity editing controls."
     },
-    "src/modules/Orders/components/ItemsManageTabCategoriesSection.tsx": {
-      "category": "editable-grid",
-      "decision": "leave",
-      "reason": "category management table includes selection checkboxes and inline editing."
-    },
     "src/modules/Orders/components/OrderFormModalPieces.tsx": {
       "category": "editable-grid",
       "decision": "leave",

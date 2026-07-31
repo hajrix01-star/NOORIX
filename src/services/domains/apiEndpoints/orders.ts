@@ -2,6 +2,8 @@ import type {
   ApiParsedResult,
   ApplyOrderProductTranslationItem,
   ApplyOrderProductTranslationsResult,
+  ApplyOrderCategoryTranslationItem,
+  ApplyOrderCategoryTranslationsResult,
   CreateInventoryStocktakePayload,
   CreateOrderPayload,
   OrderCatalogBatchCreateResult,
@@ -9,6 +11,7 @@ import type {
   OrderCatalogUnitPayload,
   OrderCategory,
   OrderCategoryPayload,
+  OrderCategoryTranslationPreview,
   OrderConversionTemplate,
   OrderConversionTemplatePayload,
   OrderItemsReportRow,
@@ -177,6 +180,24 @@ export async function applyOrderProductTranslations(
 ): Promise<ApiParsedResult<ApplyOrderProductTranslationsResult>> {
   return apiPost<ApplyOrderProductTranslationsResult>(
     `/api/v1/orders/products/translation-apply?companyId=${encodeURIComponent(companyId)}`,
+    { translations },
+  );
+}
+export async function previewOrderCategoryTranslations(
+  companyId: string,
+): Promise<ApiParsedResult<OrderCategoryTranslationPreview>> {
+  return apiPost<OrderCategoryTranslationPreview>(
+    `/api/v1/orders/categories/translation-preview?companyId=${encodeURIComponent(companyId)}`,
+    { limit: 50 },
+    { timeout: 90_000 },
+  );
+}
+export async function applyOrderCategoryTranslations(
+  companyId: string,
+  translations: ApplyOrderCategoryTranslationItem[],
+): Promise<ApiParsedResult<ApplyOrderCategoryTranslationsResult>> {
+  return apiPost<ApplyOrderCategoryTranslationsResult>(
+    `/api/v1/orders/categories/translation-apply?companyId=${encodeURIComponent(companyId)}`,
     { translations },
   );
 }

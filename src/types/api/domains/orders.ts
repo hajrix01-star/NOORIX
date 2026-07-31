@@ -101,6 +101,7 @@ export type OrderCategory = {
   nameEn?: string | null;
   sortOrder?: number;
   isActive?: boolean;
+  productCount?: number;
 };
 
 export type OrderSection = {
@@ -362,6 +363,30 @@ export type ApplyOrderProductTranslationItem = {
 };
 
 export type ApplyOrderProductTranslationsResult = {
+  updatedCount: number;
+  skippedCount: number;
+};
+
+export type OrderCategoryTranslationSuggestion = {
+  categoryId: string;
+  nameAr: string;
+  suggestedNameEn: string;
+  confidence: number;
+  needsReview: boolean;
+};
+
+export type OrderCategoryTranslationPreview = {
+  suggestions: OrderCategoryTranslationSuggestion[];
+  totalMissing: number;
+  truncated: boolean;
+};
+
+export type ApplyOrderCategoryTranslationItem = {
+  categoryId: string;
+  nameEn: string;
+};
+
+export type ApplyOrderCategoryTranslationsResult = {
   updatedCount: number;
   skippedCount: number;
 };
