@@ -54,6 +54,8 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
     handleUpdateProduct,
     sizesOptions,
     packagingOptions,
+    catalogUnits,
+    conversionTemplates,
     setAddSizeModal,
     setAddPackagingModal,
     addVariantToProduct,
@@ -113,6 +115,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
           simpleLastPrice: editingProduct.simpleLastPrice || '',
           variants: editingProduct.variants || [],
           inventoryConversions: editingProduct.inventoryConversions || [],
+          conversionTemplateId: editingProduct.conversionTemplateId || '',
           recipe: editingProduct.recipe || [],
         }
       : null
@@ -143,6 +146,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         simpleLastPrice: current.simpleLastPrice || '',
         variants: normalizeVariants(current.variants || []),
         inventoryConversions: current.inventoryConversions || [],
+        conversionTemplateId: current.conversionTemplateId || '',
         recipe: current.recipe || [],
       } : null));
       return;
@@ -160,6 +164,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         simpleLastPrice: next.simpleLastPrice,
         variants: normalizeVariants(next.variants),
         inventoryConversions: next.inventoryConversions || [],
+        conversionTemplateId: next.conversionTemplateId || '',
         recipe: next.recipe || [],
       };
     });
@@ -320,6 +325,8 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         sections={sections}
         sizesOptions={sizesOptions}
         packagingOptions={packagingOptions}
+        catalogUnits={catalogUnits}
+        conversionTemplates={conversionTemplates}
         materialProducts={filterRecipeMaterialProducts(products, activeForm?.id)}
         saving={sheetMode === 'edit' ? updateProduct.isPending : createProduct.isPending}
         onClose={closeSheet}

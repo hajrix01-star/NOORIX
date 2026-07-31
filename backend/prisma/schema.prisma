@@ -131,6 +131,8 @@ model Company {
   orderProducts       OrderProduct[]
   orderCategories     OrderCategory[]
   orderSections       OrderSection[]
+  orderCatalogUnits   OrderCatalogUnit[]
+  orderConversionTemplates OrderConversionTemplate[]
   staffOrders         StaffOrder[]
   shishaInventorySettings  ShishaInventorySettings?
   shishaInventoryMovements ShishaInventoryMovement[]
@@ -1246,11 +1248,58 @@ model OrderSection {
   @@map("order_sections")
 }
 
+model OrderCatalogUnit {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  companyId String   @map("company_id")
+  code      String
+  nameAr    String   @map("name_ar")
+  nameEn    String?  @map("name_en")
+  kind      String   @default("package")
+  isDefault Boolean  @default(false) @map("is_default")
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, code])
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("order_catalog_units")
+}
+
+model OrderConversionTemplate {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  companyId   String   @map("company_id")
+  code        String
+  nameAr      String   @map("name_ar")
+  nameEn      String?  @map("name_en")
+  description String?
+  conversions Json?
+  isDefault   Boolean  @default(false) @map("is_default")
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  products OrderProduct[]
+
+  @@unique([companyId, code])
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("order_conversion_templates")
+}
+
 model OrderProduct {
   id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")
   companyId   String   @map("company_id")
   categoryId  String?  @map("category_id")
+  conversionTemplateId String? @map("conversion_template_id")
   nameAr      String   @map("name_ar")
   nameEn      String?  @map("name_en")
   unit        String   @default("piece")  // piece | kg | box | dozen â€” ط§ظپطھط±ط§ط¶ظٹ ط¹ظ†ط¯ ط¹ط¯ظ… ظˆط¬ظˆط¯ variants
@@ -1270,12 +1319,14 @@ model OrderProduct {
 
   company    Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   category   OrderCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  conversionTemplate OrderConversionTemplate? @relation(fields: [conversionTemplateId], references: [id], onDelete: SetNull)
   items      OrderItem[]
   staffItems StaffOrderItem[]
 
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, categoryId])
+  @@index([companyId, conversionTemplateId])
   @@map("order_products")
 }
 

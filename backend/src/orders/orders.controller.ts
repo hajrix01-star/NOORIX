@@ -227,6 +227,68 @@ export class OrdersController {
     return this.ordersService.getRecipeInventoryStock(requireCompanyId(companyId));
   }
 
+  @Get('catalog-units')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
+  getCatalogUnits(@CompanyId() companyId: string) {
+    return this.ordersService.getCatalogUnits(requireCompanyId(companyId));
+  }
+
+  @Post('catalog-units')
+  @RequirePermission('ORDERS_WRITE')
+  createCatalogUnit(
+    @CompanyId() companyId: string,
+    @Body() body: { code?: string; nameAr?: string; nameEn?: string | null; kind?: string | null; sortOrder?: number },
+  ) {
+    return this.ordersService.createCatalogUnit(requireCompanyId(companyId), body);
+  }
+
+  @Patch('catalog-units/:id')
+  @RequirePermission('ORDERS_WRITE')
+  updateCatalogUnit(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @Body() body: { code?: string; nameAr?: string; nameEn?: string | null; kind?: string | null; isActive?: boolean; sortOrder?: number },
+  ) {
+    return this.ordersService.updateCatalogUnit(id, requireCompanyId(companyId), body);
+  }
+
+  @Delete('catalog-units/:id')
+  @RequirePermission('ORDERS_DELETE')
+  deleteCatalogUnit(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.ordersService.deleteCatalogUnit(id, requireCompanyId(companyId));
+  }
+
+  @Get('conversion-templates')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
+  getConversionTemplates(@CompanyId() companyId: string) {
+    return this.ordersService.getConversionTemplates(requireCompanyId(companyId));
+  }
+
+  @Post('conversion-templates')
+  @RequirePermission('ORDERS_WRITE')
+  createConversionTemplate(
+    @CompanyId() companyId: string,
+    @Body() body: { code?: string; nameAr?: string; nameEn?: string | null; description?: string | null; conversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; sortOrder?: number },
+  ) {
+    return this.ordersService.createConversionTemplate(requireCompanyId(companyId), body);
+  }
+
+  @Patch('conversion-templates/:id')
+  @RequirePermission('ORDERS_WRITE')
+  updateConversionTemplate(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @Body() body: { code?: string; nameAr?: string; nameEn?: string | null; description?: string | null; conversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; isActive?: boolean; sortOrder?: number },
+  ) {
+    return this.ordersService.updateConversionTemplate(id, requireCompanyId(companyId), body);
+  }
+
+  @Delete('conversion-templates/:id')
+  @RequirePermission('ORDERS_DELETE')
+  deleteConversionTemplate(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.ordersService.deleteConversionTemplate(id, requireCompanyId(companyId));
+  }
+
   @Get('products')
   @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE', 'ORDERS_STAFF_SUBMIT', 'STAFF_ORDERS_SUBMIT')
   getProducts(

@@ -2,8 +2,12 @@ import type {
   ApiParsedResult,
   CreateOrderPayload,
   OrderCatalogBatchCreateResult,
+  OrderCatalogUnit,
+  OrderCatalogUnitPayload,
   OrderCategory,
   OrderCategoryPayload,
+  OrderConversionTemplate,
+  OrderConversionTemplatePayload,
   OrderItemsReportRow,
   OrderItemsReportResult,
   OrderProduct,
@@ -220,6 +224,61 @@ export async function updateOrderProduct(
 ): Promise<ApiParsedResult<OrderProduct>> {
   return apiPatch<OrderProduct>(`/api/v1/orders/products/${id}?companyId=${companyId}`, body);
 }
+
+export async function getOrderCatalogUnits(companyId: string): Promise<ApiParsedResult<OrderCatalogUnit[]>> {
+  const res = await apiGet<OrderCatalogUnit[]>('/api/v1/orders/catalog-units', { companyId });
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
+}
+
+export async function createOrderCatalogUnit(
+  body: OrderCatalogUnitPayload & { companyId: string },
+): Promise<ApiParsedResult<OrderCatalogUnit>> {
+  const { companyId, ...payload } = body;
+  return apiPost<OrderCatalogUnit>(`/api/v1/orders/catalog-units?companyId=${encodeURIComponent(companyId)}`, payload);
+}
+
+export async function updateOrderCatalogUnit(
+  id: string,
+  body: Partial<OrderCatalogUnitPayload>,
+  companyId: string,
+): Promise<ApiParsedResult<OrderCatalogUnit>> {
+  return apiPatch<OrderCatalogUnit>(`/api/v1/orders/catalog-units/${id}?companyId=${companyId}`, body);
+}
+
+export async function deleteOrderCatalogUnit(
+  id: string,
+  companyId: string,
+): Promise<ApiParsedResult<OrderCatalogUnit>> {
+  return apiDelete<OrderCatalogUnit>(`/api/v1/orders/catalog-units/${id}?companyId=${companyId}`);
+}
+
+export async function getOrderConversionTemplates(companyId: string): Promise<ApiParsedResult<OrderConversionTemplate[]>> {
+  const res = await apiGet<OrderConversionTemplate[]>('/api/v1/orders/conversion-templates', { companyId });
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
+}
+
+export async function createOrderConversionTemplate(
+  body: OrderConversionTemplatePayload & { companyId: string },
+): Promise<ApiParsedResult<OrderConversionTemplate>> {
+  const { companyId, ...payload } = body;
+  return apiPost<OrderConversionTemplate>(`/api/v1/orders/conversion-templates?companyId=${encodeURIComponent(companyId)}`, payload);
+}
+
+export async function updateOrderConversionTemplate(
+  id: string,
+  body: Partial<OrderConversionTemplatePayload>,
+  companyId: string,
+): Promise<ApiParsedResult<OrderConversionTemplate>> {
+  return apiPatch<OrderConversionTemplate>(`/api/v1/orders/conversion-templates/${id}?companyId=${companyId}`, body);
+}
+
+export async function deleteOrderConversionTemplate(
+  id: string,
+  companyId: string,
+): Promise<ApiParsedResult<OrderConversionTemplate>> {
+  return apiDelete<OrderConversionTemplate>(`/api/v1/orders/conversion-templates/${id}?companyId=${companyId}`);
+}
+
 export async function getOrderCategories(companyId: string): Promise<ApiParsedResult<OrderCategory[]>> {
   const res = await apiGet<OrderCategory[]>('/api/v1/orders/categories', { companyId });
   return res?.success ? { ...res, data: res.data ?? [] } : res;

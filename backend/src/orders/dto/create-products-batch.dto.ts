@@ -123,6 +123,10 @@ export class CreateProductItemDto {
   inventoryConversions?: ProductUnitConversionBatchDto[];
 
   @IsOptional()
+  @IsString()
+  conversionTemplateId?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductRecipeBatchItemDto)

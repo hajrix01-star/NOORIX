@@ -12,6 +12,7 @@ export type ProductUnitConversionInput = {
 type ProductWithUnitConversions = {
   unit?: string | null;
   inventoryConversions?: unknown;
+  conversionTemplate?: { conversions?: unknown } | null;
 };
 
 function decimal(value: unknown): Prisma.Decimal | null {
@@ -43,12 +44,17 @@ function unitPairMultiplier(fromUnit: string, toUnit: string): Prisma.Decimal | 
   return multiplier ? new Prisma.Decimal(multiplier) : null;
 }
 
-function productConversions(product: ProductWithUnitConversions): ProductUnitConversionInput[] {
-  return Array.isArray(product.inventoryConversions)
-    ? product.inventoryConversions.filter((row): row is ProductUnitConversionInput => (
-        Boolean(row) && typeof row === 'object'
-      ))
+function conversionRows(value: unknown): ProductUnitConversionInput[] {
+  return Array.isArray(value)
+    ? value.filter((row): row is ProductUnitConversionInput => Boolean(row) && typeof row === 'object')
     : [];
+}
+
+function productConversions(product: ProductWithUnitConversions): ProductUnitConversionInput[] {
+  return [
+    ...conversionRows(product.inventoryConversions),
+    ...conversionRows(product.conversionTemplate?.conversions),
+  ];
 }
 
 export function resolveProductUnitMultiplier(

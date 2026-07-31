@@ -3,9 +3,17 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import {
   useOrderProducts,
   useOrderCategories,
+  useOrderCatalogUnits,
+  useOrderConversionTemplates,
   useOrderSections,
   useCreateOrderProductMutation,
   useCreateOrderProductsBatchMutation,
+  useCreateOrderCatalogUnitMutation,
+  useCreateOrderConversionTemplateMutation,
+  useUpdateOrderCatalogUnitMutation,
+  useUpdateOrderConversionTemplateMutation,
+  useDeleteOrderCatalogUnitMutation,
+  useDeleteOrderConversionTemplateMutation,
   useUpdateOrderProductMutation,
   useCreateOrderCategoryMutation,
   useCreateOrderCategoriesBatchMutation,
@@ -35,7 +43,14 @@ import {
   filterOrderProductsForManageTab,
 } from '../utils/itemsManageModel';
 import { useItemsManageTabSelection } from './useItemsManageTabSelection';
-import type { OrderCategory, OrderProduct, OrderProductVariant } from '../../../types/api';
+import type {
+  OrderCatalogUnitPayload,
+  OrderCategory,
+  OrderConversionTemplatePayload,
+  OrderProduct,
+  OrderProductUnitConversion,
+  OrderProductVariant,
+} from '../../../types/api';
 /**
  * State and handlers for the Orders Â«manage itemsÂ» tab (products + categories).
  */
@@ -48,6 +63,19 @@ export function useItemsManageTab(companyId: string) {
   const [editingCategory, setEditingCategory] = useState<OrderCategory | null>(null);
   const [newProduct, setNewProduct] = useState(createEmptyOrderProductForm('order'));
   const [newCategory, setNewCategory] = useState({ nameAr: '', nameEn: '' });
+  const [newCatalogUnit, setNewCatalogUnit] = useState<OrderCatalogUnitPayload>({
+    code: '',
+    nameAr: '',
+    nameEn: '',
+    kind: 'package',
+  });
+  const [newConversionTemplate, setNewConversionTemplate] = useState<OrderConversionTemplatePayload>({
+    code: '',
+    nameAr: '',
+    nameEn: '',
+    description: '',
+    conversions: [],
+  });
   const [addSizeModal, setAddSizeModal] = useState(false);
   const [addPackagingModal, setAddPackagingModal] = useState(false);
   const [newSize, setNewSize] = useState({ ar: '', en: '' });
@@ -60,6 +88,8 @@ export function useItemsManageTab(companyId: string) {
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
   const { data: products = [] } = useOrderProducts(companyId);
   const { data: categories = [] } = useOrderCategories(companyId);
+  const { data: catalogUnits = [] } = useOrderCatalogUnits(companyId);
+  const { data: conversionTemplates = [] } = useOrderConversionTemplates(companyId);
   const { data: sections = [] } = useOrderSections(companyId);
   const createProduct = useCreateOrderProductMutation(companyId);
   const createProductsBatch = useCreateOrderProductsBatchMutation(companyId);
@@ -69,6 +99,12 @@ export function useItemsManageTab(companyId: string) {
   const createCategoriesBatch = useCreateOrderCategoriesBatchMutation(companyId);
   const updateCategory = useUpdateOrderCategoryMutation(companyId);
   const deleteCategoriesMutation = useDeleteOrderCategoriesMutation(companyId);
+  const createCatalogUnit = useCreateOrderCatalogUnitMutation(companyId);
+  const updateCatalogUnit = useUpdateOrderCatalogUnitMutation(companyId);
+  const deleteCatalogUnit = useDeleteOrderCatalogUnitMutation(companyId);
+  const createConversionTemplate = useCreateOrderConversionTemplateMutation(companyId);
+  const updateConversionTemplate = useUpdateOrderConversionTemplateMutation(companyId);
+  const deleteConversionTemplate = useDeleteOrderConversionTemplateMutation(companyId);
   const createSection = useCreateOrderSectionMutation(companyId);
   const updateSection = useUpdateOrderSectionMutation(companyId);
   const deleteSection = useDeleteOrderSectionMutation(companyId);
@@ -223,6 +259,91 @@ export function useItemsManageTab(companyId: string) {
     );
   }
 
+  function handleCreateCatalogUnit(onDone?: () => void) {
+    if (!newCatalogUnit.nameAr?.trim()) {
+      showToast('اسم الوحدة مطلوب', 'error');
+      return;
+    }
+    createCatalogUnit.mutate(
+      {
+        companyId,
+        ...newCatalogUnit,
+        nameAr: newCatalogUnit.nameAr.trim(),
+        nameEn: newCatalogUnit.nameEn?.trim() || null,
+        code: newCatalogUnit.code?.trim() || undefined,
+        kind: newCatalogUnit.kind || 'package',
+      },
+      {
+        onSuccess: () => {
+          setNewCatalogUnit({ code: '', nameAr: '', nameEn: '', kind: 'package' });
+          showToast('تمت إضافة الوحدة', 'success');
+          onDone?.();
+        },
+        onError: (e: Error) => showToast(e?.message || t('addFailed'), 'error'),
+      },
+    );
+  }
+
+  function handleCreateConversionTemplate(onDone?: () => void) {
+    if (!newConversionTemplate.nameAr?.trim()) {
+      showToast('اسم التحويل مطلوب', 'error');
+      return;
+    }
+    const conversions = (newConversionTemplate.conversions || []).filter((row) => {
+      const multiplier = Number.parseFloat(String(row.multiplier ?? ''));
+      return row.fromUnit && row.toUnit && Number.isFinite(multiplier) && multiplier > 0;
+    });
+    if (conversions.length === 0) {
+      showToast('أضف معادلة تحويل واحدة على الأقل', 'error');
+      return;
+    }
+    createConversionTemplate.mutate(
+      {
+        companyId,
+        ...newConversionTemplate,
+        nameAr: newConversionTemplate.nameAr.trim(),
+        nameEn: newConversionTemplate.nameEn?.trim() || null,
+        code: newConversionTemplate.code?.trim() || undefined,
+        description: newConversionTemplate.description?.trim() || null,
+        conversions,
+      },
+      {
+        onSuccess: () => {
+          setNewConversionTemplate({ code: '', nameAr: '', nameEn: '', description: '', conversions: [] });
+          showToast('تمت إضافة قالب التحويل', 'success');
+          onDone?.();
+        },
+        onError: (e: Error) => showToast(e?.message || t('addFailed'), 'error'),
+      },
+    );
+  }
+
+  function addConversionTemplateRow() {
+    setNewConversionTemplate((current) => ({
+      ...current,
+      conversions: [
+        ...(current.conversions || []),
+        { fromUnit: 'kg', toUnit: 'g', multiplier: '', label: '' },
+      ],
+    }));
+  }
+
+  function updateConversionTemplateRow(index: number, patch: Partial<OrderProductUnitConversion>) {
+    setNewConversionTemplate((current) => ({
+      ...current,
+      conversions: (current.conversions || []).map((row, rowIndex) =>
+        rowIndex === index ? { ...row, ...patch } : row,
+      ),
+    }));
+  }
+
+  function removeConversionTemplateRow(index: number) {
+    setNewConversionTemplate((current) => ({
+      ...current,
+      conversions: (current.conversions || []).filter((_, rowIndex) => rowIndex !== index),
+    }));
+  }
+
   function addVariantToProduct() {
     setNewProduct((p) => ({
       ...p,
@@ -296,6 +417,8 @@ export function useItemsManageTab(companyId: string) {
     setCategorySearchQuery,
     products,
     categories,
+    catalogUnits,
+    conversionTemplates,
     filteredProducts,
     filteredCategories,
     sizesOptions,
@@ -318,6 +441,21 @@ export function useItemsManageTab(companyId: string) {
     createCategory,
     updateCategory,
     createCategoriesBatch,
+    newCatalogUnit,
+    setNewCatalogUnit,
+    newConversionTemplate,
+    setNewConversionTemplate,
+    createCatalogUnit,
+    updateCatalogUnit,
+    deleteCatalogUnit,
+    createConversionTemplate,
+    updateConversionTemplate,
+    deleteConversionTemplate,
+    handleCreateCatalogUnit,
+    handleCreateConversionTemplate,
+    addConversionTemplateRow,
+    updateConversionTemplateRow,
+    removeConversionTemplateRow,
     handleInsertPresetCatalog,
     handleDownloadProductsImportTemplate,
     handleDownloadCategoriesImportTemplate,

@@ -1,21 +1,33 @@
 import {
+  createOrderCatalogUnit,
   createOrderCategoriesBatch,
   createOrderCategory,
+  createOrderConversionTemplate,
   createOrderProduct,
   createOrderProductsBatch,
+  deleteOrderCatalogUnit,
+  deleteOrderConversionTemplate,
   deactivateOrderCategoriesBulk,
   deactivateOrderProductsBulk,
   getCategoryPurchaseHistory,
+  getOrderCatalogUnits,
   getOrderCategories,
+  getOrderConversionTemplates,
   getOrderProducts,
   getProductPurchaseHistory,
+  updateOrderCatalogUnit,
   updateOrderCategory,
+  updateOrderConversionTemplate,
   updateOrderProduct,
 } from '../../services/api';
 import { orderKeys } from '../../services/queryKeys';
 import type {
   OrderCategory,
   OrderCategoryPayload,
+  OrderCatalogUnit,
+  OrderCatalogUnitPayload,
+  OrderConversionTemplate,
+  OrderConversionTemplatePayload,
   OrderProduct,
   OrderProductPayload,
   OrderPurchaseHistoryRow,
@@ -39,6 +51,24 @@ export function useOrderCategories(companyId: string) {
     queryKey: orderKeys.categories(companyId),
     queryFn: () => getOrderCategories(companyId),
     fallbackMessage: 'Failed to load order categories',
+    enabled: !!companyId,
+  });
+}
+
+export function useOrderCatalogUnits(companyId: string) {
+  return useApiListQuery<OrderCatalogUnit>({
+    queryKey: orderKeys.catalogUnits(companyId),
+    queryFn: () => getOrderCatalogUnits(companyId),
+    fallbackMessage: 'Failed to load order catalog units',
+    enabled: !!companyId,
+  });
+}
+
+export function useOrderConversionTemplates(companyId: string) {
+  return useApiListQuery<OrderConversionTemplate>({
+    queryKey: orderKeys.conversionTemplates(companyId),
+    queryFn: () => getOrderConversionTemplates(companyId),
+    fallbackMessage: 'Failed to load order conversion templates',
     enabled: !!companyId,
   });
 }
@@ -139,6 +169,56 @@ export function useCreateOrderCategoryMutation(companyId: string) {
   return useApiMutation({
     mutationFn: createOrderCategory,
     invalidateQueries: [orderKeys.categories(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useCreateOrderCatalogUnitMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: createOrderCatalogUnit,
+    invalidateQueries: [orderKeys.catalogUnits(companyId), orderKeys.products(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useUpdateOrderCatalogUnitMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: ({ id, body }: MutationArgs<Partial<OrderCatalogUnitPayload>>) =>
+      updateOrderCatalogUnit(id, body, companyId),
+    invalidateQueries: [orderKeys.catalogUnits(companyId), orderKeys.products(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useDeleteOrderCatalogUnitMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: (id: string) => deleteOrderCatalogUnit(id, companyId),
+    invalidateQueries: [orderKeys.catalogUnits(companyId), orderKeys.products(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useCreateOrderConversionTemplateMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: createOrderConversionTemplate,
+    invalidateQueries: [orderKeys.conversionTemplates(companyId), orderKeys.products(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useUpdateOrderConversionTemplateMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: ({ id, body }: MutationArgs<Partial<OrderConversionTemplatePayload>>) =>
+      updateOrderConversionTemplate(id, body, companyId),
+    invalidateQueries: [orderKeys.conversionTemplates(companyId), orderKeys.products(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useDeleteOrderConversionTemplateMutation(companyId: string) {
+  return useApiMutation({
+    mutationFn: (id: string) => deleteOrderConversionTemplate(id, companyId),
+    invalidateQueries: [orderKeys.conversionTemplates(companyId), orderKeys.products(companyId)],
     showErrorToast: false,
   });
 }

@@ -316,6 +316,7 @@ export class OrdersService {
           nameEn: true,
           unit: true,
           inventoryConversions: true,
+          conversionTemplate: { select: { conversions: true } },
           recipe: true,
         },
       }),
@@ -334,6 +335,7 @@ export class OrdersService {
               nameEn: true,
               unit: true,
               inventoryConversions: true,
+              conversionTemplate: { select: { conversions: true } },
               recipe: true,
             },
           },
@@ -358,6 +360,7 @@ export class OrdersService {
               nameEn: true,
               unit: true,
               inventoryConversions: true,
+              conversionTemplate: { select: { conversions: true } },
               recipe: true,
             },
           },
@@ -448,7 +451,7 @@ export class OrdersService {
     return this.catalog.getProducts(companyId, section, productType);
   }
 
-  async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>; inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }> }>) {
+  async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>; inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; conversionTemplateId?: string | null; recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }> }>) {
     return this.catalog.createProductsBatch(companyId, products);
   }
 
@@ -469,6 +472,7 @@ export class OrdersService {
     productType?: string;
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>;
     inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>;
+    conversionTemplateId?: string | null;
     recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }>;
   }) {
     return this.catalog.createProduct(companyId, dto);
@@ -487,6 +491,7 @@ export class OrdersService {
     productType?: string;
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>;
     inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>;
+    conversionTemplateId?: string | null;
     recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }>;
     isActive?: boolean;
   }) {
@@ -495,6 +500,38 @@ export class OrdersService {
 
   async getCategories(companyId: string) {
     return this.catalog.getCategories(companyId);
+  }
+
+  async getCatalogUnits(companyId: string) {
+    return this.catalog.getCatalogUnits(companyId);
+  }
+
+  async createCatalogUnit(companyId: string, dto: { code?: string; nameAr?: string; nameEn?: string | null; kind?: string | null; isActive?: boolean; sortOrder?: number }) {
+    return this.catalog.createCatalogUnit(companyId, dto);
+  }
+
+  async updateCatalogUnit(id: string, companyId: string, dto: { code?: string; nameAr?: string; nameEn?: string | null; kind?: string | null; isActive?: boolean; sortOrder?: number }) {
+    return this.catalog.updateCatalogUnit(id, companyId, dto);
+  }
+
+  async deleteCatalogUnit(id: string, companyId: string) {
+    return this.catalog.deleteCatalogUnit(id, companyId);
+  }
+
+  async getConversionTemplates(companyId: string) {
+    return this.catalog.getConversionTemplates(companyId);
+  }
+
+  async createConversionTemplate(companyId: string, dto: { code?: string; nameAr?: string; nameEn?: string | null; description?: string | null; conversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; isActive?: boolean; sortOrder?: number }) {
+    return this.catalog.createConversionTemplate(companyId, dto);
+  }
+
+  async updateConversionTemplate(id: string, companyId: string, dto: { code?: string; nameAr?: string; nameEn?: string | null; description?: string | null; conversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; isActive?: boolean; sortOrder?: number }) {
+    return this.catalog.updateConversionTemplate(id, companyId, dto);
+  }
+
+  async deleteConversionTemplate(id: string, companyId: string) {
+    return this.catalog.deleteConversionTemplate(id, companyId);
   }
 
   async createCategory(companyId: string, dto: { nameAr: string; nameEn?: string; sortOrder?: number }) {

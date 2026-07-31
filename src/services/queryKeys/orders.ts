@@ -11,6 +11,8 @@ export const orderKeys = {
   itemsReportRoot: () => ['orders-items-report'] as const,
   productsRoot: () => ['order-products'] as const,
   categoriesRoot: () => ['order-categories'] as const,
+  catalogUnitsRoot: () => ['order-catalog-units'] as const,
+  conversionTemplatesRoot: () => ['order-conversion-templates'] as const,
   productPurchaseHistoryRoot: () => ['product-purchase-history'] as const,
   categoryPurchaseHistoryRoot: () => ['category-purchase-history'] as const,
   shishaInventoryRoot: () => ['shisha-inventory'] as const,
@@ -27,6 +29,10 @@ export const orderKeys = {
   products: (companyId: string) => ['order-products', companyId] as const,
 
   categories: (companyId: string) => ['order-categories', companyId] as const,
+
+  catalogUnits: (companyId: string) => ['order-catalog-units', companyId] as const,
+
+  conversionTemplates: (companyId: string) => ['order-conversion-templates', companyId] as const,
 
   productPurchaseHistory: (companyId: string, productId: unknown, year: unknown, month: unknown) =>
     ['product-purchase-history', companyId, productId, year, month] as const,

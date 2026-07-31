@@ -28,6 +28,25 @@ type ProductRecipeItemInput = {
   unit?: string;
 };
 
+type CatalogUnitInput = {
+  code?: string;
+  nameAr?: string;
+  nameEn?: string | null;
+  kind?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
+type ConversionTemplateInput = {
+  code?: string;
+  nameAr?: string;
+  nameEn?: string | null;
+  description?: string | null;
+  conversions?: ProductUnitConversionInput[];
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
 @Injectable()
 export class OrdersCatalogService {
   constructor(private readonly prisma: TenantPrismaService) {}
@@ -36,7 +55,7 @@ export class OrdersCatalogService {
     const all = await this.prisma.orderProduct.findMany({
       where: { companyId, isActive: true, ...(productType ? { productType } : {}) },
       orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
-      include: { category: true },
+      include: { category: true, conversionTemplate: true },
     });
     const enriched = await this.enrichProductsList(companyId, all);
     if (!section) return enriched;
@@ -56,6 +75,7 @@ export class OrdersCatalogService {
     lastPrice?: string;
     variants?: ProductVariantInput[];
     inventoryConversions?: ProductUnitConversionInput[];
+    conversionTemplateId?: string | null;
     recipe?: ProductRecipeItemInput[];
   }>) {
     const tenantId = TenantContext.getTenantId();
@@ -63,6 +83,13 @@ export class OrdersCatalogService {
     await this.assertRecipeMaterialProducts(
       companyId,
       products.flatMap((dto) => (dto.productType === 'sale' ? (dto.recipe ?? []) : [])),
+    );
+    await this.assertConversionTemplates(
+      companyId,
+      products
+        .filter((dto) => (dto.productType === 'sale' ? 'sale' : 'order') === 'order')
+        .map((dto) => this.cleanNullableId(dto.conversionTemplateId))
+        .filter((id): id is string => Boolean(id)),
     );
     const data = products
       .filter((dto) => !!dto.nameAr?.trim())
@@ -72,7 +99,7 @@ export class OrdersCatalogService {
     const inserted = await this.prisma.orderProduct.createManyAndReturn({ data });
     const rows = await this.prisma.orderProduct.findMany({
       where: { id: { in: inserted.map((row) => row.id) } },
-      include: { category: true },
+      include: { category: true, conversionTemplate: true },
     });
     const byId = new Map(rows.map((row) => [row.id, row]));
     return this.enrichProductsList(
@@ -98,6 +125,7 @@ export class OrdersCatalogService {
     productType?: string;
     variants?: ProductVariantInput[];
     inventoryConversions?: ProductUnitConversionInput[];
+    conversionTemplateId?: string | null;
     recipe?: ProductRecipeItemInput[];
   }) {
     const tenantId = TenantContext.getTenantId();
@@ -106,9 +134,12 @@ export class OrdersCatalogService {
     if (dto.productType === 'sale') {
       await this.assertRecipeMaterialProducts(companyId, dto.recipe);
     }
+    if ((dto.productType === 'sale' ? 'sale' : 'order') === 'order') {
+      await this.assertConversionTemplates(companyId, this.cleanNullableId(dto.conversionTemplateId) ? [this.cleanNullableId(dto.conversionTemplateId)] : []);
+    }
     const created = await this.prisma.orderProduct.create({
       data: this.buildProductCreateInput(tenantId, companyId, dto, sectionList),
-      include: { category: true },
+      include: { category: true, conversionTemplate: true },
     });
     return enrichProductWithSectionIds(created, sectionList);
   }
@@ -126,6 +157,7 @@ export class OrdersCatalogService {
     productType?: string;
     variants?: ProductVariantInput[];
     inventoryConversions?: ProductUnitConversionInput[];
+    conversionTemplateId?: string | null;
     recipe?: ProductRecipeItemInput[];
     isActive?: boolean;
   }) {
@@ -136,10 +168,13 @@ export class OrdersCatalogService {
     if (nextProductType === 'sale' && dto.recipe !== undefined) {
       await this.assertRecipeMaterialProducts(companyId, dto.recipe);
     }
+    if (nextProductType === 'order' && dto.conversionTemplateId !== undefined) {
+      await this.assertConversionTemplates(companyId, this.cleanNullableId(dto.conversionTemplateId) ? [this.cleanNullableId(dto.conversionTemplateId)] : []);
+    }
     const updated = await this.prisma.orderProduct.update({
       where: { id },
-      data: this.buildProductUpdateInput(dto, sectionList),
-      include: { category: true },
+      data: this.buildProductUpdateInput(dto, sectionList, nextProductType),
+      include: { category: true, conversionTemplate: true },
     });
     return enrichProductWithSectionIds(updated, sectionList);
   }
@@ -272,6 +307,102 @@ export class OrdersCatalogService {
     return { updated: products.length };
   }
 
+  async getCatalogUnits(companyId: string) {
+    await this.ensureCatalogDefaults(companyId);
+    return this.prisma.orderCatalogUnit.findMany({
+      where: { companyId, isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+    });
+  }
+
+  async createCatalogUnit(companyId: string, dto: CatalogUnitInput) {
+    const tenantId = TenantContext.getTenantId();
+    const code = this.cleanCode(dto.code || dto.nameEn || dto.nameAr);
+    if (!code || !dto.nameAr?.trim()) throw new BadRequestException('Catalog unit code and Arabic name are required.');
+    return this.prisma.orderCatalogUnit.create({
+      data: {
+        tenantId,
+        companyId,
+        code,
+        nameAr: dto.nameAr.trim(),
+        nameEn: dto.nameEn?.trim() || null,
+        kind: dto.kind?.trim() || 'package',
+        sortOrder: dto.sortOrder ?? 100,
+        isActive: dto.isActive ?? true,
+      },
+    });
+  }
+
+  async updateCatalogUnit(id: string, companyId: string, dto: CatalogUnitInput) {
+    await this.assertCatalogUnit(companyId, id);
+    return this.prisma.orderCatalogUnit.update({
+      where: { id },
+      data: {
+        ...(dto.code !== undefined ? { code: this.cleanCode(dto.code) } : {}),
+        ...(dto.nameAr !== undefined ? { nameAr: dto.nameAr.trim() } : {}),
+        ...(dto.nameEn !== undefined ? { nameEn: dto.nameEn?.trim() || null } : {}),
+        ...(dto.kind !== undefined ? { kind: dto.kind?.trim() || 'package' } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+    });
+  }
+
+  async deleteCatalogUnit(id: string, companyId: string) {
+    await this.assertCatalogUnit(companyId, id);
+    await this.prisma.orderCatalogUnit.update({ where: { id }, data: { isActive: false } });
+    return { deleted: true };
+  }
+
+  async getConversionTemplates(companyId: string) {
+    await this.ensureCatalogDefaults(companyId);
+    return this.prisma.orderConversionTemplate.findMany({
+      where: { companyId, isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+    });
+  }
+
+  async createConversionTemplate(companyId: string, dto: ConversionTemplateInput) {
+    const tenantId = TenantContext.getTenantId();
+    const code = this.cleanCode(dto.code || dto.nameEn || dto.nameAr);
+    if (!code || !dto.nameAr?.trim()) throw new BadRequestException('Conversion template code and Arabic name are required.');
+    return this.prisma.orderConversionTemplate.create({
+      data: {
+        tenantId,
+        companyId,
+        code,
+        nameAr: dto.nameAr.trim(),
+        nameEn: dto.nameEn?.trim() || null,
+        description: dto.description?.trim() || null,
+        conversions: unitConversionsJson(dto.conversions),
+        sortOrder: dto.sortOrder ?? 100,
+        isActive: dto.isActive ?? true,
+      },
+    });
+  }
+
+  async updateConversionTemplate(id: string, companyId: string, dto: ConversionTemplateInput) {
+    await this.assertConversionTemplates(companyId, [id]);
+    return this.prisma.orderConversionTemplate.update({
+      where: { id },
+      data: {
+        ...(dto.code !== undefined ? { code: this.cleanCode(dto.code) } : {}),
+        ...(dto.nameAr !== undefined ? { nameAr: dto.nameAr.trim() } : {}),
+        ...(dto.nameEn !== undefined ? { nameEn: dto.nameEn?.trim() || null } : {}),
+        ...(dto.description !== undefined ? { description: dto.description?.trim() || null } : {}),
+        ...(dto.conversions !== undefined ? { conversions: unitConversionsJson(dto.conversions) } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+    });
+  }
+
+  async deleteConversionTemplate(id: string, companyId: string) {
+    await this.assertConversionTemplates(companyId, [id]);
+    await this.prisma.orderConversionTemplate.update({ where: { id }, data: { isActive: false } });
+    return { deleted: true };
+  }
+
   private buildProductCreateInput(
     tenantId: string,
     companyId: string,
@@ -288,6 +419,7 @@ export class OrdersCatalogService {
       productType?: string;
       variants?: ProductVariantInput[];
       inventoryConversions?: ProductUnitConversionInput[];
+      conversionTemplateId?: string | null;
       recipe?: ProductRecipeItemInput[];
     },
     sectionList: Awaited<ReturnType<OrdersCatalogService['loadSectionList']>>,
@@ -313,6 +445,7 @@ export class OrdersCatalogService {
       inventoryConversions: productType === 'order'
         ? unitConversionsJson(dto.inventoryConversions)
         : Prisma.DbNull,
+      conversionTemplateId: productType === 'order' ? this.cleanNullableId(dto.conversionTemplateId) : null,
       recipe: productType === 'sale' ? this.recipeJson(dto.recipe) : Prisma.DbNull,
     };
   }
@@ -331,11 +464,13 @@ export class OrdersCatalogService {
       productType?: string;
       variants?: ProductVariantInput[];
       inventoryConversions?: ProductUnitConversionInput[];
+      conversionTemplateId?: string | null;
       recipe?: ProductRecipeItemInput[];
       isActive?: boolean;
     },
     sectionList: Awaited<ReturnType<OrdersCatalogService['loadSectionList']>>,
-  ): Prisma.OrderProductUpdateInput {
+    effectiveProductType: string,
+  ): Prisma.OrderProductUncheckedUpdateInput {
     const sectionData = dto.sections !== undefined || dto.sectionIds !== undefined
       ? this.sectionJsonData(
           normalizeProductSections(sectionList, {
@@ -359,12 +494,15 @@ export class OrdersCatalogService {
       ...sectionData,
       ...(dto.productType !== undefined ? { productType: dto.productType } : {}),
       ...(dto.variants !== undefined ? { variants: this.variantJson(dto.variants) } : {}),
-      ...(dto.productType === 'sale'
-        ? { inventoryConversions: Prisma.DbNull }
+      ...(effectiveProductType === 'sale'
+        ? { inventoryConversions: Prisma.DbNull, conversionTemplateId: null }
         : dto.inventoryConversions !== undefined
           ? { inventoryConversions: unitConversionsJson(dto.inventoryConversions) }
           : {}),
-      ...(dto.productType === 'order'
+      ...(effectiveProductType === 'order' && dto.conversionTemplateId !== undefined
+        ? { conversionTemplateId: this.cleanNullableId(dto.conversionTemplateId) }
+        : {}),
+      ...(effectiveProductType === 'order'
         ? { recipe: Prisma.DbNull }
         : dto.recipe !== undefined
           ? { recipe: this.recipeJson(dto.recipe) }
@@ -380,9 +518,117 @@ export class OrdersCatalogService {
     });
   }
 
+  private async ensureCatalogDefaults(companyId: string) {
+    const tenantId = TenantContext.getTenantId();
+    const unitsCount = await this.prisma.orderCatalogUnit.count({ where: { companyId } });
+    if (unitsCount === 0) {
+      await this.prisma.orderCatalogUnit.createMany({
+        data: this.defaultCatalogUnits().map((unit) => ({
+          tenantId,
+          companyId,
+          ...unit,
+        })),
+        skipDuplicates: true,
+      });
+    }
+    const templatesCount = await this.prisma.orderConversionTemplate.count({ where: { companyId } });
+    if (templatesCount === 0) {
+      await this.prisma.orderConversionTemplate.createMany({
+        data: this.defaultConversionTemplates().map((template) => ({
+          tenantId,
+          companyId,
+          ...template,
+          conversions: template.conversions,
+        })),
+        skipDuplicates: true,
+      });
+    }
+  }
+
+  private defaultCatalogUnits() {
+    return [
+      { code: 'piece', nameAr: 'حبة', nameEn: 'Piece', kind: 'unit', isDefault: true, sortOrder: 1 },
+      { code: 'kg', nameAr: 'كيلو', nameEn: 'Kilogram', kind: 'unit', isDefault: true, sortOrder: 2 },
+      { code: 'g', nameAr: 'جرام', nameEn: 'Gram', kind: 'unit', isDefault: true, sortOrder: 3 },
+      { code: 'l', nameAr: 'لتر', nameEn: 'Liter', kind: 'unit', isDefault: true, sortOrder: 4 },
+      { code: 'ml', nameAr: 'مل', nameEn: 'Milliliter', kind: 'unit', isDefault: true, sortOrder: 5 },
+      { code: 'box', nameAr: 'صندوق', nameEn: 'Box', kind: 'package', isDefault: true, sortOrder: 10 },
+      { code: 'pack', nameAr: 'علبة', nameEn: 'Pack', kind: 'package', isDefault: true, sortOrder: 11 },
+      { code: 'half_pack', nameAr: 'نصف علبة', nameEn: 'Half pack', kind: 'package', isDefault: true, sortOrder: 12 },
+      { code: 'carton', nameAr: 'كرتون', nameEn: 'Carton', kind: 'package', isDefault: true, sortOrder: 13 },
+      { code: 'dozen', nameAr: 'درزن', nameEn: 'Dozen', kind: 'package', isDefault: true, sortOrder: 14 },
+      { code: 'bottle', nameAr: 'قارورة', nameEn: 'Bottle', kind: 'package', isDefault: true, sortOrder: 15 },
+      { code: 'cup', nameAr: 'كوب', nameEn: 'Cup', kind: 'package', isDefault: true, sortOrder: 16 },
+    ];
+  }
+
+  private defaultConversionTemplates() {
+    return [
+      {
+        code: 'metric-weight',
+        nameAr: 'وزن قياسي',
+        nameEn: 'Metric weight',
+        description: 'كيلو وجرام',
+        conversions: [{ fromUnit: 'kg', toUnit: 'g', multiplier: '1000', label: '1 كيلو = 1000 جرام' }],
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        code: 'metric-volume',
+        nameAr: 'سوائل قياسي',
+        nameEn: 'Metric volume',
+        description: 'لتر ومل',
+        conversions: [{ fromUnit: 'l', toUnit: 'ml', multiplier: '1000', label: '1 لتر = 1000 مل' }],
+        isDefault: true,
+        sortOrder: 2,
+      },
+      {
+        code: 'dozen-piece',
+        nameAr: 'درزن إلى حبة',
+        nameEn: 'Dozen to piece',
+        description: 'درزن = 12 حبة',
+        conversions: [{ fromUnit: 'dozen', toUnit: 'piece', multiplier: '12', label: '1 درزن = 12 حبة' }],
+        isDefault: true,
+        sortOrder: 3,
+      },
+    ];
+  }
+
   private async enrichProductsList<T extends OrderProductWithSections>(companyId: string, products: T[]) {
     const sectionList = await this.loadSectionList(companyId);
     return products.map((product) => enrichProductWithSectionIds(product, sectionList));
+  }
+
+  private cleanNullableId(value: string | null | undefined) {
+    const clean = String(value ?? '').trim();
+    return clean || null;
+  }
+
+  private cleanCode(value: string | null | undefined) {
+    return String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9_-]/g, '')
+      .slice(0, 48);
+  }
+
+  private async assertCatalogUnit(companyId: string, id: string) {
+    const unit = await this.prisma.orderCatalogUnit.findFirst({ where: { id, companyId } });
+    if (!unit) throw new NotFoundException('Catalog unit not found.');
+    return unit;
+  }
+
+  private async assertConversionTemplates(companyId: string, ids: Array<string | null>) {
+    const cleanIds = [...new Set(ids.map((id) => this.cleanNullableId(id)).filter((id): id is string => Boolean(id)))];
+    if (cleanIds.length === 0) return;
+    const rows = await this.prisma.orderConversionTemplate.findMany({
+      where: { companyId, id: { in: cleanIds }, isActive: true },
+      select: { id: true },
+    });
+    if (rows.length !== cleanIds.length) {
+      throw new BadRequestException('Conversion template is not available for this company.');
+    }
   }
 
   private variantJson(variants?: ProductVariantInput[]): Prisma.InputJsonValue | typeof Prisma.DbNull {

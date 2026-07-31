@@ -8,6 +8,7 @@ import { ScreenTabs } from '../../../ui';
 import { useItemsManageTab } from '../hooks/useItemsManageTab';
 import { ItemsManageTabCategoriesSection } from './ItemsManageTabCategoriesSection';
 import { ItemsManageTabSectionsSection } from './ItemsManageTabSectionsSection';
+import { ItemsManageTabConversionsSection } from './ItemsManageTabConversionsSection';
 import { CatalogProductsPanel } from './catalog/CatalogProductsPanel';
 
 export function ItemsManageTab({ companyId }: { companyId: string }) {
@@ -31,6 +32,7 @@ export function ItemsManageTab({ companyId }: { companyId: string }) {
   const subTabs = useMemo(() => [
     { id: 'sections', label: t('ordersSections') },
     { id: 'categories', label: t('ordersCategories') },
+    { id: 'conversions', label: 'الوحدات والتحويلات' },
     { id: 'catalog', label: t('ordersCatalogTab') },
   ], [t]);
 
@@ -48,6 +50,7 @@ export function ItemsManageTab({ companyId }: { companyId: string }) {
       >
         {activeSubTab === 'sections' && <ItemsManageTabSectionsSection ctrl={ctrl} />}
         {activeSubTab === 'categories' && <ItemsManageTabCategoriesSection ctrl={ctrl} />}
+        {activeSubTab === 'conversions' && <ItemsManageTabConversionsSection ctrl={ctrl} />}
         {activeSubTab === 'catalog' && <CatalogProductsPanel ctrl={ctrl} />}
       </ScreenTabs>
     </div>

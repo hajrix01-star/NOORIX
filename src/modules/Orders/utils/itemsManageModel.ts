@@ -7,6 +7,7 @@ import type {
   OrderProductUnitConversion,
   OrderProductVariant,
   OrderProductType,
+  OrderConversionTemplate,
 } from '../../../types/api';
 
 export type OrderProductForm = {
@@ -18,6 +19,7 @@ export type OrderProductForm = {
   simpleLastPrice: string;
   variants: OrderProductVariant[];
   inventoryConversions: OrderProductUnitConversion[];
+  conversionTemplateId: string;
   recipe: OrderProductRecipeItem[];
 };
 
@@ -34,6 +36,7 @@ export type OrderProductUpdateBody = {
   productType: OrderProductType;
   variants?: OrderProductVariant[];
   inventoryConversions?: OrderProductUnitConversion[];
+  conversionTemplateId?: string | null;
   recipe?: OrderProductRecipeItem[];
   lastPrice?: string;
 };
@@ -52,6 +55,7 @@ export function createEmptyOrderProductForm(productType: OrderProductType): Orde
     simpleLastPrice: '',
     variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
     inventoryConversions: [],
+    conversionTemplateId: '',
     recipe: [],
   };
 }
@@ -132,6 +136,7 @@ export function buildEditableOrderProduct(
     productType: normalizeOrderProductType(product.productType, fallbackProductType),
     simpleLastPrice: hasVariants ? '' : String(product.lastPrice ?? ''),
     inventoryConversions: sanitizeInventoryConversions(product.inventoryConversions),
+    conversionTemplateId: product.conversionTemplateId || '',
     recipe: normalizeOrderProductType(product.productType, fallbackProductType) === 'sale'
       ? sanitizeRecipe(product.recipe)
       : [],
@@ -168,6 +173,7 @@ export function buildOrderProductUpdateBody(
     sectionIds: built.sectionIds ?? [],
     productType: built.productType ?? fallbackProductType,
     inventoryConversions: built.inventoryConversions ?? [],
+    conversionTemplateId: built.conversionTemplateId ?? null,
     recipe: built.recipe ?? [],
     ...(validVariants.length > 0
       ? { variants: built.variants ?? [] }
@@ -231,6 +237,10 @@ export function filterRecipeMaterialProducts(products: OrderProduct[], currentPr
   );
 }
 
+export function activeConversionTemplates(templates: OrderConversionTemplate[]) {
+  return templates.filter((template) => template.isActive !== false);
+}
+
 export function buildOrderProductPayload(
   form: Partial<OrderProductForm>,
   productType: OrderProductType,
@@ -245,6 +255,9 @@ export function buildOrderProductPayload(
   const inventoryConversions = productType === 'order'
     ? sanitizeInventoryConversions(form.inventoryConversions)
     : [];
+  const conversionTemplateId = productType === 'order'
+    ? String(form.conversionTemplateId ?? '').trim()
+    : '';
   const base = {
     nameAr: String(form.nameAr ?? '').trim(),
     nameEn: form.nameEn?.trim() || undefined,
@@ -252,6 +265,7 @@ export function buildOrderProductPayload(
     sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
     productType,
     ...(inventoryConversions.length > 0 ? { inventoryConversions } : {}),
+    ...(conversionTemplateId ? { conversionTemplateId } : {}),
     ...(recipe.length > 0 ? { recipe } : {}),
   };
   if (validVariants.length > 0) {

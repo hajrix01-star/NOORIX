@@ -3,6 +3,8 @@ import { useTranslation } from '../../../../i18n/useTranslation';
 import { AdaptiveSheet, Button, Checkbox, DialogActions, Input, SearchableOptionsPicker } from '../../../../ui';
 import type {
   OrderCategory,
+  OrderCatalogUnit,
+  OrderConversionTemplate,
   OrderProduct,
   OrderProductRecipeItem,
   OrderProductUnitConversion,
@@ -27,6 +29,7 @@ export type CatalogProductFormState = {
   simpleLastPrice: string;
   variants: OrderProductVariant[];
   inventoryConversions: OrderProductUnitConversion[];
+  conversionTemplateId: string;
   recipe: OrderProductRecipeItem[];
   _advanced?: boolean;
 };
@@ -46,6 +49,8 @@ type CatalogProductFormSheetProps = {
   sections: OrderSection[];
   sizesOptions: CatalogOption[];
   packagingOptions: CatalogOption[];
+  catalogUnits: OrderCatalogUnit[];
+  conversionTemplates: OrderConversionTemplate[];
   materialProducts: OrderProduct[];
   saving: boolean;
   onClose: () => void;
@@ -60,7 +65,12 @@ type CatalogProductFormSheetProps = {
 
 type CatalogFormTab = 'details' | 'variants' | 'conversions' | 'recipe';
 
-const allRecipeUnitOptions = [
+type UnitOption = {
+  value: string;
+  label: string;
+};
+
+const fallbackUnitOptions: UnitOption[] = [
   { value: 'piece', label: 'حبة' },
   { value: 'g', label: 'جرام' },
   { value: 'kg', label: 'كيلو' },
@@ -70,6 +80,18 @@ const allRecipeUnitOptions = [
   { value: 'box', label: 'صندوق' },
   { value: 'carton', label: 'كرتون' },
 ];
+
+function toUnitOptions(units: OrderCatalogUnit[]): UnitOption[] {
+  const byValue = new Map<string, UnitOption>();
+  for (const option of fallbackUnitOptions) byValue.set(option.value, option);
+  for (const unit of units) {
+    if (unit.isActive === false) continue;
+    const value = String(unit.code || unit.nameAr || '').trim();
+    if (!value) continue;
+    byValue.set(value, { value, label: unit.nameAr || unit.nameEn || value });
+  }
+  return [...byValue.values()];
+}
 
 function searchableText(...values: unknown[]) {
   return values.map((value) => String(value ?? '')).join(' ').trim().toLowerCase();
@@ -107,10 +129,12 @@ function createRecipeRow(materialProducts: OrderProduct[]): OrderProductRecipeIt
 function RecipeEditor({
   recipe,
   materialProducts,
+  unitOptions,
   onChange,
 }: {
   recipe: OrderProductRecipeItem[];
   materialProducts: OrderProduct[];
+  unitOptions: UnitOption[];
   onChange: (recipe: OrderProductRecipeItem[]) => void;
 }) {
   const materialOptions = useMemo(
@@ -179,7 +203,7 @@ function RecipeEditor({
                 value={String(row.unit || 'piece')}
                 onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { unit: event.target.value })}
               >
-                {allRecipeUnitOptions.map((unit) => (
+                {unitOptions.map((unit) => (
                   <option key={unit.value} value={unit.value}>{unit.label}</option>
                 ))}
               </Input>
@@ -205,11 +229,19 @@ function createConversionRow(baseUnit: string): OrderProductUnitConversion {
 
 function ConversionEditor({
   conversions,
+  conversionTemplateId,
+  conversionTemplates,
   baseUnit,
+  unitOptions,
+  onTemplateChange,
   onChange,
 }: {
   conversions: OrderProductUnitConversion[];
+  conversionTemplateId: string;
+  conversionTemplates: OrderConversionTemplate[];
   baseUnit: string;
+  unitOptions: UnitOption[];
+  onTemplateChange: (templateId: string) => void;
   onChange: (conversions: OrderProductUnitConversion[]) => void;
 }) {
   function updateRow(index: number, patch: Partial<OrderProductUnitConversion>) {
@@ -236,6 +268,26 @@ function ConversionEditor({
       <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
         التحويلات القياسية محفوظة تلقائياً: 1 كيلو = 1000 جرام، 1 لتر = 1000 مل. أضف هنا فقط التحويلات الخاصة بالصنف.
       </div>
+      <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr]">
+        <Input
+          type="select"
+          label="قالب التحويل"
+          value={conversionTemplateId}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => onTemplateChange(event.target.value)}
+        >
+          <option value="">بدون قالب</option>
+          {conversionTemplates.filter((template) => template.isActive !== false).map((template) => (
+            <option key={template.id} value={template.id}>
+              {template.nameAr || template.nameEn || template.code}
+            </option>
+          ))}
+        </Input>
+        {conversionTemplateId && (
+          <div className="rounded-lg border border-noorix-border bg-white p-3 text-[12px] text-noorix-muted">
+            القالب يضيف تحويلاته تلقائياً للحسابات. التحويلات بالأسفل تعتبر استثناءات خاصة بهذا الصنف.
+          </div>
+        )}
+      </div>
       <div className="flex flex-col gap-2">
         {conversions.length === 0 && (
           <div className="rounded-lg border border-dashed border-noorix-border bg-white p-3 text-center text-[13px] text-noorix-muted">
@@ -254,7 +306,7 @@ function ConversionEditor({
               value={String(row.fromUnit || 'kg')}
               onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { fromUnit: event.target.value })}
             >
-              {allRecipeUnitOptions.map((unit) => (
+              {unitOptions.map((unit) => (
                 <option key={unit.value} value={unit.value}>{unit.label}</option>
               ))}
             </Input>
@@ -263,7 +315,7 @@ function ConversionEditor({
               value={String(row.toUnit || baseUnit || 'piece')}
               onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { toUnit: event.target.value })}
             >
-              {allRecipeUnitOptions.map((unit) => (
+              {unitOptions.map((unit) => (
                 <option key={unit.value} value={unit.value}>{unit.label}</option>
               ))}
             </Input>
@@ -290,6 +342,7 @@ function VariantsTable({
   variants,
   sizesOptions,
   packagingOptions,
+  unitOptions,
   updateVariant,
   removeVariant,
   onAddSize,
@@ -302,6 +355,7 @@ function VariantsTable({
   variants: OrderProductVariant[];
   sizesOptions: CatalogOption[];
   packagingOptions: CatalogOption[];
+  unitOptions: UnitOption[];
   updateVariant: (idx: number, field: keyof OrderProductVariant, value: string) => void;
   removeVariant: (idx: number) => void;
   onAddSize: () => void;
@@ -407,13 +461,9 @@ function VariantsTable({
                       }
                     }}
                   >
-                    <option value="piece">{t('ordersUnitPiece')}</option>
-                    <option value="kg">{t('ordersUnitKg')}</option>
-                    <option value="box">{t('ordersUnitBox')}</option>
-                    <option value="pack">{t('ordersUnitPack')}</option>
-                    <option value="half_pack">{t('ordersUnitHalfPack')}</option>
-                    <option value="carton">{t('ordersUnitCarton')}</option>
-                    <option value="dozen">{t('ordersUnitDozen')}</option>
+                    {unitOptions.map((unit) => (
+                      <option key={unit.value} value={unit.value}>{unit.label}</option>
+                    ))}
                   </Input>
                 </td>
                 <td className="px-2 py-1.5">
@@ -460,6 +510,8 @@ export function CatalogProductFormSheet({
   sections,
   sizesOptions,
   packagingOptions,
+  catalogUnits,
+  conversionTemplates,
   materialProducts,
   saving,
   onClose,
@@ -475,6 +527,11 @@ export function CatalogProductFormSheet({
   const [advanced, setAdvanced] = useState(false);
   const [activeTab, setActiveTab] = useState<CatalogFormTab>('details');
   const [categorySearch, setCategorySearch] = useState('');
+  const unitOptions = useMemo(() => toUnitOptions(catalogUnits), [catalogUnits]);
+  const activeConversionTemplates = useMemo(
+    () => conversionTemplates.filter((template) => template.isActive !== false),
+    [conversionTemplates],
+  );
   const charcoalMode = Boolean(form && isCharcoalCatalogProduct(form));
   const charcoalPurchaseMode = charcoalMode && form?.productType === 'order';
   const visibleCategories = useMemo(() => {
@@ -653,6 +710,7 @@ export function CatalogProductFormSheet({
               variants={form.variants}
               sizesOptions={sizesOptions}
               packagingOptions={packagingOptions}
+              unitOptions={unitOptions}
               updateVariant={updateVariant}
               removeVariant={removeVariant}
               onAddSize={onAddSize}
@@ -672,7 +730,11 @@ export function CatalogProductFormSheet({
         {activeTab === 'conversions' && form.productType === 'order' && (
           <ConversionEditor
             conversions={form.inventoryConversions || []}
+            conversionTemplateId={form.conversionTemplateId || ''}
+            conversionTemplates={activeConversionTemplates}
             baseUnit={form.variants?.[0]?.unit || 'piece'}
+            unitOptions={unitOptions}
+            onTemplateChange={(conversionTemplateId) => updateForm({ conversionTemplateId })}
             onChange={(inventoryConversions) => updateForm({ inventoryConversions })}
           />
         )}
@@ -681,6 +743,7 @@ export function CatalogProductFormSheet({
           <RecipeEditor
             recipe={form.recipe || []}
             materialProducts={materialProducts}
+            unitOptions={unitOptions}
             onChange={(recipe) => updateForm({ recipe })}
           />
         )}

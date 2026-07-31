@@ -31,6 +31,7 @@ type ProductRecipeMaterialProduct = {
   nameEn: string | null;
   unit: string | null;
   inventoryConversions?: unknown;
+  conversionTemplate?: { conversions?: unknown } | null;
 };
 
 function decimal(value: unknown): Prisma.Decimal {
@@ -182,7 +183,14 @@ export class ShishaInventorySourceService {
       }),
       this.prisma.orderProduct.findMany({
         where: { companyId, productType: 'order', isActive: true },
-        select: { id: true, nameAr: true, nameEn: true, unit: true, inventoryConversions: true },
+        select: {
+          id: true,
+          nameAr: true,
+          nameEn: true,
+          unit: true,
+          inventoryConversions: true,
+          conversionTemplate: { select: { conversions: true } },
+        },
       }),
     ]);
     const materialById = new Map(materialProducts.map((product) => [product.id, product]));

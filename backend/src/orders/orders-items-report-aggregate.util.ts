@@ -56,6 +56,7 @@ type InventoryProduct = {
   nameEn?: string | null;
   unit?: string | null;
   inventoryConversions?: unknown;
+  conversionTemplate?: { conversions?: unknown } | null;
   recipe?: unknown;
 };
 

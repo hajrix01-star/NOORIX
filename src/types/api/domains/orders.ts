@@ -38,6 +38,52 @@ export type OrderProductUnitConversion = {
   label?: string | null;
 };
 
+export type OrderCatalogUnit = {
+  id: string;
+  companyId?: string;
+  code: string;
+  nameAr: string;
+  nameEn?: string | null;
+  kind?: string | null;
+  isDefault?: boolean;
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
+export type OrderCatalogUnitPayload = {
+  companyId?: string;
+  code?: string;
+  nameAr: string;
+  nameEn?: string | null;
+  kind?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
+export type OrderConversionTemplate = {
+  id: string;
+  companyId?: string;
+  code: string;
+  nameAr: string;
+  nameEn?: string | null;
+  description?: string | null;
+  conversions?: OrderProductUnitConversion[] | unknown;
+  isDefault?: boolean;
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
+export type OrderConversionTemplatePayload = {
+  companyId?: string;
+  code?: string;
+  nameAr: string;
+  nameEn?: string | null;
+  description?: string | null;
+  conversions?: OrderProductUnitConversion[];
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
 export type OrderProductRecipeMaterialType = 'material' | 'tobacco' | 'hose' | 'charcoal';
 export type OrderProductRecipeUnit = 'g' | 'kg' | 'ml' | 'l' | 'piece' | 'pack' | 'box' | 'carton';
 
@@ -79,6 +125,8 @@ export type OrderProduct = {
   lastPrice?: MoneyLike | null;
   variants?: OrderProductVariant[] | unknown;
   inventoryConversions?: OrderProductUnitConversion[] | unknown;
+  conversionTemplateId?: string | null;
+  conversionTemplate?: OrderConversionTemplate | null;
   recipe?: OrderProductRecipeItem[] | unknown;
   sections?: string[] | null;
   sectionIds?: string[] | null;
@@ -234,6 +282,7 @@ export type OrderProductPayload = {
   productType?: OrderProductType;
   variants?: OrderProductVariant[];
   inventoryConversions?: OrderProductUnitConversion[];
+  conversionTemplateId?: string | null;
   recipe?: OrderProductRecipeItem[];
   isActive?: boolean;
 };
