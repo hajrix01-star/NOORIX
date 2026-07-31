@@ -1,6 +1,14 @@
+import 'dotenv/config';
 import pg from 'pg';
 
 const { Client } = pg;
+
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error(
+    'DATABASE_URL is missing. Run the inventory schema verifier from the backend directory with its .env available.',
+  );
+}
 
 const requiredTables = [
   'inventory_stocktakes',
@@ -33,7 +41,7 @@ const requiredIndexes = [
   'inventory_movements_source_key_key',
 ];
 
-const client = new Client({ connectionString: process.env.DATABASE_URL });
+const client = new Client({ connectionString: databaseUrl });
 
 try {
   await client.connect();
