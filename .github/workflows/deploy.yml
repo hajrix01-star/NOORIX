@@ -128,6 +128,9 @@ jobs:
           echo "==> prisma migrate deploy"
           bash "$WORKSPACE/deploy/prisma-migrate-deploy-with-recovery.sh"
 
+          echo "==> verify inventory schema contract"
+          npm run verify:inventory-schema
+
           echo "==> backfill sales shift from notes (legacy rows)"
           node scripts/backfill-sales-shift-from-notes.mjs || echo "WARN: shift backfill skipped/failed"
 

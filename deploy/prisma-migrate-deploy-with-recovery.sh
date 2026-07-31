@@ -1,70 +1,11 @@
 #!/usr/bin/env bash
-# Runs Prisma migrations with a narrow recovery path for restored/staging databases.
+# Runs Prisma migrations in fail-closed mode.
+#
+# Never mark a migration as applied from an error message. PostgreSQL can leave a
+# partially-created schema behind after a failed migration, so schema drift must
+# be repaired by an explicit, idempotent migration committed to the repository.
 set -euo pipefail
 
-LOG="$(mktemp)"
-cleanup() { rm -f "$LOG"; }
-trap cleanup EXIT
-
-attempt_migrate() {
-  : >"$LOG"
-  set +e
-  npx prisma migrate deploy 2>&1 | tee "$LOG"
-  local code="${PIPESTATUS[0]}"
-  set -e
-  return "$code"
-}
-
-first_migration_from_log() {
-  grep -oE '[0-9]{14}_[A-Za-z0-9_-]+' "$LOG" | head -1 || true
-}
-
-MAX_MIGRATION_ATTEMPTS="${MAX_MIGRATION_ATTEMPTS:-5}"
-
-for attempt in $(seq 1 "$MAX_MIGRATION_ATTEMPTS"); do
-  echo "==> [prisma] migrate deploy attempt $attempt"
-  if attempt_migrate; then
-    echo "==> [prisma] migrate deploy succeeded"
-    exit 0
-  fi
-
-  echo "==> [prisma] migrate deploy failed; checking known recovery cases"
-  failed_migration="$(first_migration_from_log)"
-  if [ -z "$failed_migration" ]; then
-    break
-  fi
-
-  if grep -q 'already exists' "$LOG"; then
-    echo "==> [prisma] existing database object detected for $failed_migration"
-    npx prisma migrate resolve --applied "$failed_migration"
-    continue
-  fi
-
-  if grep -qE 'P3005' "$LOG"; then
-    echo "==> [prisma] baseline required for $failed_migration"
-    npx prisma migrate resolve --applied "$failed_migration"
-    continue
-  fi
-
-  if grep -qE 'P3009' "$LOG"; then
-    echo "==> [prisma] failed migration state detected for $failed_migration"
-    npx prisma migrate resolve --rolled-back "$failed_migration" || true
-    continue
-  fi
-
-  if grep -qE 'P3018' "$LOG"; then
-    if grep -q 'already exists' "$LOG"; then
-      echo "==> [prisma] existing database object detected for $failed_migration"
-      npx prisma migrate resolve --applied "$failed_migration"
-      continue
-    fi
-
-    echo "==> [prisma] unrecoverable migration error for $failed_migration; fix migration SQL and redeploy" >&2
-    break
-  fi
-
-  break
-done
-
-echo "==> [prisma] migrate deploy could not be recovered automatically" >&2
-exit 1
+echo "==> [prisma] migrate deploy (strict)"
+npx prisma migrate deploy
+echo "==> [prisma] migrate deploy succeeded"

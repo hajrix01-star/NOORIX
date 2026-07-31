@@ -21,6 +21,7 @@
     "prisma:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "db:deploy": "prisma migrate deploy",
+    "verify:inventory-schema": "node scripts/verify-inventory-schema.mjs",
     "db:delete-vip-moallim": "node prisma/delete-companies.js",
     "db:seed-hajri-history": "node prisma/seed-vat-planning-history.js",
     "db:repair-hajri-active": "node prisma/repair-hajri-vat-active-company.js",
