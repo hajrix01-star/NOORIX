@@ -16,6 +16,7 @@ export type OrderProductForm = {
   categoryId: string;
   sectionIds: string[];
   productType: OrderProductType;
+  unit: string;
   simpleLastPrice: string;
   variants: OrderProductVariant[];
   inventoryConversions: OrderProductUnitConversion[];
@@ -34,6 +35,7 @@ export type OrderProductUpdateBody = {
   categoryId: string | null;
   sectionIds: string[];
   productType: OrderProductType;
+  unit?: string;
   variants?: OrderProductVariant[];
   inventoryConversions?: OrderProductUnitConversion[];
   conversionTemplateId?: string | null;
@@ -52,6 +54,7 @@ export function createEmptyOrderProductForm(productType: OrderProductType): Orde
     categoryId: '',
     sectionIds: [],
     productType,
+    unit: 'piece',
     simpleLastPrice: '',
     variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
     inventoryConversions: [],
@@ -134,6 +137,7 @@ export function buildEditableOrderProduct(
     categoryId: product.categoryId || '',
     sectionIds: Array.isArray(product.sectionIds) ? [...product.sectionIds] : [],
     productType: normalizeOrderProductType(product.productType, fallbackProductType),
+    unit: String(product.unit || 'piece').trim() || 'piece',
     simpleLastPrice: hasVariants ? '' : String(product.lastPrice ?? ''),
     inventoryConversions: sanitizeInventoryConversions(product.inventoryConversions),
     conversionTemplateId: product.conversionTemplateId || '',
@@ -172,6 +176,7 @@ export function buildOrderProductUpdateBody(
     categoryId: built.categoryId || null,
     sectionIds: built.sectionIds ?? [],
     productType: built.productType ?? fallbackProductType,
+    unit: built.unit,
     inventoryConversions: built.inventoryConversions ?? [],
     conversionTemplateId: built.conversionTemplateId ?? null,
     recipe: built.recipe ?? [],
@@ -261,6 +266,7 @@ export function buildOrderProductPayload(
   const base = {
     nameAr: String(form.nameAr ?? '').trim(),
     nameEn: form.nameEn?.trim() || undefined,
+    unit: String(form.unit ?? 'piece').trim() || 'piece',
     categoryId: form.categoryId || undefined,
     sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
     productType,

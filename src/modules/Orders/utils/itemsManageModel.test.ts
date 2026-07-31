@@ -67,6 +67,7 @@ describe('itemsManageModel', () => {
       categoryId: undefined,
       sectionIds: undefined,
       productType: 'sale',
+      unit: 'piece',
       lastPrice: '5',
     });
   });
@@ -87,6 +88,7 @@ describe('itemsManageModel', () => {
       categoryId: 'c1',
       sectionIds: ['hot'],
       productType: 'order',
+      unit: 'piece',
       variants: [{
         size: 'large',
         packaging: '',
@@ -184,10 +186,35 @@ describe('itemsManageModel', () => {
 
     expect(buildOrderProductPayload(form, 'order')).toMatchObject({
       productType: 'order',
+      unit: 'piece',
       inventoryConversions: [
         { fromUnit: 'kg', toUnit: 'piece', multiplier: '6', label: 'kilo to pieces' },
       ],
     });
     expect(buildOrderProductPayload(form, 'sale')).not.toHaveProperty('inventoryConversions');
+  });
+
+  it('keeps an independent inventory base unit for order products', () => {
+    const payload = buildOrderProductPayload({
+      nameAr: 'Charcoal',
+      nameEn: 'Charcoal',
+      unit: 'piece',
+      variants: [{ size: '', packaging: 'Carton', unit: 'carton', lastPrice: '145', quantityMultiplier: '1' }],
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+      recipe: [],
+    }, 'order');
+
+    expect(payload).toMatchObject({
+      productType: 'order',
+      unit: 'piece',
+      variants: [{ packaging: 'Carton', unit: 'carton', lastPrice: '145' }],
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+    });
   });
 });

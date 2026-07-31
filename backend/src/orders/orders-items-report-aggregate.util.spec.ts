@@ -179,6 +179,58 @@ describe('aggregateRecipeInventoryStock', () => {
     ]);
   });
 
+  it('normalizes chained purchase units before recipe consumption', () => {
+    const charcoal = {
+      id: 'charcoal',
+      nameAr: 'Charcoal',
+      nameEn: 'Charcoal',
+      unit: 'piece',
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+    };
+    const shisha = {
+      id: 'shisha',
+      nameAr: 'Shisha',
+      nameEn: 'Shisha',
+      unit: 'piece',
+      recipe: [
+        { materialType: 'material', materialProductId: 'charcoal', quantity: '10', unit: 'piece' },
+      ],
+    };
+
+    const rows = aggregateRecipeInventoryStock({
+      materialProducts: [charcoal],
+      purchases: [
+        {
+          productId: 'charcoal',
+          quantity: new Prisma.Decimal(2),
+          quantityMultiplier: new Prisma.Decimal(640),
+          product: charcoal,
+        },
+      ],
+      sales: [
+        {
+          productId: 'shisha',
+          quantity: new Prisma.Decimal(5),
+          quantityMultiplier: new Prisma.Decimal(1),
+          product: shisha,
+        },
+      ],
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        productId: 'charcoal',
+        unit: 'piece',
+        purchasedBaseQuantity: '1280',
+        consumedBaseQuantity: '50',
+        balanceBaseQuantity: '1230',
+      }),
+    ]);
+  });
+
   it('reverses consumption when a sold item is cancelled', () => {
     const orange = {
       id: 'orange',

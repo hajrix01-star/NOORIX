@@ -21,6 +21,7 @@ export type CatalogProductFormState = {
   categoryId: string;
   sectionIds: string[];
   productType: OrderProductType;
+  unit: string;
   simpleLastPrice: string;
   variants: OrderProductVariant[];
   inventoryConversions: OrderProductUnitConversion[];
@@ -110,6 +111,17 @@ function parsePositiveNumber(value: unknown): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+function standardConversionMultiplier(fromUnit: string, toUnit: string): string {
+  const pair = `${String(fromUnit || '').trim()}:${String(toUnit || '').trim()}`;
+  const standards = new Map<string, string>([
+    ['kg:g', '1000'],
+    ['g:kg', '0.001'],
+    ['l:ml', '1000'],
+    ['ml:l', '0.001'],
+  ]);
+  return standards.get(pair) || '';
+}
+
 function productUnitConversions(product?: OrderProduct | null): OrderProductUnitConversion[] {
   return Array.isArray(product?.inventoryConversions)
     ? product.inventoryConversions.filter((row): row is OrderProductUnitConversion =>
@@ -168,7 +180,10 @@ function conversionFormulaLines(
 ) {
   const normalizedBaseUnit = String(baseUnit || 'piece').trim() || 'piece';
   const fromUnits = [...new Set(conversions.map((conversion) => String(conversion.fromUnit || '').trim()).filter(Boolean))];
-  return fromUnits.flatMap((fromUnit) => {
+  const nestedToUnits = new Set(conversions.map((conversion) => String(conversion.toUnit || '').trim()).filter(Boolean));
+  const chainRootUnits = fromUnits.filter((fromUnit) => !nestedToUnits.has(fromUnit));
+  const displayUnits = chainRootUnits.length > 0 ? chainRootUnits : fromUnits;
+  return displayUnits.flatMap((fromUnit) => {
     const path = conversionPathToBase(fromUnit, normalizedBaseUnit, conversions, unitOptions);
     return path ? [path] : [];
   });
@@ -296,11 +311,23 @@ function RecipeEditor({
   );
 }
 
-function createConversionRow(baseUnit: string): OrderProductUnitConversion {
+function createConversionRow(
+  baseUnit: string,
+  conversions: OrderProductUnitConversion[],
+  purchaseUnit: string,
+): OrderProductUnitConversion {
+  const normalizedBaseUnit = String(baseUnit || 'piece').trim() || 'piece';
+  const normalizedPurchaseUnit = String(purchaseUnit || '').trim();
+  const previousToUnit = String(conversions.at(-1)?.toUnit || '').trim();
+  const fromUnit = previousToUnit
+    || (normalizedPurchaseUnit && normalizedPurchaseUnit !== normalizedBaseUnit ? normalizedPurchaseUnit : '')
+    || (normalizedBaseUnit === 'g' ? 'kg' : 'carton');
+  const toUnit = normalizedBaseUnit;
+
   return {
-    fromUnit: 'kg',
-    toUnit: baseUnit || 'piece',
-    multiplier: '',
+    fromUnit,
+    toUnit,
+    multiplier: standardConversionMultiplier(fromUnit, toUnit),
     label: '',
   };
 }
@@ -335,7 +362,9 @@ function ConversionEditor({
   conversionTemplateId,
   conversionTemplates,
   baseUnit,
+  purchaseUnit,
   unitOptions,
+  onBaseUnitChange,
   onTemplateChange,
   onChange,
 }: {
@@ -343,7 +372,9 @@ function ConversionEditor({
   conversionTemplateId: string;
   conversionTemplates: OrderConversionTemplate[];
   baseUnit: string;
+  purchaseUnit: string;
   unitOptions: UnitOption[];
+  onBaseUnitChange: (unit: string) => void;
   onTemplateChange: (templateId: string) => void;
   onChange: (conversions: OrderProductUnitConversion[]) => void;
 }) {
@@ -351,7 +382,13 @@ function ConversionEditor({
 
   function updateRow(index: number, patch: Partial<OrderProductUnitConversion>) {
     onChange(conversions.map((row, rowIndex) => (
-      rowIndex === index ? { ...row, ...patch } : row
+      rowIndex === index
+        ? (() => {
+            const next = { ...row, ...patch };
+            const standardMultiplier = standardConversionMultiplier(next.fromUnit, next.toUnit);
+            return standardMultiplier ? { ...next, multiplier: standardMultiplier } : next;
+          })()
+        : row
     )));
   }
 
@@ -365,7 +402,7 @@ function ConversionEditor({
         <Button
           type="button"
           size="sm"
-          onClick={() => onChange([...conversions, createConversionRow(baseUnit)])}
+          onClick={() => onChange([...conversions, createConversionRow(baseUnit, conversions, purchaseUnit)])}
         >
           + وحدة
         </Button>
@@ -373,7 +410,17 @@ function ConversionEditor({
       <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
         وحدة المخزون الأساسية: <b>{unitLabel(baseUnit || 'piece', unitOptions)}</b>. عرّف سلسلة الصنف فقط، مثل: كرتون → علبة → حبة.
       </div>
-      <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr]">
+      <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr]">
+        <Input
+          type="select"
+          label="وحدة المخزون الأساسية"
+          value={baseUnit || 'piece'}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => onBaseUnitChange(event.target.value)}
+        >
+          {unitOptions.map((unit) => (
+            <option key={unit.value} value={unit.value}>{unit.label}</option>
+          ))}
+        </Input>
         <Input
           type="select"
           label="قالب جاهز اختياري"
@@ -793,8 +840,10 @@ export function CatalogProductFormSheet({
             conversions={form.inventoryConversions || []}
             conversionTemplateId={form.conversionTemplateId || ''}
             conversionTemplates={activeConversionTemplates}
-            baseUnit={form.variants?.[0]?.unit || 'piece'}
+            baseUnit={form.unit || 'piece'}
+            purchaseUnit={form.variants?.[0]?.unit || 'piece'}
             unitOptions={unitOptions}
+            onBaseUnitChange={(unit) => updateForm({ unit })}
             onTemplateChange={(conversionTemplateId) => updateForm({ conversionTemplateId })}
             onChange={(inventoryConversions) => updateForm({ inventoryConversions })}
           />
