@@ -357,6 +357,16 @@ function conversionUnitOptionsForField(
   ));
 }
 
+function conversionStepSummary(
+  row: OrderProductUnitConversion,
+  unitOptions: UnitOption[],
+) {
+  const multiplier = String(row.multiplier || '').trim() || '؟';
+  const fromUnit = unitLabel(String(row.fromUnit || ''), unitOptions);
+  const toUnit = unitLabel(String(row.toUnit || ''), unitOptions);
+  return `1 ${fromUnit} = ${multiplier} ${toUnit}`;
+}
+
 function ConversionEditor({
   conversions,
   conversionTemplateId,
@@ -396,24 +406,24 @@ function ConversionEditor({
     <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <div className="text-[13px] font-bold text-noorix-text">وحدات الصنف</div>
-          <div className="text-[12px] text-noorix-muted">عرّف وحدات الشراء والتحويل حتى تصل إلى وحدة المخزون الأساسية.</div>
+          <div className="text-[13px] font-bold text-noorix-text">سلسلة المخزون</div>
+          <div className="text-[12px] text-noorix-muted">المصدر الوحيد لحساب المخزون والرسبي. السعر والفاتورة في تبويب الشراء والسعر.</div>
         </div>
         <Button
           type="button"
           size="sm"
           onClick={() => onChange([...conversions, createConversionRow(baseUnit, conversions, purchaseUnit)])}
         >
-          + وحدة
+          + تحويل
         </Button>
       </div>
       <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
-        وحدة المخزون الأساسية: <b>{unitLabel(baseUnit || 'piece', unitOptions)}</b>. عرّف سلسلة الصنف فقط، مثل: كرتون → علبة → حبة.
+        وحدة الخصم من المخزون: <b>{unitLabel(baseUnit || 'piece', unitOptions)}</b>. اكتب السلسلة مرة واحدة فقط، مثل: كرتون → علبة → حبة.
       </div>
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr]">
         <Input
           type="select"
-          label="وحدة المخزون الأساسية"
+          label="وحدة الخصم/المخزون"
           value={baseUnit || 'piece'}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onBaseUnitChange(event.target.value)}
         >
@@ -436,7 +446,7 @@ function ConversionEditor({
         </Input>
         {conversionTemplateId && (
           <div className="rounded-lg border border-noorix-border bg-white p-3 text-[12px] text-noorix-muted">
-            القالب يضيف تحويلاته للحسابات. الوحدات الخاصة أدناه هي مصدر هذا الصنف عند الاختلاف.
+            القالب يضيف تحويلات جاهزة للحسابات. التحويلات التي تضيفها هنا تخص هذا الصنف فقط.
           </div>
         )}
       </div>
@@ -454,29 +464,17 @@ function ConversionEditor({
             const toUnitOptions = conversionUnitOptionsForField(unitOptions, conversions, index, 'toUnit', fromUnit);
 
             return (
-              <div key={`${row.fromUnit}-${row.toUnit}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[1fr_110px_110px_120px_44px]">
-                <Input
-                  value={String(row.label ?? '')}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { label: event.target.value })}
-                  placeholder="اسم الوحدة اختياري"
-                />
+              <div key={`${row.fromUnit}-${row.toUnit}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[92px_1fr_118px_1fr_44px]">
+                <div className="flex min-h-10 items-center justify-center rounded-lg border border-noorix-border bg-noorix-bg-muted px-2 text-[12px] font-bold text-noorix-text">
+                  مرحلة {index + 1}
+                </div>
                 <Input
                   type="select"
-                  aria-label="الوحدة الأكبر"
+                  aria-label="من وحدة"
                   value={fromUnit}
                   onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { fromUnit: event.target.value })}
                 >
                   {fromUnitOptions.map((unit) => (
-                    <option key={unit.value} value={unit.value}>{unit.label}</option>
-                  ))}
-                </Input>
-                <Input
-                  type="select"
-                  aria-label="تتحول إلى"
-                  value={toUnit}
-                  onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { toUnit: event.target.value })}
-                >
-                  {toUnitOptions.map((unit) => (
                     <option key={unit.value} value={unit.value}>{unit.label}</option>
                   ))}
                 </Input>
@@ -486,11 +484,25 @@ function ConversionEditor({
                   step="0.001"
                   value={String(row.multiplier ?? '')}
                   onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { multiplier: event.target.value })}
-                  placeholder="العدد"
+                  placeholder="يساوي"
+                  title={conversionStepSummary(row, unitOptions)}
                 />
+                <Input
+                  type="select"
+                  aria-label="إلى وحدة"
+                  value={toUnit}
+                  onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { toUnit: event.target.value })}
+                >
+                  {toUnitOptions.map((unit) => (
+                    <option key={unit.value} value={unit.value}>{unit.label}</option>
+                  ))}
+                </Input>
                 <Button type="button" size="sm" variant="danger" onClick={() => onChange(conversions.filter((_, rowIndex) => rowIndex !== index))}>
                   x
                 </Button>
+                <div className="text-[12px] font-semibold text-emerald-800 sm:col-span-5">
+                  {conversionStepSummary(row, unitOptions)}
+                </div>
               </div>
             );
           })()
@@ -539,19 +551,22 @@ function VariantsTable({
 }) {
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
-        <label className="text-[12px] text-noorix-muted">{t('ordersProductVariants')}</label>
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <div>
+          <label className="text-[12px] font-bold text-noorix-text">خيارات الشراء والسعر</label>
+          <div className="text-[11px] text-noorix-muted">للفواتير والتسعير فقط. حساب المخزون يتم من تبويب التحويلات.</div>
+        </div>
         <Button type="button" size="sm" onClick={addVariant}>+ {t('ordersAddVariant')}</Button>
       </div>
       <div className="overflow-x-auto rounded-lg border border-noorix-border">
         <table className="w-full min-w-[560px] border-collapse text-[12px]">
           <thead>
             <tr className="border-b border-noorix-border bg-noorix-bg-muted">
-              <th className="px-2.5 py-2 text-right font-semibold">{t('ordersProductSize')}</th>
-              <th className="px-2.5 py-2 text-right font-semibold">{t('ordersProductPackaging')}</th>
-              <th className="px-2.5 py-2 text-right font-semibold">{t('unit')}</th>
-              <th className="px-2.5 py-2 text-right font-semibold">{t('ordersVariantMultiplier')}</th>
-              <th className="px-2.5 py-2 text-right font-semibold">{t('ordersVariantPrice')}</th>
+              <th className="px-2.5 py-2 text-right font-semibold">وصف الشراء</th>
+              <th className="px-2.5 py-2 text-right font-semibold">التغليف الظاهر</th>
+              <th className="px-2.5 py-2 text-right font-semibold">وحدة الفاتورة</th>
+              <th className="px-2.5 py-2 text-right font-semibold">كمية الفاتورة</th>
+              <th className="px-2.5 py-2 text-right font-semibold">السعر</th>
               <th className="w-10 px-1 py-2" />
             </tr>
           </thead>
@@ -617,7 +632,7 @@ function VariantsTable({
                       updateVariant(index, 'quantityMultiplier', event.target.value)
                     }
                     className="w-20"
-                    title={t('ordersVariantMultiplierHint')}
+                    title="كمية هذه التركيبة في الفاتورة فقط، وليست معادلة المخزون."
                   />
                 </td>
                 <td className="px-2 py-1.5">
