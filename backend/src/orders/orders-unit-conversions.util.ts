@@ -44,6 +44,13 @@ function unitPairMultiplier(fromUnit: string, toUnit: string): Prisma.Decimal | 
   return multiplier ? new Prisma.Decimal(multiplier) : null;
 }
 
+function commonUnitConversions(): ProductUnitConversionInput[] {
+  return [
+    { fromUnit: 'kg', toUnit: 'g', multiplier: '1000' },
+    { fromUnit: 'l', toUnit: 'ml', multiplier: '1000' },
+  ];
+}
+
 function conversionRows(value: unknown): ProductUnitConversionInput[] {
   return Array.isArray(value)
     ? value.filter((row): row is ProductUnitConversionInput => Boolean(row) && typeof row === 'object')
@@ -52,9 +59,50 @@ function conversionRows(value: unknown): ProductUnitConversionInput[] {
 
 function productConversions(product: ProductWithUnitConversions): ProductUnitConversionInput[] {
   return [
+    ...commonUnitConversions(),
     ...conversionRows(product.inventoryConversions),
     ...conversionRows(product.conversionTemplate?.conversions),
   ];
+}
+
+function conversionEdges(product: ProductWithUnitConversions) {
+  return productConversions(product).flatMap((row) => {
+    const fromUnit = normalizeUnit(row.fromUnit, '');
+    const toUnit = normalizeUnit(row.toUnit, '');
+    const multiplier = decimal(row.multiplier);
+    if (!fromUnit || !toUnit || !multiplier) return [];
+    return [
+      { fromUnit, toUnit, multiplier },
+      { fromUnit: toUnit, toUnit: fromUnit, multiplier: ONE.div(multiplier) },
+    ];
+  });
+}
+
+function resolveConversionPath(
+  product: ProductWithUnitConversions,
+  fromUnit: string,
+  toUnit: string,
+): Prisma.Decimal | null {
+  if (fromUnit === toUnit) return ONE;
+  const edges = conversionEdges(product);
+  const queue: Array<{ unit: string; multiplier: Prisma.Decimal }> = [
+    { unit: fromUnit, multiplier: ONE },
+  ];
+  const visited = new Set<string>([fromUnit]);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) continue;
+    for (const edge of edges.filter((candidate) => candidate.fromUnit === current.unit)) {
+      if (visited.has(edge.toUnit)) continue;
+      const nextMultiplier = current.multiplier.times(edge.multiplier);
+      if (edge.toUnit === toUnit) return nextMultiplier;
+      visited.add(edge.toUnit);
+      queue.push({ unit: edge.toUnit, multiplier: nextMultiplier });
+    }
+  }
+
+  return null;
 }
 
 export function resolveProductUnitMultiplier(
@@ -67,17 +115,8 @@ export function resolveProductUnitMultiplier(
   const directCommon = unitPairMultiplier(fromUnit, toUnit);
   if (directCommon) return directCommon;
 
-  const custom = productConversions(product).find((row) =>
-    normalizeUnit(row.fromUnit) === fromUnit && normalizeUnit(row.toUnit, toUnit) === toUnit,
-  );
-  const customMultiplier = custom ? decimal(custom.multiplier) : null;
-  if (customMultiplier) return customMultiplier;
-
-  const reverse = productConversions(product).find((row) =>
-    normalizeUnit(row.fromUnit) === toUnit && normalizeUnit(row.toUnit, fromUnit) === fromUnit,
-  );
-  const reverseMultiplier = reverse ? decimal(reverse.multiplier) : null;
-  if (reverseMultiplier) return ONE.div(reverseMultiplier);
+  const pathMultiplier = resolveConversionPath(product, fromUnit, toUnit);
+  if (pathMultiplier) return pathMultiplier;
 
   return ONE;
 }

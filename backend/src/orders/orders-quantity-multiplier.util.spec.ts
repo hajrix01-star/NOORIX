@@ -29,6 +29,20 @@ describe('resolveQuantityMultiplier', () => {
     expect(resolveQuantityMultiplier({ variants: [] }, { unit: 'half_pack' }).toNumber()).toBe(0.5);
   });
 
+  it('uses product unit conversion chains when no legacy variant matches', () => {
+    const material = {
+      unit: 'piece',
+      variants: [],
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'box', multiplier: '10' },
+        { fromUnit: 'box', toUnit: 'piece', multiplier: '64' },
+      ],
+    };
+
+    expect(resolveQuantityMultiplier(material, { unit: 'carton' }).toNumber()).toBe(640);
+    expect(resolveQuantityMultiplier(material, { unit: 'box' }).toNumber()).toBe(64);
+  });
+
   it('derives every purchase packaging price from the carton price', () => {
     const variants = standardCharcoalVariants('145');
     expect(variants.find((variant) => variant.packaging === 'علبة')).toMatchObject({

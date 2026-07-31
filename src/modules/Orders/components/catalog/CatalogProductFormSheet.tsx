@@ -106,6 +106,79 @@ function productSearchableLabel(product: OrderProduct) {
   return categoryName ? `${label} - ${categoryName}` : label;
 }
 
+function unitLabel(value: string, unitOptions: UnitOption[]) {
+  return unitOptions.find((unit) => unit.value === value)?.label || value;
+}
+
+function parsePositiveNumber(value: unknown): number | null {
+  const parsed = Number.parseFloat(String(value ?? ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function productUnitConversions(product?: OrderProduct | null): OrderProductUnitConversion[] {
+  return Array.isArray(product?.inventoryConversions)
+    ? product.inventoryConversions.filter((row): row is OrderProductUnitConversion =>
+        Boolean(row) && typeof row === 'object',
+      )
+    : [];
+}
+
+function unitOptionsForProduct(product: OrderProduct | null | undefined, fallbackOptions: UnitOption[]): UnitOption[] {
+  const byValue = new Map<string, UnitOption>();
+  const baseUnit = String(product?.unit || 'piece').trim() || 'piece';
+  byValue.set(baseUnit, { value: baseUnit, label: unitLabel(baseUnit, fallbackOptions) });
+  for (const conversion of productUnitConversions(product)) {
+    const fromUnit = String(conversion.fromUnit || '').trim();
+    const toUnit = String(conversion.toUnit || '').trim();
+    if (fromUnit) byValue.set(fromUnit, { value: fromUnit, label: unitLabel(fromUnit, fallbackOptions) });
+    if (toUnit) byValue.set(toUnit, { value: toUnit, label: unitLabel(toUnit, fallbackOptions) });
+  }
+  for (const option of fallbackOptions) {
+    if (['piece', 'g', 'kg', 'ml', 'l'].includes(option.value)) byValue.set(option.value, option);
+  }
+  return [...byValue.values()];
+}
+
+function conversionPathToBase(
+  unit: string,
+  baseUnit: string,
+  conversions: OrderProductUnitConversion[],
+  unitOptions: UnitOption[],
+) {
+  const parts: Array<{ unit: string; quantity: number }> = [{ unit, quantity: 1 }];
+  const visited = new Set<string>([unit]);
+  let currentUnit = unit;
+  let currentQuantity = 1;
+
+  while (currentUnit !== baseUnit) {
+    const edge = conversions.find((conversion) => String(conversion.fromUnit || '').trim() === currentUnit);
+    const multiplier = parsePositiveNumber(edge?.multiplier);
+    const toUnit = String(edge?.toUnit || '').trim();
+    if (!edge || !multiplier || !toUnit || visited.has(toUnit)) return null;
+    currentQuantity *= multiplier;
+    currentUnit = toUnit;
+    visited.add(currentUnit);
+    parts.push({ unit: currentUnit, quantity: currentQuantity });
+  }
+
+  return parts
+    .map((part, index) => `${index === 0 ? '1' : part.quantity.toLocaleString('en-US')} ${unitLabel(part.unit, unitOptions)}`)
+    .join(' = ');
+}
+
+function conversionFormulaLines(
+  baseUnit: string,
+  conversions: OrderProductUnitConversion[],
+  unitOptions: UnitOption[],
+) {
+  const normalizedBaseUnit = String(baseUnit || 'piece').trim() || 'piece';
+  const fromUnits = [...new Set(conversions.map((conversion) => String(conversion.fromUnit || '').trim()).filter(Boolean))];
+  return fromUnits.flatMap((fromUnit) => {
+    const path = conversionPathToBase(fromUnit, normalizedBaseUnit, conversions, unitOptions);
+    return path ? [path] : [];
+  });
+}
+
 function filterWithSelected<T extends { id: string }>(
   rows: T[],
   selectedId: string | null | undefined,
@@ -118,11 +191,12 @@ function filterWithSelected<T extends { id: string }>(
 }
 
 function createRecipeRow(materialProducts: OrderProduct[]): OrderProductRecipeItem {
+  const firstProduct = materialProducts[0];
   return {
     materialType: 'material',
-    materialProductId: materialProducts[0]?.id ?? '',
+    materialProductId: firstProduct?.id ?? '',
     quantity: '',
-    unit: 'piece',
+    unit: firstProduct?.unit || 'piece',
   };
 }
 
@@ -137,6 +211,10 @@ function RecipeEditor({
   unitOptions: UnitOption[];
   onChange: (recipe: OrderProductRecipeItem[]) => void;
 }) {
+  const materialById = useMemo(
+    () => new Map(materialProducts.map((product) => [product.id, product])),
+    [materialProducts],
+  );
   const materialOptions = useMemo(
     () => materialProducts.map((product) => ({
       value: product.id,
@@ -148,7 +226,12 @@ function RecipeEditor({
   function updateRow(index: number, patch: Partial<OrderProductRecipeItem>) {
     onChange(recipe.map((row, rowIndex) => {
       if (rowIndex !== index) return row;
-      return { ...row, ...patch, materialType: 'material', unit: patch.unit ?? row.unit ?? 'piece' };
+      const nextMaterialId = patch.materialProductId ?? row.materialProductId;
+      const nextMaterial = materialById.get(nextMaterialId);
+      const nextUnit = patch.materialProductId && patch.materialProductId !== row.materialProductId
+        ? nextMaterial?.unit || 'piece'
+        : patch.unit ?? row.unit ?? nextMaterial?.unit ?? 'piece';
+      return { ...row, ...patch, materialType: 'material', unit: nextUnit };
     }));
   }
 
@@ -203,7 +286,7 @@ function RecipeEditor({
                 value={String(row.unit || 'piece')}
                 onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { unit: event.target.value })}
               >
-                {unitOptions.map((unit) => (
+                {unitOptionsForProduct(materialById.get(row.materialProductId), unitOptions).map((unit) => (
                   <option key={unit.value} value={unit.value}>{unit.label}</option>
                 ))}
               </Input>
@@ -244,6 +327,8 @@ function ConversionEditor({
   onTemplateChange: (templateId: string) => void;
   onChange: (conversions: OrderProductUnitConversion[]) => void;
 }) {
+  const formulaLines = conversionFormulaLines(baseUnit, conversions, unitOptions);
+
   function updateRow(index: number, patch: Partial<OrderProductUnitConversion>) {
     onChange(conversions.map((row, rowIndex) => (
       rowIndex === index ? { ...row, ...patch } : row
@@ -254,24 +339,24 @@ function ConversionEditor({
     <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <div className="text-[13px] font-bold text-noorix-text">التحويلات</div>
-          <div className="text-[12px] text-noorix-muted">عرّف تحويلات هذا الصنف للمخزون والرسبي، مثل كيلو = 6 حبات.</div>
+          <div className="text-[13px] font-bold text-noorix-text">وحدات الصنف</div>
+          <div className="text-[12px] text-noorix-muted">عرّف وحدات الشراء والتحويل حتى تصل إلى وحدة المخزون الأساسية.</div>
         </div>
         <Button
           type="button"
           size="sm"
           onClick={() => onChange([...conversions, createConversionRow(baseUnit)])}
         >
-          + تحويل
+          + وحدة
         </Button>
       </div>
       <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
-        التحويلات القياسية محفوظة تلقائياً: 1 كيلو = 1000 جرام، 1 لتر = 1000 مل. أضف هنا فقط التحويلات الخاصة بالصنف.
+        وحدة المخزون الأساسية: <b>{unitLabel(baseUnit || 'piece', unitOptions)}</b>. مثال: كرتون = 10 علب، علبة = 64 حبة.
       </div>
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr]">
         <Input
           type="select"
-          label="قالب التحويل"
+          label="قالب جاهز اختياري"
           value={conversionTemplateId}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onTemplateChange(event.target.value)}
         >
@@ -284,7 +369,7 @@ function ConversionEditor({
         </Input>
         {conversionTemplateId && (
           <div className="rounded-lg border border-noorix-border bg-white p-3 text-[12px] text-noorix-muted">
-            القالب يضيف تحويلاته تلقائياً للحسابات. التحويلات بالأسفل تعتبر استثناءات خاصة بهذا الصنف.
+            القالب يضيف تحويلاته للحسابات. الوحدات الخاصة أدناه هي مصدر هذا الصنف عند الاختلاف.
           </div>
         )}
       </div>
@@ -295,14 +380,15 @@ function ConversionEditor({
           </div>
         )}
         {conversions.map((row, index) => (
-          <div key={`${row.fromUnit}-${row.toUnit}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[1fr_96px_96px_110px_44px]">
+          <div key={`${row.fromUnit}-${row.toUnit}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[1fr_110px_110px_120px_44px]">
             <Input
               value={String(row.label ?? '')}
               onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { label: event.target.value })}
-              placeholder="وصف اختياري"
+              placeholder="اسم الوحدة اختياري"
             />
             <Input
               type="select"
+              aria-label="الوحدة الأكبر"
               value={String(row.fromUnit || 'kg')}
               onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { fromUnit: event.target.value })}
             >
@@ -312,6 +398,7 @@ function ConversionEditor({
             </Input>
             <Input
               type="select"
+              aria-label="تتحول إلى"
               value={String(row.toUnit || baseUnit || 'piece')}
               onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { toUnit: event.target.value })}
             >
@@ -325,7 +412,7 @@ function ConversionEditor({
               step="0.001"
               value={String(row.multiplier ?? '')}
               onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { multiplier: event.target.value })}
-              placeholder="المعامل"
+              placeholder="العدد"
             />
             <Button type="button" size="sm" variant="danger" onClick={() => onChange(conversions.filter((_, rowIndex) => rowIndex !== index))}>
               x
@@ -333,6 +420,20 @@ function ConversionEditor({
           </div>
         ))}
       </div>
+      {conversions.length > 0 && (
+        <div className="mt-3 rounded-xl border border-noorix-border bg-white p-3">
+          <div className="mb-2 text-[12px] font-bold text-noorix-text">معادلة الصنف</div>
+          {formulaLines.length > 0 ? (
+            <div className="flex flex-col gap-1 text-[12px] font-semibold text-emerald-800">
+              {formulaLines.map((line) => <div key={line}>{line}</div>)}
+            </div>
+          ) : (
+            <div className="text-[12px] text-orange-700">
+              أكمل سلسلة التحويل حتى تصل إلى وحدة المخزون الأساسية.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -34,7 +34,13 @@ export class OrdersService {
     const productIds = [...new Set(items.map((item) => item.productId))];
     const products = await this.prisma.orderProduct.findMany({
       where: { companyId, id: { in: productIds } },
-      select: { id: true, variants: true },
+      select: {
+        id: true,
+        unit: true,
+        variants: true,
+        inventoryConversions: true,
+        conversionTemplate: { select: { conversions: true } },
+      },
     });
     const productMap = new Map(products.map((product) => [product.id, product]));
     const missing = productIds.filter((productId) => !productMap.has(productId));
