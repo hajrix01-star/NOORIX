@@ -16,7 +16,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo journalctl -u noorix-backend --since "2 hours ago" --no-pager \
+          LOG="$(sudo journalctl -u noorix-backend --since "2 hours ago" --no-pager \
             | grep -E -A30 -B4 'HttpExceptionFilter|OrdersInventoryService|recipe-inventory-stock|Unhandled:|PrismaKnown' \
             | tail -n 240 \
-            || true
+            || true)"
+          printf '%s\n' "$LOG"
+          SAFE="${LOG//'%'/'%25'}"
+          SAFE="${SAFE//$'\r'/'%0D'}"
+          SAFE="${SAFE//$'\n'/'%0A'}"
+          printf '::notice title=Inventory runtime log::%s\n' "$SAFE"
