@@ -227,6 +227,8 @@ export type OrderRecipeInventoryStockRow = {
   productId: string;
   productNameAr: string;
   productNameEn: string | null;
+  sections: string[];
+  sectionIds: string[];
   unit: string;
   purchasedBaseQuantity: MoneyLike;
   consumedBaseQuantity: MoneyLike;

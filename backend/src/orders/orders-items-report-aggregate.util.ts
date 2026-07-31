@@ -54,6 +54,8 @@ type InventoryProduct = {
   id: string;
   nameAr: string;
   nameEn?: string | null;
+  sections?: unknown;
+  sectionIds?: unknown;
   unit?: string | null;
   inventoryConversions?: unknown;
   conversionTemplate?: { conversions?: unknown } | null;
@@ -84,6 +86,8 @@ type InventoryAccumulator = {
   productId: string;
   productNameAr: string;
   productNameEn: string | null;
+  sections: string[];
+  sectionIds: string[];
   unit: string;
   purchasedBaseQuantity: Prisma.Decimal;
   consumedBaseQuantity: Prisma.Decimal;
@@ -138,6 +142,8 @@ function ensureInventoryRow(
     productId: product.id,
     productNameAr: product.nameAr,
     productNameEn: product.nameEn ?? null,
+    sections: parseStringArray(product.sections),
+    sectionIds: parseStringArray(product.sectionIds),
     unit: String(product.unit || unitFallback || 'piece').trim() || 'piece',
     purchasedBaseQuantity: new Prisma.Decimal(0),
     consumedBaseQuantity: new Prisma.Decimal(0),
@@ -355,13 +361,15 @@ export function aggregateRecipeInventoryStock(input: {
   }
 
   return Array.from(rows.values())
-    .map((row) => ({
-      productId: row.productId,
-      productNameAr: row.productNameAr,
-      productNameEn: row.productNameEn,
-      unit: row.unit,
-      purchasedBaseQuantity: row.purchasedBaseQuantity.toString(),
-      consumedBaseQuantity: row.consumedBaseQuantity.toString(),
+        .map((row) => ({
+          productId: row.productId,
+          productNameAr: row.productNameAr,
+          productNameEn: row.productNameEn,
+          sections: row.sections,
+          sectionIds: row.sectionIds,
+          unit: row.unit,
+          purchasedBaseQuantity: row.purchasedBaseQuantity.toString(),
+          consumedBaseQuantity: row.consumedBaseQuantity.toString(),
       balanceBaseQuantity: row.purchasedBaseQuantity.minus(row.consumedBaseQuantity).toString(),
     }))
     .sort((a, b) => a.productNameAr.localeCompare(b.productNameAr, 'ar'));

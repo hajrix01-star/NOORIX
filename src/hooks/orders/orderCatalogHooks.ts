@@ -136,7 +136,7 @@ export function useCategoryPurchaseHistoryRange(
 export function useCreateOrderProductMutation(companyId: string) {
   return useApiMutation({
     mutationFn: createOrderProduct,
-    invalidateQueries: [orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }
@@ -144,7 +144,7 @@ export function useCreateOrderProductMutation(companyId: string) {
 export function useCreateOrderProductsBatchMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (products: OrderProductPayload[]) => createOrderProductsBatch(companyId, products),
-    invalidateQueries: [orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }
@@ -160,7 +160,7 @@ export function useCreateOrderCategoriesBatchMutation(companyId: string) {
 export function useUpdateOrderProductMutation(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, body }: MutationArgs<Partial<OrderProductPayload>>) => updateOrderProduct(id, body, companyId),
-    invalidateQueries: [orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }
@@ -176,7 +176,7 @@ export function useCreateOrderCategoryMutation(companyId: string) {
 export function useCreateOrderCatalogUnitMutation(companyId: string) {
   return useApiMutation({
     mutationFn: createOrderCatalogUnit,
-    invalidateQueries: [orderKeys.catalogUnits(companyId), orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.catalogUnits(companyId), orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }
@@ -185,7 +185,7 @@ export function useUpdateOrderCatalogUnitMutation(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, body }: MutationArgs<Partial<OrderCatalogUnitPayload>>) =>
       updateOrderCatalogUnit(id, body, companyId),
-    invalidateQueries: [orderKeys.catalogUnits(companyId), orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.catalogUnits(companyId), orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }
@@ -193,7 +193,7 @@ export function useUpdateOrderCatalogUnitMutation(companyId: string) {
 export function useDeleteOrderCatalogUnitMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (id: string) => deleteOrderCatalogUnit(id, companyId),
-    invalidateQueries: [orderKeys.catalogUnits(companyId), orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.catalogUnits(companyId), orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }
@@ -201,7 +201,7 @@ export function useDeleteOrderCatalogUnitMutation(companyId: string) {
 export function useCreateOrderConversionTemplateMutation(companyId: string) {
   return useApiMutation({
     mutationFn: createOrderConversionTemplate,
-    invalidateQueries: [orderKeys.conversionTemplates(companyId), orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.conversionTemplates(companyId), orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }
@@ -210,7 +210,7 @@ export function useUpdateOrderConversionTemplateMutation(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, body }: MutationArgs<Partial<OrderConversionTemplatePayload>>) =>
       updateOrderConversionTemplate(id, body, companyId),
-    invalidateQueries: [orderKeys.conversionTemplates(companyId), orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.conversionTemplates(companyId), orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }
@@ -218,7 +218,7 @@ export function useUpdateOrderConversionTemplateMutation(companyId: string) {
 export function useDeleteOrderConversionTemplateMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (id: string) => deleteOrderConversionTemplate(id, companyId),
-    invalidateQueries: [orderKeys.conversionTemplates(companyId), orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.conversionTemplates(companyId), orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }
@@ -234,7 +234,7 @@ export function useUpdateOrderCategoryMutation(companyId: string) {
 export function useDeleteOrderProductsMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (ids: string[]) => deactivateOrderProductsBulk(companyId, ids),
-    invalidateQueries: [orderKeys.products(companyId)],
+    invalidateQueries: [orderKeys.products(companyId), orderKeys.recipeInventoryStockRoot()],
     showErrorToast: false,
   });
 }

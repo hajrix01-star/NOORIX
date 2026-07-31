@@ -5,6 +5,7 @@ import {
   getOrders,
   getOrdersItemsReport,
   getOrdersItemsReportRange,
+  getOrdersRecipeInventoryStock,
   getOrdersRangeSummary,
   getOrdersSummary,
   updateOrder,
@@ -13,6 +14,7 @@ import { orderKeys } from '../../services/queryKeys';
 import type {
   OrderItemsReportRow,
   OrderItemsReportResult,
+  OrderRecipeInventoryStockRow,
   OrderRangeSummary,
   OrderRecord,
   OrderSummary,
@@ -73,6 +75,7 @@ export function useCreateOrderMutation(companyId?: string) {
       orderKeys.listRoot(),
       orderKeys.summaryRoot(),
       orderKeys.rangeSummaryRoot(),
+      orderKeys.recipeInventoryStockRoot(),
       ...(companyId ? [orderKeys.products(companyId)] : [orderKeys.productsRoot()]),
     ],
     showErrorToast: false,
@@ -86,6 +89,7 @@ export function useUpdateOrderMutation(companyId: string) {
       orderKeys.listRoot(),
       orderKeys.summaryRoot(),
       orderKeys.rangeSummaryRoot(),
+      orderKeys.recipeInventoryStockRoot(),
       ...(companyId ? [orderKeys.products(companyId)] : []),
     ],
     showErrorToast: false,
@@ -95,7 +99,12 @@ export function useUpdateOrderMutation(companyId: string) {
 export function useCancelOrderMutation(companyId: string) {
   return useApiMutation({
     mutationFn: (id: string) => cancelOrder(id, companyId),
-    invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot(), orderKeys.rangeSummaryRoot()],
+    invalidateQueries: [
+      orderKeys.listRoot(),
+      orderKeys.summaryRoot(),
+      orderKeys.rangeSummaryRoot(),
+      orderKeys.recipeInventoryStockRoot(),
+    ],
     showErrorToast: false,
   });
 }
@@ -142,5 +151,14 @@ export function useOrdersItemsReportRange(companyId: string, startDate: string, 
     queryFn: () => getOrdersItemsReportRange(companyId, normalizedStartDate, normalizedEndDate),
     fallbackMessage: 'Failed to load orders items report range',
     enabled: !!companyId && hasValidRange,
+  });
+}
+
+export function useOrdersRecipeInventoryStock(companyId: string) {
+  return useApiListQuery<OrderRecipeInventoryStockRow>({
+    queryKey: orderKeys.recipeInventoryStock(companyId),
+    queryFn: () => getOrdersRecipeInventoryStock(companyId),
+    fallbackMessage: 'Failed to load recipe inventory stock',
+    enabled: !!companyId,
   });
 }

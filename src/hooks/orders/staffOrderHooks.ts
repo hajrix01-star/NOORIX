@@ -86,6 +86,7 @@ export function useCreateStaffOrderMutation(companyId: string) {
       ['staffSaleNextLogRef', companyId],
       ['staffSaleDateStatus', companyId],
       orderKeys.shishaInventoryRoot(),
+      orderKeys.recipeInventoryStockRoot(),
     ],
     showErrorToast: false,
   });
@@ -99,6 +100,7 @@ export function useUpdateStaffOrderMutation(companyId: string) {
       ['salesReport', companyId],
       ['staffSaleDateStatus', companyId],
       orderKeys.shishaInventoryRoot(),
+      orderKeys.recipeInventoryStockRoot(),
     ],
     showErrorToast: false,
   });
@@ -112,6 +114,7 @@ export function useDeleteStaffOrderMutation(companyId: string) {
       ['salesReport', companyId],
       ['staffSaleDateStatus', companyId],
       orderKeys.shishaInventoryRoot(),
+      orderKeys.recipeInventoryStockRoot(),
     ],
     showErrorToast: false,
   });
