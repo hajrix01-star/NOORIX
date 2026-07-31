@@ -13,11 +13,6 @@ import type {
   OrderSection,
 } from '../../../../types/api';
 import { productHasAdvancedVariants } from './catalogProductUtils';
-import {
-  buildStandardCharcoalVariants,
-  charcoalConversionLabel,
-  isCharcoalCatalogProduct,
-} from '../../utils/charcoalPackaging';
 
 export type CatalogProductFormState = {
   id?: string;
@@ -351,7 +346,7 @@ function ConversionEditor({
         </Button>
       </div>
       <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
-        وحدة المخزون الأساسية: <b>{unitLabel(baseUnit || 'piece', unitOptions)}</b>. مثال: كرتون = 10 علب، علبة = 64 حبة.
+        وحدة المخزون الأساسية: <b>{unitLabel(baseUnit || 'piece', unitOptions)}</b>. عرّف سلسلة الصنف فقط، مثل: كرتون → علبة → حبة.
       </div>
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr]">
         <Input
@@ -449,8 +444,6 @@ function VariantsTable({
   onAddSize,
   onAddPackaging,
   addVariant,
-  charcoalMode,
-  charcoalPurchaseMode,
 }: {
   t: (key: string) => string;
   variants: OrderProductVariant[];
@@ -462,41 +455,7 @@ function VariantsTable({
   onAddSize: () => void;
   onAddPackaging: () => void;
   addVariant: () => void;
-  charcoalMode: boolean;
-  charcoalPurchaseMode: boolean;
 }) {
-  if (charcoalMode) {
-    return (
-      <div className="space-y-3">
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
-          أحجام الفحم مرتبطة بمعادلات ثابتة: العلبة 64 حبة، والكرتون 10 علب. الوحدة ومعامل التحويل يحددهما النظام تلقائياً.
-        </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {variants.map((variant, index) => (
-            <div key={String(variant.packaging || index)} className="rounded-xl border border-noorix-border bg-noorix-bg-muted p-3">
-              <div className="mb-1 text-[13px] font-bold text-noorix-text">{String(variant.packaging || 'فحم')}</div>
-              <div className="mb-3 text-[11px] font-semibold text-emerald-700">
-                {charcoalConversionLabel(variant)}
-              </div>
-              {charcoalPurchaseMode && (
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  label={t('ordersVariantPrice')}
-                  value={variant.lastPrice}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                    updateVariant(index, 'lastPrice', event.target.value)
-                  }
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
@@ -633,8 +592,6 @@ export function CatalogProductFormSheet({
     () => conversionTemplates.filter((template) => template.isActive !== false),
     [conversionTemplates],
   );
-  const charcoalMode = Boolean(form && isCharcoalCatalogProduct(form));
-  const charcoalPurchaseMode = charcoalMode && form?.productType === 'order';
   const visibleCategories = useMemo(() => {
     const query = searchableText(categorySearch);
     return filterWithSelected(categories, form?.categoryId, (category) => {
@@ -649,33 +606,6 @@ export function CatalogProductFormSheet({
     setActiveTab('details');
     setCategorySearch('');
   }, [open, form?.id]);
-
-  useEffect(() => {
-    if (!open || !charcoalMode) return;
-    setAdvanced(true);
-    setForm((current) => {
-      if (!current || !isCharcoalCatalogProduct(current)) return current;
-      const standardized = buildStandardCharcoalVariants(
-        current.variants || [],
-        current.productType === 'order',
-      );
-      const currentFingerprint = JSON.stringify((current.variants || []).map((variant) => [
-        variant.packaging,
-        variant.unit,
-        String(variant.quantityMultiplier ?? '1'),
-        String(variant.lastPrice ?? ''),
-      ]));
-      const nextFingerprint = JSON.stringify(standardized.map((variant) => [
-        variant.packaging,
-        variant.unit,
-        String(variant.quantityMultiplier ?? '1'),
-        String(variant.lastPrice ?? ''),
-      ]));
-      return currentFingerprint === nextFingerprint
-        ? current
-        : { ...current, variants: standardized, _advanced: true };
-    });
-  }, [charcoalMode, open, setForm]);
 
   if (!form) return null;
 
@@ -817,14 +747,10 @@ export function CatalogProductFormSheet({
               onAddSize={onAddSize}
               onAddPackaging={onAddPackaging}
               addVariant={addVariant}
-              charcoalMode={charcoalMode}
-              charcoalPurchaseMode={charcoalPurchaseMode}
             />
-            {!charcoalMode && (
-              <Button type="button" size="sm" variant="ghost" onClick={() => setAdvanced(false)}>
-                {t('ordersProductSimplePrice')}
-              </Button>
-            )}
+            <Button type="button" size="sm" variant="ghost" onClick={() => setAdvanced(false)}>
+              {t('ordersProductSimplePrice')}
+            </Button>
           </>
         ))}
 
