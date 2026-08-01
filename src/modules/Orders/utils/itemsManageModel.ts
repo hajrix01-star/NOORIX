@@ -238,7 +238,9 @@ export function filterOrderCategoriesForManageTab(categories: OrderCategory[], s
 
 export function filterRecipeMaterialProducts(products: OrderProduct[], currentProductId?: string) {
   return products.filter((product) =>
-    product.id !== currentProductId && normalizeOrderProductType(product.productType, 'order') === 'order',
+    product.id !== currentProductId
+    && product.isActive !== false
+    && normalizeOrderProductType(product.productType, 'order') === 'order',
   );
 }
 

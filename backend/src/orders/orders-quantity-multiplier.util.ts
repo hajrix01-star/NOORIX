@@ -54,6 +54,29 @@ function positiveQuantityMultiplierOrNull(
   }
 }
 
+function selectionConversionMultiplier(
+  product: QuantityMultiplierProduct | null | undefined,
+  packaging: string,
+  unit: string,
+  baseUnit: string,
+): Prisma.Decimal | null {
+  const candidates = [packaging, unit]
+    .map((value) => normalized(value))
+    .filter(Boolean)
+    .map((value) => normalizeUnit(value, baseUnit));
+
+  for (const candidate of [...new Set(candidates)]) {
+    if (candidate === baseUnit) continue;
+    const multiplier = resolveProductUnitMultiplierOrNull(
+      product ?? {},
+      candidate,
+      baseUnit,
+    );
+    if (multiplier) return multiplier;
+  }
+  return null;
+}
+
 /** Resolve multipliers for new writes without guessing or silent fallbacks. */
 export function resolveQuantityMultiplierOrNull(
   product: QuantityMultiplierProduct | null | undefined,
@@ -67,19 +90,24 @@ export function resolveQuantityMultiplierOrNull(
   const baseUnit = normalizeUnit(product?.unit, 'piece');
   const unit = normalizeUnit(selection.unit, baseUnit);
 
-  if (unit === baseUnit) {
-    if (!size && !packaging) return ONE;
-  } else {
-    const unitMultiplier = resolveProductUnitMultiplierOrNull(product ?? {}, unit, baseUnit);
-    if (unitMultiplier) return unitMultiplier;
-  }
+  const conversionMultiplier = selectionConversionMultiplier(
+    product,
+    packaging,
+    unit,
+    baseUnit,
+  );
+  if (conversionMultiplier) return conversionMultiplier;
 
   const match = variants.find((variant) =>
     normalized(variant.size) === size
     && normalized(variant.packaging) === packaging
     && normalizeUnit(variant.unit, baseUnit) === unit,
   );
-  return match ? positiveQuantityMultiplierOrNull(match.quantityMultiplier) : null;
+  const legacyMultiplier = match
+    ? positiveQuantityMultiplierOrNull(match.quantityMultiplier)
+    : null;
+  if (legacyMultiplier) return legacyMultiplier;
+  return unit === baseUnit && !size && !packaging ? ONE : null;
 }
 
 export function resolveQuantityMultiplier(
@@ -91,12 +119,15 @@ export function resolveQuantityMultiplier(
     : [];
   const size = normalized(selection.size);
   const packaging = normalized(selection.packaging);
-  const unit = normalizeUnit(selection.unit);
-  const baseUnit = normalizeUnit(product?.unit, unit);
-  const unitMultiplier = unit !== baseUnit
-    ? resolveProductUnitMultiplierOrNull(product ?? {}, unit, baseUnit)
-    : null;
-  if (unitMultiplier) return unitMultiplier;
+  const baseUnit = normalizeUnit(product?.unit, 'piece');
+  const unit = normalizeUnit(selection.unit, baseUnit);
+  const conversionMultiplier = selectionConversionMultiplier(
+    product,
+    packaging,
+    unit,
+    baseUnit,
+  );
+  if (conversionMultiplier) return conversionMultiplier;
 
   const match = variants.find((variant) =>
     normalized(variant.size) === size
@@ -104,6 +135,7 @@ export function resolveQuantityMultiplier(
     && normalizeUnit(variant.unit) === unit,
   );
   if (match) return positiveQuantityMultiplier(match.quantityMultiplier);
+  if (unit === baseUnit && !size) return ONE;
   if (unit === 'half_pack') return new Prisma.Decimal('0.5');
   if (variants.length > 0 && !size && !packaging) {
     return positiveQuantityMultiplier(variants[0].quantityMultiplier);

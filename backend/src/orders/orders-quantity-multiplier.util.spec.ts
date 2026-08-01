@@ -40,6 +40,22 @@ describe('resolveQuantityMultiplier', () => {
     expect(resolveQuantityMultiplier(material, { unit: 'box' }).toNumber()).toBe(64);
   });
 
+  it('uses the purchased packaging before the invoice unit', () => {
+    const material = {
+      unit: 'piece',
+      variants: [],
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'box', multiplier: '10' },
+        { fromUnit: 'box', toUnit: 'piece', multiplier: '64' },
+      ],
+    };
+
+    expect(resolveQuantityMultiplier(material, {
+      packaging: 'carton',
+      unit: 'box',
+    }).toNumber()).toBe(640);
+  });
+
   it('does not require a conversion when selection and base unit are semantic aliases', () => {
     expect(resolveQuantityMultiplier({ unit: 'piece', variants: [] }, { unit: 'حبة' }).toNumber()).toBe(1);
   });

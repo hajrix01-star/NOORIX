@@ -13,6 +13,15 @@ import type {
   OrderSection,
 } from '../../../../types/api';
 import { productHasAdvancedVariants } from './catalogProductUtils';
+import { normalizeOrderProductType } from '../../utils/itemsManageModel';
+import {
+  conversionRowsFromUnknown,
+  findCatalogConversionSequenceIssue,
+  normalizeCatalogUnit,
+  productConvertibleUnitValues,
+  productInventoryConversions,
+  resolveCatalogUnitMultiplier,
+} from '../../utils/productUnitConversionModel';
 
 export type CatalogProductFormState = {
   id?: string;
@@ -122,28 +131,11 @@ function standardConversionMultiplier(fromUnit: string, toUnit: string): string 
   return standards.get(pair) || '';
 }
 
-function productUnitConversions(product?: OrderProduct | null): OrderProductUnitConversion[] {
-  return Array.isArray(product?.inventoryConversions)
-    ? product.inventoryConversions.filter((row): row is OrderProductUnitConversion =>
-        Boolean(row) && typeof row === 'object',
-      )
-    : [];
-}
-
 function unitOptionsForProduct(product: OrderProduct | null | undefined, fallbackOptions: UnitOption[]): UnitOption[] {
-  const byValue = new Map<string, UnitOption>();
-  const baseUnit = String(product?.unit || 'piece').trim() || 'piece';
-  byValue.set(baseUnit, { value: baseUnit, label: unitLabel(baseUnit, fallbackOptions) });
-  for (const conversion of productUnitConversions(product)) {
-    const fromUnit = String(conversion.fromUnit || '').trim();
-    const toUnit = String(conversion.toUnit || '').trim();
-    if (fromUnit) byValue.set(fromUnit, { value: fromUnit, label: unitLabel(fromUnit, fallbackOptions) });
-    if (toUnit) byValue.set(toUnit, { value: toUnit, label: unitLabel(toUnit, fallbackOptions) });
-  }
-  for (const option of fallbackOptions) {
-    if (['piece', 'g', 'kg', 'ml', 'l'].includes(option.value)) byValue.set(option.value, option);
-  }
-  return [...byValue.values()];
+  return productConvertibleUnitValues(product).map((value) => ({
+    value,
+    label: unitLabel(value, fallbackOptions),
+  }));
 }
 
 function conversionPathToBase(
@@ -223,6 +215,7 @@ function RecipeEditor({
 }) {
   const [draft, setDraft] = useState<OrderProductRecipeItem>(() => createRecipeRow(materialProducts));
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [recipeError, setRecipeError] = useState('');
   const materialById = useMemo(
     () => new Map(materialProducts.map((product) => [product.id, product])),
     [materialProducts],
@@ -244,7 +237,7 @@ function RecipeEditor({
 
   function normalizeRecipeRow(row: OrderProductRecipeItem, patch: Partial<OrderProductRecipeItem> = {}) {
     const nextMaterialId = patch.materialProductId ?? row.materialProductId;
-      const nextMaterial = materialById.get(nextMaterialId);
+    const nextMaterial = materialById.get(nextMaterialId);
     const nextUnit = patch.materialProductId && patch.materialProductId !== row.materialProductId
       ? nextMaterial?.unit || 'piece'
       : patch.unit ?? row.unit ?? nextMaterial?.unit ?? 'piece';
@@ -252,19 +245,47 @@ function RecipeEditor({
   }
 
   function updateDraft(patch: Partial<OrderProductRecipeItem>) {
+    setRecipeError('');
     setDraft((currentDraft) => normalizeRecipeRow(currentDraft, patch));
   }
 
   function resetDraft() {
     setDraft(createRecipeRow(materialProducts));
     setEditingIndex(null);
+    setRecipeError('');
   }
 
   function saveDraft() {
-    if (materialProducts.length === 0) return;
+    if (materialProducts.length === 0) {
+      setRecipeError('لا توجد مواد مخزون صالحة للربط.');
+      return;
+    }
     const normalizedDraft = normalizeRecipeRow(draft);
-    const quantity = String(normalizedDraft.quantity ?? '').trim();
-    if (!normalizedDraft.materialProductId || !quantity) return;
+    const material = materialById.get(normalizedDraft.materialProductId);
+    const quantity = parsePositiveNumber(normalizedDraft.quantity);
+    if (
+      !material
+      || material.isActive === false
+      || normalizeOrderProductType(material.productType, 'order') !== 'order'
+    ) {
+      setRecipeError('اختر مادة مشتراة وفعالة من مخزون الطلبات.');
+      return;
+    }
+    if (!quantity) {
+      setRecipeError('أدخل كمية استهلاك أكبر من صفر.');
+      return;
+    }
+    const baseUnit = material.unit || 'piece';
+    const recipeUnit = normalizedDraft.unit || baseUnit;
+    const multiplier = resolveCatalogUnitMultiplier(
+      productInventoryConversions(material),
+      recipeUnit,
+      baseUnit,
+    );
+    if (multiplier === null) {
+      setRecipeError(`الوحدة المختارة غير مرتبطة بوحدة مخزون ${productLabel(material)}.`);
+      return;
+    }
     if (editingIndex === null) {
       onChange([...recipe, normalizedDraft]);
     } else {
@@ -278,6 +299,7 @@ function RecipeEditor({
     if (!row) return;
     setDraft(normalizeRecipeRow(row));
     setEditingIndex(index);
+    setRecipeError('');
   }
 
   function removeRow(index: number) {
@@ -313,7 +335,7 @@ function RecipeEditor({
               />
               <Input
                 type="number"
-                min="0"
+                min="0.001"
                 step="0.001"
                 value={String(draft.quantity ?? '')}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => updateDraft({ quantity: event.target.value })}
@@ -337,6 +359,11 @@ function RecipeEditor({
                 {editingIndex === null ? 'حفظ المكون' : 'حفظ التعديل'}
               </Button>
             </div>
+            {recipeError && (
+              <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700">
+                {recipeError}
+              </div>
+            )}
             {editingIndex !== null && (
               <div className="mt-2 flex justify-end">
                 <Button type="button" size="sm" variant="ghost" onClick={resetDraft}>
@@ -408,31 +435,6 @@ function createConversionRow(
   };
 }
 
-type ConversionUnitField = 'fromUnit' | 'toUnit';
-
-function conversionUnitOptionsForField(
-  unitOptions: UnitOption[],
-  conversions: OrderProductUnitConversion[],
-  rowIndex: number,
-  field: ConversionUnitField,
-  oppositeUnit: string,
-) {
-  const currentUnit = String(conversions[rowIndex]?.[field] ?? '').trim();
-  const selectedInOtherRows = new Set(
-    conversions.flatMap((row, index) => {
-      if (index === rowIndex) return [];
-      const selectedUnit = String(row[field] ?? '').trim();
-      return selectedUnit ? [selectedUnit] : [];
-    }),
-  );
-  const blockedOppositeUnit = String(oppositeUnit || '').trim();
-
-  return unitOptions.filter((unit) => (
-    unit.value === currentUnit
-    || (!selectedInOtherRows.has(unit.value) && unit.value !== blockedOppositeUnit)
-  ));
-}
-
 function conversionStepSummary(
   row: OrderProductUnitConversion,
   unitOptions: UnitOption[],
@@ -466,19 +468,127 @@ function ConversionEditor({
   onTemplateChange: (templateId: string) => void;
   onChange: (conversions: OrderProductUnitConversion[]) => void;
 }) {
-  const formulaLines = conversionFormulaLines(baseUnit, conversions, unitOptions);
+  const [draft, setDraft] = useState<OrderProductUnitConversion | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editorError, setEditorError] = useState('');
+  const selectedTemplate = useMemo(
+    () => conversionTemplates.find((template) => template.id === conversionTemplateId),
+    [conversionTemplateId, conversionTemplates],
+  );
+  const templateConversions = useMemo(
+    () => conversionRowsFromUnknown(selectedTemplate?.conversions),
+    [selectedTemplate],
+  );
+  const effectiveConversions = useMemo(
+    () => [...templateConversions, ...conversions],
+    [conversions, templateConversions],
+  );
+  const formulaLines = conversionFormulaLines(baseUnit, effectiveConversions, unitOptions);
   const visiblePackaging = String(purchasePackaging || '').trim();
+  const sequenceIssue = findCatalogConversionSequenceIssue({
+    conversions: effectiveConversions,
+    purchaseUnit,
+    baseUnit,
+  });
 
-  function updateRow(index: number, patch: Partial<OrderProductUnitConversion>) {
-    onChange(conversions.map((row, rowIndex) => (
-      rowIndex === index
-        ? (() => {
-            const next = { ...row, ...patch };
-            const standardMultiplier = standardConversionMultiplier(next.fromUnit, next.toUnit);
-            return standardMultiplier ? { ...next, multiplier: standardMultiplier } : next;
-          })()
-        : row
-    )));
+  function closeEditor() {
+    setDraft(null);
+    setEditingIndex(null);
+    setEditorError('');
+  }
+
+  function startAdd() {
+    setDraft(createConversionRow(baseUnit, effectiveConversions, purchaseUnit));
+    setEditingIndex(null);
+    setEditorError('');
+  }
+
+  function startEdit(index: number) {
+    const row = conversions[index];
+    if (!row) return;
+    setDraft({ ...row });
+    setEditingIndex(index);
+    setEditorError('');
+  }
+
+  function updateDraft(patch: Partial<OrderProductUnitConversion>) {
+    setEditorError('');
+    setDraft((current) => {
+      if (!current) return current;
+      const next = { ...current, ...patch };
+      const standardMultiplier = standardConversionMultiplier(next.fromUnit, next.toUnit);
+      return standardMultiplier ? { ...next, multiplier: standardMultiplier } : next;
+    });
+  }
+
+  function saveDraft() {
+    if (!draft) return;
+    const fromUnit = normalizeCatalogUnit(draft.fromUnit);
+    const toUnit = normalizeCatalogUnit(draft.toUnit);
+    const multiplier = parsePositiveNumber(draft.multiplier);
+    if (!fromUnit || !toUnit) {
+      setEditorError('حدد وحدتي التحويل.');
+      return;
+    }
+    if (fromUnit === toUnit) {
+      setEditorError('يجب أن تكون وحدة البداية مختلفة عن وحدة الناتج.');
+      return;
+    }
+    if (!multiplier) {
+      setEditorError('أدخل معامل تحويل أكبر من صفر.');
+      return;
+    }
+
+    const otherRows = [
+      ...templateConversions,
+      ...conversions.filter((_, index) => index !== editingIndex),
+    ];
+    const hasDuplicatePair = otherRows.some((row) => {
+      const rowFrom = normalizeCatalogUnit(row.fromUnit);
+      const rowTo = normalizeCatalogUnit(row.toUnit);
+      return (rowFrom === fromUnit && rowTo === toUnit)
+        || (rowFrom === toUnit && rowTo === fromUnit);
+    });
+    if (hasDuplicatePair) {
+      setEditorError('هذا التحويل موجود مسبقاً أو مكرر بالاتجاه العكسي.');
+      return;
+    }
+    const hasAmbiguousSource = otherRows.some((row) => (
+      normalizeCatalogUnit(row.fromUnit) === fromUnit
+      && normalizeCatalogUnit(row.toUnit) !== toUnit
+    ));
+    if (hasAmbiguousSource) {
+      setEditorError('وحدة البداية مرتبطة بمسار آخر. استخدم المرحلة التالية من السلسلة.');
+      return;
+    }
+
+    const normalizedDraft: OrderProductUnitConversion = {
+      ...draft,
+      fromUnit,
+      toUnit,
+      multiplier: String(multiplier),
+    };
+    const nextConversions = editingIndex === null
+      ? [...conversions, normalizedDraft]
+      : conversions.map((row, index) => (index === editingIndex ? normalizedDraft : row));
+    const nextIssue = findCatalogConversionSequenceIssue({
+      conversions: [...templateConversions, ...nextConversions],
+      purchaseUnit,
+      baseUnit,
+    });
+    if (nextIssue?.kind === 'disconnected') {
+      setEditorError(
+        `المرحلة ${nextIssue.index + 1} يجب أن تبدأ من ${unitLabel(nextIssue.expectedFromUnit, unitOptions)} لأنها ناتج المرحلة السابقة.`,
+      );
+      return;
+    }
+    onChange(nextConversions);
+    closeEditor();
+  }
+
+  function removeRow(index: number) {
+    onChange(conversions.filter((_, rowIndex) => rowIndex !== index));
+    if (editingIndex === index) closeEditor();
   }
 
   return (
@@ -491,7 +601,8 @@ function ConversionEditor({
         <Button
           type="button"
           size="sm"
-          onClick={() => onChange([...conversions, createConversionRow(baseUnit, conversions, purchaseUnit)])}
+          onClick={startAdd}
+          disabled={draft !== null}
         >
           + تحويل
         </Button>
@@ -529,65 +640,98 @@ function ConversionEditor({
           </div>
         )}
       </div>
-      <div className="flex flex-col gap-2">
-        {conversions.length === 0 && (
+      <div className="flex flex-col gap-3">
+        {effectiveConversions.length === 0 && !draft && (
           <div className="rounded-lg border border-dashed border-noorix-border bg-white p-3 text-center text-[13px] text-noorix-muted">
-            لا توجد تحويلات مخصصة لهذا الصنف.
+            لا توجد مراحل تحويل. أضف أول مرحلة من وحدة الشراء حتى تصل إلى وحدة المخزون.
           </div>
         )}
-        {conversions.map((row, index) => (
-          (() => {
-            const fromUnit = String(row.fromUnit || 'kg');
-            const toUnit = String(row.toUnit || baseUnit || 'piece');
-            const fromUnitOptions = conversionUnitOptionsForField(unitOptions, conversions, index, 'fromUnit', toUnit);
-            const toUnitOptions = conversionUnitOptionsForField(unitOptions, conversions, index, 'toUnit', fromUnit);
-
-            return (
-              <div key={`${row.fromUnit}-${row.toUnit}-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border border-noorix-border bg-white p-2 sm:grid-cols-[92px_1fr_118px_1fr_44px]">
-                <div className="flex min-h-10 items-center justify-center rounded-lg border border-noorix-border bg-noorix-bg-muted px-2 text-[12px] font-bold text-noorix-text">
-                  مرحلة {index + 1}
-                </div>
-                <Input
-                  type="select"
-                  aria-label="من وحدة"
-                  value={fromUnit}
-                  onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { fromUnit: event.target.value })}
-                >
-                  {fromUnitOptions.map((unit) => (
-                    <option key={unit.value} value={unit.value}>{unit.label}</option>
-                  ))}
-                </Input>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  value={String(row.multiplier ?? '')}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(index, { multiplier: event.target.value })}
-                  placeholder="يساوي"
-                  title={conversionStepSummary(row, unitOptions)}
-                />
-                <Input
-                  type="select"
-                  aria-label="إلى وحدة"
-                  value={toUnit}
-                  onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(index, { toUnit: event.target.value })}
-                >
-                  {toUnitOptions.map((unit) => (
-                    <option key={unit.value} value={unit.value}>{unit.label}</option>
-                  ))}
-                </Input>
-                <Button type="button" size="sm" variant="danger" onClick={() => onChange(conversions.filter((_, rowIndex) => rowIndex !== index))}>
-                  x
-                </Button>
-                <div className="text-[12px] font-semibold text-emerald-800 sm:col-span-5">
-                  {conversionStepSummary(row, unitOptions)}
-                </div>
+        {effectiveConversions.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-noorix-border bg-white">
+            <div className="grid grid-cols-[70px_minmax(0,1fr)_116px] border-b border-noorix-border bg-noorix-bg-muted px-3 py-2 text-center text-[12px] font-bold text-noorix-text">
+              <span>المرحلة</span>
+              <span>المعادلة</span>
+              <span>الإجراءات</span>
+            </div>
+            {templateConversions.map((row, index) => (
+              <div
+                key={`template-${row.fromUnit}-${row.toUnit}-${index}`}
+                className="grid grid-cols-[70px_minmax(0,1fr)_116px] items-center border-b border-noorix-border px-3 py-2 text-center text-[13px]"
+              >
+                <span className="font-bold text-noorix-muted">{index + 1}</span>
+                <span className="font-semibold text-noorix-text">{conversionStepSummary(row, unitOptions)}</span>
+                <span className="text-[11px] text-noorix-muted">من القالب</span>
               </div>
-            );
-          })()
-        ))}
+            ))}
+            {conversions.map((row, index) => (
+              <div
+                key={`custom-${row.fromUnit}-${row.toUnit}-${index}`}
+                className="grid grid-cols-[70px_minmax(0,1fr)_116px] items-center border-b border-noorix-border px-3 py-2 text-center text-[13px] last:border-b-0"
+              >
+                <span className="font-bold text-noorix-muted">{templateConversions.length + index + 1}</span>
+                <span className="font-semibold text-noorix-text">{conversionStepSummary(row, unitOptions)}</span>
+                <span className="flex items-center justify-center gap-1">
+                  <Button type="button" size="sm" variant="ghost" onClick={() => startEdit(index)}>تحرير</Button>
+                  <Button type="button" size="sm" variant="danger" onClick={() => removeRow(index)}>حذف</Button>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {sequenceIssue && !draft && (
+          <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-[12px] font-semibold text-orange-800">
+            {sequenceIssue.kind === 'disconnected'
+              ? `المرحلة ${sequenceIssue.index + 1} غير متصلة بما قبلها؛ يجب أن تبدأ من ${unitLabel(sequenceIssue.expectedFromUnit, unitOptions)}.`
+              : `السلسلة غير مكتملة؛ أضف المرحلة التالية حتى تصل إلى وحدة المخزون: ${unitLabel(sequenceIssue.expectedFromUnit, unitOptions)}.`}
+          </div>
+        )}
+        {draft && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+            <div className="mb-2 text-[12px] font-bold text-noorix-text">
+              {editingIndex === null ? 'إضافة مرحلة تحويل' : `تحرير المرحلة ${templateConversions.length + editingIndex + 1}`}
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_1fr_auto]">
+              <Input
+                type="select"
+                aria-label="من وحدة"
+                value={String(draft.fromUnit || '')}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => updateDraft({ fromUnit: event.target.value })}
+              >
+                {unitOptions.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
+              </Input>
+              <Input
+                type="number"
+                min="0.001"
+                step="0.001"
+                value={String(draft.multiplier ?? '')}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => updateDraft({ multiplier: event.target.value })}
+                placeholder="العدد"
+              />
+              <Input
+                type="select"
+                aria-label="إلى وحدة"
+                value={String(draft.toUnit || '')}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => updateDraft({ toUnit: event.target.value })}
+              >
+                {unitOptions.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
+              </Input>
+              <div className="flex items-center gap-1">
+                <Button type="button" size="sm" onClick={saveDraft}>حفظ</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={closeEditor}>إلغاء</Button>
+              </div>
+            </div>
+            <div className="mt-2 text-[12px] font-semibold text-emerald-800">
+              {conversionStepSummary(draft, unitOptions)}
+            </div>
+            {editorError && (
+              <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700">
+                {editorError}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-      {conversions.length > 0 && (
+      {effectiveConversions.length > 0 && (
         <div className="mt-3 rounded-xl border border-noorix-border bg-white p-3">
           <div className="mb-2 text-[12px] font-bold text-noorix-text">معادلة الصنف</div>
           <div className="mb-2 text-[12px] text-noorix-muted">
@@ -769,6 +913,7 @@ export function CatalogProductFormSheet({
   const [advanced, setAdvanced] = useState(false);
   const [activeTab, setActiveTab] = useState<CatalogFormTab>('details');
   const [categorySearch, setCategorySearch] = useState('');
+  const [formError, setFormError] = useState('');
   const unitOptions = useMemo(() => toUnitOptions(catalogUnits), [catalogUnits]);
   const activeConversionTemplates = useMemo(
     () => conversionTemplates.filter((template) => template.isActive !== false),
@@ -787,6 +932,7 @@ export function CatalogProductFormSheet({
     setAdvanced(Boolean(form._advanced) || productHasAdvancedVariants(form));
     setActiveTab('details');
     setCategorySearch('');
+    setFormError('');
   }, [open, form?.id]);
 
   if (!form) return null;
@@ -794,7 +940,36 @@ export function CatalogProductFormSheet({
   const title = mode === 'edit' ? t('ordersEditProduct') : t('ordersAddProduct');
 
   function updateForm(patch: Partial<CatalogProductFormState>) {
+    setFormError('');
     setForm((current) => (current ? { ...current, ...patch } : current));
+  }
+
+  function handleSave() {
+    if (!form) return;
+    if (form.productType === 'order') {
+      const selectedTemplate = activeConversionTemplates.find(
+        (template) => template.id === form.conversionTemplateId,
+      );
+      const issue = findCatalogConversionSequenceIssue({
+        conversions: [
+          ...conversionRowsFromUnknown(selectedTemplate?.conversions),
+          ...conversionRowsFromUnknown(form.inventoryConversions),
+        ],
+        purchaseUnit: form.variants?.[0]?.unit || form.unit || 'piece',
+        baseUnit: form.unit || 'piece',
+      });
+      if (issue) {
+        setActiveTab('conversions');
+        setFormError(
+          issue.kind === 'disconnected'
+            ? `لا يمكن الحفظ: المرحلة ${issue.index + 1} غير متصلة. يجب أن تبدأ من ${unitLabel(issue.expectedFromUnit, unitOptions)}.`
+            : `لا يمكن الحفظ: أكمل سلسلة التحويل حتى تصل إلى وحدة المخزون ${unitLabel(issue.expectedFromUnit, unitOptions)}.`,
+        );
+        return;
+      }
+    }
+    setFormError('');
+    onSave();
   }
 
   function toggleSection(sectionId: string, checked: boolean) {
@@ -822,7 +997,7 @@ export function CatalogProductFormSheet({
             ...(mode === 'edit' && onDelete
               ? [{ key: 'delete', label: t('delete'), role: 'delete' as const, disabled: saving, onClick: onDelete }]
               : []),
-            { key: 'save', label: t('save'), role: 'save', loading: saving, disabled: saving, onClick: onSave },
+            { key: 'save', label: t('save'), role: 'save', loading: saving, disabled: saving, onClick: handleSave },
           ]}
         />
       )}
@@ -835,9 +1010,11 @@ export function CatalogProductFormSheet({
             ...(form.productType === 'order' ? [{ key: 'conversions' as const, label: 'التحويلات' }] : []),
             ...(form.productType === 'sale' ? [{ key: 'recipe' as const, label: 'الرسبي' }] : []),
           ].map((tab) => (
-            <button
+            <Button
               key={tab.key}
               type="button"
+              size="sm"
+              variant={activeTab === tab.key ? 'success' : 'ghost'}
               className={`rounded-lg px-3 py-2 text-[13px] font-bold transition ${
                 activeTab === tab.key
                   ? 'bg-emerald-700 text-white shadow-sm'
@@ -846,9 +1023,15 @@ export function CatalogProductFormSheet({
               onClick={() => setActiveTab(tab.key)}
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
+
+        {formError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13px] font-semibold text-red-700">
+            {formError}
+          </div>
+        )}
 
         {activeTab === 'details' && (
           <>
@@ -943,7 +1126,7 @@ export function CatalogProductFormSheet({
             conversionTemplates={activeConversionTemplates}
             baseUnit={form.unit || 'piece'}
             purchasePackaging={form.variants?.[0]?.packaging || ''}
-            purchaseUnit={form.variants?.[0]?.unit || 'piece'}
+            purchaseUnit={form.variants?.[0]?.unit || form.unit || 'piece'}
             unitOptions={unitOptions}
             onBaseUnitChange={(unit) => updateForm({ unit })}
             onTemplateChange={(conversionTemplateId) => updateForm({ conversionTemplateId })}

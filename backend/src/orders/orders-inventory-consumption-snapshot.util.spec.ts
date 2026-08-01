@@ -61,6 +61,44 @@ describe('inventory consumption snapshots', () => {
     })).toThrow('Missing inventory conversion');
   });
 
+  it('consumes a purchased inventory material through a multi-stage recipe conversion', () => {
+    const chainedMaterial = {
+      ...material,
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+    };
+    const chainedSaleProduct = {
+      ...saleProduct,
+      recipe: [
+        { materialProductId: material.id, quantity: '0.25', unit: 'carton' },
+      ],
+    };
+
+    const snapshot = buildInventoryConsumptionSnapshot({
+      saleProduct: chainedSaleProduct,
+      soldQuantity: '2',
+      soldQuantityMultiplier: '1',
+      materialById: new Map([[material.id, chainedMaterial]]),
+    });
+
+    expect(snapshot.components).toEqual([{
+      materialProductId: material.id,
+      materialBaseUnit: 'piece',
+      quantityBase: '320',
+    }]);
+  });
+
+  it('rejects sale products used as inventory recipe materials', () => {
+    expect(() => buildInventoryConsumptionSnapshot({
+      saleProduct,
+      soldQuantity: '1',
+      soldQuantityMultiplier: '1',
+      materialById: new Map([[material.id, { ...material, productType: 'sale' }]]),
+    })).toThrow('not an inventory product');
+  });
+
   it('reverses the remaining historical snapshot rather than the current recipe', () => {
     const original = buildInventoryConsumptionSnapshot({
       saleProduct,

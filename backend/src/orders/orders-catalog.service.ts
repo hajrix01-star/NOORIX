@@ -12,26 +12,16 @@ import {
 } from './orders-product-sections.util';
 import {
   type ProductUnitConversionInput,
-  resolveProductUnitMultiplierOrNull,
+  productUnitConversionRowsFromUnknown,
   unitConversionsJson,
-  validateProductUnitConversions,
 } from './orders-unit-conversions.util';
+import { OrdersCatalogProductIntegrityService } from './orders-catalog-product-integrity.service';
+import type {
+  ProductRecipeItemInput,
+  ProductVariantInput,
+} from './orders-catalog-product.types';
 
 type OrderProductWithSections = { sections?: unknown; sectionIds?: unknown };
-type ProductVariantInput = {
-  size?: string;
-  packaging?: string;
-  unit?: string;
-  lastPrice?: string;
-  quantityMultiplier?: string;
-};
-
-type ProductRecipeItemInput = {
-  materialType?: string;
-  materialProductId?: string;
-  quantity?: string;
-  unit?: string;
-};
 
 type CatalogUnitInput = {
   code?: string;
@@ -54,7 +44,10 @@ type ConversionTemplateInput = {
 
 @Injectable()
 export class OrdersCatalogService {
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly productIntegrity: OrdersCatalogProductIntegrityService,
+  ) {}
 
   async getProducts(companyId: string, section?: string, productType?: string) {
     const all = await this.prisma.orderProduct.findMany({
@@ -85,11 +78,11 @@ export class OrdersCatalogService {
   }>) {
     const tenantId = TenantContext.getTenantId();
     const sectionList = await this.loadSectionList(companyId);
-    await this.assertRecipeMaterialProducts(
+    await this.productIntegrity.assertRecipeMaterialProducts(
       companyId,
       products.flatMap((dto) => (dto.productType === 'sale' ? (dto.recipe ?? []) : [])),
     );
-    await this.assertConversionTemplates(
+    const conversionTemplates = await this.productIntegrity.assertConversionTemplates(
       companyId,
       products
         .filter((dto) => (dto.productType === 'sale' ? 'sale' : 'order') === 'order')
@@ -98,7 +91,15 @@ export class OrdersCatalogService {
     );
     for (const dto of products) {
       if ((dto.productType === 'sale' ? 'sale' : 'order') === 'order') {
-        this.assertUnitConversionRows(dto.inventoryConversions);
+        const conversionTemplateId = this.cleanNullableId(dto.conversionTemplateId);
+        this.productIntegrity.assertProductUnitConversionChain({
+          directConversions: dto.inventoryConversions,
+          templateConversions: conversionTemplateId
+            ? conversionTemplates.get(conversionTemplateId) ?? []
+            : [],
+          purchaseUnit: this.productIntegrity.purchaseUnit(dto.variants, dto.unit),
+          baseUnit: dto.unit,
+        });
       }
     }
     const data = products
@@ -142,11 +143,22 @@ export class OrdersCatalogService {
     if (!dto.nameAr?.trim()) throw new BadRequestException('اسم الصنف بالعربية مطلوب');
     const sectionList = await this.loadSectionList(companyId);
     if (dto.productType === 'sale') {
-      await this.assertRecipeMaterialProducts(companyId, dto.recipe);
+      await this.productIntegrity.assertRecipeMaterialProducts(companyId, dto.recipe);
     }
     if ((dto.productType === 'sale' ? 'sale' : 'order') === 'order') {
-      await this.assertConversionTemplates(companyId, this.cleanNullableId(dto.conversionTemplateId) ? [this.cleanNullableId(dto.conversionTemplateId)] : []);
-      this.assertUnitConversionRows(dto.inventoryConversions);
+      const conversionTemplateId = this.cleanNullableId(dto.conversionTemplateId);
+      const conversionTemplates = await this.productIntegrity.assertConversionTemplates(
+        companyId,
+        conversionTemplateId ? [conversionTemplateId] : [],
+      );
+      this.productIntegrity.assertProductUnitConversionChain({
+        directConversions: dto.inventoryConversions,
+        templateConversions: conversionTemplateId
+          ? conversionTemplates.get(conversionTemplateId) ?? []
+          : [],
+        purchaseUnit: this.productIntegrity.purchaseUnit(dto.variants, dto.unit),
+        baseUnit: dto.unit,
+      });
     }
     const created = await this.prisma.orderProduct.create({
       data: this.buildProductCreateInput(tenantId, companyId, dto, sectionList),
@@ -172,7 +184,10 @@ export class OrdersCatalogService {
     recipe?: ProductRecipeItemInput[];
     isActive?: boolean;
   }) {
-    const product = await this.prisma.orderProduct.findFirst({ where: { id, companyId } });
+    const product = await this.prisma.orderProduct.findFirst({
+      where: { id, companyId },
+      include: { conversionTemplate: { select: { conversions: true } } },
+    });
     if (!product) throw new NotFoundException('الصنف غير موجود');
     const nextUnit = dto.unit?.trim();
     const nextProductType = dto.productType ?? product.productType;
@@ -186,14 +201,63 @@ export class OrdersCatalogService {
       );
     }
     const sectionList = await this.loadSectionList(companyId);
-    if (nextProductType === 'sale' && dto.recipe !== undefined) {
-      await this.assertRecipeMaterialProducts(companyId, dto.recipe);
+    const nextIsActive = dto.isActive ?? product.isActive;
+    if (
+      nextProductType === 'sale'
+      && nextIsActive
+      && (dto.recipe !== undefined || dto.productType !== undefined || dto.isActive !== undefined)
+    ) {
+      await this.productIntegrity.assertRecipeMaterialProducts(
+        companyId,
+        dto.recipe ?? this.productIntegrity.productRecipeFromUnknown(product.recipe),
+      );
     }
-    if (nextProductType === 'order' && dto.conversionTemplateId !== undefined) {
-      await this.assertConversionTemplates(companyId, this.cleanNullableId(dto.conversionTemplateId) ? [this.cleanNullableId(dto.conversionTemplateId)] : []);
+    const changesConversionDefinition = dto.productType !== undefined
+      || dto.unit !== undefined
+      || dto.variants !== undefined
+      || dto.inventoryConversions !== undefined
+      || dto.conversionTemplateId !== undefined;
+    const conversionTemplateId = dto.conversionTemplateId !== undefined
+      ? this.cleanNullableId(dto.conversionTemplateId)
+      : product.conversionTemplateId;
+    const conversionTemplates = dto.conversionTemplateId !== undefined
+      ? await this.productIntegrity.assertConversionTemplates(
+        companyId,
+        conversionTemplateId ? [conversionTemplateId] : [],
+      )
+      : new Map<string, ProductUnitConversionInput[]>();
+    const templateConversions = dto.conversionTemplateId !== undefined
+      ? (conversionTemplateId ? conversionTemplates.get(conversionTemplateId) ?? [] : [])
+      : productUnitConversionRowsFromUnknown(product.conversionTemplate?.conversions);
+    const directConversions = dto.inventoryConversions !== undefined
+      ? dto.inventoryConversions
+      : productUnitConversionRowsFromUnknown(product.inventoryConversions);
+    if (nextProductType === 'order' && changesConversionDefinition) {
+      const variants = dto.variants !== undefined
+        ? dto.variants
+        : this.productIntegrity.productVariantsFromUnknown(product.variants);
+      this.productIntegrity.assertProductUnitConversionChain({
+        directConversions,
+        templateConversions,
+        purchaseUnit: this.productIntegrity.purchaseUnit(variants, dto.unit ?? product.unit),
+        baseUnit: dto.unit ?? product.unit,
+      });
     }
-    if (nextProductType === 'order' && dto.inventoryConversions !== undefined) {
-      this.assertUnitConversionRows(dto.inventoryConversions);
+    const changesRecipeMaterialContract = dto.unit !== undefined
+      || dto.inventoryConversions !== undefined
+      || dto.conversionTemplateId !== undefined
+      || dto.productType !== undefined
+      || dto.isActive !== undefined;
+    if (changesRecipeMaterialContract && product.productType === 'order') {
+      await this.productIntegrity.assertDependentRecipesRemainValid(companyId, {
+        id: product.id,
+        nameAr: dto.nameAr ?? product.nameAr,
+        productType: nextProductType,
+        isActive: nextIsActive,
+        unit: dto.unit ?? product.unit,
+        inventoryConversions: directConversions,
+        conversionTemplate: { conversions: templateConversions },
+      });
     }
     const updated = await this.prisma.orderProduct.update({
       where: { id },
@@ -423,7 +487,7 @@ export class OrdersCatalogService {
     const tenantId = TenantContext.getTenantId();
     const code = this.cleanCode(dto.code || dto.nameEn || dto.nameAr);
     if (!code || !dto.nameAr?.trim()) throw new BadRequestException('Conversion template code and Arabic name are required.');
-    this.assertUnitConversionRows(dto.conversions);
+    this.productIntegrity.assertUnitConversionRows(dto.conversions);
     return this.prisma.orderConversionTemplate.create({
       data: {
         tenantId,
@@ -440,8 +504,8 @@ export class OrdersCatalogService {
   }
 
   async updateConversionTemplate(id: string, companyId: string, dto: ConversionTemplateInput) {
-    await this.assertConversionTemplates(companyId, [id]);
-    if (dto.conversions !== undefined) this.assertUnitConversionRows(dto.conversions);
+    await this.productIntegrity.assertConversionTemplates(companyId, [id]);
+    if (dto.conversions !== undefined) this.productIntegrity.assertUnitConversionRows(dto.conversions);
     return this.prisma.orderConversionTemplate.update({
       where: { id },
       data: {
@@ -457,7 +521,7 @@ export class OrdersCatalogService {
   }
 
   async deleteConversionTemplate(id: string, companyId: string) {
-    await this.assertConversionTemplates(companyId, [id]);
+    await this.productIntegrity.assertConversionTemplates(companyId, [id]);
     await this.prisma.orderConversionTemplate.update({ where: { id }, data: { isActive: false } });
     return { deleted: true };
   }
@@ -500,12 +564,12 @@ export class OrdersCatalogService {
       productType,
       ...this.sectionJsonData(sections.sectionIds ?? [], sections.sections ?? []),
       lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
-      variants: this.variantJson(dto.variants),
+      variants: this.productIntegrity.variantJson(dto.variants),
       inventoryConversions: productType === 'order'
         ? unitConversionsJson(dto.inventoryConversions)
         : Prisma.DbNull,
       conversionTemplateId: productType === 'order' ? this.cleanNullableId(dto.conversionTemplateId) : null,
-      recipe: productType === 'sale' ? this.recipeJson(dto.recipe) : Prisma.DbNull,
+      recipe: productType === 'sale' ? this.productIntegrity.recipeJson(dto.recipe) : Prisma.DbNull,
     };
   }
 
@@ -552,7 +616,7 @@ export class OrdersCatalogService {
       ...(dto.lastPrice !== undefined ? { lastPrice: new Prisma.Decimal(dto.lastPrice) } : {}),
       ...sectionData,
       ...(dto.productType !== undefined ? { productType: dto.productType } : {}),
-      ...(dto.variants !== undefined ? { variants: this.variantJson(dto.variants) } : {}),
+      ...(dto.variants !== undefined ? { variants: this.productIntegrity.variantJson(dto.variants) } : {}),
       ...(effectiveProductType === 'sale'
         ? { inventoryConversions: Prisma.DbNull, conversionTemplateId: null }
         : dto.inventoryConversions !== undefined
@@ -564,7 +628,7 @@ export class OrdersCatalogService {
       ...(effectiveProductType === 'order'
         ? { recipe: Prisma.DbNull }
         : dto.recipe !== undefined
-          ? { recipe: this.recipeJson(dto.recipe) }
+          ? { recipe: this.productIntegrity.recipeJson(dto.recipe) }
           : {}),
       ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
     };
@@ -691,118 +755,6 @@ export class OrdersCatalogService {
     const unit = await this.prisma.orderCatalogUnit.findFirst({ where: { id, companyId } });
     if (!unit) throw new NotFoundException('Catalog unit not found.');
     return unit;
-  }
-
-  private async assertConversionTemplates(companyId: string, ids: Array<string | null>) {
-    const cleanIds = [...new Set(ids.map((id) => this.cleanNullableId(id)).filter((id): id is string => Boolean(id)))];
-    if (cleanIds.length === 0) return;
-    const rows = await this.prisma.orderConversionTemplate.findMany({
-      where: { companyId, id: { in: cleanIds }, isActive: true },
-      select: { id: true },
-    });
-    if (rows.length !== cleanIds.length) {
-      throw new BadRequestException('Conversion template is not available for this company.');
-    }
-  }
-
-  private assertUnitConversionRows(conversions?: ProductUnitConversionInput[] | null) {
-    const issues = validateProductUnitConversions(conversions);
-    if (issues.length === 0) return;
-    throw new BadRequestException(issues.map((issue) => issue.message).join(' '));
-  }
-
-  private variantJson(variants?: ProductVariantInput[]): Prisma.InputJsonValue | typeof Prisma.DbNull {
-    if (!variants?.length) return Prisma.DbNull;
-    return variants.map((variant) => ({
-      size: variant.size || '',
-      packaging: variant.packaging || '',
-      unit: variant.unit || 'piece',
-      lastPrice: variant.lastPrice || '0',
-      quantityMultiplier: variant.quantityMultiplier || '1',
-    }));
-  }
-
-  private recipeJson(recipe?: ProductRecipeItemInput[]): Prisma.InputJsonValue | typeof Prisma.DbNull {
-    if (!recipe?.length) return Prisma.DbNull;
-    const rows = recipe.flatMap((item) => {
-      const materialType = this.recipeMaterialType(item.materialType);
-      const materialProductId = String(item.materialProductId ?? '').trim();
-      const quantity = String(item.quantity ?? '').trim();
-      if (!materialProductId || !this.positiveDecimal(quantity)) return [];
-      return [{
-        materialType,
-        materialProductId,
-        quantity,
-        unit: String(item.unit ?? '').trim() || this.defaultRecipeUnit(materialType),
-      }];
-    });
-    return rows.length > 0 ? rows : Prisma.DbNull;
-  }
-
-  private recipeMaterialIds(recipe?: ProductRecipeItemInput[]): string[] {
-    if (!recipe?.length) return [];
-    return [...new Set(recipe.flatMap((item) => {
-      const materialProductId = String(item.materialProductId ?? '').trim();
-      const quantity = String(item.quantity ?? '').trim();
-      return materialProductId && this.positiveDecimal(quantity) ? [materialProductId] : [];
-    }))];
-  }
-
-  private async assertRecipeMaterialProducts(companyId: string, recipe?: ProductRecipeItemInput[]) {
-    const materialIds = this.recipeMaterialIds(recipe);
-    if (materialIds.length === 0) return;
-    const validMaterials = await this.prisma.orderProduct.findMany({
-      where: {
-        companyId,
-        id: { in: materialIds },
-        isActive: true,
-        productType: 'order',
-      },
-      select: {
-        id: true,
-        nameAr: true,
-        unit: true,
-        inventoryConversions: true,
-        conversionTemplate: { select: { conversions: true } },
-      },
-    });
-    if (validMaterials.length !== materialIds.length) {
-      throw new BadRequestException('Recipe components must be purchase/inventory products only.');
-    }
-    const materialById = new Map(validMaterials.map((material) => [material.id, material]));
-    for (const item of recipe ?? []) {
-      const materialProductId = String(item.materialProductId ?? '').trim();
-      const quantity = String(item.quantity ?? '').trim();
-      if (!materialProductId || !this.positiveDecimal(quantity)) continue;
-      const material = materialById.get(materialProductId);
-      if (!material) continue;
-      const recipeUnit = String(item.unit ?? '').trim() || this.defaultRecipeUnit(this.recipeMaterialType(item.materialType));
-      const baseUnit = String(material.unit || recipeUnit || 'piece').trim() || 'piece';
-      if (!resolveProductUnitMultiplierOrNull(material, recipeUnit, baseUnit)) {
-        throw new BadRequestException(
-          `Recipe material "${material.nameAr}" cannot convert from "${recipeUnit}" to stock unit "${baseUnit}".`,
-        );
-      }
-    }
-  }
-
-  private recipeMaterialType(value: string | null | undefined) {
-    const materialType = String(value ?? '').trim();
-    if (materialType === 'tobacco' || materialType === 'hose' || materialType === 'charcoal') return materialType;
-    return 'material';
-  }
-
-  private positiveDecimal(value: string): boolean {
-    try {
-      return new Prisma.Decimal(value || 0).gt(0);
-    } catch {
-      return false;
-    }
-  }
-
-  private defaultRecipeUnit(materialType: string) {
-    if (materialType === 'tobacco') return 'g';
-    return 'piece';
   }
 
   private sectionJsonData(sectionIds: string[], sections: string[]) {

@@ -1,5 +1,6 @@
 import { GeminiService } from '../chat/gemini.service';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { OrdersCatalogProductIntegrityService } from './orders-catalog-product-integrity.service';
 import { OrdersCatalogService } from './orders-catalog.service';
 import { OrdersCatalogTranslationService } from './orders-catalog-translation.service';
 
@@ -263,7 +264,8 @@ describe('OrdersCatalogTranslationService', () => {
     const prisma = Object.create(TenantPrismaService.prototype) as TenantPrismaService;
     Object.defineProperty(prisma, 'orderCategory', { value: { findMany } });
     const gemini = Object.create(GeminiService.prototype) as GeminiService;
-    const service = new OrdersCatalogService(prisma);
+    const productIntegrity = new OrdersCatalogProductIntegrityService(prisma);
+    const service = new OrdersCatalogService(prisma, productIntegrity);
 
     const result = await service.getCategories('company-1');
 

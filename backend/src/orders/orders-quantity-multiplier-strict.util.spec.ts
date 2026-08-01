@@ -24,6 +24,21 @@ describe('resolveQuantityMultiplierOrNull', () => {
     ).toBe(1);
   });
 
+  it('resolves the full chain from purchased packaging to inventory unit', () => {
+    expect(
+      resolveQuantityMultiplierOrNull(
+        {
+          unit: 'piece',
+          inventoryConversions: [
+            { fromUnit: 'carton', toUnit: 'box', multiplier: '10' },
+            { fromUnit: 'box', toUnit: 'piece', multiplier: '64' },
+          ],
+        },
+        { packaging: 'carton', unit: 'box' },
+      )?.toNumber(),
+    ).toBe(640);
+  });
+
   it('rejects unknown or invalid conversions for new writes', () => {
     expect(
       resolveQuantityMultiplierOrNull(

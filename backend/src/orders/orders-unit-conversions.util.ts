@@ -74,6 +74,14 @@ export type ProductUnitConversionValidationIssue = {
   message: string;
 };
 
+export type ProductUnitConversionSequenceIssue = {
+  code: 'disconnected' | 'incomplete';
+  index: number;
+  expectedFromUnit: string;
+  actualFromUnit: string;
+  message: string;
+};
+
 function decimal(value: unknown): Prisma.Decimal | null {
   try {
     const parsed = new Prisma.Decimal(String(value ?? ''));
@@ -115,7 +123,7 @@ function commonUnitConversions(): ProductUnitConversionInput[] {
   ];
 }
 
-function conversionRows(value: unknown): ProductUnitConversionInput[] {
+export function productUnitConversionRowsFromUnknown(value: unknown): ProductUnitConversionInput[] {
   return Array.isArray(value)
     ? value.filter((row): row is ProductUnitConversionInput => Boolean(row) && typeof row === 'object')
     : [];
@@ -124,8 +132,8 @@ function conversionRows(value: unknown): ProductUnitConversionInput[] {
 function productConversions(product: ProductWithUnitConversions): ProductUnitConversionInput[] {
   return [
     ...commonUnitConversions(),
-    ...conversionRows(product.inventoryConversions),
-    ...conversionRows(product.conversionTemplate?.conversions),
+    ...productUnitConversionRowsFromUnknown(product.inventoryConversions),
+    ...productUnitConversionRowsFromUnknown(product.conversionTemplate?.conversions),
   ];
 }
 
@@ -247,6 +255,66 @@ export function validateProductUnitConversions(
   }
 
   return issues;
+}
+
+export function validateProductUnitConversionSequence(input: {
+  conversions?: ProductUnitConversionInput[] | null;
+  purchaseUnit?: unknown;
+  baseUnit?: unknown;
+}): ProductUnitConversionSequenceIssue | null {
+  const purchaseUnit = normalizeUnit(input.purchaseUnit);
+  const baseUnit = normalizeUnit(input.baseUnit);
+  const rows = productUnitConversionRowsFromUnknown(input.conversions);
+  const requiresConversion = purchaseUnit !== baseUnit;
+
+  if (rows.length === 0) {
+    return requiresConversion && !hasCommonUnitPath(purchaseUnit, baseUnit)
+      ? {
+          code: 'incomplete',
+          index: 0,
+          expectedFromUnit: baseUnit,
+          actualFromUnit: purchaseUnit,
+          message: `Conversion chain must connect purchase unit ${purchaseUnit} to inventory unit ${baseUnit}.`,
+        }
+      : null;
+  }
+
+  let expectedFromUnit = requiresConversion
+    ? purchaseUnit
+    : normalizeUnit(rows[0]?.fromUnit, '');
+  for (const [index, row] of rows.entries()) {
+    const actualFromUnit = normalizeUnit(row.fromUnit, '');
+    if (actualFromUnit !== expectedFromUnit && !hasCommonUnitPath(expectedFromUnit, actualFromUnit)) {
+      return {
+        code: 'disconnected',
+        index,
+        expectedFromUnit,
+        actualFromUnit,
+        message: `Conversion stage ${index + 1} must start from ${expectedFromUnit}.`,
+      };
+    }
+    expectedFromUnit = normalizeUnit(row.toUnit, '');
+  }
+
+  if (expectedFromUnit !== baseUnit && !hasCommonUnitPath(expectedFromUnit, baseUnit)) {
+    return {
+      code: 'incomplete',
+      index: rows.length,
+      expectedFromUnit: baseUnit,
+      actualFromUnit: expectedFromUnit,
+      message: `Conversion chain must end at inventory unit ${baseUnit}; current end unit is ${expectedFromUnit}.`,
+    };
+  }
+  return null;
+}
+
+function hasCommonUnitPath(fromUnit: string, toUnit: string): boolean {
+  if (!fromUnit || !toUnit) return false;
+  return resolveConversionPath(
+    { inventoryConversions: [], conversionTemplate: null },
+    normalizeUnit(fromUnit),
+    normalizeUnit(toUnit),
+  ) !== null;
 }
 
 export function unitConversionsJson(

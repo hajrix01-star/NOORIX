@@ -48,9 +48,10 @@ describe('itemsManageModel', () => {
     const material = { ...products[0], id: 'material-1', productType: 'order' as const };
     const sold = { ...products[1], id: 'sale-1', productType: 'sale' as const };
     const legacyMaterial = { ...products[1], id: 'legacy-material', productType: undefined };
+    const inactiveMaterial = { ...products[0], id: 'inactive-material', productType: 'order' as const, isActive: false };
 
-    expect(filterRecipeMaterialProducts([material, sold, legacyMaterial], 'material-1')).toEqual([legacyMaterial]);
-    expect(filterRecipeMaterialProducts([material, sold, legacyMaterial])).toEqual([material, legacyMaterial]);
+    expect(filterRecipeMaterialProducts([material, sold, legacyMaterial, inactiveMaterial], 'material-1')).toEqual([legacyMaterial]);
+    expect(filterRecipeMaterialProducts([material, sold, legacyMaterial, inactiveMaterial])).toEqual([material, legacyMaterial]);
   });
 
   it('builds a simple product payload when no real variants exist', () => {
