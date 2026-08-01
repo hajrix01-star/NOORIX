@@ -44,7 +44,6 @@ type StaffOrderClient = Pick<
 >;
 
 export const NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED = 'NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED';
-export const NEGATIVE_INVENTORY_BLOCKED = 'NEGATIVE_INVENTORY_BLOCKED';
 
 @Injectable()
 export class OrdersStaffService {
@@ -63,21 +62,11 @@ export class OrdersStaffService {
     return Array.isArray(userPermissions) && userPermissions.includes(permission);
   }
 
-  private assertNegativeInventoryOverrideAccess(
-    allowNegativeInventory: boolean | undefined,
-    userRole?: string,
-  ): void {
-    if (allowNegativeInventory && !this.isPrivilegedStaffOrderUser(userRole)) {
-      throw new ForbiddenException('السماح بالمخزون السالب متاح للمالك أو المشرف العام فقط.');
-    }
-  }
-
   private async assertStaffSaleInventoryAvailable(
     client: StaffOrderClient,
     companyId: string,
     mappedItems: Array<{ inventoryConsumptionSnapshot: unknown }>,
     allowNegativeInventory: boolean | undefined,
-    userRole?: string,
     excludeStaffOrderId?: string,
   ): Promise<void> {
     const shortages = await this.inventory.findStaffSaleNegativeInventory(
@@ -88,16 +77,11 @@ export class OrdersStaffService {
     );
     if (shortages.length === 0) return;
 
-    const canOverride = this.isPrivilegedStaffOrderUser(userRole);
-    if (allowNegativeInventory && canOverride) return;
+    if (allowNegativeInventory) return;
     throw new ConflictException({
-      errorCode: canOverride
-        ? NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED
-        : NEGATIVE_INVENTORY_BLOCKED,
-      message: canOverride
-        ? 'سيؤدي الحفظ إلى مخزون سالب. يلزم تأكيد صريح للمتابعة.'
-        : 'لا يمكن الحفظ لأن الكمية المطلوبة تتجاوز المخزون المتاح.',
-      details: { canOverride, shortages },
+      errorCode: NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED,
+      message: 'سيؤدي الحفظ إلى مخزون سالب. يلزم تأكيد صريح للمتابعة.',
+      details: { canOverride: true, shortages },
     });
   }
 
@@ -452,7 +436,6 @@ export class OrdersStaffService {
         dto.companyId,
         mapped,
         dto.allowNegativeInventory,
-        userRole,
       );
     }
     return client.staffOrder.create({
@@ -500,7 +483,6 @@ export class OrdersStaffService {
 
     const orderType = dto.orderType === 'sale' ? 'sale' : 'order';
     this.assertStaffOrderTypeAccess(orderType, userRole, userPermissions);
-    this.assertNegativeInventoryOverrideAccess(dto.allowNegativeInventory, userRole);
     const entryType: StaffOrderEntryType = dto.entryType === 'cancellation' ? 'cancellation' : 'issue';
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
     const isSale = orderType === 'sale';
@@ -640,7 +622,6 @@ export class OrdersStaffService {
         companyId,
         mapped,
         dto.allowNegativeInventory,
-        userRole,
         id,
       );
 
@@ -687,7 +668,6 @@ export class OrdersStaffService {
       allowNegativeInventory?: boolean;
     },
   ) {
-    this.assertNegativeInventoryOverrideAccess(dto.allowNegativeInventory, userRole);
     if (dto.items?.length) {
       return this.updateStaffOrderItemsAtomic(
         id,

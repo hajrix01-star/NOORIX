@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -98,12 +98,12 @@ describe('OrdersStaffService negative inventory policy', () => {
   beforeEach(() => jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1'));
   afterEach(() => jest.restoreAllMocks());
 
-  it('rejects negative inventory by default and does not write the staff order', async () => {
+  it('requires explicit confirmation from an authorized staff user before writing negative inventory', async () => {
     const { service, create, dto } = fixture();
 
     let caught: unknown;
     try {
-      await service.createStaffOrder('user-1', dto, 'owner');
+      await service.createStaffOrder('user-1', dto, 'staff', ['STAFF_ORDERS_SUBMIT']);
     } catch (error) {
       caught = error;
     }
@@ -115,25 +115,25 @@ describe('OrdersStaffService negative inventory policy', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('allows an owner retry with the explicit override inside the locked transaction', async () => {
+  it('allows an authorized staff user retry with the explicit override inside the locked transaction', async () => {
     const { service, inventory, create, dto } = fixture();
 
     await expect(service.createStaffOrder('user-1', {
       ...dto,
       allowNegativeInventory: true,
-    }, 'owner')).resolves.toMatchObject({ id: 'staff-order-1' });
+    }, 'staff', ['STAFF_ORDERS_SUBMIT'])).resolves.toMatchObject({ id: 'staff-order-1' });
     expect(inventory.lockInventoryBalance).toHaveBeenCalledWith(expect.anything(), 'tenant-1', 'company-1');
     expect(inventory.findStaffSaleNegativeInventory).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects a forged override from a non-privileged staff user before opening a transaction', async () => {
+  it('still rejects users who do not have permission to submit internal sales', async () => {
     const { service, prisma, dto } = fixture();
 
     await expect(service.createStaffOrder('user-1', {
       ...dto,
       allowNegativeInventory: true,
-    }, 'staff', ['STAFF_ORDERS_SUBMIT'])).rejects.toBeInstanceOf(ForbiddenException);
+    }, 'staff', [])).rejects.toThrow('لا تملك صلاحية التسجيل الداخلي.');
     expect(prisma.withTenant).not.toHaveBeenCalled();
   });
 });

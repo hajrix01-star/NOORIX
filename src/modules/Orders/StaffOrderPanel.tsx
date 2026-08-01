@@ -377,7 +377,7 @@ export function StaffOrderPanel({
       if (waText) setSendWhatsAppPrompt(waText);
     } catch (error) {
       const confirmation = staffNegativeInventoryConfirmation(error);
-      if (isSale && isPrivilegedStaffOrderUser && confirmation) {
+      if (isSale && confirmation) {
         setNegativeInventoryRetry({
           payload,
           editingId,
@@ -391,10 +391,10 @@ export function StaffOrderPanel({
     } finally {
       setSubmitting(false);
     }
-  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, entryType, companyId, productType, isSale, isPrivilegedStaffOrderUser, displayLang, t, showToast, createOrder, updateOrder, queryClient]);
+  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, entryType, companyId, productType, isSale, displayLang, t, showToast, createOrder, updateOrder, queryClient]);
 
   const confirmNegativeInventory = useCallback(async () => {
-    if (!negativeInventoryRetry || !isPrivilegedStaffOrderUser) return;
+    if (!negativeInventoryRetry) return;
     setSubmitting(true);
     try {
       const payload = { ...negativeInventoryRetry.payload, allowNegativeInventory: true };
@@ -424,7 +424,7 @@ export function StaffOrderPanel({
     } finally {
       setSubmitting(false);
     }
-  }, [negativeInventoryRetry, isPrivilegedStaffOrderUser, updateOrder, createOrder, t, showToast, queryClient, companyId]);
+  }, [negativeInventoryRetry, updateOrder, createOrder, t, showToast, queryClient, companyId]);
 
   const handleResendOrder = useCallback(async (order: StaffOrder) => {
     try {
