@@ -358,6 +358,18 @@ export default {
   staffSaleSaving:          { ar: 'جاري الحفظ…', en: 'Saving…' },
   staffSaleSaved:           { ar: 'تم حفظ التسجيل الداخلي بنجاح', en: 'Internal log saved successfully' },
   staffSaleSavedWithRef:    { ar: 'تم الحفظ — رقم العملية {0}', en: 'Saved — operation {0}' },
+  staffNegativeInventoryConfirmTitle: {
+    ar: 'تأكيد السماح بالمخزون السالب',
+    en: 'Allow negative inventory?',
+  },
+  staffNegativeInventoryConfirmMessage: {
+    ar: 'سيصبح مخزون المواد التالية سالباً: {0}. هل تريد المتابعة رغم ذلك؟',
+    en: 'The following materials will have negative inventory: {0}. Continue anyway?',
+  },
+  staffNegativeInventoryConfirmAction: {
+    ar: 'متابعة وحفظ',
+    en: 'Continue and save',
+  },
   staffSaleSubmit:          { ar: 'حفظ وإرسال', en: 'Save & send' },
   staffSaleBasket:          { ar: 'سلة التسجيل', en: 'Log basket' },
   staffCancellationStart:   { ar: 'تسجيل إلغاء', en: 'Record cancellation' },

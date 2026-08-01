@@ -17,6 +17,13 @@ type VariantSelection = {
   unit?: string | null;
 };
 
+type QuantityMultiplierProduct = {
+  unit?: string | null;
+  variants?: unknown;
+  inventoryConversions?: unknown;
+  conversionTemplate?: { conversions?: unknown } | null;
+};
+
 const ONE = new Prisma.Decimal(1);
 
 function normalized(value: string | null | undefined): string {
@@ -35,13 +42,48 @@ export function positiveQuantityMultiplier(
   }
 }
 
+function positiveQuantityMultiplierOrNull(
+  value: string | number | Prisma.Decimal | null | undefined,
+): Prisma.Decimal | null {
+  if (value == null || String(value).trim() === '') return null;
+  try {
+    const multiplier = new Prisma.Decimal(value);
+    return multiplier.gt(0) ? multiplier : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Resolve multipliers for new writes without guessing or silent fallbacks. */
+export function resolveQuantityMultiplierOrNull(
+  product: QuantityMultiplierProduct | null | undefined,
+  selection: VariantSelection,
+): Prisma.Decimal | null {
+  const variants = Array.isArray(product?.variants)
+    ? product.variants as QuantityMultiplierVariant[]
+    : [];
+  const size = normalized(selection.size);
+  const packaging = normalized(selection.packaging);
+  const baseUnit = normalizeUnit(product?.unit, 'piece');
+  const unit = normalizeUnit(selection.unit, baseUnit);
+
+  if (unit === baseUnit) {
+    if (!size && !packaging) return ONE;
+  } else {
+    const unitMultiplier = resolveProductUnitMultiplierOrNull(product ?? {}, unit, baseUnit);
+    if (unitMultiplier) return unitMultiplier;
+  }
+
+  const match = variants.find((variant) =>
+    normalized(variant.size) === size
+    && normalized(variant.packaging) === packaging
+    && normalizeUnit(variant.unit, baseUnit) === unit,
+  );
+  return match ? positiveQuantityMultiplierOrNull(match.quantityMultiplier) : null;
+}
+
 export function resolveQuantityMultiplier(
-  product: {
-    unit?: string | null;
-    variants?: unknown;
-    inventoryConversions?: unknown;
-    conversionTemplate?: { conversions?: unknown } | null;
-  } | null | undefined,
+  product: QuantityMultiplierProduct | null | undefined,
   selection: VariantSelection,
 ): Prisma.Decimal {
   const variants = Array.isArray(product?.variants)

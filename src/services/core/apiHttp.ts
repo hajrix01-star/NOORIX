@@ -6,8 +6,10 @@ import type { ApiParsedResult, AuthLoginRefreshPayload, RefreshAuthSessionResult
 
 export type { ApiParsedResult } from '../../types/api';
 
-type ApiThrownError = Error & {
+export type ApiThrownError = Error & {
   code?: number;
+  errorCode?: string;
+  details?: unknown;
   isTransientServerError?: boolean;
   isNetworkError?: boolean;
 };
@@ -179,7 +181,13 @@ export async function parseResponse<T = unknown>(
     const msg = Array.isArray(data?.message)
       ? data.message.join(', ')
       : (data?.message || data?.error || res.statusText);
-    return { success: false, error: String(msg || 'خطأ'), code: res.status };
+    return {
+      success: false,
+      error: String(msg || 'خطأ'),
+      code: res.status,
+      errorCode: typeof data?.errorCode === 'string' ? data.errorCode : undefined,
+      details: data?.details,
+    };
   }
   return { success: true, data: (data?.data ?? data) as T };
 }
@@ -190,12 +198,16 @@ export function throwIfApiFailed(res: unknown, fallbackMessage: string = 'طلب
     error?: string;
     message?: string;
     code?: number;
+    errorCode?: string;
+    details?: unknown;
     isTransientServerError?: boolean;
     isNetworkError?: boolean;
   };
   if (r?.success) return;
   const err = new Error(String(r?.error || r?.message || fallbackMessage)) as ApiThrownError;
   if (r?.code != null) err.code = r.code;
+  if (r?.errorCode) err.errorCode = r.errorCode;
+  if (r?.details !== undefined) err.details = r.details;
   if (r?.isTransientServerError) err.isTransientServerError = true;
   if (r?.isNetworkError) err.isNetworkError = true;
   throw err;

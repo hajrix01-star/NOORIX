@@ -380,12 +380,17 @@ export function StaffOrderPanelDialogs({
   t,
   lang,
   deleteBusy,
+  negativeInventoryOpen,
+  negativeInventoryMessage,
+  negativeInventoryBusy,
   sendWhatsAppPrompt,
   qtyModal,
   variantModal,
   isCancellation,
   setDeleteTarget,
   confirmDelete,
+  closeNegativeInventory,
+  confirmNegativeInventory,
   setSendWhatsAppPrompt,
   openWhatsApp,
   showToast,
@@ -399,12 +404,17 @@ export function StaffOrderPanelDialogs({
   t: Translate;
   lang: string;
   deleteBusy: boolean;
+  negativeInventoryOpen: boolean;
+  negativeInventoryMessage: string;
+  negativeInventoryBusy: boolean;
   sendWhatsAppPrompt: string | null;
   qtyModal: StaffQtyModalState | null;
   variantModal: ReturnType<typeof defaultVariantModalState> | null;
   isCancellation: boolean;
   setDeleteTarget: (order: StaffOrder | null) => void;
   confirmDelete: () => void;
+  closeNegativeInventory: () => void;
+  confirmNegativeInventory: () => void | Promise<void>;
   setSendWhatsAppPrompt: (text: string | null) => void;
   openWhatsApp: (text: string) => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
@@ -424,6 +434,16 @@ export function StaffOrderPanelDialogs({
         busy={deleteBusy}
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
+      />
+      <OrderConfirmModal
+        open={negativeInventoryOpen}
+        title={t('staffNegativeInventoryConfirmTitle')}
+        message={negativeInventoryMessage}
+        confirmLabel={t('staffNegativeInventoryConfirmAction')}
+        cancelLabel={t('cancel')}
+        busy={negativeInventoryBusy}
+        onClose={closeNegativeInventory}
+        onConfirm={confirmNegativeInventory}
       />
       <StaffWhatsAppPromptModal
         text={sendWhatsAppPrompt}

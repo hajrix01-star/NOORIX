@@ -25,6 +25,8 @@ export type {
   OrderItemsReportRow,
   OrderItemsReportDailyRow,
   OrderItemsReportResult,
+  InventoryDataQualityReport,
+  InventoryDataQualityStatus,
   InventoryStocktake,
   InventoryStocktakeLine,
   OrderRecipeInventoryStockRow,

@@ -52,7 +52,7 @@ import type {
   OrderProductVariant,
 } from '../../../types/api';
 /**
- * State and handlers for the Orders Â«manage itemsÂ» tab (products + categories).
+ * State and handlers for the Orders manage-items tab (products and categories).
  */
 export function useItemsManageTab(companyId: string) {
   const { t } = useTranslation();

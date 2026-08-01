@@ -24,6 +24,7 @@ import {
   canMutateStaffSaleOrder,
   latestEditableStaffSaleScope,
   mapStaffOrderToBasketLines,
+  staffNegativeInventoryConfirmation,
   summarizeSentSales,
   upsertPlainStaffBasketLine,
 } from './utils/staffOrderPanelModel';
@@ -48,7 +49,7 @@ import {
   useOrderProducts,
   useOrderSections,
 } from '../../hooks/useOrders';
-import type { OrderProduct, StaffOrder } from '../../types/api';
+import type { OrderProduct, StaffOrder, StaffOrderPayload } from '../../types/api';
 import type { StaffQtyModalState } from './StaffOrderPanelModals';
 
 export function StaffOrderPanel({
@@ -87,6 +88,11 @@ export function StaffOrderPanel({
   const [qtyModal, setQtyModal] = useState<StaffQtyModalState | null>(null);
   const [variantModal, setVariantModal] = useState<ReturnType<typeof defaultVariantModalState> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StaffOrder | null>(null);
+  const [negativeInventoryRetry, setNegativeInventoryRetry] = useState<{
+    payload: StaffOrderPayload;
+    editingId: string | null;
+    shortageNames: string[];
+  } | null>(null);
 
   const freqMap = useMemo(
     () => buildStaffOrderFrequencyMap(myOrders, productType),
@@ -320,22 +326,21 @@ export function StaffOrderPanel({
       }
     }
     if (isSale && !saleDate) { showToast(t('staffSaleDateRequired'), 'error'); return; }
+    const payload = buildStaffOrderPayload({
+      companyId,
+      productType,
+      isSale,
+      saleDate,
+      lang: displayLang,
+      notes,
+      basketLines,
+      productsById,
+      sectionFilter,
+      editingId,
+      entryType,
+    });
     setSubmitting(true);
     try {
-      const payload = buildStaffOrderPayload({
-        companyId,
-        productType,
-        isSale,
-        saleDate,
-        lang: displayLang,
-        notes,
-        basketLines,
-        productsById,
-        sectionFilter,
-        editingId,
-        entryType,
-      });
-
       if (isSale) {
         const res = editingId
           ? await updateOrder.mutateAsync({ id: editingId, body: payload })
@@ -371,11 +376,55 @@ export function StaffOrderPanel({
       const waText = saved.whatsAppText?.trim();
       if (waText) setSendWhatsAppPrompt(waText);
     } catch (error) {
+      const confirmation = staffNegativeInventoryConfirmation(error);
+      if (isSale && isPrivilegedStaffOrderUser && confirmation) {
+        setNegativeInventoryRetry({
+          payload,
+          editingId,
+          shortageNames: confirmation.shortages.map((row) => (
+            displayLang === 'en' ? (row.productNameEn || row.productNameAr) : row.productNameAr
+          )),
+        });
+        return;
+      }
       showToast(error instanceof Error ? error.message : t('saveFailed'), 'error');
     } finally {
       setSubmitting(false);
     }
-  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, entryType, companyId, productType, isSale, displayLang, t, showToast, createOrder, updateOrder, queryClient]);
+  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, entryType, companyId, productType, isSale, isPrivilegedStaffOrderUser, displayLang, t, showToast, createOrder, updateOrder, queryClient]);
+
+  const confirmNegativeInventory = useCallback(async () => {
+    if (!negativeInventoryRetry || !isPrivilegedStaffOrderUser) return;
+    setSubmitting(true);
+    try {
+      const payload = { ...negativeInventoryRetry.payload, allowNegativeInventory: true };
+      const res = negativeInventoryRetry.editingId
+        ? await updateOrder.mutateAsync({ id: negativeInventoryRetry.editingId, body: payload })
+        : await createOrder.mutateAsync(payload);
+      const saved = res.data && 'id' in res.data ? res.data : null;
+      if (!saved?.id) throw new Error(t('saveFailed'));
+
+      const savedLogRef = saved.logRef;
+      showToast(
+        payload.entryType === 'cancellation'
+          ? t('staffCancellationSaved')
+          : (savedLogRef ? t('staffSaleSavedWithRef', savedLogRef) : t('staffSaleSaved')),
+        'success',
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: orderKeys.staffMy(companyId) }),
+        queryClient.invalidateQueries({ queryKey: ['salesReport', companyId] }),
+      ]);
+      setNegativeInventoryRetry(null);
+      resetForm();
+      const waText = saved.whatsAppText?.trim();
+      if (waText) setSendWhatsAppPrompt(waText);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('saveFailed'), 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [negativeInventoryRetry, isPrivilegedStaffOrderUser, updateOrder, createOrder, t, showToast, queryClient, companyId]);
 
   const handleResendOrder = useCallback(async (order: StaffOrder) => {
     try {
@@ -422,12 +471,20 @@ export function StaffOrderPanel({
         t={t}
         lang={lang}
         deleteBusy={deleteOrder.isPending}
+        negativeInventoryOpen={!!negativeInventoryRetry}
+        negativeInventoryMessage={t(
+          'staffNegativeInventoryConfirmMessage',
+          negativeInventoryRetry?.shortageNames.join(displayLang === 'ar' ? '، ' : ', ') || '',
+        )}
+        negativeInventoryBusy={submitting}
         sendWhatsAppPrompt={sendWhatsAppPrompt}
         qtyModal={qtyModal}
         variantModal={variantModal}
         isCancellation={entryType === 'cancellation'}
         setDeleteTarget={setDeleteTarget}
         confirmDelete={confirmDelete}
+        closeNegativeInventory={() => setNegativeInventoryRetry(null)}
+        confirmNegativeInventory={confirmNegativeInventory}
         setSendWhatsAppPrompt={setSendWhatsAppPrompt}
         openWhatsApp={openWhatsApp}
         showToast={showToast}

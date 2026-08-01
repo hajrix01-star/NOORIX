@@ -12,16 +12,23 @@ import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { CreateInventoryStocktakeDto } from './dto/create-inventory-stocktake.dto';
 import { aggregateRecipeInventoryStock } from './orders-items-report-aggregate.util';
+import { inventoryConsumptionSnapshotValidity } from './orders-inventory-snapshot.sql';
 import {
   assertCurrentSaudiStocktakeDate,
   calculateStocktakeLines,
   InventoryStocktakeValidationError,
 } from './orders-inventory-stocktake.util';
+import {
+  findNegativeInventoryShortages,
+  NegativeInventoryShortage,
+} from './orders-negative-inventory.util';
 
 type InventoryClient = Pick<
   TenantPrismaService,
   'orderProduct' | 'inventoryMovement' | '$queryRaw'
 >;
+
+type InventoryLockClient = Pick<TenantPrismaService, '$executeRaw'>;
 
 type AggregatedInventoryQuantity = {
   productId: string;
@@ -41,39 +48,30 @@ type AggregatedInventoryConsumption = {
   invalidCount: number;
 };
 
-const INVENTORY_NUMERIC_PATTERN =
-  '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?$';
-
-function inventoryConsumptionSnapshotValidity(snapshot: Prisma.Sql): Prisma.Sql {
-  return Prisma.sql`
-    CASE
-      WHEN jsonb_typeof(${snapshot}) IS DISTINCT FROM 'object' THEN false
-      WHEN ${snapshot}->>'version' IS DISTINCT FROM '1' THEN false
-      WHEN jsonb_typeof(${snapshot}->'components') IS DISTINCT FROM 'array' THEN false
-      WHEN EXISTS (
-        SELECT 1
-        FROM jsonb_array_elements(
-          CASE
-            WHEN jsonb_typeof(${snapshot}->'components') = 'array'
-              THEN ${snapshot}->'components'
-            ELSE '[]'::jsonb
-          END
-        ) AS component
-        WHERE jsonb_typeof(component) IS DISTINCT FROM 'object'
-          OR BTRIM(COALESCE(component->>'materialProductId', '')) = ''
-          OR BTRIM(COALESCE(component->>'materialBaseUnit', '')) = ''
-          OR COALESCE(component->>'quantityBase', '') !~ ${INVENTORY_NUMERIC_PATTERN}
-      ) THEN false
-      ELSE true
-    END
-  `;
-}
-
 @Injectable()
 export class OrdersInventoryService {
   private readonly logger = new Logger(OrdersInventoryService.name);
 
   constructor(private readonly prisma: TenantPrismaService) {}
+
+  async lockInventoryBalance(
+    client: InventoryLockClient,
+    tenantId: string,
+    companyId: string,
+  ): Promise<void> {
+    const lockKey = `inventory-balance:${tenantId}:${companyId}`;
+    await client.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+  }
+
+  async findStaffSaleNegativeInventory(
+    client: InventoryClient,
+    companyId: string,
+    consumptionSnapshots: readonly unknown[],
+    excludeStaffOrderId?: string,
+  ): Promise<NegativeInventoryShortage[]> {
+    const stock = await this.projectStock(client, companyId, { excludeStaffOrderId });
+    return findNegativeInventoryShortages(stock, consumptionSnapshots);
+  }
 
   async getStock(companyId: string) {
     return this.prisma.withTenant((tx) => this.projectStock(tx, companyId));
@@ -109,8 +107,7 @@ export class OrdersInventoryService {
         await tx.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`;
         TenantContext.setSkipSetConfigForTransaction(true);
         try {
-          const lockKey = `inventory-stocktake:${tenantId}:${companyId}`;
-          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+          await this.lockInventoryBalance(tx, tenantId, companyId);
 
           const company = await tx.company.findFirst({
             where: { id: companyId, tenantId },
@@ -237,7 +234,11 @@ export class OrdersInventoryService {
     throw error;
   }
 
-  private async projectStock(client: InventoryClient, companyId: string, throughDate?: Date) {
+  private async projectStock(
+    client: InventoryClient,
+    companyId: string,
+    options: { throughDate?: Date; excludeStaffOrderId?: string } = {},
+  ) {
     const productSelect = {
       id: true,
       nameAr: true,
@@ -251,14 +252,17 @@ export class OrdersInventoryService {
       recipe: true,
     } satisfies Prisma.OrderProductSelect;
 
-    const purchaseDateFilter = throughDate
-      ? Prisma.sql`AND o."order_date" <= ${throughDate}`
+    const purchaseDateFilter = options.throughDate
+      ? Prisma.sql`AND o."order_date" <= ${options.throughDate}`
       : Prisma.empty;
-    const saleDateFilter = throughDate
+    const saleDateFilter = options.throughDate
       ? Prisma.sql`AND (
-          so."sale_date" <= ${throughDate}
-          OR (so."sale_date" IS NULL AND so."created_at" <= ${throughDate})
+          so."sale_date" <= ${options.throughDate}
+          OR (so."sale_date" IS NULL AND so."created_at" <= ${options.throughDate})
         )`
+      : Prisma.empty;
+    const excludedStaffOrderFilter = options.excludeStaffOrderId
+      ? Prisma.sql`AND so."id" <> ${options.excludeStaffOrderId}`
       : Prisma.empty;
 
     const [
@@ -308,6 +312,7 @@ export class OrdersInventoryService {
             AND so."order_type" = 'sale'
             AND so."status" = 'sent'
             AND soi."inventory_consumption_snapshot" IS NOT NULL
+            ${excludedStaffOrderFilter}
             ${saleDateFilter}
         ), classified_snapshots AS MATERIALIZED (
           SELECT
@@ -354,6 +359,7 @@ export class OrdersInventoryService {
           WHERE so."company_id" = ${companyId}
             AND so."order_type" = 'sale'
             AND so."status" = 'sent'
+            ${excludedStaffOrderFilter}
             ${saleDateFilter}
         )
         SELECT
@@ -369,7 +375,7 @@ export class OrdersInventoryService {
         by: ['productId'],
         where: {
           companyId,
-          ...(throughDate ? { transactionDate: { lte: throughDate } } : {}),
+          ...(options.throughDate ? { transactionDate: { lte: options.throughDate } } : {}),
         },
         _sum: { quantityBase: true },
       }),

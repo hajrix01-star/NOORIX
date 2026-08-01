@@ -10,6 +10,7 @@ export const orderKeys = {
   productPurchaseHistoryRoot: () => ['product-purchase-history'] as const,
   categoryPurchaseHistoryRoot: () => ['category-purchase-history'] as const,
   recipeInventoryStockRoot: () => ['orders-recipe-inventory-stock'] as const,
+  inventoryDataQualityRoot: () => ['orders-inventory-data-quality'] as const,
   inventoryStocktakesRoot: () => ['orders-inventory-stocktakes'] as const,
 
   list: (companyId: string, year: unknown, month: unknown) =>
@@ -46,6 +47,9 @@ export const orderKeys = {
 
   recipeInventoryStock: (companyId: string) =>
     ['orders-recipe-inventory-stock', companyId] as const,
+
+  inventoryDataQuality: (companyId: string) =>
+    ['orders-inventory-data-quality', companyId] as const,
 
   inventoryStocktakes: (companyId: string) =>
     ['orders-inventory-stocktakes', companyId] as const,

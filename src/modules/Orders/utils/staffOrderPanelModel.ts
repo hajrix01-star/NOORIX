@@ -14,6 +14,39 @@ import type {
   StaffOrderPayload,
 } from '../../../types/api';
 
+export const NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED = 'NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED';
+
+export type StaffNegativeInventoryShortage = {
+  productId: string;
+  productNameAr: string;
+  productNameEn: string | null;
+  unit: string;
+  availableQuantity: string;
+  requestedQuantity: string;
+  projectedQuantity: string;
+};
+
+export function staffNegativeInventoryConfirmation(error: unknown): {
+  canOverride: true;
+  shortages: StaffNegativeInventoryShortage[];
+} | null {
+  if (!error || typeof error !== 'object') return null;
+  const apiError = error as { errorCode?: unknown; details?: unknown };
+  if (apiError.errorCode !== NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED) return null;
+  if (!apiError.details || typeof apiError.details !== 'object') return null;
+  const details = apiError.details as { canOverride?: unknown; shortages?: unknown };
+  if (details.canOverride !== true || !Array.isArray(details.shortages)) return null;
+  return {
+    canOverride: true,
+    shortages: details.shortages.filter(
+      (row): row is StaffNegativeInventoryShortage => Boolean(row)
+        && typeof row === 'object'
+        && typeof (row as StaffNegativeInventoryShortage).productId === 'string'
+        && typeof (row as StaffNegativeInventoryShortage).projectedQuantity === 'string',
+    ),
+  };
+}
+
 export function createDraftLineId(productId: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return `${productId}-${crypto.randomUUID()}`;

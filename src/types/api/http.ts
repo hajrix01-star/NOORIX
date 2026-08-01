@@ -8,6 +8,8 @@ export type ApiParsedResult<TData = unknown, TItems = unknown> = {
   pageSize?: number;
   error?: string;
   code?: number;
+  errorCode?: string;
+  details?: unknown;
   isTransientServerError?: boolean;
   isNetworkError?: boolean;
 };

@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
   importSnapshotArr as arr,
@@ -7,6 +6,7 @@ import {
 } from './backup-logical-import-helpers.util';
 import { BackupLogicalImportTxParams } from './backup-logical-import-transaction.types';
 import { normalizeSalesDayContextSnapshotInput, salesDayContextJson } from '../sales/sales-day-context.util';
+import { importBackupLogicalOrdersAndInventory } from './backup-logical-import-orders-inventory.util';
 
 export type BackupLogicalImportOperationalMaps = {
   dailySalesSummaryMap: Map<string, string>;
@@ -68,91 +68,8 @@ export async function importBackupLogicalOperationalRecords(
     });
   }
 
-  const orderCategoryMap = new Map<string, string>();
-  for (const o of arr<Record<string, unknown>>(data.orderCategories)) {
-    const id = nid();
-    orderCategoryMap.set(String(o.id), id);
-    await tx.orderCategory.create({
-      data: {
-        id,
-        tenantId,
-        companyId: newCompanyId,
-        nameAr: String(o.nameAr),
-        nameEn: (o.nameEn as string | null) ?? null,
-        sortOrder: Number(o.sortOrder ?? 0),
-        isActive: o.isActive !== false,
-        createdAt: ddate(o.createdAt),
-        updatedAt: ddate(o.updatedAt),
-      },
-    });
-  }
-
-  const orderProductMap = new Map<string, string>();
-  for (const p of arr<Record<string, unknown>>(data.orderProducts)) {
-    const id = nid();
-    orderProductMap.set(String(p.id), id);
-    const catId = p.categoryId ? orderCategoryMap.get(String(p.categoryId)) : undefined;
-    await tx.orderProduct.create({
-      data: {
-        id,
-        tenantId,
-        companyId: newCompanyId,
-        categoryId: catId ?? null,
-        nameAr: String(p.nameAr),
-        nameEn: (p.nameEn as string | null) ?? null,
-        unit: String(p.unit ?? 'piece'),
-        sizes: (p.sizes as string | null) ?? null,
-        packaging: (p.packaging as string | null) ?? null,
-        lastPrice: dec(p.lastPrice ?? 0),
-        variants: p.variants != null ? (p.variants as Prisma.InputJsonValue) : undefined,
-        isActive: p.isActive !== false,
-        sortOrder: Number(p.sortOrder ?? 0),
-        createdAt: ddate(p.createdAt),
-        updatedAt: ddate(p.updatedAt),
-      },
-    });
-  }
-
-  const orderMap = new Map<string, string>();
-  for (const o of arr<Record<string, unknown>>(data.orders)) {
-    const id = nid();
-    orderMap.set(String(o.id), id);
-    await tx.order.create({
-      data: {
-        id,
-        tenantId,
-        companyId: newCompanyId,
-        orderNumber: String(o.orderNumber),
-        orderDate: ddate(o.orderDate),
-        orderType: String(o.orderType),
-        pettyCashAmount: o.pettyCashAmount != null ? dec(o.pettyCashAmount) : null,
-        totalAmount: dec(o.totalAmount),
-        notes: (o.notes as string | null) ?? null,
-        status: String(o.status ?? 'active'),
-        createdAt: ddate(o.createdAt),
-        updatedAt: ddate(o.updatedAt),
-      },
-    });
-  }
-
-  for (const it of arr<Record<string, unknown>>(data.orderItems)) {
-    const oid = orderMap.get(String(it.orderId));
-    const pid = orderProductMap.get(String(it.productId));
-    if (!oid || !pid) continue;
-    await tx.orderItem.create({
-      data: {
-        id: nid(),
-        orderId: oid,
-        productId: pid,
-        size: (it.size as string | null) ?? null,
-        packaging: (it.packaging as string | null) ?? null,
-        unit: (it.unit as string | null) ?? null,
-        quantity: dec(it.quantity),
-        unitPrice: dec(it.unitPrice),
-        amount: dec(it.amount),
-      },
-    });
-  }
+  const { orderCategoryMap, orderProductMap, orderMap } =
+    await importBackupLogicalOrdersAndInventory(tx, p);
 
   const bscatMap = new Map<string, string>();
   for (const c of arr<Record<string, unknown>>(data.bankStatementCategories)) {

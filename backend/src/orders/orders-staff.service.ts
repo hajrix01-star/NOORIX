@@ -1,9 +1,13 @@
 ﻿import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { ConflictException } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
 import { PERMISSIONS } from '../auth/constants/permissions';
-import { resolveStaffItemVariant } from './orders-staff-pricing.util';
+import {
+  resolveStaffItemVariant,
+  StaffItemConversionError,
+} from './orders-staff-pricing.util';
 import {
   buildStaffSaleLogRef,
   staffSaleLogRefPrefix,
@@ -19,6 +23,7 @@ import { suggestNextStaffRegistrationDate } from './orders-staff-registration-co
 import { resolveProductSection } from './orders-staff-sections.util';
 import { CreateStaffOrderDto, StaffOrderItemInput, StaffOrderEntryType } from './orders-staff.types';
 import { OrdersStaffReportService } from './orders-staff-report.service';
+import { OrdersInventoryService } from './orders-inventory.service';
 import {
   normalizeCancellationReasons,
   staffCancellationVariantKey,
@@ -33,11 +38,20 @@ import {
   parseInventoryConsumptionSnapshot,
 } from './orders-inventory-consumption-snapshot.util';
 
+type StaffOrderClient = Pick<
+  TenantPrismaService,
+  'orderProduct' | 'staffOrder' | 'staffOrderItem' | 'inventoryMovement' | '$queryRaw'
+>;
+
+export const NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED = 'NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED';
+export const NEGATIVE_INVENTORY_BLOCKED = 'NEGATIVE_INVENTORY_BLOCKED';
+
 @Injectable()
 export class OrdersStaffService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly report: OrdersStaffReportService,
+    private readonly inventory: OrdersInventoryService,
   ) {}
 
   private isPrivilegedStaffOrderUser(userRole?: string): boolean {
@@ -47,6 +61,44 @@ export class OrdersStaffService {
 
   private hasStaffPermission(userPermissions: string[] | undefined, permission: string): boolean {
     return Array.isArray(userPermissions) && userPermissions.includes(permission);
+  }
+
+  private assertNegativeInventoryOverrideAccess(
+    allowNegativeInventory: boolean | undefined,
+    userRole?: string,
+  ): void {
+    if (allowNegativeInventory && !this.isPrivilegedStaffOrderUser(userRole)) {
+      throw new ForbiddenException('السماح بالمخزون السالب متاح للمالك أو المشرف العام فقط.');
+    }
+  }
+
+  private async assertStaffSaleInventoryAvailable(
+    client: StaffOrderClient,
+    companyId: string,
+    mappedItems: Array<{ inventoryConsumptionSnapshot: unknown }>,
+    allowNegativeInventory: boolean | undefined,
+    userRole?: string,
+    excludeStaffOrderId?: string,
+  ): Promise<void> {
+    const shortages = await this.inventory.findStaffSaleNegativeInventory(
+      client,
+      companyId,
+      mappedItems.map((item) => item.inventoryConsumptionSnapshot),
+      excludeStaffOrderId,
+    );
+    if (shortages.length === 0) return;
+
+    const canOverride = this.isPrivilegedStaffOrderUser(userRole);
+    if (allowNegativeInventory && canOverride) return;
+    throw new ConflictException({
+      errorCode: canOverride
+        ? NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED
+        : NEGATIVE_INVENTORY_BLOCKED,
+      message: canOverride
+        ? 'سيؤدي الحفظ إلى مخزون سالب. يلزم تأكيد صريح للمتابعة.'
+        : 'لا يمكن الحفظ لأن الكمية المطلوبة تتجاوز المخزون المتاح.',
+      details: { canOverride, shortages },
+    });
   }
 
   private resolveAllowedStaffOrderTypes(
@@ -77,6 +129,7 @@ export class OrdersStaffService {
   private async assertLatestEditableStaffSaleOrder(
     order: { id: string; companyId: string; userId: string; orderType?: string | null; logRef?: string | null },
     userRole?: string,
+    client: StaffOrderClient = this.prisma,
   ): Promise<void> {
     if (order.orderType !== 'sale') return;
 
@@ -88,7 +141,7 @@ export class OrdersStaffService {
     const tenantId = TenantContext.tryGetTenantId();
     if (tenantId) where.tenantId = tenantId;
 
-    const latest = await this.prisma.staffOrder.findFirst({
+    const latest = await client.staffOrder.findFirst({
       where,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       select: { id: true, logRef: true },
@@ -99,9 +152,13 @@ export class OrdersStaffService {
     }
   }
 
-  private async countStaffSaleOperationsForDay(companyId: string, saleDate: Date): Promise<number> {
+  private async countStaffSaleOperationsForDay(
+    companyId: string,
+    saleDate: Date,
+    client: StaffOrderClient = this.prisma,
+  ): Promise<number> {
     const prefix = staffSaleLogRefPrefix(saleDate);
-    const rows = await this.prisma.staffOrder.findMany({
+    const rows = await client.staffOrder.findMany({
       where: { companyId, orderType: 'sale', logRef: { startsWith: prefix } },
       select: { logRef: true },
       distinct: ['logRef'],
@@ -109,12 +166,16 @@ export class OrdersStaffService {
     return rows.length;
   }
 
-  private async allocateStaffSaleLogRef(companyId: string, saleDate: Date): Promise<string> {
-    const nextSeq = (await this.countStaffSaleOperationsForDay(companyId, saleDate)) + 1;
+  private async allocateStaffSaleLogRef(
+    companyId: string,
+    saleDate: Date,
+    client: StaffOrderClient = this.prisma,
+  ): Promise<string> {
+    const nextSeq = (await this.countStaffSaleOperationsForDay(companyId, saleDate, client)) + 1;
     return buildStaffSaleLogRef(saleDate, nextSeq);
   }
 
-  /** Ù…Ø¹Ø§ÙŠÙ†Ø© Ø§Ù„Ø±Ù‚Ù… Ø§Ù„ØªØ§Ù„ÙŠ ÙÙŠ Ø³Ù„Ø© Ø§Ù„ØªØ³Ø¬ÙŠÙ„ â€” Ù„Ø§ ÙŠØ­Ø¬Ø² */
+  /** يعرض الرقم التالي في سلة التسجيل دون حجزه. */
   async peekNextStaffSaleLogRef(companyId: string, saleDateYmd: string): Promise<{ logRef: string }> {
     const saleDate = parseSaleDateYmd(saleDateYmd);
     const nextSeq = (await this.countStaffSaleOperationsForDay(companyId, saleDate)) + 1;
@@ -167,6 +228,7 @@ export class OrdersStaffService {
     companyId: string,
     items: StaffOrderItemInput[],
     explicitSection?: string,
+    client: StaffOrderClient = this.prisma,
   ): Promise<Map<string, StaffOrderItemInput[]>> {
     const groups = new Map<string, StaffOrderItemInput[]>();
     if (explicitSection?.trim()) {
@@ -176,7 +238,7 @@ export class OrdersStaffService {
 
     const productIds = [...new Set(items.map((it) => it.productId).filter(Boolean))];
     const products = productIds.length
-      ? await this.prisma.orderProduct.findMany({
+      ? await client.orderProduct.findMany({
           where: { companyId, id: { in: productIds } },
           select: { id: true, sections: true },
         })
@@ -201,7 +263,7 @@ export class OrdersStaffService {
       } catch {
         // Converted below into the existing request validation error.
       }
-      throw new BadRequestException('Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ØµÙ†Ù ØºÙŠØ± ØµØ­ÙŠØ­Ø©');
+      throw new BadRequestException('بيانات الصنف غير صحيحة');
     });
   }
 
@@ -210,10 +272,11 @@ export class OrdersStaffService {
     items: StaffOrderItemInput[],
     entryType: StaffOrderEntryType,
     orderType: 'order' | 'sale',
+    client: StaffOrderClient = this.prisma,
   ) {
     const productIds = [...new Set(items.map((it) => it.productId).filter(Boolean))];
     const products = productIds.length
-      ? await this.prisma.orderProduct.findMany({
+      ? await client.orderProduct.findMany({
           where: { companyId, id: { in: productIds } },
           include: { conversionTemplate: { select: { conversions: true } } },
         })
@@ -221,7 +284,7 @@ export class OrdersStaffService {
     const pmap = new Map(products.map((p) => [p.id, p]));
     const missing = productIds.filter((id) => !pmap.has(id));
     if (missing.length) {
-      throw new BadRequestException('ØµÙ†Ù ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯ Ø£Ùˆ Ù„Ø§ ÙŠÙ†ØªÙ…ÙŠ Ù„Ù‡Ø°Ù‡ Ø§Ù„Ø´Ø±ÙƒØ©');
+      throw new BadRequestException('الصنف غير موجود أو لا ينتمي إلى هذه الشركة');
     }
     const qty = this.validateItemQuantities(items);
     try {
@@ -229,7 +292,7 @@ export class OrdersStaffService {
         ? [...new Set(products.flatMap((product) => inventoryRecipeMaterialIds(product.recipe)))]
         : [];
       const materials = materialIds.length > 0
-        ? await this.prisma.orderProduct.findMany({
+        ? await client.orderProduct.findMany({
             where: {
               companyId,
               id: { in: materialIds },
@@ -267,6 +330,9 @@ export class OrdersStaffService {
         };
       });
     } catch (error) {
+      if (error instanceof StaffItemConversionError) {
+        throw new BadRequestException(`لا توجد معادلة تحويل صالحة لوحدة ${error.unit}`);
+      }
       if (error instanceof InventoryConsumptionSnapshotError) {
         throw new BadRequestException(error.message);
       }
@@ -279,8 +345,9 @@ export class OrdersStaffService {
     sectionName: string,
     saleDate: Date,
     items: Awaited<ReturnType<OrdersStaffService['mapStaffItemsForCreate']>>,
+    client: StaffOrderClient = this.prisma,
   ): Promise<Prisma.InputJsonObject[]> {
-    const recordedItems = await this.prisma.staffOrderItem.findMany({
+    const recordedItems = await client.staffOrderItem.findMany({
       where: {
         staffOrder: {
           companyId,
@@ -364,8 +431,10 @@ export class OrdersStaffService {
     sentAt: Date | null,
     logRef: string | null = null,
     entryType: StaffOrderEntryType = 'issue',
+    userRole?: string,
+    client: StaffOrderClient = this.prisma,
   ) {
-    const mapped = await this.mapStaffItemsForCreate(dto.companyId, items, entryType, orderType);
+    const mapped = await this.mapStaffItemsForCreate(dto.companyId, items, entryType, orderType, client);
     let cancellationSnapshots: Prisma.InputJsonObject[] | null = null;
     if (entryType === 'cancellation') {
       if (!saleDate) throw new BadRequestException('تاريخ الإلغاء مطلوب.');
@@ -374,9 +443,19 @@ export class OrdersStaffService {
         sectionName,
         saleDate,
         mapped,
+        client,
       );
     }
-    return this.prisma.staffOrder.create({
+    if (orderType === 'sale' && entryType === 'issue') {
+      await this.assertStaffSaleInventoryAvailable(
+        client,
+        dto.companyId,
+        mapped,
+        dto.allowNegativeInventory,
+        userRole,
+      );
+    }
+    return client.staffOrder.create({
       data: {
         tenantId,
         companyId: dto.companyId,
@@ -416,11 +495,12 @@ export class OrdersStaffService {
   ) {
     const tenantId = TenantContext.getTenantId();
     const companyId = String(dto.companyId ?? '').trim();
-    if (!companyId) throw new BadRequestException('companyId Ù…Ø·Ù„ÙˆØ¨');
-    if (!dto.items?.length) throw new BadRequestException('ÙŠØ¬Ø¨ Ø¥Ø¶Ø§ÙØ© ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„');
+    if (!companyId) throw new BadRequestException('companyId مطلوب');
+    if (!dto.items?.length) throw new BadRequestException('يجب إضافة صنف واحد على الأقل');
 
     const orderType = dto.orderType === 'sale' ? 'sale' : 'order';
     this.assertStaffOrderTypeAccess(orderType, userRole, userPermissions);
+    this.assertNegativeInventoryOverrideAccess(dto.allowNegativeInventory, userRole);
     const entryType: StaffOrderEntryType = dto.entryType === 'cancellation' ? 'cancellation' : 'issue';
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
     const isSale = orderType === 'sale';
@@ -435,12 +515,10 @@ export class OrdersStaffService {
     if (isSale && sectionEntries.length !== 1) {
       throw new BadRequestException('يجب تسجيل كل قسم بشكل مستقل في التسجيل الداخلي.');
     }
-    const saleLogRef = isSale && saleDate ? await this.allocateStaffSaleLogRef(companyId, saleDate) : null;
-
-    const orders: Awaited<ReturnType<typeof this.createStaffOrderRecord>>[] = [];
-    for (const [sectionName, sectionItems] of sectionEntries) {
-      orders.push(
-        await this.createStaffOrderRecord(
+    const persistOrders = async (client: StaffOrderClient, saleLogRef: string | null) => {
+      const saved: Awaited<ReturnType<typeof this.createStaffOrderRecord>>[] = [];
+      for (const [sectionName, sectionItems] of sectionEntries) {
+        saved.push(await this.createStaffOrderRecord(
           tenantId,
           userId,
           { ...dto, companyId },
@@ -451,8 +529,29 @@ export class OrdersStaffService {
           sentAt,
           saleLogRef,
           entryType,
-        ),
-      );
+          userRole,
+          client,
+        ));
+      }
+      return saved;
+    };
+
+    let saleLogRef: string | null = null;
+    let orders: Awaited<ReturnType<typeof this.createStaffOrderRecord>>[];
+    if (isSale && entryType === 'issue' && saleDate) {
+      const persisted = await this.prisma.withTenant(async (tx) => {
+        await this.inventory.lockInventoryBalance(tx, tenantId, companyId);
+        const lockedLogRef = await this.allocateStaffSaleLogRef(companyId, saleDate, tx);
+        return {
+          saleLogRef: lockedLogRef,
+          orders: await persistOrders(tx, lockedLogRef),
+        };
+      });
+      saleLogRef = persisted.saleLogRef;
+      orders = persisted.orders;
+    } else {
+      saleLogRef = isSale && saleDate ? await this.allocateStaffSaleLogRef(companyId, saleDate) : null;
+      orders = await persistOrders(this.prisma, saleLogRef);
     }
 
     if (!isSale) {
@@ -481,7 +580,7 @@ export class OrdersStaffService {
     userRole?: string,
     userPermissions?: string[],
   ) {
-    // Ù†ÙØ³ Ù†Ø§ÙØ°Ø© ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª â€” createdAt Ø£Ùˆ saleDate Ø¯Ø§Ø®Ù„ Ø§Ù„ÙØªØ±Ø©
+    // نفس نافذة تقرير المبيعات: createdAt أو saleDate داخل الفترة.
     const since = buildSalesReportSince(days);
     const tenantId = TenantContext.tryGetTenantId();
     const where: Prisma.StaffOrderWhereInput = {
@@ -502,6 +601,77 @@ export class OrdersStaffService {
     });
   }
 
+  private async updateStaffOrderItemsAtomic(
+    id: string,
+    companyId: string,
+    userId: string,
+    userRole: string | undefined,
+    userPermissions: string[] | undefined,
+    dto: {
+      sectionName?: string;
+      notes?: string;
+      saleDate?: string;
+      items: StaffOrderItemInput[];
+      lang?: 'ar' | 'en';
+      allowNegativeInventory?: boolean;
+    },
+  ) {
+    const tenantId = TenantContext.getTenantId();
+    return this.prisma.withTenant(async (tx) => {
+      await this.inventory.lockInventoryBalance(tx, tenantId, companyId);
+      const order = await tx.staffOrder.findFirst({ where: { id, companyId } });
+      if (!order) throw new NotFoundException('Staff order not found.');
+      if (order.userId !== userId) throw new ForbiddenException('Another employee staff order cannot be edited.');
+      this.assertStaffOrderTypeAccess(order.orderType === 'sale' ? 'sale' : 'order', userRole, userPermissions);
+      if (order.orderType !== 'sale') throw new BadRequestException('A sent operational order cannot be edited.');
+      if (order.entryType === 'cancellation') {
+        throw new BadRequestException('Cancellation records are immutable.');
+      }
+      await this.assertLatestEditableStaffSaleOrder(order, userRole, tx);
+
+      const grouped = await this.groupItemsBySection(companyId, dto.items, dto.sectionName, tx);
+      if (grouped.size !== 1) {
+        throw new BadRequestException('An internal sale record must contain exactly one section.');
+      }
+      const [[sectionName, sectionItems]] = grouped.entries();
+      const mapped = await this.mapStaffItemsForCreate(companyId, sectionItems, 'issue', 'sale', tx);
+      await this.assertStaffSaleInventoryAvailable(
+        tx,
+        companyId,
+        mapped,
+        dto.allowNegativeInventory,
+        userRole,
+        id,
+      );
+
+      await tx.staffOrderItem.deleteMany({ where: { staffOrderId: id } });
+      const updated = await tx.staffOrder.update({
+        where: { id },
+        data: {
+          sectionName,
+          ...(dto.notes !== undefined && { notes: dto.notes?.trim() || null }),
+          ...(dto.saleDate && { saleDate: parseSaleDateYmd(dto.saleDate) }),
+          items: {
+            create: mapped.map((item) => ({
+              ...item,
+              cancellationReasons: item.cancellationReasons ?? Prisma.JsonNull,
+            })),
+          },
+        },
+        include: {
+          items: { include: { product: true } },
+          user: { select: { nameAr: true, nameEn: true } },
+        },
+      });
+      const saleDay = updated.saleDate ?? updated.createdAt;
+      const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
+      return {
+        ...updated,
+        whatsAppText: buildSalesWhatsAppTextCombined([updated], saleDay, lang, updated.logRef),
+      };
+    });
+  }
+
   async updateStaffOrder(
     id: string,
     companyId: string,
@@ -514,16 +684,28 @@ export class OrdersStaffService {
       saleDate?: string;
       items?: StaffOrderItemInput[];
       lang?: 'ar' | 'en';
+      allowNegativeInventory?: boolean;
     },
   ) {
+    this.assertNegativeInventoryOverrideAccess(dto.allowNegativeInventory, userRole);
+    if (dto.items?.length) {
+      return this.updateStaffOrderItemsAtomic(
+        id,
+        companyId,
+        userId,
+        userRole,
+        userPermissions,
+        { ...dto, items: dto.items },
+      );
+    }
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
-    if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
-    if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† ØªØ¹Ø¯ÙŠÙ„ Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
+    if (!order) throw new NotFoundException('الطلب غير موجود');
+    if (order.userId !== userId) throw new ForbiddenException('لا يمكن تعديل طلب موظف آخر');
     this.assertStaffOrderTypeAccess(order.orderType === 'sale' ? 'sale' : 'order', userRole, userPermissions);
 
     const isSale = order.orderType === 'sale';
     if (!isSale) {
-      throw new BadRequestException('Ù„Ø§ ÙŠÙ…ÙƒÙ† ØªØ¹Ø¯ÙŠÙ„ Ø·Ù„Ø¨ ØªÙ… Ø¥Ø±Ø³Ø§Ù„Ù‡');
+      throw new BadRequestException('لا يمكن تعديل طلب تم إرساله');
     }
     if (order.entryType === 'cancellation') {
       throw new BadRequestException('عملية الإلغاء محفوظة كسجل رقابي ولا يمكن تعديلها.');
@@ -542,7 +724,7 @@ export class OrdersStaffService {
       const grouped = await this.groupItemsBySection(companyId, dto.items, dto.sectionName);
       if (grouped.size > 1) {
         throw new BadRequestException(
-          'Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¯Ù…Ø¬ Ø£Ù‚Ø³Ø§Ù… Ù…ØªØ¹Ø¯Ø¯Ø© ÙÙŠ Ø³Ø¬Ù„ Ù…Ø¨ÙŠØ¹Ø§Øª ÙˆØ§Ø­Ø¯ â€” Ø¹Ø¯Ù‘Ù„ ÙƒÙ„ Ù‚Ø³Ù… Ù…Ù† Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª',
+          'لا يمكن دمج أقسام متعددة في سجل مبيعات واحد؛ عدّل كل قسم من قائمة المبيعات',
         );
       }
       const [[sectionName, sectionItems]] = grouped.entries();
@@ -591,8 +773,8 @@ export class OrdersStaffService {
         user: { select: { nameAr: true, nameEn: true } },
       },
     });
-    if (!order) throw new NotFoundException('Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©');
-    if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„ Ù…Ø¨ÙŠØ¹Ø§Øª Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
+    if (!order) throw new NotFoundException('المبيعات غير موجودة');
+    if (order.userId !== userId) throw new ForbiddenException('لا يمكن إعادة إرسال مبيعات موظف آخر');
     this.assertStaffOrderTypeAccess(order.orderType === 'sale' ? 'sale' : 'order', userRole, userPermissions);
 
     if (order.orderType !== 'sale') {
@@ -633,11 +815,11 @@ export class OrdersStaffService {
     userPermissions?: string[],
   ) {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
-    if (!order) throw new NotFoundException('Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯');
-    if (order.userId !== userId) throw new ForbiddenException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ Ù…ÙˆØ¸Ù Ø¢Ø®Ø±');
+    if (!order) throw new NotFoundException('الطلب غير موجود');
+    if (order.userId !== userId) throw new ForbiddenException('لا يمكن حذف طلب موظف آخر');
     this.assertStaffOrderTypeAccess(order.orderType === 'sale' ? 'sale' : 'order', userRole, userPermissions);
     if (order.orderType !== 'sale') {
-      throw new BadRequestException('Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø·Ù„Ø¨ ØªÙ… Ø¥Ø±Ø³Ø§Ù„Ù‡');
+      throw new BadRequestException('لا يمكن حذف طلب تم إرساله');
     }
     if (order.entryType === 'cancellation') {
       throw new BadRequestException('عملية الإلغاء محفوظة كسجل رقابي ولا يمكن حذفها.');

@@ -12,11 +12,12 @@ import {
 } from './orders-items-report-aggregate.util';
 import { OrdersCatalogService } from './orders-catalog.service';
 import { OrdersCatalogTranslationService } from './orders-catalog-translation.service';
-import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
+import { resolveQuantityMultiplierOrNull } from './orders-quantity-multiplier.util';
 
 type OrderItemInput = { productId: string; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
 type OrderPaymentMethod = 'external' | 'internal' | 'transfer';
 type OrderPaymentPatch = { orderType?: OrderPaymentMethod; pettyCashAmount?: string };
+type OrdersWriteClient = Pick<TenantPrismaService, 'order' | 'orderItem' | 'orderProduct' | '$executeRaw'>;
 
 @Injectable()
 export class OrdersService {
@@ -32,12 +33,13 @@ export class OrdersService {
     size?: string | null;
     packaging?: string | null;
     unit?: string | null;
-  }>(companyId: string, items: T[]) {
+  }>(companyId: string, items: T[], db: OrdersWriteClient = this.prisma) {
     const productIds = [...new Set(items.map((item) => item.productId))];
-    const products = await this.prisma.orderProduct.findMany({
+    const products = await db.orderProduct.findMany({
       where: { companyId, id: { in: productIds } },
       select: {
         id: true,
+        nameAr: true,
         unit: true,
         variants: true,
         inventoryConversions: true,
@@ -48,7 +50,14 @@ export class OrdersService {
     const missing = productIds.filter((productId) => !productMap.has(productId));
     if (missing.length > 0) throw new BadRequestException('صنف غير موجود أو لا ينتمي لهذه الشركة');
     return items.map((item) => {
-      const quantityMultiplier = resolveQuantityMultiplier(productMap.get(item.productId), item);
+      const product = productMap.get(item.productId);
+      const quantityMultiplier = resolveQuantityMultiplierOrNull(product, item);
+      if (!quantityMultiplier) {
+        const selectedUnit = item.unit?.trim() || product?.unit?.trim() || 'piece';
+        throw new BadRequestException(
+          `لا توجد معادلة تحويل صالحة للصنف ${product?.nameAr || item.productId} والوحدة ${selectedUnit}`,
+        );
+      }
       return {
         ...item,
         quantityMultiplier,
@@ -75,9 +84,9 @@ export class OrdersService {
     return patch;
   }
 
-  async updateProductLastPrices(items: OrderItemInput[]) {
+  async updateProductLastPrices(items: OrderItemInput[], db: OrdersWriteClient = this.prisma) {
     for (const it of items) {
-      const product = await this.prisma.orderProduct.findUnique({ where: { id: it.productId }, select: { variants: true } });
+      const product = await db.orderProduct.findUnique({ where: { id: it.productId }, select: { variants: true } });
       if (!product) continue;
       const variants = product.variants as Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }> | null;
       if (variants && Array.isArray(variants) && variants.length > 0) {
@@ -87,13 +96,13 @@ export class OrdersService {
         const idx = variants.findIndex((v) => (v.size || '') === size && (v.packaging || '') === packaging && (v.unit || '') === unit);
         if (idx >= 0) {
           variants[idx] = { ...variants[idx], lastPrice: String(it.unitPrice) };
-          await this.prisma.orderProduct.update({
+          await db.orderProduct.update({
             where: { id: it.productId },
             data: { variants: variants as object },
           });
         }
       } else {
-        await this.prisma.orderProduct.update({
+        await db.orderProduct.update({
           where: { id: it.productId },
           data: { lastPrice: it.unitPrice },
         });
@@ -138,48 +147,45 @@ export class OrdersService {
     const tenantId = TenantContext.getTenantId();
     if (!dto.items?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
 
-    const items = await this.withQuantityMultipliers(companyId, mapDtoItemsToOrderLines(dto.items));
-    const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
+    return this.prisma.withTenant(async (tx) => {
+      const items = await this.withQuantityMultipliers(companyId, mapDtoItemsToOrderLines(dto.items), tx);
+      const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
+      const dateStr = orderGregorianDateToNumberPrefix(dto.orderDate);
 
-    const dateStr = orderGregorianDateToNumberPrefix(dto.orderDate);
-    const existing = await this.prisma.order.count({
-      where: { companyId, orderNumber: { startsWith: `ORD-${dateStr}` } },
-    });
-    const orderNumber = buildOrderNumberFromPrefix(dateStr, existing + 1);
-
-    const order = await this.prisma.order.create({
-      data: {
-        tenantId,
-        companyId,
-        orderNumber,
-        orderDate: new Date(dto.orderDate),
-        orderType: dto.orderType,
-        pettyCashAmount: dto.orderType === 'external' && dto.pettyCashAmount ? new Prisma.Decimal(dto.pettyCashAmount) : null,
-        totalAmount,
-        notes: dto.notes?.trim() || null,
-        items: {
-          create: items.map((i) => ({
-            productId: i.productId,
-            size: i.size,
-            packaging: i.packaging,
-            unit: i.unit,
-            quantity: i.quantity,
-            quantityMultiplier: i.quantityMultiplier,
-            inventoryBaseQuantitySnapshot: i.inventoryBaseQuantitySnapshot,
-            unitPrice: i.unitPrice,
-            amount: i.amount,
-          })),
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders:${companyId}:${dateStr}`}))`;
+      const existing = await tx.order.count({
+        where: { companyId, orderNumber: { startsWith: `ORD-${dateStr}` } },
+      });
+      const orderNumber = buildOrderNumberFromPrefix(dateStr, existing + 1);
+      const order = await tx.order.create({
+        data: {
+          tenantId,
+          companyId,
+          orderNumber,
+          orderDate: new Date(dto.orderDate),
+          orderType: dto.orderType,
+          pettyCashAmount: dto.orderType === 'external' && dto.pettyCashAmount ? new Prisma.Decimal(dto.pettyCashAmount) : null,
+          totalAmount,
+          notes: dto.notes?.trim() || null,
+          items: {
+            create: items.map((i) => ({
+              productId: i.productId,
+              size: i.size,
+              packaging: i.packaging,
+              unit: i.unit,
+              quantity: i.quantity,
+              quantityMultiplier: i.quantityMultiplier,
+              inventoryBaseQuantitySnapshot: i.inventoryBaseQuantitySnapshot,
+              unitPrice: i.unitPrice,
+              amount: i.amount,
+            })),
+          },
         },
-      },
-      include: {
-        items: {
-          include: { product: { include: { category: true } } },
-        },
-      },
+        include: { items: { include: { product: { include: { category: true } } } } },
+      });
+      await this.updateProductLastPrices(orderLinesToLastPriceInputs(items), tx);
+      return order;
     });
-
-    await this.updateProductLastPrices(orderLinesToLastPriceInputs(items));
-    return order;
   }
 
   async update(companyId: string, id: string, dto: {
@@ -189,14 +195,16 @@ export class OrdersService {
     notes?: string;
     items?: { productId: string; size?: string; packaging?: string; unit?: string; quantity: string; unitPrice: string }[];
   }) {
-    const existing = await this.prisma.order.findFirst({ where: { id, companyId, status: 'active' } });
-    if (!existing) throw new NotFoundException('الطلب غير موجود');
+    return this.prisma.withTenant(async (tx) => {
+      await tx.$executeRaw`SELECT id FROM orders WHERE id = ${id} AND company_id = ${companyId} FOR UPDATE`;
+      const existing = await tx.order.findFirst({ where: { id, companyId, status: 'active' } });
+      if (!existing) throw new NotFoundException('الطلب غير موجود');
 
-    if (dto.items?.length) {
-      const items = await this.withQuantityMultipliers(companyId, mapDtoItemsToOrderLines(dto.items));
-      await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
+      if (dto.items?.length) {
+      const items = await this.withQuantityMultipliers(companyId, mapDtoItemsToOrderLines(dto.items), tx);
+      await tx.orderItem.deleteMany({ where: { orderId: id } });
       const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
-      await this.prisma.orderItem.createMany({
+      await tx.orderItem.createMany({
         data: items.map((i) => ({
           orderId: id,
           productId: i.productId,
@@ -210,7 +218,7 @@ export class OrdersService {
           amount: i.amount,
         })),
       });
-      await this.prisma.order.update({
+      await tx.order.update({
         where: { id },
         data: {
           totalAmount,
@@ -219,9 +227,9 @@ export class OrdersService {
           ...(dto.notes !== undefined && { notes: dto.notes?.trim() || null }),
         },
       });
-      await this.updateProductLastPrices(orderLinesToLastPriceInputs(items));
+      await this.updateProductLastPrices(orderLinesToLastPriceInputs(items), tx);
     } else {
-      await this.prisma.order.update({
+      await tx.order.update({
         where: { id },
         data: {
           ...(dto.orderDate && { orderDate: new Date(dto.orderDate) }),
@@ -231,7 +239,13 @@ export class OrdersService {
       });
     }
 
-    return this.findOne(id, companyId);
+      const updated = await tx.order.findFirst({
+        where: { id, companyId },
+        include: { items: { include: { product: { include: { category: true } } } } },
+      });
+      if (!updated) throw new NotFoundException('الطلب غير موجود');
+      return updated;
+    });
   }
 
   async cancel(id: string, companyId: string) {

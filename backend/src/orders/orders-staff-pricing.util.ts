@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { resolveQuantityMultiplier } from './orders-quantity-multiplier.util';
+import { resolveQuantityMultiplierOrNull } from './orders-quantity-multiplier.util';
 
 export type ProductVariantRow = {
   size?: string;
@@ -16,12 +16,29 @@ export type StaffItemVariantInput = {
   unitPrice?: string | null;
 };
 
+export class StaffItemConversionError extends Error {
+  constructor(readonly unit: string) {
+    super(`Missing inventory conversion for unit ${unit}`);
+  }
+}
+
+function requireQuantityMultiplier(
+  product: Parameters<typeof resolveQuantityMultiplierOrNull>[0],
+  selection: Parameters<typeof resolveQuantityMultiplierOrNull>[1],
+): Prisma.Decimal {
+  const multiplier = resolveQuantityMultiplierOrNull(product, selection);
+  if (!multiplier) throw new StaffItemConversionError(selection.unit?.trim() || product?.unit?.trim() || 'piece');
+  return multiplier;
+}
+
 /** يطابق متغيراً من الكتالوج أو يعيد الافتراضي */
 export function resolveStaffItemVariant(
   product: {
     lastPrice?: Prisma.Decimal | string | number | null;
     variants?: unknown;
     unit?: string | null;
+    inventoryConversions?: unknown;
+    conversionTemplate?: { conversions?: unknown } | null;
   } | null | undefined,
   input: StaffItemVariantInput,
 ): {
@@ -33,7 +50,7 @@ export function resolveStaffItemVariant(
 } {
   const size = input.size?.trim() || null;
   const packaging = input.packaging?.trim() || null;
-  const unit = input.unit?.trim() || 'piece';
+  const unit = input.unit?.trim() || product?.unit?.trim() || 'piece';
   const variants = Array.isArray(product?.variants) ? (product!.variants as ProductVariantRow[]) : [];
 
   if (input.unitPrice != null && String(input.unitPrice).trim() !== '') {
@@ -42,7 +59,7 @@ export function resolveStaffItemVariant(
       packaging,
       unit,
       unitPrice: new Prisma.Decimal(input.unitPrice),
-      quantityMultiplier: resolveQuantityMultiplier(product, { size, packaging, unit }),
+      quantityMultiplier: requireQuantityMultiplier(product, { size, packaging, unit }),
     };
   }
 
@@ -55,7 +72,7 @@ export function resolveStaffItemVariant(
       packaging,
       unit,
       unitPrice: new Prisma.Decimal(match.lastPrice),
-      quantityMultiplier: resolveQuantityMultiplier(product, { size, packaging, unit }),
+      quantityMultiplier: requireQuantityMultiplier(product, { size, packaging, unit }),
     };
   }
   if (variants.length > 0 && !size && !packaging) {
@@ -65,7 +82,7 @@ export function resolveStaffItemVariant(
       packaging: v0.packaging?.trim() || null,
       unit: v0.unit?.trim() || 'piece',
       unitPrice: new Prisma.Decimal(v0.lastPrice ?? 0),
-      quantityMultiplier: resolveQuantityMultiplier(product, {
+      quantityMultiplier: requireQuantityMultiplier(product, {
         size: v0.size,
         packaging: v0.packaging,
         unit: v0.unit,
@@ -78,7 +95,7 @@ export function resolveStaffItemVariant(
     packaging,
     unit,
     unitPrice: new Prisma.Decimal(product?.lastPrice ?? 0),
-    quantityMultiplier: resolveQuantityMultiplier(product, { size, packaging, unit }),
+    quantityMultiplier: requireQuantityMultiplier(product, { size, packaging, unit }),
   };
 }
 

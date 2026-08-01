@@ -9,6 +9,7 @@ import {
   groupSentSaleOrders,
   latestEditableStaffSaleScope,
   mapStaffOrderToBasketLines,
+  staffNegativeInventoryConfirmation,
   summarizeSentSales,
   upsertPlainStaffBasketLine,
 } from './staffOrderPanelModel';
@@ -180,5 +181,27 @@ describe('staffOrderPanelModel', () => {
       quantity: '2',
       cancellationReasons: ['customer_disliked', 'replaced_item'],
     });
+  });
+
+  it('recognizes only overridable negative-inventory confirmation errors', () => {
+    expect(staffNegativeInventoryConfirmation({
+      errorCode: 'NEGATIVE_INVENTORY_CONFIRMATION_REQUIRED',
+      details: {
+        canOverride: true,
+        shortages: [{
+          productId: 'p1',
+          productNameAr: 'مادة',
+          productNameEn: 'Material',
+          unit: 'piece',
+          availableQuantity: '1',
+          requestedQuantity: '2',
+          projectedQuantity: '-1',
+        }],
+      },
+    })?.shortages).toHaveLength(1);
+    expect(staffNegativeInventoryConfirmation({
+      errorCode: 'NEGATIVE_INVENTORY_BLOCKED',
+      details: { canOverride: false, shortages: [] },
+    })).toBeNull();
   });
 });

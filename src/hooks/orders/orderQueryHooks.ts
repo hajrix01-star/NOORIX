@@ -3,6 +3,7 @@ import {
   cancelOrder,
   createInventoryStocktake,
   createOrder,
+  getInventoryDataQuality,
   getOrders,
   getOrdersItemsReport,
   getOrdersItemsReportRange,
@@ -17,6 +18,7 @@ import type {
   OrderItemsReportRow,
   OrderItemsReportResult,
   CreateInventoryStocktakePayload,
+  InventoryDataQualityReport,
   InventoryStocktake,
   OrderRecipeInventoryStockRow,
   OrderRangeSummary,
@@ -80,6 +82,7 @@ export function useCreateOrderMutation(companyId?: string) {
       orderKeys.summaryRoot(),
       orderKeys.rangeSummaryRoot(),
       orderKeys.recipeInventoryStockRoot(),
+      orderKeys.inventoryDataQualityRoot(),
       ...(companyId ? [orderKeys.products(companyId)] : [orderKeys.productsRoot()]),
     ],
     showErrorToast: false,
@@ -94,6 +97,7 @@ export function useUpdateOrderMutation(companyId: string) {
       orderKeys.summaryRoot(),
       orderKeys.rangeSummaryRoot(),
       orderKeys.recipeInventoryStockRoot(),
+      orderKeys.inventoryDataQuality(companyId),
       ...(companyId ? [orderKeys.products(companyId)] : []),
     ],
     showErrorToast: false,
@@ -108,6 +112,7 @@ export function useCancelOrderMutation(companyId: string) {
       orderKeys.summaryRoot(),
       orderKeys.rangeSummaryRoot(),
       orderKeys.recipeInventoryStockRoot(),
+      orderKeys.inventoryDataQuality(companyId),
     ],
     showErrorToast: false,
   });
@@ -163,6 +168,15 @@ export function useOrdersRecipeInventoryStock(companyId: string) {
     queryKey: orderKeys.recipeInventoryStock(companyId),
     queryFn: () => getOrdersRecipeInventoryStock(companyId),
     fallbackMessage: 'Failed to load recipe inventory stock',
+    enabled: !!companyId,
+  });
+}
+
+export function useInventoryDataQuality(companyId: string) {
+  return useApiQuery<InventoryDataQualityReport>({
+    queryKey: orderKeys.inventoryDataQuality(companyId),
+    queryFn: () => getInventoryDataQuality(companyId),
+    fallbackMessage: 'Failed to load inventory data quality',
     enabled: !!companyId,
   });
 }

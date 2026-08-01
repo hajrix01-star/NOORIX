@@ -593,13 +593,13 @@ describe('aggregateRecipeInventoryStock', () => {
   it('reverses consumption when a sold item is cancelled', () => {
     const orange = {
       id: 'orange',
-      nameAr: 'Ø¨Ø±ØªÙ‚Ø§Ù„',
+      nameAr: 'برتقال',
       nameEn: 'Orange',
       unit: 'piece',
     };
     const juice = {
       id: 'orange-juice',
-      nameAr: 'Ø¹ØµÙŠØ± Ø¨Ø±ØªÙ‚Ø§Ù„',
+      nameAr: 'عصير برتقال',
       nameEn: 'Orange juice',
       unit: 'cup',
       recipe: [

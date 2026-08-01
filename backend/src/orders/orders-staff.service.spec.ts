@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { OrdersStaffReportService } from './orders-staff-report.service';
+import { OrdersInventoryService } from './orders-inventory.service';
 import { OrdersStaffService } from './orders-staff.service';
 
 describe('OrdersStaffService direct operational orders', () => {
@@ -67,7 +68,7 @@ describe('OrdersStaffService direct operational orders', () => {
     const prisma = new TenantPrismaService();
     jest.spyOn(prisma.orderProduct, 'findMany').mockResolvedValue([product]);
     const createSpy = jest.spyOn(prisma.staffOrder, 'create').mockResolvedValue(savedOrder);
-    const service = new OrdersStaffService(prisma, new OrdersStaffReportService(prisma));
+    const service = new OrdersStaffService(prisma, new OrdersStaffReportService(prisma), new OrdersInventoryService(prisma));
 
     let resultPromise: ReturnType<OrdersStaffService['createStaffOrder']> | undefined;
     TenantContext.run('tenant-1', 'user-1', () => {
@@ -176,7 +177,7 @@ describe('OrdersStaffService direct operational orders', () => {
       user: { nameAr: 'موظف البار', nameEn: null },
     };
     const createSpy = jest.spyOn(prisma.staffOrder, 'create').mockResolvedValue(savedCancellation);
-    const service = new OrdersStaffService(prisma, new OrdersStaffReportService(prisma));
+    const service = new OrdersStaffService(prisma, new OrdersStaffReportService(prisma), new OrdersInventoryService(prisma));
 
     let resultPromise: ReturnType<OrdersStaffService['createStaffOrder']> | undefined;
     TenantContext.run('tenant-1', 'user-1', () => {
@@ -254,7 +255,7 @@ describe('OrdersStaffService direct operational orders', () => {
       createdAt: now,
     }]);
     const createSpy = jest.spyOn(prisma.staffOrder, 'create');
-    const service = new OrdersStaffService(prisma, new OrdersStaffReportService(prisma));
+    const service = new OrdersStaffService(prisma, new OrdersStaffReportService(prisma), new OrdersInventoryService(prisma));
 
     let resultPromise: ReturnType<OrdersStaffService['createStaffOrder']> | undefined;
     TenantContext.run('tenant-1', 'user-1', () => {

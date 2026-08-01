@@ -10,11 +10,14 @@ import { requireCompanyId } from '../common/utils/require-company-id';
 import { OrdersService } from './orders.service';
 import { OrdersStaffService } from './orders-staff.service';
 import { OrdersInventoryService } from './orders-inventory.service';
+import { OrdersInventoryQualityService } from './orders-inventory-quality.service';
+import type { InventoryDataQualityReport } from './orders-inventory-quality.types';
 import { CreateInventoryStocktakeDto } from './dto/create-inventory-stocktake.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductsBatchDto } from './dto/create-products-batch.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
 import {
   ApplyCategoryTranslationsDto,
   ApplyProductTranslationsDto,
@@ -40,6 +43,7 @@ export class OrdersController {
     private readonly ordersService: OrdersService,
     private readonly staffService: OrdersStaffService,
     private readonly inventoryService: OrdersInventoryService,
+    private readonly inventoryQualityService: OrdersInventoryQualityService,
   ) {}
 
   // ══════════════════════════════════════════════════
@@ -234,6 +238,14 @@ export class OrdersController {
   @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
   getRecipeInventoryStock(@CompanyId() companyId: string) {
     return this.inventoryService.getStock(requireCompanyId(companyId));
+  }
+
+  @Get('inventory-data-quality')
+  @RequireAnyPermission('ORDERS_READ', 'ORDERS_WRITE')
+  getInventoryDataQuality(
+    @CompanyId() companyId: string,
+  ): Promise<InventoryDataQualityReport> {
+    return this.inventoryQualityService.getDataQuality(requireCompanyId(companyId));
   }
 
   @Get('inventory-stocktakes')
@@ -527,13 +539,7 @@ export class OrdersController {
   update(
     @Param('id') id: string,
     @CompanyId() companyId: string,
-    @Body() body: {
-      orderDate?: string;
-      orderType?: 'external' | 'internal' | 'transfer';
-      pettyCashAmount?: string;
-      notes?: string;
-      items?: { productId: string; size?: string; quantity: string; unitPrice: string }[];
-    },
+    @Body() body: UpdateOrderDto,
   ) {
     return this.ordersService.update(requireCompanyId(companyId), id, body);
   }

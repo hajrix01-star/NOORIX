@@ -16,6 +16,7 @@ import type {
   OrderConversionTemplatePayload,
   OrderItemsReportRow,
   OrderItemsReportResult,
+  InventoryDataQualityReport,
   InventoryStocktake,
   OrderProduct,
   OrderProductPayload,
@@ -145,6 +146,11 @@ export async function getOrdersRecipeInventoryStock(
 ): Promise<ApiParsedResult<OrderRecipeInventoryStockRow[]>> {
   const res = await apiGet<OrderRecipeInventoryStockRow[]>('/api/v1/orders/recipe-inventory-stock', { companyId });
   return res?.success ? { ...res, data: res.data ?? [] } : res;
+}
+export async function getInventoryDataQuality(
+  companyId: string,
+): Promise<ApiParsedResult<InventoryDataQualityReport>> {
+  return apiGet<InventoryDataQualityReport>('/api/v1/orders/inventory-data-quality', { companyId });
 }
 export async function getInventoryStocktakes(
   companyId: string,

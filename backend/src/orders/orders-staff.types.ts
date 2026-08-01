@@ -32,4 +32,5 @@ export interface CreateStaffOrderDto {
   notes?: string;
   items: StaffOrderItemInput[];
   lang?: 'ar' | 'en';
+  allowNegativeInventory?: boolean;
 }

@@ -2,7 +2,7 @@ import Decimal from 'decimal.js';
 import { useEffect, useMemo, useState } from 'react';
 import { PERMISSIONS, hasPermission } from '../../../constants/permissions';
 import { useAuth } from '../../../context/AuthContext';
-import { useOrderSections, useOrdersRecipeInventoryStock } from '../../../hooks/useOrders';
+import { useInventoryDataQuality, useOrderSections, useOrdersRecipeInventoryStock } from '../../../hooks/useOrders';
 import type { OrderRecipeInventoryStockRow, OrderSection } from '../../../types/api';
 import { Badge, Button, SimpleTable, Spinner, useIsNarrow700 } from '../../../ui';
 import type { SimpleTableColumn } from '../../../ui';
@@ -13,6 +13,7 @@ import {
   inventoryRowSectionLabels,
 } from '../inventorySectionFilterModel';
 import InventoryStocktakeSheet from './InventoryStocktakeSheet';
+import InventoryDataQualityPanel from './InventoryDataQualityPanel';
 
 type InventoryCostTabProps = {
   companyId: string;
@@ -125,6 +126,7 @@ export function InventoryCostTab({ companyId }: InventoryCostTabProps) {
   const [selectedSectionId, setSelectedSectionId] = useState(ALL_INVENTORY_SECTIONS);
   const [stocktakeSheetMode, setStocktakeSheetMode] = useState<StocktakeSheetMode | null>(null);
   const stockQuery = useOrdersRecipeInventoryStock(companyId);
+  const qualityQuery = useInventoryDataQuality(companyId);
   const sectionsQuery = useOrderSections(companyId);
 
   const rows = stockQuery.data ?? [];
@@ -232,6 +234,13 @@ export function InventoryCostTab({ companyId }: InventoryCostTabProps) {
           </div>
         </div>
       </div>
+
+      <InventoryDataQualityPanel
+        quality={qualityQuery.data}
+        isLoading={qualityQuery.isLoading}
+        error={qualityQuery.error}
+        onRetry={() => qualityQuery.refetch()}
+      />
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
         <SummaryTile label="المواد" value={String(summary.items)} />
