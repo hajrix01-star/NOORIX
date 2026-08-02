@@ -6,6 +6,7 @@ import type {
   DashboardDailyMetricRow,
   DashboardDailyTotalMetricRow,
   DashboardSalesShiftBucket,
+  DashboardWeekdayAverageMetricRow,
 } from './sales-dashboard-metrics.types';
 
 export function periodDailyAverage(rows: readonly DashboardDailyMetricRow[], endDayInclusive?: number) {
@@ -66,6 +67,56 @@ export function dailyTotalRows(rows: readonly DashboardDailyMetricRow[]): Dashbo
     totals.set(row.transactionDate, current);
   }
   return [...totals.values()].sort((a, b) => a.transactionDate.localeCompare(b.transactionDate));
+}
+
+/**
+ * Official sales average for each weekday in a calendar-month period.
+ * The denominator includes every elapsed calendar occurrence of that weekday,
+ * including elapsed days without sales, and shares the same end-day cap as the
+ * dashboard monthly daily average.
+ */
+export function weekdayAverageRows(
+  rows: readonly DashboardDailyMetricRow[],
+  endDayInclusive?: number,
+): DashboardWeekdayAverageMetricRow[] {
+  if (!rows.length) return [];
+  const first = ymdParts(rows[0].transactionDate);
+  if (!first) return [];
+
+  const cap = Math.max(
+    0,
+    Math.min(endDayInclusive ?? lastDayOfMonth(first.year, first.month), lastDayOfMonth(first.year, first.month)),
+  );
+  if (cap <= 0) return [];
+
+  const totals = Array<number>(7).fill(0);
+  const calendarDays = Array<number>(7).fill(0);
+
+  for (let day = 1; day <= cap; day += 1) {
+    const dow = new Date(Date.UTC(first.year, first.month - 1, day)).getUTCDay();
+    calendarDays[dow] += 1;
+  }
+
+  for (const row of rows) {
+    const parts = ymdParts(row.transactionDate);
+    if (
+      !parts ||
+      parts.year !== first.year ||
+      parts.month !== first.month ||
+      parts.day > cap
+    ) {
+      continue;
+    }
+    const dow = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay();
+    totals[dow] += Number(row.totalAmount || 0);
+  }
+
+  return Array.from({ length: 7 }, (_, dow) => ({
+    dow,
+    totalSales: totals[dow],
+    calendarDays: calendarDays[dow],
+    avgDaily: calendarDays[dow] > 0 ? totals[dow] / calendarDays[dow] : null,
+  }));
 }
 
 export function channelBreakdown(rows: readonly DashboardChannelMetricRow[]): DashboardChannelBreakdownMetricRow[] {

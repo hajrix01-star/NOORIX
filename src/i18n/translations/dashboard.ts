@@ -130,6 +130,8 @@ export default {
   dashboardKpiFormulaSales: { ar: 'إجمالي المبيعات للفترة', en: 'Total sales for the period' },
   /** متوسط يومي للفترة 1–N: المجموع ÷ أيام التقويم في الفترة (مقارنة MTD). */
   dashboardSalesDailyAvgActiveDays: { ar: 'المعدل اليومي', en: 'Daily average' },
+  dashboardCalendarWeekdaySalesAvg: { ar: 'متوسط المبيعات حسب يوم الأسبوع', en: 'Sales average by weekday' },
+  dashboardCalendarWeekdaySalesAvgShort: { ar: 'معدل', en: 'Avg' },
   dashboardRevenuePrevMonthSales: { ar: 'مبيعات الشهر الماضي', en: 'Prev month sales' },
   dashboardRevenueCompareSales: { ar: 'المبيعات', en: 'Sales' },
   dashboardShiftDetailsToggle: { ar: 'الشفت', en: 'Shifts' },

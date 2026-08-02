@@ -97,19 +97,19 @@ function OrdersV4PurchaseSummaryCards({ summary }: { summary?: OrdersV4Summary }
   ];
   return <section data-testid="orders-v4-purchase-summary-cards" className="overflow-hidden rounded-xl border border-noorix-border bg-noorix-surface shadow-sm">
     <div className="flex items-center justify-between border-b border-noorix-border px-4 py-3">
-      <strong className="text-[13px]">ملخص الفترة المختارة</strong>
-      <span className="text-[11px] text-noorix-muted">SR</span>
+      <strong className="text-[15px] leading-6">ملخص الفترة المختارة</strong>
+      <span className="text-[12px] font-semibold text-noorix-muted">SR</span>
     </div>
     <div className="grid gap-3 p-3 md:grid-cols-2">
       {cards.map((card) => <article key={card.title} className="overflow-hidden rounded-xl border border-noorix-border bg-white shadow-sm">
         <header className="flex items-center gap-2 border-b border-noorix-border bg-noorix-bg-muted/35 px-3 py-2.5">
           <span className={`h-5 w-1 rounded-full ${card.accent}`} aria-hidden />
-          <strong className="text-[12px]">{card.title}</strong>
+          <strong className="text-[14px] leading-6">{card.title}</strong>
         </header>
         <div className="divide-y divide-noorix-border">
-          {card.rows.map((row) => <div key={row.label} className="flex items-center justify-between gap-3 px-3 py-2.5 text-[12px]"><span className="text-noorix-muted">{row.label}</span><b className={`tabular-nums ${row.tone}`}>{v4Number(row.value)} SR</b></div>)}
+          {card.rows.map((row) => <div key={row.label} className="flex items-center justify-between gap-3 px-3 py-3"><span className="min-w-0 text-[13px] font-medium leading-5 text-noorix-muted sm:text-[14px]">{row.label}</span><b className={`shrink-0 text-[14px] tabular-nums sm:text-[15px] ${row.tone}`}>{v4Number(row.value)} SR</b></div>)}
         </div>
-        <footer className="flex items-center justify-between gap-3 border-t border-noorix-border bg-noorix-bg-muted/60 px-3 py-3 text-[12px]"><strong>{card.totalLabel}</strong><b className={`text-[16px] tabular-nums ${card.total < 0 ? 'text-noorix-red' : 'text-noorix-text'}`}>{v4Number(card.total)} SR</b></footer>
+        <footer className="flex items-center justify-between gap-3 border-t border-noorix-border bg-noorix-bg-muted/60 px-3 py-3.5"><strong className="text-[14px] leading-5">{card.totalLabel}</strong><b className={`shrink-0 text-[18px] tabular-nums ${card.total < 0 ? 'text-noorix-red' : 'text-noorix-text'}`}>{v4Number(card.total)} SR</b></footer>
       </article>)}
     </div>
   </section>;

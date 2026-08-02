@@ -11,6 +11,13 @@ export type DashboardDailyTotalMetricRow = {
   customerCount: number;
 };
 
+export type DashboardWeekdayAverageMetricRow = {
+  dow: number;
+  totalSales: number;
+  calendarDays: number;
+  avgDaily: number | null;
+};
+
 export type DashboardSalesShiftBucket = {
   amount: number;
   customers: number;

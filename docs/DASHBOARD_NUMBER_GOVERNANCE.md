@@ -19,6 +19,7 @@ Dashboard UI must not calculate official amounts, averages, percentages, compari
 | Yearly monthly daily average table | monthly sales, daily average, change percent | `GET /api/v1/dashboard/overview` -> `salesPack.metrics.yearMonthlyDailyAverages` |
 | Calendar day cells | day amount | `GET /api/v1/sales-summaries/dashboard-pack` -> `metrics.dailyTotals` |
 | Calendar average banner | daily average | `GET /api/v1/sales-summaries/dashboard-pack` -> `metrics.monthAverage.revenueAvgDaily` |
+| Calendar weekday headers | sales average for each weekday | `GET /api/v1/sales-summaries/dashboard-pack` -> `metrics.weekdayAverages` |
 | App-sales dashboard | app totals, channel totals, percentages | `GET /api/v1/sales-summaries/dashboard-pack` -> `metrics.appSales` |
 | Channel breakdown | amount, share percent | `GET /api/v1/sales-summaries/dashboard-pack` -> `metrics.channelBreakdown` |
 | Top suppliers | amount, invoice count, share percent | `GET /api/v1/dashboard/overview` -> `periodData.topSuppliers` |

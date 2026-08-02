@@ -100,6 +100,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
   }, [salesMetrics?.dailyTotals]);
 
   const salesDailyAvgCalendarPeriod = salesMetrics?.monthAverage?.revenueAvgDaily ?? null;
+  const weekdaySalesAverages = salesMetrics?.weekdayAverages ?? [];
 
   const daysInMonth = useMemo<DashboardCalendarDay[]>(() => {
     const days: DashboardCalendarDay[] = [];
@@ -337,6 +338,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     targets,
     dailySales,
     salesDailyAvgCalendarPeriod,
+    weekdaySalesAverages,
     daysInMonth,
     maxAmount,
     companyName,

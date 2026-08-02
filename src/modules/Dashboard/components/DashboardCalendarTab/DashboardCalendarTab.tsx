@@ -87,6 +87,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           lang={m.lang}
           isLoading={m.isLoading}
           daysInMonth={m.daysInMonth}
+          weekdaySalesAverages={m.weekdaySalesAverages}
           isSelectionMode={m.isSelectionMode}
           selectedDates={m.selectedDates}
           selectedDay={m.selectedDay}

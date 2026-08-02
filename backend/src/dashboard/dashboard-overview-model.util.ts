@@ -14,6 +14,7 @@ export const EMPTY_SALES_PACK = {
     channelBreakdown: [],
     monthDaily: [],
     monthAverage: null,
+    weekdayAverages: [],
     dailyWeekly: [],
     dailyWeeklyComparison: [],
     shiftTotals: [],

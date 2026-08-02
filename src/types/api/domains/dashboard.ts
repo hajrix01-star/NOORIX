@@ -35,6 +35,13 @@ export type DashboardSalesMetricDailyTotal = {
   customerCount: number;
 };
 
+export type DashboardSalesMetricWeekdayAverage = {
+  dow: number;
+  totalSales: number;
+  calendarDays: number;
+  avgDaily: number | null;
+};
+
 export type DashboardSalesShiftBucket = {
   amount: number;
   customers: number;
@@ -134,6 +141,7 @@ export type DashboardSalesPackMetrics = {
   channelBreakdown?: DashboardChannelBreakdownMetricRow[];
   monthDaily: DashboardSalesMetricDay[];
   monthAverage?: DashboardSalesMetricAverage;
+  weekdayAverages?: DashboardSalesMetricWeekdayAverage[];
   dailyWeekly?: DashboardSalesMetricWeeklyRow[];
   dailyWeeklyComparison?: DashboardSalesMetricWeeklyComparisonRow[];
   shiftTotals?: DashboardSalesShiftTotals;

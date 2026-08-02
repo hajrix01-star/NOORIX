@@ -10,6 +10,7 @@ import {
   periodDailyAverage,
   salesShiftTotals,
   selectedMonthAverageEndDay,
+  weekdayAverageRows,
   weeklyComparisonRows,
   weeklyRows,
   type DashboardChannelMetricRow,
@@ -77,6 +78,9 @@ export class SalesDashboardPackService {
         : [],
     ]);
 
+    const monthAverageEndDay = selectedMonthAverageEndDay(monthDailyMetrics);
+    const monthAverage = periodDailyAverage(monthDailyMetrics, monthAverageEndDay);
+
     return {
       yearSummaries,
       dailySummaries,
@@ -89,7 +93,8 @@ export class SalesDashboardPackService {
         dailyChannels: dailyChannelMetrics,
         channelBreakdown: channelBreakdown(dailyChannelMetrics),
         monthDaily: monthDailyMetrics,
-        monthAverage: periodDailyAverage(monthDailyMetrics, selectedMonthAverageEndDay(monthDailyMetrics)),
+        monthAverage,
+        weekdayAverages: weekdayAverageRows(monthDailyMetrics, monthAverage.calendarDays),
         dailyWeekly: weeklyRows(dailyDailyMetrics),
         dailyWeeklyComparison: weeklyComparisonRows(dailyDailyMetrics, baselineDailyMetrics),
         shiftTotals: salesShiftTotals(dailyDailyMetrics),
