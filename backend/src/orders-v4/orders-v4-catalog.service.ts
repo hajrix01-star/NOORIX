@@ -40,6 +40,7 @@ const DEFAULT_UNITS: Array<OrdersV4UnitInput & { sortOrder: number }> = [
   { code: 'l', nameAr: 'لتر', nameEn: 'Liter', dimension: 'volume', canonicalFactor: '1000', decimalScale: 6, sortOrder: 40 },
   { code: 'ml', nameAr: 'ملليلتر', nameEn: 'Milliliter', dimension: 'volume', canonicalFactor: '1', decimalScale: 6, sortOrder: 50 },
   { code: 'pack', nameAr: 'باكيت', nameEn: 'Pack', dimension: 'package', canonicalFactor: null, decimalScale: 4, sortOrder: 60 },
+  { code: 'box', nameAr: 'علبة', nameEn: 'Box', dimension: 'package', canonicalFactor: null, decimalScale: 4, sortOrder: 65 },
   { code: 'carton', nameAr: 'كرتون', nameEn: 'Carton', dimension: 'package', canonicalFactor: null, decimalScale: 4, sortOrder: 70 },
 ];
 
