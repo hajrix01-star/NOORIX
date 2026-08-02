@@ -94,12 +94,16 @@ export type OrdersV4DocumentLine = {
   itemId: string;
   itemNameSnapshot: string;
   inputQuantity: string;
+  inputUnitId: string;
   baseQuantity: string;
+  baseUnitId: string;
   unitPrice: string;
+  priceUnitId: string;
   priceQuantity: string;
   lineTotal: string;
   item: OrdersV4Item;
   inputUnit: OrdersV4Unit;
+  baseUnit: OrdersV4Unit;
   priceUnit: OrdersV4Unit;
 };
 
@@ -187,6 +191,8 @@ export type OrdersV4LedgerEntry = {
   valueAfter: string;
   averageUnitCostAfter: string;
   sourceType: string;
+  inventoryUnitId: string;
+  inventoryUnit: OrdersV4Unit;
   item: OrdersV4Item;
   location: OrdersV4Location;
 };

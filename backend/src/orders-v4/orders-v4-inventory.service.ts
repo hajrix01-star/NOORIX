@@ -5,14 +5,8 @@ import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { calculateOrdersV4StocktakeAdjustment } from './orders-v4-calculation.kernel';
 import type { OrdersV4StocktakeInput } from './orders-v4.contracts';
-import type { OrdersV4InventoryBalance } from './orders-v4-kernel.types';
-
-function stocktakeDate(value: string): Date {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) throw new BadRequestException('تاريخ الجرد غير صالح');
-  const date = new Date(`${value}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) throw new BadRequestException('تاريخ الجرد غير صالح');
-  return date;
-}
+import { ordersV4DateOnly } from './orders-v4-date.util';
+import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 
 function stocktakeRequestHash(input: OrdersV4StocktakeInput): string {
   return createHash('sha256').update(JSON.stringify({
@@ -25,13 +19,16 @@ function stocktakeRequestHash(input: OrdersV4StocktakeInput): string {
 
 @Injectable()
 export class OrdersV4InventoryService {
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly posting: OrdersV4LedgerPostingService,
+  ) {}
 
   async balances(companyId: string) {
     const [entries, items, locations] = await Promise.all([
       this.prisma.ordersV4InventoryLedgerEntry.findMany({
         where: { companyId },
-        include: { item: { include: { inventoryUnit: true, category: true } }, location: true },
+        include: { inventoryUnit: true, item: { include: { inventoryUnit: true, category: true } }, location: true },
         orderBy: { sequence: 'desc' },
       }),
       this.prisma.ordersV4Item.findMany({
@@ -50,8 +47,8 @@ export class OrdersV4InventoryService {
       itemId: entry.itemId,
       itemName: entry.item.nameAr,
       categoryName: entry.item.category?.nameAr ?? '',
-      unitCode: entry.item.inventoryUnit.code,
-      unitName: entry.item.inventoryUnit.nameAr,
+      unitCode: entry.inventoryUnit.code,
+      unitName: entry.inventoryUnit.nameAr,
       locationId: entry.locationId,
       locationName: entry.location.nameAr,
       quantity: entry.quantityAfter,
@@ -85,7 +82,7 @@ export class OrdersV4InventoryService {
   async ledger(companyId: string, itemId?: string, locationId?: string) {
     const entries = await this.prisma.ordersV4InventoryLedgerEntry.findMany({
       where: { companyId, itemId: itemId || undefined, locationId: locationId || undefined },
-      include: { item: { include: { inventoryUnit: true } }, location: true },
+      include: { inventoryUnit: true, item: { include: { inventoryUnit: true } }, location: true },
       orderBy: { sequence: 'desc' },
       take: 1000,
     });
@@ -104,7 +101,7 @@ export class OrdersV4InventoryService {
     if (!input.idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     if (!input.lines?.length) throw new BadRequestException('الجرد لا يحتوي على أصناف');
     const tenantId = TenantContext.getTenantId();
-    const date = stocktakeDate(input.stocktakeDate);
+    const date = ordersV4DateOnly(input.stocktakeDate, 'تاريخ الجرد');
     const inputRequestHash = stocktakeRequestHash(input);
     return this.prisma.withTenant(async (tx) => {
       const duplicate = await tx.ordersV4Stocktake.findFirst({
@@ -121,9 +118,7 @@ export class OrdersV4InventoryService {
       if (itemIds.length !== input.lines.length) throw new BadRequestException('لا يمكن تكرار الصنف في الجرد');
       const items = await tx.ordersV4Item.findMany({ where: { companyId, id: { in: itemIds }, isActive: true, trackInventory: true } });
       if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف الجرد غير صالح');
-      for (const itemId of [...itemIds].sort()) {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:ledger:${companyId}:${itemId}:${location.id}`}))`;
-      }
+      await this.posting.lockKeys(tx, companyId, itemIds.map((itemId) => ({ itemId, locationId: location.id })));
       const stocktake = await tx.ordersV4Stocktake.create({
         data: {
           tenantId, companyId,
@@ -137,15 +132,7 @@ export class OrdersV4InventoryService {
       for (const line of [...input.lines].sort((a, b) => a.itemId.localeCompare(b.itemId))) {
         const item = items.find((row) => row.id === line.itemId);
         if (!item) throw new BadRequestException('صنف الجرد غير موجود');
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:ledger:${companyId}:${item.id}:${location.id}`}))`;
-        const latest = await tx.ordersV4InventoryLedgerEntry.findFirst({
-          where: { companyId, itemId: item.id, locationId: location.id }, orderBy: { sequence: 'desc' },
-        });
-        const balance: OrdersV4InventoryBalance = {
-          quantity: latest?.quantityAfter ?? new Prisma.Decimal(0),
-          value: latest?.valueAfter ?? new Prisma.Decimal(0),
-          averageUnitCost: latest?.averageUnitCostAfter ?? new Prisma.Decimal(0),
-        };
+        const balance = await this.posting.currentBalance(tx, companyId, item.id, location.id, item.inventoryUnitId);
         const calculation = calculateOrdersV4StocktakeAdjustment(balance, line.physicalQuantity);
         const createdLine = await tx.ordersV4StocktakeLine.create({
           data: {
@@ -155,18 +142,11 @@ export class OrdersV4InventoryService {
             varianceValue: calculation.valueDelta,
           },
         });
-        if (!calculation.quantityDelta.isZero()) {
-          await tx.ordersV4InventoryLedgerEntry.create({
-            data: {
-              tenantId, companyId, itemId: item.id, locationId: location.id,
-              effectiveAt: date, entryType: 'stocktake_adjustment', ...calculation,
-              sourceType: 'stocktake', sourceId: stocktake.id,
-              sourceKey: `stocktake:${stocktake.id}:line:${createdLine.id}`,
-              sourceSnapshot: { kernelVersion: 4, stocktakeNumber: stocktake.stocktakeNumber, stocktakeLineId: createdLine.id },
-              createdByUserId: TenantContext.getUserId(),
-            },
-          });
-        }
+        await this.posting.postStocktakeAdjustment(tx, {
+          tenantId, companyId, itemId: item.id, inventoryUnitId: item.inventoryUnitId, locationId: location.id,
+          stocktakeId: stocktake.id, stocktakeLineId: createdLine.id, effectiveAt: date,
+          calculation, stocktakeNumber: stocktake.stocktakeNumber,
+        });
       }
       return tx.ordersV4Stocktake.findUniqueOrThrow({
         where: { id: stocktake.id }, include: { location: true, lines: { include: { item: true, unit: true } } },

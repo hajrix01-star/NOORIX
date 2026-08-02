@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { calculateOrdersV4AverageUnitCost, calculateOrdersV4ConvertedQuantity } from './orders-v4-calculation.kernel';
 import type { OrdersV4DocumentType } from './orders-v4.contracts';
+import { resolveOrdersV4Conversion } from './orders-v4-conversion.kernel';
 import { ordersV4RangeBounds } from './orders-v4-date.util';
 
 @Injectable()
@@ -61,18 +63,53 @@ export class OrdersV4ReportsService {
   }
 
   async itemsReport(companyId: string, documentType?: OrdersV4DocumentType, startDate?: string, endDate?: string) {
-    const lines = await this.prisma.ordersV4DocumentLine.findMany({
-      where: {
-        companyId,
-        document: { status: 'received', documentType: documentType || undefined, documentDate: ordersV4RangeBounds(startDate, endDate) },
-      },
-      include: { item: { include: { category: true, inventoryUnit: true } } },
-    });
+    const [lines, units] = await Promise.all([
+      this.prisma.ordersV4DocumentLine.findMany({
+        where: {
+          companyId,
+          document: { status: 'received', documentType: documentType || undefined, documentDate: ordersV4RangeBounds(startDate, endDate) },
+        },
+        include: {
+          item: {
+            include: {
+              category: true,
+              inventoryUnit: true,
+              conversionVersions: {
+                where: { status: 'published' },
+                orderBy: { version: 'desc' },
+                take: 1,
+                include: { edges: true },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.ordersV4Unit.findMany({ where: { companyId, isActive: true } }),
+    ]);
+    const unitDefinitions = units.map((unit) => ({
+      id: unit.id,
+      code: unit.code,
+      dimension: unit.dimension,
+      canonicalFactor: unit.canonicalFactor,
+    }));
     const byItem = new Map<string, {
       itemId: string; nameAr: string; categoryName: string; inventoryUnit: string;
       documentCount: Set<string>; baseQuantity: Prisma.Decimal; totalAmount: Prisma.Decimal;
     }>();
     for (const line of lines) {
+      const currentDefinition = line.item.conversionVersions[0];
+      const baseQuantity = calculateOrdersV4ConvertedQuantity(
+        line.baseQuantity,
+        resolveOrdersV4Conversion({
+          fromUnitId: line.baseUnitId,
+          toUnitId: line.item.inventoryUnitId,
+          units: unitDefinitions,
+          edges: currentDefinition?.edges.map((edge) => ({
+            ...edge,
+            allowDimensionBridge: edge.allowDimensionBridge,
+          })) ?? [],
+        }),
+      );
       const current = byItem.get(line.itemId) ?? {
         itemId: line.itemId,
         nameAr: line.item.nameAr,
@@ -83,7 +120,7 @@ export class OrdersV4ReportsService {
         totalAmount: new Prisma.Decimal(0),
       };
       current.documentCount.add(line.documentId);
-      current.baseQuantity = current.baseQuantity.plus(line.baseQuantity);
+      current.baseQuantity = current.baseQuantity.plus(baseQuantity);
       current.totalAmount = current.totalAmount.plus(line.lineTotal);
       byItem.set(line.itemId, current);
     }
@@ -95,7 +132,7 @@ export class OrdersV4ReportsService {
       documentCount: row.documentCount.size,
       baseQuantity: row.baseQuantity.toDecimalPlaces(8),
       totalAmount: row.totalAmount.toDecimalPlaces(6),
-      averageUnitCost: row.baseQuantity.isZero() ? new Prisma.Decimal(0) : row.totalAmount.div(row.baseQuantity).toDecimalPlaces(8),
+      averageUnitCost: calculateOrdersV4AverageUnitCost(row.totalAmount, row.baseQuantity),
     })).sort((a, b) => b.totalAmount.comparedTo(a.totalAmount));
   }
 
@@ -106,7 +143,7 @@ export class OrdersV4ReportsService {
       this.itemsReport(companyId, 'registration', startDate, endDate),
       this.prisma.ordersV4Document.findMany({
         where: { companyId, documentType: 'registration', documentDate: bounds },
-        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
+        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
         orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
       }),
     ]);

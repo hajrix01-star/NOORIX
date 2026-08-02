@@ -2201,15 +2201,18 @@ model OrdersV4Unit {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  inventoryItems     OrdersV4Item[]           @relation("OrdersV4InventoryUnit")
+  inventoryItems     OrdersV4Item[]                 @relation("OrdersV4InventoryUnit")
   itemUnits          OrdersV4ItemUnit[]
-  conversionFrom     OrdersV4ConversionEdge[] @relation("OrdersV4ConversionFromUnit")
-  conversionTo       OrdersV4ConversionEdge[] @relation("OrdersV4ConversionToUnit")
-  recipeOutputUnits  OrdersV4RecipeVersion[]  @relation("OrdersV4RecipeOutputUnit")
-  recipeLineUnits    OrdersV4RecipeLine[]     @relation("OrdersV4RecipeLineUnit")
-  documentUnits      OrdersV4DocumentLine[]   @relation("OrdersV4DocumentInputUnit")
-  documentPriceUnits OrdersV4DocumentLine[]   @relation("OrdersV4DocumentPriceUnit")
-  priceHistory       OrdersV4PriceHistory[]
+  conversionFrom     OrdersV4ConversionEdge[]       @relation("OrdersV4ConversionFromUnit")
+  conversionTo       OrdersV4ConversionEdge[]       @relation("OrdersV4ConversionToUnit")
+  recipeOutputUnits  OrdersV4RecipeVersion[]        @relation("OrdersV4RecipeOutputUnit")
+  recipeLineUnits    OrdersV4RecipeLine[]           @relation("OrdersV4RecipeLineUnit")
+  documentUnits      OrdersV4DocumentLine[]         @relation("OrdersV4DocumentInputUnit")
+  documentBaseUnits  OrdersV4DocumentLine[]         @relation("OrdersV4DocumentBaseUnit")
+  documentPriceUnits OrdersV4DocumentLine[]         @relation("OrdersV4DocumentPriceUnit")
+  priceHistory       OrdersV4PriceHistory[]         @relation("OrdersV4PriceUnit")
+  inventoryPrices    OrdersV4PriceHistory[]         @relation("OrdersV4PriceInventoryUnit")
+  inventoryLedger    OrdersV4InventoryLedgerEntry[] @relation("OrdersV4LedgerInventoryUnit")
   stocktakeLines     OrdersV4StocktakeLine[]
 
   @@unique([companyId, code])
@@ -2513,6 +2516,7 @@ model OrdersV4DocumentLine {
   inputQuantity       Decimal  @map("input_quantity") @db.Decimal(24, 8)
   inputUnitId         String   @map("input_unit_id")
   baseQuantity        Decimal  @map("base_quantity") @db.Decimal(24, 8)
+  baseUnitId          String   @map("base_unit_id")
   unitPrice           Decimal  @default(0) @map("unit_price") @db.Decimal(20, 6)
   priceUnitId         String   @map("price_unit_id")
   priceQuantity       Decimal  @map("price_quantity") @db.Decimal(24, 8)
@@ -2528,6 +2532,7 @@ model OrdersV4DocumentLine {
   document          OrdersV4Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
   item              OrdersV4Item                   @relation(fields: [itemId], references: [id], onDelete: Restrict)
   inputUnit         OrdersV4Unit                   @relation("OrdersV4DocumentInputUnit", fields: [inputUnitId], references: [id], onDelete: Restrict)
+  baseUnit          OrdersV4Unit                   @relation("OrdersV4DocumentBaseUnit", fields: [baseUnitId], references: [id], onDelete: Restrict)
   priceUnit         OrdersV4Unit                   @relation("OrdersV4DocumentPriceUnit", fields: [priceUnitId], references: [id], onDelete: Restrict)
   conversionVersion OrdersV4ConversionVersion?     @relation(fields: [conversionVersionId], references: [id], onDelete: Restrict)
   recipeVersion     OrdersV4RecipeVersion?         @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
@@ -2537,6 +2542,7 @@ model OrdersV4DocumentLine {
   @@unique([documentId, lineNumber])
   @@index([tenantId])
   @@index([companyId, itemId])
+  @@index([baseUnitId])
   @@map("orders_v4_document_lines")
 }
 
@@ -2546,6 +2552,7 @@ model OrdersV4PriceHistory {
   companyId           String   @map("company_id")
   itemId              String   @map("item_id")
   unitId              String   @map("unit_id")
+  inventoryUnitId     String   @map("inventory_unit_id")
   documentId          String   @map("document_id")
   documentLineId      String   @map("document_line_id")
   unitPrice           Decimal  @map("unit_price") @db.Decimal(20, 6)
@@ -2555,7 +2562,8 @@ model OrdersV4PriceHistory {
   createdAt           DateTime @default(now()) @map("created_at")
 
   item              OrdersV4Item               @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  unit              OrdersV4Unit               @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  unit              OrdersV4Unit               @relation("OrdersV4PriceUnit", fields: [unitId], references: [id], onDelete: Restrict)
+  inventoryUnit     OrdersV4Unit               @relation("OrdersV4PriceInventoryUnit", fields: [inventoryUnitId], references: [id], onDelete: Restrict)
   document          OrdersV4Document           @relation(fields: [documentId], references: [id], onDelete: Restrict)
   documentLine      OrdersV4DocumentLine       @relation(fields: [documentLineId], references: [id], onDelete: Restrict)
   conversionVersion OrdersV4ConversionVersion? @relation(fields: [conversionVersionId], references: [id], onDelete: Restrict)
@@ -2563,6 +2571,7 @@ model OrdersV4PriceHistory {
   @@unique([documentLineId])
   @@index([tenantId])
   @@index([companyId, itemId, effectiveAt])
+  @@index([inventoryUnitId])
   @@map("orders_v4_price_history")
 }
 
@@ -2572,6 +2581,7 @@ model OrdersV4InventoryLedgerEntry {
   tenantId             String   @map("tenant_id")
   companyId            String   @map("company_id")
   itemId               String   @map("item_id")
+  inventoryUnitId      String   @map("inventory_unit_id")
   locationId           String   @map("location_id")
   documentLineId       String?  @map("document_line_id")
   effectiveAt          DateTime @map("effective_at")
@@ -2593,6 +2603,7 @@ model OrdersV4InventoryLedgerEntry {
   createdAt            DateTime @default(now()) @map("created_at")
 
   item              OrdersV4Item                   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  inventoryUnit     OrdersV4Unit                   @relation("OrdersV4LedgerInventoryUnit", fields: [inventoryUnitId], references: [id], onDelete: Restrict)
   location          OrdersV4Location               @relation(fields: [locationId], references: [id], onDelete: Restrict)
   documentLine      OrdersV4DocumentLine?          @relation(fields: [documentLineId], references: [id], onDelete: Restrict)
   conversionVersion OrdersV4ConversionVersion?     @relation(fields: [conversionVersionId], references: [id], onDelete: Restrict)
@@ -2605,6 +2616,7 @@ model OrdersV4InventoryLedgerEntry {
   @@index([tenantId])
   @@index([companyId, itemId, locationId, sequence])
   @@index([companyId, effectiveAt])
+  @@index([inventoryUnitId])
   @@map("orders_v4_inventory_ledger")
 }
 

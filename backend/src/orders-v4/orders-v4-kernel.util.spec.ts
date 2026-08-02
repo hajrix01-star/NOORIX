@@ -1,6 +1,16 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { calculateOrdersV4Issue, calculateOrdersV4LastFiveAverage, calculateOrdersV4Line, calculateOrdersV4Receipt } from './orders-v4-calculation.kernel';
+import {
+  calculateOrdersV4ConvertedUnitPrice,
+  calculateOrdersV4Issue,
+  calculateOrdersV4LastFiveAverage,
+  calculateOrdersV4Line,
+  calculateOrdersV4Receipt,
+  calculateOrdersV4RecipeComponentCost,
+  calculateOrdersV4RecipeUsage,
+  calculateOrdersV4Reversal,
+  calculateOrdersV4UnitRebase,
+} from './orders-v4-calculation.kernel';
 import { resolveOrdersV4Conversion, validateOrdersV4ConversionDefinition } from './orders-v4-conversion.kernel';
 import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
 import type { OrdersV4ConversionEdgeDefinition, OrdersV4UnitDefinition } from './orders-v4-kernel.types';
@@ -73,6 +83,56 @@ describe('Orders Core V4 kernel', () => {
     }, { quantity: 4 });
     expect(issue.valueDelta.toString()).toBe('-80');
     expect(issue.quantityAfter.toString()).toBe('16');
+  });
+
+  it('normalizes historical prices before calculating the last-five average', () => {
+    const cartonToPiece = resolveOrdersV4Conversion({ fromUnitId: 'carton', toUnitId: 'piece', units, edges });
+    const normalized = calculateOrdersV4ConvertedUnitPrice('288', cartonToPiece);
+    expect(normalized.toString()).toBe('1');
+  });
+
+  it('owns recipe quantity and cost arithmetic across multi-level units', () => {
+    const outputConversion = resolveOrdersV4Conversion({ fromUnitId: 'carton', toUnitId: 'piece', units, edges });
+    const componentConversion = resolveOrdersV4Conversion({ fromUnitId: 'pack', toUnitId: 'piece', units, edges });
+    const usage = calculateOrdersV4RecipeUsage({
+      registeredBaseQuantity: '576',
+      recipeOutputQuantity: '2',
+      outputConversion,
+      componentQuantity: '2',
+      componentConversion,
+    });
+    expect(usage.batches.toString()).toBe('1');
+    expect(usage.issueQuantity.toString()).toBe('48');
+    expect(calculateOrdersV4RecipeComponentCost(usage.issueQuantity, '1.5').toString()).toBe('72');
+  });
+
+  it('rebases quantity and average cost while preserving inventory value', () => {
+    const cartonToPiece = resolveOrdersV4Conversion({ fromUnitId: 'carton', toUnitId: 'piece', units, edges });
+    const rebased = calculateOrdersV4UnitRebase({
+      quantity: new Prisma.Decimal(2),
+      value: new Prisma.Decimal(576),
+      averageUnitCost: new Prisma.Decimal(288),
+    }, cartonToPiece);
+    expect(rebased.quantityAfter.toString()).toBe('576');
+    expect(rebased.valueAfter.toString()).toBe('576');
+    expect(rebased.averageUnitCostAfter.toString()).toBe('1');
+  });
+
+  it('reverses historical entries safely after an inventory-unit rebase', () => {
+    const cartonToPiece = resolveOrdersV4Conversion({ fromUnitId: 'carton', toUnitId: 'piece', units, edges });
+    const reversed = calculateOrdersV4Reversal({
+      quantity: new Prisma.Decimal(576),
+      value: new Prisma.Decimal(576),
+      averageUnitCost: new Prisma.Decimal(1),
+    }, {
+      quantityDelta: new Prisma.Decimal(2),
+      valueDelta: new Prisma.Decimal(576),
+      unitCost: new Prisma.Decimal(288),
+    }, cartonToPiece.factor);
+    expect(reversed.quantityDelta.toString()).toBe('-576');
+    expect(reversed.valueDelta.toString()).toBe('-576');
+    expect(reversed.quantityAfter.toString()).toBe('0');
+    expect(reversed.valueAfter.toString()).toBe('0');
   });
 });
 

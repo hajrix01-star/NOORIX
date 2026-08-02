@@ -13,7 +13,13 @@ import type {
 } from './orders-v4.contracts';
 import { resolveOrdersV4Conversion, validateOrdersV4ConversionDefinition } from './orders-v4-conversion.kernel';
 import type { OrdersV4ConversionEdgeDefinition, OrdersV4UnitDefinition } from './orders-v4-kernel.types';
-import { calculateOrdersV4LastFiveAverage } from './orders-v4-calculation.kernel';
+import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
+import {
+  calculateOrdersV4ConvertedQuantity,
+  calculateOrdersV4ConvertedUnitPrice,
+  calculateOrdersV4LastFiveAverage,
+  calculateOrdersV4RecipeComponentCost,
+} from './orders-v4-calculation.kernel';
 
 const DEFAULT_UNITS: Array<OrdersV4UnitInput & { sortOrder: number }> = [
   { code: 'piece', nameAr: 'حبة', nameEn: 'Piece', dimension: 'count', canonicalFactor: '1', decimalScale: 3, sortOrder: 10 },
@@ -71,7 +77,10 @@ function unitDefinition(unit: {
 
 @Injectable()
 export class OrdersV4CatalogService {
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly posting: OrdersV4LedgerPostingService,
+  ) {}
 
   async ensureFoundation(companyId: string): Promise<void> {
     const tenantId = TenantContext.getTenantId();
@@ -149,7 +158,7 @@ export class OrdersV4CatalogService {
       ? await this.prisma.ordersV4PriceHistory.findMany({
           where: { companyId, itemId: { in: componentIds }, document: { status: 'received' } },
           orderBy: [{ effectiveAt: 'desc' }, { createdAt: 'desc' }],
-          select: { itemId: true, inventoryUnitPrice: true },
+          select: { itemId: true, inventoryUnitPrice: true, inventoryUnitId: true },
         })
       : [];
     const normalizedUnits = units.map(unitDefinition);
@@ -163,8 +172,18 @@ export class OrdersV4CatalogService {
           edges: definition?.edges ?? [],
         });
         const samples = priceRows.filter((price) => price.itemId === line.componentItemId).slice(0, 5);
-        const averageLastFive = calculateOrdersV4LastFiveAverage(samples.map((price) => price.inventoryUnitPrice));
-        const cost = line.quantity.times(conversion.factor).times(averageLastFive).toDecimalPlaces(6);
+        const normalizedPrices = samples.map((price) => calculateOrdersV4ConvertedUnitPrice(
+          price.inventoryUnitPrice,
+          resolveOrdersV4Conversion({
+            fromUnitId: price.inventoryUnitId,
+            toUnitId: line.componentItem.inventoryUnitId,
+            units: normalizedUnits,
+            edges: definition?.edges ?? [],
+          }),
+        ));
+        const averageLastFive = calculateOrdersV4LastFiveAverage(normalizedPrices);
+        const issueQuantity = calculateOrdersV4ConvertedQuantity(line.quantity, conversion);
+        const cost = calculateOrdersV4RecipeComponentCost(issueQuantity, averageLastFive);
         return { componentItemId: line.componentItemId, averageLastFive, sampleCount: samples.length, cost };
       });
       const estimatedCost = components.reduce((sum, line) => sum.plus(line.cost), new Prisma.Decimal(0)).toDecimalPlaces(6);
@@ -306,28 +325,163 @@ export class OrdersV4CatalogService {
 
   async replaceItemUnits(companyId: string, itemId: string, input: OrdersV4ItemUnitsInput) {
     if (!input.units?.length) throw new BadRequestException('يجب إضافة وحدة واحدة على الأقل');
-    const item = await this.prisma.ordersV4Item.findFirst({ where: { id: itemId, companyId, isActive: true } });
-    if (!item) throw new NotFoundException('الصنف غير موجود');
     const rows = [...input.units];
     if (!rows.some((row) => row.unitId === input.inventoryUnitId)) {
       rows.unshift({ unitId: input.inventoryUnitId, isOrderEnabled: false, sortOrder: 0 });
     }
     if (new Set(rows.map((row) => row.unitId)).size !== rows.length) throw new BadRequestException('لا يمكن تكرار الوحدة');
-    for (const row of rows) await this.requireUnit(companyId, row.unitId);
+    const normalizedRows = rows.map((row, index) => ({
+      unitId: row.unitId,
+      isOrderEnabled: row.isOrderEnabled === true,
+      lastPrice: row.lastPrice == null || row.lastPrice === '' ? null : positiveDecimal(row.lastPrice, 'السعر'),
+      sortOrder: Number(row.sortOrder ?? index),
+    }));
     const tenantId = TenantContext.getTenantId();
     return this.prisma.withTenant(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:item-units:${itemId}`}))`;
+      const item = await tx.ordersV4Item.findFirst({
+        where: { id: itemId, companyId, isActive: true },
+        include: {
+          units: true,
+          conversionVersions: {
+            where: { status: 'published' },
+            orderBy: { version: 'desc' },
+            take: 1,
+            include: { edges: true },
+          },
+        },
+      });
+      if (!item) throw new NotFoundException('الصنف غير موجود');
+
+      const companyUnits = await tx.ordersV4Unit.findMany({ where: { companyId, isActive: true } });
+      const nextUnitIds = new Set(normalizedRows.map((row) => row.unitId));
+      if (companyUnits.filter((unit) => nextUnitIds.has(unit.id)).length !== nextUnitIds.size) {
+        throw new BadRequestException('إحدى الوحدات لا تنتمي إلى الشركة أو غير نشطة');
+      }
+
+      const [documentUnits, priceUnits, ledgerUnits, recipeInputUnits, recipeOutputUnits] = await Promise.all([
+        tx.ordersV4DocumentLine.findMany({
+          where: { companyId, itemId },
+          select: { inputUnitId: true, priceUnitId: true, baseUnitId: true },
+        }),
+        tx.ordersV4PriceHistory.findMany({
+          where: { companyId, itemId },
+          select: { unitId: true, inventoryUnitId: true },
+        }),
+        tx.ordersV4InventoryLedgerEntry.findMany({
+          where: { companyId, itemId },
+          select: { inventoryUnitId: true },
+        }),
+        tx.ordersV4RecipeLine.findMany({
+          where: { companyId, componentItemId: itemId },
+          select: { unitId: true },
+        }),
+        tx.ordersV4RecipeVersion.findMany({
+          where: { companyId, outputItemId: itemId },
+          select: { outputUnitId: true },
+        }),
+      ]);
+      const protectedUnitIds = new Set<string>([
+        item.inventoryUnitId,
+        ...item.conversionVersions.flatMap((version) => version.edges.flatMap((edge) => [edge.fromUnitId, edge.toUnitId])),
+        ...documentUnits.flatMap((row) => [row.inputUnitId, row.priceUnitId, row.baseUnitId]),
+        ...priceUnits.flatMap((row) => [row.unitId, row.inventoryUnitId]),
+        ...ledgerUnits.map((row) => row.inventoryUnitId),
+        ...recipeInputUnits.map((row) => row.unitId),
+        ...recipeOutputUnits.map((row) => row.outputUnitId),
+      ]);
+      if ([...protectedUnitIds].some((unitId) => !nextUnitIds.has(unitId))) {
+        throw new BadRequestException('لا يمكن حذف وحدة مستخدمة في مستند أو سعر أو مخزون أو رسبي؛ يمكن إيقافها للطلبات مع إبقائها في بطاقة الصنف');
+      }
+
+      if (item.inventoryUnitId !== input.inventoryUnitId) {
+        if (!nextUnitIds.has(item.inventoryUnitId)) {
+          throw new BadRequestException('يجب إبقاء وحدة المخزون السابقة لحماية السجل التاريخي والتحويلات');
+        }
+        const definitions = companyUnits.map(unitDefinition);
+        const currentVersion = item.conversionVersions[0];
+        const currentEdges: OrdersV4ConversionEdgeDefinition[] = (currentVersion?.edges ?? []).map((edge) => ({
+          id: edge.id,
+          fromUnitId: edge.fromUnitId,
+          toUnitId: edge.toUnitId,
+          factor: edge.factor,
+          reversible: edge.reversible,
+          allowDimensionBridge: edge.allowDimensionBridge,
+        }));
+        const oldToNewConversion = resolveOrdersV4Conversion({
+          fromUnitId: item.inventoryUnitId,
+          toUnitId: input.inventoryUnitId,
+          units: definitions,
+          edges: currentEdges,
+        });
+        const normalizedEdges = currentEdges.map((edge) => ({
+          fromUnitId: edge.fromUnitId,
+          toUnitId: edge.toUnitId,
+          factor: edge.factor.toString(),
+          reversible: edge.reversible,
+          allowDimensionBridge: edge.allowDimensionBridge,
+        }));
+        const contentHash = stableHash({
+          itemId,
+          inventoryUnitId: input.inventoryUnitId,
+          predecessorVersionId: currentVersion?.id ?? null,
+          edges: normalizedEdges,
+        });
+        const latest = await tx.ordersV4ConversionVersion.aggregate({ where: { itemId }, _max: { version: true } });
+        await tx.ordersV4ConversionVersion.updateMany({
+          where: { itemId, status: 'published' },
+          data: { status: 'retired', retiredAt: new Date() },
+        });
+        const conversionVersion = await tx.ordersV4ConversionVersion.create({
+          data: {
+            tenantId,
+            companyId,
+            itemId,
+            version: (latest._max.version ?? 0) + 1,
+            status: 'published',
+            contentHash,
+            publishedAt: new Date(),
+            createdByUserId: TenantContext.getUserId(),
+            edges: normalizedEdges.length ? {
+              create: normalizedEdges.map((edge, index) => ({
+                tenantId,
+                companyId,
+                ...edge,
+                factor: new Prisma.Decimal(edge.factor),
+                sortOrder: index,
+              })),
+            } : undefined,
+          },
+        });
+        const locations = await tx.ordersV4InventoryLedgerEntry.findMany({
+          where: { companyId, itemId },
+          select: { locationId: true },
+          distinct: ['locationId'],
+        });
+        const changedAt = new Date();
+        for (const { locationId } of locations.sort((a, b) => a.locationId.localeCompare(b.locationId))) {
+          await this.posting.postUnitRebase(tx, {
+            tenantId,
+            companyId,
+            itemId,
+            locationId,
+            effectiveAt: changedAt,
+            oldInventoryUnitId: item.inventoryUnitId,
+            newInventoryUnitId: input.inventoryUnitId,
+            conversionVersionId: conversionVersion.id,
+            conversion: oldToNewConversion,
+          });
+        }
+      }
+
       await tx.ordersV4ItemUnit.deleteMany({ where: { companyId, itemId } });
       await tx.ordersV4Item.update({ where: { id: itemId }, data: { inventoryUnitId: input.inventoryUnitId } });
       await tx.ordersV4ItemUnit.createMany({
-        data: rows.map((row, index) => ({
+        data: normalizedRows.map((row) => ({
           tenantId,
           companyId,
           itemId,
-          unitId: row.unitId,
-          isOrderEnabled: row.isOrderEnabled === true,
-          lastPrice: row.lastPrice == null || row.lastPrice === '' ? null : positiveDecimal(row.lastPrice, 'السعر'),
-          sortOrder: Number(row.sortOrder ?? index),
+          ...row,
         })),
       });
       return tx.ordersV4Item.findUniqueOrThrow({

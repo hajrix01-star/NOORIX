@@ -64,12 +64,10 @@ export function calculateOrdersV4Receipt(
   if (totalValue.lt(0)) throw new BadRequestException('قيمة الوارد لا يمكن أن تكون سالبة');
   const quantityAfter = balance.quantity.plus(quantity).toDecimalPlaces(QUANTITY_SCALE);
   const valueAfter = balance.value.plus(totalValue).toDecimalPlaces(MONEY_SCALE);
-  const averageUnitCostAfter = quantityAfter.isZero()
-    ? new Prisma.Decimal(0)
-    : valueAfter.div(quantityAfter).toDecimalPlaces(COST_SCALE);
+  const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(valueAfter, quantityAfter);
   return {
     quantityDelta: quantity.toDecimalPlaces(QUANTITY_SCALE),
-    unitCost: quantity.isZero() ? new Prisma.Decimal(0) : totalValue.div(quantity).toDecimalPlaces(COST_SCALE),
+    unitCost: calculateOrdersV4InventoryUnitPrice(totalValue, quantity),
     valueDelta: totalValue.toDecimalPlaces(MONEY_SCALE),
     quantityAfter,
     valueAfter,
@@ -89,9 +87,7 @@ export function calculateOrdersV4Issue(
   }
   const issueValue = quantity.times(balance.averageUnitCost).toDecimalPlaces(MONEY_SCALE);
   const valueAfter = balance.value.minus(issueValue).toDecimalPlaces(MONEY_SCALE);
-  const averageUnitCostAfter = quantityAfter.isZero()
-    ? balance.averageUnitCost.toDecimalPlaces(COST_SCALE)
-    : valueAfter.div(quantityAfter).toDecimalPlaces(COST_SCALE);
+  const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(valueAfter, quantityAfter, balance.averageUnitCost);
   return {
     quantityDelta: quantity.negated().toDecimalPlaces(QUANTITY_SCALE),
     unitCost: balance.averageUnitCost.toDecimalPlaces(COST_SCALE),
@@ -128,5 +124,117 @@ export function calculateOrdersV4LastFiveAverage(
   const samples = inventoryUnitPrices.slice(0, 5).map((value) => decimal(value, 'سعر الشراء'));
   if (!samples.length) return new Prisma.Decimal(0);
   return samples.reduce((sum, value) => sum.plus(value), new Prisma.Decimal(0)).div(samples.length).toDecimalPlaces(8);
+}
+
+export function calculateOrdersV4InventoryUnitPrice(
+  totalValueInput: Prisma.Decimal.Value,
+  inventoryQuantityInput: Prisma.Decimal.Value,
+): Prisma.Decimal {
+  const totalValue = decimal(totalValueInput, 'القيمة الإجمالية');
+  const inventoryQuantity = decimal(inventoryQuantityInput, 'كمية المخزون');
+  if (inventoryQuantity.lte(0)) throw new BadRequestException('كمية المخزون لحساب السعر يجب أن تكون أكبر من صفر');
+  return totalValue.div(inventoryQuantity).toDecimalPlaces(COST_SCALE);
+}
+
+export function calculateOrdersV4AverageUnitCost(
+  totalValueInput: Prisma.Decimal.Value,
+  quantityInput: Prisma.Decimal.Value,
+  zeroQuantityFallback: Prisma.Decimal.Value = 0,
+): Prisma.Decimal {
+  const totalValue = decimal(totalValueInput, 'القيمة الإجمالية');
+  const quantity = decimal(quantityInput, 'كمية حساب متوسط التكلفة');
+  if (quantity.lt(0)) throw new BadRequestException('كمية حساب متوسط التكلفة لا يمكن أن تكون سالبة');
+  if (quantity.isZero()) return decimal(zeroQuantityFallback, 'متوسط التكلفة عند نفاد الكمية').toDecimalPlaces(COST_SCALE);
+  return totalValue.div(quantity).toDecimalPlaces(COST_SCALE);
+}
+
+export function calculateOrdersV4ConvertedUnitPrice(
+  sourceUnitPriceInput: Prisma.Decimal.Value,
+  sourceToTargetConversion: OrdersV4ResolvedConversion,
+): Prisma.Decimal {
+  const sourceUnitPrice = decimal(sourceUnitPriceInput, 'سعر الوحدة التاريخي');
+  if (sourceToTargetConversion.factor.lte(0)) throw new BadRequestException('معامل تحويل السعر التاريخي غير صالح');
+  return sourceUnitPrice.div(sourceToTargetConversion.factor).toDecimalPlaces(COST_SCALE);
+}
+
+export function calculateOrdersV4ConvertedQuantity(
+  sourceQuantityInput: Prisma.Decimal.Value,
+  sourceToTargetConversion: OrdersV4ResolvedConversion,
+): Prisma.Decimal {
+  const sourceQuantity = decimal(sourceQuantityInput, 'الكمية المراد تحويلها');
+  if (sourceQuantity.lt(0)) throw new BadRequestException('الكمية المراد تحويلها لا يمكن أن تكون سالبة');
+  if (sourceToTargetConversion.factor.lte(0)) throw new BadRequestException('معامل تحويل الكمية غير صالح');
+  return sourceQuantity.times(sourceToTargetConversion.factor).toDecimalPlaces(QUANTITY_SCALE);
+}
+
+export function calculateOrdersV4RecipeUsage(input: {
+  registeredBaseQuantity: Prisma.Decimal.Value;
+  recipeOutputQuantity: Prisma.Decimal.Value;
+  outputConversion: OrdersV4ResolvedConversion;
+  componentQuantity: Prisma.Decimal.Value;
+  componentConversion: OrdersV4ResolvedConversion;
+}): { batches: Prisma.Decimal; issueQuantity: Prisma.Decimal } {
+  const registeredBaseQuantity = decimal(input.registeredBaseQuantity, 'كمية التسجيل الأساسية');
+  const recipeOutputQuantity = decimal(input.recipeOutputQuantity, 'كمية مخرج الرسبي');
+  const componentQuantity = decimal(input.componentQuantity, 'كمية مكوّن الرسبي');
+  const recipeOutputBase = recipeOutputQuantity.times(input.outputConversion.factor).toDecimalPlaces(QUANTITY_SCALE);
+  if (recipeOutputBase.lte(0)) throw new BadRequestException('كمية مخرج الرسبي بعد التحويل غير صالحة');
+  const batches = registeredBaseQuantity.div(recipeOutputBase).toDecimalPlaces(QUANTITY_SCALE);
+  const issueQuantity = componentQuantity
+    .times(input.componentConversion.factor)
+    .times(batches)
+    .toDecimalPlaces(QUANTITY_SCALE);
+  if (issueQuantity.lte(0)) throw new BadRequestException('كمية صرف مكوّن الرسبي غير صالحة');
+  return { batches, issueQuantity };
+}
+
+export function calculateOrdersV4RecipeComponentCost(
+  issueQuantityInput: Prisma.Decimal.Value,
+  averageInventoryUnitPriceInput: Prisma.Decimal.Value,
+): Prisma.Decimal {
+  const issueQuantity = decimal(issueQuantityInput, 'كمية صرف المكوّن');
+  const averageInventoryUnitPrice = decimal(averageInventoryUnitPriceInput, 'متوسط سعر المكوّن');
+  if (issueQuantity.lt(0) || averageInventoryUnitPrice.lt(0)) throw new BadRequestException('مدخلات تكلفة الرسبي لا يمكن أن تكون سالبة');
+  return issueQuantity.times(averageInventoryUnitPrice).toDecimalPlaces(MONEY_SCALE);
+}
+
+export function calculateOrdersV4Reversal(
+  balance: OrdersV4InventoryBalance,
+  original: { quantityDelta: Prisma.Decimal.Value; valueDelta: Prisma.Decimal.Value; unitCost: Prisma.Decimal.Value },
+  originalToCurrentUnitFactor: Prisma.Decimal.Value = 1,
+): OrdersV4InventoryCalculation {
+  const factor = decimal(originalToCurrentUnitFactor, 'معامل وحدة العكس');
+  if (factor.lte(0)) throw new BadRequestException('معامل وحدة العكس غير صالح');
+  const quantityDelta = decimal(original.quantityDelta, 'كمية القيد الأصلي').times(factor).negated().toDecimalPlaces(QUANTITY_SCALE);
+  const valueDelta = decimal(original.valueDelta, 'قيمة القيد الأصلي').negated().toDecimalPlaces(MONEY_SCALE);
+  const quantityAfter = balance.quantity.plus(quantityDelta).toDecimalPlaces(QUANTITY_SCALE);
+  const valueAfter = balance.value.plus(valueDelta).toDecimalPlaces(MONEY_SCALE);
+  if (quantityAfter.lt(0) || valueAfter.lt(0)) throw new BadRequestException('لا يمكن عكس المستند بعد استهلاك رصيده');
+  const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(valueAfter, quantityAfter);
+  return {
+    quantityDelta,
+    unitCost: decimal(original.unitCost, 'تكلفة القيد الأصلي').div(factor).toDecimalPlaces(COST_SCALE),
+    valueDelta,
+    quantityAfter,
+    valueAfter,
+    averageUnitCostAfter,
+  };
+}
+
+export function calculateOrdersV4UnitRebase(
+  balance: OrdersV4InventoryBalance,
+  oldToNewConversion: OrdersV4ResolvedConversion,
+): OrdersV4InventoryCalculation {
+  if (oldToNewConversion.factor.lte(0)) throw new BadRequestException('معامل تغيير وحدة المخزون غير صالح');
+  const quantityAfter = balance.quantity.times(oldToNewConversion.factor).toDecimalPlaces(QUANTITY_SCALE);
+  const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(balance.value, quantityAfter);
+  return {
+    quantityDelta: new Prisma.Decimal(0),
+    unitCost: averageUnitCostAfter,
+    valueDelta: new Prisma.Decimal(0),
+    quantityAfter,
+    valueAfter: balance.value.toDecimalPlaces(MONEY_SCALE),
+    averageUnitCostAfter,
+  };
 }
 

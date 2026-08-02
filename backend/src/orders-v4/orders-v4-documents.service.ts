@@ -3,7 +3,15 @@ import { Prisma } from '@prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { calculateOrdersV4LastFiveAverage, calculateOrdersV4Line } from './orders-v4-calculation.kernel';
+import {
+  calculateOrdersV4AverageUnitCost,
+  calculateOrdersV4ConvertedUnitPrice,
+  calculateOrdersV4InventoryUnitPrice,
+  calculateOrdersV4LastFiveAverage,
+  calculateOrdersV4Line,
+  calculateOrdersV4RecipeComponentCost,
+  calculateOrdersV4RecipeUsage,
+} from './orders-v4-calculation.kernel';
 import type { OrdersV4DocumentInput, OrdersV4DocumentType, OrdersV4ReceiveInput } from './orders-v4.contracts';
 import { resolveOrdersV4Conversion } from './orders-v4-conversion.kernel';
 import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
@@ -76,7 +84,7 @@ export class OrdersV4DocumentsService {
       include: {
         section: true,
         location: true,
-        lines: { include: { item: true, inputUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } },
+        lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } },
       },
       orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
     });
@@ -107,7 +115,7 @@ export class OrdersV4DocumentsService {
     return this.prisma.withTenant(async (tx) => {
       const duplicate = await tx.ordersV4Document.findFirst({
         where: { companyId, idempotencyKey: input.idempotencyKey.trim() },
-        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, priceUnit: true } } },
+        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true } } },
       });
       if (duplicate) {
         if (duplicate.requestHash !== inputRequestHash) throw new BadRequestException('مفتاح منع التكرار مستخدم لمحتوى مختلف');
@@ -253,6 +261,7 @@ export class OrdersV4DocumentsService {
             inputQuantity: row.calculation.inputQuantity,
             inputUnitId: row.line.unitId,
             baseQuantity: row.calculation.baseQuantity,
+            baseUnitId: row.item.inventoryUnitId,
             unitPrice: row.calculation.unitPrice,
             priceUnitId: row.priceUnitId,
             priceQuantity: row.calculation.priceQuantity,
@@ -288,8 +297,6 @@ export class OrdersV4DocumentsService {
               units: unitDefinitions,
               edges: outputDefinitionEdges,
             });
-            const recipeOutputBase = row.recipe.outputQuantity.times(outputConversion.factor);
-            const batches = row.calculation.baseQuantity.div(recipeOutputBase);
             for (const component of row.recipe.lines) {
               if (!component.componentItem.trackInventory) continue;
               const componentDefinition = component.componentItem.conversionVersions[0];
@@ -303,15 +310,30 @@ export class OrdersV4DocumentsService {
                 units: unitDefinitions,
                 edges: componentEdges,
               });
-              const issueQuantity = component.quantity.times(componentConversion.factor).times(batches).toDecimalPlaces(8);
+              const { issueQuantity } = calculateOrdersV4RecipeUsage({
+                registeredBaseQuantity: row.calculation.baseQuantity,
+                recipeOutputQuantity: row.recipe.outputQuantity,
+                outputConversion,
+                componentQuantity: component.quantity,
+                componentConversion,
+              });
               const recentPrices = await tx.ordersV4PriceHistory.findMany({
                 where: { companyId, itemId: component.componentItem.id, document: { status: 'received' } },
                 orderBy: [{ effectiveAt: 'desc' }, { createdAt: 'desc' }],
                 take: 5,
-                select: { inventoryUnitPrice: true },
+                select: { inventoryUnitPrice: true, inventoryUnitId: true },
               });
-              const averageLastFive = calculateOrdersV4LastFiveAverage(recentPrices.map((price) => price.inventoryUnitPrice));
-              const componentCost = issueQuantity.times(averageLastFive).toDecimalPlaces(6);
+              const normalizedPrices = recentPrices.map((price) => calculateOrdersV4ConvertedUnitPrice(
+                price.inventoryUnitPrice,
+                resolveOrdersV4Conversion({
+                  fromUnitId: price.inventoryUnitId,
+                  toUnitId: component.componentItem.inventoryUnitId,
+                  units: unitDefinitions,
+                  edges: componentEdges,
+                }),
+              ));
+              const averageLastFive = calculateOrdersV4LastFiveAverage(normalizedPrices);
+              const componentCost = calculateOrdersV4RecipeComponentCost(issueQuantity, averageLastFive);
               recipeCost = recipeCost.plus(componentCost);
               recipeCostLines.push({
                 componentItemId: component.componentItem.id,
@@ -322,7 +344,7 @@ export class OrdersV4DocumentsService {
                 componentCost: componentCost.toString(),
               });
               await this.posting.postIssue(tx, {
-                tenantId, companyId, itemId: component.componentItem.id, locationId: location.id,
+                tenantId, companyId, itemId: component.componentItem.id, inventoryUnitId: component.componentItem.inventoryUnitId, locationId: location.id,
                 documentLineId: createdLine.id, sourceId: document.id,
                 sourceKey: `document:${document.id}:line:${createdLine.id}:recipe:${component.id}:issue`,
                 effectiveAt: documentDate, quantity: issueQuantity,
@@ -349,14 +371,14 @@ export class OrdersV4DocumentsService {
                 costSnapshot: {
                   policy: 'simple-average-last-5-received-purchase-orders',
                   totalCost: recipeCost.toDecimalPlaces(6).toString(),
-                  costPerRegisteredUnit: row.calculation.inputQuantity.isZero() ? '0' : recipeCost.div(row.calculation.inputQuantity).toDecimalPlaces(8).toString(),
+                  costPerRegisteredUnit: calculateOrdersV4AverageUnitCost(recipeCost, row.calculation.inputQuantity).toString(),
                   components: recipeCostLines,
                 },
               },
             });
           } else if (row.item.trackInventory) {
             await this.posting.postIssue(tx, {
-              tenantId, companyId, itemId: row.item.id, locationId: location.id,
+              tenantId, companyId, itemId: row.item.id, inventoryUnitId: row.item.inventoryUnitId, locationId: location.id,
               documentLineId: createdLine.id, sourceId: document.id,
               sourceKey: `document:${document.id}:line:${createdLine.id}:issue`,
               effectiveAt: documentDate, quantity: row.calculation.baseQuantity,
@@ -370,7 +392,7 @@ export class OrdersV4DocumentsService {
 
       return tx.ordersV4Document.findUniqueOrThrow({
         where: { id: document.id },
-        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
+        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
       });
     });
   }
@@ -394,7 +416,7 @@ export class OrdersV4DocumentsService {
       if (latest.status === 'received' && previousSnapshot.receiveIdempotencyKey === input.idempotencyKey.trim()) {
         return tx.ordersV4Document.findUniqueOrThrow({
           where: { id },
-          include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
+          include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
         });
       }
       if (latest.status !== 'prepared') throw new BadRequestException('آخر طلب ليس في حالة انتظار الاستلام');
@@ -504,7 +526,7 @@ export class OrdersV4DocumentsService {
             tenantId, companyId, documentId: id, itemId: row.item.id, lineNumber: row.index + 1,
             itemNameSnapshot: row.item.nameAr,
             inputQuantity: row.calculation.inputQuantity, inputUnitId: row.line.unitId,
-            baseQuantity: row.calculation.baseQuantity, unitPrice: row.calculation.unitPrice,
+            baseQuantity: row.calculation.baseQuantity, baseUnitId: row.item.inventoryUnitId, unitPrice: row.calculation.unitPrice,
             priceUnitId: row.priceUnitId, priceQuantity: row.calculation.priceQuantity,
             lineTotal: row.calculation.lineTotal, conversionVersionId: row.definition?.id || null,
             conversionSnapshot: {
@@ -515,16 +537,14 @@ export class OrdersV4DocumentsService {
               kernelVersion: 4,
               inputQuantity: row.calculation.inputQuantity.toString(),
               baseQuantity: row.calculation.baseQuantity.toString(),
-              inventoryUnitPrice: row.calculation.baseQuantity.isZero() ? '0' : row.calculation.lineTotal.div(row.calculation.baseQuantity).toString(),
+              inventoryUnitPrice: calculateOrdersV4InventoryUnitPrice(row.calculation.lineTotal, row.calculation.baseQuantity).toString(),
             },
           },
         });
-        const inventoryUnitPrice = row.calculation.baseQuantity.isZero()
-          ? new Prisma.Decimal(0)
-          : row.calculation.lineTotal.div(row.calculation.baseQuantity).toDecimalPlaces(8);
+        const inventoryUnitPrice = calculateOrdersV4InventoryUnitPrice(row.calculation.lineTotal, row.calculation.baseQuantity);
         await tx.ordersV4PriceHistory.create({
           data: {
-            tenantId, companyId, itemId: row.item.id, unitId: row.priceUnitId,
+            tenantId, companyId, itemId: row.item.id, unitId: row.priceUnitId, inventoryUnitId: row.item.inventoryUnitId,
             documentId: id, documentLineId: line.id, unitPrice: row.calculation.unitPrice,
             inventoryUnitPrice, conversionVersionId: row.definition?.id || null, effectiveAt: receivedDate,
           },
@@ -535,7 +555,7 @@ export class OrdersV4DocumentsService {
         });
         if (row.item.trackInventory) {
           await this.posting.postReceipt(tx, {
-            tenantId, companyId, itemId: row.item.id, locationId: location.id, documentLineId: line.id,
+            tenantId, companyId, itemId: row.item.id, inventoryUnitId: row.item.inventoryUnitId, locationId: location.id, documentLineId: line.id,
             sourceId: id, sourceKey: `document:${id}:line:${line.id}:receipt`, effectiveAt: receivedDate,
             quantity: row.calculation.baseQuantity, totalValue: row.calculation.lineTotal,
             conversionVersionId: row.definition?.id || null,
@@ -562,7 +582,7 @@ export class OrdersV4DocumentsService {
 
       return tx.ordersV4Document.findUniqueOrThrow({
         where: { id },
-        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
+        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
       });
     });
   }
@@ -584,6 +604,27 @@ export class OrdersV4DocumentsService {
       const originalLedger = await tx.ordersV4InventoryLedgerEntry.findMany({
         where: { companyId, sourceId: original.id }, orderBy: { sequence: 'desc' },
       });
+      const ledgerItemIds = [...new Set(originalLedger.map((entry) => entry.itemId))];
+      const [ledgerItems, companyUnits] = await Promise.all([
+        tx.ordersV4Item.findMany({
+          where: { companyId, id: { in: ledgerItemIds } },
+          include: {
+            conversionVersions: {
+              where: { status: 'published' },
+              orderBy: { version: 'desc' },
+              take: 1,
+              include: { edges: true },
+            },
+          },
+        }),
+        tx.ordersV4Unit.findMany({ where: { companyId, isActive: true } }),
+      ]);
+      const unitDefinitions = companyUnits.map((unit) => ({
+        id: unit.id,
+        code: unit.code,
+        dimension: unit.dimension,
+        canonicalFactor: unit.canonicalFactor,
+      }));
       const originalCustody = await tx.ordersV4CustodyLedgerEntry.findMany({
         where: { companyId, documentId: original.id }, orderBy: { sequence: 'asc' },
       });
@@ -604,28 +645,29 @@ export class OrdersV4DocumentsService {
           reversalOfId: original.id, createdByUserId: TenantContext.getUserId(),
         },
       });
+      const reversedAt = new Date();
       for (const entry of originalLedger) {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:ledger:${companyId}:${entry.itemId}:${entry.locationId}`}))`;
-        const latest = await tx.ordersV4InventoryLedgerEntry.findFirst({
-          where: { companyId, itemId: entry.itemId, locationId: entry.locationId }, orderBy: { sequence: 'desc' },
+        const item = ledgerItems.find((row) => row.id === entry.itemId);
+        if (!item) throw new BadRequestException('تعذر العثور على صنف قيد المخزون المراد عكسه');
+        const definition = item.conversionVersions[0];
+        const currentConversion = resolveOrdersV4Conversion({
+          fromUnitId: entry.inventoryUnitId,
+          toUnitId: item.inventoryUnitId,
+          units: unitDefinitions,
+          edges: definition?.edges.map((edge) => ({
+            ...edge,
+            allowDimensionBridge: edge.allowDimensionBridge,
+          })) ?? [],
         });
-        const quantityAfter = (latest?.quantityAfter ?? new Prisma.Decimal(0)).minus(entry.quantityDelta).toDecimalPlaces(8);
-        const valueAfter = (latest?.valueAfter ?? new Prisma.Decimal(0)).minus(entry.valueDelta).toDecimalPlaces(6);
-        if (quantityAfter.lt(0) || valueAfter.lt(0)) throw new BadRequestException('لا يمكن عكس المستند بعد استهلاك رصيده');
-        const averageAfter = quantityAfter.isZero()
-          ? new Prisma.Decimal(0)
-          : valueAfter.div(quantityAfter).toDecimalPlaces(8);
-        await tx.ordersV4InventoryLedgerEntry.create({
-          data: {
-            tenantId, companyId, itemId: entry.itemId, locationId: entry.locationId,
-            effectiveAt: new Date(), entryType: 'reversal',
-            quantityDelta: entry.quantityDelta.negated(), unitCost: entry.unitCost,
-            valueDelta: entry.valueDelta.negated(), quantityAfter, valueAfter,
-            averageUnitCostAfter: averageAfter, sourceType: 'document_reversal', sourceId: reversal.id,
-            sourceKey: `reversal:${entry.id}`, sourceSnapshot: { kernelVersion: 4, originalEntryId: entry.id },
-            conversionVersionId: entry.conversionVersionId, recipeVersionId: entry.recipeVersionId,
-            reversalOfId: entry.id, createdByUserId: TenantContext.getUserId(),
-          },
+        await this.posting.postReversal(tx, {
+          tenantId,
+          companyId,
+          sourceId: reversal.id,
+          effectiveAt: reversedAt,
+          currentInventoryUnitId: item.inventoryUnitId,
+          currentConversionVersionId: definition?.id ?? null,
+          currentConversion,
+          original: entry,
         });
       }
       if (originalCustody.length) {
