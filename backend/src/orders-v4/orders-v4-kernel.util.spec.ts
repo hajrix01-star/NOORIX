@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { calculateOrdersV4Issue, calculateOrdersV4LastFiveAverage, calculateOrdersV4Line, calculateOrdersV4Receipt } from './orders-v4-calculation.kernel';
 import { resolveOrdersV4Conversion, validateOrdersV4ConversionDefinition } from './orders-v4-conversion.kernel';
+import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
 import type { OrdersV4ConversionEdgeDefinition, OrdersV4UnitDefinition } from './orders-v4-kernel.types';
 
 const units: OrdersV4UnitDefinition[] = [
@@ -18,6 +19,12 @@ const edges: OrdersV4ConversionEdgeDefinition[] = [
 ];
 
 describe('Orders Core V4 kernel', () => {
+  it('accepts the shared ISO date filter while storing date-only boundaries', () => {
+    expect(ordersV4DateOnly('2026-08-01T00:00:00+03:00', 'date').toISOString()).toBe('2026-08-01T00:00:00.000Z');
+    const range = ordersV4RangeBounds('2026-08-01T00:00:00+03:00', '2026-08-31T23:59:59+03:00');
+    expect(range.gte?.toISOString()).toBe('2026-08-01T00:00:00.000Z');
+    expect(range.lte?.toISOString()).toBe('2026-08-31T00:00:00.000Z');
+  });
   it('uses only the latest five normalized purchase prices for recipe costing', () => {
     expect(calculateOrdersV4LastFiveAverage(['10', '20', '30', '40', '50', '999']).toString()).toBe('30');
     expect(calculateOrdersV4LastFiveAverage([]).toString()).toBe('0');

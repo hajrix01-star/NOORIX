@@ -1,30 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type { OrdersV4DocumentType } from './orders-v4.contracts';
-
-function dateOnly(value: string, label: string): Date {
-  const text = String(value ?? '').trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) throw new BadRequestException(`${label} غير صالح`);
-  const date = new Date(`${text}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) throw new BadRequestException(`${label} غير صالح`);
-  return date;
-}
-
-function rangeBounds(startDate?: string, endDate?: string): { gte?: Date; lte?: Date } {
-  const bounds: { gte?: Date; lte?: Date } = {};
-  if (startDate) bounds.gte = dateOnly(startDate, 'تاريخ البداية');
-  if (endDate) bounds.lte = dateOnly(endDate, 'تاريخ النهاية');
-  if (bounds.gte && bounds.lte && bounds.gte > bounds.lte) throw new BadRequestException('نطاق التاريخ معكوس');
-  return bounds;
-}
+import { ordersV4RangeBounds } from './orders-v4-date.util';
 
 @Injectable()
 export class OrdersV4ReportsService {
   constructor(private readonly prisma: TenantPrismaService) {}
 
   async summary(companyId: string, startDate?: string, endDate?: string) {
-    const bounds = rangeBounds(startDate, endDate);
+    const bounds = ordersV4RangeBounds(startDate, endDate);
     const cashStart = bounds.gte ?? new Date('1970-01-01T00:00:00.000Z');
     const cashEnd = bounds.lte ? new Date(bounds.lte.getTime() + 86_399_999) : new Date('2999-12-31T23:59:59.999Z');
     const [documents, cashSales, custodyEntries] = await Promise.all([
@@ -79,7 +64,7 @@ export class OrdersV4ReportsService {
     const lines = await this.prisma.ordersV4DocumentLine.findMany({
       where: {
         companyId,
-        document: { status: 'received', documentType: documentType || undefined, documentDate: rangeBounds(startDate, endDate) },
+        document: { status: 'received', documentType: documentType || undefined, documentDate: ordersV4RangeBounds(startDate, endDate) },
       },
       include: { item: { include: { category: true, inventoryUnit: true } } },
     });
@@ -115,7 +100,7 @@ export class OrdersV4ReportsService {
   }
 
   async salesReport(companyId: string, startDate?: string, endDate?: string) {
-    const bounds = rangeBounds(startDate, endDate);
+    const bounds = ordersV4RangeBounds(startDate, endDate);
     const [summary, byItem, documents] = await Promise.all([
       this.summary(companyId, startDate, endDate),
       this.itemsReport(companyId, 'registration', startDate, endDate),

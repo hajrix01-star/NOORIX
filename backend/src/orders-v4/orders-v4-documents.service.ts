@@ -6,24 +6,9 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { calculateOrdersV4LastFiveAverage, calculateOrdersV4Line } from './orders-v4-calculation.kernel';
 import type { OrdersV4DocumentInput, OrdersV4DocumentType, OrdersV4ReceiveInput } from './orders-v4.contracts';
 import { resolveOrdersV4Conversion } from './orders-v4-conversion.kernel';
+import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
 import type { OrdersV4ResolvedConversion, OrdersV4UnitDefinition } from './orders-v4-kernel.types';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
-
-function dateOnly(value: string, label: string): Date {
-  const text = String(value ?? '').trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) throw new BadRequestException(`${label} غير صالح`);
-  const date = new Date(`${text}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) throw new BadRequestException(`${label} غير صالح`);
-  return date;
-}
-
-function rangeBounds(startDate?: string, endDate?: string): { gte?: Date; lte?: Date } {
-  const bounds: { gte?: Date; lte?: Date } = {};
-  if (startDate) bounds.gte = dateOnly(startDate, 'تاريخ البداية');
-  if (endDate) bounds.lte = dateOnly(endDate, 'تاريخ النهاية');
-  if (bounds.gte && bounds.lte && bounds.gte > bounds.lte) throw new BadRequestException('نطاق التاريخ معكوس');
-  return bounds;
-}
 
 function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
   return {
@@ -86,7 +71,7 @@ export class OrdersV4DocumentsService {
         companyId,
         createdByUserId: createdByUserId || undefined,
         documentType: documentType || undefined,
-        documentDate: rangeBounds(startDate, endDate),
+        documentDate: ordersV4RangeBounds(startDate, endDate),
       },
       include: {
         section: true,
@@ -107,7 +92,7 @@ export class OrdersV4DocumentsService {
       throw new BadRequestException('طريقة الدفع غير صالحة');
     }
     if (input.documentType === 'registration' && input.paymentMethod) throw new BadRequestException('التسجيل الداخلي لا يقبل طريقة دفع');
-    const documentDate = dateOnly(input.documentDate, 'تاريخ المستند');
+    const documentDate = ordersV4DateOnly(input.documentDate, 'تاريخ المستند');
     const inputRequestHash = documentRequestHash(input);
     let pettyCashAmount: Prisma.Decimal | null = null;
     if (input.documentType === 'purchase' && input.paymentMethod === 'custody' && input.pettyCashAmount != null && input.pettyCashAmount !== '') {
@@ -396,7 +381,7 @@ export class OrdersV4DocumentsService {
     if (!Number.isInteger(input.revision) || input.revision < 1) throw new BadRequestException('رقم مراجعة الطلب غير صالح');
     const tenantId = TenantContext.getTenantId();
     const userId = TenantContext.getUserId();
-    const receivedDate = dateOnly(input.documentDate, 'تاريخ الاستلام');
+    const receivedDate = ordersV4DateOnly(input.documentDate, 'تاريخ الاستلام');
 
     return this.prisma.withTenant(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
