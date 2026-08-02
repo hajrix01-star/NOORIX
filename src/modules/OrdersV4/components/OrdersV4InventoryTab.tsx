@@ -32,9 +32,9 @@ function LedgerTable({ query }: { query: ReturnType<typeof useOrdersV4Ledger> })
   const columns: SimpleTableColumn<OrdersV4LedgerEntry>[] = [
     { key: 'sequence', label: '#', numeric: true }, { key: 'effectiveAt', label: 'التاريخ', render: (value) => v4Date(String(value)) },
     { key: 'item', label: 'الصنف', render: (_value, row) => row.item.nameAr }, { key: 'location', label: 'الموقع', render: (_value, row) => row.location.nameAr },
-    { key: 'entryType', label: 'نوع القيد' }, { key: 'quantityDelta', label: 'تغير الكمية', numeric: true, render: (value) => v4Number(value, 6) },
-    { key: 'valueDelta', label: 'تغير القيمة', numeric: true, render: (value) => v4Number(value) }, { key: 'quantityAfter', label: 'الرصيد بعد', numeric: true, render: (value) => v4Number(value, 6) },
-    { key: 'averageUnitCostAfter', label: 'المتوسط بعد', numeric: true, render: (value) => v4Number(value, 4) },
+    { key: 'entryType', label: 'نوع القيد' }, { key: 'quantityDelta', label: 'تغير الكمية', numeric: true, render: (value, row) => `${v4Number(value, 6)} ${row.inventoryUnit.nameAr}` },
+    { key: 'valueDelta', label: 'تغير القيمة', numeric: true, render: (value) => v4Number(value) }, { key: 'quantityAfter', label: 'الرصيد بعد', numeric: true, render: (value, row) => `${v4Number(value, 6)} ${row.inventoryUnit.nameAr}` },
+    { key: 'averageUnitCostAfter', label: 'المتوسط بعد', numeric: true, render: (value, row) => `${v4Number(value, 4)} / ${row.inventoryUnit.nameAr}` },
   ];
   return <OrdersV4Panel title="دفتر المخزون الدائم"><OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} />{!query.isLoading && <SimpleTable columns={columns} data={query.data ?? []} tableMinWidth={1100} emptyMessage="لا توجد قيود بعد" />}</OrdersV4Panel>;
 }

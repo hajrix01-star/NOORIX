@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { createHash } from 'node:crypto';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type {
@@ -11,9 +10,21 @@ import type {
   OrdersV4RecipePublishInput,
   OrdersV4UnitInput,
 } from './orders-v4.contracts';
-import { resolveOrdersV4Conversion, validateOrdersV4ConversionDefinition } from './orders-v4-conversion.kernel';
-import type { OrdersV4ConversionEdgeDefinition, OrdersV4UnitDefinition } from './orders-v4-kernel.types';
+import {
+  normalizeOrdersV4ConversionEdges,
+  ordersV4EdgeDefinitions,
+  ordersV4UnitDefinitions,
+  resolveOrdersV4ContextConversion,
+} from './orders-v4-conversion.context';
+import { validateOrdersV4ConversionDefinition } from './orders-v4-conversion.kernel';
+import type { OrdersV4ConversionEdgeDefinition } from './orders-v4-kernel.types';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
+import {
+  decideOrdersV4VersionPublication,
+  ordersV4DefinitionsEqual,
+  ordersV4StableHash,
+} from './orders-v4-version.kernel';
+import { assertOrdersV4UnitDeactivationAllowed } from './orders-v4-unit-governance.kernel';
 import {
   calculateOrdersV4ConvertedQuantity,
   calculateOrdersV4ConvertedUnitPrice,
@@ -41,10 +52,6 @@ function slugCode(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-function stableHash(value: object): string {
-  return createHash('sha256').update(JSON.stringify(value)).digest('hex');
-}
-
 function decimalInput(value: Prisma.Decimal.Value, label: string): Prisma.Decimal {
   try {
     const parsed = new Prisma.Decimal(value);
@@ -59,20 +66,6 @@ function positiveDecimal(value: Prisma.Decimal.Value, label: string): Prisma.Dec
   const parsed = decimalInput(value, label);
   if (parsed.lte(0)) throw new BadRequestException(`${label} يجب أن يكون أكبر من صفر`);
   return parsed;
-}
-
-function unitDefinition(unit: {
-  id: string;
-  code: string;
-  dimension: string;
-  canonicalFactor: Prisma.Decimal | null;
-}): OrdersV4UnitDefinition {
-  return {
-    id: unit.id,
-    code: unit.code,
-    dimension: unit.dimension,
-    canonicalFactor: unit.canonicalFactor,
-  };
 }
 
 @Injectable()
@@ -161,11 +154,11 @@ export class OrdersV4CatalogService {
           select: { itemId: true, inventoryUnitPrice: true, inventoryUnitId: true },
         })
       : [];
-    const normalizedUnits = units.map(unitDefinition);
+    const normalizedUnits = ordersV4UnitDefinitions(units);
     const recipesWithCost = recipes.map((recipe) => {
       const components = recipe.lines.map((line) => {
         const definition = line.componentItem.conversionVersions[0];
-        const conversion = resolveOrdersV4Conversion({
+        const conversion = resolveOrdersV4ContextConversion({
           fromUnitId: line.unitId,
           toUnitId: line.componentItem.inventoryUnitId,
           units: normalizedUnits,
@@ -174,7 +167,7 @@ export class OrdersV4CatalogService {
         const samples = priceRows.filter((price) => price.itemId === line.componentItemId).slice(0, 5);
         const normalizedPrices = samples.map((price) => calculateOrdersV4ConvertedUnitPrice(
           price.inventoryUnitPrice,
-          resolveOrdersV4Conversion({
+          resolveOrdersV4ContextConversion({
             fromUnitId: price.inventoryUnitId,
             toUnitId: line.componentItem.inventoryUnitId,
             units: normalizedUnits,
@@ -338,7 +331,7 @@ export class OrdersV4CatalogService {
     }));
     const tenantId = TenantContext.getTenantId();
     return this.prisma.withTenant(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:item-units:${itemId}`}))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:item-definition:${itemId}`}))`;
       const item = await tx.ordersV4Item.findFirst({
         where: { id: itemId, companyId, isActive: true },
         include: {
@@ -352,6 +345,9 @@ export class OrdersV4CatalogService {
         },
       });
       if (!item) throw new NotFoundException('الصنف غير موجود');
+      for (const unitId of [...new Set([item.inventoryUnitId, ...normalizedRows.map((row) => row.unitId)])].sort()) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:unit:${unitId}`}))`;
+      }
 
       const companyUnits = await tx.ordersV4Unit.findMany({ where: { companyId, isActive: true } });
       const nextUnitIds = new Set(normalizedRows.map((row) => row.unitId));
@@ -398,30 +394,17 @@ export class OrdersV4CatalogService {
         if (!nextUnitIds.has(item.inventoryUnitId)) {
           throw new BadRequestException('يجب إبقاء وحدة المخزون السابقة لحماية السجل التاريخي والتحويلات');
         }
-        const definitions = companyUnits.map(unitDefinition);
+        const definitions = ordersV4UnitDefinitions(companyUnits);
         const currentVersion = item.conversionVersions[0];
-        const currentEdges: OrdersV4ConversionEdgeDefinition[] = (currentVersion?.edges ?? []).map((edge) => ({
-          id: edge.id,
-          fromUnitId: edge.fromUnitId,
-          toUnitId: edge.toUnitId,
-          factor: edge.factor,
-          reversible: edge.reversible,
-          allowDimensionBridge: edge.allowDimensionBridge,
-        }));
-        const oldToNewConversion = resolveOrdersV4Conversion({
+        const currentEdges = ordersV4EdgeDefinitions(currentVersion?.edges);
+        const oldToNewConversion = resolveOrdersV4ContextConversion({
           fromUnitId: item.inventoryUnitId,
           toUnitId: input.inventoryUnitId,
           units: definitions,
           edges: currentEdges,
         });
-        const normalizedEdges = currentEdges.map((edge) => ({
-          fromUnitId: edge.fromUnitId,
-          toUnitId: edge.toUnitId,
-          factor: edge.factor.toString(),
-          reversible: edge.reversible,
-          allowDimensionBridge: edge.allowDimensionBridge,
-        }));
-        const contentHash = stableHash({
+        const normalizedEdges = normalizeOrdersV4ConversionEdges(currentEdges);
+        const contentHash = ordersV4StableHash({
           itemId,
           inventoryUnitId: input.inventoryUnitId,
           predecessorVersionId: currentVersion?.id ?? null,
@@ -497,7 +480,7 @@ export class OrdersV4CatalogService {
     const item = await this.prisma.ordersV4Item.findFirst({ where: { id: input.itemId, companyId }, include: { units: true } });
     if (!item) throw new NotFoundException('صنف V4 غير موجود');
     const units = await this.prisma.ordersV4Unit.findMany({ where: { companyId, isActive: true } });
-    const definitions = units.map(unitDefinition);
+    const definitions = ordersV4UnitDefinitions(units);
     const definitionEdges: OrdersV4ConversionEdgeDefinition[] = input.edges.map((edge, index) => ({
       id: `candidate-${index + 1}`,
       fromUnitId: edge.fromUnitId,
@@ -512,21 +495,50 @@ export class OrdersV4CatalogService {
       if (!item.units.some((row) => row.unitId === unitId && row.isActive)) throw new BadRequestException('وحدة التحويل غير مضافة إلى بطاقة الصنف');
     }
     for (const unitId of new Set(definitionEdges.flatMap((edge) => [edge.fromUnitId, edge.toUnitId]))) {
-      resolveOrdersV4Conversion({ fromUnitId: unitId, toUnitId: item.inventoryUnitId, units: definitions, edges: definitionEdges });
+      resolveOrdersV4ContextConversion({ fromUnitId: unitId, toUnitId: item.inventoryUnitId, units: definitions, edges: definitionEdges });
     }
-    const normalized = definitionEdges.map((edge) => ({
-      fromUnitId: edge.fromUnitId,
-      toUnitId: edge.toUnitId,
-      factor: edge.factor.toString(),
-      reversible: edge.reversible,
-      allowDimensionBridge: edge.allowDimensionBridge,
-    }));
-    const contentHash = stableHash({ itemId: item.id, inventoryUnitId: item.inventoryUnitId, edges: normalized });
+    const normalized = normalizeOrdersV4ConversionEdges(definitionEdges);
+    const contentHash = ordersV4StableHash({ itemId: item.id, inventoryUnitId: item.inventoryUnitId, edges: normalized });
     return this.prisma.withTenant(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:conversion:${item.id}`}))`;
-      const existingHash = await tx.ordersV4ConversionVersion.findFirst({ where: { itemId: item.id, contentHash } });
-      if (existingHash) return existingHash;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:item-definition:${item.id}`}))`;
+      const definitionUnitIds = [...new Set([item.inventoryUnitId, ...definitionEdges.flatMap((edge) => [edge.fromUnitId, edge.toUnitId])])].sort();
+      for (const unitId of definitionUnitIds) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:unit:${unitId}`}))`;
+      }
+      const lockedItem = await tx.ordersV4Item.findFirst({
+        where: { id: item.id, companyId, isActive: true },
+        include: { units: true },
+      });
+      if (!lockedItem || lockedItem.inventoryUnitId !== item.inventoryUnitId) {
+        throw new BadRequestException('تغير تعريف الصنف أثناء نشر التحويل؛ أعد المحاولة بعد تحديث البيانات');
+      }
+      const lockedActiveUnitCount = await tx.ordersV4Unit.count({ where: { companyId, id: { in: definitionUnitIds }, isActive: true } });
+      if (lockedActiveUnitCount !== definitionUnitIds.length) throw new BadRequestException('إحدى وحدات التحويل عُطلت أثناء النشر');
+      for (const unitId of [lockedItem.inventoryUnitId, ...definitionEdges.flatMap((edge) => [edge.fromUnitId, edge.toUnitId])]) {
+        if (!lockedItem.units.some((row) => row.unitId === unitId && row.isActive)) {
+          throw new BadRequestException('تغيرت وحدات الصنف أثناء نشر التحويل؛ أعد المحاولة بعد تحديث البيانات');
+        }
+      }
+      const current = await tx.ordersV4ConversionVersion.findFirst({
+        where: { itemId: item.id, status: 'published' },
+        orderBy: { version: 'desc' },
+        include: { edges: { orderBy: { sortOrder: 'asc' } }, item: true },
+      });
+      const currentNormalized = current ? normalizeOrdersV4ConversionEdges(ordersV4EdgeDefinitions(current.edges)) : null;
+      if (current && ordersV4DefinitionsEqual(currentNormalized, normalized)) {
+        return current;
+      }
       const latest = await tx.ordersV4ConversionVersion.aggregate({ where: { itemId: item.id }, _max: { version: true } });
+      const nextVersion = (latest._max.version ?? 0) + 1;
+      const hashCollision = await tx.ordersV4ConversionVersion.findFirst({ where: { itemId: item.id, contentHash } });
+      const publication = decideOrdersV4VersionPublication({
+        currentDefinition: currentNormalized,
+        candidateDefinition: normalized,
+        semanticHash: contentHash,
+        hashAlreadyExists: !!hashCollision,
+        predecessorVersionId: current?.id ?? null,
+        nextVersion,
+      });
       await tx.ordersV4ConversionVersion.updateMany({
         where: { itemId: item.id, status: 'published' },
         data: { status: 'retired', retiredAt: new Date() },
@@ -534,8 +546,8 @@ export class OrdersV4CatalogService {
       return tx.ordersV4ConversionVersion.create({
         data: {
           tenantId, companyId, itemId: item.id,
-          version: (latest._max.version ?? 0) + 1,
-          status: 'published', contentHash, publishedAt: new Date(),
+          version: nextVersion,
+          status: 'published', contentHash: publication.contentHash, publishedAt: new Date(),
           createdByUserId: TenantContext.getUserId(),
           edges: {
             create: normalized.map((edge, index) => ({
@@ -564,7 +576,7 @@ export class OrdersV4CatalogService {
       throw new BadRequestException('وحدة مخرج الرسبي غير مضافة إلى بطاقة صنف البيع');
     }
     const units = await this.prisma.ordersV4Unit.findMany({ where: { companyId, isActive: true } });
-    const unitDefinitions = units.map(unitDefinition);
+    const unitDefinitions = ordersV4UnitDefinitions(units);
     const itemIds = [...new Set(input.lines.map((line) => line.componentItemId))];
     const components = await this.prisma.ordersV4Item.findMany({
       where: { companyId, id: { in: itemIds }, isActive: true },
@@ -574,9 +586,9 @@ export class OrdersV4CatalogService {
     const outputDefinition = await this.prisma.ordersV4ConversionVersion.findFirst({
       where: { companyId, itemId: outputItem.id, status: 'published' }, include: { edges: true }, orderBy: { version: 'desc' },
     });
-    resolveOrdersV4Conversion({
+    resolveOrdersV4ContextConversion({
       fromUnitId: input.outputUnitId, toUnitId: outputItem.inventoryUnitId, units: unitDefinitions,
-      edges: outputDefinition?.edges.map((edge) => ({ ...edge, allowDimensionBridge: edge.allowDimensionBridge })) ?? [],
+      edges: ordersV4EdgeDefinitions(outputDefinition?.edges),
     });
     for (const line of input.lines) {
       const component = components.find((item) => item.id === line.componentItemId);
@@ -585,9 +597,9 @@ export class OrdersV4CatalogService {
       if (!component.units.some((row) => row.unitId === line.unitId && row.isActive)) {
         throw new BadRequestException(`${component.nameAr}: وحدة الرسبي غير مضافة إلى بطاقة المكوّن`);
       }
-      resolveOrdersV4Conversion({
+      resolveOrdersV4ContextConversion({
         fromUnitId: line.unitId, toUnitId: component.inventoryUnitId, units: unitDefinitions,
-        edges: definition?.edges.map((edge) => ({ ...edge, allowDimensionBridge: edge.allowDimensionBridge })) ?? [],
+        edges: ordersV4EdgeDefinitions(definition?.edges),
       });
       positiveDecimal(line.quantity, 'كمية مكوّن الوصفة');
     }
@@ -602,12 +614,59 @@ export class OrdersV4CatalogService {
         unitId: line.unitId,
       })),
     };
-    const contentHash = stableHash(normalized);
+    const contentHash = ordersV4StableHash(normalized);
     return this.prisma.withTenant(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:recipe:${outputItem.id}`}))`;
-      const duplicate = await tx.ordersV4RecipeVersion.findFirst({ where: { outputItemId: outputItem.id, contentHash } });
-      if (duplicate) return duplicate;
+      for (const definitionItemId of [outputItem.id, ...itemIds].sort()) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:item-definition:${definitionItemId}`}))`;
+      }
+      const recipeUnitIds = [...new Set([input.outputUnitId, ...input.lines.map((line) => line.unitId)])].sort();
+      for (const unitId of recipeUnitIds) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:unit:${unitId}`}))`;
+      }
+      const lockedActiveUnitCount = await tx.ordersV4Unit.count({ where: { companyId, id: { in: recipeUnitIds }, isActive: true } });
+      if (lockedActiveUnitCount !== recipeUnitIds.length) throw new BadRequestException('إحدى وحدات الرسبي عُطلت أثناء النشر');
+      const lockedItems = await tx.ordersV4Item.findMany({
+        where: { companyId, id: { in: [outputItem.id, ...itemIds] }, isActive: true },
+        include: { units: true },
+      });
+      const lockedOutput = lockedItems.find((item) => item.id === outputItem.id);
+      if (!lockedOutput || lockedOutput.inventoryUnitId !== outputItem.inventoryUnitId || !lockedOutput.units.some((row) => row.unitId === input.outputUnitId && row.isActive)) {
+        throw new BadRequestException('تغير تعريف صنف البيع أثناء نشر الرسبي؛ أعد المحاولة بعد تحديث البيانات');
+      }
+      for (const line of input.lines) {
+        const before = components.find((item) => item.id === line.componentItemId);
+        const locked = lockedItems.find((item) => item.id === line.componentItemId);
+        if (!before || !locked || before.inventoryUnitId !== locked.inventoryUnitId || !locked.units.some((row) => row.unitId === line.unitId && row.isActive)) {
+          throw new BadRequestException('تغير تعريف أحد مكونات الرسبي أثناء النشر؛ أعد المحاولة بعد تحديث البيانات');
+        }
+      }
+      const current = await tx.ordersV4RecipeVersion.findFirst({
+        where: { outputItemId: outputItem.id, status: 'published' },
+        orderBy: { version: 'desc' },
+        include: { lines: { orderBy: { sortOrder: 'asc' } }, outputItem: true, outputUnit: true },
+      });
+      const currentNormalized = current ? {
+        outputItemId: current.outputItemId,
+        outputQuantity: current.outputQuantity.toString(),
+        outputUnitId: current.outputUnitId,
+        lines: current.lines.map((line) => ({
+          componentItemId: line.componentItemId,
+          quantity: line.quantity.toString(),
+          unitId: line.unitId,
+        })),
+      } : null;
+      if (current && ordersV4DefinitionsEqual(currentNormalized, normalized)) return current;
       const latest = await tx.ordersV4RecipeVersion.aggregate({ where: { outputItemId: outputItem.id }, _max: { version: true } });
+      const nextVersion = (latest._max.version ?? 0) + 1;
+      const hashCollision = await tx.ordersV4RecipeVersion.findFirst({ where: { outputItemId: outputItem.id, contentHash } });
+      const publication = decideOrdersV4VersionPublication({
+        currentDefinition: currentNormalized,
+        candidateDefinition: normalized,
+        semanticHash: contentHash,
+        hashAlreadyExists: !!hashCollision,
+        predecessorVersionId: current?.id ?? null,
+        nextVersion,
+      });
       await tx.ordersV4RecipeVersion.updateMany({
         where: { outputItemId: outputItem.id, status: 'published' }, data: { status: 'retired', retiredAt: new Date() },
       });
@@ -615,8 +674,8 @@ export class OrdersV4CatalogService {
         data: {
           tenantId, companyId, outputItemId: outputItem.id,
           outputQuantity: new Prisma.Decimal(normalized.outputQuantity), outputUnitId: normalized.outputUnitId,
-          version: (latest._max.version ?? 0) + 1,
-          status: 'published', contentHash, publishedAt: new Date(), createdByUserId: TenantContext.getUserId(),
+          version: nextVersion,
+          status: 'published', contentHash: publication.contentHash, publishedAt: new Date(), createdByUserId: TenantContext.getUserId(),
           lines: {
             create: normalized.lines.map((line, index) => ({
               tenantId, companyId, componentItemId: line.componentItemId,
@@ -630,9 +689,28 @@ export class OrdersV4CatalogService {
   }
 
   async deactivate(companyId: string, entity: 'unit' | 'category' | 'section' | 'item' | 'location', id: string) {
-    const updated = entity === 'unit'
-      ? await this.prisma.ordersV4Unit.updateMany({ where: { id, companyId }, data: { isActive: false } })
-      : entity === 'category'
+    if (entity === 'unit') {
+      return this.prisma.withTenant(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:unit:${id}`}))`;
+        const unit = await tx.ordersV4Unit.findFirst({ where: { id, companyId, isActive: true } });
+        if (!unit) throw new NotFoundException('وحدة V4 غير موجودة أو معطلة');
+        const references = await Promise.all([
+          tx.ordersV4Item.count({ where: { companyId, inventoryUnitId: id } }),
+          tx.ordersV4ItemUnit.count({ where: { companyId, unitId: id } }),
+          tx.ordersV4ConversionEdge.count({ where: { companyId, OR: [{ fromUnitId: id }, { toUnitId: id }] } }),
+          tx.ordersV4RecipeVersion.count({ where: { companyId, outputUnitId: id } }),
+          tx.ordersV4RecipeLine.count({ where: { companyId, unitId: id } }),
+          tx.ordersV4DocumentLine.count({ where: { companyId, OR: [{ inputUnitId: id }, { baseUnitId: id }, { priceUnitId: id }] } }),
+          tx.ordersV4PriceHistory.count({ where: { companyId, OR: [{ unitId: id }, { inventoryUnitId: id }] } }),
+          tx.ordersV4InventoryLedgerEntry.count({ where: { companyId, inventoryUnitId: id } }),
+          tx.ordersV4StocktakeLine.count({ where: { companyId, unitId: id } }),
+        ]);
+        assertOrdersV4UnitDeactivationAllowed(references);
+        await tx.ordersV4Unit.update({ where: { id }, data: { isActive: false } });
+        return { id, deactivated: true };
+      });
+    }
+    const updated = entity === 'category'
         ? await this.prisma.ordersV4Category.updateMany({ where: { id, companyId }, data: { isActive: false } })
         : entity === 'section'
           ? await this.prisma.ordersV4Section.updateMany({ where: { id, companyId }, data: { isActive: false } })

@@ -3,7 +3,11 @@ import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { calculateOrdersV4AverageUnitCost, calculateOrdersV4ConvertedQuantity } from './orders-v4-calculation.kernel';
 import type { OrdersV4DocumentType } from './orders-v4.contracts';
-import { resolveOrdersV4Conversion } from './orders-v4-conversion.kernel';
+import {
+  ordersV4EdgeDefinitions,
+  ordersV4UnitDefinitions,
+  resolveOrdersV4ContextConversion,
+} from './orders-v4-conversion.context';
 import { ordersV4RangeBounds } from './orders-v4-date.util';
 
 @Injectable()
@@ -84,14 +88,9 @@ export class OrdersV4ReportsService {
           },
         },
       }),
-      this.prisma.ordersV4Unit.findMany({ where: { companyId, isActive: true } }),
+      this.prisma.ordersV4Unit.findMany({ where: { companyId } }),
     ]);
-    const unitDefinitions = units.map((unit) => ({
-      id: unit.id,
-      code: unit.code,
-      dimension: unit.dimension,
-      canonicalFactor: unit.canonicalFactor,
-    }));
+    const unitDefinitions = ordersV4UnitDefinitions(units);
     const byItem = new Map<string, {
       itemId: string; nameAr: string; categoryName: string; inventoryUnit: string;
       documentCount: Set<string>; baseQuantity: Prisma.Decimal; totalAmount: Prisma.Decimal;
@@ -100,14 +99,11 @@ export class OrdersV4ReportsService {
       const currentDefinition = line.item.conversionVersions[0];
       const baseQuantity = calculateOrdersV4ConvertedQuantity(
         line.baseQuantity,
-        resolveOrdersV4Conversion({
+        resolveOrdersV4ContextConversion({
           fromUnitId: line.baseUnitId,
           toUnitId: line.item.inventoryUnitId,
           units: unitDefinitions,
-          edges: currentDefinition?.edges.map((edge) => ({
-            ...edge,
-            allowDimensionBridge: edge.allowDimensionBridge,
-          })) ?? [],
+          edges: ordersV4EdgeDefinitions(currentDefinition?.edges),
         }),
       );
       const current = byItem.get(line.itemId) ?? {

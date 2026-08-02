@@ -31,4 +31,31 @@ describe('Orders V4 inventory boundary', () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it('allows conversion resolution only through the central conversion context', () => {
+    const offenders = readdirSync(__dirname)
+      .filter((name) => name.endsWith('.ts') && !name.endsWith('.spec.ts'))
+      .filter((name) => !['orders-v4-conversion.kernel.ts', 'orders-v4-conversion.context.ts'].includes(name))
+      .filter((name) => readFileSync(join(__dirname, name), 'utf8').includes('resolveOrdersV4Conversion'));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('keeps stocktake calculation and posting inside the central posting boundary', () => {
+    const offenders = readdirSync(__dirname)
+      .filter((name) => name.endsWith('.ts') && !name.endsWith('.spec.ts'))
+      .filter((name) => !['orders-v4-calculation.kernel.ts', 'orders-v4-ledger-posting.service.ts'].includes(name))
+      .filter((name) => readFileSync(join(__dirname, name), 'utf8').includes('calculateOrdersV4StocktakeAdjustment'));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('renders the historical document base unit snapshot instead of the item current unit', () => {
+    const documentTab = readFileSync(
+      join(__dirname, '../../../src/modules/OrdersV4/components/OrdersV4DocumentsTab.tsx'),
+      'utf8',
+    );
+    expect(documentTab).toContain('row.baseUnit.nameAr');
+    expect(documentTab).not.toContain('row.item.inventoryUnit.nameAr}` },');
+  });
 });

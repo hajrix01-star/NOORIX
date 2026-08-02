@@ -219,7 +219,7 @@ function OrdersV4DocumentDetails({ document, onClose }: { document: OrdersV4Docu
     { key: 'lineNumber', label: '#' },
     { key: 'itemNameSnapshot', label: 'الصنف' },
     { key: 'inputQuantity', label: 'الكمية المدخلة', numeric: true, render: (value, row) => `${v4Number(value, 6)} ${row.inputUnit.nameAr}` },
-    { key: 'baseQuantity', label: 'كمية الأساس', numeric: true, render: (value, row) => `${v4Number(value, 6)} ${row.item.inventoryUnit.nameAr}` },
+    { key: 'baseQuantity', label: 'كمية الأساس وقت المستند', numeric: true, render: (value, row) => `${v4Number(value, 6)} ${row.baseUnit.nameAr}` },
     { key: 'unitPrice', label: 'سعر الوحدة', numeric: true, render: (value, row) => `${v4Number(value)} / ${row.priceUnit.nameAr}` },
     { key: 'lineTotal', label: 'الإجمالي', numeric: true, render: (value) => `${v4Number(value)} ر.س` },
   ];

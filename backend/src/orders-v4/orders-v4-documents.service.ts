@@ -13,9 +13,13 @@ import {
   calculateOrdersV4RecipeUsage,
 } from './orders-v4-calculation.kernel';
 import type { OrdersV4DocumentInput, OrdersV4DocumentType, OrdersV4ReceiveInput } from './orders-v4.contracts';
-import { resolveOrdersV4Conversion } from './orders-v4-conversion.kernel';
+import {
+  ordersV4EdgeDefinitions,
+  ordersV4UnitDefinitions,
+  resolveOrdersV4ContextConversion,
+} from './orders-v4-conversion.context';
 import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
-import type { OrdersV4ResolvedConversion, OrdersV4UnitDefinition } from './orders-v4-kernel.types';
+import type { OrdersV4ResolvedConversion } from './orders-v4-kernel.types';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 
 function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
@@ -26,15 +30,6 @@ function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
     source: resolved.source,
     path: resolved.path,
   };
-}
-
-function toUnitDefinition(unit: {
-  id: string;
-  code: string;
-  dimension: string;
-  canonicalFactor: Prisma.Decimal | null;
-}): OrdersV4UnitDefinition {
-  return { id: unit.id, code: unit.code, dimension: unit.dimension, canonicalFactor: unit.canonicalFactor };
 }
 
 function documentNumber(documentType: OrdersV4DocumentType, date: Date): string {
@@ -168,7 +163,7 @@ export class OrdersV4DocumentsService {
       if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف V4 غير موجود أو غير فعال');
       const itemById = new Map(items.map((item) => [item.id, item]));
       const units = await tx.ordersV4Unit.findMany({ where: { companyId, isActive: true } });
-      const unitDefinitions = units.map(toUnitDefinition);
+      const unitDefinitions = ordersV4UnitDefinitions(units);
 
       const prepared = input.lines.map((line, index) => {
         const item = itemById.get(line.itemId);
@@ -179,15 +174,8 @@ export class OrdersV4DocumentsService {
         if (!item.units.some((row) => row.unitId === line.unitId && row.isActive)) {
           throw new BadRequestException(`${item.nameAr}: وحدة الكمية غير مضافة إلى بطاقة الصنف`);
         }
-        const definitionEdges = definition?.edges.map((edge) => ({
-          id: edge.id,
-          fromUnitId: edge.fromUnitId,
-          toUnitId: edge.toUnitId,
-          factor: edge.factor,
-          reversible: edge.reversible,
-          allowDimensionBridge: edge.allowDimensionBridge,
-        })) ?? [];
-        const inputConversion = resolveOrdersV4Conversion({
+        const definitionEdges = ordersV4EdgeDefinitions(definition?.edges);
+        const inputConversion = resolveOrdersV4ContextConversion({
           fromUnitId: line.unitId,
           toUnitId: item.inventoryUnitId,
           units: unitDefinitions,
@@ -197,7 +185,7 @@ export class OrdersV4DocumentsService {
         if (!item.units.some((row) => row.unitId === priceUnitId && row.isActive)) {
           throw new BadRequestException(`${item.nameAr}: وحدة السعر غير مضافة إلى بطاقة الصنف`);
         }
-        const priceConversion = resolveOrdersV4Conversion({
+        const priceConversion = resolveOrdersV4ContextConversion({
           fromUnitId: priceUnitId,
           toUnitId: item.inventoryUnitId,
           units: unitDefinitions,
@@ -287,11 +275,8 @@ export class OrdersV4DocumentsService {
           if (row.recipe) {
             let recipeCost = new Prisma.Decimal(0);
             const recipeCostLines: Prisma.InputJsonObject[] = [];
-            const outputDefinitionEdges = row.definition?.edges.map((edge) => ({
-              id: edge.id, fromUnitId: edge.fromUnitId, toUnitId: edge.toUnitId, factor: edge.factor,
-              reversible: edge.reversible, allowDimensionBridge: edge.allowDimensionBridge,
-            })) ?? [];
-            const outputConversion = resolveOrdersV4Conversion({
+            const outputDefinitionEdges = ordersV4EdgeDefinitions(row.definition?.edges);
+            const outputConversion = resolveOrdersV4ContextConversion({
               fromUnitId: row.recipe.outputUnitId,
               toUnitId: row.item.inventoryUnitId,
               units: unitDefinitions,
@@ -300,11 +285,8 @@ export class OrdersV4DocumentsService {
             for (const component of row.recipe.lines) {
               if (!component.componentItem.trackInventory) continue;
               const componentDefinition = component.componentItem.conversionVersions[0];
-              const componentEdges = componentDefinition?.edges.map((edge) => ({
-                id: edge.id, fromUnitId: edge.fromUnitId, toUnitId: edge.toUnitId, factor: edge.factor,
-                reversible: edge.reversible, allowDimensionBridge: edge.allowDimensionBridge,
-              })) ?? [];
-              const componentConversion = resolveOrdersV4Conversion({
+              const componentEdges = ordersV4EdgeDefinitions(componentDefinition?.edges);
+              const componentConversion = resolveOrdersV4ContextConversion({
                 fromUnitId: component.unitId,
                 toUnitId: component.componentItem.inventoryUnitId,
                 units: unitDefinitions,
@@ -325,7 +307,7 @@ export class OrdersV4DocumentsService {
               });
               const normalizedPrices = recentPrices.map((price) => calculateOrdersV4ConvertedUnitPrice(
                 price.inventoryUnitPrice,
-                resolveOrdersV4Conversion({
+                resolveOrdersV4ContextConversion({
                   fromUnitId: price.inventoryUnitId,
                   toUnitId: component.componentItem.inventoryUnitId,
                   units: unitDefinitions,
@@ -434,7 +416,7 @@ export class OrdersV4DocumentsService {
       });
       if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف الاستلام غير صالح');
       const units = await tx.ordersV4Unit.findMany({ where: { companyId, isActive: true } });
-      const unitDefinitions = units.map(toUnitDefinition);
+      const unitDefinitions = ordersV4UnitDefinitions(units);
       const itemById = new Map(items.map((item) => [item.id, item]));
       const prepared = input.lines.map((line, index) => {
         const item = itemById.get(line.itemId);
@@ -447,11 +429,11 @@ export class OrdersV4DocumentsService {
           throw new BadRequestException(`${item.nameAr}: وحدة السعر غير مضافة إلى بطاقة الصنف`);
         }
         const definition = item.conversionVersions[0];
-        const edges = definition?.edges.map((edge) => ({ ...edge })) ?? [];
-        const inputConversion = resolveOrdersV4Conversion({
+        const edges = ordersV4EdgeDefinitions(definition?.edges);
+        const inputConversion = resolveOrdersV4ContextConversion({
           fromUnitId: line.unitId, toUnitId: item.inventoryUnitId, units: unitDefinitions, edges,
         });
-        const priceConversion = resolveOrdersV4Conversion({
+        const priceConversion = resolveOrdersV4ContextConversion({
           fromUnitId: priceUnitId, toUnitId: item.inventoryUnitId, units: unitDefinitions, edges,
         });
         const calculation = calculateOrdersV4Line({
@@ -617,14 +599,9 @@ export class OrdersV4DocumentsService {
             },
           },
         }),
-        tx.ordersV4Unit.findMany({ where: { companyId, isActive: true } }),
+        tx.ordersV4Unit.findMany({ where: { companyId } }),
       ]);
-      const unitDefinitions = companyUnits.map((unit) => ({
-        id: unit.id,
-        code: unit.code,
-        dimension: unit.dimension,
-        canonicalFactor: unit.canonicalFactor,
-      }));
+      const unitDefinitions = ordersV4UnitDefinitions(companyUnits);
       const originalCustody = await tx.ordersV4CustodyLedgerEntry.findMany({
         where: { companyId, documentId: original.id }, orderBy: { sequence: 'asc' },
       });
@@ -650,14 +627,11 @@ export class OrdersV4DocumentsService {
         const item = ledgerItems.find((row) => row.id === entry.itemId);
         if (!item) throw new BadRequestException('تعذر العثور على صنف قيد المخزون المراد عكسه');
         const definition = item.conversionVersions[0];
-        const currentConversion = resolveOrdersV4Conversion({
+        const currentConversion = resolveOrdersV4ContextConversion({
           fromUnitId: entry.inventoryUnitId,
           toUnitId: item.inventoryUnitId,
           units: unitDefinitions,
-          edges: definition?.edges.map((edge) => ({
-            ...edge,
-            allowDimensionBridge: edge.allowDimensionBridge,
-          })) ?? [],
+          edges: ordersV4EdgeDefinitions(definition?.edges),
         });
         await this.posting.postReversal(tx, {
           tenantId,

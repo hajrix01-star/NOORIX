@@ -5,9 +5,10 @@ import {
   calculateOrdersV4Issue,
   calculateOrdersV4Receipt,
   calculateOrdersV4Reversal,
+  calculateOrdersV4StocktakeAdjustment,
   calculateOrdersV4UnitRebase,
 } from './orders-v4-calculation.kernel';
-import type { OrdersV4InventoryCalculation, OrdersV4ResolvedConversion } from './orders-v4-kernel.types';
+import type { OrdersV4ResolvedConversion } from './orders-v4-kernel.types';
 import type { OrdersV4InventoryBalance } from './orders-v4-kernel.types';
 
 type OrdersV4Transaction = Prisma.TransactionClient;
@@ -67,23 +68,38 @@ export class OrdersV4LedgerPostingService {
 
   async postStocktakeAdjustment(tx: OrdersV4Transaction, input: {
     tenantId: string; companyId: string; itemId: string; inventoryUnitId: string; locationId: string;
-    stocktakeId: string; stocktakeLineId: string; effectiveAt: Date; calculation: OrdersV4InventoryCalculation;
-    stocktakeNumber: string;
+    stocktakeId: string; effectiveAt: Date; physicalQuantity: Prisma.Decimal.Value; stocktakeNumber: string;
   }) {
     await this.lockKeys(tx, input.companyId, [{ itemId: input.itemId, locationId: input.locationId }]);
-    if (input.calculation.quantityDelta.isZero()) return null;
+    const balance = await this.currentBalance(tx, input.companyId, input.itemId, input.locationId, input.inventoryUnitId);
+    const calculation = calculateOrdersV4StocktakeAdjustment(balance, input.physicalQuantity);
+    const stocktakeLine = await tx.ordersV4StocktakeLine.create({
+      data: {
+        tenantId: input.tenantId,
+        companyId: input.companyId,
+        stocktakeId: input.stocktakeId,
+        itemId: input.itemId,
+        unitId: input.inventoryUnitId,
+        expectedQuantity: balance.quantity,
+        physicalQuantity: calculation.quantityAfter,
+        varianceQuantity: calculation.quantityDelta,
+        unitCost: calculation.unitCost,
+        varianceValue: calculation.valueDelta,
+      },
+    });
+    if (calculation.quantityDelta.isZero()) return { stocktakeLine, entry: null, calculation };
     const entry = await tx.ordersV4InventoryLedgerEntry.create({
       data: {
         tenantId: input.tenantId, companyId: input.companyId, itemId: input.itemId,
         inventoryUnitId: input.inventoryUnitId, locationId: input.locationId,
-        effectiveAt: input.effectiveAt, entryType: 'stocktake_adjustment', ...input.calculation,
+        effectiveAt: input.effectiveAt, entryType: 'stocktake_adjustment', ...calculation,
         sourceType: 'stocktake', sourceId: input.stocktakeId,
-        sourceKey: `stocktake:${input.stocktakeId}:line:${input.stocktakeLineId}`,
-        sourceSnapshot: { kernelVersion: 4, stocktakeNumber: input.stocktakeNumber, stocktakeLineId: input.stocktakeLineId },
+        sourceKey: `stocktake:${input.stocktakeId}:line:${stocktakeLine.id}`,
+        sourceSnapshot: { kernelVersion: 4, stocktakeNumber: input.stocktakeNumber, stocktakeLineId: stocktakeLine.id },
         createdByUserId: TenantContext.getUserId(),
       },
     });
-    return entry;
+    return { stocktakeLine, entry, calculation };
   }
 
   async postReversal(tx: OrdersV4Transaction, input: {

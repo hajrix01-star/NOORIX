@@ -14,6 +14,8 @@ import {
 import { resolveOrdersV4Conversion, validateOrdersV4ConversionDefinition } from './orders-v4-conversion.kernel';
 import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
 import type { OrdersV4ConversionEdgeDefinition, OrdersV4UnitDefinition } from './orders-v4-kernel.types';
+import { assertOrdersV4UnitDeactivationAllowed } from './orders-v4-unit-governance.kernel';
+import { decideOrdersV4VersionPublication, ordersV4StableHash } from './orders-v4-version.kernel';
 
 const units: OrdersV4UnitDefinition[] = [
   { id: 'piece', code: 'piece', dimension: 'count', canonicalFactor: new Prisma.Decimal(1) },
@@ -133,6 +135,36 @@ describe('Orders Core V4 kernel', () => {
     expect(reversed.valueDelta.toString()).toBe('-576');
     expect(reversed.quantityAfter.toString()).toBe('0');
     expect(reversed.valueAfter.toString()).toBe('0');
+  });
+
+  it('publishes a fresh version when reverting from B back to a retired A definition', () => {
+    const definitionA = [{ fromUnitId: 'carton', toUnitId: 'piece', factor: '288' }];
+    const semanticHashA = ordersV4StableHash(definitionA);
+    const reverted = decideOrdersV4VersionPublication({
+      currentDefinition: [{ fromUnitId: 'carton', toUnitId: 'piece', factor: '300' }],
+      candidateDefinition: definitionA,
+      semanticHash: semanticHashA,
+      hashAlreadyExists: true,
+      predecessorVersionId: 'version-b',
+      nextVersion: 3,
+    });
+    expect(reverted.reuseCurrent).toBe(false);
+    expect(reverted.contentHash).not.toBe(semanticHashA);
+
+    const repeated = decideOrdersV4VersionPublication({
+      currentDefinition: definitionA,
+      candidateDefinition: definitionA,
+      semanticHash: semanticHashA,
+      hashAlreadyExists: true,
+      predecessorVersionId: 'version-a2',
+      nextVersion: 4,
+    });
+    expect(repeated.reuseCurrent).toBe(true);
+  });
+
+  it('blocks deactivation of any referenced unit and permits an unused unit', () => {
+    expect(() => assertOrdersV4UnitDeactivationAllowed([0, 0, 1, 0])).toThrow(BadRequestException);
+    expect(() => assertOrdersV4UnitDeactivationAllowed([0, 0, 0])).not.toThrow();
   });
 });
 

@@ -3,7 +3,6 @@ import { Prisma } from '@prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { calculateOrdersV4StocktakeAdjustment } from './orders-v4-calculation.kernel';
 import type { OrdersV4StocktakeInput } from './orders-v4.contracts';
 import { ordersV4DateOnly } from './orders-v4-date.util';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
@@ -132,20 +131,10 @@ export class OrdersV4InventoryService {
       for (const line of [...input.lines].sort((a, b) => a.itemId.localeCompare(b.itemId))) {
         const item = items.find((row) => row.id === line.itemId);
         if (!item) throw new BadRequestException('صنف الجرد غير موجود');
-        const balance = await this.posting.currentBalance(tx, companyId, item.id, location.id, item.inventoryUnitId);
-        const calculation = calculateOrdersV4StocktakeAdjustment(balance, line.physicalQuantity);
-        const createdLine = await tx.ordersV4StocktakeLine.create({
-          data: {
-            tenantId, companyId, stocktakeId: stocktake.id, itemId: item.id, unitId: item.inventoryUnitId,
-            expectedQuantity: balance.quantity, physicalQuantity: calculation.quantityAfter,
-            varianceQuantity: calculation.quantityDelta, unitCost: calculation.unitCost,
-            varianceValue: calculation.valueDelta,
-          },
-        });
         await this.posting.postStocktakeAdjustment(tx, {
           tenantId, companyId, itemId: item.id, inventoryUnitId: item.inventoryUnitId, locationId: location.id,
-          stocktakeId: stocktake.id, stocktakeLineId: createdLine.id, effectiveAt: date,
-          calculation, stocktakeNumber: stocktake.stocktakeNumber,
+          stocktakeId: stocktake.id, effectiveAt: date, physicalQuantity: line.physicalQuantity,
+          stocktakeNumber: stocktake.stocktakeNumber,
         });
       }
       return tx.ordersV4Stocktake.findUniqueOrThrow({
