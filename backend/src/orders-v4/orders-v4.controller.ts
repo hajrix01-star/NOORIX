@@ -24,6 +24,7 @@ import type {
 import { OrdersV4DocumentsService } from './orders-v4-documents.service';
 import { OrdersV4InventoryService } from './orders-v4-inventory.service';
 import { OrdersV4ItemDefinitionService } from './orders-v4-item-definition.service';
+import { OrdersV4LegacyCutoverService } from './orders-v4-legacy-cutover.service';
 import { OrdersV4ReportsService } from './orders-v4-reports.service';
 
 function userCan(user: JwtUser, permission: Permission): boolean {
@@ -44,6 +45,7 @@ export class OrdersV4Controller {
     private readonly documents: OrdersV4DocumentsService,
     private readonly inventory: OrdersV4InventoryService,
     private readonly itemDefinitions: OrdersV4ItemDefinitionService,
+    private readonly legacyCutover: OrdersV4LegacyCutoverService,
     private readonly reports: OrdersV4ReportsService,
   ) {}
 
@@ -245,5 +247,11 @@ export class OrdersV4Controller {
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_REPORTS_READ', 'ORDERS_V4_INVENTORY_WRITE')
   dataQuality(@CompanyId() companyId: string) {
     return this.inventory.dataQuality(requireCompanyId(companyId));
+  }
+
+  @Get('cutover/audit')
+  @RequirePermission('ORDERS_V4_DELETE')
+  cutoverAudit(@CompanyId() companyId: string) {
+    return this.legacyCutover.audit(requireCompanyId(companyId));
   }
 }
