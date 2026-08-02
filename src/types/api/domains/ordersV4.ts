@@ -124,12 +124,14 @@ export type OrdersV4Document = {
   paymentMethod?: 'custody' | 'cash' | 'transfer' | null;
   documentDate: string;
   status: 'prepared' | 'received' | 'cancelled' | 'reversed';
+  reversalOfId?: string | null;
   revision: number;
   receivedAt?: string | null;
   createdAt: string;
   sectionId?: string | null;
   locationId: string;
   pettyCashAmount?: string | null;
+  custodyBalanceAfter?: string | null;
   subtotal: string;
   totalAmount: string;
   operationalCost: string;

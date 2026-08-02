@@ -2,6 +2,7 @@ import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, 
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { CurrentUser, type JwtUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { hasPermission, PERMISSIONS, type Permission } from '../auth/constants/permissions';
@@ -192,6 +193,16 @@ export class OrdersV4Controller {
     @Body() body: { idempotencyKey?: string },
   ) {
     return this.documents.reverse(requireCompanyId(companyId), id, body.idempotencyKey || '');
+  }
+
+  @Post('documents/:id/undo-reverse')
+  @Roles('owner')
+  undoReverseDocument(
+    @CompanyId() companyId: string,
+    @Param('id') id: string,
+    @Body() body: { idempotencyKey?: string },
+  ) {
+    return this.documents.undoReverse(requireCompanyId(companyId), id, body.idempotencyKey || '');
   }
 
   @Get('reports/summary')

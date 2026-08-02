@@ -44,6 +44,10 @@ export function reverseOrdersV4Document(companyId: string, id: string, idempoten
   return apiPost(`${BASE}/documents/${encodeURIComponent(id)}/reverse?companyId=${encodeURIComponent(companyId)}`, { idempotencyKey });
 }
 
+export function undoReverseOrdersV4Document(companyId: string, id: string, idempotencyKey: string): Promise<ApiParsedResult<OrdersV4Document>> {
+  return apiPost(`${BASE}/documents/${encodeURIComponent(id)}/undo-reverse?companyId=${encodeURIComponent(companyId)}`, { idempotencyKey });
+}
+
 export function getOrdersV4Summary(companyId: string, startDate: string, endDate: string): Promise<ApiParsedResult<OrdersV4Summary>> {
   return apiGet(`${BASE}/reports/summary`, { companyId, startDate, endDate });
 }

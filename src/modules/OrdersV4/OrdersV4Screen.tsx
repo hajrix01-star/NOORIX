@@ -14,12 +14,16 @@ import { useOrdersV4Bootstrap } from './useOrdersV4';
 type TabId = 'requests' | 'registration' | 'reports' | 'catalog' | 'inventory';
 
 export default function OrdersV4Screen() {
-  const { activeCompanyId, userRole, userPermissions } = useApp();
+  const { activeCompanyId, userRole, userPermissions, companies = [] } = useApp();
   const { lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
+  const activeCompany = companies.find((company) => company.id === companyId);
+  const companyName = activeCompany?.nameAr || activeCompany?.nameEn || '';
+  const companyLogoUrl = String(activeCompany?.logoUrl || '');
   const dateFilter = useDateFilter();
   const bootstrapQuery = useOrdersV4Bootstrap(companyId);
   const [reportTab, setReportTab] = useState<'items' | 'registration'>('items');
+  const isOwner = String(userRole || '').toLowerCase() === 'owner';
   const admin = ['owner', 'super_admin'].includes(String(userRole || '').toLowerCase());
   const can = (permission: string) => admin || hasPermission(userRole, permission, userPermissions);
   const canWrite = can(PERMISSIONS.ORDERS_V4_WRITE);
@@ -49,7 +53,7 @@ export default function OrdersV4Screen() {
           <div className="flex items-center gap-2"><ScreenTitle>{lang === 'ar' ? 'طلبات V4' : 'Orders V4'}</ScreenTitle><span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-[10px] font-extrabold text-violet-700">CORE V4</span></div>
           <p className="m-0 mt-1 text-[12px] text-noorix-muted">{lang === 'ar' ? 'قسم تشغيلي مستقل للطلبات والتسجيل الداخلي والمخزون والتكلفة والعهدة.' : 'Independent operational orders, internal registration, inventory, costing and custody.'}</p>
         </div>
-        <DateFilterBar filter={dateFilter} modes={['month', 'range', 'quarter', 'year']} />
+        <DateFilterBar filter={dateFilter} modes={['all', 'day', 'month', 'range', 'quarter', 'year']} />
       </div>
       {!companyId && <div className="noorix-surface-card p-8 text-center text-noorix-muted">{lang === 'ar' ? 'اختر شركة للبدء' : 'Select a company to continue'}</div>}
       {companyId && tabs.length === 0 && <div className="noorix-surface-card p-8 text-center text-red-700">{lang === 'ar' ? 'لا توجد صلاحية لدخول طلبات V4' : 'No Orders V4 permission'}</div>}
@@ -65,8 +69,8 @@ export default function OrdersV4Screen() {
           contentClassName="min-h-[260px] px-1 py-3 sm:px-3"
         >
           <OrdersV4QueryState loading={bootstrapQuery.isLoading} error={bootstrapQuery.error as Error | null} />
-          {!bootstrapQuery.isLoading && activeTab === 'requests' && <OrdersV4DocumentsTab companyId={companyId} documentType="purchase" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreatePurchase} canReverse={canDelete} canReceive={canReceive} />}
-          {!bootstrapQuery.isLoading && activeTab === 'registration' && <OrdersV4DocumentsTab companyId={companyId} documentType="registration" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreateRegistration} canReverse={canDelete} />}
+          {!bootstrapQuery.isLoading && activeTab === 'requests' && <OrdersV4DocumentsTab companyId={companyId} documentType="purchase" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreatePurchase} canReverse={canDelete} canUndoReverse={isOwner} canReceive={canReceive} companyName={companyName} companyLogoUrl={companyLogoUrl} />}
+          {!bootstrapQuery.isLoading && activeTab === 'registration' && <OrdersV4DocumentsTab companyId={companyId} documentType="registration" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreateRegistration} canReverse={canDelete} canUndoReverse={isOwner} companyName={companyName} companyLogoUrl={companyLogoUrl} />}
           {!bootstrapQuery.isLoading && activeTab === 'reports' && <ScreenTabs items={[{ id: 'items', label: lang === 'ar' ? 'تقارير الأصناف' : 'Item reports' }, { id: 'registration', label: lang === 'ar' ? 'تقرير داخلي' : 'Internal report' }]} value={reportTab} onChange={(id) => setReportTab(id as 'items' | 'registration')} variant="segmented" segmentedFlat barClassName={ordersV4NavigationBarClassName} getTabClassName={ordersV4NavigationTabClassName} contentClassName="pt-3">{reportTab === 'items' ? <OrdersV4ItemsReportTab companyId={companyId} startDate={dateFilter.startDate} endDate={dateFilter.endDate} /> : <OrdersV4SalesReportTab companyId={companyId} startDate={dateFilter.startDate} endDate={dateFilter.endDate} />}</ScreenTabs>}
           {!bootstrapQuery.isLoading && activeTab === 'catalog' && <OrdersV4CatalogTab companyId={companyId} bootstrap={bootstrapQuery.data} canDelete={canDelete} />}
           {!bootstrapQuery.isLoading && activeTab === 'inventory' && <OrdersV4InventoryTab companyId={companyId} bootstrap={bootstrapQuery.data} canWrite={canInventoryWrite} canCutover={canDelete} />}

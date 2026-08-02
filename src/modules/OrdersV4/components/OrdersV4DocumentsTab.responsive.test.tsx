@@ -10,7 +10,8 @@ vi.mock('../useOrdersV4', () => ({
   useOrdersV4Summary: () => ({ data: undefined }),
   useCreateOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReceiveOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
-  useReverseOrdersV4Document: () => ({ isPending: false, mutate: vi.fn() }),
+  useReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useUndoReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
 const bootstrap = {

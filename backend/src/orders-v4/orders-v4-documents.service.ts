@@ -78,18 +78,21 @@ export class OrdersV4DocumentsService {
         companyId,
         createdByUserId: createdByUserId || undefined,
         documentType: documentType || undefined,
+        reversalOfId: null,
         documentDate: ordersV4RangeBounds(startDate, endDate),
       },
       include: {
         section: true,
         location: true,
+        custodyEntries: { orderBy: { sequence: 'desc' }, take: 1, select: { balanceAfter: true } },
         lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } },
       },
       orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
     });
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
-    return documents.map((document) => ({
+    return documents.map(({ custodyEntries, ...document }) => ({
       ...document,
+      custodyBalanceAfter: custodyEntries[0]?.balanceAfter ?? null,
       createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
     }));
   }
@@ -667,22 +670,41 @@ export class OrdersV4DocumentsService {
     });
   }
 
-  async reverse(companyId: string, id: string, idempotencyKey: string) {
+  reverse(companyId: string, id: string, idempotencyKey: string) {
+    return this.toggleReversal(companyId, id, idempotencyKey, false);
+  }
+
+  undoReverse(companyId: string, id: string, idempotencyKey: string) {
+    return this.toggleReversal(companyId, id, idempotencyKey, true);
+  }
+
+  private async toggleReversal(companyId: string, id: string, idempotencyKey: string, undo: boolean) {
     if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     const tenantId = TenantContext.getTenantId();
-    const reversalRequestHash = requestHash({ operation: 'reverse', documentId: id });
+    const operation = undo ? 'undo-reverse' : 'reverse';
+    const reversalRequestHash = requestHash({ operation, documentId: id });
     return this.prisma.withTenant(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:reverse:${companyId}:${id}`}))`;
       const duplicate = await tx.ordersV4Document.findFirst({ where: { companyId, idempotencyKey: idempotencyKey.trim() } });
       if (duplicate) {
         if (duplicate.requestHash !== reversalRequestHash) throw new BadRequestException('مفتاح منع التكرار مستخدم لعملية مختلفة');
         return duplicate;
       }
       const original = await tx.ordersV4Document.findFirst({
-        where: { id, companyId, status: 'received' }, include: { lines: true },
+        where: { id, companyId, status: undo ? 'reversed' : 'received', reversalOfId: null }, include: { lines: true },
       });
-      if (!original) throw new NotFoundException('المستند غير موجود أو سبق عكسه');
+      if (!original) throw new NotFoundException(undo ? 'المستند غير موجود أو لم يتم عكسه' : 'المستند غير موجود أو سبق عكسه');
+      let chainHead = original;
+      const visited = new Set<string>([original.id]);
+      while (true) {
+        const next = await tx.ordersV4Document.findFirst({ where: { companyId, reversalOfId: chainHead.id }, include: { lines: true } });
+        if (!next) break;
+        if (visited.has(next.id)) throw new BadRequestException('تم اكتشاف دورة غير صالحة في سلسلة العكس');
+        visited.add(next.id);
+        chainHead = next;
+      }
       const originalLedger = await tx.ordersV4InventoryLedgerEntry.findMany({
-        where: { companyId, sourceId: original.id }, orderBy: { sequence: 'desc' },
+        where: { companyId, sourceId: chainHead.id }, orderBy: { sequence: 'desc' },
       });
       const ledgerItemIds = [...new Set(originalLedger.map((entry) => entry.itemId))];
       const historicalConversionIds = [...new Set(originalLedger.map((entry) => entry.conversionVersionId).filter(Boolean) as string[])];
@@ -706,24 +728,31 @@ export class OrdersV4DocumentsService {
       ]);
       const unitDefinitions = ordersV4UnitDefinitions(companyUnits);
       const originalCustody = await tx.ordersV4CustodyLedgerEntry.findMany({
-        where: { companyId, documentId: original.id }, orderBy: { sequence: 'asc' },
+        where: { companyId, documentId: chainHead.id }, orderBy: { sequence: 'asc' },
       });
       await this.posting.lockKeys(tx, companyId, originalLedger.map((entry) => ({ itemId: entry.itemId, locationId: entry.locationId })));
       const reversal = await tx.ordersV4Document.create({
         data: {
           tenantId, companyId,
-          documentNumber: `${original.documentNumber}-R`,
+          documentNumber: `${original.documentNumber}-${undo ? 'UNDO' : 'R'}-${randomUUID().slice(0, 8).toUpperCase()}`,
           documentType: original.documentType,
           paymentMethod: original.paymentMethod,
           documentDate: new Date(), status: 'reversed', sectionId: original.sectionId,
-          locationId: original.locationId, pettyCashAmount: original.pettyCashAmount?.negated() ?? null,
-          subtotal: original.subtotal.negated(), totalAmount: original.totalAmount.negated(),
-          operationalCost: original.operationalCost.negated(),
-          notes: `عكس ${original.documentNumber}`, idempotencyKey: idempotencyKey.trim(),
+          locationId: original.locationId, pettyCashAmount: chainHead.pettyCashAmount?.negated() ?? null,
+          subtotal: chainHead.subtotal.negated(), totalAmount: chainHead.totalAmount.negated(),
+          operationalCost: chainHead.operationalCost.negated(),
+          notes: undo ? `إلغاء عكس ${original.documentNumber}` : `عكس ${original.documentNumber}`,
+          idempotencyKey: idempotencyKey.trim(),
           requestHash: reversalRequestHash,
           calculationVersion: 1,
-          calculationSnapshot: { kernelVersion: 4, reversalOfId: original.id, operationalCost: original.operationalCost.negated().toString() },
-          reversalOfId: original.id, createdByUserId: TenantContext.getUserId(),
+          calculationSnapshot: {
+            kernelVersion: 4,
+            operation,
+            rootDocumentId: original.id,
+            reversalOfId: chainHead.id,
+            operationalCost: chainHead.operationalCost.negated().toString(),
+          },
+          reversalOfId: chainHead.id, createdByUserId: TenantContext.getUserId(),
         },
       });
       const reversedAt = new Date();
@@ -755,7 +784,10 @@ export class OrdersV4DocumentsService {
           effectiveAt: reversedAt, originals: originalCustody,
         });
       }
-      await tx.ordersV4Document.update({ where: { id: original.id }, data: { status: 'reversed', updatedByUserId: TenantContext.getUserId() } });
+      await tx.ordersV4Document.update({
+        where: { id: original.id },
+        data: { status: undo ? 'received' : 'reversed', updatedByUserId: TenantContext.getUserId() },
+      });
       for (const line of original.lines) {
         const latestPrice = await tx.ordersV4PriceHistory.findFirst({
           where: { companyId, itemId: line.itemId, unitId: line.priceUnitId, document: { status: 'received' } },

@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { OrdersV4Bootstrap, OrdersV4CutoverAudit, OrdersV4CutoverResult, OrdersV4DataQuality, OrdersV4InventoryBalance, OrdersV4LedgerEntry, OrdersV4Stocktake, OrdersV4UserIdentity } from '../../../types/api';
-import { Button, DialogActions, Input, Modal, ScreenTabs, type SimpleTableColumn, TransactionDatePicker } from '../../../ui';
+import { Button, DialogActions, Input, Modal, ScreenTabs, type SimpleTableColumn } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import {
   OrdersV4Field,
@@ -265,55 +265,106 @@ function QualityTable({ query }: { query: ReturnType<typeof useOrdersV4DataQuali
 
 function StocktakeModal({ open, onClose, companyId, bootstrap, balances }: { open: boolean; onClose: () => void; companyId: string; bootstrap?: OrdersV4Bootstrap; balances: OrdersV4InventoryBalance[] }) {
   const mutation = useCreateOrdersV4Stocktake(companyId);
-  const [date, setDate] = useState(getSaudiToday());
   const [locationId, setLocationId] = useState('');
+  const [sectionId, setSectionId] = useState('all');
+  const [search, setSearch] = useState('');
+  const [notes, setNotes] = useState('');
   const [physical, setPhysical] = useState<Record<string, Record<string, string>>>({});
+  const date = getSaudiToday();
   const effectiveLocation = locationId || bootstrap?.locations.find((row) => row.isActive)?.id || '';
-  const scoped = balances.filter((row) => !effectiveLocation || row.locationId === effectiveLocation);
-  const columns: SimpleTableColumn<OrdersV4InventoryBalance>[] = [
-    { key: 'itemName', label: 'الصنف', minWidth: 220 },
-    { key: 'quantity', label: 'المتوقع', numeric: true, render: (value, row) => {
-      const item = bootstrap?.items.find((candidate) => candidate.id === row.itemId);
-      const conversion = bootstrap?.conversions.find((candidate) => candidate.itemId === row.itemId && candidate.status === 'published');
-      return ordersV4CompositeQuantity(String(value), item, conversion)?.primary ?? v4Number(value, 6);
-    } },
-    {
-      key: 'physicalQuantity',
-      label: 'الفعلي',
-      minWidth: 320,
-      render: (_value, row) => {
-        const item = bootstrap?.items.find((candidate) => candidate.id === row.itemId);
-        const conversion = bootstrap?.conversions.find((candidate) => candidate.itemId === row.itemId && candidate.status === 'published');
-        const inputUnits = item?.units.filter((unit) => unit.isActive).map((unit) => ({
-          ...unit,
-          factor: ordersV4UnitFactorToBase(unit.unitId, item.inventoryUnitId, conversion),
-        })).filter((unit) => unit.factor != null && unit.factor >= 1).sort((left, right) => Number(right.factor) - Number(left.factor)) ?? [];
-        return <div className="flex min-w-[300px] flex-wrap gap-2">{inputUnits.map((unit) => <label key={unit.unitId} className="min-w-[90px] flex-1"><span className="mb-1 block text-[10px] font-bold text-noorix-muted">{unit.unit.nameAr}</span><Input type="number" min="0" step="any" value={physical[row.itemId]?.[unit.unitId] ?? ''} placeholder="0" onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPhysical((current) => ({ ...current, [row.itemId]: { ...current[row.itemId], [unit.unitId]: event.target.value } }))} /></label>)}</div>;
-      },
-    },
-  ];
+  const itemById = useMemo(() => new Map((bootstrap?.items ?? []).map((item) => [item.id, item])), [bootstrap?.items]);
+  const scopeRows = useMemo(() => balances.filter((row) => (!effectiveLocation || row.locationId === effectiveLocation)
+    && (sectionId === 'all' || itemById.get(row.itemId)?.sections.some((entry) => entry.section.id === sectionId))), [balances, effectiveLocation, itemById, sectionId]);
+  const scoped = useMemo(() => {
+    const needle = normalized(search);
+    return scopeRows.filter((row) => !needle || normalized(`${row.itemName} ${row.categoryName} ${row.unitName}`).includes(needle));
+  }, [scopeRows, search]);
+
+  useEffect(() => {
+    if (!open) return;
+    setLocationId(bootstrap?.locations.find((row) => row.isActive)?.id || '');
+    setSectionId('all');
+    setSearch('');
+    setNotes('');
+    setPhysical({});
+  }, [bootstrap?.locations, open]);
+
+  function rowDefinition(row: OrdersV4InventoryBalance) {
+    const item = itemById.get(row.itemId);
+    const conversion = bootstrap?.conversions.find((candidate) => candidate.itemId === row.itemId && candidate.status === 'published');
+    const units = item?.units.filter((unit) => unit.isActive).map((unit) => ({
+      ...unit,
+      factor: ordersV4UnitFactorToBase(unit.unitId, item.inventoryUnitId, conversion),
+    })).filter((unit): unit is typeof unit & { factor: number } => unit.factor != null && unit.factor >= 1)
+      .sort((left, right) => right.factor - left.factor) ?? [];
+    return { item, conversion, units };
+  }
+
   function physicalBaseQuantity(row: OrdersV4InventoryBalance) {
     const values = physical[row.itemId];
     if (!values || !Object.values(values).some((value) => value !== '')) return String(row.quantity);
-    const item = bootstrap?.items.find((candidate) => candidate.id === row.itemId);
-    const conversion = bootstrap?.conversions.find((candidate) => candidate.itemId === row.itemId && candidate.status === 'published');
+    const { item, conversion } = rowDefinition(row);
     return String(Object.entries(values).reduce((total, [unitId, value]) => {
       const factor = item ? ordersV4UnitFactorToBase(unitId, item.inventoryUnitId, conversion) : null;
       return total + (Number(value) || 0) * (factor ?? 0);
     }, 0));
   }
+
+  function setPhysicalValue(row: OrdersV4InventoryBalance, unitId: string, value: string) {
+    setPhysical((current) => ({
+      ...current,
+      [row.itemId]: { ...(current[row.itemId] ?? {}), [unitId]: value },
+    }));
+  }
+
   async function submit() {
-    if (!effectiveLocation || !scoped.length) return;
-    await mutation.mutateAsync({ stocktakeDate: date, locationId: effectiveLocation, idempotencyKey: crypto.randomUUID(), lines: scoped.map((row) => ({ itemId: row.itemId, physicalQuantity: physicalBaseQuantity(row) })) });
+    if (!effectiveLocation || !scopeRows.length) return;
+    await mutation.mutateAsync({ stocktakeDate: date, locationId: effectiveLocation, notes: notes.trim() || undefined, idempotencyKey: crypto.randomUUID(), lines: scopeRows.map((row) => ({ itemId: row.itemId, physicalQuantity: physicalBaseQuantity(row) })) });
     onClose();
   }
-  return <Modal open={open} onClose={onClose} size="xl" title="جرد مخزون V4" footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose }, { key: 'save', label: 'اعتماد الفروقات', role: 'save', onClick: submit, loading: mutation.isPending }]} />}>
-    <div className="flex flex-col gap-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <OrdersV4Field label="تاريخ الجرد"><TransactionDatePicker value={date} onValueChange={setDate} /></OrdersV4Field>
-        <OrdersV4Field label="الموقع"><OrdersV4Select value={effectiveLocation} onChange={(event) => setLocationId(event.target.value)}>{bootstrap?.locations.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+  return <Modal open={open} onClose={onClose} size="xl" title="جرد المخزون" footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose }, { key: 'save', label: 'اعتماد الجرد', role: 'save', onClick: submit, loading: mutation.isPending, disabled: !scopeRows.length }]} />}>
+    <div className="flex flex-col gap-4">
+      <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-6 text-blue-900">
+        الجرد التشغيلي يعتمد تاريخ اليوم بتوقيت السعودية: <b>{date}</b>. الرصيد الدفتري يُعاد احتسابه لحظة الاعتماد لضمان سلامة القيود.
       </div>
-      <div className="max-h-[50vh] overflow-auto"><SimpleTable columns={columns} data={scoped} tableMinWidth={560} emptyMessage="لا توجد أرصدة مخزنية في الموقع" /></div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <OrdersV4Field label="موقع المخزون"><OrdersV4Select value={effectiveLocation} onChange={(event) => { setLocationId(event.target.value); setPhysical({}); }}>{bootstrap?.locations.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+        <OrdersV4Field label="بحث في الأصناف"><Input type="search" value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)} placeholder="اسم الصنف أو الفئة…" /></OrdersV4Field>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[12px] font-bold text-noorix-muted">نطاق الجرد:</span>
+        <Button size="sm" variant={sectionId === 'all' ? 'primary' : 'ghost'} onClick={() => setSectionId('all')}>كل الأقسام / جرد كامل</Button>
+        {bootstrap?.sections.filter((section) => section.isActive).map((section) => <Button key={section.id} size="sm" variant={sectionId === section.id ? 'primary' : 'ghost'} onClick={() => setSectionId(section.id)}>{section.nameAr}</Button>)}
+        <span className="ms-auto rounded-full bg-noorix-bg-muted px-3 py-1 text-[12px] font-bold">{search.trim() ? `${scoped.length} ظاهر من ${scopeRows.length}` : scopeRows.length} صنف</span>
+      </div>
+      <div className="max-h-[52vh] space-y-2 overflow-y-auto pe-1">
+        {scoped.map((row) => {
+          const { item, conversion, units } = rowDefinition(row);
+          const expected = Number(row.quantity);
+          const physicalBase = Number(physicalBaseQuantity(row));
+          const variance = physicalBase - expected;
+          const expectedDisplay = ordersV4CompositeQuantity(row.quantity, item, conversion)?.primary ?? `${v4Number(row.quantity, 6)} ${row.unitName}`;
+          const physicalDisplay = ordersV4CompositeQuantity(physicalBase, item, conversion)?.primary ?? `${v4Number(physicalBase, 6)} ${row.unitName}`;
+          const varianceDisplay = ordersV4CompositeQuantity(variance, item, conversion)?.primary ?? `${v4Number(variance, 6)} ${row.unitName}`;
+          return <article key={row.itemId} className="rounded-xl border border-noorix-border bg-noorix-surface p-3 shadow-sm">
+            <div className="grid gap-3 lg:grid-cols-[minmax(170px,1fr)_minmax(140px,0.8fr)_minmax(280px,1.6fr)_minmax(140px,0.8fr)] lg:items-end">
+              <div><div className="text-[11px] font-bold text-noorix-muted">الصنف</div><div className="mt-1 font-bold text-noorix-text">{row.itemName}</div><div className="text-[11px] text-noorix-muted">{row.categoryName || 'بدون فئة'} · {row.unitName}</div></div>
+              <div className="rounded-lg bg-noorix-bg-muted p-2 text-center"><div className="text-[10px] font-bold text-noorix-muted">الدفتري</div><div className="mt-1 text-[13px] font-bold tabular-nums">{expectedDisplay}</div></div>
+              <div><div className="mb-1 text-[10px] font-bold text-noorix-muted">الفعلي — أدخل بأي تغليف</div><div className="flex flex-wrap gap-2">{units.map((unit) => {
+                const stored = physical[row.itemId];
+                const value = stored ? stored[unit.unitId] ?? '' : unit.unitId === item?.inventoryUnitId ? String(row.quantity) : '';
+                return <label key={unit.unitId} className="min-w-[90px] flex-1"><span className="mb-1 block text-center text-[10px] text-noorix-muted">{unit.unit.nameAr}</span><Input type="number" step="any" value={value} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPhysicalValue(row, unit.unitId, event.target.value)} /></label>;
+              })}</div><div className="mt-1 text-[10px] text-noorix-muted">الإجمالي الفعلي: {physicalDisplay}</div></div>
+              <div className={`rounded-lg p-2 text-center ${variance === 0 ? 'bg-emerald-50 text-emerald-700' : variance < 0 ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'}`}><div className="text-[10px] font-bold">الفرق</div><div className="mt-1 text-[13px] font-bold tabular-nums">{varianceDisplay}</div></div>
+            </div>
+          </article>;
+        })}
+        {!scoped.length && <div className="rounded-xl border border-dashed border-noorix-border p-8 text-center text-[13px] text-noorix-muted">لا توجد أصناف مطابقة في الموقع والنطاق المحددين</div>}
+      </div>
+      <OrdersV4Field label="ملاحظات الجرد"><textarea className="min-h-[82px] w-full rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2 text-[13px] outline-none focus:border-noorix-green" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="ملاحظات اختيارية…" /></OrdersV4Field>
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-6 text-amber-950">
+        الاعتماد ينشئ مستند جرد وقيود فروقات غير قابلة للحذف. أي تصحيح لاحق يتم بجرد جديد حتى يبقى سجل المخزون كاملاً وقابلاً للمراجعة.
+      </div>
     </div>
   </Modal>;
 }

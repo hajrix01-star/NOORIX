@@ -20,6 +20,7 @@ import {
   getOrdersV4Summary,
   publishOrdersV4Recipe,
   reverseOrdersV4Document,
+  undoReverseOrdersV4Document,
   receiveOrdersV4Document,
   restoreOrdersV4Unit,
   saveOrdersV4ItemDefinition,
@@ -165,6 +166,16 @@ export function useReverseOrdersV4Document(companyId: string) {
     mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) => reverseOrdersV4Document(companyId, id, idempotencyKey),
     invalidateQueries: [ordersV4Keys.root],
     successToast: 'تم عكس مستند V4',
+    showErrorToast: true,
+  });
+}
+
+export function useUndoReverseOrdersV4Document(companyId: string) {
+  return useApiMutation({
+    mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) => undoReverseOrdersV4Document(companyId, id, idempotencyKey),
+    invalidateQueries: [ordersV4Keys.root],
+    successToast: 'تم إلغاء العكس وإعادة تطبيق الأثر الدفتري للمستند',
+    showErrorToast: true,
   });
 }
 
