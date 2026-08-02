@@ -122,6 +122,11 @@ export class OrdersV4LegacyCutoverImportService {
         throw new BadRequestException('تغير المصدر أثناء بدء الترحيل؛ لم يتم حذف أو استيراد أي بيانات');
       }
 
+      // The immutable audit tables remain protected for every normal request. This
+      // transaction-local flag is accepted only by the database guard installed for
+      // the privileged atomic cutover and clears automatically on commit or rollback.
+      await tx.$executeRaw`SELECT set_config('app.orders_v4_cutover_mode', 'authorized', true)`;
+
       const productById = new Map(products.map((product) => [product.id, product]));
       const purchaseProducts = products.filter((product) => product.productType === 'order');
       const saleProducts = products.filter((product) => product.productType === 'sale');

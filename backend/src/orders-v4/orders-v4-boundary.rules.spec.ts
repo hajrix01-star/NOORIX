@@ -67,6 +67,17 @@ describe('Orders V4 inventory boundary', () => {
     expect(posting).toContain('calculateOrdersV4OpeningBalance');
   });
 
+  it('limits the append-only ledger bypass to the privileged cutover transaction', () => {
+    const importer = readFileSync(join(__dirname, 'orders-v4-legacy-cutover-import.service.ts'), 'utf8');
+    const migration = readFileSync(
+      join(__dirname, '../../prisma/migrations/20260802205000_orders_v4_cutover_append_only_guard/migration.sql'),
+      'utf8',
+    );
+    expect(importer).toContain("set_config('app.orders_v4_cutover_mode', 'authorized', true)");
+    expect(migration).toContain("current_setting('app.orders_v4_cutover_mode', true) = 'authorized'");
+    expect(migration).toContain("RAISE EXCEPTION 'Orders V4 audit rows are append-only'");
+  });
+
   it('renders the historical document base unit snapshot instead of the item current unit', () => {
     const documentTab = readFileSync(
       join(__dirname, '../../../src/modules/OrdersV4/components/OrdersV4DocumentsTab.tsx'),
