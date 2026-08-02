@@ -248,6 +248,7 @@ export default {
   note: { ar: 'ملاحظة', en: 'Note' },
   orders: { ar: 'الطلبات', en: 'Orders' },
   ordersV3: { ar: 'طلبات 2', en: 'Orders 2' },
+  ordersV4: { ar: 'طلبات V4', en: 'Orders V4' },
   hr: { ar: 'الموارد البشرية', en: 'Human Resources' },
   reports: { ar: 'التقارير', en: 'Reports' },
   settings: { ar: 'الإعدادات', en: 'Settings' },

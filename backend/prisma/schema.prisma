@@ -1753,27 +1753,27 @@ model DashboardCalendarData {
 // ============================================================================
 
 model OrdersV3Unit {
-  id                String   @id @default(cuid())
-  tenantId          String   @map("tenant_id")
-  companyId         String   @map("company_id")
-  code              String
-  nameAr            String   @map("name_ar")
-  nameEn            String?  @map("name_en")
-  dimension         String
-  canonicalFactor   Decimal? @map("canonical_factor") @db.Decimal(24, 12)
-  decimalScale      Int      @default(6) @map("decimal_scale")
-  isActive          Boolean  @default(true) @map("is_active")
-  sortOrder         Int      @default(0) @map("sort_order")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  code            String
+  nameAr          String   @map("name_ar")
+  nameEn          String?  @map("name_en")
+  dimension       String
+  canonicalFactor Decimal? @map("canonical_factor") @db.Decimal(24, 12)
+  decimalScale    Int      @default(6) @map("decimal_scale")
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  baseItems          OrdersV3Item[]              @relation("OrdersV3ItemBaseUnit")
-  conversionFrom     OrdersV3ConversionEdge[]    @relation("OrdersV3ConversionFromUnit")
-  conversionTo       OrdersV3ConversionEdge[]    @relation("OrdersV3ConversionToUnit")
-  recipeOutputUnits  OrdersV3RecipeVersion[]     @relation("OrdersV3RecipeOutputUnit")
-  recipeLineUnits    OrdersV3RecipeLine[]        @relation("OrdersV3RecipeLineUnit")
-  documentInputLines OrdersV3DocumentLine[]      @relation("OrdersV3DocumentInputUnit")
-  documentPriceLines OrdersV3DocumentLine[]      @relation("OrdersV3DocumentPriceUnit")
+  baseItems          OrdersV3Item[]           @relation("OrdersV3ItemBaseUnit")
+  conversionFrom     OrdersV3ConversionEdge[] @relation("OrdersV3ConversionFromUnit")
+  conversionTo       OrdersV3ConversionEdge[] @relation("OrdersV3ConversionToUnit")
+  recipeOutputUnits  OrdersV3RecipeVersion[]  @relation("OrdersV3RecipeOutputUnit")
+  recipeLineUnits    OrdersV3RecipeLine[]     @relation("OrdersV3RecipeLineUnit")
+  documentInputLines OrdersV3DocumentLine[]   @relation("OrdersV3DocumentInputUnit")
+  documentPriceLines OrdersV3DocumentLine[]   @relation("OrdersV3DocumentPriceUnit")
   stocktakeLines     OrdersV3StocktakeLine[]
 
   @@unique([companyId, code])
@@ -1839,12 +1839,12 @@ model OrdersV3Item {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  category           OrdersV3Category?          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  baseUnit           OrdersV3Unit               @relation("OrdersV3ItemBaseUnit", fields: [baseUnitId], references: [id], onDelete: Restrict)
+  category           OrdersV3Category?           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  baseUnit           OrdersV3Unit                @relation("OrdersV3ItemBaseUnit", fields: [baseUnitId], references: [id], onDelete: Restrict)
   sections           OrdersV3ItemSection[]
   conversionVersions OrdersV3ConversionVersion[]
-  recipeVersions     OrdersV3RecipeVersion[]    @relation("OrdersV3RecipeOutputItem")
-  recipeComponents   OrdersV3RecipeLine[]       @relation("OrdersV3RecipeComponentItem")
+  recipeVersions     OrdersV3RecipeVersion[]     @relation("OrdersV3RecipeOutputItem")
+  recipeComponents   OrdersV3RecipeLine[]        @relation("OrdersV3RecipeComponentItem")
   documentLines      OrdersV3DocumentLine[]
   ledgerEntries      OrdersV3LedgerEntry[]
   stocktakeLines     OrdersV3StocktakeLine[]
@@ -1888,9 +1888,9 @@ model OrdersV3ConversionVersion {
   createdByUserId String?   @map("created_by_user_id")
   createdAt       DateTime  @default(now()) @map("created_at")
 
-  item  OrdersV3Item             @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  edges OrdersV3ConversionEdge[]
-  lines OrdersV3DocumentLine[]
+  item          OrdersV3Item             @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  edges         OrdersV3ConversionEdge[]
+  lines         OrdersV3DocumentLine[]
   ledgerEntries OrdersV3LedgerEntry[]
 
   @@unique([itemId, version])
@@ -1901,17 +1901,17 @@ model OrdersV3ConversionVersion {
 }
 
 model OrdersV3ConversionEdge {
-  id        String   @id @default(cuid())
-  tenantId  String   @map("tenant_id")
-  companyId String   @map("company_id")
-  versionId String   @map("version_id")
-  fromUnitId String  @map("from_unit_id")
-  toUnitId  String   @map("to_unit_id")
-  factor    Decimal  @db.Decimal(24, 12)
-  reversible Boolean @default(true)
-  allowDimensionBridge Boolean @default(false) @map("allow_dimension_bridge")
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
+  id                   String   @id @default(cuid())
+  tenantId             String   @map("tenant_id")
+  companyId            String   @map("company_id")
+  versionId            String   @map("version_id")
+  fromUnitId           String   @map("from_unit_id")
+  toUnitId             String   @map("to_unit_id")
+  factor               Decimal  @db.Decimal(24, 12)
+  reversible           Boolean  @default(true)
+  allowDimensionBridge Boolean  @default(false) @map("allow_dimension_bridge")
+  sortOrder            Int      @default(0) @map("sort_order")
+  createdAt            DateTime @default(now()) @map("created_at")
 
   version  OrdersV3ConversionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   fromUnit OrdersV3Unit              @relation("OrdersV3ConversionFromUnit", fields: [fromUnitId], references: [id], onDelete: Restrict)
@@ -1938,8 +1938,8 @@ model OrdersV3RecipeVersion {
   createdByUserId String?   @map("created_by_user_id")
   createdAt       DateTime  @default(now()) @map("created_at")
 
-  outputItem    OrdersV3Item         @relation("OrdersV3RecipeOutputItem", fields: [outputItemId], references: [id], onDelete: Restrict)
-  outputUnit    OrdersV3Unit         @relation("OrdersV3RecipeOutputUnit", fields: [outputUnitId], references: [id], onDelete: Restrict)
+  outputItem    OrdersV3Item           @relation("OrdersV3RecipeOutputItem", fields: [outputItemId], references: [id], onDelete: Restrict)
+  outputUnit    OrdersV3Unit           @relation("OrdersV3RecipeOutputUnit", fields: [outputUnitId], references: [id], onDelete: Restrict)
   lines         OrdersV3RecipeLine[]
   documentLines OrdersV3DocumentLine[]
   ledgerEntries OrdersV3LedgerEntry[]
@@ -1986,7 +1986,7 @@ model OrdersV3Location {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  section       OrdersV3Section?       @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  section       OrdersV3Section?      @relation(fields: [sectionId], references: [id], onDelete: Restrict)
   documents     OrdersV3Document[]
   ledgerEntries OrdersV3LedgerEntry[]
   stocktakes    OrdersV3Stocktake[]
@@ -1998,33 +1998,33 @@ model OrdersV3Location {
 }
 
 model OrdersV3Document {
-  id                 String    @id @default(cuid())
-  tenantId           String    @map("tenant_id")
-  companyId          String    @map("company_id")
-  documentNumber     String    @map("document_number")
-  documentType       String    @map("document_type")
-  paymentMethod      String?   @map("payment_method")
-  documentDate       DateTime  @map("document_date") @db.Date
-  status             String    @default("posted")
-  sectionId          String?   @map("section_id")
-  locationId         String    @map("location_id")
-  pettyCashAmount    Decimal?  @map("petty_cash_amount") @db.Decimal(20, 6)
-  subtotal           Decimal   @default(0) @db.Decimal(20, 6)
-  totalAmount        Decimal   @default(0) @map("total_amount") @db.Decimal(20, 6)
-  notes              String?   @db.Text
-  idempotencyKey     String    @map("idempotency_key")
-  requestHash        String    @map("request_hash")
-  calculationVersion Int       @default(1) @map("calculation_version")
+  id                  String   @id @default(cuid())
+  tenantId            String   @map("tenant_id")
+  companyId           String   @map("company_id")
+  documentNumber      String   @map("document_number")
+  documentType        String   @map("document_type")
+  paymentMethod       String?  @map("payment_method")
+  documentDate        DateTime @map("document_date") @db.Date
+  status              String   @default("posted")
+  sectionId           String?  @map("section_id")
+  locationId          String   @map("location_id")
+  pettyCashAmount     Decimal? @map("petty_cash_amount") @db.Decimal(20, 6)
+  subtotal            Decimal  @default(0) @db.Decimal(20, 6)
+  totalAmount         Decimal  @default(0) @map("total_amount") @db.Decimal(20, 6)
+  notes               String?  @db.Text
+  idempotencyKey      String   @map("idempotency_key")
+  requestHash         String   @map("request_hash")
+  calculationVersion  Int      @default(1) @map("calculation_version")
   calculationSnapshot Json     @map("calculation_snapshot")
-  reversalOfId       String?   @map("reversal_of_id")
-  createdByUserId    String?   @map("created_by_user_id")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
+  reversalOfId        String?  @map("reversal_of_id")
+  createdByUserId     String?  @map("created_by_user_id")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  section    OrdersV3Section?      @relation(fields: [sectionId], references: [id], onDelete: Restrict)
-  location   OrdersV3Location      @relation(fields: [locationId], references: [id], onDelete: Restrict)
-  reversalOf OrdersV3Document?     @relation("OrdersV3DocumentReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
-  reversals  OrdersV3Document[]    @relation("OrdersV3DocumentReversal")
+  section    OrdersV3Section?       @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  location   OrdersV3Location       @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  reversalOf OrdersV3Document?      @relation("OrdersV3DocumentReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversals  OrdersV3Document[]     @relation("OrdersV3DocumentReversal")
   lines      OrdersV3DocumentLine[]
 
   @@unique([companyId, documentNumber])
@@ -2037,33 +2037,33 @@ model OrdersV3Document {
 }
 
 model OrdersV3DocumentLine {
-  id                    String   @id @default(cuid())
-  tenantId              String   @map("tenant_id")
-  companyId             String   @map("company_id")
-  documentId            String   @map("document_id")
-  itemId                String   @map("item_id")
-  lineNumber            Int      @map("line_number")
-  itemNameSnapshot      String   @map("item_name_snapshot")
-  inputQuantity         Decimal  @map("input_quantity") @db.Decimal(24, 8)
-  inputUnitId           String   @map("input_unit_id")
-  baseQuantity          Decimal  @map("base_quantity") @db.Decimal(24, 8)
-  unitPrice             Decimal  @default(0) @map("unit_price") @db.Decimal(20, 6)
-  priceUnitId           String   @map("price_unit_id")
-  priceQuantity         Decimal  @map("price_quantity") @db.Decimal(24, 8)
-  lineTotal             Decimal  @map("line_total") @db.Decimal(20, 6)
-  conversionVersionId   String?  @map("conversion_version_id")
-  recipeVersionId       String?  @map("recipe_version_id")
-  conversionSnapshot    Json     @map("conversion_snapshot")
-  calculationSnapshot   Json     @map("calculation_snapshot")
-  createdAt             DateTime @default(now()) @map("created_at")
+  id                  String   @id @default(cuid())
+  tenantId            String   @map("tenant_id")
+  companyId           String   @map("company_id")
+  documentId          String   @map("document_id")
+  itemId              String   @map("item_id")
+  lineNumber          Int      @map("line_number")
+  itemNameSnapshot    String   @map("item_name_snapshot")
+  inputQuantity       Decimal  @map("input_quantity") @db.Decimal(24, 8)
+  inputUnitId         String   @map("input_unit_id")
+  baseQuantity        Decimal  @map("base_quantity") @db.Decimal(24, 8)
+  unitPrice           Decimal  @default(0) @map("unit_price") @db.Decimal(20, 6)
+  priceUnitId         String   @map("price_unit_id")
+  priceQuantity       Decimal  @map("price_quantity") @db.Decimal(24, 8)
+  lineTotal           Decimal  @map("line_total") @db.Decimal(20, 6)
+  conversionVersionId String?  @map("conversion_version_id")
+  recipeVersionId     String?  @map("recipe_version_id")
+  conversionSnapshot  Json     @map("conversion_snapshot")
+  calculationSnapshot Json     @map("calculation_snapshot")
+  createdAt           DateTime @default(now()) @map("created_at")
 
-  document         OrdersV3Document           @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  item             OrdersV3Item               @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  inputUnit        OrdersV3Unit               @relation("OrdersV3DocumentInputUnit", fields: [inputUnitId], references: [id], onDelete: Restrict)
-  priceUnit        OrdersV3Unit               @relation("OrdersV3DocumentPriceUnit", fields: [priceUnitId], references: [id], onDelete: Restrict)
+  document          OrdersV3Document           @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  item              OrdersV3Item               @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  inputUnit         OrdersV3Unit               @relation("OrdersV3DocumentInputUnit", fields: [inputUnitId], references: [id], onDelete: Restrict)
+  priceUnit         OrdersV3Unit               @relation("OrdersV3DocumentPriceUnit", fields: [priceUnitId], references: [id], onDelete: Restrict)
   conversionVersion OrdersV3ConversionVersion? @relation(fields: [conversionVersionId], references: [id], onDelete: Restrict)
-  recipeVersion    OrdersV3RecipeVersion?     @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
-  ledgerEntries    OrdersV3LedgerEntry[]
+  recipeVersion     OrdersV3RecipeVersion?     @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
+  ledgerEntries     OrdersV3LedgerEntry[]
 
   @@unique([documentId, lineNumber])
   @@index([tenantId])
@@ -2072,38 +2072,38 @@ model OrdersV3DocumentLine {
 }
 
 model OrdersV3LedgerEntry {
-  id                    String   @id @default(cuid())
-  sequence              BigInt   @unique @default(autoincrement())
-  tenantId              String   @map("tenant_id")
-  companyId             String   @map("company_id")
-  itemId                String   @map("item_id")
-  locationId            String   @map("location_id")
-  documentLineId        String?  @map("document_line_id")
-  effectiveAt           DateTime @map("effective_at")
-  entryType             String   @map("entry_type")
-  quantityDelta         Decimal  @map("quantity_delta") @db.Decimal(24, 8)
-  unitCost              Decimal  @map("unit_cost") @db.Decimal(20, 8)
-  valueDelta            Decimal  @map("value_delta") @db.Decimal(20, 6)
-  quantityAfter         Decimal  @map("quantity_after") @db.Decimal(24, 8)
-  valueAfter            Decimal  @map("value_after") @db.Decimal(20, 6)
-  averageUnitCostAfter  Decimal  @map("average_unit_cost_after") @db.Decimal(20, 8)
-  sourceType            String   @map("source_type")
-  sourceId              String   @map("source_id")
-  sourceKey             String   @map("source_key")
-  sourceSnapshot        Json     @map("source_snapshot")
-  conversionVersionId   String?  @map("conversion_version_id")
-  recipeVersionId       String?  @map("recipe_version_id")
-  reversalOfId          String?  @map("reversal_of_id")
-  createdByUserId       String?  @map("created_by_user_id")
-  createdAt             DateTime @default(now()) @map("created_at")
+  id                   String   @id @default(cuid())
+  sequence             BigInt   @unique @default(autoincrement())
+  tenantId             String   @map("tenant_id")
+  companyId            String   @map("company_id")
+  itemId               String   @map("item_id")
+  locationId           String   @map("location_id")
+  documentLineId       String?  @map("document_line_id")
+  effectiveAt          DateTime @map("effective_at")
+  entryType            String   @map("entry_type")
+  quantityDelta        Decimal  @map("quantity_delta") @db.Decimal(24, 8)
+  unitCost             Decimal  @map("unit_cost") @db.Decimal(20, 8)
+  valueDelta           Decimal  @map("value_delta") @db.Decimal(20, 6)
+  quantityAfter        Decimal  @map("quantity_after") @db.Decimal(24, 8)
+  valueAfter           Decimal  @map("value_after") @db.Decimal(20, 6)
+  averageUnitCostAfter Decimal  @map("average_unit_cost_after") @db.Decimal(20, 8)
+  sourceType           String   @map("source_type")
+  sourceId             String   @map("source_id")
+  sourceKey            String   @map("source_key")
+  sourceSnapshot       Json     @map("source_snapshot")
+  conversionVersionId  String?  @map("conversion_version_id")
+  recipeVersionId      String?  @map("recipe_version_id")
+  reversalOfId         String?  @map("reversal_of_id")
+  createdByUserId      String?  @map("created_by_user_id")
+  createdAt            DateTime @default(now()) @map("created_at")
 
   item              OrdersV3Item               @relation(fields: [itemId], references: [id], onDelete: Restrict)
   location          OrdersV3Location           @relation(fields: [locationId], references: [id], onDelete: Restrict)
-  documentLine      OrdersV3DocumentLine?       @relation(fields: [documentLineId], references: [id], onDelete: Restrict)
+  documentLine      OrdersV3DocumentLine?      @relation(fields: [documentLineId], references: [id], onDelete: Restrict)
   conversionVersion OrdersV3ConversionVersion? @relation(fields: [conversionVersionId], references: [id], onDelete: Restrict)
   recipeVersion     OrdersV3RecipeVersion?     @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
-  reversalOf        OrdersV3LedgerEntry?        @relation("OrdersV3LedgerReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
-  reversals         OrdersV3LedgerEntry[]       @relation("OrdersV3LedgerReversal")
+  reversalOf        OrdersV3LedgerEntry?       @relation("OrdersV3LedgerReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversals         OrdersV3LedgerEntry[]      @relation("OrdersV3LedgerReversal")
 
   @@unique([companyId, sourceKey])
   @@unique([reversalOfId])
@@ -2127,7 +2127,7 @@ model OrdersV3Stocktake {
   createdByUserId String?  @map("created_by_user_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
-  location OrdersV3Location       @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  location OrdersV3Location        @relation(fields: [locationId], references: [id], onDelete: Restrict)
   lines    OrdersV3StocktakeLine[]
 
   @@unique([companyId, stocktakeNumber])
@@ -2138,17 +2138,17 @@ model OrdersV3Stocktake {
 }
 
 model OrdersV3StocktakeLine {
-  id               String   @id @default(cuid())
-  tenantId         String   @map("tenant_id")
-  companyId        String   @map("company_id")
-  stocktakeId      String   @map("stocktake_id")
-  itemId           String   @map("item_id")
-  unitId           String   @map("unit_id")
-  expectedQuantity Decimal  @map("expected_quantity") @db.Decimal(24, 8)
-  physicalQuantity Decimal  @map("physical_quantity") @db.Decimal(24, 8)
-  varianceQuantity Decimal  @map("variance_quantity") @db.Decimal(24, 8)
-  unitCost          Decimal @map("unit_cost") @db.Decimal(20, 8)
-  varianceValue     Decimal @map("variance_value") @db.Decimal(20, 6)
+  id               String  @id @default(cuid())
+  tenantId         String  @map("tenant_id")
+  companyId        String  @map("company_id")
+  stocktakeId      String  @map("stocktake_id")
+  itemId           String  @map("item_id")
+  unitId           String  @map("unit_id")
+  expectedQuantity Decimal @map("expected_quantity") @db.Decimal(24, 8)
+  physicalQuantity Decimal @map("physical_quantity") @db.Decimal(24, 8)
+  varianceQuantity Decimal @map("variance_quantity") @db.Decimal(24, 8)
+  unitCost         Decimal @map("unit_cost") @db.Decimal(20, 8)
+  varianceValue    Decimal @map("variance_value") @db.Decimal(20, 6)
 
   stocktake OrdersV3Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
   item      OrdersV3Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
@@ -2161,20 +2161,544 @@ model OrdersV3StocktakeLine {
 }
 
 model OrdersV3MigrationMap {
-  id            String   @id @default(cuid())
-  tenantId      String   @map("tenant_id")
-  companyId     String   @map("company_id")
-  sourceEntity  String   @map("source_entity")
-  sourceId      String   @map("source_id")
-  targetEntity  String   @map("target_entity")
-  targetId      String   @map("target_id")
-  sourceChecksum String  @map("source_checksum")
-  migrationRunId String  @map("migration_run_id")
-  status        String   @default("verified")
-  migratedAt    DateTime @default(now()) @map("migrated_at")
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+  companyId      String   @map("company_id")
+  sourceEntity   String   @map("source_entity")
+  sourceId       String   @map("source_id")
+  targetEntity   String   @map("target_entity")
+  targetId       String   @map("target_id")
+  sourceChecksum String   @map("source_checksum")
+  migrationRunId String   @map("migration_run_id")
+  status         String   @default("verified")
+  migratedAt     DateTime @default(now()) @map("migrated_at")
 
   @@unique([companyId, sourceEntity, sourceId])
   @@index([tenantId])
   @@index([companyId, migrationRunId, status])
   @@map("orders_v3_migration_map")
+}
+
+// ============================================================================
+// ORDERS V4 — independent operational orders domain
+// V4 owns its catalog, item units/prices, versioned conversions and recipes,
+// prepared/received workflow, inventory/custody ledgers, stocktakes and maps.
+// It has no runtime relation to legacy Orders, Orders 2 or Orders V3 models.
+// ============================================================================
+
+model OrdersV4Unit {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  code            String
+  nameAr          String   @map("name_ar")
+  nameEn          String?  @map("name_en")
+  dimension       String
+  canonicalFactor Decimal? @map("canonical_factor") @db.Decimal(24, 12)
+  decimalScale    Int      @default(6) @map("decimal_scale")
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  inventoryItems     OrdersV4Item[]           @relation("OrdersV4InventoryUnit")
+  itemUnits          OrdersV4ItemUnit[]
+  conversionFrom     OrdersV4ConversionEdge[] @relation("OrdersV4ConversionFromUnit")
+  conversionTo       OrdersV4ConversionEdge[] @relation("OrdersV4ConversionToUnit")
+  recipeOutputUnits  OrdersV4RecipeVersion[]  @relation("OrdersV4RecipeOutputUnit")
+  recipeLineUnits    OrdersV4RecipeLine[]     @relation("OrdersV4RecipeLineUnit")
+  documentUnits      OrdersV4DocumentLine[]   @relation("OrdersV4DocumentInputUnit")
+  documentPriceUnits OrdersV4DocumentLine[]   @relation("OrdersV4DocumentPriceUnit")
+  priceHistory       OrdersV4PriceHistory[]
+  stocktakeLines     OrdersV4StocktakeLine[]
+
+  @@unique([companyId, code])
+  @@index([tenantId])
+  @@index([companyId, dimension, isActive])
+  @@map("orders_v4_units")
+}
+
+model OrdersV4Category {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  companyId String   @map("company_id")
+  nameAr    String   @map("name_ar")
+  nameEn    String?  @map("name_en")
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  items OrdersV4Item[]
+
+  @@unique([companyId, nameAr])
+  @@index([tenantId])
+  @@index([companyId, isActive])
+  @@map("orders_v4_categories")
+}
+
+model OrdersV4Section {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  companyId String   @map("company_id")
+  code      String
+  nameAr    String   @map("name_ar")
+  nameEn    String?  @map("name_en")
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  items     OrdersV4ItemSection[]
+  documents OrdersV4Document[]
+  locations OrdersV4Location[]
+
+  @@unique([companyId, code])
+  @@index([tenantId])
+  @@index([companyId, isActive])
+  @@map("orders_v4_sections")
+}
+
+model OrdersV4Item {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  sku             String?
+  nameAr          String   @map("name_ar")
+  nameEn          String?  @map("name_en")
+  itemType        String   @map("item_type")
+  categoryId      String?  @map("category_id")
+  inventoryUnitId String   @map("inventory_unit_id")
+  trackInventory  Boolean  @default(true) @map("track_inventory")
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  category           OrdersV4Category?              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  inventoryUnit      OrdersV4Unit                   @relation("OrdersV4InventoryUnit", fields: [inventoryUnitId], references: [id], onDelete: Restrict)
+  units              OrdersV4ItemUnit[]
+  sections           OrdersV4ItemSection[]
+  conversionVersions OrdersV4ConversionVersion[]
+  recipeVersions     OrdersV4RecipeVersion[]        @relation("OrdersV4RecipeOutputItem")
+  recipeComponents   OrdersV4RecipeLine[]           @relation("OrdersV4RecipeComponentItem")
+  documentLines      OrdersV4DocumentLine[]
+  ledgerEntries      OrdersV4InventoryLedgerEntry[]
+  priceHistory       OrdersV4PriceHistory[]
+  stocktakeLines     OrdersV4StocktakeLine[]
+
+  @@unique([companyId, sku])
+  @@index([tenantId])
+  @@index([companyId, itemType, isActive])
+  @@index([categoryId])
+  @@index([inventoryUnitId])
+  @@map("orders_v4_items")
+}
+
+model OrdersV4ItemUnit {
+  id             String    @id @default(cuid())
+  tenantId       String    @map("tenant_id")
+  companyId      String    @map("company_id")
+  itemId         String    @map("item_id")
+  unitId         String    @map("unit_id")
+  isOrderEnabled Boolean   @default(false) @map("is_order_enabled")
+  lastPrice      Decimal?  @map("last_price") @db.Decimal(20, 6)
+  lastPriceAt    DateTime? @map("last_price_at")
+  isActive       Boolean   @default(true) @map("is_active")
+  sortOrder      Int       @default(0) @map("sort_order")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  item OrdersV4Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  unit OrdersV4Unit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+  @@unique([itemId, unitId])
+  @@index([tenantId])
+  @@index([companyId, itemId, isActive])
+  @@map("orders_v4_item_units")
+}
+
+model OrdersV4ItemSection {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  companyId String   @map("company_id")
+  itemId    String   @map("item_id")
+  sectionId String   @map("section_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  item    OrdersV4Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  section OrdersV4Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, sectionId])
+  @@index([tenantId])
+  @@index([companyId, sectionId])
+  @@map("orders_v4_item_sections")
+}
+
+model OrdersV4ConversionVersion {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  companyId       String    @map("company_id")
+  itemId          String    @map("item_id")
+  version         Int
+  status          String    @default("published")
+  contentHash     String    @map("content_hash")
+  publishedAt     DateTime? @map("published_at")
+  retiredAt       DateTime? @map("retired_at")
+  createdByUserId String?   @map("created_by_user_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  item          OrdersV4Item                   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  edges         OrdersV4ConversionEdge[]
+  documentLines OrdersV4DocumentLine[]
+  ledgerEntries OrdersV4InventoryLedgerEntry[]
+  priceHistory  OrdersV4PriceHistory[]
+
+  @@unique([itemId, version])
+  @@unique([itemId, contentHash])
+  @@index([tenantId])
+  @@index([companyId, itemId, status])
+  @@map("orders_v4_conversion_versions")
+}
+
+model OrdersV4ConversionEdge {
+  id                   String   @id @default(cuid())
+  tenantId             String   @map("tenant_id")
+  companyId            String   @map("company_id")
+  versionId            String   @map("version_id")
+  fromUnitId           String   @map("from_unit_id")
+  toUnitId             String   @map("to_unit_id")
+  factor               Decimal  @db.Decimal(24, 12)
+  reversible           Boolean  @default(true)
+  allowDimensionBridge Boolean  @default(false) @map("allow_dimension_bridge")
+  sortOrder            Int      @default(0) @map("sort_order")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  version  OrdersV4ConversionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  fromUnit OrdersV4Unit              @relation("OrdersV4ConversionFromUnit", fields: [fromUnitId], references: [id], onDelete: Restrict)
+  toUnit   OrdersV4Unit              @relation("OrdersV4ConversionToUnit", fields: [toUnitId], references: [id], onDelete: Restrict)
+
+  @@unique([versionId, fromUnitId, toUnitId])
+  @@index([tenantId])
+  @@index([companyId, versionId])
+  @@map("orders_v4_conversion_edges")
+}
+
+model OrdersV4RecipeVersion {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  companyId       String    @map("company_id")
+  outputItemId    String    @map("output_item_id")
+  outputQuantity  Decimal   @map("output_quantity") @db.Decimal(24, 8)
+  outputUnitId    String    @map("output_unit_id")
+  version         Int
+  status          String    @default("published")
+  contentHash     String    @map("content_hash")
+  publishedAt     DateTime? @map("published_at")
+  retiredAt       DateTime? @map("retired_at")
+  createdByUserId String?   @map("created_by_user_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  outputItem    OrdersV4Item                   @relation("OrdersV4RecipeOutputItem", fields: [outputItemId], references: [id], onDelete: Restrict)
+  outputUnit    OrdersV4Unit                   @relation("OrdersV4RecipeOutputUnit", fields: [outputUnitId], references: [id], onDelete: Restrict)
+  lines         OrdersV4RecipeLine[]
+  documentLines OrdersV4DocumentLine[]
+  ledgerEntries OrdersV4InventoryLedgerEntry[]
+
+  @@unique([outputItemId, version])
+  @@unique([outputItemId, contentHash])
+  @@index([tenantId])
+  @@index([companyId, outputItemId, status])
+  @@map("orders_v4_recipe_versions")
+}
+
+model OrdersV4RecipeLine {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  recipeVersionId String   @map("recipe_version_id")
+  componentItemId String   @map("component_item_id")
+  quantity        Decimal  @db.Decimal(24, 8)
+  unitId          String   @map("unit_id")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  recipeVersion OrdersV4RecipeVersion @relation(fields: [recipeVersionId], references: [id], onDelete: Cascade)
+  componentItem OrdersV4Item          @relation("OrdersV4RecipeComponentItem", fields: [componentItemId], references: [id], onDelete: Restrict)
+  unit          OrdersV4Unit          @relation("OrdersV4RecipeLineUnit", fields: [unitId], references: [id], onDelete: Restrict)
+
+  @@unique([recipeVersionId, componentItemId, unitId])
+  @@index([tenantId])
+  @@index([companyId, componentItemId])
+  @@map("orders_v4_recipe_lines")
+}
+
+model OrdersV4Location {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  companyId String   @map("company_id")
+  code      String
+  nameAr    String   @map("name_ar")
+  nameEn    String?  @map("name_en")
+  kind      String   @default("warehouse")
+  sectionId String?  @map("section_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  section       OrdersV4Section?               @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  documents     OrdersV4Document[]
+  ledgerEntries OrdersV4InventoryLedgerEntry[]
+  stocktakes    OrdersV4Stocktake[]
+
+  @@unique([companyId, code])
+  @@index([tenantId])
+  @@index([companyId, isActive])
+  @@map("orders_v4_locations")
+}
+
+model OrdersV4Document {
+  id                  String    @id @default(cuid())
+  tenantId            String    @map("tenant_id")
+  companyId           String    @map("company_id")
+  documentNumber      String    @map("document_number")
+  documentType        String    @map("document_type")
+  status              String    @default("prepared")
+  paymentMethod       String?   @map("payment_method")
+  documentDate        DateTime  @map("document_date") @db.Date
+  sectionId           String?   @map("section_id")
+  locationId          String    @map("location_id")
+  pettyCashAmount     Decimal?  @map("petty_cash_amount") @db.Decimal(20, 6)
+  subtotal            Decimal   @default(0) @db.Decimal(20, 6)
+  totalAmount         Decimal   @default(0) @map("total_amount") @db.Decimal(20, 6)
+  notes               String?   @db.Text
+  revision            Int       @default(1)
+  idempotencyKey      String    @map("idempotency_key")
+  requestHash         String    @map("request_hash")
+  calculationVersion  Int       @default(1) @map("calculation_version")
+  calculationSnapshot Json      @map("calculation_snapshot")
+  reversalOfId        String?   @map("reversal_of_id")
+  receivedAt          DateTime? @map("received_at")
+  receivedByUserId    String?   @map("received_by_user_id")
+  createdByUserId     String?   @map("created_by_user_id")
+  updatedByUserId     String?   @map("updated_by_user_id")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  section        OrdersV4Section?             @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  location       OrdersV4Location             @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  reversalOf     OrdersV4Document?            @relation("OrdersV4DocumentReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversals      OrdersV4Document[]           @relation("OrdersV4DocumentReversal")
+  lines          OrdersV4DocumentLine[]
+  custodyEntries OrdersV4CustodyLedgerEntry[]
+  priceHistory   OrdersV4PriceHistory[]
+
+  @@unique([companyId, documentNumber])
+  @@unique([companyId, idempotencyKey])
+  @@unique([reversalOfId])
+  @@index([tenantId])
+  @@index([companyId, documentType, documentDate])
+  @@index([companyId, status, createdAt])
+  @@map("orders_v4_documents")
+}
+
+model OrdersV4DocumentLine {
+  id                  String   @id @default(cuid())
+  tenantId            String   @map("tenant_id")
+  companyId           String   @map("company_id")
+  documentId          String   @map("document_id")
+  itemId              String   @map("item_id")
+  lineNumber          Int      @map("line_number")
+  itemNameSnapshot    String   @map("item_name_snapshot")
+  inputQuantity       Decimal  @map("input_quantity") @db.Decimal(24, 8)
+  inputUnitId         String   @map("input_unit_id")
+  baseQuantity        Decimal  @map("base_quantity") @db.Decimal(24, 8)
+  unitPrice           Decimal  @default(0) @map("unit_price") @db.Decimal(20, 6)
+  priceUnitId         String   @map("price_unit_id")
+  priceQuantity       Decimal  @map("price_quantity") @db.Decimal(24, 8)
+  lineTotal           Decimal  @map("line_total") @db.Decimal(20, 6)
+  conversionVersionId String?  @map("conversion_version_id")
+  recipeVersionId     String?  @map("recipe_version_id")
+  conversionSnapshot  Json     @map("conversion_snapshot")
+  recipeSnapshot      Json?    @map("recipe_snapshot")
+  costSnapshot        Json?    @map("cost_snapshot")
+  calculationSnapshot Json     @map("calculation_snapshot")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  document          OrdersV4Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  item              OrdersV4Item                   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  inputUnit         OrdersV4Unit                   @relation("OrdersV4DocumentInputUnit", fields: [inputUnitId], references: [id], onDelete: Restrict)
+  priceUnit         OrdersV4Unit                   @relation("OrdersV4DocumentPriceUnit", fields: [priceUnitId], references: [id], onDelete: Restrict)
+  conversionVersion OrdersV4ConversionVersion?     @relation(fields: [conversionVersionId], references: [id], onDelete: Restrict)
+  recipeVersion     OrdersV4RecipeVersion?         @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
+  ledgerEntries     OrdersV4InventoryLedgerEntry[]
+  priceHistory      OrdersV4PriceHistory[]
+
+  @@unique([documentId, lineNumber])
+  @@index([tenantId])
+  @@index([companyId, itemId])
+  @@map("orders_v4_document_lines")
+}
+
+model OrdersV4PriceHistory {
+  id                  String   @id @default(cuid())
+  tenantId            String   @map("tenant_id")
+  companyId           String   @map("company_id")
+  itemId              String   @map("item_id")
+  unitId              String   @map("unit_id")
+  documentId          String   @map("document_id")
+  documentLineId      String   @map("document_line_id")
+  unitPrice           Decimal  @map("unit_price") @db.Decimal(20, 6)
+  inventoryUnitPrice  Decimal  @map("inventory_unit_price") @db.Decimal(20, 8)
+  conversionVersionId String?  @map("conversion_version_id")
+  effectiveAt         DateTime @map("effective_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  item              OrdersV4Item               @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  unit              OrdersV4Unit               @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  document          OrdersV4Document           @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  documentLine      OrdersV4DocumentLine       @relation(fields: [documentLineId], references: [id], onDelete: Restrict)
+  conversionVersion OrdersV4ConversionVersion? @relation(fields: [conversionVersionId], references: [id], onDelete: Restrict)
+
+  @@unique([documentLineId])
+  @@index([tenantId])
+  @@index([companyId, itemId, effectiveAt])
+  @@map("orders_v4_price_history")
+}
+
+model OrdersV4InventoryLedgerEntry {
+  id                   String   @id @default(cuid())
+  sequence             BigInt   @unique @default(autoincrement())
+  tenantId             String   @map("tenant_id")
+  companyId            String   @map("company_id")
+  itemId               String   @map("item_id")
+  locationId           String   @map("location_id")
+  documentLineId       String?  @map("document_line_id")
+  effectiveAt          DateTime @map("effective_at")
+  entryType            String   @map("entry_type")
+  quantityDelta        Decimal  @map("quantity_delta") @db.Decimal(24, 8)
+  unitCost             Decimal  @map("unit_cost") @db.Decimal(20, 8)
+  valueDelta           Decimal  @map("value_delta") @db.Decimal(20, 6)
+  quantityAfter        Decimal  @map("quantity_after") @db.Decimal(24, 8)
+  valueAfter           Decimal  @map("value_after") @db.Decimal(20, 6)
+  averageUnitCostAfter Decimal  @map("average_unit_cost_after") @db.Decimal(20, 8)
+  sourceType           String   @map("source_type")
+  sourceId             String   @map("source_id")
+  sourceKey            String   @map("source_key")
+  sourceSnapshot       Json     @map("source_snapshot")
+  conversionVersionId  String?  @map("conversion_version_id")
+  recipeVersionId      String?  @map("recipe_version_id")
+  reversalOfId         String?  @map("reversal_of_id")
+  createdByUserId      String?  @map("created_by_user_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  item              OrdersV4Item                   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  location          OrdersV4Location               @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  documentLine      OrdersV4DocumentLine?          @relation(fields: [documentLineId], references: [id], onDelete: Restrict)
+  conversionVersion OrdersV4ConversionVersion?     @relation(fields: [conversionVersionId], references: [id], onDelete: Restrict)
+  recipeVersion     OrdersV4RecipeVersion?         @relation(fields: [recipeVersionId], references: [id], onDelete: Restrict)
+  reversalOf        OrdersV4InventoryLedgerEntry?  @relation("OrdersV4InventoryLedgerReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversals         OrdersV4InventoryLedgerEntry[] @relation("OrdersV4InventoryLedgerReversal")
+
+  @@unique([companyId, sourceKey])
+  @@unique([reversalOfId])
+  @@index([tenantId])
+  @@index([companyId, itemId, locationId, sequence])
+  @@index([companyId, effectiveAt])
+  @@map("orders_v4_inventory_ledger")
+}
+
+model OrdersV4CustodyLedgerEntry {
+  id              String   @id @default(cuid())
+  sequence        BigInt   @unique @default(autoincrement())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  documentId      String?  @map("document_id")
+  effectiveAt     DateTime @map("effective_at")
+  entryType       String   @map("entry_type")
+  amountDelta     Decimal  @map("amount_delta") @db.Decimal(20, 6)
+  balanceAfter    Decimal  @map("balance_after") @db.Decimal(20, 6)
+  sourceKey       String   @map("source_key")
+  sourceSnapshot  Json     @map("source_snapshot")
+  reversalOfId    String?  @map("reversal_of_id")
+  createdByUserId String?  @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  document   OrdersV4Document?            @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  reversalOf OrdersV4CustodyLedgerEntry?  @relation("OrdersV4CustodyLedgerReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversals  OrdersV4CustodyLedgerEntry[] @relation("OrdersV4CustodyLedgerReversal")
+
+  @@unique([companyId, sourceKey])
+  @@unique([reversalOfId])
+  @@index([tenantId])
+  @@index([companyId, sequence])
+  @@map("orders_v4_custody_ledger")
+}
+
+model OrdersV4Stocktake {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  stocktakeNumber String   @map("stocktake_number")
+  stocktakeDate   DateTime @map("stocktake_date") @db.Date
+  locationId      String   @map("location_id")
+  status          String   @default("posted")
+  notes           String?  @db.Text
+  idempotencyKey  String   @map("idempotency_key")
+  requestHash     String   @map("request_hash")
+  createdByUserId String?  @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  location OrdersV4Location        @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  lines    OrdersV4StocktakeLine[]
+
+  @@unique([companyId, stocktakeNumber])
+  @@unique([companyId, idempotencyKey])
+  @@index([tenantId])
+  @@index([companyId, stocktakeDate])
+  @@map("orders_v4_stocktakes")
+}
+
+model OrdersV4StocktakeLine {
+  id               String  @id @default(cuid())
+  tenantId         String  @map("tenant_id")
+  companyId        String  @map("company_id")
+  stocktakeId      String  @map("stocktake_id")
+  itemId           String  @map("item_id")
+  unitId           String  @map("unit_id")
+  expectedQuantity Decimal @map("expected_quantity") @db.Decimal(24, 8)
+  physicalQuantity Decimal @map("physical_quantity") @db.Decimal(24, 8)
+  varianceQuantity Decimal @map("variance_quantity") @db.Decimal(24, 8)
+  unitCost         Decimal @map("unit_cost") @db.Decimal(20, 8)
+  varianceValue    Decimal @map("variance_value") @db.Decimal(20, 6)
+
+  stocktake OrdersV4Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
+  item      OrdersV4Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  unit      OrdersV4Unit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+  @@unique([stocktakeId, itemId])
+  @@index([tenantId])
+  @@index([companyId, itemId])
+  @@map("orders_v4_stocktake_lines")
+}
+
+model OrdersV4MigrationMap {
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+  companyId      String   @map("company_id")
+  sourceSystem   String   @map("source_system")
+  sourceEntity   String   @map("source_entity")
+  sourceId       String   @map("source_id")
+  targetEntity   String   @map("target_entity")
+  targetId       String   @map("target_id")
+  sourceChecksum String   @map("source_checksum")
+  migrationRunId String   @map("migration_run_id")
+  status         String   @default("pending")
+  detail         Json?
+  migratedAt     DateTime @default(now()) @map("migrated_at")
+
+  @@unique([companyId, sourceSystem, sourceEntity, sourceId])
+  @@index([tenantId])
+  @@index([companyId, migrationRunId, status])
+  @@map("orders_v4_migration_map")
 }

@@ -132,6 +132,18 @@ export const ORDERS_V3_APP_ACCESS: string[] = [
   PERMISSIONS.ORDERS_V3_INVENTORY_WRITE,
 ];
 
+/** طلبات V4 — نطاق مستقل بالكامل عن الطلبات القديمة وطلبات 2. */
+export const ORDERS_V4_APP_ACCESS: string[] = [
+  PERMISSIONS.VIEW_ORDERS_V4,
+  PERMISSIONS.ORDERS_V4_READ,
+  PERMISSIONS.ORDERS_V4_WRITE,
+  PERMISSIONS.ORDERS_V4_STAFF_SUBMIT,
+  PERMISSIONS.ORDERS_V4_INTERNAL_SUBMIT,
+  PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE,
+  PERMISSIONS.ORDERS_V4_REPORTS_READ,
+  PERMISSIONS.ORDERS_V4_INVENTORY_WRITE,
+];
+
 /** تبويبات التقارير — ترتيب redirect الافتراضي */
 export const REPORT_TAB_SEQUENCE: Array<{ path: string; required: readonly string[] }> = [
   { path: '/reports/general', required: REPORTS_GENERAL_ACCESS },
@@ -180,6 +192,7 @@ export const ROUTE_PERMISSION = {
   '/assets':        ASSETS_APP_ACCESS,
   '/orders':        ORDERS_APP_ACCESS,
   '/orders-2':      ORDERS_V3_APP_ACCESS,
+  '/orders-v4':     ORDERS_V4_APP_ACCESS,
   '/hr':            HR_APP_ACCESS,
   '/reports':       REPORTS_APP_ACCESS,
   '/reports/general': REPORTS_GENERAL_ACCESS,

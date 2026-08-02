@@ -31,6 +31,7 @@ const ExpensesScreen = React.lazy(() => import('./modules/Expenses/ExpensesScree
 const AssetsRegisterScreen = React.lazy(() => import('./modules/Assets/AssetsRegisterScreen'));
 const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const OrdersV3Screen = React.lazy(() => import('./modules/OrdersV3/OrdersV3Screen'));
+const OrdersV4Screen = React.lazy(() => import('./modules/OrdersV4/OrdersV4Screen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
 
 type ProtectedAppRoutesProps = {
@@ -66,6 +67,7 @@ export function ProtectedAppRoutes({ user, isUserLoading }: ProtectedAppRoutesPr
         <Route path="/assets" element={<AssetsRegisterScreen />} />
         <Route path="/orders" element={<OrdersScreen />} />
         <Route path="/orders-2" element={<OrdersV3Screen />} />
+        <Route path="/orders-v4" element={<OrdersV4Screen />} />
         <Route path="/invoices" element={<InvoicesListScreen />} />
         <Route path="/treasury" element={<TreasuryScreen />} />
         <Route path="/hr" element={<HRMainScreen />} />

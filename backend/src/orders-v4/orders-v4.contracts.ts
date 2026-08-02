@@ -1,0 +1,102 @@
+export type OrdersV4DocumentType = 'purchase' | 'registration';
+export type OrdersV4PaymentMethod = 'custody' | 'cash' | 'transfer';
+
+export type OrdersV4UnitInput = {
+  code: string;
+  nameAr: string;
+  nameEn?: string | null;
+  dimension: string;
+  canonicalFactor?: string | null;
+  decimalScale?: number;
+};
+
+export type OrdersV4NamedInput = {
+  nameAr: string;
+  nameEn?: string | null;
+  code?: string;
+  sortOrder?: number;
+};
+
+export type OrdersV4ItemInput = {
+  sku?: string | null;
+  nameAr: string;
+  nameEn?: string | null;
+  itemType: 'purchased' | 'sale';
+  categoryId?: string | null;
+  inventoryUnitId: string;
+  sectionIds?: string[];
+  trackInventory?: boolean;
+  sortOrder?: number;
+  units?: Array<{
+    unitId: string;
+    isOrderEnabled?: boolean;
+    lastPrice?: string | null;
+    sortOrder?: number;
+  }>;
+};
+
+export type OrdersV4ItemUnitsInput = {
+  inventoryUnitId: string;
+  units: Array<{
+    unitId: string;
+    isOrderEnabled?: boolean;
+    lastPrice?: string | null;
+    sortOrder?: number;
+  }>;
+};
+
+export type OrdersV4ConversionPublishInput = {
+  itemId: string;
+  edges: Array<{
+    fromUnitId: string;
+    toUnitId: string;
+    factor: string;
+    reversible?: boolean;
+    allowDimensionBridge?: boolean;
+  }>;
+};
+
+export type OrdersV4RecipePublishInput = {
+  outputItemId: string;
+  outputQuantity: string;
+  outputUnitId: string;
+  lines: Array<{ componentItemId: string; quantity: string; unitId: string }>;
+};
+
+export type OrdersV4DocumentInput = {
+  documentType: OrdersV4DocumentType;
+  documentDate: string;
+  paymentMethod?: OrdersV4PaymentMethod | null;
+  sectionId?: string | null;
+  locationId: string;
+  pettyCashAmount?: string | null;
+  notes?: string | null;
+  idempotencyKey: string;
+  lines: Array<{
+    itemId: string;
+    quantity: string;
+    unitId: string;
+    unitPrice?: string;
+    priceUnitId?: string;
+  }>;
+};
+
+export type OrdersV4ReceiveInput = Omit<OrdersV4DocumentInput, 'documentType' | 'idempotencyKey'> & {
+  revision: number;
+  idempotencyKey: string;
+};
+
+export type OrdersV4CustodyInput = {
+  amount: string;
+  effectiveDate: string;
+  notes?: string | null;
+  idempotencyKey: string;
+};
+
+export type OrdersV4StocktakeInput = {
+  stocktakeDate: string;
+  locationId: string;
+  notes?: string | null;
+  idempotencyKey: string;
+  lines: Array<{ itemId: string; physicalQuantity: string }>;
+};
