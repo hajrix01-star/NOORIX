@@ -4,6 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { OrdersV4Item, OrdersV4Unit } from '../../../types/api';
 import { OrdersV4DocumentLineModal } from './OrdersV4DocumentLineModal';
 
+vi.mock('../../../i18n/useTranslation', async () => {
+  const translations = await vi.importActual<typeof import('../../../i18n/translations')>('../../../i18n/translations');
+  return { useTranslation: () => ({ lang: 'ar', t: (key: string) => translations.getText(key, 'ar') }) };
+});
+
 afterEach(cleanup);
 
 const piece: OrdersV4Unit = {

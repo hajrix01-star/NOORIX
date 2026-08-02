@@ -1,5 +1,6 @@
 import React from 'react';
 import type { OrdersV4Item } from '../../../types/api';
+import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, type SimpleTableColumn } from '../../../ui';
 import { OrdersV4Select, OrdersV4Table as SimpleTable } from '../OrdersV4Shared';
 import type { OrdersV4DocumentLineDraft } from './OrdersV4DocumentLineModal';
@@ -24,6 +25,7 @@ export function OrdersV4DocumentLinesTable({
   onPatch: (key: string, patch: Partial<OrdersV4DocumentDraftLine>) => void;
   onRemove: (key: string) => void;
 }) {
+  const { t } = useTranslation();
   const itemById = new Map(items.map((item) => [item.id, item]));
   const columns: SimpleTableColumn<OrdersV4DocumentDraftLine>[] = [
     {
@@ -104,9 +106,9 @@ export function OrdersV4DocumentLinesTable({
       ...columns.filter((column) => !['unitPrice', 'priceUnitId', 'actions'].includes(String(column.key))),
       {
         key: 'cancellationReasons',
-        label: 'أسباب الإلغاء',
+        label: t('ordersV4CancellationReasonsPlural'),
         minWidth: 240,
-        render: (_value: unknown, line: OrdersV4DocumentDraftLine) => <div className="flex flex-wrap justify-center gap-1">{(line.cancellationReasons ?? []).map((reason) => <span key={reason} className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-700">{ordersV4CancellationReasonLabel(reason)}</span>)}</div>,
+        render: (_value: unknown, line: OrdersV4DocumentDraftLine) => <div className="flex flex-wrap justify-center gap-1">{(line.cancellationReasons ?? []).map((reason) => <span key={reason} className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-700">{ordersV4CancellationReasonLabel(reason, t)}</span>)}</div>,
       } as SimpleTableColumn<OrdersV4DocumentDraftLine>,
       columns.find((column) => column.key === 'actions')!,
     ]

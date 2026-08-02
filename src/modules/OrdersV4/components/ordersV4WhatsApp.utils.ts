@@ -1,4 +1,6 @@
 import type { OrdersV4Document, OrdersV4DocumentLine } from '../../../types/api';
+import { getText, type TranslationKey, type TranslationLanguage, type TranslationReplacement } from '../../../i18n/translations';
+import { ordersV4CancellationReasonLabel } from './ordersV4CancellationReasons';
 
 type WhatsAppLine = Pick<OrdersV4DocumentLine,
   'itemNameSnapshot' | 'inputQuantity' | 'unitPrice' | 'lineTotal' | 'inputUnit' | 'cancellationReasons' | 'cancellationNote'>;
@@ -32,26 +34,24 @@ function paymentMethodLabel(method: OrdersV4Document['paymentMethod']): string {
  * نص الإرسال يُبنى من المستند الذي أعاده الخادم بعد نجاح الحفظ، لا من مسودة الواجهة.
  * التنسيق يطابق تجربة الطلبات/التسجيل الداخلي القديم مع الاحتفاظ بوحدات V4 الفعلية.
  */
-export function buildOrdersV4WhatsAppText(document: WhatsAppDocument): string {
+export function buildOrdersV4WhatsAppText(document: WhatsAppDocument, lang: TranslationLanguage = 'ar'): string {
   if (document.documentType === 'registration' && document.registrationEntryType === 'cancellation') {
-    const reasonLabels: Record<string, string> = {
-      customer_disliked: 'لم يعجب العميل', replaced_item: 'استُبدل بصنف آخر', order_error: 'خطأ في الطلب',
-      registration_error: 'خطأ في التسجيل', delayed_order: 'تأخر الطلب', duplicate_order: 'طلب مكرر',
-      customer_changed_mind: 'العميل غيّر رأيه', item_unavailable: 'الصنف غير متوفر', other: 'أخرى',
-    };
-    const section = document.section?.nameAr || '—';
+    const translate = (key: TranslationKey | string, ...values: TranslationReplacement[]) => getText(String(key), lang, ...values);
+    const section = lang === 'en'
+      ? (document.section?.nameEn || document.section?.nameAr || '—')
+      : (document.section?.nameAr || document.section?.nameEn || '—');
     return [
-      `سجل إلغاء — ${section}`,
-      `التاريخ: ${formatDate(document.documentDate)}`,
-      `رقم العملية: ${document.documentNumber}`,
+      translate('ordersV4CancellationWhatsappTitle', section),
+      translate('ordersV4CancellationWhatsappDate', formatDate(document.documentDate)),
+      translate('ordersV4CancellationWhatsappNumber', document.documentNumber),
       '──────────────',
       ...document.lines.flatMap((line) => [
-        `• ${line.itemNameSnapshot} (${line.inputUnit.nameAr}): ${formatNumber(Math.abs(Number(line.inputQuantity)))}`,
-        `  السبب: ${(line.cancellationReasons ?? []).map((reason) => reasonLabels[reason] || reason).join('، ')}`,
-        line.cancellationNote?.trim() ? `  التوضيح: ${line.cancellationNote.trim()}` : '',
+        `• ${line.itemNameSnapshot} (${lang === 'en' ? (line.inputUnit.nameEn || line.inputUnit.nameAr) : line.inputUnit.nameAr}): ${formatNumber(Math.abs(Number(line.inputQuantity)))}`,
+        `  ${translate('ordersV4CancellationWhatsappReason', (line.cancellationReasons ?? []).map((reason) => ordersV4CancellationReasonLabel(reason, translate)).join(lang === 'en' ? ', ' : '، '))}`,
+        line.cancellationNote?.trim() ? `  ${translate('ordersV4CancellationWhatsappExplanation', line.cancellationNote.trim())}` : '',
       ]),
       '──────────────',
-      document.notes?.trim() ? `ملاحظات عامة: ${document.notes.trim()}` : '',
+      document.notes?.trim() ? translate('ordersV4CancellationWhatsappGeneralNotes', document.notes.trim()) : '',
     ].filter(Boolean).join('\n');
   }
   if (document.documentType === 'registration') {

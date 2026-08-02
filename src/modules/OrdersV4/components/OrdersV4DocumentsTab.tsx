@@ -12,6 +12,7 @@ import { OrdersV4DocumentLineModal, type OrdersV4DocumentLineDraft } from './Ord
 import { buildOrdersV4PeriodCustodyBalances } from './ordersV4CustodyPeriod.utils';
 import { buildOrdersV4WhatsAppText } from './ordersV4WhatsApp.utils';
 import { ordersV4CancellationReasonLabel } from './ordersV4CancellationReasons';
+import { useTranslation } from '../../../i18n/useTranslation';
 
 type DraftLine = OrdersV4DocumentDraftLine;
 
@@ -161,6 +162,7 @@ export function OrdersV4DocumentsTab({
   companyName?: string;
   companyLogoUrl?: string;
 }) {
+  const { t, lang } = useTranslation();
   const documentsQuery = useOrdersV4Documents(companyId, documentType, startDate, endDate);
   const summaryQuery = useOrdersV4Summary(companyId, startDate, endDate, canReport);
   const reverseMutation = useReverseOrdersV4Document(companyId);
@@ -238,15 +240,15 @@ export function OrdersV4DocumentsTab({
   }
 
   function sendDocumentWhatsApp(document: OrdersV4Document) {
-    window.open(`https://wa.me/?text=${encodeURIComponent(buildOrdersV4WhatsAppText(document))}`, '_blank', 'noopener,noreferrer');
+    window.open(`https://wa.me/?text=${encodeURIComponent(buildOrdersV4WhatsAppText(document, lang === 'en' ? 'en' : 'ar'))}`, '_blank', 'noopener,noreferrer');
   }
 
   const columns = useMemo<SimpleTableColumn<OrdersV4Document>[]>(() => [
     ...(!isPurchase ? [
-      { key: 'registrationEntryType', label: 'نوع السجل', minWidth: 115, render: (_value: unknown, row: OrdersV4Document) => (row.registrationEntryType ?? 'issue') === 'cancellation' ? <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">إلغاء</span> : <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">تسجيل</span> },
-      { key: 'cancellationReasons', label: 'أسباب الإلغاء', minWidth: 220, render: (_value: unknown, row: OrdersV4Document) => {
+      { key: 'registrationEntryType', label: t('ordersV4CancellationRecordType'), minWidth: 115, render: (_value: unknown, row: OrdersV4Document) => (row.registrationEntryType ?? 'issue') === 'cancellation' ? <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">{t('ordersV4CancellationShort')}</span> : <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">{t('ordersV4CancellationShortRecord')}</span> },
+      { key: 'cancellationReasons', label: t('ordersV4CancellationReasonsPlural'), minWidth: 220, render: (_value: unknown, row: OrdersV4Document) => {
         const reasons = [...new Set(row.lines.flatMap((line) => line.cancellationReasons ?? []))];
-        return reasons.length ? reasons.map(ordersV4CancellationReasonLabel).join('، ') : '—';
+        return reasons.length ? reasons.map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(lang === 'en' ? ', ' : '، ') : '—';
       } },
     ] as SimpleTableColumn<OrdersV4Document>[] : []),
     { key: 'documentNumber', label: isPurchase ? 'رقم الطلب' : 'رقم التسجيل', minWidth: 180, render: (value) => <span className="font-bold text-noorix-blue">{String(value)}</span> },
@@ -264,7 +266,7 @@ export function OrdersV4DocumentsTab({
     { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? 'الإجمالي' : 'التكلفة', numeric: true, render: (value) => <strong>{v4Number(value)} ر.س</strong> },
     { key: 'status', label: 'الحالة', render: (value) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : 'معكوس'}</span> },
     { key: 'actions', label: '', render: (_value, row) => <div className="flex gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },
-  ], [canReceive, canReverse, canUndoReverse, isPurchase, periodCustodyBalanceByDocumentId]);
+  ], [canReceive, canReverse, canUndoReverse, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -272,7 +274,7 @@ export function OrdersV4DocumentsTab({
       {canCreate && (
         <div className="flex flex-wrap justify-start gap-2" role="toolbar" aria-label={isPurchase ? 'إجراءات الطلبات' : 'إجراءات التسجيل الداخلي'}>
           <Button variant="primary" onClick={() => setCreateOpen(true)}>+ {isPurchase ? 'طلب جديد' : 'تسجيل جديد'}</Button>
-          {!isPurchase && <Button variant="ghost" className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100" onClick={() => setCancellationOpen(true)}>تسجيل إلغاء</Button>}
+          {!isPurchase && <Button variant="ghost" className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100" onClick={() => setCancellationOpen(true)}>{t('staffCancellationStart')}</Button>}
         </div>
       )}
       {historyWindowDays && (
@@ -285,7 +287,7 @@ export function OrdersV4DocumentsTab({
           <OrdersV4Kpi label="عدد التسجيلات" value={summary?.registrationCount ?? 0} />
           <OrdersV4Kpi label="التكلفة المركزية" value={`${v4Number(summary?.registrationTotal)} ر.س`} tone="green" />
           <OrdersV4Kpi label="أسطر التسجيل" value={documents.reduce((sum, row) => sum + row.lines.length, 0)} tone="amber" />
-          <OrdersV4Kpi label="سجلات الإلغاء" value={summary?.cancellationCount ?? 0} tone="red" />
+          <OrdersV4Kpi label={t('ordersV4CancellationRecords')} value={summary?.cancellationCount ?? 0} tone="red" />
         </div>
       ) : null}
       <div className="grid gap-3 rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -337,6 +339,7 @@ export function OrdersV4DocumentsTab({
 function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registrationEntryType = 'issue', bootstrap, initialDocument }: {
   open: boolean; onClose: () => void; companyId: string; documentType: 'purchase' | 'registration'; registrationEntryType?: 'issue' | 'cancellation'; bootstrap?: OrdersV4Bootstrap; initialDocument?: OrdersV4Document | null;
 }) {
+  const { t, lang } = useTranslation();
   const createMutation = useCreateOrdersV4Document(companyId);
   const receiveMutation = useReceiveOrdersV4Document(companyId);
   const mutation = initialDocument ? receiveMutation : createMutation;
@@ -430,7 +433,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       });
     } else {
       const response = await createMutation.mutateAsync(payload);
-      if (response.data) setSendWhatsAppPrompt(buildOrdersV4WhatsAppText(response.data));
+      if (response.data) setSendWhatsAppPrompt(buildOrdersV4WhatsAppText(response.data, lang === 'en' ? 'en' : 'ar'));
     }
     setLines([]);
     setNotes('');
@@ -444,11 +447,11 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       onClose={onClose}
       size="2xl"
       side="start"
-      title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : isCancellation ? 'تسجيل إلغاء — طلبات V4' : 'تسجيل داخلي جديد — طلبات V4'}
-      footer={<DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: 'إلغاء', onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? 'حفظ سجل الإلغاء' : 'حفظ التسجيل الداخلي', onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending }]} />}
+      title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : isCancellation ? t('ordersV4CancellationTitle') : 'تسجيل داخلي جديد — طلبات V4'}
+      footer={<DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? t('ordersV4CancellationSaveRecord') : 'حفظ التسجيل الداخلي', onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending }]} />}
     >
       <div className="flex flex-col gap-4">
-        {isCancellation && <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-[12px] font-semibold leading-6 text-red-900">هذا سجل رقابي مستقل. اختر الصنف كالمعتاد، ثم حدد الكمية وسببًا واحدًا أو أكثر داخل نافذة الصنف. لا يرتبط السجل بتسجيل سابق.</div>}
+        {isCancellation && <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-[12px] font-semibold leading-6 text-red-900">{t('ordersV4CancellationIndependentHint')}</div>}
         <div className={`grid gap-3 sm:grid-cols-2 ${isPurchase ? 'lg:grid-cols-3' : ''}`}>
           <OrdersV4Field label="التاريخ"><TransactionDatePicker value={date} onValueChange={setDate} /></OrdersV4Field>
           {isPurchase && (
@@ -582,12 +585,13 @@ function OrdersV4DocumentDetails({ document, onClose, onPrint, onExport, onWhats
   onExport: (document: OrdersV4Document) => void;
   onWhatsApp: (document: OrdersV4Document) => void;
 }) {
+  const { t, lang } = useTranslation();
   const columns: SimpleTableColumn<OrdersV4Document['lines'][number]>[] = [
     ...(document?.registrationEntryType === 'cancellation' ? [{
       key: 'cancellationReasons',
-      label: 'أسباب الإلغاء',
+      label: t('ordersV4CancellationReasonsPlural'),
       minWidth: 230,
-      render: (_value: unknown, row: OrdersV4Document['lines'][number]) => <div className="flex flex-col gap-1"><span>{(row.cancellationReasons ?? []).map(ordersV4CancellationReasonLabel).join('، ')}</span>{row.cancellationNote && <small className="text-noorix-muted">{row.cancellationNote}</small>}</div>,
+      render: (_value: unknown, row: OrdersV4Document['lines'][number]) => <div className="flex flex-col gap-1"><span>{(row.cancellationReasons ?? []).map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(lang === 'en' ? ', ' : '، ')}</span>{row.cancellationNote && <small className="text-noorix-muted">{row.cancellationNote}</small>}</div>,
     } as SimpleTableColumn<OrdersV4Document['lines'][number]>] : []),
     { key: 'lineNumber', label: '#' },
     { key: 'itemNameSnapshot', label: 'الصنف' },

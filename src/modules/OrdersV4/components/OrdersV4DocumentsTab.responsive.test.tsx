@@ -5,6 +5,11 @@ import type { OrdersV4Bootstrap, OrdersV4Item } from '../../../types/api';
 import { OrdersV4DocumentLinesTable } from './OrdersV4DocumentLinesTable';
 import { OrdersV4DocumentsTab } from './OrdersV4DocumentsTab';
 
+vi.mock('../../../i18n/useTranslation', async () => {
+  const translations = await vi.importActual<typeof import('../../../i18n/translations')>('../../../i18n/translations');
+  return { useTranslation: () => ({ lang: 'ar', t: (key: string) => translations.getText(key, 'ar') }) };
+});
+
 vi.mock('../useOrdersV4', () => ({
   useOrdersV4Documents: () => ({ data: [], isLoading: false, error: null }),
   useOrdersV4Summary: () => ({ data: undefined }),

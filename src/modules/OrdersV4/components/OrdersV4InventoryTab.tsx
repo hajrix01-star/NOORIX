@@ -328,7 +328,11 @@ function StocktakeModal({ open, onClose, companyId, bootstrap, balances }: { ope
         {bootstrap?.sections.filter((section) => section.isActive).map((section) => <Button key={section.id} size="sm" variant={sectionId === section.id ? 'primary' : 'ghost'} onClick={() => setSectionId(section.id)}>{section.nameAr}</Button>)}
         <span className="ms-auto rounded-full bg-noorix-bg-muted px-3 py-1 text-[12px] font-bold">{search.trim() ? `${scoped.length} ظاهر من ${scopeRows.length}` : scopeRows.length} صنف</span>
       </div>
-      <div className="max-h-[52vh] space-y-2 overflow-y-auto pe-1">
+      <details data-testid="orders-v4-stocktake-notes" className="rounded-xl border border-noorix-border bg-noorix-surface">
+        <summary className="cursor-pointer select-none px-3 py-2 text-[11px] font-bold text-noorix-text">ملاحظات الجرد <span className="font-normal text-noorix-muted">(اختياري)</span></summary>
+        <div className="border-t border-noorix-border p-3"><textarea aria-label="ملاحظات الجرد" className="min-h-[72px] w-full rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2 text-[13px] outline-none focus:border-noorix-green" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="ملاحظات اختيارية…" /></div>
+      </details>
+      <div data-testid="orders-v4-stocktake-items" className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {scoped.map((row) => {
           const { item, conversion, units } = rowDefinition(row);
           const expected = Number(row.quantity);
@@ -337,22 +341,40 @@ function StocktakeModal({ open, onClose, companyId, bootstrap, balances }: { ope
           const expectedDisplay = ordersV4CompositeQuantity(row.quantity, item, conversion)?.primary ?? `${v4Number(row.quantity, 6)} ${row.unitName}`;
           const physicalDisplay = ordersV4CompositeQuantity(physicalBase, item, conversion)?.primary ?? `${v4Number(physicalBase, 6)} ${row.unitName}`;
           const varianceDisplay = ordersV4CompositeQuantity(variance, item, conversion)?.primary ?? `${v4Number(variance, 6)} ${row.unitName}`;
-          return <article key={row.itemId} className="rounded-xl border border-noorix-border bg-noorix-surface p-3 shadow-sm">
-            <div className="grid gap-3 lg:grid-cols-[minmax(170px,1fr)_minmax(140px,0.8fr)_minmax(280px,1.6fr)_minmax(140px,0.8fr)] lg:items-end">
-              <div><div className="text-[11px] font-bold text-noorix-muted">الصنف</div><div className="mt-1 font-bold text-noorix-text">{row.itemName}</div><div className="text-[11px] text-noorix-muted">{row.categoryName || 'بدون فئة'} · {row.unitName}</div></div>
-              <div className="rounded-lg bg-noorix-bg-muted p-2 text-center"><div className="text-[10px] font-bold text-noorix-muted">الدفتري</div><div className="mt-1 text-[13px] font-bold tabular-nums">{expectedDisplay}</div></div>
-              <div><div className="mb-1 text-[10px] font-bold text-noorix-muted">الفعلي — أدخل بأي تغليف</div><div className="flex flex-wrap gap-2">{units.map((unit) => {
-                const stored = physical[row.itemId];
-                const value = stored ? stored[unit.unitId] ?? '' : unit.unitId === item?.inventoryUnitId ? String(row.quantity) : '';
-                return <label key={unit.unitId} className="min-w-[90px] flex-1"><span className="mb-1 block text-center text-[10px] text-noorix-muted">{unit.unit.nameAr}</span><Input type="number" step="any" value={value} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPhysicalValue(row, unit.unitId, event.target.value)} /></label>;
-              })}</div><div className="mt-1 text-[10px] text-noorix-muted">الإجمالي الفعلي: {physicalDisplay}</div></div>
-              <div className={`rounded-lg p-2 text-center ${variance === 0 ? 'bg-emerald-50 text-emerald-700' : variance < 0 ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'}`}><div className="text-[10px] font-bold">الفرق</div><div className="mt-1 text-[13px] font-bold tabular-nums">{varianceDisplay}</div></div>
+          return <article key={row.itemId} data-testid={`orders-v4-stocktake-item-${row.itemId}`} className="min-w-0 rounded-xl border border-noorix-border bg-noorix-surface p-3 shadow-sm">
+            <header className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[13px] font-bold leading-5 text-noorix-text">{row.itemName}</div>
+                {item?.nameEn && <div className="truncate text-[10px] text-noorix-muted" dir="ltr">{item.nameEn}</div>}
+                <div className="mt-0.5 text-[10px] text-noorix-muted">{row.categoryName || 'بدون فئة'}</div>
+              </div>
+              <span className="shrink-0 rounded-full bg-noorix-bg-muted px-2.5 py-1 text-[10px] font-bold text-noorix-muted">{row.unitName}</span>
+            </header>
+
+            <div data-testid="orders-v4-stocktake-quantity-pair" className="mt-2.5 grid grid-cols-2 gap-2">
+              <div className="flex min-h-[74px] flex-col justify-center rounded-lg bg-noorix-bg-muted p-2 text-center">
+                <div className="text-[10px] font-bold text-noorix-muted">الدفتري</div>
+                <div className="mt-1 text-[14px] font-bold tabular-nums">{expectedDisplay}</div>
+              </div>
+              <div className="rounded-lg border border-noorix-border bg-white p-2">
+                <div className="mb-1 text-center text-[10px] font-bold text-noorix-muted">الفعلي</div>
+                <div className="grid gap-1.5">{units.map((unit) => {
+                  const stored = physical[row.itemId];
+                  const value = stored ? stored[unit.unitId] ?? '' : unit.unitId === item?.inventoryUnitId ? String(row.quantity) : '';
+                  return <label key={unit.unitId} className="min-w-0"><span className="mb-0.5 block text-center text-[9px] text-noorix-muted">{unit.unit.nameAr}</span><Input className="h-9 text-center font-bold tabular-nums" type="number" step="any" value={value} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPhysicalValue(row, unit.unitId, event.target.value)} /></label>;
+                })}</div>
+                <div className="mt-1 text-center text-[9px] text-noorix-muted">الإجمالي: {physicalDisplay}</div>
+              </div>
+            </div>
+
+            <div data-testid="orders-v4-stocktake-variance" className={`mt-2 flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 ${variance === 0 ? 'bg-emerald-50 text-emerald-700' : variance < 0 ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'}`}>
+              <span className="text-[10px] font-bold">الفرق</span>
+              <strong className="text-[12px] tabular-nums">{varianceDisplay}</strong>
             </div>
           </article>;
         })}
-        {!scoped.length && <div className="rounded-xl border border-dashed border-noorix-border p-8 text-center text-[13px] text-noorix-muted">لا توجد أصناف مطابقة في الموقع والنطاق المحددين</div>}
+        {!scoped.length && <div className="rounded-xl border border-dashed border-noorix-border p-8 text-center text-[13px] text-noorix-muted md:col-span-2">لا توجد أصناف مطابقة في الموقع والنطاق المحددين</div>}
       </div>
-      <OrdersV4Field label="ملاحظات الجرد"><textarea className="min-h-[82px] w-full rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2 text-[13px] outline-none focus:border-noorix-green" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="ملاحظات اختيارية…" /></OrdersV4Field>
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-6 text-amber-950">
         الاعتماد ينشئ مستند جرد وقيود فروقات غير قابلة للحذف. أي تصحيح لاحق يتم بجرد جديد حتى يبقى سجل المخزون كاملاً وقابلاً للمراجعة.
       </div>

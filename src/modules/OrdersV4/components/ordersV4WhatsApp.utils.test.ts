@@ -76,4 +76,22 @@ describe('buildOrdersV4WhatsAppText', () => {
     expect(text).toContain('خطأ في الطلب، طلب مكرر');
     expect(text).toContain('اختبار رقابي');
   });
+
+  it('translates the independent cancellation message and its reasons to English', () => {
+    const text = buildOrdersV4WhatsAppText(document({
+      documentNumber: 'CAN4-20260803-ABC123',
+      registrationEntryType: 'cancellation',
+      lines: [{
+        ...document().lines[0],
+        inputQuantity: '-1',
+        cancellationReasons: ['customer_changed_mind', 'item_unavailable'],
+        cancellationNote: 'English control note',
+      }],
+    }), 'en');
+
+    expect(text).toContain('Cancellation record');
+    expect(text).toContain('Reason: Customer changed their mind, Item unavailable');
+    expect(text).toContain('Details: English control note');
+    expect(text).not.toContain('السبب');
+  });
 });

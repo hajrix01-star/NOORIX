@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { OrdersV4CancellationReason, OrdersV4Item } from '../../../types/api';
+import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, DialogActions, Input, Modal } from '../../../ui';
 import { OrdersV4Field, OrdersV4Select, v4Number } from '../OrdersV4Shared';
 import { ORDERS_V4_CANCELLATION_REASON_OPTIONS } from './ordersV4CancellationReasons';
@@ -29,6 +30,7 @@ export function OrdersV4DocumentLineModal({
   onClose: () => void;
   onConfirm: (draft: OrdersV4DocumentLineDraft) => void;
 }) {
+  const { t } = useTranslation();
   const selectableUnits = useMemo(() => (item?.units ?? []).filter((row) => row.isActive
     && (!isPurchase || isReceiving || (row.isOrderEnabled && row.lastPrice != null))), [isPurchase, isReceiving, item]);
   const [unitId, setUnitId] = useState('');
@@ -81,7 +83,7 @@ export function OrdersV4DocumentLineModal({
       title={activeItem.nameAr}
       footer={<DialogActions actions={[
         { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose },
-        { key: 'add', label: isCancellation ? 'إضافة الإلغاء' : 'إضافة', role: isCancellation ? 'danger' : 'save', onClick: confirm, disabled: !unitId || Number(quantity) <= 0 || (isCancellation && (!cancellationReasons.length || (cancellationReasons.includes('other') && !cancellationNote.trim()))) },
+        { key: 'add', label: isCancellation ? t('ordersV4CancellationAddLine') : t('add'), role: isCancellation ? 'danger' : 'save', onClick: confirm, disabled: !unitId || Number(quantity) <= 0 || (isCancellation && (!cancellationReasons.length || (cancellationReasons.includes('other') && !cancellationNote.trim()))) },
       ]} />}
     >
       <div className="flex flex-col gap-5">
@@ -129,10 +131,10 @@ export function OrdersV4DocumentLineModal({
         {isCancellation && (
           <div className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50/60 p-3">
             <div>
-              <div className="text-[13px] font-bold text-red-900">سبب الإلغاء</div>
-              <div className="mt-1 text-[11px] text-red-700">يمكن اختيار أكثر من سبب لهذا الصنف.</div>
+              <div className="text-[13px] font-bold text-red-900">{t('staffCancellationReasons')}</div>
+              <div className="mt-1 text-[11px] text-red-700">{t('ordersV4CancellationMultipleReasonsHint')}</div>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-label="أسباب إلغاء الصنف">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-label={t('ordersV4CancellationReasonsPlural')}>
               {ORDERS_V4_CANCELLATION_REASON_OPTIONS.map((option) => {
                 const selected = cancellationReasons.includes(option.value);
                 return <Button
@@ -142,10 +144,10 @@ export function OrdersV4DocumentLineModal({
                   aria-pressed={selected}
                   onClick={() => setCancellationReasons((current) => selected ? current.filter((reason) => reason !== option.value) : [...current, option.value])}
                   className={`min-h-10 rounded-lg border px-2 py-1.5 text-[11px] font-semibold ${selected ? 'border-red-600 bg-red-600 text-white shadow-sm' : 'border-red-200 bg-white text-noorix-text hover:border-red-400'}`}
-                >{option.label}</Button>;
+                >{t(option.translationKey)}</Button>;
               })}
             </div>
-            {cancellationReasons.includes('other') && <OrdersV4Field label="توضيح السبب الآخر"><Input multiline rows={2} value={cancellationNote} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setCancellationNote(event.target.value)} placeholder="اكتب سبب الإلغاء بوضوح…" /></OrdersV4Field>}
+            {cancellationReasons.includes('other') && <OrdersV4Field label={t('ordersV4CancellationOtherExplanation')}><Input multiline rows={2} value={cancellationNote} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setCancellationNote(event.target.value)} placeholder={t('ordersV4CancellationOtherPlaceholder')} /></OrdersV4Field>}
           </div>
         )}
 

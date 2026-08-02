@@ -14,6 +14,7 @@ import {
 } from '../OrdersV4Shared';
 import { useOrdersV4ItemsReport, useOrdersV4SalesReport } from '../useOrdersV4';
 import { ORDERS_V4_CANCELLATION_REASON_OPTIONS, ordersV4CancellationReasonLabel } from './ordersV4CancellationReasons';
+import { useTranslation } from '../../../i18n/useTranslation';
 
 function normalized(value: unknown): string {
   return String(value ?? '').trim().toLocaleLowerCase('ar');
@@ -78,6 +79,7 @@ function statusLabel(status: string): string {
 }
 
 export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { companyId: string; startDate: string; endDate: string }) {
+  const { t, lang } = useTranslation();
   const query = useOrdersV4SalesReport(companyId, startDate, endDate);
   const report = query.data;
   const [search, setSearch] = useState('');
@@ -96,8 +98,8 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
       && (!status || document.status === status)
       && (!entryType || (document.registrationEntryType ?? 'issue') === entryType)
       && (!cancellationReason || document.lines.some((line) => line.cancellationReasons?.includes(cancellationReason)))
-      && (!term || normalized(`${document.documentNumber} ${document.section?.nameAr || ''} ${v4UserLabel(document.createdByUser)} ${document.lines.map((line) => `${line.itemNameSnapshot} ${(line.cancellationReasons ?? []).map(ordersV4CancellationReasonLabel).join(' ')} ${line.cancellationNote || ''}`).join(' ')}`).includes(term)));
-  }, [cancellationReason, createdByUserId, documents, entryType, search, sectionId, status]);
+      && (!term || normalized(`${document.documentNumber} ${document.section?.nameAr || ''} ${v4UserLabel(document.createdByUser)} ${document.lines.map((line) => `${line.itemNameSnapshot} ${(line.cancellationReasons ?? []).map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(' ')} ${line.cancellationNote || ''}`).join(' ')}`).includes(term)));
+  }, [cancellationReason, createdByUserId, documents, entryType, search, sectionId, status, t]);
   const filteredByItem = useMemo<OrdersV4ItemsReportRow[]>(() => {
     const grouped = new Map<string, { itemId: string; nameAr: string; categoryName: string; inventoryUnit: string; documentIds: Set<string>; baseQuantity: number; totalAmount: number }>();
     for (const document of filteredDocuments) for (const line of document.lines) {
@@ -139,8 +141,8 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
   }, [filteredDocuments]);
   const filteredTotal = useMemo(() => filteredDocuments.reduce((sum, row) => sum + Number(row.operationalCost || 0), 0), [filteredDocuments]);
   const cancellationFilters = <div className="grid gap-3 rounded-xl border border-red-100 bg-red-50/40 p-3 sm:grid-cols-2">
-    <OrdersV4Field label="نوع السجل"><OrdersV4Select value={entryType} onChange={(event) => setEntryType(event.target.value as 'issue' | 'cancellation' | '')}><option value="">كل التسجيلات</option><option value="issue">تسجيل داخلي</option><option value="cancellation">سجل إلغاء</option></OrdersV4Select></OrdersV4Field>
-    <OrdersV4Field label="سبب الإلغاء"><OrdersV4Select value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value as OrdersV4CancellationReason | '')}><option value="">كل الأسباب</option>{ORDERS_V4_CANCELLATION_REASON_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</OrdersV4Select></OrdersV4Field>
+    <OrdersV4Field label={t('ordersV4CancellationRecordType')}><OrdersV4Select value={entryType} onChange={(event) => setEntryType(event.target.value as 'issue' | 'cancellation' | '')}><option value="">{t('ordersV4CancellationAllRecords')}</option><option value="issue">{t('ordersV4CancellationRegularRecord')}</option><option value="cancellation">{t('ordersV4CancellationRecord')}</option></OrdersV4Select></OrdersV4Field>
+    <OrdersV4Field label={t('staffCancellationReasons')}><OrdersV4Select value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value as OrdersV4CancellationReason | '')}><option value="">{t('ordersV4CancellationAllReasons')}</option>{ORDERS_V4_CANCELLATION_REASON_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.translationKey)}</option>)}</OrdersV4Select></OrdersV4Field>
   </div>;
   const itemColumns: SimpleTableColumn<OrdersV4ItemsReportRow>[] = [
     { key: 'nameAr', label: 'الصنف' },
@@ -154,10 +156,10 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
     { key: 'totalAmount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
   ];
   const documentColumns: SimpleTableColumn<OrdersV4Document>[] = [
-    { key: 'registrationEntryType', label: 'نوع السجل', render: (_value, row) => (row.registrationEntryType ?? 'issue') === 'cancellation' ? <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">إلغاء</span> : 'تسجيل داخلي' },
-    { key: 'cancellationReasons', label: 'أسباب الإلغاء', minWidth: 230, render: (_value, row) => {
+    { key: 'registrationEntryType', label: t('ordersV4CancellationRecordType'), render: (_value, row) => (row.registrationEntryType ?? 'issue') === 'cancellation' ? <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">{t('ordersV4CancellationShort')}</span> : t('ordersV4CancellationRegularRecord') },
+    { key: 'cancellationReasons', label: t('ordersV4CancellationReasonsPlural'), minWidth: 230, render: (_value, row) => {
       const reasons = [...new Set(row.lines.flatMap((line) => line.cancellationReasons ?? []))];
-      return reasons.length ? reasons.map(ordersV4CancellationReasonLabel).join('، ') : '—';
+      return reasons.length ? reasons.map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(lang === 'en' ? ', ' : '، ') : '—';
     } },
     { key: 'documentNumber', label: 'مرجع التسجيل', minWidth: 180 },
     { key: 'documentDate', label: 'التاريخ', render: (value) => v4Date(String(value)) },
