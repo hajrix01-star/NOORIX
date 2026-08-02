@@ -72,6 +72,7 @@ function CutoverAuditPanel({ companyId, query }: { companyId: string; query: Ret
   const audit = query.data;
   const executeMutation = useExecuteOrdersV4Cutover(companyId);
   const [result, setResult] = useState<OrdersV4CutoverResult | null>(null);
+  const [executeError, setExecuteError] = useState('');
   const issueColumns: SimpleTableColumn<OrdersV4CutoverAudit['issues'][number]>[] = [
     { key: 'severity', label: 'المستوى', render: (value) => value === 'error' ? 'خطأ مانع' : 'تنبيه' },
     { key: 'entity', label: 'الكيان' },
@@ -82,8 +83,13 @@ function CutoverAuditPanel({ companyId, query }: { companyId: string; query: Ret
   const target = audit?.target ?? {};
   const execute = async () => {
     if (!audit?.ready || executeMutation.isPending) return;
-    const response = await executeMutation.mutateAsync({ confirmation: 'IMPORT_LEGACY_ORDERS_TO_V4', sourceFingerprint: audit.sourceFingerprint });
-    setResult(response.data ?? null);
+    setExecuteError('');
+    try {
+      const response = await executeMutation.mutateAsync({ confirmation: 'IMPORT_LEGACY_ORDERS_TO_V4', sourceFingerprint: audit.sourceFingerprint });
+      setResult(response.data ?? null);
+    } catch (error) {
+      setExecuteError(error instanceof Error ? error.message : 'تعذر تنفيذ الترحيل');
+    }
   };
   return <OrdersV4Panel title="تدقيق الانتقال من الطلبات القديم إلى طلبات V4" action={audit?.ready ? <Button variant="primary" onClick={execute} disabled={executeMutation.isPending}>{executeMutation.isPending ? 'جارٍ الترحيل والمطابقة…' : 'تنفيذ الترحيل الذري'}</Button> : undefined}>
     <OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} />
@@ -98,6 +104,7 @@ function CutoverAuditPanel({ companyId, query }: { companyId: string; query: Ret
         <pre className="min-w-[760px] whitespace-pre-wrap text-left">{JSON.stringify({ generatedAt: audit.generatedAt, sourceFingerprint: audit.sourceFingerprint, source, target, issueCounts: audit.issueCounts }, null, 2)}</pre>
       </div>
       <SimpleTable columns={issueColumns} data={audit.issues} emptyMessage="لا توجد مشكلات في المصدر" tableMinWidth={760} />
+      {executeError && <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800">{executeError}</div>}
       {result && <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900" dir="ltr"><pre className="whitespace-pre-wrap text-left">{JSON.stringify(result, null, 2)}</pre></div>}
     </div>}
   </OrdersV4Panel>;
