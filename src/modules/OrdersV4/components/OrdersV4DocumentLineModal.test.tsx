@@ -11,7 +11,7 @@ const piece: OrdersV4Unit = {
   code: 'piece',
   nameAr: 'حبة',
   dimension: 'count',
-  decimalScale: 0,
+  decimalScale: 3,
   isActive: true,
 };
 

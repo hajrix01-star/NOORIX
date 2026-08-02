@@ -42,7 +42,9 @@ export function OrdersV4DocumentLineModal({
   if (!item) return null;
   const activeItem = item;
   const selectedUnit = selectableUnits.find((row) => row.unitId === unitId);
-  const unitStep = selectedUnit?.unit.decimalScale === 0 ? 1 : 0.001;
+  const unitStep = selectedUnit?.unit.dimension === 'count'
+    ? 1
+    : 10 ** -Math.min(3, Math.max(0, selectedUnit?.unit.decimalScale ?? 0));
   const numericQuantity = Math.max(unitStep, Number(quantity) || unitStep);
 
   function changeUnit(nextUnitId: string) {
