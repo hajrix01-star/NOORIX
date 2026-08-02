@@ -16,6 +16,11 @@ describe('Orders V4 legacy cutover mapping', () => {
     expect(legacyTargetId('unit', 'piece')).toBe(legacyTargetId('unit', 'piece'));
   });
 
+  it('keeps deterministic migration identities isolated between companies', () => {
+    expect(legacyTargetId('unit', 'company-a:piece')).not.toBe(legacyTargetId('unit', 'company-b:piece'));
+    expect(legacyTargetId('item', 'company-a:source-1')).not.toBe(legacyTargetId('item', 'company-b:source-1'));
+  });
+
   it('keeps only valid unique conversion edges', () => {
     const rows = legacyConversionRows([
       { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },

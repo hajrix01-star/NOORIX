@@ -65,6 +65,8 @@ describe('Orders V4 inventory boundary', () => {
     expect(importer).toContain('ledgerPosting.postCutoverOpening');
     expect(importer).not.toContain('ordersV4InventoryLedgerEntry.create');
     expect(posting).toContain('calculateOrdersV4OpeningBalance');
+    expect(importer).toContain("legacyTargetId(scope, `${companyId}:${sourceKey}`)");
+    expect(importer).toContain("`${companyId}:${sourceEntity}:${sourceId}`");
   });
 
   it('limits the append-only ledger bypass to the privileged cutover transaction', () => {

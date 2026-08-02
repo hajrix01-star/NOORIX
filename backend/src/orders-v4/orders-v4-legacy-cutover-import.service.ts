@@ -80,6 +80,7 @@ export class OrdersV4LegacyCutoverImportService {
     const userId = TenantContext.getUserId();
     const runId = `orders-v4-cutover-${Date.now()}-${legacyStableHash(expectedFingerprint).slice(0, 8)}`;
     const executedAt = new Date();
+    const targetId = (scope: string, sourceKey: string) => legacyTargetId(scope, `${companyId}:${sourceKey}`);
 
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -173,18 +174,18 @@ export class OrdersV4LegacyCutoverImportService {
       for (const order of orders) for (const line of order.items) registerUnit(line.unit || line.packaging);
       for (const order of staffOrders) for (const line of order.items) registerUnit(line.unit || line.packaging);
 
-      const unitIdByKey = new Map([...unitMetadata.keys()].map((key) => [key, legacyTargetId('unit', key)]));
+      const unitIdByKey = new Map([...unitMetadata.keys()].map((key) => [key, targetId('unit', key)]));
       const categoryIdBySource = new Map<string, string>();
       const categoryTargetByName = new Map<string, string>();
       for (const category of categories) {
         const key = normalizedName(category.nameAr);
-        const targetId = categoryTargetByName.get(key) ?? legacyTargetId('category', key);
-        categoryTargetByName.set(key, targetId);
-        categoryIdBySource.set(category.id, targetId);
+        const categoryTargetId = categoryTargetByName.get(key) ?? targetId('category', key);
+        categoryTargetByName.set(key, categoryTargetId);
+        categoryIdBySource.set(category.id, categoryTargetId);
       }
-      const sectionIdBySource = new Map(sections.map((section) => [section.id, legacyTargetId('section', section.id)]));
+      const sectionIdBySource = new Map(sections.map((section) => [section.id, targetId('section', section.id)]));
       const sectionIdByName = new Map(sections.map((section) => [normalizedName(section.nameAr), sectionIdBySource.get(section.id)!]));
-      const itemIdBySource = new Map(products.map((product) => [product.id, legacyTargetId('item', product.id)]));
+      const itemIdBySource = new Map(products.map((product) => [product.id, targetId('item', product.id)]));
 
       await this.purgeTarget(tx, companyId);
       await tx.ordersV4Unit.createMany({ data: [...unitMetadata.entries()].map(([key, metadata], index) => ({
@@ -199,8 +200,8 @@ export class OrdersV4LegacyCutoverImportService {
         nameEn: section.nameEn, sortOrder: section.sortOrder, isActive: true,
       })) });
 
-      const mainLocationId = legacyTargetId('location', 'main');
-      const locationIdBySource = new Map(legacyLocations.map((location) => [location.id, legacyTargetId('location', location.id)]));
+      const mainLocationId = targetId('location', 'main');
+      const locationIdBySource = new Map(legacyLocations.map((location) => [location.id, targetId('location', location.id)]));
       await tx.ordersV4Location.createMany({ data: [
         { id: mainLocationId, tenantId, companyId, code: 'main', nameAr: 'المخزون الرئيسي', nameEn: 'Main inventory', kind: 'warehouse', sectionId: null, isActive: true },
         ...legacyLocations.filter((location) => location.code !== 'main').map((location) => ({
@@ -241,7 +242,7 @@ export class OrdersV4LegacyCutoverImportService {
           if (!definitions.has(conversion.toUnitKey)) definitions.set(conversion.toUnitKey, { label: null, price: null, enabled: true });
         }
         for (const [unitKey, definition] of definitions) itemUnits.push({
-          id: legacyTargetId('item-unit', `${product.id}:${unitKey}`), tenantId, companyId, itemId, unitId: unitIdByKey.get(unitKey)!,
+          id: targetId('item-unit', `${product.id}:${unitKey}`), tenantId, companyId, itemId, unitId: unitIdByKey.get(unitKey)!,
           purchaseLabel: definition.label, isOrderEnabled: definition.enabled, lastPrice: definition.price, isActive: true, sortOrder: itemUnits.length,
         });
       }
@@ -255,7 +256,7 @@ export class OrdersV4LegacyCutoverImportService {
           ...ids.map((id) => sectionIdBySource.get(id)).filter((id): id is string => Boolean(id)),
           ...names.map((name) => sectionIdByName.get(normalizedName(name))).filter((id): id is string => Boolean(id)),
         ]);
-        for (const sectionId of targetIds) itemSections.push({ id: legacyTargetId('item-section', `${product.id}:${sectionId}`), tenantId, companyId, itemId: itemIdBySource.get(product.id)!, sectionId });
+        for (const sectionId of targetIds) itemSections.push({ id: targetId('item-section', `${product.id}:${sectionId}`), tenantId, companyId, itemId: itemIdBySource.get(product.id)!, sectionId });
       }
       if (itemSections.length) await tx.ordersV4ItemSection.createMany({ data: itemSections, skipDuplicates: true });
 
@@ -263,9 +264,9 @@ export class OrdersV4LegacyCutoverImportService {
       const conversionEdges: Prisma.OrdersV4ConversionEdgeCreateManyInput[] = [];
       await tx.ordersV4ConversionVersion.createMany({ data: products.map((product) => {
         const rows = legacyConversionRows(product.inventoryConversions, product.conversionTemplate?.conversions);
-        const id = legacyTargetId('conversion', product.id); conversionVersionIdByProduct.set(product.id, id);
+        const id = targetId('conversion', product.id); conversionVersionIdByProduct.set(product.id, id);
         rows.forEach((row, index) => conversionEdges.push({
-          id: legacyTargetId('conversion-edge', `${product.id}:${row.fromUnitKey}:${row.toUnitKey}`), tenantId, companyId, versionId: id,
+          id: targetId('conversion-edge', `${product.id}:${row.fromUnitKey}:${row.toUnitKey}`), tenantId, companyId, versionId: id,
           fromUnitId: unitIdByKey.get(row.fromUnitKey)!, toUnitId: unitIdByKey.get(row.toUnitKey)!, factor: row.factor,
           reversible: true, allowDimensionBridge: legacyUnitDefinition(row.fromUnitKey).dimension !== legacyUnitDefinition(row.toUnitKey).dimension, sortOrder: index,
         }));
@@ -277,9 +278,9 @@ export class OrdersV4LegacyCutoverImportService {
       const recipeLines: Prisma.OrdersV4RecipeLineCreateManyInput[] = [];
       if (validRecipes.size) {
         await tx.ordersV4RecipeVersion.createMany({ data: [...validRecipes.entries()].map(([productId, rows]) => {
-          const id = legacyTargetId('recipe', productId); recipeVersionIdByProduct.set(productId, id);
+          const id = targetId('recipe', productId); recipeVersionIdByProduct.set(productId, id);
           rows.forEach((row, index) => recipeLines.push({
-            id: legacyTargetId('recipe-line', `${productId}:${row.materialProductId}:${index}`), tenantId, companyId, recipeVersionId: id,
+            id: targetId('recipe-line', `${productId}:${row.materialProductId}:${index}`), tenantId, companyId, recipeVersionId: id,
             componentItemId: itemIdBySource.get(row.materialProductId)!, quantity: row.quantity, unitId: unitIdByKey.get(row.unitKey)!, sortOrder: index,
           }));
           const outputUnitId = unitIdByKey.get(legacyUnitKey(productById.get(productId)!.unit))!;
@@ -293,7 +294,7 @@ export class OrdersV4LegacyCutoverImportService {
       const priceHistory: Prisma.OrdersV4PriceHistoryCreateManyInput[] = [];
       const documentIdByOrder = new Map<string, string>();
       for (const order of orders) {
-        const documentId = legacyTargetId('purchase-document', order.id); documentIdByOrder.set(order.id, documentId);
+        const documentId = targetId('purchase-document', order.id); documentIdByOrder.set(order.id, documentId);
         const paymentMethod = legacyPaymentMethod(order.orderType);
         documentRows.push({
           id: documentId, tenantId, companyId, documentNumber: `LEGACY-${order.orderNumber}`, documentType: 'purchase',
@@ -309,7 +310,7 @@ export class OrdersV4LegacyCutoverImportService {
           const inputKey = legacyUnitKey(line.unit || line.packaging, product.unit);
           const baseKey = legacyUnitKey(product.unit);
           const baseQuantity = line.inventoryBaseQuantitySnapshot ?? line.quantity.times(line.quantityMultiplier);
-          const lineId = legacyTargetId('purchase-line', line.id);
+          const lineId = targetId('purchase-line', line.id);
           documentLines.push({
             id: lineId, tenantId, companyId, documentId, itemId: itemIdBySource.get(line.productId)!, lineNumber: index + 1,
             itemNameSnapshot: product.nameAr, inputQuantity: line.quantity, inputUnitId: unitIdByKey.get(inputKey)!, baseQuantity,
@@ -319,7 +320,7 @@ export class OrdersV4LegacyCutoverImportService {
             calculationSnapshot: { kernelVersion: 4, sourceLineId: line.id, migrationRunId: runId }, createdAt: order.createdAt,
           });
           if (order.status === 'active' && baseQuantity.gt(0)) priceHistory.push({
-            id: legacyTargetId('price', line.id), tenantId, companyId, itemId: itemIdBySource.get(line.productId)!, unitId: unitIdByKey.get(inputKey)!,
+            id: targetId('price', line.id), tenantId, companyId, itemId: itemIdBySource.get(line.productId)!, unitId: unitIdByKey.get(inputKey)!,
             inventoryUnitId: unitIdByKey.get(baseKey)!, documentId, documentLineId: lineId, unitPrice: line.unitPrice,
             inventoryUnitPrice: line.amount.div(baseQuantity), conversionVersionId: conversionVersionIdByProduct.get(line.productId), effectiveAt: order.orderDate, createdAt: order.createdAt,
           });
@@ -329,7 +330,7 @@ export class OrdersV4LegacyCutoverImportService {
       const documentIdByStaffOrder = new Map<string, string>();
       for (const staffOrder of staffOrders) {
         if (staffOrder.entryType !== 'issue') continue;
-        const documentId = legacyTargetId('registration-document', staffOrder.id); documentIdByStaffOrder.set(staffOrder.id, documentId);
+        const documentId = targetId('registration-document', staffOrder.id); documentIdByStaffOrder.set(staffOrder.id, documentId);
         const documentDate = dateOnly(staffOrder.saleDate ?? staffOrder.createdAt);
         const sectionId = sectionIdByName.get(normalizedName(staffOrder.sectionName)) ?? null;
         let totalAmount = new Prisma.Decimal(0);
@@ -344,7 +345,7 @@ export class OrdersV4LegacyCutoverImportService {
           const lineCost = sum(components.map((component) => component.quantity.times(averageCostByProduct.get(component.productId) ?? 0)));
           totalAmount = totalAmount.plus(lineTotal); operationalCost = operationalCost.plus(lineCost);
           documentLines.push({
-            id: legacyTargetId('registration-line', line.id), tenantId, companyId, documentId, itemId: itemIdBySource.get(line.productId)!, lineNumber: index + 1,
+            id: targetId('registration-line', line.id), tenantId, companyId, documentId, itemId: itemIdBySource.get(line.productId)!, lineNumber: index + 1,
             itemNameSnapshot: product.nameAr, inputQuantity: line.quantity, inputUnitId: unitIdByKey.get(inputKey)!, baseQuantity,
             baseUnitId: unitIdByKey.get(baseKey)!, unitPrice: line.unitPrice, priceUnitId: unitIdByKey.get(inputKey)!, priceQuantity: line.quantity,
             lineTotal, operationalCost: lineCost, conversionVersionId: conversionVersionIdByProduct.get(line.productId), recipeVersionId: recipeVersionIdByProduct.get(line.productId),
@@ -476,7 +477,7 @@ export class OrdersV4LegacyCutoverImportService {
   }
 
   private mapRow(tenantId: string, companyId: string, runId: string, sourceEntity: string, sourceId: string, targetEntity: string, targetId: string, source: unknown): Prisma.OrdersV4MigrationMapCreateManyInput {
-    return { id: legacyTargetId('migration-map', `${sourceEntity}:${sourceId}`), tenantId, companyId, sourceSystem: 'legacy-orders', sourceEntity, sourceId, targetEntity, targetId, sourceChecksum: legacyStableHash(source), migrationRunId: runId, status: 'verified', detail: { migrationRunId: runId } };
+    return { id: legacyTargetId('migration-map', `${companyId}:${sourceEntity}:${sourceId}`), tenantId, companyId, sourceSystem: 'legacy-orders', sourceEntity, sourceId, targetEntity, targetId, sourceChecksum: legacyStableHash(source), migrationRunId: runId, status: 'verified', detail: { migrationRunId: runId } };
   }
 
   private async purgeTarget(tx: Prisma.TransactionClient, companyId: string): Promise<void> {
