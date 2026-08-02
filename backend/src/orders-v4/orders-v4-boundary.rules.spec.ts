@@ -78,6 +78,16 @@ describe('Orders V4 inventory boundary', () => {
     expect(migration).toContain("RAISE EXCEPTION 'Orders V4 audit rows are append-only'");
   });
 
+  it('declares cutover opening balances as a first-class audited ledger event', () => {
+    const posting = readFileSync(join(__dirname, 'orders-v4-ledger-posting.service.ts'), 'utf8');
+    const migration = readFileSync(
+      join(__dirname, '../../prisma/migrations/20260802235500_orders_v4_cutover_opening_entry_type/migration.sql'),
+      'utf8',
+    );
+    expect(posting).toContain("entryType: 'cutover_opening'");
+    expect(migration).toContain("'cutover_opening'");
+  });
+
   it('renders the historical document base unit snapshot instead of the item current unit', () => {
     const documentTab = readFileSync(
       join(__dirname, '../../../src/modules/OrdersV4/components/OrdersV4DocumentsTab.tsx'),
