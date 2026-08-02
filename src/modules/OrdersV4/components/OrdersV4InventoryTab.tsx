@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import type { OrdersV4Bootstrap, OrdersV4CutoverAudit, OrdersV4DataQuality, OrdersV4InventoryBalance, OrdersV4LedgerEntry, OrdersV4Stocktake, OrdersV4UserIdentity } from '../../../types/api';
+import type { OrdersV4Bootstrap, OrdersV4CutoverAudit, OrdersV4CutoverResult, OrdersV4DataQuality, OrdersV4InventoryBalance, OrdersV4LedgerEntry, OrdersV4Stocktake, OrdersV4UserIdentity } from '../../../types/api';
 import { Button, DialogActions, Input, Modal, ScreenTabs, type SimpleTableColumn, TransactionDatePicker } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import {
@@ -15,7 +15,7 @@ import {
   v4Number,
   v4UserLabel,
 } from '../OrdersV4Shared';
-import { useCreateOrdersV4Stocktake, useOrdersV4Balances, useOrdersV4CutoverAudit, useOrdersV4DataQuality, useOrdersV4Ledger, useOrdersV4Stocktakes } from '../useOrdersV4';
+import { useCreateOrdersV4Stocktake, useExecuteOrdersV4Cutover, useOrdersV4Balances, useOrdersV4CutoverAudit, useOrdersV4DataQuality, useOrdersV4Ledger, useOrdersV4Stocktakes } from '../useOrdersV4';
 import { ordersV4CompositeQuantity, ordersV4UnitFactorToBase } from './ordersV4ItemDefinition.utils';
 
 function normalized(value: unknown): string {
@@ -63,13 +63,15 @@ export function OrdersV4InventoryTab({ companyId, bootstrap, canWrite = false, c
       {tab === 'stocktakes' && <StocktakesTable query={stocktakesQuery} onCreate={canWrite ? () => setStocktakeOpen(true) : undefined} />}
       {tab === 'quality' && <QualityTable query={qualityQuery} />}
     </ScreenTabs>
-    {canCutover && <CutoverAuditPanel query={cutoverQuery} />}
+    {canCutover && <CutoverAuditPanel companyId={companyId} query={cutoverQuery} />}
     {canWrite && <StocktakeModal open={stocktakeOpen} onClose={() => setStocktakeOpen(false)} companyId={companyId} bootstrap={bootstrap} balances={balances} />}
   </div>;
 }
 
-function CutoverAuditPanel({ query }: { query: ReturnType<typeof useOrdersV4CutoverAudit> }) {
+function CutoverAuditPanel({ companyId, query }: { companyId: string; query: ReturnType<typeof useOrdersV4CutoverAudit> }) {
   const audit = query.data;
+  const executeMutation = useExecuteOrdersV4Cutover(companyId);
+  const [result, setResult] = useState<OrdersV4CutoverResult | null>(null);
   const issueColumns: SimpleTableColumn<OrdersV4CutoverAudit['issues'][number]>[] = [
     { key: 'severity', label: 'المستوى', render: (value) => value === 'error' ? 'خطأ مانع' : 'تنبيه' },
     { key: 'entity', label: 'الكيان' },
@@ -78,7 +80,12 @@ function CutoverAuditPanel({ query }: { query: ReturnType<typeof useOrdersV4Cuto
   ];
   const source = audit?.source ?? {};
   const target = audit?.target ?? {};
-  return <OrdersV4Panel title="تدقيق الانتقال من الطلبات القديم إلى طلبات V4">
+  const execute = async () => {
+    if (!audit?.ready || executeMutation.isPending) return;
+    const response = await executeMutation.mutateAsync({ confirmation: 'IMPORT_LEGACY_ORDERS_TO_V4', sourceFingerprint: audit.sourceFingerprint });
+    setResult(response.data ?? null);
+  };
+  return <OrdersV4Panel title="تدقيق الانتقال من الطلبات القديم إلى طلبات V4" action={audit?.ready ? <Button variant="primary" onClick={execute} disabled={executeMutation.isPending}>{executeMutation.isPending ? 'جارٍ الترحيل والمطابقة…' : 'تنفيذ الترحيل الذري'}</Button> : undefined}>
     <OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} />
     {audit && <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -91,6 +98,7 @@ function CutoverAuditPanel({ query }: { query: ReturnType<typeof useOrdersV4Cuto
         <pre className="min-w-[760px] whitespace-pre-wrap text-left">{JSON.stringify({ generatedAt: audit.generatedAt, sourceFingerprint: audit.sourceFingerprint, source, target, issueCounts: audit.issueCounts }, null, 2)}</pre>
       </div>
       <SimpleTable columns={issueColumns} data={audit.issues} emptyMessage="لا توجد مشكلات في المصدر" tableMinWidth={760} />
+      {result && <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900" dir="ltr"><pre className="whitespace-pre-wrap text-left">{JSON.stringify(result, null, 2)}</pre></div>}
     </div>}
   </OrdersV4Panel>;
 }

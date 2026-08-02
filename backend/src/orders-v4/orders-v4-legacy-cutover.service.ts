@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { createHash } from 'crypto';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { OrdersInventoryService } from '../orders/orders-inventory.service';
 import {
   normalizeUnit,
   productUnitConversionRowsFromUnknown,
@@ -14,13 +15,6 @@ type CutoverIssue = {
   entity: string;
   entityId?: string;
   message: string;
-};
-
-type LatestLegacyBalance = {
-  productId: string;
-  locationId: string;
-  quantityAfter: Prisma.Decimal;
-  valueAfter: Prisma.Decimal;
 };
 
 function decimalSum(values: Array<Prisma.Decimal | string | number | null | undefined>): Prisma.Decimal {
@@ -45,7 +39,10 @@ function recipeRows(value: unknown): Array<{ materialProductId: string; quantity
 
 @Injectable()
 export class OrdersV4LegacyCutoverService {
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly legacyInventory: OrdersInventoryService,
+  ) {}
 
   async audit(companyId: string) {
     const company = await this.prisma.company.findUnique({
@@ -65,7 +62,8 @@ export class OrdersV4LegacyCutoverService {
       cancelledOrders,
       staffIssues,
       staffCancellations,
-      legacyBalances,
+      projectedStock,
+      activePriceLines,
       v4Counts,
       v4Purchase,
       v4Registration,
@@ -90,23 +88,28 @@ export class OrdersV4LegacyCutoverService {
       this.prisma.order.findMany({
         where: { companyId, status: 'active' },
         select: { id: true, orderType: true, totalAmount: true, pettyCashAmount: true },
+        orderBy: { id: 'asc' },
       }),
       this.prisma.order.count({ where: { companyId, status: 'cancelled' } }),
       this.prisma.staffOrder.findMany({
         where: { companyId, orderType: 'sale', entryType: 'issue' },
         select: { id: true, items: { select: { quantity: true, unitPrice: true } } },
+        orderBy: { id: 'asc' },
       }),
       this.prisma.staffOrder.count({ where: { companyId, orderType: 'sale', entryType: 'cancellation' } }),
-      this.prisma.$queryRaw<LatestLegacyBalance[]>(Prisma.sql`
-        SELECT DISTINCT ON (entry.product_id, entry.location_id)
-          entry.product_id AS "productId",
-          entry.location_id AS "locationId",
-          entry.quantity_after AS "quantityAfter",
-          entry.value_after AS "valueAfter"
-        FROM inventory_ledger_entries_v2 AS entry
-        WHERE entry.company_id = ${companyId}
-        ORDER BY entry.product_id, entry.location_id, entry.sequence DESC
-      `),
+      this.legacyInventory.getStock(companyId),
+      this.prisma.orderItem.findMany({
+        where: { order: { companyId, status: 'active' } },
+        select: {
+          productId: true,
+          amount: true,
+          quantity: true,
+          quantityMultiplier: true,
+          inventoryBaseQuantitySnapshot: true,
+          order: { select: { id: true, orderDate: true, createdAt: true } },
+        },
+        orderBy: [{ order: { orderDate: 'desc' } }, { order: { createdAt: 'desc' } }],
+      }),
       Promise.all([
         this.prisma.ordersV4Unit.count({ where: { companyId } }),
         this.prisma.ordersV4Category.count({ where: { companyId } }),
@@ -141,7 +144,7 @@ export class OrdersV4LegacyCutoverService {
     for (const category of categories) {
       const key = category.nameAr.trim().toLocaleLowerCase('ar');
       const existingId = categoryNames.get(key);
-      if (existingId) issues.push({ severity: 'error', code: 'duplicate_category_name', entity: 'OrderCategory', entityId: category.id, message: `اسم الفئة مكرر مع ${existingId}: ${category.nameAr}` });
+      if (existingId) issues.push({ severity: 'warning', code: 'merged_duplicate_category', entity: 'OrderCategory', entityId: category.id, message: `سيتم دمج الفئة المكررة مع ${existingId}: ${category.nameAr}` });
       categoryNames.set(key, category.id);
     }
 
@@ -186,8 +189,26 @@ export class OrdersV4LegacyCutoverService {
     const custodyFunding = decimalSum(activeOrders.filter((row) => row.orderType === 'external').map((row) => row.pettyCashAmount));
     const custodyPurchases = decimalSum(activeOrders.filter((row) => row.orderType === 'external').map((row) => row.totalAmount));
     const registrationTotal = decimalSum(staffIssues.flatMap((row) => row.items.map((item) => item.quantity.mul(item.unitPrice))));
-    const inventoryQuantity = decimalSum(legacyBalances.map((row) => row.quantityAfter));
-    const inventoryValue = decimalSum(legacyBalances.map((row) => row.valueAfter));
+    const priceSamples = new Map<string, Array<{ documentId: string; unitCost: Prisma.Decimal }>>();
+    for (const line of activePriceLines) {
+      const baseQuantity = line.inventoryBaseQuantitySnapshot ?? line.quantity.times(line.quantityMultiplier);
+      if (!baseQuantity.gt(0)) continue;
+      const samples = priceSamples.get(line.productId) ?? [];
+      if (!samples.some((sample) => sample.documentId === line.order.id) && samples.length < 5) {
+        samples.push({ documentId: line.order.id, unitCost: line.amount.div(baseQuantity) });
+        priceSamples.set(line.productId, samples);
+      }
+    }
+    const projectedBalances = projectedStock.map((row) => {
+      const quantity = new Prisma.Decimal(row.balanceBaseQuantity);
+      const samples = priceSamples.get(row.productId) ?? [];
+      const unitCost = samples.length
+        ? decimalSum(samples.map((sample) => sample.unitCost)).div(samples.length)
+        : new Prisma.Decimal(0);
+      return { productId: row.productId, quantity, value: quantity.times(unitCost), unitCost };
+    });
+    const inventoryQuantity = decimalSum(projectedBalances.map((row) => row.quantity));
+    const inventoryValue = decimalSum(projectedBalances.map((row) => row.value));
     const blockingIssues = issues.filter((issue) => issue.severity === 'error');
     const sourceFingerprint = checksum({
       categories: categories.map((row) => [row.id, row.updatedAt]),
@@ -195,7 +216,6 @@ export class OrdersV4LegacyCutoverService {
       products: products.map((row) => [row.id, row.updatedAt]),
       activeOrders: activeOrders.map((row) => [row.id, row.totalAmount.toString()]),
       staffIssues: staffIssues.map((row) => row.id),
-      legacyBalances: legacyBalances.map((row) => [row.productId, row.locationId, row.quantityAfter.toString(), row.valueAfter.toString()]),
     });
 
     return {
@@ -222,7 +242,7 @@ export class OrdersV4LegacyCutoverService {
         custodyFunding: custodyFunding.toString(),
         custodyPurchases: custodyPurchases.toString(),
         custodyBalance: custodyFunding.minus(custodyPurchases).toString(),
-        inventoryBalances: legacyBalances.length,
+        inventoryBalances: projectedBalances.filter((row) => !row.quantity.isZero() || !row.value.isZero()).length,
         inventoryQuantity: inventoryQuantity.toString(),
         inventoryValue: inventoryValue.toString(),
       },

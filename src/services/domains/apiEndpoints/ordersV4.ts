@@ -4,6 +4,7 @@ import type {
   OrdersV4Category,
   OrdersV4DataQuality,
   OrdersV4CutoverAudit,
+  OrdersV4CutoverResult,
   OrdersV4Document,
   OrdersV4DocumentPayload,
   OrdersV4ReceivePayload,
@@ -80,6 +81,10 @@ export function getOrdersV4DataQuality(companyId: string): Promise<ApiParsedResu
 
 export function getOrdersV4CutoverAudit(companyId: string): Promise<ApiParsedResult<OrdersV4CutoverAudit>> {
   return apiGet(`${BASE}/cutover/audit`, { companyId });
+}
+
+export function executeOrdersV4Cutover(companyId: string, body: { confirmation: string; sourceFingerprint: string }): Promise<ApiParsedResult<OrdersV4CutoverResult>> {
+  return apiPost(`${BASE}/cutover/execute?companyId=${encodeURIComponent(companyId)}`, body);
 }
 
 export function createOrdersV4Unit(companyId: string, body: { code: string; nameAr: string; nameEn?: string; dimension: string; canonicalFactor?: string | null }): Promise<ApiParsedResult<OrdersV4Unit>> {

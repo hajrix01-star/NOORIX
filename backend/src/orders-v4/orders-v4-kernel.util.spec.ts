@@ -6,6 +6,7 @@ import {
   calculateOrdersV4LastFiveAverage,
   calculateOrdersV4Line,
   calculateOrdersV4NegativeStockRevaluation,
+  calculateOrdersV4OpeningBalance,
   calculateOrdersV4Receipt,
   calculateOrdersV4RecipeComponentCost,
   calculateOrdersV4RecipeUsage,
@@ -86,6 +87,15 @@ describe('Orders Core V4 kernel', () => {
     }, { quantity: 4 });
     expect(issue.valueDelta.toString()).toBe('-80');
     expect(issue.quantityAfter.toString()).toBe('16');
+  });
+
+  it('creates exact positive and negative cutover opening balances', () => {
+    const positive = calculateOrdersV4OpeningBalance({ quantity: '10', value: '25' });
+    expect(positive.quantityAfter.toString()).toBe('10');
+    expect(positive.valueAfter.toString()).toBe('25');
+    expect(positive.averageUnitCostAfter.toString()).toBe('2.5');
+    const negative = calculateOrdersV4OpeningBalance({ quantity: '-4', value: '-10' });
+    expect(negative.averageUnitCostAfter.toString()).toBe('2.5');
   });
 
   it('allows operational issues to make inventory negative without an employee override', () => {

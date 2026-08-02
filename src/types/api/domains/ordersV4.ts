@@ -239,6 +239,17 @@ export type OrdersV4CutoverAudit = {
   }>;
 };
 
+export type OrdersV4CutoverResult = {
+  cutover: 'legacy-orders-to-v4';
+  runId: string;
+  executedAt: string;
+  sourceFingerprint: string;
+  passed: boolean;
+  checks: Record<string, boolean>;
+  source: Record<string, string | number>;
+  target: Record<string, string | number>;
+};
+
 export type OrdersV4Stocktake = {
   id: string;
   stocktakeNumber: string;

@@ -59,6 +59,14 @@ describe('Orders V4 inventory boundary', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('routes cutover opening balances through the central ledger posting boundary', () => {
+    const importer = readFileSync(join(__dirname, 'orders-v4-legacy-cutover-import.service.ts'), 'utf8');
+    const posting = readFileSync(join(__dirname, 'orders-v4-ledger-posting.service.ts'), 'utf8');
+    expect(importer).toContain('ledgerPosting.postCutoverOpening');
+    expect(importer).not.toContain('ordersV4InventoryLedgerEntry.create');
+    expect(posting).toContain('calculateOrdersV4OpeningBalance');
+  });
+
   it('renders the historical document base unit snapshot instead of the item current unit', () => {
     const documentTab = readFileSync(
       join(__dirname, '../../../src/modules/OrdersV4/components/OrdersV4DocumentsTab.tsx'),

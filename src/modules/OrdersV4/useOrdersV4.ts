@@ -11,6 +11,7 @@ import {
   getOrdersV4Bootstrap,
   getOrdersV4DataQuality,
   getOrdersV4CutoverAudit,
+  executeOrdersV4Cutover,
   getOrdersV4Documents,
   getOrdersV4ItemsReport,
   getOrdersV4Ledger,
@@ -138,6 +139,15 @@ export function useOrdersV4CutoverAudit(companyId: string, enabled = false) {
     queryFn: () => getOrdersV4CutoverAudit(companyId),
     fallbackMessage: 'تعذر تدقيق جاهزية ترحيل الطلبات القديم',
     enabled: enabled && !!companyId,
+  });
+}
+
+export function useExecuteOrdersV4Cutover(companyId: string) {
+  return useApiMutation({
+    mutationFn: (body: { confirmation: string; sourceFingerprint: string }) => executeOrdersV4Cutover(companyId, body),
+    invalidateQueries: [ordersV4Keys.root],
+    successToast: 'اكتمل ترحيل الطلبات القديم إلى V4 واجتازت المطابقة',
+    showErrorToast: true,
   });
 }
 

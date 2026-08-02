@@ -76,6 +76,27 @@ export function calculateOrdersV4Receipt(
   };
 }
 
+/** Creates the exact, auditable opening balance used only by an approved cutover. */
+export function calculateOrdersV4OpeningBalance(input: {
+  quantity: Prisma.Decimal.Value;
+  value: Prisma.Decimal.Value;
+}): OrdersV4InventoryCalculation {
+  const quantity = decimal(input.quantity, 'كمية الرصيد الافتتاحي').toDecimalPlaces(QUANTITY_SCALE);
+  const value = decimal(input.value, 'قيمة الرصيد الافتتاحي').toDecimalPlaces(MONEY_SCALE);
+  if ((quantity.gt(0) && value.lt(0)) || (quantity.lt(0) && value.gt(0))) {
+    throw new BadRequestException('إشارة كمية وقيمة الرصيد الافتتاحي غير متطابقة');
+  }
+  const unitCost = calculateOrdersV4AverageUnitCost(value, quantity).toDecimalPlaces(COST_SCALE);
+  return {
+    quantityDelta: quantity,
+    unitCost,
+    valueDelta: value,
+    quantityAfter: quantity,
+    valueAfter: value,
+    averageUnitCostAfter: unitCost,
+  };
+}
+
 export function calculateOrdersV4Issue(
   balance: OrdersV4InventoryBalance,
   input: { quantity: Prisma.Decimal.Value; provisionalUnitCost?: Prisma.Decimal.Value },

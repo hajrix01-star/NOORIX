@@ -5,6 +5,7 @@ import {
   calculateOrdersV4Issue,
   calculateOrdersV4InventoryUnitPrice,
   calculateOrdersV4NegativeStockRevaluation,
+  calculateOrdersV4OpeningBalance,
   calculateOrdersV4Receipt,
   calculateOrdersV4Reversal,
   calculateOrdersV4StocktakeAdjustment,
@@ -71,6 +72,28 @@ export class OrdersV4LedgerPostingService {
         ...calculation, sourceType: 'purchase_document', sourceId: input.sourceId, sourceKey: input.sourceKey,
         sourceSnapshot: input.sourceSnapshot, conversionVersionId: input.conversionVersionId,
         createdByUserId: TenantContext.getUserId(),
+      },
+    });
+  }
+
+  async postCutoverOpening(tx: OrdersV4Transaction, input: {
+    tenantId: string; companyId: string; itemId: string; inventoryUnitId: string; locationId: string;
+    sourceId: string; sourceKey: string; effectiveAt: Date;
+    quantity: Prisma.Decimal.Value; value: Prisma.Decimal.Value; sourceSnapshot: Prisma.InputJsonObject;
+  }) {
+    await this.lockKeys(tx, input.companyId, [{ itemId: input.itemId, locationId: input.locationId }]);
+    const balance = await this.currentBalance(tx, input.companyId, input.itemId, input.locationId, input.inventoryUnitId);
+    if (!balance.quantity.isZero() || !balance.value.isZero()) {
+      throw new Error(`Orders V4 cutover opening requires an empty balance for ${input.itemId}/${input.locationId}`);
+    }
+    const calculation = calculateOrdersV4OpeningBalance({ quantity: input.quantity, value: input.value });
+    return tx.ordersV4InventoryLedgerEntry.create({
+      data: {
+        tenantId: input.tenantId, companyId: input.companyId, itemId: input.itemId,
+        inventoryUnitId: input.inventoryUnitId, locationId: input.locationId,
+        effectiveAt: input.effectiveAt, entryType: 'cutover_opening', ...calculation,
+        sourceType: 'legacy_orders_cutover', sourceId: input.sourceId, sourceKey: input.sourceKey,
+        sourceSnapshot: input.sourceSnapshot, createdByUserId: TenantContext.getUserId(),
       },
     });
   }
