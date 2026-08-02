@@ -367,7 +367,7 @@ export class OrdersV4LegacyCutoverImportService {
         });
         documentRows.push({
           id: documentId, tenantId, companyId, documentNumber: `LEGACY-${staffOrder.logRef || 'SALE'}-${legacyStableHash(staffOrder.id).slice(0, 8)}`,
-          documentType: 'registration', status: 'received', paymentMethod: null, documentDate, sectionId, locationId: mainLocationId,
+          documentType: 'registration', registrationEntryType: 'issue', status: 'received', paymentMethod: null, documentDate, sectionId, locationId: mainLocationId,
           subtotal: totalAmount, totalAmount, operationalCost, notes: staffOrder.notes, revision: 1,
           idempotencyKey: `legacy-staff-order:${staffOrder.id}`, requestHash: legacyStableHash(staffOrder.id), calculationVersion: 4,
           calculationSnapshot: { kernelVersion: 4, sourceSystem: 'legacy-orders', sourceId: staffOrder.id, migrationRunId: runId },

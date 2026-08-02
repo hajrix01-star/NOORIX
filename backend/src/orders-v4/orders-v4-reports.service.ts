@@ -24,7 +24,7 @@ export class OrdersV4ReportsService {
     const [documents, cashSales, custodyEntries] = await Promise.all([
       this.prisma.ordersV4Document.findMany({
         where: { companyId, status: 'received', documentDate: bounds },
-        select: { documentType: true, paymentMethod: true, totalAmount: true, operationalCost: true },
+        select: { documentType: true, registrationEntryType: true, paymentMethod: true, totalAmount: true, operationalCost: true },
       }),
       this.prisma.$queryRaw<Array<{ total: Prisma.Decimal | null }>>(Prisma.sql`
         SELECT COALESCE(SUM(channel.amount), 0) AS total
@@ -46,7 +46,9 @@ export class OrdersV4ReportsService {
     const sumFinancial = (rows: typeof documents) => rows.reduce((total, row) => total.plus(row.totalAmount), zero).toDecimalPlaces(6);
     const sumOperationalCost = (rows: typeof documents) => rows.reduce((total, row) => total.plus(row.operationalCost), zero).toDecimalPlaces(6);
     const purchases = documents.filter((row) => row.documentType === 'purchase');
-    const registrations = documents.filter((row) => row.documentType === 'registration');
+    const registrations = documents.filter((row) => row.documentType === 'registration' && row.registrationEntryType !== 'cancellation');
+    const cancellations = documents.filter((row) => row.documentType === 'registration' && row.registrationEntryType === 'cancellation');
+    const registrationMovements = documents.filter((row) => row.documentType === 'registration');
     const cashUsed = sumFinancial(purchases.filter((row) => row.paymentMethod === 'cash'));
     const cashSalesImported = new Prisma.Decimal(cashSales[0]?.total ?? 0).toDecimalPlaces(6);
     const custodyFundingDelta = custodyEntries
@@ -63,8 +65,10 @@ export class OrdersV4ReportsService {
     return {
       purchaseCount: purchases.length,
       registrationCount: registrations.length,
+      cancellationCount: cancellations.length,
       purchaseTotal: sumFinancial(purchases),
-      registrationTotal: sumOperationalCost(registrations),
+      registrationTotal: sumOperationalCost(registrationMovements),
+      cancellationTotal: sumOperationalCost(cancellations),
       custodyTotal: sumFinancial(purchases.filter((row) => row.paymentMethod === 'custody')),
       cashTotal: sumFinancial(purchases.filter((row) => row.paymentMethod === 'cash')),
       transferTotal: sumFinancial(purchases.filter((row) => row.paymentMethod === 'transfer')),

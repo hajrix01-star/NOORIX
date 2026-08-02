@@ -11,6 +11,7 @@ import { OrdersV4DocumentLinesTable, type OrdersV4DocumentDraftLine } from './Or
 import { OrdersV4DocumentLineModal, type OrdersV4DocumentLineDraft } from './OrdersV4DocumentLineModal';
 import { buildOrdersV4PeriodCustodyBalances } from './ordersV4CustodyPeriod.utils';
 import { buildOrdersV4WhatsAppText } from './ordersV4WhatsApp.utils';
+import { ordersV4CancellationReasonLabel } from './ordersV4CancellationReasons';
 
 type DraftLine = OrdersV4DocumentDraftLine;
 
@@ -69,13 +70,63 @@ function OrdersV4PurchaseSummaryCard({ summary }: { summary?: OrdersV4Summary })
   );
 }
 
+function OrdersV4PurchaseSummaryCards({ summary }: { summary?: OrdersV4Summary }) {
+  const cards = [
+    {
+      title: 'عهدة المندوب',
+      accent: 'bg-noorix-green',
+      rows: [
+        { label: 'العهدة المستلمة خلال الفترة', value: summary?.custodyFunded, tone: 'text-noorix-green' },
+        { label: 'مشتريات العهدة خلال الفترة', value: summary?.custodySpent, tone: 'text-noorix-red' },
+      ],
+      totalLabel: 'رصيد عهدة الفترة',
+      total: Number(summary?.custodyBalance ?? 0),
+    },
+    {
+      title: 'نقد المحل والتحويل',
+      accent: 'bg-noorix-blue',
+      rows: [
+        { label: 'نقد المبيعات خلال الفترة', value: summary?.cashSalesImported, tone: 'text-noorix-green' },
+        { label: 'مشتريات نقد المحل', value: summary?.cashUsed, tone: 'text-noorix-red' },
+        { label: 'مشتريات التحويل', value: summary?.transferTotal, tone: 'text-noorix-muted' },
+      ],
+      totalLabel: 'صافي نقد الفترة',
+      total: Number(summary?.cashAvailable ?? 0),
+    },
+  ];
+  return <section data-testid="orders-v4-purchase-summary-cards" className="overflow-hidden rounded-xl border border-noorix-border bg-noorix-surface shadow-sm">
+    <div className="flex items-center justify-between border-b border-noorix-border px-4 py-3">
+      <strong className="text-[13px]">ملخص الفترة المختارة</strong>
+      <span className="text-[11px] text-noorix-muted">SR</span>
+    </div>
+    <div className="grid gap-3 p-3 md:grid-cols-2">
+      {cards.map((card) => <article key={card.title} className="overflow-hidden rounded-xl border border-noorix-border bg-white shadow-sm">
+        <header className="flex items-center gap-2 border-b border-noorix-border bg-noorix-bg-muted/35 px-3 py-2.5">
+          <span className={`h-5 w-1 rounded-full ${card.accent}`} aria-hidden />
+          <strong className="text-[12px]">{card.title}</strong>
+        </header>
+        <div className="divide-y divide-noorix-border">
+          {card.rows.map((row) => <div key={row.label} className="flex items-center justify-between gap-3 px-3 py-2.5 text-[12px]"><span className="text-noorix-muted">{row.label}</span><b className={`tabular-nums ${row.tone}`}>{v4Number(row.value)} SR</b></div>)}
+        </div>
+        <footer className="flex items-center justify-between gap-3 border-t border-noorix-border bg-noorix-bg-muted/60 px-3 py-3 text-[12px]"><strong>{card.totalLabel}</strong><b className={`text-[16px] tabular-nums ${card.total < 0 ? 'text-noorix-red' : 'text-noorix-text'}`}>{v4Number(card.total)} SR</b></footer>
+      </article>)}
+    </div>
+  </section>;
+}
+
 export function addOrMergeDraftLine(current: DraftLine[], draft: OrdersV4DocumentLineDraft): DraftLine[] {
   const existingIndex = current.findIndex((line) => line.itemId === draft.itemId
     && line.unitId === draft.unitId
     && line.priceUnitId === draft.priceUnitId);
   if (existingIndex < 0) return [...current, { ...draft, key: crypto.randomUUID() }];
   return current.map((line, index) => index === existingIndex
-    ? { ...line, quantity: String(Math.max(0, Number(line.quantity) || 0) + Math.max(0, Number(draft.quantity) || 0)), unitPrice: draft.unitPrice }
+    ? {
+      ...line,
+      quantity: String(Math.max(0, Number(line.quantity) || 0) + Math.max(0, Number(draft.quantity) || 0)),
+      unitPrice: draft.unitPrice,
+      cancellationReasons: [...new Set([...(line.cancellationReasons ?? []), ...(draft.cancellationReasons ?? [])])],
+      cancellationNote: [line.cancellationNote, draft.cancellationNote].filter(Boolean).join(' — ') || undefined,
+    }
     : line);
 }
 
@@ -115,6 +166,7 @@ export function OrdersV4DocumentsTab({
   const reverseMutation = useReverseOrdersV4Document(companyId);
   const undoReverseMutation = useUndoReverseOrdersV4Document(companyId);
   const [createOpen, setCreateOpen] = useState(false);
+  const [cancellationOpen, setCancellationOpen] = useState(false);
   const [viewing, setViewing] = useState<OrdersV4Document | null>(null);
   const [receiving, setReceiving] = useState<OrdersV4Document | null>(null);
   const [reverseTarget, setReverseTarget] = useState<OrdersV4Document | null>(null);
@@ -133,7 +185,7 @@ export function OrdersV4DocumentsTab({
   );
   const filteredDocuments = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase('ar');
-    return documents.filter((document) => (!needle || `${document.documentNumber} ${document.notes || ''} ${document.section?.nameAr || ''} ${document.location?.nameAr || ''}`.toLocaleLowerCase('ar').includes(needle))
+    return documents.filter((document) => (!needle || `${document.documentNumber} ${document.notes || ''} ${document.section?.nameAr || ''}`.toLocaleLowerCase('ar').includes(needle))
       && (paymentFilter === 'all' || document.paymentMethod === paymentFilter)
       && (statusFilter === 'all' || document.status === statusFilter)
       && (!sectionFilter || document.sectionId === sectionFilter));
@@ -180,7 +232,7 @@ export function OrdersV4DocumentsTab({
       title: `${document.documentType === 'purchase' ? 'طلب شراء' : 'تسجيل داخلي'} — ${document.documentNumber}`,
       companyName,
       logoUrl: companyLogoUrl.trim(),
-      subtitle: `${v4Date(document.documentDate)} — ${document.location.nameAr}`,
+      subtitle: v4Date(document.documentDate),
       body,
     });
   }
@@ -190,6 +242,13 @@ export function OrdersV4DocumentsTab({
   }
 
   const columns = useMemo<SimpleTableColumn<OrdersV4Document>[]>(() => [
+    ...(!isPurchase ? [
+      { key: 'registrationEntryType', label: 'نوع السجل', minWidth: 115, render: (_value: unknown, row: OrdersV4Document) => (row.registrationEntryType ?? 'issue') === 'cancellation' ? <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">إلغاء</span> : <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">تسجيل</span> },
+      { key: 'cancellationReasons', label: 'أسباب الإلغاء', minWidth: 220, render: (_value: unknown, row: OrdersV4Document) => {
+        const reasons = [...new Set(row.lines.flatMap((line) => line.cancellationReasons ?? []))];
+        return reasons.length ? reasons.map(ordersV4CancellationReasonLabel).join('، ') : '—';
+      } },
+    ] as SimpleTableColumn<OrdersV4Document>[] : []),
     { key: 'documentNumber', label: isPurchase ? 'رقم الطلب' : 'رقم التسجيل', minWidth: 180, render: (value) => <span className="font-bold text-noorix-blue">{String(value)}</span> },
     { key: 'documentDate', label: 'التاريخ', render: (value) => v4Date(String(value)) },
     ...(isPurchase ? [
@@ -201,7 +260,6 @@ export function OrdersV4DocumentsTab({
       } },
     ] : []),
     { key: 'section', label: 'القسم', render: (_value, row) => row.section?.nameAr || '—' },
-    { key: 'location', label: 'الموقع', render: (_value, row) => row.location?.nameAr || '—' },
     { key: 'lines', label: 'الأسطر', numeric: true, render: (_value, row) => row.lines.length },
     { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? 'الإجمالي' : 'التكلفة', numeric: true, render: (value) => <strong>{v4Number(value)} ر.س</strong> },
     { key: 'status', label: 'الحالة', render: (value) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : 'معكوس'}</span> },
@@ -212,8 +270,9 @@ export function OrdersV4DocumentsTab({
     <div className="flex min-w-0 flex-col gap-4">
       {printPreviewModal}
       {canCreate && (
-        <div className="flex justify-start" role="toolbar" aria-label={isPurchase ? 'إجراءات الطلبات' : 'إجراءات التسجيل الداخلي'}>
+        <div className="flex flex-wrap justify-start gap-2" role="toolbar" aria-label={isPurchase ? 'إجراءات الطلبات' : 'إجراءات التسجيل الداخلي'}>
           <Button variant="primary" onClick={() => setCreateOpen(true)}>+ {isPurchase ? 'طلب جديد' : 'تسجيل جديد'}</Button>
+          {!isPurchase && <Button variant="ghost" className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100" onClick={() => setCancellationOpen(true)}>تسجيل إلغاء</Button>}
         </div>
       )}
       {historyWindowDays && (
@@ -221,16 +280,16 @@ export function OrdersV4DocumentsTab({
           يعرض حساب الموظف تسجيلاته الداخلية لآخر {historyWindowDays} أيام فقط.
         </div>
       )}
-      {isPurchase ? <OrdersV4PurchaseSummaryCard summary={summary} /> : showOverviewCards ? (
+      {isPurchase ? <OrdersV4PurchaseSummaryCards summary={summary} /> : showOverviewCards ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <OrdersV4Kpi label="عدد التسجيلات" value={summary?.registrationCount ?? 0} />
           <OrdersV4Kpi label="التكلفة المركزية" value={`${v4Number(summary?.registrationTotal)} ر.س`} tone="green" />
           <OrdersV4Kpi label="أسطر التسجيل" value={documents.reduce((sum, row) => sum + row.lines.length, 0)} tone="amber" />
-          <OrdersV4Kpi label="نسخة النواة" value="V4" />
+          <OrdersV4Kpi label="سجلات الإلغاء" value={summary?.cancellationCount ?? 0} tone="red" />
         </div>
       ) : null}
       <div className="grid gap-3 rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:grid-cols-2 xl:grid-cols-4">
-        <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)} placeholder="رقم المستند أو القسم أو الموقع…" /></OrdersV4Field>
+        <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)} placeholder="رقم المستند أو القسم…" /></OrdersV4Field>
         <OrdersV4Field label="القسم"><OrdersV4Select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)}><option value="">كل الأقسام</option>{sections.map((section) => <option key={section.id} value={section.id}>{section.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label="الحالة"><OrdersV4Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">كل الحالات</option><option value="prepared">بانتظار الاستلام</option><option value="received">مستلم</option><option value="reversed">معكوس</option><option value="cancelled">ملغي</option></OrdersV4Select></OrdersV4Field>
         <div className="flex items-end justify-end text-[13px] font-bold text-noorix-text">المطابق: {filteredDocuments.length} — الإجمالي: {v4Number(filteredTotal)} ر.س</div>
@@ -246,6 +305,7 @@ export function OrdersV4DocumentsTab({
         {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage="لا توجد مستندات مطابقة للفترة والفلاتر" tableMinWidth={isPurchase ? 1240 : 980} onRowClick={setViewing} />}
       </OrdersV4Panel>
       {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} />}
+      {canCreate && !isPurchase && <OrdersV4DocumentModal open={cancellationOpen} onClose={() => setCancellationOpen(false)} companyId={companyId} documentType="registration" registrationEntryType="cancellation" bootstrap={bootstrap} />}
       {canReceive && receiving && <OrdersV4DocumentModal open={!!receiving} onClose={() => setReceiving(null)} companyId={companyId} documentType="purchase" bootstrap={bootstrap} initialDocument={receiving} />}
       <OrdersV4DocumentDetails document={viewing} onClose={() => setViewing(null)} onPrint={printDocument} onExport={exportDocument} onWhatsApp={sendDocumentWhatsApp} />
       <OrdersV4ReversalConfirmModal
@@ -274,8 +334,8 @@ export function OrdersV4DocumentsTab({
   );
 }
 
-function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstrap, initialDocument }: {
-  open: boolean; onClose: () => void; companyId: string; documentType: 'purchase' | 'registration'; bootstrap?: OrdersV4Bootstrap; initialDocument?: OrdersV4Document | null;
+function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registrationEntryType = 'issue', bootstrap, initialDocument }: {
+  open: boolean; onClose: () => void; companyId: string; documentType: 'purchase' | 'registration'; registrationEntryType?: 'issue' | 'cancellation'; bootstrap?: OrdersV4Bootstrap; initialDocument?: OrdersV4Document | null;
 }) {
   const createMutation = useCreateOrdersV4Document(companyId);
   const receiveMutation = useReceiveOrdersV4Document(companyId);
@@ -290,6 +350,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   const [selectedItem, setSelectedItem] = useState<OrdersV4Item | null>(null);
   const [sendWhatsAppPrompt, setSendWhatsAppPrompt] = useState<string | null>(null);
   const isPurchase = documentType === 'purchase';
+  const isCancellation = !isPurchase && registrationEntryType === 'cancellation';
   const items = (bootstrap?.items ?? []).filter((item) => item.isActive
     && (isPurchase ? item.itemType !== 'sale' : item.itemType !== 'purchased')
     && (!isPurchase || !!initialDocument || item.units.some((row) => row.isActive && row.isOrderEnabled && row.lastPrice != null)));
@@ -348,8 +409,10 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   async function submit() {
     const resolvedLocation = locationId || bootstrap?.locations.find((row) => row.isActive)?.id || '';
     if (!resolvedLocation || lines.length === 0 || lines.some((line) => !line.itemId || !line.unitId || Number(line.quantity) <= 0)) return;
+    if (isCancellation && lines.some((line) => !line.cancellationReasons?.length || (line.cancellationReasons.includes('other') && !line.cancellationNote?.trim()))) return;
     const payload: OrdersV4DocumentPayload = {
       documentType,
+      registrationEntryType: isPurchase ? undefined : registrationEntryType,
       documentDate: date,
       paymentMethod: isPurchase ? paymentMethod : null,
       sectionId: sectionId || null,
@@ -357,7 +420,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
       pettyCashAmount: isPurchase && paymentMethod === 'custody' ? pettyCashAmount || null : null,
       notes: notes || null,
       idempotencyKey: crypto.randomUUID(),
-      lines: lines.map((line) => ({ itemId: line.itemId, quantity: line.quantity, unitId: line.unitId, unitPrice: line.unitPrice || '0', priceUnitId: line.priceUnitId || line.unitId })),
+      lines: lines.map((line) => ({ itemId: line.itemId, quantity: line.quantity, unitId: line.unitId, unitPrice: line.unitPrice || '0', priceUnitId: line.priceUnitId || line.unitId, cancellationReasons: isCancellation ? line.cancellationReasons ?? [] : undefined, cancellationNote: isCancellation ? line.cancellationNote || null : undefined })),
     };
     if (initialDocument) {
       const { documentType: _documentType, ...receiveBody } = payload;
@@ -381,10 +444,11 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
       onClose={onClose}
       size="2xl"
       side="start"
-      title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : 'تسجيل داخلي جديد — طلبات V4'}
-      footer={<DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: 'إلغاء', onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : 'حفظ التسجيل الداخلي', onClick: submit, role: 'save', loading: mutation.isPending }]} />}
+      title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : isCancellation ? 'تسجيل إلغاء — طلبات V4' : 'تسجيل داخلي جديد — طلبات V4'}
+      footer={<DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: 'إلغاء', onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? 'حفظ سجل الإلغاء' : 'حفظ التسجيل الداخلي', onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending }]} />}
     >
       <div className="flex flex-col gap-4">
+        {isCancellation && <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-[12px] font-semibold leading-6 text-red-900">هذا سجل رقابي مستقل. اختر الصنف كالمعتاد، ثم حدد الكمية وسببًا واحدًا أو أكثر داخل نافذة الصنف. لا يرتبط السجل بتسجيل سابق.</div>}
         <div className={`grid gap-3 sm:grid-cols-2 ${isPurchase ? 'lg:grid-cols-3' : ''}`}>
           <OrdersV4Field label="التاريخ"><TransactionDatePicker value={date} onValueChange={setDate} /></OrdersV4Field>
           {isPurchase && (
@@ -412,7 +476,6 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
               </div>
             </OrdersV4Field>
           )}
-          <OrdersV4Field label="موقع المخزون"><OrdersV4Select value={locationId || defaultLocationId} onChange={(event) => setLocationId(event.target.value)}>{bootstrap?.locations.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
           {isPurchase && paymentMethod === 'custody' && <OrdersV4Field label="مبلغ العهدة"><Input type="number" min="0" step="0.01" value={pettyCashAmount} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPettyCashAmount(event.target.value)} /></OrdersV4Field>}
         </div>
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/30 p-3">
@@ -426,6 +489,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
             items={items}
             isPurchase={isPurchase}
             isReceiving={!!initialDocument}
+            isCancellation={isCancellation}
             onPatch={patchLine}
             onRemove={(key) => setLines((current) => current.filter((row) => row.key !== key))}
           />
@@ -436,6 +500,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
           item={selectedItem}
           isPurchase={isPurchase}
           isReceiving={!!initialDocument}
+          isCancellation={isCancellation}
           onClose={() => setSelectedItem(null)}
           onConfirm={confirmItem}
         />
@@ -518,6 +583,12 @@ function OrdersV4DocumentDetails({ document, onClose, onPrint, onExport, onWhats
   onWhatsApp: (document: OrdersV4Document) => void;
 }) {
   const columns: SimpleTableColumn<OrdersV4Document['lines'][number]>[] = [
+    ...(document?.registrationEntryType === 'cancellation' ? [{
+      key: 'cancellationReasons',
+      label: 'أسباب الإلغاء',
+      minWidth: 230,
+      render: (_value: unknown, row: OrdersV4Document['lines'][number]) => <div className="flex flex-col gap-1"><span>{(row.cancellationReasons ?? []).map(ordersV4CancellationReasonLabel).join('، ')}</span>{row.cancellationNote && <small className="text-noorix-muted">{row.cancellationNote}</small>}</div>,
+    } as SimpleTableColumn<OrdersV4Document['lines'][number]>] : []),
     { key: 'lineNumber', label: '#' },
     { key: 'itemNameSnapshot', label: 'الصنف' },
     { key: 'inputQuantity', label: 'الكمية المدخلة', numeric: true, render: (value, row) => `${v4Number(value, 6)} ${row.inputUnit.nameAr}` },
@@ -541,7 +612,6 @@ function OrdersV4DocumentDetails({ document, onClose, onPrint, onExport, onWhats
     {document && <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-noorix-bg-muted p-3 text-[12px] sm:grid-cols-4">
         <span>التاريخ: <b>{v4Date(document.documentDate)}</b></span>
-        <span>الموقع: <b>{document.location.nameAr}</b></span>
         <span>الحالة: <b>{statusLabel}</b></span>
         <span>{document.documentType === 'registration' ? 'التكلفة' : 'الإجمالي'}: <b>{v4Number(document.documentType === 'registration' ? document.operationalCost : document.totalAmount)} ر.س</b></span>
       </div>

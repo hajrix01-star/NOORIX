@@ -49,6 +49,22 @@ afterEach(() => {
 });
 
 describe('OrdersV4DocumentsTab mobile document workflow', () => {
+  it('renders the purchase period summary as cards rather than a table', () => {
+    render(
+      <OrdersV4DocumentsTab
+        companyId="company-1"
+        documentType="purchase"
+        startDate="2026-08-01"
+        endDate="2026-08-31"
+        bootstrap={bootstrap}
+      />,
+    );
+
+    const summaryCards = screen.getByTestId('orders-v4-purchase-summary-cards');
+    expect(summaryCards.querySelectorAll('article')).toHaveLength(2);
+    expect(summaryCards.querySelector('table')).toBeNull();
+  });
+
   it.each([
     ['purchase', '+ طلب جديد', 'طلب شراء جديد — طلبات V4'],
     ['registration', '+ تسجيل جديد', 'تسجيل داخلي جديد — طلبات V4'],
@@ -74,6 +90,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(dialog.className).toContain('h-full');
     expect(dialog.className).toContain('w-[min(100vw,920px)]');
     expect(dialog.className).not.toContain('max-h-[min(92vh,860px)]');
+    expect(screen.queryByLabelText('موقع المخزون')).toBeNull();
   });
 
   it('renders added document lines as one editable table without repeated field headings', () => {
@@ -127,6 +144,23 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(onPatch).toHaveBeenCalledWith('line-1', { quantity: '3' });
     fireEvent.click(screen.getAllByRole('button', { name: 'حذف معسل' })[1]);
     expect(onRemove).toHaveBeenCalledWith('line-2');
+  });
+
+  it('opens cancellation through the same internal-registration sheet', () => {
+    render(
+      <OrdersV4DocumentsTab
+        companyId="company-1"
+        documentType="registration"
+        startDate="2026-08-01"
+        endDate="2026-08-31"
+        bootstrap={bootstrap}
+        canCreate
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'تسجيل إلغاء' }));
+    expect(screen.getByRole('dialog', { name: 'تسجيل إلغاء — طلبات V4' })).toBeTruthy();
+    expect(screen.getByText(/لا يرتبط السجل بتسجيل سابق/)).toBeTruthy();
   });
 
   it('hides internal-registration overview cards for a submit-only employee', () => {

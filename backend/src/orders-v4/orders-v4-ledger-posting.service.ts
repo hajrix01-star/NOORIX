@@ -122,6 +122,32 @@ export class OrdersV4LedgerPostingService {
     });
   }
 
+  async postRegistrationCancellation(tx: OrdersV4Transaction, input: {
+    tenantId: string; companyId: string; itemId: string; locationId: string; documentLineId: string;
+    inventoryUnitId: string;
+    sourceId: string; sourceKey: string; effectiveAt: Date; quantity: Prisma.Decimal;
+    unitCost: Prisma.Decimal;
+    conversionVersionId: string | null; recipeVersionId: string | null; sourceSnapshot: Prisma.InputJsonObject;
+  }) {
+    await this.lockKeys(tx, input.companyId, [{ itemId: input.itemId, locationId: input.locationId }]);
+    const balance = await this.currentBalance(tx, input.companyId, input.itemId, input.locationId, input.inventoryUnitId);
+    const calculation = calculateOrdersV4Receipt(balance, {
+      quantity: input.quantity,
+      totalValue: input.quantity.times(input.unitCost).toDecimalPlaces(6),
+    });
+    return tx.ordersV4InventoryLedgerEntry.create({
+      data: {
+        tenantId: input.tenantId, companyId: input.companyId, itemId: input.itemId,
+        inventoryUnitId: input.inventoryUnitId, locationId: input.locationId,
+        documentLineId: input.documentLineId, effectiveAt: input.effectiveAt,
+        entryType: 'registration_cancellation', ...calculation,
+        sourceType: 'registration_cancellation', sourceId: input.sourceId, sourceKey: input.sourceKey,
+        sourceSnapshot: input.sourceSnapshot, conversionVersionId: input.conversionVersionId,
+        recipeVersionId: input.recipeVersionId, createdByUserId: TenantContext.getUserId(),
+      },
+    });
+  }
+
   async postStocktakeAdjustment(tx: OrdersV4Transaction, input: {
     tenantId: string; companyId: string; itemId: string; inventoryUnitId: string; locationId: string;
     stocktakeId: string; effectiveAt: Date; physicalQuantity: Prisma.Decimal.Value; stocktakeNumber: string;

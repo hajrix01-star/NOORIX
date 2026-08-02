@@ -1,5 +1,16 @@
 export type OrdersV4DocumentType = 'purchase' | 'registration';
 export type OrdersV4PaymentMethod = 'custody' | 'cash' | 'transfer';
+export type OrdersV4RegistrationEntryType = 'issue' | 'cancellation';
+export type OrdersV4CancellationReason =
+  | 'customer_disliked'
+  | 'replaced_item'
+  | 'order_error'
+  | 'registration_error'
+  | 'delayed_order'
+  | 'duplicate_order'
+  | 'customer_changed_mind'
+  | 'item_unavailable'
+  | 'other';
 
 export type OrdersV4UnitInput = {
   code: string;
@@ -77,6 +88,7 @@ export type OrdersV4RecipePublishInput = {
 
 export type OrdersV4DocumentInput = {
   documentType: OrdersV4DocumentType;
+  registrationEntryType?: OrdersV4RegistrationEntryType;
   documentDate: string;
   paymentMethod?: OrdersV4PaymentMethod | null;
   sectionId?: string | null;
@@ -90,6 +102,8 @@ export type OrdersV4DocumentInput = {
     unitId: string;
     unitPrice?: string;
     priceUnitId?: string;
+    cancellationReasons?: OrdersV4CancellationReason[] | null;
+    cancellationNote?: string | null;
   }>;
 };
 

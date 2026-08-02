@@ -62,4 +62,30 @@ describe('OrdersV4DocumentLineModal', () => {
       priceUnitId: piece.id,
     });
   });
+
+  it('requires and returns multiple reasons for an independently cancelled item', () => {
+    const onConfirm = vi.fn();
+    render(
+      <OrdersV4DocumentLineModal
+        item={item}
+        isPurchase={false}
+        isReceiving={false}
+        isCancellation
+        onClose={() => undefined}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    const add = screen.getByRole('button', { name: 'إضافة الإلغاء' });
+    expect(add).toHaveProperty('disabled', true);
+    fireEvent.click(screen.getByRole('button', { name: 'خطأ في الطلب' }));
+    fireEvent.click(screen.getByRole('button', { name: 'طلب مكرر' }));
+    fireEvent.click(add);
+
+    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
+      itemId: item.id,
+      quantity: '1',
+      cancellationReasons: ['order_error', 'duplicate_order'],
+    }));
+  });
 });

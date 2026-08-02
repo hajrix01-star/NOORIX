@@ -2,12 +2,12 @@ import React from 'react';
 import type { OrdersV4UserIdentity } from '../../types/api';
 import { InlineSelect, SimpleTable, Spinner, type SimpleTableProps } from '../../ui';
 
-export const ordersV4NavigationBarClassName = '!flex !w-full !min-w-0 !flex-wrap !items-center !gap-2 !overflow-visible rounded-xl border border-noorix-border bg-[var(--noorix-bg-muted)] p-2';
+export const ordersV4NavigationBarClassName = '!flex !w-full !min-w-0 !flex-nowrap !items-center !gap-2 !overflow-x-auto !overflow-y-hidden rounded-xl border border-noorix-border bg-[var(--noorix-bg-muted)] p-2 [scrollbar-width:thin] sm:!flex-wrap sm:!overflow-visible';
 
 export function ordersV4NavigationTabClassName(_item: unknown, active: boolean): string {
   return active
-    ? '!min-h-10 !rounded-lg !border !border-[var(--noorix-accent-green)] !bg-[var(--noorix-accent-green)] !px-4 !py-2 !text-sm !font-extrabold !text-white !shadow-sm'
-    : '!min-h-10 !rounded-lg !border !border-[var(--noorix-border)] !bg-[var(--noorix-bg-surface)] !px-4 !py-2 !text-sm !font-bold !text-[var(--noorix-text-muted)] !shadow-sm hover:!border-[var(--noorix-accent-blue)] hover:!text-[var(--noorix-text)]';
+    ? '!min-h-10 !shrink-0 !whitespace-nowrap !rounded-lg !border !border-[var(--noorix-accent-green)] !bg-[var(--noorix-accent-green)] !px-4 !py-2 !text-sm !font-extrabold !text-white !shadow-sm'
+    : '!min-h-10 !shrink-0 !whitespace-nowrap !rounded-lg !border !border-[var(--noorix-border)] !bg-[var(--noorix-bg-surface)] !px-4 !py-2 !text-sm !font-bold !text-[var(--noorix-text-muted)] !shadow-sm hover:!border-[var(--noorix-accent-blue)] hover:!text-[var(--noorix-text)]';
 }
 
 export function OrdersV4Panel({ title, action, children }: { title: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {

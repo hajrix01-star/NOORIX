@@ -24,6 +24,7 @@ import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service
 import { calculateOrdersV4CashAvailable } from './orders-v4-funds.kernel';
 import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
+import { resolveOrdersV4RegistrationEntry } from './orders-v4-registration-cancellation.policy';
 
 function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
   return {
@@ -35,9 +36,9 @@ function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
   };
 }
 
-function documentNumber(documentType: OrdersV4DocumentType, date: Date): string {
+function documentNumber(documentType: OrdersV4DocumentType, date: Date, registrationEntryType?: 'issue' | 'cancellation' | null): string {
   const datePart = date.toISOString().slice(0, 10).replaceAll('-', '');
-  const prefix = documentType === 'purchase' ? 'REQ4' : 'REG4';
+  const prefix = documentType === 'purchase' ? 'REQ4' : registrationEntryType === 'cancellation' ? 'CAN4' : 'REG4';
   return `${prefix}-${datePart}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
@@ -48,6 +49,7 @@ function requestHash(value: object): string {
 function documentRequestHash(input: OrdersV4DocumentInput): string {
   return requestHash({
     documentType: input.documentType,
+    registrationEntryType: input.registrationEntryType ?? (input.documentType === 'registration' ? 'issue' : null),
     documentDate: input.documentDate,
     paymentMethod: input.paymentMethod ?? null,
     sectionId: input.sectionId ?? null,
@@ -60,6 +62,8 @@ function documentRequestHash(input: OrdersV4DocumentInput): string {
       unitId: line.unitId,
       unitPrice: String(line.unitPrice ?? 0),
       priceUnitId: line.priceUnitId || line.unitId,
+      cancellationReasons: line.cancellationReasons ?? null,
+      cancellationNote: line.cancellationNote?.trim() || null,
     })),
   });
 }
@@ -104,6 +108,8 @@ export class OrdersV4DocumentsService {
     if (new Set(input.lines.map((line) => line.itemId)).size !== input.lines.length) {
       throw new BadRequestException('لا يمكن تكرار الصنف نفسه في المستند؛ عدّل الكمية في السطر الموجود');
     }
+    const registrationEntry = resolveOrdersV4RegistrationEntry(input);
+    const isRegistrationCancellation = registrationEntry.entryType === 'cancellation';
     if (input.documentType === 'purchase' && !['custody', 'cash', 'transfer'].includes(input.paymentMethod || 'custody')) {
       throw new BadRequestException('طريقة الدفع غير صالحة');
     }
@@ -219,27 +225,62 @@ export class OrdersV4DocumentsService {
       });
 
       const subtotal = prepared.reduce((sum, row) => sum.plus(row.calculation.lineTotal), new Prisma.Decimal(0)).toDecimalPlaces(6);
-      const initialOperationalCost = input.documentType === 'purchase' ? subtotal : new Prisma.Decimal(0);
+      const documentDirection = isRegistrationCancellation ? new Prisma.Decimal(-1) : new Prisma.Decimal(1);
+      const signedSubtotal = subtotal.times(documentDirection).toDecimalPlaces(6);
+      const initialOperationalCost = input.documentType === 'purchase' ? signedSubtotal : new Prisma.Decimal(0);
       const inventoryKeys = prepared.flatMap((row) => {
         if (input.documentType === 'purchase') return row.item.trackInventory ? [{ itemId: row.item.id, locationId: location.id }] : [];
         if (row.recipe) return row.recipe.lines.filter((line) => line.componentItem.trackInventory).map((line) => ({ itemId: line.componentItem.id, locationId: location.id }));
         return row.item.trackInventory ? [{ itemId: row.item.id, locationId: location.id }] : [];
       });
+      if (isRegistrationCancellation) {
+        if (!input.sectionId) throw new BadRequestException('يجب اختيار القسم عند تسجيل الإلغاء');
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:registration-cancellation:${companyId}:${documentDate.toISOString()}:${input.sectionId}:${location.id}`}))`;
+      }
       if (input.documentType === 'registration') await this.posting.lockKeys(tx, companyId, inventoryKeys);
+      if (isRegistrationCancellation) {
+        const historicalLines = await tx.ordersV4DocumentLine.findMany({
+          where: {
+            companyId,
+            itemId: { in: itemIds },
+            document: {
+              documentType: 'registration',
+              registrationEntryType: { in: ['issue', 'cancellation'] },
+              status: 'received',
+              reversalOfId: null,
+              documentDate,
+              sectionId: input.sectionId,
+              locationId: location.id,
+            },
+          },
+          select: { itemId: true, baseQuantity: true },
+        });
+        const availableByItem = new Map<string, Prisma.Decimal>();
+        for (const line of historicalLines) {
+          availableByItem.set(line.itemId, (availableByItem.get(line.itemId) ?? new Prisma.Decimal(0)).plus(line.baseQuantity));
+        }
+        for (const row of prepared) {
+          const available = availableByItem.get(row.item.id) ?? new Prisma.Decimal(0);
+          if (row.calculation.baseQuantity.gt(available)) {
+            throw new BadRequestException(`${row.item.nameAr}: كمية الإلغاء تتجاوز صافي الكمية المسجلة في القسم لهذا اليوم (${available.toString()})`);
+          }
+        }
+      }
       const document = await tx.ordersV4Document.create({
         data: {
           tenantId,
           companyId,
-          documentNumber: documentNumber(input.documentType, documentDate),
+          documentNumber: documentNumber(input.documentType, documentDate, registrationEntry.entryType),
           documentType: input.documentType,
+          registrationEntryType: registrationEntry.entryType,
           paymentMethod: input.documentType === 'purchase' ? input.paymentMethod || 'custody' : null,
           documentDate,
           status: input.documentType === 'purchase' ? 'prepared' : 'received',
           sectionId: input.sectionId || null,
           locationId: location.id,
           pettyCashAmount,
-          subtotal,
-          totalAmount: subtotal,
+          subtotal: signedSubtotal,
+          totalAmount: signedSubtotal,
           operationalCost: initialOperationalCost,
           notes: input.notes?.trim() || null,
           idempotencyKey: input.idempotencyKey.trim(),
@@ -249,8 +290,8 @@ export class OrdersV4DocumentsService {
             kernelVersion: 4,
             owner: 'orders-v4-calculation-kernel',
             lineCount: prepared.length,
-            subtotal: subtotal.toString(),
-            totalAmount: subtotal.toString(),
+            subtotal: signedSubtotal.toString(),
+            totalAmount: signedSubtotal.toString(),
             operationalCost: initialOperationalCost.toString(),
           },
           createdByUserId: userId,
@@ -259,6 +300,7 @@ export class OrdersV4DocumentsService {
 
       let registrationOperationalCost = new Prisma.Decimal(0);
       for (const row of prepared) {
+        const lineDirection = isRegistrationCancellation ? new Prisma.Decimal(-1) : new Prisma.Decimal(1);
         const createdLine = await tx.ordersV4DocumentLine.create({
           data: {
             tenantId,
@@ -267,17 +309,19 @@ export class OrdersV4DocumentsService {
             itemId: row.item.id,
             lineNumber: row.index + 1,
             itemNameSnapshot: row.item.nameAr,
-            inputQuantity: row.calculation.inputQuantity,
+            inputQuantity: row.calculation.inputQuantity.times(lineDirection),
             inputUnitId: row.line.unitId,
-            baseQuantity: row.calculation.baseQuantity,
+            baseQuantity: row.calculation.baseQuantity.times(lineDirection),
             baseUnitId: row.item.kernelUnitId,
             unitPrice: row.calculation.unitPrice,
             priceUnitId: row.priceUnitId,
-            priceQuantity: row.calculation.priceQuantity,
-            lineTotal: row.calculation.lineTotal,
+            priceQuantity: row.calculation.priceQuantity.times(lineDirection),
+            lineTotal: row.calculation.lineTotal.times(lineDirection),
             operationalCost: input.documentType === 'purchase' ? row.calculation.lineTotal : new Prisma.Decimal(0),
             conversionVersionId: row.definition?.id || null,
             recipeVersionId: row.recipe?.id || null,
+            cancellationReasons: isRegistrationCancellation ? row.line.cancellationReasons ?? [] : undefined,
+            cancellationNote: isRegistrationCancellation ? row.line.cancellationNote?.trim() || null : null,
             conversionSnapshot: {
               input: conversionSnapshot(row.calculation.inputConversion),
               price: conversionSnapshot(row.calculation.priceConversion),
@@ -289,6 +333,7 @@ export class OrdersV4DocumentsService {
               priceQuantity: row.calculation.priceQuantity.toString(),
               unitPrice: row.calculation.unitPrice.toString(),
               lineTotal: row.calculation.lineTotal.toString(),
+              registrationEntryType: registrationEntry.entryType,
             },
           },
         });
@@ -366,7 +411,20 @@ export class OrdersV4DocumentsService {
                 sampleCount: recentPrices.length,
                 componentCost: componentCost.toString(),
               });
-              await this.posting.postIssue(tx, {
+              if (isRegistrationCancellation) {
+                await this.posting.postRegistrationCancellation(tx, {
+                  tenantId, companyId, itemId: component.componentItem.id, inventoryUnitId: component.componentItem.kernelUnitId, locationId: location.id,
+                  documentLineId: createdLine.id, sourceId: document.id,
+                  sourceKey: `document:${document.id}:line:${createdLine.id}:recipe:${component.id}:cancellation`,
+                  effectiveAt: documentDate, quantity: issueQuantity, unitCost: averageLastFive,
+                  conversionVersionId: componentDefinition?.id || null, recipeVersionId: row.recipe.id,
+                  sourceSnapshot: {
+                    documentNumber: document.documentNumber, lineNumber: row.index + 1,
+                    recipeVersion: row.recipe.version, componentLineId: component.id, kernelVersion: 4,
+                    cancellationReasons: row.line.cancellationReasons ?? [],
+                  },
+                });
+              } else await this.posting.postIssue(tx, {
                   tenantId, companyId, itemId: component.componentItem.id, inventoryUnitId: component.componentItem.kernelUnitId, locationId: location.id,
                 documentLineId: createdLine.id, sourceId: document.id,
                 sourceKey: `document:${document.id}:line:${createdLine.id}:recipe:${component.id}:issue`,
@@ -383,7 +441,7 @@ export class OrdersV4DocumentsService {
                 },
               });
             }
-            const lineOperationalCost = recipeCost.toDecimalPlaces(6);
+            const lineOperationalCost = recipeCost.times(lineDirection).toDecimalPlaces(6);
             registrationOperationalCost = registrationOperationalCost.plus(lineOperationalCost);
             await tx.ordersV4DocumentLine.update({
               where: { id: createdLine.id },
@@ -404,7 +462,20 @@ export class OrdersV4DocumentsService {
               },
             });
           } else if (row.item.trackInventory) {
-            const issueEntry = await this.posting.postIssue(tx, {
+            const currentBalance = isRegistrationCancellation
+              ? await this.posting.currentBalance(tx, companyId, row.item.id, location.id, row.item.kernelUnitId)
+              : null;
+            const issueEntry = isRegistrationCancellation
+              ? await this.posting.postRegistrationCancellation(tx, {
+                tenantId, companyId, itemId: row.item.id, inventoryUnitId: row.item.kernelUnitId, locationId: location.id,
+                documentLineId: createdLine.id, sourceId: document.id,
+                sourceKey: `document:${document.id}:line:${createdLine.id}:cancellation`,
+                effectiveAt: documentDate, quantity: row.calculation.baseQuantity,
+                unitCost: currentBalance?.averageUnitCost ?? new Prisma.Decimal(0),
+                conversionVersionId: row.definition?.id || null, recipeVersionId: null,
+                sourceSnapshot: { documentNumber: document.documentNumber, lineNumber: row.index + 1, kernelVersion: 4, cancellationReasons: row.line.cancellationReasons ?? [] },
+              })
+              : await this.posting.postIssue(tx, {
               tenantId, companyId, itemId: row.item.id, inventoryUnitId: row.item.kernelUnitId, locationId: location.id,
               documentLineId: createdLine.id, sourceId: document.id,
               sourceKey: `document:${document.id}:line:${createdLine.id}:issue`,
@@ -413,7 +484,7 @@ export class OrdersV4DocumentsService {
               recipeVersionId: null,
               sourceSnapshot: { documentNumber: document.documentNumber, lineNumber: row.index + 1, kernelVersion: 4 },
             });
-            const lineOperationalCost = issueEntry.valueDelta.abs().toDecimalPlaces(6);
+            const lineOperationalCost = issueEntry.valueDelta.abs().times(lineDirection).toDecimalPlaces(6);
             registrationOperationalCost = registrationOperationalCost.plus(lineOperationalCost);
             await tx.ordersV4DocumentLine.update({
               where: { id: createdLine.id },
@@ -422,7 +493,7 @@ export class OrdersV4DocumentsService {
                 costSnapshot: {
                   policy: 'moving-average-inventory-cost',
                   totalCost: lineOperationalCost.toString(),
-                  costPerRegisteredUnit: calculateOrdersV4AverageUnitCost(lineOperationalCost, row.calculation.inputQuantity).toString(),
+                  costPerRegisteredUnit: calculateOrdersV4AverageUnitCost(lineOperationalCost.abs(), row.calculation.inputQuantity).toString(),
                 },
               },
             });
@@ -440,10 +511,11 @@ export class OrdersV4DocumentsService {
               kernelVersion: 4,
               owner: 'orders-v4-calculation-kernel',
               lineCount: prepared.length,
-              subtotal: subtotal.toString(),
-              totalAmount: subtotal.toString(),
+              subtotal: signedSubtotal.toString(),
+              totalAmount: signedSubtotal.toString(),
               operationalCost: operationalCost.toString(),
               costPolicy: 'line-cost-snapshots',
+              registrationEntryType: registrationEntry.entryType,
             },
           },
         });
@@ -692,6 +764,9 @@ export class OrdersV4DocumentsService {
         where: { id, companyId, status: undo ? 'reversed' : 'received', reversalOfId: null }, include: { lines: true },
       });
       if (!original) throw new NotFoundException(undo ? 'المستند غير موجود أو لم يتم عكسه' : 'المستند غير موجود أو سبق عكسه');
+      if (original.documentType === 'registration' && original.sectionId) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:registration-cancellation:${companyId}:${original.documentDate.toISOString()}:${original.sectionId}:${original.locationId}`}))`;
+      }
       let chainHead = original;
       const visited = new Set<string>([original.id]);
       while (true) {
@@ -734,6 +809,7 @@ export class OrdersV4DocumentsService {
           tenantId, companyId,
           documentNumber: `${original.documentNumber}-${undo ? 'UNDO' : 'R'}-${randomUUID().slice(0, 8).toUpperCase()}`,
           documentType: original.documentType,
+          registrationEntryType: original.registrationEntryType,
           paymentMethod: original.paymentMethod,
           documentDate: new Date(), status: 'reversed', sectionId: original.sectionId,
           locationId: original.locationId, pettyCashAmount: chainHead.pettyCashAmount?.negated() ?? null,

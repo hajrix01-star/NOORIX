@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { OrdersV4Item } from '../../../types/api';
+import type { OrdersV4CancellationReason, OrdersV4Item } from '../../../types/api';
 import { Button, DialogActions, Input, Modal } from '../../../ui';
 import { OrdersV4Field, OrdersV4Select, v4Number } from '../OrdersV4Shared';
+import { ORDERS_V4_CANCELLATION_REASON_OPTIONS } from './ordersV4CancellationReasons';
 
 export type OrdersV4DocumentLineDraft = {
   itemId: string;
@@ -9,18 +10,22 @@ export type OrdersV4DocumentLineDraft = {
   unitId: string;
   unitPrice: string;
   priceUnitId: string;
+  cancellationReasons?: OrdersV4CancellationReason[];
+  cancellationNote?: string;
 };
 
 export function OrdersV4DocumentLineModal({
   item,
   isPurchase,
   isReceiving,
+  isCancellation = false,
   onClose,
   onConfirm,
 }: {
   item: OrdersV4Item | null;
   isPurchase: boolean;
   isReceiving: boolean;
+  isCancellation?: boolean;
   onClose: () => void;
   onConfirm: (draft: OrdersV4DocumentLineDraft) => void;
 }) {
@@ -29,6 +34,8 @@ export function OrdersV4DocumentLineModal({
   const [unitId, setUnitId] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [unitPrice, setUnitPrice] = useState('0');
+  const [cancellationReasons, setCancellationReasons] = useState<OrdersV4CancellationReason[]>([]);
+  const [cancellationNote, setCancellationNote] = useState('');
 
   useEffect(() => {
     if (!item) return;
@@ -37,6 +44,8 @@ export function OrdersV4DocumentLineModal({
     setUnitId(preferred?.unitId ?? item.inventoryUnitId);
     setUnitPrice(String(preferred?.lastPrice ?? '0'));
     setQuantity('1');
+    setCancellationReasons([]);
+    setCancellationNote('');
   }, [item, selectableUnits]);
 
   if (!item) return null;
@@ -52,7 +61,16 @@ export function OrdersV4DocumentLineModal({
 
   function confirm() {
     if (!unitId || Number(quantity) <= 0) return;
-    onConfirm({ itemId: activeItem.id, quantity, unitId, unitPrice: unitPrice || '0', priceUnitId: unitId });
+    if (isCancellation && (!cancellationReasons.length || (cancellationReasons.includes('other') && !cancellationNote.trim()))) return;
+    onConfirm({
+      itemId: activeItem.id,
+      quantity,
+      unitId,
+      unitPrice: unitPrice || '0',
+      priceUnitId: unitId,
+      cancellationReasons: isCancellation ? cancellationReasons : undefined,
+      cancellationNote: isCancellation ? cancellationNote.trim() : undefined,
+    });
   }
 
   return (
@@ -63,7 +81,7 @@ export function OrdersV4DocumentLineModal({
       title={activeItem.nameAr}
       footer={<DialogActions actions={[
         { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose },
-        { key: 'add', label: 'إضافة', role: 'save', onClick: confirm, disabled: !unitId || Number(quantity) <= 0 },
+        { key: 'add', label: isCancellation ? 'إضافة الإلغاء' : 'إضافة', role: isCancellation ? 'danger' : 'save', onClick: confirm, disabled: !unitId || Number(quantity) <= 0 || (isCancellation && (!cancellationReasons.length || (cancellationReasons.includes('other') && !cancellationNote.trim()))) },
       ]} />}
     >
       <div className="flex flex-col gap-5">
@@ -107,6 +125,29 @@ export function OrdersV4DocumentLineModal({
             </Button>
           </div>
         </div>
+
+        {isCancellation && (
+          <div className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50/60 p-3">
+            <div>
+              <div className="text-[13px] font-bold text-red-900">سبب الإلغاء</div>
+              <div className="mt-1 text-[11px] text-red-700">يمكن اختيار أكثر من سبب لهذا الصنف.</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-label="أسباب إلغاء الصنف">
+              {ORDERS_V4_CANCELLATION_REASON_OPTIONS.map((option) => {
+                const selected = cancellationReasons.includes(option.value);
+                return <Button
+                  key={option.value}
+                  type="button"
+                  variant="raw"
+                  aria-pressed={selected}
+                  onClick={() => setCancellationReasons((current) => selected ? current.filter((reason) => reason !== option.value) : [...current, option.value])}
+                  className={`min-h-10 rounded-lg border px-2 py-1.5 text-[11px] font-semibold ${selected ? 'border-red-600 bg-red-600 text-white shadow-sm' : 'border-red-200 bg-white text-noorix-text hover:border-red-400'}`}
+                >{option.label}</Button>;
+              })}
+            </div>
+            {cancellationReasons.includes('other') && <OrdersV4Field label="توضيح السبب الآخر"><Input multiline rows={2} value={cancellationNote} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setCancellationNote(event.target.value)} placeholder="اكتب سبب الإلغاء بوضوح…" /></OrdersV4Field>}
+          </div>
+        )}
 
         {isPurchase ? (
           <OrdersV4Field label="سعر الوحدة (ر.س)">

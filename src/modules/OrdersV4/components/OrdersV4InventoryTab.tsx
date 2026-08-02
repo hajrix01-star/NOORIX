@@ -203,24 +203,20 @@ function LedgerTable({ query }: { query: ReturnType<typeof useOrdersV4Ledger> })
 
 function StocktakesTable({ query, onCreate }: { query: ReturnType<typeof useOrdersV4Stocktakes>; onCreate?: () => void }) {
   const [search, setSearch] = useState('');
-  const [locationId, setLocationId] = useState('');
   const [status, setStatus] = useState('');
   const [createdByUserId, setCreatedByUserId] = useState('');
   const rows = query.data ?? [];
-  const locations = useMemo(() => [...new Map(rows.map((row) => [row.location.id, row.location])).values()].sort((a, b) => a.nameAr.localeCompare(b.nameAr, 'ar')), [rows]);
   const statuses = useMemo(() => [...new Set(rows.map((row) => row.status))].sort(), [rows]);
   const users = useMemo(() => uniqueUsers(rows), [rows]);
   const filteredRows = useMemo(() => {
     const term = normalized(search);
-    return rows.filter((row) => (!locationId || row.location.id === locationId)
-      && (!status || row.status === status)
+    return rows.filter((row) => (!status || row.status === status)
       && (!createdByUserId || row.createdByUser?.id === createdByUserId)
-      && (!term || normalized(`${row.stocktakeNumber} ${row.location.nameAr} ${v4UserLabel(row.createdByUser)}`).includes(term)));
-  }, [createdByUserId, locationId, rows, search, status]);
+      && (!term || normalized(`${row.stocktakeNumber} ${v4UserLabel(row.createdByUser)}`).includes(term)));
+  }, [createdByUserId, rows, search, status]);
   const columns: SimpleTableColumn<OrdersV4Stocktake>[] = [
     { key: 'stocktakeNumber', label: 'رقم الجرد' },
     { key: 'stocktakeDate', label: 'التاريخ', render: (value) => v4Date(String(value)) },
-    { key: 'location', label: 'الموقع', render: (_value, row) => row.location.nameAr },
     { key: 'lines', label: 'الأصناف', numeric: true, render: (_value, row) => row.lines.length },
     { key: 'variance', label: 'قيمة الفروقات', numeric: true, render: (_value, row) => `${v4Number(row.lines.reduce((sum, line) => sum + Number(line.varianceValue), 0))} ر.س` },
     { key: 'createdByUser', label: 'الموظف (المستخدم)', minWidth: 180, render: (_value, row) => v4UserLabel(row.createdByUser) },
@@ -228,8 +224,7 @@ function StocktakesTable({ query, onCreate }: { query: ReturnType<typeof useOrde
   ];
   return <OrdersV4Panel title={`سجل الجرد — ${filteredRows.length} جلسة`} action={onCreate ? <Button variant="primary" onClick={onCreate}>+ جرد جديد</Button> : undefined}>
     <InventoryFilterBar>
-      <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="رقم الجرد أو الموقع أو الموظف…" /></OrdersV4Field>
-      <OrdersV4Field label="الموقع"><OrdersV4Select value={locationId} onChange={(event) => setLocationId(event.target.value)}><option value="">كل المواقع</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+      <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="رقم الجرد أو الموظف…" /></OrdersV4Field>
       <OrdersV4Field label="الحالة"><OrdersV4Select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">كل الحالات</option>{statuses.map((value) => <option key={value} value={value}>{value}</option>)}</OrdersV4Select></OrdersV4Field>
       <OrdersV4Field label="الموظف"><OrdersV4Select value={createdByUserId} onChange={(event) => setCreatedByUserId(event.target.value)}><option value="">كل الموظفين</option>{users.map((user) => <option key={user.id} value={user.id}>{v4UserLabel(user)}</option>)}</OrdersV4Select></OrdersV4Field>
     </InventoryFilterBar>
@@ -324,11 +319,7 @@ function StocktakeModal({ open, onClose, companyId, bootstrap, balances }: { ope
   }
   return <AdaptiveSheet open={open} onClose={onClose} size="2xl" side="start" closeOnBackdrop={!mutation.isPending} hideClose={mutation.isPending} title="جرد المخزون" footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose, disabled: mutation.isPending }, { key: 'save', label: 'اعتماد الجرد', role: 'save', onClick: submit, loading: mutation.isPending, disabled: !scopeRows.length }]} />}>
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-6 text-blue-900">
-        الجرد التشغيلي يعتمد تاريخ اليوم بتوقيت السعودية: <b>{date}</b>. الرصيد الدفتري يُعاد احتسابه لحظة الاعتماد لضمان سلامة القيود.
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <OrdersV4Field label="موقع المخزون"><OrdersV4Select value={effectiveLocation} onChange={(event) => { setLocationId(event.target.value); setPhysical({}); }}>{bootstrap?.locations.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+      <div className="grid gap-3">
         <OrdersV4Field label="بحث في الأصناف"><Input type="search" value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)} placeholder="اسم الصنف أو الفئة…" /></OrdersV4Field>
       </div>
       <div className="flex flex-wrap items-center gap-2">

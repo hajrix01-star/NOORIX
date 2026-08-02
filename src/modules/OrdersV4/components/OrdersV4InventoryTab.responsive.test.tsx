@@ -62,5 +62,7 @@ describe('OrdersV4InventoryTab mobile stocktake workflow', () => {
     expect(dialog.className).toContain('h-full');
     expect(dialog.className).toContain('w-[min(100vw,920px)]');
     expect(dialog.className).not.toContain('max-h-[min(92vh,860px)]');
+    expect(screen.queryByLabelText('موقع المخزون')).toBeNull();
+    expect(screen.queryByText(/الجرد التشغيلي يعتمد تاريخ اليوم/)).toBeNull();
   });
 });

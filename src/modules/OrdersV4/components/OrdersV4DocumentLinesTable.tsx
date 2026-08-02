@@ -3,6 +3,7 @@ import type { OrdersV4Item } from '../../../types/api';
 import { Button, Input, type SimpleTableColumn } from '../../../ui';
 import { OrdersV4Select, OrdersV4Table as SimpleTable } from '../OrdersV4Shared';
 import type { OrdersV4DocumentLineDraft } from './OrdersV4DocumentLineModal';
+import { ordersV4CancellationReasonLabel } from './ordersV4CancellationReasons';
 
 export type OrdersV4DocumentDraftLine = OrdersV4DocumentLineDraft & { key: string };
 
@@ -11,6 +12,7 @@ export function OrdersV4DocumentLinesTable({
   items,
   isPurchase,
   isReceiving,
+  isCancellation = false,
   onPatch,
   onRemove,
 }: {
@@ -18,6 +20,7 @@ export function OrdersV4DocumentLinesTable({
   items: OrdersV4Item[];
   isPurchase: boolean;
   isReceiving: boolean;
+  isCancellation?: boolean;
   onPatch: (key: string, patch: Partial<OrdersV4DocumentDraftLine>) => void;
   onRemove: (key: string) => void;
 }) {
@@ -96,11 +99,24 @@ export function OrdersV4DocumentLinesTable({
     },
   ];
 
+  const visibleColumns = isCancellation
+    ? [
+      ...columns.filter((column) => !['unitPrice', 'priceUnitId', 'actions'].includes(String(column.key))),
+      {
+        key: 'cancellationReasons',
+        label: 'أسباب الإلغاء',
+        minWidth: 240,
+        render: (_value: unknown, line: OrdersV4DocumentDraftLine) => <div className="flex flex-wrap justify-center gap-1">{(line.cancellationReasons ?? []).map((reason) => <span key={reason} className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-700">{ordersV4CancellationReasonLabel(reason)}</span>)}</div>,
+      } as SimpleTableColumn<OrdersV4DocumentDraftLine>,
+      columns.find((column) => column.key === 'actions')!,
+    ]
+    : columns;
+
   return (
     <SimpleTable
-      columns={columns}
+      columns={visibleColumns}
       data={lines}
-      tableMinWidth={860}
+      tableMinWidth={isCancellation ? 720 : 860}
       emptyMessage="اضغط زر الصنف لإضافته إلى الطلب."
     />
   );

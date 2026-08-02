@@ -97,6 +97,17 @@ export type OrdersV4UserIdentity = {
   username?: string | null;
 };
 
+export type OrdersV4CancellationReason =
+  | 'customer_disliked'
+  | 'replaced_item'
+  | 'order_error'
+  | 'registration_error'
+  | 'delayed_order'
+  | 'duplicate_order'
+  | 'customer_changed_mind'
+  | 'item_unavailable'
+  | 'other';
+
 export type OrdersV4DocumentLine = {
   id: string;
   lineNumber: number;
@@ -111,6 +122,8 @@ export type OrdersV4DocumentLine = {
   priceQuantity: string;
   lineTotal: string;
   operationalCost: string;
+  cancellationReasons?: OrdersV4CancellationReason[] | null;
+  cancellationNote?: string | null;
   item: OrdersV4Item;
   inputUnit: OrdersV4Unit;
   baseUnit: OrdersV4Unit;
@@ -121,6 +134,7 @@ export type OrdersV4Document = {
   id: string;
   documentNumber: string;
   documentType: 'purchase' | 'registration';
+  registrationEntryType?: 'issue' | 'cancellation' | null;
   paymentMethod?: 'custody' | 'cash' | 'transfer' | null;
   documentDate: string;
   status: 'prepared' | 'received' | 'cancelled' | 'reversed';
@@ -144,8 +158,10 @@ export type OrdersV4Document = {
 export type OrdersV4Summary = {
   purchaseCount: number;
   registrationCount: number;
+  cancellationCount: number;
   purchaseTotal: string;
   registrationTotal: string;
+  cancellationTotal: string;
   custodyTotal: string;
   cashTotal: string;
   transferTotal: string;
@@ -271,6 +287,7 @@ export type OrdersV4Stocktake = {
 
 export type OrdersV4DocumentPayload = {
   documentType: 'purchase' | 'registration';
+  registrationEntryType?: 'issue' | 'cancellation';
   documentDate: string;
   paymentMethod?: 'custody' | 'cash' | 'transfer' | null;
   sectionId?: string | null;
@@ -278,7 +295,7 @@ export type OrdersV4DocumentPayload = {
   pettyCashAmount?: string | null;
   notes?: string | null;
   idempotencyKey: string;
-  lines: Array<{ itemId: string; quantity: string; unitId: string; unitPrice?: string; priceUnitId?: string }>;
+  lines: Array<{ itemId: string; quantity: string; unitId: string; unitPrice?: string; priceUnitId?: string; cancellationReasons?: OrdersV4CancellationReason[] | null; cancellationNote?: string | null }>;
 };
 
 export type OrdersV4ReceivePayload = Omit<OrdersV4DocumentPayload, 'documentType'> & { revision: number };

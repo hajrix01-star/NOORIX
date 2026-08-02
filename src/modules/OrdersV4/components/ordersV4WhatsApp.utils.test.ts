@@ -59,4 +59,21 @@ describe('buildOrdersV4WhatsAppText', () => {
     expect(text).toContain('شاي (حبة): 3 × 10 = 30 SR');
     expect(text).toContain('الإجمالي: 30 SR');
   });
+
+  it('shows each cancelled item reasons in the independent cancellation message', () => {
+    const text = buildOrdersV4WhatsAppText(document({
+      documentNumber: 'CAN4-20260803-ABC123',
+      registrationEntryType: 'cancellation',
+      lines: [{
+        ...document().lines[0],
+        inputQuantity: '-2',
+        cancellationReasons: ['order_error', 'duplicate_order'],
+        cancellationNote: 'اختبار رقابي',
+      }],
+    }));
+
+    expect(text).toContain('سجل إلغاء');
+    expect(text).toContain('خطأ في الطلب، طلب مكرر');
+    expect(text).toContain('اختبار رقابي');
+  });
 });

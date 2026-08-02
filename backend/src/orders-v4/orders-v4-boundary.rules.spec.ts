@@ -59,6 +59,16 @@ describe('Orders V4 inventory boundary', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('posts registration cancellations through the central inventory boundary', () => {
+    const posting = readFileSync(join(__dirname, 'orders-v4-ledger-posting.service.ts'), 'utf8');
+    const documents = readFileSync(join(__dirname, 'orders-v4-documents.service.ts'), 'utf8');
+    expect(posting).toContain('postRegistrationCancellation');
+    expect(posting).toContain("entryType: 'registration_cancellation'");
+    expect(posting).toContain('calculateOrdersV4Receipt');
+    expect(documents).toContain('this.posting.postRegistrationCancellation');
+    expect(documents).not.toContain('ordersV4InventoryLedgerEntry.create');
+  });
+
   it('routes cutover opening balances through the central ledger posting boundary', () => {
     const importer = readFileSync(join(__dirname, 'orders-v4-legacy-cutover-import.service.ts'), 'utf8');
     const posting = readFileSync(join(__dirname, 'orders-v4-ledger-posting.service.ts'), 'utf8');
