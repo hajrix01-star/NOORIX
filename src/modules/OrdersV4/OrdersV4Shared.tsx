@@ -1,5 +1,5 @@
 import React from 'react';
-import { InlineSelect, Spinner } from '../../ui';
+import { InlineSelect, SimpleTable, Spinner, type SimpleTableProps } from '../../ui';
 
 export function OrdersV4Panel({ title, action, children }: { title: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -42,14 +42,18 @@ export function OrdersV4QueryState({ loading, error }: { loading: boolean; error
   return null;
 }
 
+export function OrdersV4Table<TRow extends object>({ columns, ...props }: SimpleTableProps<TRow>) {
+  return <SimpleTable {...props} columns={columns.map((column) => ({ ...column, align: 'center' }))} />;
+}
+
 export function v4Number(value: unknown, digits = 2): string {
   const number = Number(value ?? 0);
   return Number.isFinite(number)
-    ? new Intl.NumberFormat('ar-SA', { maximumFractionDigits: digits, minimumFractionDigits: 0 }).format(number)
+    ? new Intl.NumberFormat('en-US', { maximumFractionDigits: digits, minimumFractionDigits: 0 }).format(number)
     : '0';
 }
 
 export function v4Date(value: string): string {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('ar-SA-u-ca-gregory').format(date);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('ar-SA-u-ca-gregory-nu-latn').format(date);
 }

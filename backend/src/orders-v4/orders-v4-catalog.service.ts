@@ -43,6 +43,7 @@ const DEFAULT_UNITS: Array<OrdersV4UnitInput & { sortOrder: number }> = [
   { code: 'box', nameAr: 'علبة', nameEn: 'Box', dimension: 'package', canonicalFactor: null, decimalScale: 4, sortOrder: 65 },
   { code: 'carton', nameAr: 'كرتون', nameEn: 'Carton', dimension: 'package', canonicalFactor: null, decimalScale: 4, sortOrder: 70 },
 ];
+const DEFAULT_UNIT_CODES = new Set(DEFAULT_UNITS.map((unit) => unit.code));
 
 function normalizedText(value: unknown, label: string): string {
   const text = String(value ?? '').trim();
@@ -93,6 +94,10 @@ export class OrdersV4CatalogService {
           sortOrder: unit.sortOrder,
         })),
         skipDuplicates: true,
+      });
+      await tx.ordersV4Unit.updateMany({
+        where: { companyId, code: { in: [...DEFAULT_UNIT_CODES] }, isActive: false },
+        data: { isActive: true },
       });
       await tx.ordersV4Section.createMany({
         data: [{ tenantId, companyId, code: 'general', nameAr: 'عام', nameEn: 'General', sortOrder: 10 }],
@@ -776,7 +781,7 @@ export class OrdersV4CatalogService {
           tx.ordersV4InventoryLedgerEntry.count({ where: { companyId, inventoryUnitId: id } }),
           tx.ordersV4StocktakeLine.count({ where: { companyId, unitId: id } }),
         ]);
-        assertOrdersV4UnitDeactivationAllowed(references);
+        assertOrdersV4UnitDeactivationAllowed(references, { isDefault: DEFAULT_UNIT_CODES.has(unit.code) });
         await tx.ordersV4Unit.update({ where: { id }, data: { isActive: false } });
         return { id, deactivated: true };
       });
@@ -790,6 +795,18 @@ export class OrdersV4CatalogService {
             : await this.prisma.ordersV4Location.updateMany({ where: { id, companyId }, data: { isActive: false } });
     if (!updated.count) throw new NotFoundException('سجل V4 غير موجود');
     return { id, deactivated: true };
+  }
+
+  async restoreUnit(companyId: string, id: string) {
+    const restored = await this.prisma.ordersV4Unit.updateMany({
+      where: { id, companyId, isActive: false },
+      data: { isActive: true },
+    });
+    if (!restored.count) {
+      const existing = await this.prisma.ordersV4Unit.findFirst({ where: { id, companyId } });
+      if (!existing) throw new NotFoundException('وحدة V4 غير موجودة');
+    }
+    return { id, restored: true };
   }
 
   private async requireUnit(companyId: string, id: string) {

@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4Item, OrdersV4ReceivePayload } from '../../../types/api';
-import { Button, DialogActions, Input, Modal, SimpleTable, type SimpleTableColumn, TransactionDatePicker } from '../../../ui';
+import { Button, DialogActions, Input, Modal, type SimpleTableColumn, TransactionDatePicker } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
-import { OrdersV4Field, OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4Select, v4Date, v4Number } from '../OrdersV4Shared';
+import { OrdersV4Field, OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4Select, OrdersV4Table as SimpleTable, v4Date, v4Number } from '../OrdersV4Shared';
 import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, useReceiveOrdersV4Document, useReverseOrdersV4Document } from '../useOrdersV4';
 import { OrdersV4DocumentItemPicker } from './OrdersV4DocumentItemPicker';
 

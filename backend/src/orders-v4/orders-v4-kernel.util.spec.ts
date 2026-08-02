@@ -165,6 +165,7 @@ describe('Orders Core V4 kernel', () => {
   it('blocks deactivation of any referenced unit and permits an unused unit', () => {
     expect(() => assertOrdersV4UnitDeactivationAllowed([0, 0, 1, 0])).toThrow(BadRequestException);
     expect(() => assertOrdersV4UnitDeactivationAllowed([0, 0, 0])).not.toThrow();
+    expect(() => assertOrdersV4UnitDeactivationAllowed([0, 0, 0], { isDefault: true })).toThrow('لا يمكن تعطيل أو حذف وحدة افتراضية');
   });
 });
 

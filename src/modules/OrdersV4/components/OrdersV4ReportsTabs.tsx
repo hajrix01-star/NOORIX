@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { OrdersV4Document, OrdersV4ItemsReportRow } from '../../../types/api';
-import { SimpleTable, type SimpleTableColumn } from '../../../ui';
-import { OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, v4Date, v4Number } from '../OrdersV4Shared';
+import { type SimpleTableColumn } from '../../../ui';
+import { OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4Table as SimpleTable, v4Date, v4Number } from '../OrdersV4Shared';
 import { useOrdersV4ItemsReport, useOrdersV4SalesReport } from '../useOrdersV4';
 
 export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { companyId: string; startDate: string; endDate: string }) {

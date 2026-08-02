@@ -112,16 +112,16 @@ export function ordersV4CompositeQuantity(
     if (candidate.factor === 1) continue;
     const count = Math.floor((remaining + 1e-9) / candidate.factor);
     if (count <= 0) continue;
-    parts.push(`${count.toLocaleString('ar-SA')} ${candidate.unit.nameAr}`);
+    parts.push(`${count.toLocaleString('en-US')} ${candidate.unit.nameAr}`);
     remaining -= count * candidate.factor;
   }
   if (remaining > 1e-8 || !parts.length) {
     const precision = item.inventoryUnit.decimalScale ?? 6;
     const rounded = Number(remaining.toFixed(precision));
-    parts.push(`${rounded.toLocaleString('ar-SA', { maximumFractionDigits: precision })} ${item.inventoryUnit.nameAr}`);
+    parts.push(`${rounded.toLocaleString('en-US', { maximumFractionDigits: precision })} ${item.inventoryUnit.nameAr}`);
   }
   return {
     primary: `${sign}${parts.join(' + ')}`,
-    base: `${numeric.toLocaleString('ar-SA', { maximumFractionDigits: item.inventoryUnit.decimalScale ?? 6 })} ${item.inventoryUnit.nameAr}`,
+    base: `${numeric.toLocaleString('en-US', { maximumFractionDigits: item.inventoryUnit.decimalScale ?? 6 })} ${item.inventoryUnit.nameAr}`,
   };
 }

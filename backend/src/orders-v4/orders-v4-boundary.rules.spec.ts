@@ -65,4 +65,9 @@ describe('Orders V4 inventory boundary', () => {
     expect(controller).not.toContain("@Patch('catalog/items/:id/units')");
     expect(controller).not.toContain("@Post('catalog/conversions/publish')");
   });
+
+  it('exposes an explicit unit restore lifecycle endpoint', () => {
+    const controller = readFileSync(join(__dirname, 'orders-v4.controller.ts'), 'utf8');
+    expect(controller).toContain("@Patch('catalog/units/:id/restore')");
+  });
 });

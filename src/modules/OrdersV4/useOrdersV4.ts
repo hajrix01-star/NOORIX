@@ -19,6 +19,7 @@ import {
   publishOrdersV4Recipe,
   reverseOrdersV4Document,
   receiveOrdersV4Document,
+  restoreOrdersV4Unit,
   saveOrdersV4ItemDefinition,
   updateOrdersV4Category,
   updateOrdersV4Item,
@@ -177,5 +178,6 @@ export function useOrdersV4CatalogMutations(companyId: string) {
     saveItemDefinition: useApiMutation({ mutationFn: ({ id, body }: { id: string; body: { inventoryUnitId: string; edges: Array<{ fromUnitId: string; toUnitId: string; factor: string; reversible?: boolean; allowDimensionBridge?: boolean }>; units: Array<{ unitId: string; purchaseLabel?: string | null; isOrderEnabled?: boolean; lastPrice?: string | null; sortOrder?: number }> } }) => saveOrdersV4ItemDefinition(companyId, id, body), invalidateQueries, successToast: 'تم حفظ سلسلة الوحدات والأسعار', showErrorToast: true }),
     publishRecipe: useApiMutation({ mutationFn: (body: { outputItemId: string; outputQuantity: string; outputUnitId: string; lines: Array<{ componentItemId: string; quantity: string; unitId: string }> }) => publishOrdersV4Recipe(companyId, body), invalidateQueries, showErrorToast: true }),
     deactivate: useApiMutation({ mutationFn: ({ entity, id }: { entity: string; id: string }) => deactivateOrdersV4Catalog(companyId, entity, id), invalidateQueries, showErrorToast: true }),
+    restoreUnit: useApiMutation({ mutationFn: (id: string) => restoreOrdersV4Unit(companyId, id), invalidateQueries, successToast: 'تم استرجاع الوحدة', showErrorToast: true }),
   };
 }

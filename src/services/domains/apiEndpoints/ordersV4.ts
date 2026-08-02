@@ -134,3 +134,7 @@ export function publishOrdersV4Recipe(companyId: string, body: {
 export function deactivateOrdersV4Catalog(companyId: string, entity: string, id: string): Promise<ApiParsedResult<{ id: string; deactivated: boolean }>> {
   return apiDelete(`${BASE}/catalog/${encodeURIComponent(entity)}/${encodeURIComponent(id)}?companyId=${encodeURIComponent(companyId)}`);
 }
+
+export function restoreOrdersV4Unit(companyId: string, id: string): Promise<ApiParsedResult<{ id: string; restored: boolean }>> {
+  return apiPatch(`${BASE}/catalog/units/${encodeURIComponent(id)}/restore?companyId=${encodeURIComponent(companyId)}`, {});
+}

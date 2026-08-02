@@ -6,6 +6,7 @@ export type OrdersV4Unit = {
   dimension: string;
   canonicalFactor?: string | null;
   decimalScale: number;
+  sortOrder?: number;
   isActive: boolean;
 };
 

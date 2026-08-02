@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import type { OrdersV4Bootstrap, OrdersV4Item } from '../../../types/api';
-import { Button, Checkbox, Input, SimpleTable, type SimpleTableColumn } from '../../../ui';
+import { Button, Checkbox, Input, type SimpleTableColumn } from '../../../ui';
 import { exportToExcel } from '../../../utils/exportUtils';
-import { OrdersV4Select, v4Number } from '../OrdersV4Shared';
+import { OrdersV4Select, OrdersV4Table as SimpleTable, v4Number } from '../OrdersV4Shared';
 import {
   filterOrdersV4CatalogItems,
   ordersV4ItemLastPrice,

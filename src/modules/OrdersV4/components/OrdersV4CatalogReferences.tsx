@@ -1,14 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import type { OrdersV4Bootstrap, OrdersV4Category, OrdersV4Section } from '../../../types/api';
-import { Button, DialogActions, Input, Modal, SimpleTable, type SimpleTableColumn } from '../../../ui';
+import type { OrdersV4Bootstrap, OrdersV4Category, OrdersV4Section, OrdersV4Unit } from '../../../types/api';
+import { Button, DialogActions, Input, Modal, type SimpleTableColumn } from '../../../ui';
 import { exportToExcel } from '../../../utils/exportUtils';
-import { OrdersV4Field, OrdersV4Panel, OrdersV4Select, v4Number } from '../OrdersV4Shared';
+import { OrdersV4Field, OrdersV4Panel, OrdersV4Select, OrdersV4Table as SimpleTable, v4Number } from '../OrdersV4Shared';
 import type { useOrdersV4CatalogMutations } from '../useOrdersV4';
 import { ordersV4BuiltInTemplates, ordersV4ConversionEquations } from './ordersV4Catalog.utils';
 
 type Mutations = ReturnType<typeof useOrdersV4CatalogMutations>;
 type ReferenceTab = 'sections' | 'categories' | 'units' | 'recipes' | 'locations';
 type FormMode = 'category' | 'section' | 'unit' | 'location' | null;
+const DEFAULT_UNIT_CODES = new Set(['piece', 'kg', 'g', 'l', 'ml', 'pack', 'box', 'carton']);
 
 export function OrdersV4CatalogReferences({
   tab,
@@ -78,6 +79,25 @@ export function OrdersV4CatalogReferences({
     { key: 'count', label: 'عدد الأصناف', numeric: true, render: (_value, row) => data.items.filter((item) => item.isActive && item.sections.some((link) => link.section.id === row.id)).length },
     { key: 'actions', label: 'الإجراءات', render: (_value, row) => <div className="flex gap-2"><Button size="sm" onClick={() => openSection(row)}>تعديل</Button>{canDelete && <Button size="sm" variant="danger" onClick={() => mutations.deactivate.mutate({ entity: 'section', id: row.id })}>تعطيل</Button>}</div> },
   ];
+  const orderedUnits = useMemo(() => [...data.units].sort((left, right) => {
+    if (left.isActive !== right.isActive) return left.isActive ? -1 : 1;
+    return (left.sortOrder ?? Number.MAX_SAFE_INTEGER) - (right.sortOrder ?? Number.MAX_SAFE_INTEGER)
+      || left.nameAr.localeCompare(right.nameAr, 'ar');
+  }), [data.units]);
+  const unitColumns: SimpleTableColumn<OrdersV4Unit>[] = [
+    { key: 'nameAr', label: 'الوحدة', render: (_value, row) => <div className="flex flex-wrap items-center justify-center gap-2"><strong>{row.nameAr}</strong>{DEFAULT_UNIT_CODES.has(row.code) && <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">افتراضية</span>}</div> },
+    { key: 'code', label: 'الكود' },
+    { key: 'dimension', label: 'النوع', render: (value) => value === 'package' ? 'تغليف' : value === 'mass' ? 'وزن' : value === 'volume' ? 'حجم' : 'وحدة' },
+    { key: 'canonicalFactor', label: 'المعامل القياسي', numeric: true, render: (value) => value == null ? 'خاص بالصنف' : v4Number(value, 8) },
+    { key: 'isActive', label: 'الحالة', render: (_value, row) => <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{row.isActive ? 'نشطة' : 'معطلة'}</span> },
+    ...(canDelete ? [{
+      key: 'action', label: 'الإجراءات', render: (_value: unknown, row: OrdersV4Unit) => row.isActive
+        ? DEFAULT_UNIT_CODES.has(row.code)
+          ? <span className="text-[11px] font-bold text-noorix-muted">محمية</span>
+          : <Button size="sm" variant="danger" onClick={() => mutations.deactivate.mutate({ entity: 'unit', id: row.id })}>تعطيل</Button>
+        : <Button size="sm" variant="primary" onClick={() => mutations.restoreUnit.mutate(row.id)}>استرجاع</Button>,
+    } as SimpleTableColumn<OrdersV4Unit>] : []),
+  ];
 
   return <>
     <Modal open={formMode !== null} onClose={() => setFormMode(null)} size="md" title={`${editingId ? 'تعديل' : 'إضافة'} ${formMode === 'category' ? 'فئة' : formMode === 'section' ? 'قسم' : formMode === 'unit' ? 'وحدة مركزية' : 'موقع مخزون'}`} footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: () => setFormMode(null), disabled: busy }, { key: 'save', label: 'حفظ', role: 'save', onClick: save, loading: busy, disabled: busy }]} />}>
@@ -94,9 +114,7 @@ export function OrdersV4CatalogReferences({
 
     {tab === 'categories' && <OrdersV4Panel title="الفئات" action={<Button variant="primary" size="sm" onClick={() => openCreate('category')}>+ إضافة فئة</Button>}><div className="mb-3 flex flex-wrap justify-between gap-2"><Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="بحث في الفئات…" className="max-w-[320px]" /><Button size="sm" variant="ghost" disabled={!filteredCategories.length} onClick={() => exportToExcel(filteredCategories.map((row) => ({ 'الاسم العربي': row.nameAr, 'الاسم الإنجليزي': row.nameEn || '' })), 'orders-v4-categories.xlsx', { title: 'فئات طلبات V4' })}>تصدير Excel</Button></div><SimpleTable columns={categoryColumns} data={filteredCategories} emptyMessage="لا توجد فئات مطابقة" /></OrdersV4Panel>}
 
-    {tab === 'units' && <div className="flex flex-col gap-4"><OrdersV4Panel title="الوحدات المركزية" action={<Button variant="primary" size="sm" onClick={() => openCreate('unit')}>+ إضافة وحدة</Button>}><div className="mb-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-6 text-blue-950"><b>المصدر المركزي للوحدات:</b> تُنشأ الوحدة هنا مرة واحدة، ثم تستوردها بطاقات الأصناف والرسبي. الوحدات الافتراضية: حبة، كيلوجرام، جرام، لتر، ملليلتر، باكيت، علبة، كرتون.</div><SimpleTable columns={[
-      { key: 'nameAr', label: 'الوحدة' }, { key: 'code', label: 'الكود' }, { key: 'dimension', label: 'النوع', render: (value) => value === 'package' ? 'تغليف' : value === 'mass' ? 'وزن' : value === 'volume' ? 'حجم' : 'وحدة' }, { key: 'canonicalFactor', label: 'المعامل القياسي', numeric: true, render: (value) => value == null ? 'خاص بالصنف' : v4Number(value, 8) }, ...(canDelete ? [{ key: 'action', label: 'الإجراءات', render: (_value: unknown, row: OrdersV4Bootstrap['units'][number]) => <Button size="sm" variant="danger" onClick={() => mutations.deactivate.mutate({ entity: 'unit', id: row.id })}>تعطيل</Button> } as SimpleTableColumn<OrdersV4Bootstrap['units'][number]>] : []),
-    ]} data={data.units.filter((row) => row.isActive)} tableMinWidth={680} /></OrdersV4Panel><OrdersV4Panel title="قوالب التحويل"><div className="grid gap-2 md:grid-cols-3">{ordersV4BuiltInTemplates(data.units).map((template) => { const from = data.units.find((unit) => unit.id === template.fromUnitId); const to = data.units.find((unit) => unit.id === template.toUnitId); return <div key={template.name} className="rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3"><strong>{template.name}</strong><div className="mt-2 text-[12px] text-noorix-muted">1 {from?.nameAr} = {template.factor} {to?.nameAr}</div></div>; })}</div></OrdersV4Panel><OrdersV4Panel title="التحويلات المنشورة"><SimpleTable columns={[{ key: 'item', label: 'الصنف', render: (_value, row) => <Button variant="raw" size="auto" className="font-bold text-noorix-blue" onClick={() => onOpenItem(row.itemId)}>{row.item.nameAr}</Button> }, { key: 'version', label: 'النسخة', numeric: true }, { key: 'edges', label: 'سلسلة التحويل', render: (_value, row) => ordersV4ConversionEquations(row).join(' ← ') }, { key: 'status', label: 'الحالة', render: () => 'منشور' }]} data={data.conversions} tableMinWidth={760} emptyMessage="لا توجد تحويلات منشورة" /></OrdersV4Panel></div>}
+    {tab === 'units' && <div className="flex flex-col gap-4"><OrdersV4Panel title="الوحدات المركزية" action={<Button variant="primary" size="sm" onClick={() => openCreate('unit')}>+ إضافة وحدة</Button>}><div className="mb-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-6 text-blue-950"><b>المصدر المركزي للوحدات:</b> تُنشأ الوحدة هنا مرة واحدة، ثم تستوردها بطاقات الأصناف والرسبي. الوحدات المعطلة تبقى محفوظة تاريخيًا ويمكن استرجاعها، أما الوحدات الافتراضية فهي محمية من التعطيل والحذف.</div><SimpleTable columns={unitColumns} data={orderedUnits} tableMinWidth={760} getRowClassName={(row) => row.isActive ? undefined : 'opacity-60'} /></OrdersV4Panel><OrdersV4Panel title="قوالب التحويل"><div className="grid gap-2 md:grid-cols-3">{ordersV4BuiltInTemplates(data.units.filter((unit) => unit.isActive)).map((template) => { const from = data.units.find((unit) => unit.id === template.fromUnitId); const to = data.units.find((unit) => unit.id === template.toUnitId); return <div key={template.name} className="rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3"><strong>{template.name}</strong><div className="mt-2 text-[12px] text-noorix-muted">1 {from?.nameAr} = {template.factor} {to?.nameAr}</div></div>; })}</div></OrdersV4Panel><OrdersV4Panel title="التحويلات المنشورة"><SimpleTable columns={[{ key: 'item', label: 'الصنف', render: (_value, row) => <Button variant="raw" size="auto" className="font-bold text-noorix-blue" onClick={() => onOpenItem(row.itemId)}>{row.item.nameAr}</Button> }, { key: 'version', label: 'النسخة', numeric: true }, { key: 'edges', label: 'سلسلة التحويل', render: (_value, row) => ordersV4ConversionEquations(row).join(' ← ') }, { key: 'status', label: 'الحالة', render: () => 'منشور' }]} data={data.conversions} tableMinWidth={760} emptyMessage="لا توجد تحويلات منشورة" /></OrdersV4Panel></div>}
 
     {tab === 'recipes' && <OrdersV4Panel title="الرسبي" action={<span className="text-[11px] text-noorix-muted">تُدار الوصفة من بطاقة صنف التسجيل الداخلي</span>}><SimpleTable columns={[{ key: 'outputItem', label: 'صنف التسجيل الداخلي', render: (_value, row) => <Button variant="raw" size="auto" className="font-bold text-noorix-blue" onClick={() => onOpenItem(row.outputItemId)}>{row.outputItem.nameAr}</Button> }, { key: 'version', label: 'النسخة', numeric: true }, { key: 'outputQuantity', label: 'المخرج', render: (_value, row) => `${row.outputQuantity} ${row.outputUnit.nameAr}` }, { key: 'lines', label: 'المكونات', render: (_value, row) => row.lines.map((line) => `${line.componentItem.nameAr}: ${line.quantity} ${line.unit.nameAr}`).join(' · ') }, { key: 'estimatedCost', label: 'التكلفة', numeric: true, render: (value) => `${v4Number(value)} ر.س` }]} data={data.recipes} tableMinWidth={850} emptyMessage="لا توجد وصفات منشورة" /></OrdersV4Panel>}
 

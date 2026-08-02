@@ -49,7 +49,7 @@ describe('Orders V4 item definition UI model', () => {
         { id: 'e2', fromUnitId: box.id, toUnitId: piece.id, factor: '64', reversible: true, allowDimensionBridge: true, fromUnit: box, toUnit: piece },
       ],
     } as OrdersV4ConversionVersion;
-    expect(ordersV4CompositeQuantity('6400', item, conversion)).toEqual({ primary: '١٠ كرتون', base: '٦٬٤٠٠ حبة' });
-    expect(ordersV4CompositeQuantity('6465', item, conversion)?.primary).toBe('١٠ كرتون + ١ علبة + ١ حبة');
+    expect(ordersV4CompositeQuantity('6400', item, conversion)).toEqual({ primary: '10 كرتون', base: '6,400 حبة' });
+    expect(ordersV4CompositeQuantity('6465', item, conversion)?.primary).toBe('10 كرتون + 1 علبة + 1 حبة');
   });
 });

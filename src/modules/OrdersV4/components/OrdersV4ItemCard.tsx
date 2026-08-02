@@ -26,6 +26,7 @@ export function OrdersV4ItemCard({
   data,
   mutations,
   onManageCategories,
+  onSaved,
   onClose,
 }: {
   item: OrdersV4Item | null;
@@ -33,6 +34,7 @@ export function OrdersV4ItemCard({
   data: OrdersV4Bootstrap;
   mutations: Mutations;
   onManageCategories: () => void;
+  onSaved: (item: OrdersV4Item) => void;
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<CardTab>('data');
@@ -170,7 +172,7 @@ export function OrdersV4ItemCard({
     if (!nameAr.trim()) return;
     if (!item) {
       if (!inventoryUnitId) return;
-      await mutations.createItem.mutateAsync({
+      const created = await mutations.createItem.mutateAsync({
         sku: sku.trim() || undefined,
         nameAr: nameAr.trim(),
         nameEn: nameEn.trim() || undefined,
@@ -181,14 +183,15 @@ export function OrdersV4ItemCard({
         trackInventory,
         units: [{ unitId: inventoryUnitId, purchaseLabel: '', isOrderEnabled: false, lastPrice: null }],
       });
-      onClose();
+      if (created.data) onSaved(created.data);
       return;
     }
     if (tab === 'data') {
-      await mutations.updateItem.mutateAsync({
+      const updated = await mutations.updateItem.mutateAsync({
         id: item.id,
         body: { sku: sku.trim() || null, nameAr: nameAr.trim(), nameEn: nameEn.trim() || undefined, categoryId: categoryId || null, sectionIds, trackInventory },
       });
+      if (updated.data) onSaved(updated.data);
     } else if (tab === 'prices') {
       if (!inventoryUnitId || !definitionUnitIds.length || orphanPriceUnitIds.length) return;
       await mutations.saveItemDefinition.mutateAsync({ id: item.id, body: definitionPayload() });
@@ -203,7 +206,6 @@ export function OrdersV4ItemCard({
         lines: recipeRows.map(({ componentItemId, quantity, unitId }) => ({ componentItemId, quantity, unitId })),
       });
     }
-    onClose();
   }
 
   const tabButton = (id: CardTab, label: string) => (
@@ -217,7 +219,6 @@ export function OrdersV4ItemCard({
       size="xl"
       title={item ? `بطاقة الصنف — ${item.nameAr}` : `إضافة ${initialKind === 'purchased' ? 'صنف طلبات' : 'صنف تسجيل داخلي'}`}
       footer={<DialogActions actions={[
-        { key: 'cancel', label: 'إلغاء', role: 'cancel', disabled: busy, onClick: onClose },
         { key: 'save', label: tab === 'definition' && item?.itemType === 'purchased' ? 'حفظ الوحدات والتحويلات' : tab === 'definition' ? 'تحقق وانشر' : 'حفظ', role: 'save', loading: busy, disabled: busy || orphanPriceUnitIds.length > 0, onClick: save },
       ]} />}
     >

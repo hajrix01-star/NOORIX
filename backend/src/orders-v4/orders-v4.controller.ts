@@ -139,6 +139,15 @@ export class OrdersV4Controller {
     return this.catalog.deactivate(requireCompanyId(companyId), entity, id);
   }
 
+  @Patch('catalog/units/:id/restore')
+  @RequirePermission('ORDERS_V4_DELETE')
+  restoreUnit(
+    @CompanyId() companyId: string,
+    @Param('id') id: string,
+  ) {
+    return this.catalog.restoreUnit(requireCompanyId(companyId), id);
+  }
+
   @Get('documents')
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_WRITE', 'ORDERS_V4_STAFF_SUBMIT', 'ORDERS_V4_INTERNAL_SUBMIT')
   listDocuments(
