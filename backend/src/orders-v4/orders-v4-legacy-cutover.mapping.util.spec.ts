@@ -5,6 +5,7 @@ import {
   legacyRecipeRows,
   legacyTargetId,
   legacyUnitDefinition,
+  legacyUnitIsConnected,
   legacyUnitKey,
 } from './orders-v4-legacy-cutover.mapping';
 
@@ -35,6 +36,16 @@ describe('Orders V4 legacy cutover mapping', () => {
       ['carton', 'pack', '10'],
       ['pack', 'piece', '64'],
     ]);
+  });
+
+  it('publishes only item units connected to the immutable kernel unit', () => {
+    const rows = legacyConversionRows([
+      { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+      { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+    ]);
+    expect(legacyUnitIsConnected('carton', 'piece', rows)).toBe(true);
+    expect(legacyUnitIsConnected('kg', 'g', [])).toBe(true);
+    expect(legacyUnitIsConnected('piece', 'pack', [])).toBe(false);
   });
 
   it('maps recipes and legacy payment ownership without financial side effects', () => {

@@ -15,6 +15,7 @@ import {
   legacyStableHash,
   legacyTargetId,
   legacyUnitDefinition,
+  legacyUnitIsConnected,
   legacyUnitKey,
   legacyVariantRows,
 } from './orders-v4-legacy-cutover.mapping';
@@ -234,12 +235,21 @@ export class OrdersV4LegacyCutoverImportService {
       for (const product of products) {
         const itemId = itemIdBySource.get(product.id)!;
         const baseKey = legacyUnitKey(product.unit);
+        const conversions = legacyConversionRows(product.inventoryConversions, product.conversionTemplate?.conversions);
         const definitions = new Map<string, { label: string | null; price: Prisma.Decimal | null; enabled: boolean }>();
         definitions.set(baseKey, { label: null, price: product.lastPrice, enabled: true });
-        for (const variant of legacyVariantRows(product.variants)) definitions.set(variant.unitKey, { label: variant.label, price: variant.lastPrice, enabled: true });
-        for (const conversion of legacyConversionRows(product.inventoryConversions, product.conversionTemplate?.conversions)) {
-          if (!definitions.has(conversion.fromUnitKey)) definitions.set(conversion.fromUnitKey, { label: null, price: null, enabled: true });
-          if (!definitions.has(conversion.toUnitKey)) definitions.set(conversion.toUnitKey, { label: null, price: null, enabled: true });
+        for (const variant of legacyVariantRows(product.variants)) {
+          if (legacyUnitIsConnected(baseKey, variant.unitKey, conversions)) {
+            definitions.set(variant.unitKey, { label: variant.label, price: variant.lastPrice, enabled: true });
+          }
+        }
+        for (const conversion of conversions) {
+          if (legacyUnitIsConnected(baseKey, conversion.fromUnitKey, conversions) && !definitions.has(conversion.fromUnitKey)) {
+            definitions.set(conversion.fromUnitKey, { label: null, price: null, enabled: true });
+          }
+          if (legacyUnitIsConnected(baseKey, conversion.toUnitKey, conversions) && !definitions.has(conversion.toUnitKey)) {
+            definitions.set(conversion.toUnitKey, { label: null, price: null, enabled: true });
+          }
         }
         for (const [unitKey, definition] of definitions) itemUnits.push({
           id: targetId('item-unit', `${product.id}:${unitKey}`), tenantId, companyId, itemId, unitId: unitIdByKey.get(unitKey)!,

@@ -103,6 +103,41 @@ export function legacyConversionRows(...values: unknown[]): LegacyConversionRow[
   return rows;
 }
 
+export function legacyUnitIsConnected(
+  baseUnitKey: string,
+  candidateUnitKey: string,
+  rows: readonly LegacyConversionRow[],
+): boolean {
+  if (baseUnitKey === candidateUnitKey) return true;
+  const base = legacyUnitDefinition(baseUnitKey);
+  const candidate = legacyUnitDefinition(candidateUnitKey);
+  if (
+    base.dimension === candidate.dimension
+    && base.canonicalFactor != null
+    && candidate.canonicalFactor != null
+  ) return true;
+
+  const adjacency = new Map<string, Set<string>>();
+  for (const row of rows) {
+    if (!adjacency.has(row.fromUnitKey)) adjacency.set(row.fromUnitKey, new Set());
+    if (!adjacency.has(row.toUnitKey)) adjacency.set(row.toUnitKey, new Set());
+    adjacency.get(row.fromUnitKey)!.add(row.toUnitKey);
+    adjacency.get(row.toUnitKey)!.add(row.fromUnitKey);
+  }
+  const pending = [candidateUnitKey];
+  const visited = new Set(pending);
+  while (pending.length) {
+    const current = pending.shift()!;
+    if (current === baseUnitKey) return true;
+    for (const next of adjacency.get(current) ?? []) {
+      if (visited.has(next)) continue;
+      visited.add(next);
+      pending.push(next);
+    }
+  }
+  return false;
+}
+
 export function legacyRecipeRows(value: unknown): LegacyRecipeRow[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((entry) => {
