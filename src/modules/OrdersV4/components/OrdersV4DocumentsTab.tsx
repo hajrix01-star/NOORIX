@@ -15,6 +15,14 @@ function newLine(item: OrdersV4Item): DraftLine {
   return { key: crypto.randomUUID(), itemId: item.id, quantity: '1', unitId, unitPrice: String(preferred?.lastPrice ?? '0'), priceUnitId: unitId };
 }
 
+export function addOrIncrementDraftLine(current: DraftLine[], item: OrdersV4Item): DraftLine[] {
+  const existingIndex = current.findIndex((line) => line.itemId === item.id);
+  if (existingIndex < 0) return [...current, newLine(item)];
+  return current.map((line, index) => index === existingIndex
+    ? { ...line, quantity: String(Math.max(0, Number(line.quantity) || 0) + 1) }
+    : line);
+}
+
 export function OrdersV4DocumentsTab({
   companyId,
   documentType,
@@ -88,7 +96,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   const receiveMutation = useReceiveOrdersV4Document(companyId);
   const mutation = initialDocument ? receiveMutation : createMutation;
   const [date, setDate] = useState(getSaudiToday());
-  const [paymentMethod, setPaymentMethod] = useState<'custody' | 'cash' | 'transfer'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'custody' | 'cash' | 'transfer'>('custody');
   const [sectionId, setSectionId] = useState('');
   const [locationId, setLocationId] = useState('');
   const [pettyCashAmount, setPettyCashAmount] = useState('');
@@ -105,7 +113,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
     if (!open) return;
     if (initialDocument) {
       setDate(initialDocument.documentDate.slice(0, 10));
-      setPaymentMethod(initialDocument.paymentMethod ?? 'cash');
+      setPaymentMethod(initialDocument.paymentMethod ?? 'custody');
       setSectionId(initialDocument.sectionId ?? '');
       setLocationId(initialDocument.locationId);
       setPettyCashAmount(String(initialDocument.pettyCashAmount ?? ''));
@@ -117,7 +125,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
       return;
     }
     setDate(getSaudiToday());
-    setPaymentMethod('cash');
+    setPaymentMethod('custody');
     setSectionId('');
     setLocationId(defaultLocationId);
     setPettyCashAmount('');
@@ -136,7 +144,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   }, [lines]);
 
   function addItem(item: OrdersV4Item) {
-    setLines((current) => [...current, newLine(item)]);
+    setLines((current) => addOrIncrementDraftLine(current, item));
   }
 
   async function submit() {
@@ -183,16 +191,39 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   return (
     <Modal open={open} onClose={onClose} size="2xl" title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : 'تسجيل داخلي جديد — طلبات V4'} footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : 'حفظ التسجيل الداخلي', onClick: submit, role: 'save', loading: mutation.isPending }]} />}>
       <div className="flex flex-col gap-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`grid gap-3 sm:grid-cols-2 ${isPurchase ? 'lg:grid-cols-3' : ''}`}>
           <OrdersV4Field label="التاريخ"><TransactionDatePicker value={date} onValueChange={setDate} /></OrdersV4Field>
-          {isPurchase && <OrdersV4Field label="طريقة الدفع"><OrdersV4Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as typeof paymentMethod)}><option value="custody">عهدة</option><option value="cash">نقد المحل</option><option value="transfer">تحويل</option></OrdersV4Select></OrdersV4Field>}
-          <OrdersV4Field label="القسم"><OrdersV4Select value={sectionId} onChange={(event) => setSectionId(event.target.value)}><option value="">غير محدد</option>{bootstrap?.sections.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+          {isPurchase && (
+            <OrdersV4Field label="طريقة الدفع">
+              <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="طريقة الدفع">
+                {([
+                  ['custody', 'عهدة'],
+                  ['cash', 'نقد المحل'],
+                  ['transfer', 'تحويل'],
+                ] as const).map(([value, label]) => {
+                  const selected = paymentMethod === value;
+                  return (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant="raw"
+                      aria-pressed={selected}
+                      onClick={() => setPaymentMethod(value)}
+                      className={`h-9 rounded-lg border px-2 text-[12px] font-semibold transition-all ${selected ? 'border-noorix-blue bg-noorix-blue text-white shadow-sm' : 'border-noorix-border bg-noorix-surface text-noorix-text hover:border-noorix-blue/50'}`}
+                    >
+                      {label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </OrdersV4Field>
+          )}
           <OrdersV4Field label="موقع المخزون"><OrdersV4Select value={locationId || defaultLocationId} onChange={(event) => setLocationId(event.target.value)}>{bootstrap?.locations.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
           {isPurchase && paymentMethod === 'custody' && <OrdersV4Field label="مبلغ العهدة"><Input type="number" min="0" step="0.01" value={pettyCashAmount} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPettyCashAmount(event.target.value)} /></OrdersV4Field>}
         </div>
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/30 p-3">
           <div className="mb-3 text-[13px] font-bold">اختر الأصناف</div>
-          <OrdersV4DocumentItemPicker items={items} sections={(bootstrap?.sections ?? []).filter((row) => row.isActive)} selectedQuantities={selectedQuantities} onSelect={addItem} />
+          <OrdersV4DocumentItemPicker items={items} sections={(bootstrap?.sections ?? []).filter((row) => row.isActive)} sectionId={sectionId} onSectionChange={setSectionId} selectedQuantities={selectedQuantities} onSelect={addItem} />
         </div>
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/30 p-3">
           <div className="mb-3 flex items-center justify-between"><strong className="text-[13px]">الأصناف المضافة</strong><span className="text-[11px] text-noorix-muted">{lines.length} سطر</span></div>

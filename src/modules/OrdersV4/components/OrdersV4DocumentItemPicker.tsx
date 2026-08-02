@@ -20,15 +20,18 @@ export function filterOrdersV4DocumentItems(
 export function OrdersV4DocumentItemPicker({
   items,
   sections,
+  sectionId,
+  onSectionChange,
   selectedQuantities,
   onSelect,
 }: {
   items: OrdersV4Item[];
   sections: OrdersV4Section[];
+  sectionId: string;
+  onSectionChange: (sectionId: string) => void;
   selectedQuantities: Map<string, number>;
   onSelect: (item: OrdersV4Item) => void;
 }) {
-  const [sectionId, setSectionId] = useState('');
   const [search, setSearch] = useState('');
   const visibleSections = useMemo(
     () => sections.filter((section) => items.some((item) => item.sections.some((entry) => entry.section.id === section.id))),
@@ -51,7 +54,7 @@ export function OrdersV4DocumentItemPicker({
             variant="raw"
             type="button"
             aria-pressed={!sectionId}
-            onClick={() => setSectionId('')}
+            onClick={() => onSectionChange('')}
             className={`rounded-xl border px-3 py-1 text-[12px] font-semibold transition-all ${!sectionId ? 'border-noorix-blue bg-noorix-blue text-white shadow-sm' : 'border-noorix-border bg-noorix-surface text-noorix-text hover:border-noorix-blue/50'}`}
           >
             كل الأقسام
@@ -64,7 +67,7 @@ export function OrdersV4DocumentItemPicker({
                 variant="raw"
                 type="button"
                 aria-pressed={selected}
-                onClick={() => setSectionId(selected ? '' : section.id)}
+                onClick={() => onSectionChange(selected ? '' : section.id)}
                 className={`rounded-xl border px-3 py-1 text-[12px] font-semibold transition-all ${selected ? 'border-noorix-blue bg-noorix-blue text-white shadow-sm' : 'border-noorix-border bg-noorix-surface text-noorix-text hover:border-noorix-blue/50'}`}
               >
                 {section.nameAr}

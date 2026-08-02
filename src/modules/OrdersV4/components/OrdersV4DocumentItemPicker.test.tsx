@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { OrdersV4Item, OrdersV4Section, OrdersV4Unit } from '../../../types/api';
 import { OrdersV4DocumentItemPicker, filterOrdersV4DocumentItems } from './OrdersV4DocumentItemPicker';
+import { addOrIncrementDraftLine } from './OrdersV4DocumentsTab';
 
 afterEach(cleanup);
 
@@ -48,6 +49,23 @@ const items: OrdersV4Item[] = [
 ];
 
 describe('OrdersV4DocumentItemPicker', () => {
+  it('increments the existing item instead of creating a duplicate row', () => {
+    const current = [{
+      key: 'line-1',
+      itemId: items[0].id,
+      quantity: '2',
+      unitId: unit.id,
+      unitPrice: '10',
+      priceUnitId: unit.id,
+    }];
+
+    const next = addOrIncrementDraftLine(current, items[0]);
+
+    expect(next).toHaveLength(1);
+    expect(next[0].quantity).toBe('3');
+    expect(next[0].key).toBe('line-1');
+  });
+
   it('filters by section, item text, SKU, and category', () => {
     expect(filterOrdersV4DocumentItems(items, kitchen.id, '')).toEqual([items[0]]);
     expect(filterOrdersV4DocumentItems(items, '', 'COLA')).toEqual([items[1]]);
@@ -60,6 +78,8 @@ describe('OrdersV4DocumentItemPicker', () => {
       <OrdersV4DocumentItemPicker
         items={items}
         sections={[kitchen, drinks]}
+        sectionId=""
+        onSectionChange={() => undefined}
         selectedQuantities={new Map([['item-1', 2]])}
         onSelect={onSelect}
       />,
@@ -72,13 +92,21 @@ describe('OrdersV4DocumentItemPicker', () => {
   });
 
   it('supports the section buttons and search field', () => {
+    function ControlledPicker() {
+      const [sectionId, setSectionId] = React.useState('');
+      return (
+        <OrdersV4DocumentItemPicker
+          items={items}
+          sections={[kitchen, drinks]}
+          sectionId={sectionId}
+          onSectionChange={setSectionId}
+          selectedQuantities={new Map()}
+          onSelect={() => undefined}
+        />
+      );
+    }
     render(
-      <OrdersV4DocumentItemPicker
-        items={items}
-        sections={[kitchen, drinks]}
-        selectedQuantities={new Map()}
-        onSelect={() => undefined}
-      />,
+      <ControlledPicker />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'المشروبات' }));
