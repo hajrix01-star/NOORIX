@@ -1,7 +1,7 @@
 # Orders V4 kernel governance
 
 Orders V4 is an independent operational domain. It does not read from or write
-to legacy Orders, Orders 2, or Orders V3 tables. Legacy data migration is a
+to legacy Orders tables. Legacy data migration is a
 separate, explicit operation and is not part of normal V4 runtime behavior.
 
 ## Authoritative boundaries

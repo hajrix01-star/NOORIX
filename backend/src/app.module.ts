@@ -32,7 +32,6 @@ import { ReportingModule }     from './reporting/reporting.module';
 import { ChatModule }          from './chat/chat.module';
 import { BankStatementsModule } from './bank-statements/bank-statements.module';
 import { OrdersModule }         from './orders/orders.module';
-import { OrdersV3Module }       from './orders-v3/orders-v3.module';
 import { OrdersV4Module }       from './orders-v4/orders-v4.module';
 import { DatabaseModule }       from './database/database.module';
 import { BackupModule }         from './backup/backup.module';
@@ -89,7 +88,6 @@ import { getJwtSecret }        from './config/jwt.config';
     ChatModule,
     BankStatementsModule,
     OrdersModule,
-    OrdersV3Module,
     OrdersV4Module,
     BackupModule,
     CompanyAssetsModule,

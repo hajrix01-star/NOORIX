@@ -35,7 +35,6 @@
     "check:expenses-governance": "node scripts/check-expenses-governance.mjs",
     "check:vaults-governance": "node scripts/check-vaults-governance.mjs",
     "check:orders-governance": "node scripts/check-orders-governance.mjs",
-    "check:orders-v3-boundary": "node scripts/check-orders-v3-boundary.mjs",
     "test:orders-governance": "vitest run scripts/check-orders-governance.test.mjs",
     "check:chat-governance": "node scripts/check-chat-governance.mjs",
     "check:login-theme-governance": "node scripts/check-login-theme-governance.mjs",

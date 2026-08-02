@@ -7,7 +7,6 @@ export * from './company-assets';
 export * from './sales-summaries';
 export * from './reports';
 export * from './orders';
-export * from './ordersV3';
 export * from './ordersV4';
 export * from './vaults';
 export * from './employees';
