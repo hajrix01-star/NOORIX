@@ -107,7 +107,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
       };
       current.documentIds.add(document.id);
       current.baseQuantity += Number(line.baseQuantity || 0);
-      current.totalAmount += Number(line.lineTotal || 0);
+      current.totalAmount += Number(line.operationalCost || 0);
       grouped.set(line.itemId, current);
     }
     return [...grouped.values()].map((row) => ({
@@ -127,22 +127,22 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
       const key = document.sectionId || 'unassigned';
       const current = grouped.get(key) ?? { sectionName: document.section?.nameAr || 'غير محدد', count: 0, totalAmount: 0 };
       current.count += 1;
-      current.totalAmount += Number(document.totalAmount || 0);
+      current.totalAmount += Number(document.operationalCost || 0);
       grouped.set(key, current);
     }
     return [...grouped.values()].sort((a, b) => b.totalAmount - a.totalAmount);
   }, [filteredDocuments]);
-  const filteredTotal = useMemo(() => filteredDocuments.reduce((sum, row) => sum + Number(row.totalAmount || 0), 0), [filteredDocuments]);
+  const filteredTotal = useMemo(() => filteredDocuments.reduce((sum, row) => sum + Number(row.operationalCost || 0), 0), [filteredDocuments]);
   const itemColumns: SimpleTableColumn<OrdersV4ItemsReportRow>[] = [
     { key: 'nameAr', label: 'الصنف' },
     { key: 'documentCount', label: 'التسجيلات', numeric: true },
     { key: 'baseQuantity', label: 'كمية الأساس', numeric: true, render: (value, row) => `${v4ReportNumber(value)} ${row.inventoryUnit}` },
-    { key: 'totalAmount', label: 'الإجمالي', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
+    { key: 'totalAmount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
   ];
   const sectionColumns: SimpleTableColumn<(typeof filteredBySection)[number]>[] = [
     { key: 'sectionName', label: 'القسم' },
     { key: 'count', label: 'عدد التسجيلات', numeric: true },
-    { key: 'totalAmount', label: 'الإجمالي', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
+    { key: 'totalAmount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
   ];
   const documentColumns: SimpleTableColumn<OrdersV4Document>[] = [
     { key: 'documentNumber', label: 'مرجع التسجيل', minWidth: 180 },
@@ -151,7 +151,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
     { key: 'createdByUser', label: 'الموظف (المستخدم)', minWidth: 170, render: (_value, row) => v4UserLabel(row.createdByUser) },
     { key: 'status', label: 'الحالة', render: (value) => statusLabel(String(value)) },
     { key: 'lines', label: 'الأسطر', numeric: true, render: (_value, row) => row.lines.length },
-    { key: 'totalAmount', label: 'الإجمالي', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
+    { key: 'operationalCost', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
   ];
   return <div className="flex flex-col gap-4">
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

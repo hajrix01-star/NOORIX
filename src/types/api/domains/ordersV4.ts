@@ -110,6 +110,7 @@ export type OrdersV4DocumentLine = {
   priceUnitId: string;
   priceQuantity: string;
   lineTotal: string;
+  operationalCost: string;
   item: OrdersV4Item;
   inputUnit: OrdersV4Unit;
   baseUnit: OrdersV4Unit;
@@ -131,6 +132,7 @@ export type OrdersV4Document = {
   pettyCashAmount?: string | null;
   subtotal: string;
   totalAmount: string;
+  operationalCost: string;
   notes?: string | null;
   createdByUser?: OrdersV4UserIdentity | null;
   section?: OrdersV4Section | null;

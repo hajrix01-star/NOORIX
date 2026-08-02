@@ -22,7 +22,7 @@ export class OrdersV4ReportsService {
     const [documents, cashSales, custodyEntries] = await Promise.all([
       this.prisma.ordersV4Document.findMany({
         where: { companyId, status: 'received', documentDate: bounds },
-        select: { documentType: true, paymentMethod: true, totalAmount: true },
+        select: { documentType: true, paymentMethod: true, totalAmount: true, operationalCost: true },
       }),
       this.prisma.$queryRaw<Array<{ total: Prisma.Decimal | null }>>(Prisma.sql`
         SELECT COALESCE(SUM(channel.amount), 0) AS total
@@ -37,26 +37,35 @@ export class OrdersV4ReportsService {
       `),
       this.prisma.ordersV4CustodyLedgerEntry.findMany({
         where: { companyId, effectiveAt: bounds },
-        select: { entryType: true, amountDelta: true },
+        select: { entryType: true, amountDelta: true, reversalOf: { select: { entryType: true } } },
       }),
     ]);
     const zero = new Prisma.Decimal(0);
-    const sum = (rows: typeof documents) => rows.reduce((total, row) => total.plus(row.totalAmount), zero).toDecimalPlaces(6);
+    const sumFinancial = (rows: typeof documents) => rows.reduce((total, row) => total.plus(row.totalAmount), zero).toDecimalPlaces(6);
+    const sumOperationalCost = (rows: typeof documents) => rows.reduce((total, row) => total.plus(row.operationalCost), zero).toDecimalPlaces(6);
     const purchases = documents.filter((row) => row.documentType === 'purchase');
     const registrations = documents.filter((row) => row.documentType === 'registration');
-    const cashUsed = sum(purchases.filter((row) => row.paymentMethod === 'cash'));
+    const cashUsed = sumFinancial(purchases.filter((row) => row.paymentMethod === 'cash'));
     const cashSalesImported = new Prisma.Decimal(cashSales[0]?.total ?? 0).toDecimalPlaces(6);
-    const custodyFunded = custodyEntries.filter((row) => row.entryType === 'funding').reduce((total, row) => total.plus(row.amountDelta), zero).toDecimalPlaces(6);
-    const custodySpent = custodyEntries.filter((row) => row.entryType === 'purchase').reduce((total, row) => total.plus(row.amountDelta.abs()), zero).toDecimalPlaces(6);
+    const custodyFundingDelta = custodyEntries
+      .filter((row) => row.entryType === 'funding' || (row.entryType === 'reversal' && row.reversalOf?.entryType === 'funding'))
+      .reduce((total, row) => total.plus(row.amountDelta), zero)
+      .toDecimalPlaces(6);
+    const custodyPurchaseDelta = custodyEntries
+      .filter((row) => row.entryType === 'purchase' || (row.entryType === 'reversal' && row.reversalOf?.entryType === 'purchase'))
+      .reduce((total, row) => total.plus(row.amountDelta), zero)
+      .toDecimalPlaces(6);
+    const custodyFunded = custodyFundingDelta.lt(0) ? zero : custodyFundingDelta;
+    const custodySpent = custodyPurchaseDelta.gt(0) ? zero : custodyPurchaseDelta.negated().toDecimalPlaces(6);
     const custodyBalance = custodyEntries.reduce((total, row) => total.plus(row.amountDelta), zero).toDecimalPlaces(6);
     return {
       purchaseCount: purchases.length,
       registrationCount: registrations.length,
-      purchaseTotal: sum(purchases),
-      registrationTotal: sum(registrations),
-      custodyTotal: sum(purchases.filter((row) => row.paymentMethod === 'custody')),
-      cashTotal: sum(purchases.filter((row) => row.paymentMethod === 'cash')),
-      transferTotal: sum(purchases.filter((row) => row.paymentMethod === 'transfer')),
+      purchaseTotal: sumFinancial(purchases),
+      registrationTotal: sumOperationalCost(registrations),
+      custodyTotal: sumFinancial(purchases.filter((row) => row.paymentMethod === 'custody')),
+      cashTotal: sumFinancial(purchases.filter((row) => row.paymentMethod === 'cash')),
+      transferTotal: sumFinancial(purchases.filter((row) => row.paymentMethod === 'transfer')),
       cashSalesImported,
       cashUsed,
       cashAvailable: cashSalesImported.minus(cashUsed).toDecimalPlaces(6),
@@ -118,7 +127,7 @@ export class OrdersV4ReportsService {
       };
       current.documentCount.add(line.documentId);
       current.baseQuantity = current.baseQuantity.plus(baseQuantity);
-      current.totalAmount = current.totalAmount.plus(line.lineTotal);
+      current.totalAmount = current.totalAmount.plus(line.operationalCost);
       byItem.set(line.itemId, current);
     }
     return [...byItem.values()].map((row) => ({
@@ -154,7 +163,7 @@ export class OrdersV4ReportsService {
         total: new Prisma.Decimal(0),
       };
       current.count += 1;
-      current.total = current.total.plus(document.totalAmount);
+      current.total = current.total.plus(document.operationalCost);
       bySection.set(key, current);
     }
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));

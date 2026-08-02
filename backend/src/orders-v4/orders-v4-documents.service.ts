@@ -212,6 +212,7 @@ export class OrdersV4DocumentsService {
       });
 
       const subtotal = prepared.reduce((sum, row) => sum.plus(row.calculation.lineTotal), new Prisma.Decimal(0)).toDecimalPlaces(6);
+      const initialOperationalCost = input.documentType === 'purchase' ? subtotal : new Prisma.Decimal(0);
       const inventoryKeys = prepared.flatMap((row) => {
         if (input.documentType === 'purchase') return row.item.trackInventory ? [{ itemId: row.item.id, locationId: location.id }] : [];
         if (row.recipe) return row.recipe.lines.filter((line) => line.componentItem.trackInventory).map((line) => ({ itemId: line.componentItem.id, locationId: location.id }));
@@ -232,6 +233,7 @@ export class OrdersV4DocumentsService {
           pettyCashAmount,
           subtotal,
           totalAmount: subtotal,
+          operationalCost: initialOperationalCost,
           notes: input.notes?.trim() || null,
           idempotencyKey: input.idempotencyKey.trim(),
           requestHash: inputRequestHash,
@@ -242,11 +244,13 @@ export class OrdersV4DocumentsService {
             lineCount: prepared.length,
             subtotal: subtotal.toString(),
             totalAmount: subtotal.toString(),
+            operationalCost: initialOperationalCost.toString(),
           },
           createdByUserId: userId,
         },
       });
 
+      let registrationOperationalCost = new Prisma.Decimal(0);
       for (const row of prepared) {
         const createdLine = await tx.ordersV4DocumentLine.create({
           data: {
@@ -264,6 +268,7 @@ export class OrdersV4DocumentsService {
             priceUnitId: row.priceUnitId,
             priceQuantity: row.calculation.priceQuantity,
             lineTotal: row.calculation.lineTotal,
+            operationalCost: input.documentType === 'purchase' ? row.calculation.lineTotal : new Prisma.Decimal(0),
             conversionVersionId: row.definition?.id || null,
             recipeVersionId: row.recipe?.id || null,
             conversionSnapshot: {
@@ -351,9 +356,12 @@ export class OrdersV4DocumentsService {
                 },
               });
             }
+            const lineOperationalCost = recipeCost.toDecimalPlaces(6);
+            registrationOperationalCost = registrationOperationalCost.plus(lineOperationalCost);
             await tx.ordersV4DocumentLine.update({
               where: { id: createdLine.id },
               data: {
+                operationalCost: lineOperationalCost,
                 recipeSnapshot: {
                   recipeVersionId: row.recipe.id,
                   recipeVersion: row.recipe.version,
@@ -362,14 +370,14 @@ export class OrdersV4DocumentsService {
                 },
                 costSnapshot: {
                   policy: 'simple-average-last-5-received-purchase-orders',
-                  totalCost: recipeCost.toDecimalPlaces(6).toString(),
+                  totalCost: lineOperationalCost.toString(),
                   costPerRegisteredUnit: calculateOrdersV4AverageUnitCost(recipeCost, row.calculation.inputQuantity).toString(),
                   components: recipeCostLines,
                 },
               },
             });
           } else if (row.item.trackInventory) {
-            await this.posting.postIssue(tx, {
+            const issueEntry = await this.posting.postIssue(tx, {
               tenantId, companyId, itemId: row.item.id, inventoryUnitId: row.item.inventoryUnitId, locationId: location.id,
               documentLineId: createdLine.id, sourceId: document.id,
               sourceKey: `document:${document.id}:line:${createdLine.id}:issue`,
@@ -378,8 +386,40 @@ export class OrdersV4DocumentsService {
               recipeVersionId: null,
               sourceSnapshot: { documentNumber: document.documentNumber, lineNumber: row.index + 1, kernelVersion: 4 },
             });
+            const lineOperationalCost = issueEntry.valueDelta.abs().toDecimalPlaces(6);
+            registrationOperationalCost = registrationOperationalCost.plus(lineOperationalCost);
+            await tx.ordersV4DocumentLine.update({
+              where: { id: createdLine.id },
+              data: {
+                operationalCost: lineOperationalCost,
+                costSnapshot: {
+                  policy: 'moving-average-inventory-cost',
+                  totalCost: lineOperationalCost.toString(),
+                  costPerRegisteredUnit: calculateOrdersV4AverageUnitCost(lineOperationalCost, row.calculation.inputQuantity).toString(),
+                },
+              },
+            });
           }
         }
+      }
+
+      if (input.documentType === 'registration') {
+        const operationalCost = registrationOperationalCost.toDecimalPlaces(6);
+        await tx.ordersV4Document.update({
+          where: { id: document.id },
+          data: {
+            operationalCost,
+            calculationSnapshot: {
+              kernelVersion: 4,
+              owner: 'orders-v4-calculation-kernel',
+              lineCount: prepared.length,
+              subtotal: subtotal.toString(),
+              totalAmount: subtotal.toString(),
+              operationalCost: operationalCost.toString(),
+              costPolicy: 'line-cost-snapshots',
+            },
+          },
+        });
       }
 
       return tx.ordersV4Document.findUniqueOrThrow({
@@ -491,6 +531,7 @@ export class OrdersV4DocumentsService {
         receiveIdempotencyKey: input.idempotencyKey.trim(),
         lineCount: prepared.length,
         subtotal: subtotal.toString(),
+        operationalCost: subtotal.toString(),
       };
       await tx.ordersV4Document.update({
         where: { id },
@@ -502,6 +543,7 @@ export class OrdersV4DocumentsService {
           pettyCashAmount,
           subtotal,
           totalAmount: subtotal,
+          operationalCost: subtotal,
           notes: input.notes?.trim() || null,
           status: 'received',
           revision: { increment: 1 },
@@ -521,6 +563,7 @@ export class OrdersV4DocumentsService {
             baseQuantity: row.calculation.baseQuantity, baseUnitId: row.item.inventoryUnitId, unitPrice: row.calculation.unitPrice,
             priceUnitId: row.priceUnitId, priceQuantity: row.calculation.priceQuantity,
             lineTotal: row.calculation.lineTotal, conversionVersionId: row.definition?.id || null,
+            operationalCost: row.calculation.lineTotal,
             conversionSnapshot: {
               input: conversionSnapshot(row.calculation.inputConversion),
               price: conversionSnapshot(row.calculation.priceConversion),
@@ -625,10 +668,11 @@ export class OrdersV4DocumentsService {
           documentDate: new Date(), status: 'reversed', sectionId: original.sectionId,
           locationId: original.locationId, pettyCashAmount: original.pettyCashAmount?.negated() ?? null,
           subtotal: original.subtotal.negated(), totalAmount: original.totalAmount.negated(),
+          operationalCost: original.operationalCost.negated(),
           notes: `عكس ${original.documentNumber}`, idempotencyKey: idempotencyKey.trim(),
           requestHash: reversalRequestHash,
           calculationVersion: 1,
-          calculationSnapshot: { kernelVersion: 4, reversalOfId: original.id },
+          calculationSnapshot: { kernelVersion: 4, reversalOfId: original.id, operationalCost: original.operationalCost.negated().toString() },
           reversalOfId: original.id, createdByUserId: TenantContext.getUserId(),
         },
       });

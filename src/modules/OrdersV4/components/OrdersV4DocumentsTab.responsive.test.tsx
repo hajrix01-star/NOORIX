@@ -1,7 +1,8 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { OrdersV4Bootstrap } from '../../../types/api';
+import type { OrdersV4Bootstrap, OrdersV4Item } from '../../../types/api';
+import { OrdersV4DocumentLinesTable } from './OrdersV4DocumentLinesTable';
 import { OrdersV4DocumentsTab } from './OrdersV4DocumentsTab';
 
 vi.mock('../useOrdersV4', () => ({
@@ -62,11 +63,68 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: triggerLabel }));
+    const trigger = screen.getByRole('button', { name: triggerLabel });
+    const toolbar = screen.getByRole('toolbar', { name: documentType === 'purchase' ? 'إجراءات الطلبات' : 'إجراءات التسجيل الداخلي' });
+    expect(toolbar.contains(trigger)).toBe(true);
+    expect(trigger.closest('section')).toBeNull();
+    fireEvent.click(trigger);
 
     const dialog = screen.getByRole('dialog', { name: title });
     expect(dialog.className).toContain('h-full');
     expect(dialog.className).toContain('w-[min(100vw,920px)]');
     expect(dialog.className).not.toContain('max-h-[min(92vh,860px)]');
+  });
+
+  it('renders added document lines as one editable table without repeated field headings', () => {
+    const item = {
+      id: 'item-1',
+      sku: 'M-1',
+      nameAr: 'معسل',
+      itemType: 'purchased',
+      inventoryUnitId: 'unit-1',
+      inventoryUnit: { id: 'unit-1', code: 'box', nameAr: 'علبة', dimension: 'count', decimalScale: 3, isActive: true },
+      units: [{
+        id: 'item-unit-1',
+        unitId: 'unit-1',
+        unit: { id: 'unit-1', code: 'box', nameAr: 'علبة', dimension: 'count', decimalScale: 3, isActive: true },
+        isOrderEnabled: true,
+        isActive: true,
+        sortOrder: 0,
+        lastPrice: '15',
+      }],
+      trackInventory: true,
+      isActive: true,
+      sections: [],
+    } as unknown as OrdersV4Item;
+    const onPatch = vi.fn();
+    const onRemove = vi.fn();
+
+    render(
+      <OrdersV4DocumentLinesTable
+        lines={[
+          { key: 'line-1', itemId: item.id, quantity: '1', unitId: 'unit-1', unitPrice: '15', priceUnitId: 'unit-1' },
+          { key: 'line-2', itemId: item.id, quantity: '2', unitId: 'unit-1', unitPrice: '15', priceUnitId: 'unit-1' },
+        ]}
+        items={[item]}
+        isPurchase
+        isReceiving={false}
+        onPatch={onPatch}
+        onRemove={onRemove}
+      />,
+    );
+
+    expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
+      'الصنف',
+      'الكمية',
+      'وحدة الإدخال',
+      'سعر الوحدة',
+      'وحدة السعر',
+      'الإجراء',
+    ]);
+    expect(screen.getAllByText('الكمية')).toHaveLength(1);
+    fireEvent.change(screen.getAllByRole('spinbutton', { name: 'كمية معسل' })[0], { target: { value: '3' } });
+    expect(onPatch).toHaveBeenCalledWith('line-1', { quantity: '3' });
+    fireEvent.click(screen.getAllByRole('button', { name: 'حذف معسل' })[1]);
+    expect(onRemove).toHaveBeenCalledWith('line-2');
   });
 });
