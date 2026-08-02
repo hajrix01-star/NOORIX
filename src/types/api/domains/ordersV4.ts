@@ -27,6 +27,7 @@ export type OrdersV4Item = {
   units: Array<{
     id: string;
     unitId: string;
+    purchaseLabel?: string | null;
     isOrderEnabled: boolean;
     lastPrice?: string | null;
     lastPriceAt?: string | null;

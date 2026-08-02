@@ -86,8 +86,16 @@ export function createOrdersV4Category(companyId: string, body: { nameAr: string
   return apiPost(`${BASE}/catalog/categories?companyId=${encodeURIComponent(companyId)}`, body);
 }
 
+export function updateOrdersV4Category(companyId: string, id: string, body: { nameAr: string; nameEn?: string }): Promise<ApiParsedResult<OrdersV4Category>> {
+  return apiPatch(`${BASE}/catalog/categories/${encodeURIComponent(id)}?companyId=${encodeURIComponent(companyId)}`, body);
+}
+
 export function createOrdersV4Section(companyId: string, body: { code?: string; nameAr: string; nameEn?: string }): Promise<ApiParsedResult<OrdersV4Section>> {
   return apiPost(`${BASE}/catalog/sections?companyId=${encodeURIComponent(companyId)}`, body);
+}
+
+export function updateOrdersV4Section(companyId: string, id: string, body: { code?: string; nameAr: string; nameEn?: string }): Promise<ApiParsedResult<OrdersV4Section>> {
+  return apiPatch(`${BASE}/catalog/sections/${encodeURIComponent(id)}?companyId=${encodeURIComponent(companyId)}`, body);
 }
 
 export function createOrdersV4Location(companyId: string, body: { code?: string; nameAr: string; nameEn?: string; kind?: string; sectionId?: string | null }): Promise<ApiParsedResult<OrdersV4Location>> {
@@ -97,14 +105,21 @@ export function createOrdersV4Location(companyId: string, body: { code?: string;
 export function createOrdersV4Item(companyId: string, body: {
   sku?: string; nameAr: string; nameEn?: string; itemType: 'purchased' | 'sale';
   categoryId?: string | null; inventoryUnitId: string; sectionIds?: string[]; trackInventory?: boolean;
-  units?: Array<{ unitId: string; isOrderEnabled?: boolean; lastPrice?: string | null; sortOrder?: number }>;
+  units?: Array<{ unitId: string; purchaseLabel?: string | null; isOrderEnabled?: boolean; lastPrice?: string | null; sortOrder?: number }>;
 }): Promise<ApiParsedResult<OrdersV4Item>> {
   return apiPost(`${BASE}/catalog/items?companyId=${encodeURIComponent(companyId)}`, body);
 }
 
+export function updateOrdersV4Item(companyId: string, id: string, body: {
+  sku?: string | null; nameAr: string; nameEn?: string; categoryId?: string | null;
+  sectionIds?: string[]; trackInventory?: boolean; sortOrder?: number;
+}): Promise<ApiParsedResult<OrdersV4Item>> {
+  return apiPatch(`${BASE}/catalog/items/${encodeURIComponent(id)}?companyId=${encodeURIComponent(companyId)}`, body);
+}
+
 export function replaceOrdersV4ItemUnits(companyId: string, id: string, body: {
   inventoryUnitId: string;
-  units: Array<{ unitId: string; isOrderEnabled?: boolean; lastPrice?: string | null; sortOrder?: number }>;
+  units: Array<{ unitId: string; purchaseLabel?: string | null; isOrderEnabled?: boolean; lastPrice?: string | null; sortOrder?: number }>;
 }): Promise<ApiParsedResult<OrdersV4Item>> {
   return apiPatch(`${BASE}/catalog/items/${encodeURIComponent(id)}/units?companyId=${encodeURIComponent(companyId)}`, body);
 }

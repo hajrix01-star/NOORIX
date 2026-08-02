@@ -21,6 +21,9 @@ import {
   reverseOrdersV4Document,
   receiveOrdersV4Document,
   replaceOrdersV4ItemUnits,
+  updateOrdersV4Category,
+  updateOrdersV4Item,
+  updateOrdersV4Section,
 } from '../../services/api';
 import type {
   OrdersV4Bootstrap,
@@ -166,10 +169,13 @@ export function useOrdersV4CatalogMutations(companyId: string) {
   return {
     createUnit: useApiMutation({ mutationFn: (body: { code: string; nameAr: string; nameEn?: string; dimension: string; canonicalFactor?: string | null }) => createOrdersV4Unit(companyId, body), invalidateQueries, showErrorToast: true }),
     createCategory: useApiMutation({ mutationFn: (body: { nameAr: string; nameEn?: string }) => createOrdersV4Category(companyId, body), invalidateQueries, showErrorToast: true }),
+    updateCategory: useApiMutation({ mutationFn: ({ id, body }: { id: string; body: { nameAr: string; nameEn?: string } }) => updateOrdersV4Category(companyId, id, body), invalidateQueries, successToast: 'تم تحديث الفئة', showErrorToast: true }),
     createSection: useApiMutation({ mutationFn: (body: { code?: string; nameAr: string; nameEn?: string }) => createOrdersV4Section(companyId, body), invalidateQueries, showErrorToast: true }),
+    updateSection: useApiMutation({ mutationFn: ({ id, body }: { id: string; body: { code?: string; nameAr: string; nameEn?: string } }) => updateOrdersV4Section(companyId, id, body), invalidateQueries, successToast: 'تم تحديث القسم', showErrorToast: true }),
     createLocation: useApiMutation({ mutationFn: (body: { code?: string; nameAr: string; nameEn?: string; kind?: string; sectionId?: string | null }) => createOrdersV4Location(companyId, body), invalidateQueries, showErrorToast: true }),
-    createItem: useApiMutation({ mutationFn: (body: { sku?: string; nameAr: string; nameEn?: string; itemType: 'purchased' | 'sale'; categoryId?: string | null; inventoryUnitId: string; sectionIds?: string[]; trackInventory?: boolean; units?: Array<{ unitId: string; isOrderEnabled?: boolean; lastPrice?: string | null }> }) => createOrdersV4Item(companyId, body), invalidateQueries, showErrorToast: true }),
-    replaceItemUnits: useApiMutation({ mutationFn: ({ id, body }: { id: string; body: { inventoryUnitId: string; units: Array<{ unitId: string; isOrderEnabled?: boolean; lastPrice?: string | null; sortOrder?: number }> } }) => replaceOrdersV4ItemUnits(companyId, id, body), invalidateQueries, successToast: 'تم حفظ وحدات الصنف وأسعاره', showErrorToast: true }),
+    createItem: useApiMutation({ mutationFn: (body: { sku?: string; nameAr: string; nameEn?: string; itemType: 'purchased' | 'sale'; categoryId?: string | null; inventoryUnitId: string; sectionIds?: string[]; trackInventory?: boolean; units?: Array<{ unitId: string; purchaseLabel?: string | null; isOrderEnabled?: boolean; lastPrice?: string | null }> }) => createOrdersV4Item(companyId, body), invalidateQueries, showErrorToast: true }),
+    updateItem: useApiMutation({ mutationFn: ({ id, body }: { id: string; body: { sku?: string | null; nameAr: string; nameEn?: string; categoryId?: string | null; sectionIds?: string[]; trackInventory?: boolean } }) => updateOrdersV4Item(companyId, id, body), invalidateQueries, successToast: 'تم تحديث بيانات الصنف', showErrorToast: true }),
+    replaceItemUnits: useApiMutation({ mutationFn: ({ id, body }: { id: string; body: { inventoryUnitId: string; units: Array<{ unitId: string; purchaseLabel?: string | null; isOrderEnabled?: boolean; lastPrice?: string | null; sortOrder?: number }> } }) => replaceOrdersV4ItemUnits(companyId, id, body), invalidateQueries, successToast: 'تم حفظ وحدات الصنف وأسعاره', showErrorToast: true }),
     publishConversion: useApiMutation({ mutationFn: (body: { itemId: string; edges: Array<{ fromUnitId: string; toUnitId: string; factor: string; reversible?: boolean; allowDimensionBridge?: boolean }> }) => publishOrdersV4Conversion(companyId, body), invalidateQueries, showErrorToast: true }),
     publishRecipe: useApiMutation({ mutationFn: (body: { outputItemId: string; outputQuantity: string; outputUnitId: string; lines: Array<{ componentItemId: string; quantity: string; unitId: string }> }) => publishOrdersV4Recipe(companyId, body), invalidateQueries, showErrorToast: true }),
     deactivate: useApiMutation({ mutationFn: ({ entity, id }: { entity: string; id: string }) => deactivateOrdersV4Catalog(companyId, entity, id), invalidateQueries, showErrorToast: true }),

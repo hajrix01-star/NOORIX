@@ -2304,6 +2304,7 @@ model OrdersV4ItemUnit {
   companyId      String    @map("company_id")
   itemId         String    @map("item_id")
   unitId         String    @map("unit_id")
+  purchaseLabel  String?   @map("purchase_label")
   isOrderEnabled Boolean   @default(false) @map("is_order_enabled")
   lastPrice      Decimal?  @map("last_price") @db.Decimal(20, 6)
   lastPriceAt    DateTime? @map("last_price_at")

@@ -29,6 +29,7 @@ export type OrdersV4ItemInput = {
   sortOrder?: number;
   units?: Array<{
     unitId: string;
+    purchaseLabel?: string | null;
     isOrderEnabled?: boolean;
     lastPrice?: string | null;
     sortOrder?: number;
@@ -39,11 +40,16 @@ export type OrdersV4ItemUnitsInput = {
   inventoryUnitId: string;
   units: Array<{
     unitId: string;
+    purchaseLabel?: string | null;
     isOrderEnabled?: boolean;
     lastPrice?: string | null;
     sortOrder?: number;
   }>;
 };
+
+export type OrdersV4ItemUpdateInput = Pick<OrdersV4ItemInput,
+  'sku' | 'nameAr' | 'nameEn' | 'categoryId' | 'sectionIds' | 'trackInventory' | 'sortOrder'
+>;
 
 export type OrdersV4ConversionPublishInput = {
   itemId: string;

@@ -14,6 +14,7 @@ import type {
   OrdersV4DocumentInput,
   OrdersV4DocumentType,
   OrdersV4ItemInput,
+  OrdersV4ItemUpdateInput,
   OrdersV4ItemUnitsInput,
   OrdersV4NamedInput,
   OrdersV4RecipePublishInput,
@@ -91,6 +92,24 @@ export class OrdersV4Controller {
   @RequirePermission('ORDERS_V4_WRITE')
   createItem(@CompanyId() companyId: string, @Body() body: OrdersV4ItemInput) {
     return this.catalog.createItem(requireCompanyId(companyId), body);
+  }
+
+  @Patch('catalog/items/:id')
+  @RequirePermission('ORDERS_V4_WRITE')
+  updateItem(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4ItemUpdateInput) {
+    return this.catalog.updateItem(requireCompanyId(companyId), id, body);
+  }
+
+  @Patch('catalog/categories/:id')
+  @RequirePermission('ORDERS_V4_WRITE')
+  updateCategory(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4NamedInput) {
+    return this.catalog.updateCategory(requireCompanyId(companyId), id, body);
+  }
+
+  @Patch('catalog/sections/:id')
+  @RequirePermission('ORDERS_V4_WRITE')
+  updateSection(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4NamedInput) {
+    return this.catalog.updateSection(requireCompanyId(companyId), id, body);
   }
 
   @Patch('catalog/items/:id/units')

@@ -5,6 +5,7 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type {
   OrdersV4ConversionPublishInput,
   OrdersV4ItemInput,
+  OrdersV4ItemUpdateInput,
   OrdersV4ItemUnitsInput,
   OrdersV4NamedInput,
   OrdersV4RecipePublishInput,
@@ -249,6 +250,34 @@ export class OrdersV4CatalogService {
     });
   }
 
+  async updateCategory(companyId: string, id: string, input: OrdersV4NamedInput) {
+    const category = await this.prisma.ordersV4Category.findFirst({ where: { id, companyId, isActive: true } });
+    if (!category) throw new NotFoundException('فئة V4 غير موجودة');
+    return this.prisma.ordersV4Category.update({
+      where: { id },
+      data: {
+        nameAr: normalizedText(input.nameAr, 'اسم الفئة'),
+        nameEn: input.nameEn?.trim() || null,
+        sortOrder: Number(input.sortOrder ?? category.sortOrder),
+      },
+    });
+  }
+
+  async updateSection(companyId: string, id: string, input: OrdersV4NamedInput) {
+    const section = await this.prisma.ordersV4Section.findFirst({ where: { id, companyId, isActive: true } });
+    if (!section) throw new NotFoundException('قسم V4 غير موجود');
+    const nameAr = normalizedText(input.nameAr, 'اسم القسم');
+    return this.prisma.ordersV4Section.update({
+      where: { id },
+      data: {
+        code: input.code?.trim() ? slugCode(input.code) : section.code,
+        nameAr,
+        nameEn: input.nameEn?.trim() || null,
+        sortOrder: Number(input.sortOrder ?? section.sortOrder),
+      },
+    });
+  }
+
   async createLocation(companyId: string, input: OrdersV4NamedInput & { kind?: string; sectionId?: string | null }) {
     const nameAr = normalizedText(input.nameAr, 'اسم الموقع');
     const code = slugCode(input.code?.trim() || nameAr) || `location-${Date.now()}`;
@@ -301,6 +330,7 @@ export class OrdersV4CatalogService {
             tenantId,
             companyId,
             unitId: row.unitId,
+            purchaseLabel: row.purchaseLabel?.trim() || null,
             isOrderEnabled: row.isOrderEnabled === true,
             lastPrice: row.lastPrice == null || row.lastPrice === '' ? null : positiveDecimal(row.lastPrice, 'السعر'),
             sortOrder: Number(row.sortOrder ?? index),
@@ -316,6 +346,45 @@ export class OrdersV4CatalogService {
     });
   }
 
+  async updateItem(companyId: string, itemId: string, input: OrdersV4ItemUpdateInput) {
+    const tenantId = TenantContext.getTenantId();
+    const sectionIds = [...new Set(input.sectionIds ?? [])];
+    return this.prisma.withTenant(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:item-definition:${itemId}`}))`;
+      const item = await tx.ordersV4Item.findFirst({ where: { id: itemId, companyId, isActive: true } });
+      if (!item) throw new NotFoundException('صنف V4 غير موجود');
+      if (input.categoryId) {
+        const category = await tx.ordersV4Category.findFirst({ where: { id: input.categoryId, companyId, isActive: true } });
+        if (!category) throw new BadRequestException('فئة الصنف غير موجودة أو معطلة');
+      }
+      if (sectionIds.length) {
+        const sectionCount = await tx.ordersV4Section.count({ where: { companyId, id: { in: sectionIds }, isActive: true } });
+        if (sectionCount !== sectionIds.length) throw new BadRequestException('أحد أقسام الصنف غير موجود أو معطل');
+      }
+      await tx.ordersV4ItemSection.deleteMany({ where: { companyId, itemId } });
+      return tx.ordersV4Item.update({
+        where: { id: itemId },
+        data: {
+          sku: input.sku?.trim() || null,
+          nameAr: normalizedText(input.nameAr, 'اسم الصنف'),
+          nameEn: input.nameEn?.trim() || null,
+          categoryId: input.categoryId || null,
+          trackInventory: input.trackInventory !== false,
+          sortOrder: Number(input.sortOrder ?? item.sortOrder),
+          sections: sectionIds.length
+            ? { create: sectionIds.map((sectionId) => ({ tenantId, companyId, sectionId })) }
+            : undefined,
+        },
+        include: {
+          inventoryUnit: true,
+          category: true,
+          units: { include: { unit: true }, orderBy: { sortOrder: 'asc' } },
+          sections: { include: { section: true } },
+        },
+      });
+    });
+  }
+
   async replaceItemUnits(companyId: string, itemId: string, input: OrdersV4ItemUnitsInput) {
     if (!input.units?.length) throw new BadRequestException('يجب إضافة وحدة واحدة على الأقل');
     const rows = [...input.units];
@@ -325,6 +394,7 @@ export class OrdersV4CatalogService {
     if (new Set(rows.map((row) => row.unitId)).size !== rows.length) throw new BadRequestException('لا يمكن تكرار الوحدة');
     const normalizedRows = rows.map((row, index) => ({
       unitId: row.unitId,
+      purchaseLabel: row.purchaseLabel?.trim() || null,
       isOrderEnabled: row.isOrderEnabled === true,
       lastPrice: row.lastPrice == null || row.lastPrice === '' ? null : positiveDecimal(row.lastPrice, 'السعر'),
       sortOrder: Number(row.sortOrder ?? index),
