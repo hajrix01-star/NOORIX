@@ -9,7 +9,8 @@ import { OrdersV4DocumentItemPicker } from './OrdersV4DocumentItemPicker';
 type DraftLine = { key: string; itemId: string; quantity: string; unitId: string; unitPrice: string; priceUnitId: string };
 
 function newLine(item: OrdersV4Item): DraftLine {
-  const preferred = item.units.find((row) => row.isActive && row.isOrderEnabled) ?? item.units.find((row) => row.isActive);
+  const preferred = item.units.find((row) => row.isActive && row.isOrderEnabled && row.lastPrice != null)
+    ?? item.units.find((row) => row.isActive);
   const unitId = preferred?.unitId ?? item.inventoryUnitId;
   return { key: crypto.randomUUID(), itemId: item.id, quantity: '1', unitId, unitPrice: String(preferred?.lastPrice ?? '0'), priceUnitId: unitId };
 }
@@ -94,7 +95,9 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<DraftLine[]>([]);
   const isPurchase = documentType === 'purchase';
-  const items = (bootstrap?.items ?? []).filter((item) => item.isActive && (isPurchase ? item.itemType !== 'sale' : item.itemType !== 'purchased'));
+  const items = (bootstrap?.items ?? []).filter((item) => item.isActive
+    && (isPurchase ? item.itemType !== 'sale' : item.itemType !== 'purchased')
+    && (!isPurchase || !!initialDocument || item.units.some((row) => row.isActive && row.isOrderEnabled && row.lastPrice != null)));
   const units = (bootstrap?.units ?? []).filter((unit) => unit.isActive);
   const defaultLocationId = bootstrap?.locations.find((row) => row.isActive)?.id || '';
 
@@ -201,7 +204,10 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
                 <OrdersV4Field label="الكمية"><Input type="number" min="0.000001" step="any" value={line.quantity} onChange={(event: React.ChangeEvent<HTMLInputElement>) => patchLine(line.key, { quantity: event.target.value })} /></OrdersV4Field>
                 <OrdersV4Field label="وحدة الإدخال"><OrdersV4Select value={line.unitId} onChange={(event) => patchLine(line.key, { unitId: event.target.value })}>{(items.find((item) => item.id === line.itemId)?.units ?? []).filter((row) => row.isActive).map((row) => <option key={row.unitId} value={row.unitId}>{row.unit.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
                 <OrdersV4Field label="سعر الوحدة"><Input type="number" min="0" step="any" value={line.unitPrice} onChange={(event: React.ChangeEvent<HTMLInputElement>) => patchLine(line.key, { unitPrice: event.target.value })} /></OrdersV4Field>
-                <OrdersV4Field label="وحدة السعر"><OrdersV4Select value={line.priceUnitId} onChange={(event) => patchLine(line.key, { priceUnitId: event.target.value })}>{(items.find((item) => item.id === line.itemId)?.units ?? []).filter((row) => row.isActive && (row.isOrderEnabled || !isPurchase)).map((row) => <option key={row.unitId} value={row.unitId}>{row.unit.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+                <OrdersV4Field label="وحدة السعر"><OrdersV4Select value={line.priceUnitId} onChange={(event) => {
+                  const priceUnit = items.find((item) => item.id === line.itemId)?.units.find((row) => row.unitId === event.target.value);
+                  patchLine(line.key, { priceUnitId: event.target.value, unitPrice: String(priceUnit?.lastPrice ?? line.unitPrice) });
+                }}>{(items.find((item) => item.id === line.itemId)?.units ?? []).filter((row) => row.isActive && (!isPurchase || !!initialDocument || (row.isOrderEnabled && row.lastPrice != null))).map((row) => <option key={row.unitId} value={row.unitId}>{row.unit.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
                 <Button variant="danger" size="sm" onClick={() => setLines((current) => current.filter((row) => row.key !== line.key))}>حذف</Button>
               </div>
             ))}

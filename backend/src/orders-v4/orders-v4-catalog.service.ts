@@ -302,9 +302,9 @@ export class OrdersV4CatalogService {
     for (const sectionId of sectionIds) await this.requireSection(companyId, sectionId);
     const configuredUnits = input.units?.length
       ? input.units
-      : [{ unitId: input.inventoryUnitId, isOrderEnabled: itemType === 'purchased', sortOrder: 0 }];
+      : [{ unitId: input.inventoryUnitId, isOrderEnabled: false, sortOrder: 0 }];
     if (!configuredUnits.some((row) => row.unitId === input.inventoryUnitId)) {
-      configuredUnits.unshift({ unitId: input.inventoryUnitId, isOrderEnabled: itemType === 'purchased', sortOrder: 0 });
+      configuredUnits.unshift({ unitId: input.inventoryUnitId, isOrderEnabled: false, sortOrder: 0 });
     }
     if (new Set(configuredUnits.map((row) => row.unitId)).size !== configuredUnits.length) {
       throw new BadRequestException('لا يمكن تكرار الوحدة في بطاقة الصنف');
@@ -331,7 +331,7 @@ export class OrdersV4CatalogService {
             companyId,
             unitId: row.unitId,
             purchaseLabel: row.purchaseLabel?.trim() || null,
-            isOrderEnabled: row.isOrderEnabled === true,
+            isOrderEnabled: row.isOrderEnabled === true && row.lastPrice != null && row.lastPrice !== '',
             lastPrice: row.lastPrice == null || row.lastPrice === '' ? null : positiveDecimal(row.lastPrice, 'السعر'),
             sortOrder: Number(row.sortOrder ?? index),
           })),

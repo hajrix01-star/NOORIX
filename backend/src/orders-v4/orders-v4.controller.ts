@@ -10,12 +10,11 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { requireCompanyId } from '../common/utils/require-company-id';
 import { OrdersV4CatalogService } from './orders-v4-catalog.service';
 import type {
-  OrdersV4ConversionPublishInput,
   OrdersV4DocumentInput,
   OrdersV4DocumentType,
   OrdersV4ItemInput,
+  OrdersV4ItemDefinitionInput,
   OrdersV4ItemUpdateInput,
-  OrdersV4ItemUnitsInput,
   OrdersV4NamedInput,
   OrdersV4RecipePublishInput,
   OrdersV4ReceiveInput,
@@ -24,6 +23,7 @@ import type {
 } from './orders-v4.contracts';
 import { OrdersV4DocumentsService } from './orders-v4-documents.service';
 import { OrdersV4InventoryService } from './orders-v4-inventory.service';
+import { OrdersV4ItemDefinitionService } from './orders-v4-item-definition.service';
 import { OrdersV4ReportsService } from './orders-v4-reports.service';
 
 function userCan(user: JwtUser, permission: Permission): boolean {
@@ -43,6 +43,7 @@ export class OrdersV4Controller {
     private readonly catalog: OrdersV4CatalogService,
     private readonly documents: OrdersV4DocumentsService,
     private readonly inventory: OrdersV4InventoryService,
+    private readonly itemDefinitions: OrdersV4ItemDefinitionService,
     private readonly reports: OrdersV4ReportsService,
   ) {}
 
@@ -112,16 +113,14 @@ export class OrdersV4Controller {
     return this.catalog.updateSection(requireCompanyId(companyId), id, body);
   }
 
-  @Patch('catalog/items/:id/units')
+  @Patch('catalog/items/:id/definition')
   @RequirePermission('ORDERS_V4_WRITE')
-  replaceItemUnits(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4ItemUnitsInput) {
-    return this.catalog.replaceItemUnits(requireCompanyId(companyId), id, body);
-  }
-
-  @Post('catalog/conversions/publish')
-  @RequirePermission('ORDERS_V4_WRITE')
-  publishConversion(@CompanyId() companyId: string, @Body() body: OrdersV4ConversionPublishInput) {
-    return this.catalog.publishConversion(requireCompanyId(companyId), body);
+  saveItemDefinition(
+    @CompanyId() companyId: string,
+    @Param('id') id: string,
+    @Body() body: OrdersV4ItemDefinitionInput,
+  ) {
+    return this.itemDefinitions.save(requireCompanyId(companyId), id, body);
   }
 
   @Post('catalog/recipes/publish')

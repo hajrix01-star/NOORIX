@@ -2,7 +2,6 @@ import type {
   ApiParsedResult,
   OrdersV4Bootstrap,
   OrdersV4Category,
-  OrdersV4ConversionVersion,
   OrdersV4DataQuality,
   OrdersV4Document,
   OrdersV4DocumentPayload,
@@ -117,18 +116,12 @@ export function updateOrdersV4Item(companyId: string, id: string, body: {
   return apiPatch(`${BASE}/catalog/items/${encodeURIComponent(id)}?companyId=${encodeURIComponent(companyId)}`, body);
 }
 
-export function replaceOrdersV4ItemUnits(companyId: string, id: string, body: {
+export function saveOrdersV4ItemDefinition(companyId: string, id: string, body: {
   inventoryUnitId: string;
-  units: Array<{ unitId: string; purchaseLabel?: string | null; isOrderEnabled?: boolean; lastPrice?: string | null; sortOrder?: number }>;
-}): Promise<ApiParsedResult<OrdersV4Item>> {
-  return apiPatch(`${BASE}/catalog/items/${encodeURIComponent(id)}/units?companyId=${encodeURIComponent(companyId)}`, body);
-}
-
-export function publishOrdersV4Conversion(companyId: string, body: {
-  itemId: string;
   edges: Array<{ fromUnitId: string; toUnitId: string; factor: string; reversible?: boolean; allowDimensionBridge?: boolean }>;
-}): Promise<ApiParsedResult<OrdersV4ConversionVersion>> {
-  return apiPost(`${BASE}/catalog/conversions/publish?companyId=${encodeURIComponent(companyId)}`, body);
+  units: Array<{ unitId: string; purchaseLabel?: string | null; isOrderEnabled?: boolean; lastPrice?: string | null; sortOrder?: number }>;
+}): Promise<ApiParsedResult<{ item: OrdersV4Item; conversionVersionId: string }>> {
+  return apiPatch(`${BASE}/catalog/items/${encodeURIComponent(id)}/definition?companyId=${encodeURIComponent(companyId)}`, body);
 }
 
 export function publishOrdersV4Recipe(companyId: string, body: {

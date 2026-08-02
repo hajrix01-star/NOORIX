@@ -90,7 +90,6 @@ export function OrdersV4CatalogTab({
         data={data}
         mutations={mutations}
         onManageCategories={() => { setActiveItem(undefined); setTab('categories'); }}
-        onManageUnits={() => { setActiveItem(undefined); setTab('units'); }}
         onClose={() => setActiveItem(undefined)}
       />
     )}

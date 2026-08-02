@@ -182,8 +182,12 @@ export class OrdersV4DocumentsService {
           edges: definitionEdges,
         });
         const priceUnitId = line.priceUnitId || line.unitId;
-        if (!item.units.some((row) => row.unitId === priceUnitId && row.isActive)) {
+        const priceUnit = item.units.find((row) => row.unitId === priceUnitId && row.isActive);
+        if (!priceUnit) {
           throw new BadRequestException(`${item.nameAr}: وحدة السعر غير مضافة إلى بطاقة الصنف`);
+        }
+        if (input.documentType === 'purchase' && (!priceUnit.isOrderEnabled || priceUnit.lastPrice == null)) {
+          throw new BadRequestException(`${item.nameAr}: تغليف السعر غير مفعل للطلبات أو لا يحتوي على سعر`);
         }
         const priceConversion = resolveOrdersV4ContextConversion({
           fromUnitId: priceUnitId,

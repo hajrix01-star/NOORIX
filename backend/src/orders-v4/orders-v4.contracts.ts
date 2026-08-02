@@ -62,6 +62,12 @@ export type OrdersV4ConversionPublishInput = {
   }>;
 };
 
+export type OrdersV4ItemDefinitionInput = {
+  inventoryUnitId: string;
+  edges: OrdersV4ConversionPublishInput['edges'];
+  units: OrdersV4ItemUnitsInput['units'];
+};
+
 export type OrdersV4RecipePublishInput = {
   outputItemId: string;
   outputQuantity: string;

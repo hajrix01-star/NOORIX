@@ -58,4 +58,11 @@ describe('Orders V4 inventory boundary', () => {
     expect(documentTab).toContain('row.baseUnit.nameAr');
     expect(documentTab).not.toContain('row.item.inventoryUnit.nameAr}` },');
   });
+
+  it('publishes item units, prices, and conversions through one atomic endpoint', () => {
+    const controller = readFileSync(join(__dirname, 'orders-v4.controller.ts'), 'utf8');
+    expect(controller).toContain("@Patch('catalog/items/:id/definition')");
+    expect(controller).not.toContain("@Patch('catalog/items/:id/units')");
+    expect(controller).not.toContain("@Post('catalog/conversions/publish')");
+  });
 });
