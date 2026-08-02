@@ -6,6 +6,7 @@ export type {
   RefreshAuthSessionResult,
 } from './auth';
 export type { CreateInvoiceBatchResult } from './domains/invoices-batch';
+export type * from './domains/ordersV3';
 export type {
   CreateOrderLinePayload,
   CreateOrderPayload,

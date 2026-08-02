@@ -7,6 +7,7 @@ type ItemRow = {
   packaging?: string | null;
   unit?: string | null;
   quantityMultiplier?: Prisma.Decimal | null;
+  inventoryBaseQuantitySnapshot?: Prisma.Decimal | null;
   quantity: Prisma.Decimal;
   unitPrice?: Prisma.Decimal;
   amount: Prisma.Decimal;
@@ -127,15 +128,6 @@ function decimal(value: Prisma.Decimal | string | number | null | undefined): Pr
   }
 }
 
-function normalizedQuantity(
-  quantity: Prisma.Decimal | string | number,
-  quantityMultiplier?: Prisma.Decimal | string | number | null,
-): Prisma.Decimal {
-  const qty = decimal(quantity);
-  const multiplier = decimal(quantityMultiplier ?? 1);
-  return qty.times(multiplier.gt(0) ? multiplier : 1);
-}
-
 function storedQuantityMultiplier(
   quantityMultiplier?: Prisma.Decimal | string | number | null,
 ): Prisma.Decimal | null {
@@ -144,41 +136,33 @@ function storedQuantityMultiplier(
   return multiplier.gt(0) ? multiplier : null;
 }
 
-type InventoryBaseQuantityPolicy = {
-  allowLegacyPurchaseMultiplierFallback?: boolean;
-};
-
 function inventoryBaseQuantity(item: {
   quantity: Prisma.Decimal | string | number;
   unit?: string | null;
   quantityMultiplier?: Prisma.Decimal | string | number | null;
   inventoryBaseQuantitySnapshot?: Prisma.Decimal | string | number | null;
   product: InventoryProduct;
-}, policy: InventoryBaseQuantityPolicy = {}): Prisma.Decimal {
+}): Prisma.Decimal {
+  // Historical line values must outrank mutable product conversion settings.
   if (item.inventoryBaseQuantitySnapshot != null) {
     return decimal(item.inventoryBaseQuantitySnapshot);
   }
   const qty = decimal(item.quantity);
+  const storedMultiplier = storedQuantityMultiplier(item.quantityMultiplier);
+  if (storedMultiplier) return qty.times(storedMultiplier);
+
   const unit = normalizeUnit(item.unit, '');
   const baseUnit = normalizeUnit(item.product.unit, unit || 'piece');
   const multiplierFromUnit = unit
     ? resolveProductUnitMultiplierOrNull(item.product, unit, baseUnit)
     : null;
-  const storedMultiplier = storedQuantityMultiplier(item.quantityMultiplier);
-  if (storedMultiplier && (!unit || unit === baseUnit || !storedMultiplier.eq(1))) {
-    return qty.times(storedMultiplier);
-  }
   if (multiplierFromUnit) return qty.times(multiplierFromUnit);
   if (unit && unit !== baseUnit) {
-    if (policy.allowLegacyPurchaseMultiplierFallback && storedMultiplier) {
-      return qty.times(storedMultiplier);
-    }
     throw new Error(
       `Missing inventory conversion for "${item.product.nameAr}" from "${unit}" to "${baseUnit}".`,
     );
   }
-  if (storedMultiplier) return qty.times(storedMultiplier);
-  return normalizedQuantity(item.quantity, item.quantityMultiplier);
+  return qty;
 }
 
 function soldRecipeBatchQuantity(item: InventorySaleInput): Prisma.Decimal {
@@ -447,9 +431,7 @@ export function aggregateRecipeInventoryStock(input: {
   for (const purchase of input.purchases) {
     if (purchase.product.productType && purchase.product.productType !== 'order') continue;
     const row = ensureInventoryRow(rows, purchase.product, purchase.product.unit || 'piece');
-    row.purchasedBaseQuantity = row.purchasedBaseQuantity.plus(inventoryBaseQuantity(purchase, {
-      allowLegacyPurchaseMultiplierFallback: true,
-    }));
+    row.purchasedBaseQuantity = row.purchasedBaseQuantity.plus(inventoryBaseQuantity(purchase));
   }
 
   for (const purchase of input.aggregatedPurchases ?? []) {

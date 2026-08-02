@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type {
+  PersistedProductVariantInput,
   ProductRecipeItemInput,
   ProductVariantInput,
 } from './orders-catalog-product.types';
@@ -10,7 +11,6 @@ import {
   type ProductUnitConversionInput,
   productUnitConversionRowsFromUnknown,
   resolveProductUnitMultiplierOrNull,
-  validateProductUnitConversionSequence,
   validateProductUnitConversions,
 } from './orders-unit-conversions.util';
 
@@ -43,31 +43,45 @@ export class OrdersCatalogProductIntegrityService {
   assertProductUnitConversionChain(input: {
     directConversions?: ProductUnitConversionInput[] | null;
     templateConversions?: ProductUnitConversionInput[] | null;
-    purchaseUnit?: unknown;
     baseUnit?: unknown;
+    variants?: ProductVariantInput[] | null;
   }) {
     const conversions = [
       ...productUnitConversionRowsFromUnknown(input.templateConversions),
       ...productUnitConversionRowsFromUnknown(input.directConversions),
     ];
     this.assertUnitConversionRows(conversions);
-    const sequenceIssue = validateProductUnitConversionSequence({
-      conversions,
-      purchaseUnit: input.purchaseUnit,
-      baseUnit: input.baseUnit,
-    });
-    if (!sequenceIssue) return;
-    if (sequenceIssue.code === 'disconnected') {
-      throw new BadRequestException(
-        `Conversion stage ${sequenceIssue.index + 1} must start with the previous stage unit (${sequenceIssue.expectedFromUnit}).`,
-      );
+    const product = {
+      unit: String(input.baseUnit ?? 'piece'),
+      inventoryConversions: input.directConversions,
+      conversionTemplate: { conversions: input.templateConversions },
+    };
+    for (const conversion of conversions) {
+      const sourceUnit = String(conversion.fromUnit ?? '').trim();
+      const targetUnit = String(conversion.toUnit ?? '').trim();
+      if (
+        !resolveProductUnitMultiplierOrNull(product, sourceUnit, input.baseUnit)
+        || !resolveProductUnitMultiplierOrNull(product, targetUnit, input.baseUnit)
+      ) {
+        throw new BadRequestException(
+          `Conversion from "${sourceUnit}" to "${targetUnit}" is not connected to the product inventory unit.`,
+        );
+      }
     }
-    throw new BadRequestException(
-      `Complete the conversion chain from the purchase unit to the inventory unit (${sequenceIssue.expectedFromUnit}).`,
-    );
+    for (const variant of input.variants ?? []) {
+      const pricingUnit = String(variant.unit ?? '').trim();
+      if (!pricingUnit) {
+        throw new BadRequestException('Every price row must select a unit from the product conversion chain.');
+      }
+      if (!resolveProductUnitMultiplierOrNull(product, pricingUnit, input.baseUnit)) {
+        throw new BadRequestException(
+          `Pricing unit "${pricingUnit}" is not connected to the product inventory unit.`,
+        );
+      }
+    }
   }
 
-  productVariantsFromUnknown(value: unknown): ProductVariantInput[] {
+  productVariantsFromUnknown(value: unknown): PersistedProductVariantInput[] {
     if (!Array.isArray(value)) return [];
     return value.flatMap((entry) => {
       if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
@@ -96,19 +110,27 @@ export class OrdersCatalogProductIntegrityService {
     });
   }
 
-  purchaseUnit(variants: ProductVariantInput[] | undefined, baseUnit: unknown) {
-    return String(variants?.[0]?.unit ?? baseUnit ?? 'piece').trim() || 'piece';
-  }
-
-  variantJson(variants?: ProductVariantInput[]): Prisma.InputJsonValue | typeof Prisma.DbNull {
+  variantJson(
+    variants?: ProductVariantInput[],
+    existingVariants?: PersistedProductVariantInput[],
+  ): Prisma.InputJsonValue | typeof Prisma.DbNull {
     if (!variants?.length) return Prisma.DbNull;
-    return variants.map((variant) => ({
-      size: variant.size || '',
-      packaging: variant.packaging || '',
-      unit: variant.unit || 'piece',
-      lastPrice: variant.lastPrice || '0',
-      quantityMultiplier: variant.quantityMultiplier || '1',
-    }));
+    const legacyMultiplierByKey = new Map(
+      (existingVariants ?? []).flatMap((variant) => {
+        const multiplier = String(variant.quantityMultiplier ?? '').trim();
+        return multiplier ? [[this.variantIdentity(variant), multiplier] as const] : [];
+      }),
+    );
+    return variants.map((variant) => {
+      const legacyMultiplier = legacyMultiplierByKey.get(this.variantIdentity(variant));
+      return {
+        size: variant.size || '',
+        packaging: variant.packaging || '',
+        unit: variant.unit || 'piece',
+        lastPrice: variant.lastPrice || '0',
+        ...(legacyMultiplier ? { quantityMultiplier: legacyMultiplier } : {}),
+      };
+    });
   }
 
   recipeJson(recipe?: ProductRecipeItemInput[]): Prisma.InputJsonValue | typeof Prisma.DbNull {
@@ -223,5 +245,11 @@ export class OrdersCatalogProductIntegrityService {
   private defaultRecipeUnit(materialType: string) {
     if (materialType === 'tobacco') return 'g';
     return 'piece';
+  }
+
+  private variantIdentity(variant: ProductVariantInput) {
+    return [variant.size, variant.packaging, variant.unit]
+      .map((value) => String(value ?? '').trim())
+      .join('|');
   }
 }

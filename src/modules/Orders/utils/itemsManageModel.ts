@@ -18,10 +18,17 @@ export type OrderProductForm = {
   productType: OrderProductType;
   unit: string;
   simpleLastPrice: string;
-  variants: OrderProductVariant[];
+  variants: OrderCatalogPrice[];
   inventoryConversions: OrderProductUnitConversion[];
   conversionTemplateId: string;
   recipe: OrderProductRecipeItem[];
+};
+
+export type OrderCatalogPrice = {
+  size: string;
+  packaging: string;
+  unit: string;
+  lastPrice: string;
 };
 
 export type EditableOrderProduct = OrderProductForm & {
@@ -36,7 +43,7 @@ export type OrderProductUpdateBody = {
   sectionIds: string[];
   productType: OrderProductType;
   unit?: string;
-  variants?: OrderProductVariant[];
+  variants?: OrderCatalogPrice[];
   inventoryConversions?: OrderProductUnitConversion[];
   conversionTemplateId?: string | null;
   recipe?: OrderProductRecipeItem[];
@@ -56,7 +63,7 @@ export function createEmptyOrderProductForm(productType: OrderProductType): Orde
     productType,
     unit: 'piece',
     simpleLastPrice: '',
-    variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
+    variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
     inventoryConversions: [],
     conversionTemplateId: '',
     recipe: [],
@@ -114,11 +121,12 @@ function sanitizeInventoryConversions(value: unknown): OrderProductUnitConversio
   });
 }
 
-function hasOrderProductVariants(variants: OrderProductVariant[]): boolean {
+function hasOrderProductVariants(variants: OrderProductVariant[], baseUnit: string): boolean {
   return variants.some(
     (variant) =>
       variant.size ||
       variant.packaging ||
+      (variant.unit && variant.unit !== baseUnit) ||
       Number.parseFloat(String(variant.quantityMultiplier ?? '1')) !== 1 ||
       Number.parseFloat(String(variant.lastPrice ?? '')) > 0,
   );
@@ -129,7 +137,8 @@ export function buildEditableOrderProduct(
   fallbackProductType: OrderProductType,
 ): EditableOrderProduct {
   const variants = Array.isArray(product.variants) ? product.variants : [];
-  const hasVariants = hasOrderProductVariants(variants);
+  const baseUnit = String(product.unit || 'piece').trim() || 'piece';
+  const hasVariants = hasOrderProductVariants(variants, baseUnit);
   return {
     id: product.id,
     nameAr: product.nameAr,
@@ -137,7 +146,7 @@ export function buildEditableOrderProduct(
     categoryId: product.categoryId || '',
     sectionIds: Array.isArray(product.sectionIds) ? [...product.sectionIds] : [],
     productType: normalizeOrderProductType(product.productType, fallbackProductType),
-    unit: String(product.unit || 'piece').trim() || 'piece',
+    unit: baseUnit,
     simpleLastPrice: hasVariants ? '' : String(product.lastPrice ?? ''),
     inventoryConversions: sanitizeInventoryConversions(product.inventoryConversions),
     conversionTemplateId: product.conversionTemplateId || '',
@@ -148,11 +157,10 @@ export function buildEditableOrderProduct(
       ? variants.map((variant) => ({
           size: variant.size || '',
           packaging: variant.packaging || '',
-          unit: variant.unit || 'piece',
+          unit: variant.unit || baseUnit,
           lastPrice: variant.lastPrice ? String(variant.lastPrice) : '',
-          quantityMultiplier: String(variant.quantityMultiplier ?? '1'),
         }))
-      : [{ size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
+      : [{ size: '', packaging: '', unit: baseUnit, lastPrice: '' }],
     _advanced: hasVariants,
   };
 }
@@ -162,12 +170,17 @@ export function buildOrderProductUpdateBody(
   fallbackProductType: OrderProductType,
 ): OrderProductUpdateBody {
   const built = buildOrderProductPayload(form, form.productType || fallbackProductType);
+  const builtPrices: OrderCatalogPrice[] = (built.variants ?? []).map((variant) => ({
+    size: variant.size || '',
+    packaging: variant.packaging || '',
+    unit: variant.unit || form.unit || 'piece',
+    lastPrice: String(variant.lastPrice ?? '0'),
+  }));
   const validVariants = (form.variants || []).filter(
     (variant) =>
       variant.size ||
       variant.packaging ||
-      (variant.unit && variant.unit !== 'piece') ||
-      Number.parseFloat(String(variant.quantityMultiplier ?? '1')) !== 1 ||
+      (variant.unit && variant.unit !== form.unit) ||
       Number.parseFloat(String(variant.lastPrice ?? '')) > 0,
   );
   return {
@@ -181,7 +194,7 @@ export function buildOrderProductUpdateBody(
     conversionTemplateId: built.conversionTemplateId ?? null,
     recipe: built.recipe ?? [],
     ...(validVariants.length > 0
-      ? { variants: built.variants ?? [] }
+      ? { variants: builtPrices }
       : { variants: [], lastPrice: built.lastPrice || '0' }),
   };
 }
@@ -252,9 +265,9 @@ export function buildOrderProductPayload(
   form: Partial<OrderProductForm>,
   productType: OrderProductType,
 ): OrderProductPayload {
+  const baseUnit = String(form.unit ?? 'piece').trim() || 'piece';
   const validVariants = (form.variants || []).filter(
-    (v) => v.size || v.packaging || (v.unit && v.unit !== 'piece')
-      || Number.parseFloat(String(v.quantityMultiplier ?? '1')) !== 1
+    (v) => v.size || v.packaging || (v.unit && v.unit !== baseUnit)
       || Number.parseFloat(String(v.lastPrice ?? '')) > 0,
   );
   const sectionIds = Array.isArray(form.sectionIds) ? form.sectionIds.filter(Boolean) : [];
@@ -268,7 +281,7 @@ export function buildOrderProductPayload(
   const base = {
     nameAr: String(form.nameAr ?? '').trim(),
     nameEn: form.nameEn?.trim() || undefined,
-    unit: String(form.unit ?? 'piece').trim() || 'piece',
+    unit: baseUnit,
     categoryId: form.categoryId || undefined,
     sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
     productType,
@@ -282,9 +295,8 @@ export function buildOrderProductPayload(
       variants: validVariants.map((v) => ({
         size: v.size || '',
         packaging: v.packaging || '',
-        unit: v.unit || 'piece',
+        unit: v.unit || baseUnit,
         lastPrice: v.lastPrice || '0',
-        quantityMultiplier: String(v.quantityMultiplier ?? '1'),
       })),
     };
   }

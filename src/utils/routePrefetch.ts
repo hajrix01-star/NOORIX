@@ -18,6 +18,7 @@ const routeLoaders = {
   '/expenses': () => import('../modules/Expenses/ExpensesScreen'),
   '/assets': () => import('../modules/Assets/AssetsRegisterScreen'),
   '/orders': () => import('../modules/Orders/OrdersScreen'),
+  '/orders-2': () => import('../modules/OrdersV3/OrdersV3Screen'),
   '/hr': () => import('../modules/HR/HRMainScreen'),
   '/reports': () => import('../modules/Reports/ReportsLayout'),
   '/reports/general': () => import('../modules/Reports/ReportsScreen'),

@@ -41,10 +41,6 @@ export function productVariantsSummary(
           && value !== '—'
           && values.findIndex((candidate) => String(candidate).trim() === String(value).trim()) === index
         ));
-        const multiplier = Number(v.quantityMultiplier ?? 1);
-        if (Number.isFinite(multiplier) && multiplier !== 1) {
-          parts.push(`×${fmt(multiplier, 2)}`);
-        }
         return parts.join(' / ') || unitLabel('piece');
       })
       .join(' · ');
@@ -69,11 +65,16 @@ export function productPriceLineShort(p: OrderProduct): string {
   return Number.isFinite(simplePrice) && simplePrice > 0 ? fmt(simplePrice, 2) : '—';
 }
 
-export function productHasAdvancedVariants(p: { variants?: OrderProductVariant[] | unknown }): boolean {
+export function productHasAdvancedVariants(p: {
+  unit?: string | null;
+  variants?: OrderProductVariant[] | unknown;
+}): boolean {
   const variants = Array.isArray(p?.variants) ? p.variants : [];
+  const baseUnit = String(p.unit || 'piece').trim() || 'piece';
   return variants.some((v: OrderProductVariant) =>
     v.size
     || v.packaging
+    || (v.unit && v.unit !== baseUnit)
     || Number.parseFloat(String(v.quantityMultiplier ?? '1')) !== 1
     || Number.parseFloat(String(v.lastPrice ?? '')) > 0
   );

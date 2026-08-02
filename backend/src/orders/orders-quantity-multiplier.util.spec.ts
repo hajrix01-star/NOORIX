@@ -40,7 +40,43 @@ describe('resolveQuantityMultiplier', () => {
     expect(resolveQuantityMultiplier(material, { unit: 'box' }).toNumber()).toBe(64);
   });
 
-  it('uses the purchased packaging before the invoice unit', () => {
+  it('prefers an explicit conversion chain over a matching legacy multiplier', () => {
+    const material = {
+      unit: 'piece',
+      variants: [
+        { packaging: 'legacy carton', unit: 'carton', quantityMultiplier: '999' },
+      ],
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'box', multiplier: '10' },
+        { fromUnit: 'box', toUnit: 'piece', multiplier: '64' },
+      ],
+    };
+
+    expect(resolveQuantityMultiplier(material, {
+      packaging: 'legacy carton',
+      unit: 'carton',
+    }).toNumber()).toBe(640);
+  });
+
+  it('reads a legacy multiplier only when the explicit conversion chain is disconnected', () => {
+    const material = {
+      unit: 'piece',
+      variants: [
+        { packaging: 'legacy carton', unit: 'carton', quantityMultiplier: '640' },
+      ],
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'box', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
+    };
+
+    expect(resolveQuantityMultiplier(material, {
+      packaging: 'legacy carton',
+      unit: 'carton',
+    }).toNumber()).toBe(640);
+  });
+
+  it('uses the invoice unit while keeping packaging descriptive', () => {
     const material = {
       unit: 'piece',
       variants: [],
@@ -53,7 +89,7 @@ describe('resolveQuantityMultiplier', () => {
     expect(resolveQuantityMultiplier(material, {
       packaging: 'carton',
       unit: 'box',
-    }).toNumber()).toBe(640);
+    }).toNumber()).toBe(64);
   });
 
   it('does not require a conversion when selection and base unit are semantic aliases', () => {

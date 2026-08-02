@@ -1,9 +1,9 @@
 import Decimal from 'decimal.js';
 import type {
   OrderProduct,
-  OrderProductVariant,
   StaffCancellationReason,
 } from '../../../types/api';
+import { buildProductUnitSelectionModel } from './productUnitConversionModel';
 
 export type StaffBasketLine = {
   lineId: string;
@@ -22,28 +22,30 @@ export function staffBasketLineKey(line: Pick<StaffBasketLine, 'productId' | 'si
   return `${line.productId}|${line.size}|${line.packaging}|${line.unit}`;
 }
 
+export function firstProductPricedChoice(product: OrderProduct) {
+  return buildProductUnitSelectionModel(product).pricedChoices[0] ?? null;
+}
+
 export function productHasVariants(product: OrderProduct): boolean {
-  const variants = Array.isArray(product?.variants) ? product.variants : [];
-  const sizes = product?.sizes ? String(product.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean) : [];
-  return variants.length > 0 || sizes.length > 0;
+  const { baseUnit, pricedChoices } = buildProductUnitSelectionModel(product);
+  return pricedChoices.length > 1 || pricedChoices.some((choice) => (
+    Boolean(choice.size)
+    || Boolean(choice.packaging)
+    || choice.unit !== baseUnit
+  ));
 }
 
 export function defaultVariantModalState(product: OrderProduct) {
-  const variants = Array.isArray(product?.variants) ? product.variants : [];
-  const sizes = product?.sizes ? String(product.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean) : [];
-  const hasVariants = variants.length > 0;
-  const hasSizes = sizes.length > 0;
-  const v0 = variants[0];
+  const choice = firstProductPricedChoice(product);
+  if (!choice) return null;
   return {
     product,
-    variantKey: hasVariants
-      ? `${v0?.size || ''}|${v0?.packaging || ''}|${v0?.unit || 'piece'}|0`
-      : '',
-    size: !hasVariants && hasSizes ? sizes[0] : '',
-    packaging: '',
-    unit: v0?.unit || 'piece',
+    variantKey: choice.key,
+    size: choice.size,
+    packaging: choice.packaging,
+    unit: choice.unit,
     quantity: '1',
-    unitPrice: v0?.lastPrice ? String(v0.lastPrice) : (product?.lastPrice ? String(product.lastPrice) : ''),
+    unitPrice: String(choice.unitPrice),
     cancellationReasons: [] as StaffCancellationReason[],
     cancellationNote: '',
   };
@@ -53,28 +55,15 @@ export function resolveVariantFromModal(
   product: OrderProduct,
   modal: { variantKey: string; size: string; packaging: string; unit: string; unitPrice: string },
 ) {
-  const variants = Array.isArray(product?.variants) ? product.variants : [];
-  let size = modal.size;
-  let packaging = modal.packaging;
-  let unit = modal.unit || 'piece';
-  let unitPrice = modal.unitPrice;
-  if (modal.variantKey && variants.length > 0) {
-    const v = (variants as OrderProductVariant[]).find((x, i) =>
-      `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}|${i}` === modal.variantKey
-      || `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}` === modal.variantKey.split('|').slice(0, 3).join('|'),
-    ) || variants[0];
-    if (v) {
-      size = v.size || '';
-      packaging = v.packaging || '';
-      unit = v.unit || 'piece';
-      if (!unitPrice) unitPrice = v.lastPrice ? String(v.lastPrice) : '';
-    }
-  }
+  const choice = buildProductUnitSelectionModel(product).pricedChoices.find(
+    (candidate) => candidate.key === modal.variantKey,
+  );
+  if (!choice) return null;
   return {
-    size: size || '',
-    packaging: packaging || '',
-    unit: unit || 'piece',
-    unitPrice: unitPrice || (product?.lastPrice ? String(product.lastPrice) : '0'),
+    size: choice.size,
+    packaging: choice.packaging,
+    unit: choice.unit,
+    unitPrice: modal.unitPrice || String(choice.unitPrice),
   };
 }
 
@@ -172,10 +161,8 @@ export function staffSaleAvgPerOrder(totalAmount: Decimal | number, totalQty: nu
 }
 
 export function displayProductPrice(product: OrderProduct): string | null {
-  const variants = Array.isArray(product?.variants) ? product.variants : [];
-  if (variants.length > 0 && variants[0]?.lastPrice) return String(variants[0].lastPrice);
-  if (product?.lastPrice != null && Number(product.lastPrice) > 0) return String(product.lastPrice);
-  return null;
+  const choice = firstProductPricedChoice(product);
+  return choice ? String(choice.unitPrice) : null;
 }
 
 export function formatVariantLabel(

@@ -133,7 +133,6 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
         packaging: variant.packaging || '',
         unit: variant.unit || 'piece',
         lastPrice: String(variant.lastPrice ?? ''),
-        quantityMultiplier: String(variant.quantityMultiplier ?? '1'),
       }));
     const resolve = (current: CatalogProductFormState | null) =>
       typeof action === 'function' ? action(current) : action;
@@ -202,7 +201,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: ItemsManageTabController 
     ? {
         addVariant: () => setEditingProduct((p) => p ? ({
           ...p,
-          variants: [...(p.variants || []), { size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
+          variants: [...(p.variants || []), { size: '', packaging: '', unit: p.unit || 'piece', lastPrice: '' }],
         }) : p),
         updateVariant: updateEditingVariant,
         removeVariant: removeEditingVariant,

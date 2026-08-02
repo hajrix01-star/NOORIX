@@ -54,36 +54,16 @@ describe('orders unit conversions', () => {
     expect(resolveProductUnitMultiplierOrNull({ unit: 'جرام' }, 'كيلو', 'جرام')?.toNumber()).toBe(1000);
   });
 
-  it('requires a chain when the purchase and inventory units differ', () => {
+  it('allows products without custom conversion stages', () => {
     expect(validateProductUnitConversionSequence({
       conversions: [],
-      purchaseUnit: 'carton',
       baseUnit: 'piece',
-    })).toEqual(expect.objectContaining({
-      code: 'incomplete',
-      expectedFromUnit: 'piece',
-      actualFromUnit: 'carton',
-    }));
-  });
-
-  it('accepts standard purchase-to-inventory conversions without explicit rows', () => {
-    expect(validateProductUnitConversionSequence({
-      conversions: [],
-      purchaseUnit: 'kg',
-      baseUnit: 'g',
-    })).toBeNull();
-
-    expect(validateProductUnitConversionSequence({
-      conversions: [],
-      purchaseUnit: 'l',
-      baseUnit: 'ml',
     })).toBeNull();
   });
 
   it('accepts a custom stage that finishes through a standard conversion', () => {
     expect(validateProductUnitConversionSequence({
       conversions: [{ fromUnit: 'carton', toUnit: 'kg', multiplier: '10' }],
-      purchaseUnit: 'carton',
       baseUnit: 'g',
     })).toBeNull();
   });
@@ -91,7 +71,6 @@ describe('orders unit conversions', () => {
   it('rejects a chain that stops before the inventory unit', () => {
     expect(validateProductUnitConversionSequence({
       conversions: [{ fromUnit: 'carton', toUnit: 'pack', multiplier: '10' }],
-      purchaseUnit: 'carton',
       baseUnit: 'piece',
     })).toEqual(expect.objectContaining({
       code: 'incomplete',
@@ -106,7 +85,6 @@ describe('orders unit conversions', () => {
         { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
         { fromUnit: 'box', toUnit: 'piece', multiplier: '64' },
       ],
-      purchaseUnit: 'carton',
       baseUnit: 'piece',
     })).toEqual(expect.objectContaining({
       code: 'disconnected',
@@ -122,8 +100,31 @@ describe('orders unit conversions', () => {
         { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
         { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
       ],
-      purchaseUnit: 'carton',
       baseUnit: 'piece',
     })).toBeNull();
+  });
+
+  it('rejects a custom multiplier that conflicts with a standard conversion', () => {
+    expect(validateProductUnitConversions([
+      { fromUnit: 'kg', toUnit: 'g', multiplier: '500' },
+    ])).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'standard-conflict', fromUnit: 'kg', toUnit: 'g' }),
+    ]));
+  });
+
+  it('accepts an explicit standard conversion with its exact multiplier', () => {
+    expect(validateProductUnitConversions([
+      { fromUnit: 'kg', toUnit: 'g', multiplier: '1000' },
+    ])).toEqual([]);
+  });
+
+  it('rejects cyclic conversion chains', () => {
+    expect(validateProductUnitConversions([
+      { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+      { fromUnit: 'pack', toUnit: 'box', multiplier: '2' },
+      { fromUnit: 'box', toUnit: 'carton', multiplier: '3' },
+    ])).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'cycle' }),
+    ]));
   });
 });

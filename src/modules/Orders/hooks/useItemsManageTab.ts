@@ -39,6 +39,7 @@ import {
   buildOrderProductUpdateBody,
   createEmptyOrderProductForm,
   type EditableOrderProduct,
+  type OrderCatalogPrice,
   filterOrderCategoriesForManageTab,
   filterOrderProductsForManageTab,
 } from '../utils/itemsManageModel';
@@ -49,7 +50,6 @@ import type {
   OrderConversionTemplatePayload,
   OrderProduct,
   OrderProductUnitConversion,
-  OrderProductVariant,
 } from '../../../types/api';
 /**
  * State and handlers for the Orders manage-items tab (products and categories).
@@ -347,11 +347,11 @@ export function useItemsManageTab(companyId: string) {
   function addVariantToProduct() {
     setNewProduct((p) => ({
       ...p,
-      variants: [...(p.variants || []), { size: '', packaging: '', unit: 'piece', lastPrice: '', quantityMultiplier: '1' }],
+      variants: [...(p.variants || []), { size: '', packaging: '', unit: p.unit || 'piece', lastPrice: '' }],
     }));
   }
 
-  function updateNewProductVariant(idx: number, field: keyof OrderProductVariant, value: string) {
+  function updateNewProductVariant(idx: number, field: keyof OrderCatalogPrice, value: string) {
     setNewProduct((p) => {
       const v = [...(p.variants || [])];
       if (!v[idx]) return p;
@@ -364,7 +364,7 @@ export function useItemsManageTab(companyId: string) {
     setNewProduct((p) => ({ ...p, variants: (p.variants || []).filter((_, i) => i !== idx) }));
   }
 
-  function updateEditingVariant(idx: number, field: keyof OrderProductVariant, value: string) {
+  function updateEditingVariant(idx: number, field: keyof OrderCatalogPrice, value: string) {
     setEditingProduct((p) => {
       if (!p) return p;
       const v = [...(p.variants || [])];

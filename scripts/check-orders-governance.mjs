@@ -1,5 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  operationalQuantityMultiplierFailures,
+  ordersV2SnapshotConventionFailures,
+} from './orders-governance-rules.mjs';
 
 const root = process.cwd();
 const failures = [];
@@ -39,6 +43,18 @@ const legacyShishaRuntimeChecks = [
   { pattern: /shisha-inventory/, message: 'legacy shisha inventory endpoint is removed; use recipe inventory instead' },
   { pattern: /ShishaPurchaseSheet/, message: 'legacy shisha purchase sheet is removed; use orders purchase flow instead' },
   { pattern: /useShishaInventory/, message: 'legacy shisha inventory hook is removed; use recipe inventory hooks instead' },
+];
+
+const operationalQuantityMultiplierTargets = [
+  'backend/src/orders/dto',
+  'backend/src/orders/orders.controller.ts',
+  'backend/src/orders/orders-staff.types.ts',
+  'backend/src/orders/orders-catalog-product.types.ts',
+  'backend/src/orders/orders.service.ts',
+  'src/services/domains/apiEndpoints/orders.ts',
+  'src/hooks/useOrders.ts',
+  'src/hooks/orders',
+  'src/types/api/domains/orders.ts',
 ];
 
 function walk(target, acc = []) {
@@ -94,6 +110,21 @@ for (const file of legacyRuntimeTargets.flatMap((target) => walk(target))) {
   }
 }
 
+for (const file of operationalQuantityMultiplierTargets.flatMap((target) => walk(target))) {
+  for (const message of operationalQuantityMultiplierFailures(file, read(file))) {
+    fail(file, message);
+  }
+}
+
+for (const message of ordersV2SnapshotConventionFailures({
+  schema: read('backend/prisma/schema.prisma'),
+  ordersService: read('backend/src/orders/orders.service.ts'),
+  consumptionSnapshot: read('backend/src/orders/orders-inventory-consumption-snapshot.util.ts'),
+  snapshotSql: read('backend/src/orders/orders-inventory-snapshot.sql.ts'),
+})) {
+  fail('Orders V2 snapshot/schema', message);
+}
+
 const ordersTab = read('src/modules/Orders/components/OrdersTab.tsx');
 if (!ordersTab.includes('useOrdersRangeSummary(companyId, startDate, endDate)')) {
   fail('src/modules/Orders/components/OrdersTab.tsx', 'orders range summary must come from the backend-owned range summary hook');
@@ -123,6 +154,24 @@ for (const requiredType of [
   if (!apiTypes.includes(requiredType)) {
     fail('src/types/api/domains/orders.ts', `missing central orders contract: ${requiredType}`);
   }
+}
+
+const packageJson = read('package.json');
+if (!packageJson.includes('"check:orders-governance": "node scripts/check-orders-governance.mjs"')) {
+  fail('package.json', 'missing check:orders-governance script');
+}
+if (!packageJson.includes('"test:orders-governance": "vitest run scripts/check-orders-governance.test.mjs"')) {
+  fail('package.json', 'missing focused Orders V2 governance test script');
+}
+
+const consolidatedGovernance = read('scripts/check-system-governance-consolidated.mjs');
+if (!consolidatedGovernance.includes("'check-orders-governance.mjs'")) {
+  fail('scripts/check-system-governance-consolidated.mjs', 'orders governance must run in consolidated governance');
+}
+
+const ciWorkflow = read('.github/workflows/ci.yml');
+if (!ciWorkflow.includes('npm run check:system-governance-consolidated')) {
+  fail('.github/workflows/ci.yml', 'consolidated governance must run in CI');
 }
 
 if (failures.length) {

@@ -25,6 +25,7 @@ const governanceChecks = [
   'check-filter-governance.mjs',
   'check-date-control-governance.mjs',
   'check-responsive-governance.mjs',
+  'check-orders-governance.mjs',
 ];
 
 function read(rel) {

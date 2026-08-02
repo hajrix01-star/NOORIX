@@ -27,6 +27,7 @@
     "db:repair-hajri-active": "node prisma/repair-hajri-vat-active-company.js",
     "acceptance:system": "node scripts/system-acceptance-test.js",
     "audit:http-surface": "node scripts/audit-http-surface.mjs",
+    "audit:orders-v3-cutover": "node scripts/audit-orders-v3-cutover.mjs",
     "check:service-footprint": "node ../scripts/check-heavy-service-footprint.mjs",
     "test:financial": "jest --config jest.config.cjs financial-core-helpers.util.spec.ts financial-outflow-ledger.util.spec.ts"
   },

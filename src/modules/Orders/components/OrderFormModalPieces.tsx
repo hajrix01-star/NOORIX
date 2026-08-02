@@ -4,6 +4,7 @@ import { ProductSearchInput, type ProductSearchItem } from '../../../components/
 import { fmt } from '../../../utils/format';
 import { AdaptiveSheet, Button, FmtNum, Input } from '../../../ui';
 import type { CreateOrderLinePayload, OrderProduct, OrderRecord } from '../../../types/api';
+import { buildProductUnitSelectionModel } from '../utils/productUnitConversionModel';
 
 type OrderDraftLine = CreateOrderLinePayload;
 type Translation = (key: string) => string;
@@ -287,8 +288,12 @@ function OrderDraftItemRow({
   updateItems: React.Dispatch<React.SetStateAction<OrderDraftLine[]>>;
   removeItem: (idx: number) => void;
 }) {
-  const variantsArr = Array.isArray(product?.variants) ? product.variants : [];
-  const sizesArr = product?.sizes ? String(product.sizes).split(/[,،]/).map((value) => value.trim()).filter(Boolean) : [];
+  const unitChoices = buildProductUnitSelectionModel(product).pricedChoices;
+  const selectedChoiceKey = unitChoices.find(
+    (choice) => choice.size === item.size
+      && choice.packaging === item.packaging
+      && choice.unit === item.unit,
+  )?.key ?? '';
   const variantLabel = [item.size, item.packaging, item.unit].filter(Boolean).join(' / ') || '-';
 
   return (
@@ -308,7 +313,7 @@ function OrderDraftItemRow({
                 size: selection.size || '',
                 packaging: selection.packaging || '',
                 unit: selection.unit || 'piece',
-                unitPrice: selection.unitPrice || next[idx].unitPrice,
+                unitPrice: selection.unitPrice,
               };
               return next;
             });
@@ -318,36 +323,32 @@ function OrderDraftItemRow({
         />
       </td>
       <td className="py-3 px-3 min-w-[120px]">
-        {variantsArr.length > 0 ? (
+        {unitChoices.length > 0 ? (
           <Input
             type="select"
-            value={`${item.size || ''}|${item.packaging || ''}|${item.unit || ''}`}
+            value={selectedChoiceKey}
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
-              const variant = variantsArr.find((value) => `${value.size || ''}|${value.packaging || ''}|${value.unit || ''}` === event.target.value);
-              if (!variant) return;
+              const choice = unitChoices.find((value) => value.key === event.target.value);
+              if (!choice) return;
               updateItems((prev) => {
                 const next = [...prev];
                 next[idx] = {
                   ...next[idx],
-                  size: variant.size || '',
-                  packaging: variant.packaging || '',
-                  unit: variant.unit || 'piece',
-                  unitPrice: variant.lastPrice ? String(variant.lastPrice) : next[idx].unitPrice,
+                  size: choice.size,
+                  packaging: choice.packaging,
+                  unit: choice.unit,
+                  unitPrice: choice.unitPrice,
                 };
                 return next;
               });
             }}
           >
-            {variantsArr.map((variant) => (
-              <option key={`${variant.size}|${variant.packaging}|${variant.unit}`} value={`${variant.size || ''}|${variant.packaging || ''}|${variant.unit || ''}`}>
-                {[variant.size, variant.packaging, variant.unit].filter(Boolean).join(' / ') || '-'}
+            {!selectedChoiceKey ? <option value="">{variantLabel}</option> : null}
+            {unitChoices.map((choice) => (
+              <option key={choice.key} value={choice.key}>
+                {[choice.size, choice.packaging, choice.unit].filter(Boolean).join(' / ') || '-'}
               </option>
             ))}
-          </Input>
-        ) : sizesArr.length > 0 ? (
-          <Input type="select" value={item.size} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => updateItem(idx, 'size', event.target.value)}>
-            <option value="">-</option>
-            {sizesArr.map((size) => <option key={size} value={size}>{size}</option>)}
           </Input>
         ) : (
           <span className="text-noorix-muted text-[13px]">{variantLabel}</span>

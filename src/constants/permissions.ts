@@ -121,6 +121,17 @@ export const ORDERS_INTERNAL_REGISTRATION_ACCESS = [
 /** تقرير التسجيل الداخلي — قراءة مستقلة عن الطلبات */
 export const ORDERS_SALES_REPORT_ACCESS = [PERMISSIONS.STAFF_ORDERS_READ] as const;
 
+/** طلبات 2 — نطاق V3 مستقل لا يعتمد على صلاحيات الطلبات القديمة. */
+export const ORDERS_V3_APP_ACCESS: string[] = [
+  PERMISSIONS.VIEW_ORDERS_V3,
+  PERMISSIONS.ORDERS_V3_READ,
+  PERMISSIONS.ORDERS_V3_WRITE,
+  PERMISSIONS.ORDERS_V3_STAFF_SUBMIT,
+  PERMISSIONS.ORDERS_V3_INTERNAL_SUBMIT,
+  PERMISSIONS.ORDERS_V3_REPORTS_READ,
+  PERMISSIONS.ORDERS_V3_INVENTORY_WRITE,
+];
+
 /** تبويبات التقارير — ترتيب redirect الافتراضي */
 export const REPORT_TAB_SEQUENCE: Array<{ path: string; required: readonly string[] }> = [
   { path: '/reports/general', required: REPORTS_GENERAL_ACCESS },
@@ -168,6 +179,7 @@ export const ROUTE_PERMISSION = {
   '/expenses':      PERMISSIONS.VIEW_EXPENSES,
   '/assets':        ASSETS_APP_ACCESS,
   '/orders':        ORDERS_APP_ACCESS,
+  '/orders-2':      ORDERS_V3_APP_ACCESS,
   '/hr':            HR_APP_ACCESS,
   '/reports':       REPORTS_APP_ACCESS,
   '/reports/general': REPORTS_GENERAL_ACCESS,
@@ -235,6 +247,7 @@ export function normalizeModuleViewAccess(
 const APP_HOME_ROUTE_SEQUENCE: Array<{ path: string; required: string | string[] }> = [
   { path: '/sales', required: PERMISSIONS.VIEW_SALES },
   { path: '/orders', required: ORDERS_APP_ACCESS },
+  { path: '/orders-2', required: ORDERS_V3_APP_ACCESS },
   { path: '/settings', required: [...SETTINGS_APP_ACCESS] },
   { path: '/hr', required: [...HR_APP_ACCESS] },
   { path: '/', required: PERMISSIONS.VIEW_DASHBOARD },

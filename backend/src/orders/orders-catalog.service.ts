@@ -17,6 +17,7 @@ import {
 } from './orders-unit-conversions.util';
 import { OrdersCatalogProductIntegrityService } from './orders-catalog-product-integrity.service';
 import type {
+  PersistedProductVariantInput,
   ProductRecipeItemInput,
   ProductVariantInput,
 } from './orders-catalog-product.types';
@@ -85,22 +86,19 @@ export class OrdersCatalogService {
     const conversionTemplates = await this.productIntegrity.assertConversionTemplates(
       companyId,
       products
-        .filter((dto) => (dto.productType === 'sale' ? 'sale' : 'order') === 'order')
         .map((dto) => this.cleanNullableId(dto.conversionTemplateId))
         .filter((id): id is string => Boolean(id)),
     );
     for (const dto of products) {
-      if ((dto.productType === 'sale' ? 'sale' : 'order') === 'order') {
-        const conversionTemplateId = this.cleanNullableId(dto.conversionTemplateId);
-        this.productIntegrity.assertProductUnitConversionChain({
-          directConversions: dto.inventoryConversions,
-          templateConversions: conversionTemplateId
-            ? conversionTemplates.get(conversionTemplateId) ?? []
-            : [],
-          purchaseUnit: this.productIntegrity.purchaseUnit(dto.variants, dto.unit),
-          baseUnit: dto.unit,
-        });
-      }
+      const conversionTemplateId = this.cleanNullableId(dto.conversionTemplateId);
+      this.productIntegrity.assertProductUnitConversionChain({
+        directConversions: dto.inventoryConversions,
+        templateConversions: conversionTemplateId
+          ? conversionTemplates.get(conversionTemplateId) ?? []
+          : [],
+        baseUnit: dto.unit,
+        variants: dto.variants,
+      });
     }
     const data = products
       .filter((dto) => !!dto.nameAr?.trim())
@@ -145,21 +143,19 @@ export class OrdersCatalogService {
     if (dto.productType === 'sale') {
       await this.productIntegrity.assertRecipeMaterialProducts(companyId, dto.recipe);
     }
-    if ((dto.productType === 'sale' ? 'sale' : 'order') === 'order') {
-      const conversionTemplateId = this.cleanNullableId(dto.conversionTemplateId);
-      const conversionTemplates = await this.productIntegrity.assertConversionTemplates(
-        companyId,
-        conversionTemplateId ? [conversionTemplateId] : [],
-      );
-      this.productIntegrity.assertProductUnitConversionChain({
-        directConversions: dto.inventoryConversions,
-        templateConversions: conversionTemplateId
-          ? conversionTemplates.get(conversionTemplateId) ?? []
-          : [],
-        purchaseUnit: this.productIntegrity.purchaseUnit(dto.variants, dto.unit),
-        baseUnit: dto.unit,
-      });
-    }
+    const conversionTemplateId = this.cleanNullableId(dto.conversionTemplateId);
+    const conversionTemplates = await this.productIntegrity.assertConversionTemplates(
+      companyId,
+      conversionTemplateId ? [conversionTemplateId] : [],
+    );
+    this.productIntegrity.assertProductUnitConversionChain({
+      directConversions: dto.inventoryConversions,
+      templateConversions: conversionTemplateId
+        ? conversionTemplates.get(conversionTemplateId) ?? []
+        : [],
+      baseUnit: dto.unit,
+      variants: dto.variants,
+    });
     const created = await this.prisma.orderProduct.create({
       data: this.buildProductCreateInput(tenantId, companyId, dto, sectionList),
       include: { category: true, conversionTemplate: true },
@@ -232,15 +228,15 @@ export class OrdersCatalogService {
     const directConversions = dto.inventoryConversions !== undefined
       ? dto.inventoryConversions
       : productUnitConversionRowsFromUnknown(product.inventoryConversions);
-    if (nextProductType === 'order' && changesConversionDefinition) {
+    if (changesConversionDefinition) {
       const variants = dto.variants !== undefined
         ? dto.variants
         : this.productIntegrity.productVariantsFromUnknown(product.variants);
       this.productIntegrity.assertProductUnitConversionChain({
         directConversions,
         templateConversions,
-        purchaseUnit: this.productIntegrity.purchaseUnit(variants, dto.unit ?? product.unit),
         baseUnit: dto.unit ?? product.unit,
+        variants,
       });
     }
     const changesRecipeMaterialContract = dto.unit !== undefined
@@ -261,7 +257,12 @@ export class OrdersCatalogService {
     }
     const updated = await this.prisma.orderProduct.update({
       where: { id },
-      data: this.buildProductUpdateInput(dto, sectionList, nextProductType),
+      data: this.buildProductUpdateInput(
+        dto,
+        sectionList,
+        nextProductType,
+        this.productIntegrity.productVariantsFromUnknown(product.variants),
+      ),
       include: { category: true, conversionTemplate: true },
     });
     return enrichProductWithSectionIds(updated, sectionList);
@@ -565,10 +566,8 @@ export class OrdersCatalogService {
       ...this.sectionJsonData(sections.sectionIds ?? [], sections.sections ?? []),
       lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
       variants: this.productIntegrity.variantJson(dto.variants),
-      inventoryConversions: productType === 'order'
-        ? unitConversionsJson(dto.inventoryConversions)
-        : Prisma.DbNull,
-      conversionTemplateId: productType === 'order' ? this.cleanNullableId(dto.conversionTemplateId) : null,
+      inventoryConversions: unitConversionsJson(dto.inventoryConversions),
+      conversionTemplateId: this.cleanNullableId(dto.conversionTemplateId),
       recipe: productType === 'sale' ? this.productIntegrity.recipeJson(dto.recipe) : Prisma.DbNull,
     };
   }
@@ -593,6 +592,7 @@ export class OrdersCatalogService {
     },
     sectionList: Awaited<ReturnType<OrdersCatalogService['loadSectionList']>>,
     effectiveProductType: string,
+    existingVariants: PersistedProductVariantInput[],
   ): Prisma.OrderProductUncheckedUpdateInput {
     const sectionData = dto.sections !== undefined || dto.sectionIds !== undefined
       ? this.sectionJsonData(
@@ -616,13 +616,13 @@ export class OrdersCatalogService {
       ...(dto.lastPrice !== undefined ? { lastPrice: new Prisma.Decimal(dto.lastPrice) } : {}),
       ...sectionData,
       ...(dto.productType !== undefined ? { productType: dto.productType } : {}),
-      ...(dto.variants !== undefined ? { variants: this.productIntegrity.variantJson(dto.variants) } : {}),
-      ...(effectiveProductType === 'sale'
-        ? { inventoryConversions: Prisma.DbNull, conversionTemplateId: null }
-        : dto.inventoryConversions !== undefined
-          ? { inventoryConversions: unitConversionsJson(dto.inventoryConversions) }
-          : {}),
-      ...(effectiveProductType === 'order' && dto.conversionTemplateId !== undefined
+      ...(dto.variants !== undefined
+        ? { variants: this.productIntegrity.variantJson(dto.variants, existingVariants) }
+        : {}),
+      ...(dto.inventoryConversions !== undefined
+        ? { inventoryConversions: unitConversionsJson(dto.inventoryConversions) }
+        : {}),
+      ...(dto.conversionTemplateId !== undefined
         ? { conversionTemplateId: this.cleanNullableId(dto.conversionTemplateId) }
         : {}),
       ...(effectiveProductType === 'order'

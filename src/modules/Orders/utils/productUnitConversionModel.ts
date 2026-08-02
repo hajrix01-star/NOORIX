@@ -4,6 +4,27 @@ import type {
   OrderProductVariant,
 } from '../../../types/api';
 
+export type ProductPricedUnitChoice = {
+  key: string;
+  size: string;
+  packaging: string;
+  unit: string;
+  unitPrice: string;
+  inventoryMultiplier: number;
+};
+
+export type ProductUnitSelectionModel = {
+  baseUnit: string;
+  conversions: OrderProductUnitConversion[];
+  convertibleUnits: string[];
+  pricedChoices: ProductPricedUnitChoice[];
+};
+
+type ProductConversionSource = Pick<
+  OrderProduct,
+  'inventoryConversions' | 'conversionTemplate'
+>;
+
 const UNIT_ALIASES = new Map<string, string>([
   ['piece', 'piece'],
   ['pc', 'piece'],
@@ -46,13 +67,6 @@ const UNIT_ALIASES = new Map<string, string>([
   ['bottle', 'bottle'],
   ['قارورة', 'bottle'],
   ['قاروره', 'bottle'],
-]);
-
-const STANDARD_UNIT_PAIRS = new Map<string, number>([
-  ['kg:g', 1000],
-  ['g:kg', 0.001],
-  ['l:ml', 1000],
-  ['ml:l', 0.001],
 ]);
 
 type ConversionGraphEdge = {
@@ -106,7 +120,7 @@ export function findCatalogConversionSequenceIssue(input: {
   const requiresConversion = Boolean(purchaseUnit && purchaseUnit !== baseUnit);
 
   if (conversions.length === 0) {
-    return requiresConversion && !hasStandardUnitPath(purchaseUnit, baseUnit)
+    return requiresConversion
       ? {
         kind: 'incomplete',
         index: 0,
@@ -125,7 +139,6 @@ export function findCatalogConversionSequenceIssue(input: {
     if (
       expectedFromUnit
       && current?.fromUnit !== expectedFromUnit
-      && !hasStandardUnitPath(expectedFromUnit, current?.fromUnit || '')
     ) {
       return {
         kind: 'disconnected',
@@ -137,7 +150,7 @@ export function findCatalogConversionSequenceIssue(input: {
   }
 
   const lastUnit = conversions.at(-1)?.toUnit || '';
-  if (requiresConversion && lastUnit !== baseUnit && !hasStandardUnitPath(lastUnit, baseUnit)) {
+  if (lastUnit !== baseUnit) {
     return {
       kind: 'incomplete',
       index: conversions.length,
@@ -150,7 +163,7 @@ export function findCatalogConversionSequenceIssue(input: {
 }
 
 export function productInventoryConversions(
-  product: OrderProduct | null | undefined,
+  product: ProductConversionSource | null | undefined,
 ): OrderProductUnitConversion[] {
   const rows = [
     ...conversionRowsFromUnknown(product?.inventoryConversions),
@@ -179,11 +192,6 @@ function buildConversionGraph(conversions: OrderProductUnitConversion[]): Map<st
       edges.push({ unit: toUnit, multiplier });
       graph.set(fromUnit, edges);
     }
-  }
-
-  for (const [pair, multiplier] of STANDARD_UNIT_PAIRS) {
-    const [fromUnit, toUnit] = pair.split(':');
-    if (fromUnit && toUnit) addEdge(fromUnit, toUnit, multiplier);
   }
 
   for (const conversion of conversions) {
@@ -227,11 +235,25 @@ export function resolveCatalogUnitMultiplier(
   return null;
 }
 
-function hasStandardUnitPath(fromUnit: string, toUnit: string): boolean {
-  if (!fromUnit || !toUnit) return false;
-  return resolveCatalogUnitMultiplier([], fromUnit, toUnit) !== null;
+export function catalogConversionUnitValues(
+  baseUnitValue: unknown,
+  conversions: OrderProductUnitConversion[],
+): string[] {
+  const baseUnit = normalizeCatalogUnit(baseUnitValue, 'piece');
+  const candidates = new Set<string>([baseUnit]);
+  for (const conversion of conversions) {
+    const fromUnit = normalizeCatalogUnit(conversion.fromUnit);
+    const toUnit = normalizeCatalogUnit(conversion.toUnit);
+    if (fromUnit) candidates.add(fromUnit);
+    if (toUnit) candidates.add(toUnit);
+  }
+
+  return [...candidates].filter((unit) => (
+    Boolean(unit) && resolveCatalogUnitMultiplier(conversions, unit, baseUnit) !== null
+  ));
 }
 
+/** Legacy read compatibility only. New catalog price payloads must not persist this fallback. */
 export function resolveVariantInventoryMultiplier(
   variant: OrderProductVariant,
   baseUnitValue: unknown,
@@ -253,19 +275,93 @@ export function resolveVariantInventoryMultiplier(
 export function productConvertibleUnitValues(product: OrderProduct | null | undefined): string[] {
   const baseUnit = normalizeCatalogUnit(product?.unit, 'piece');
   const conversions = productInventoryConversions(product);
-  const candidates = new Set<string>([baseUnit]);
+  return catalogConversionUnitValues(baseUnit, conversions);
+}
 
-  for (const conversion of conversions) {
-    candidates.add(normalizeCatalogUnit(conversion.fromUnit));
-    candidates.add(normalizeCatalogUnit(conversion.toUnit));
+function cleanText(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function cleanMoneyText(value: unknown): string {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : '';
   }
-  for (const pair of STANDARD_UNIT_PAIRS.keys()) {
-    const [fromUnit, toUnit] = pair.split(':');
-    if (fromUnit) candidates.add(fromUnit);
-    if (toUnit) candidates.add(toUnit);
+  return cleanText(value);
+}
+
+function choiceKey(choice: Omit<ProductPricedUnitChoice, 'key'>): string {
+  return [choice.size, choice.packaging, choice.unit]
+    .map((value) => value.trim().toLocaleLowerCase())
+    .join('|');
+}
+
+/**
+ * Canonical selection contract for new orders, recipes and inventory posting.
+ * Explicit conversion rows are the only conversion source. Legacy size strings
+ * and quantityMultiplier remain readable elsewhere for historical records only.
+ */
+export function buildProductUnitSelectionModel(
+  product: Pick<
+    OrderProduct,
+    'unit' | 'inventoryConversions' | 'conversionTemplate' | 'variants' | 'lastPrice'
+  > | null | undefined,
+): ProductUnitSelectionModel {
+  const baseUnit = normalizeCatalogUnit(product?.unit, 'piece');
+  const conversions = productInventoryConversions(product);
+  const convertibleUnits = catalogConversionUnitValues(baseUnit, conversions);
+  const connectedUnits = new Set(convertibleUnits);
+  const pricedChoices: ProductPricedUnitChoice[] = [];
+  const seen = new Set<string>();
+
+  for (const variant of Array.isArray(product?.variants) ? product.variants : []) {
+    const unitPrice = cleanMoneyText(variant?.lastPrice);
+    const numericPrice = Number(unitPrice);
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) continue;
+
+    const unit = normalizeCatalogUnit(variant?.unit, baseUnit);
+    if (!connectedUnits.has(unit)) continue;
+
+    const inventoryMultiplier = resolveCatalogUnitMultiplier(
+      conversions,
+      unit,
+      baseUnit,
+    );
+    if (inventoryMultiplier === null || inventoryMultiplier <= 0) continue;
+
+    const choiceWithoutKey = {
+      size: cleanText(variant?.size),
+      packaging: cleanText(variant?.packaging),
+      unit,
+      unitPrice,
+      inventoryMultiplier,
+    };
+    const key = choiceKey(choiceWithoutKey);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    pricedChoices.push({ key, ...choiceWithoutKey });
   }
 
-  return [...candidates].filter((unit) => (
-    Boolean(unit) && resolveCatalogUnitMultiplier(conversions, unit, baseUnit) !== null
-  ));
+  const fallbackPrice = cleanMoneyText(product?.lastPrice);
+  const fallbackNumericPrice = Number(fallbackPrice);
+  if (
+    pricedChoices.length === 0 &&
+    Number.isFinite(fallbackNumericPrice) &&
+    fallbackNumericPrice > 0
+  ) {
+    const fallback = {
+      size: '',
+      packaging: '',
+      unit: baseUnit,
+      unitPrice: fallbackPrice,
+      inventoryMultiplier: 1,
+    };
+    pricedChoices.push({ key: choiceKey(fallback), ...fallback });
+  }
+
+  return {
+    baseUnit,
+    conversions,
+    convertibleUnits,
+    pricedChoices,
+  };
 }

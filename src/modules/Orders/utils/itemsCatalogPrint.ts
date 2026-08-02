@@ -18,7 +18,6 @@ export type PrintRow = {
   size: string;
   packaging: string;
   unit: string;
-  multiplier: string;
   lastPrice: string;
 };
 
@@ -28,7 +27,6 @@ export function buildProductSpec(p: OrderProduct, unitLabel: (u: string) => stri
     return variants
       .map((v: OrderProductVariant) => {
         const parts = [v.size, v.packaging, unitLabel(v.unit || 'piece')].filter((x) => x && x !== '—');
-        if (Number(v.quantityMultiplier ?? 1) !== 1) parts.push(`×${v.quantityMultiplier}`);
         return parts.join(' / ') || '—';
       })
       .join(' · ');
@@ -54,7 +52,6 @@ function buildPrintRow(r: PrintRow): PrintHtmlTableRow {
       { value: r.size, className: 'col-size' },
       { value: r.packaging, className: 'col-packaging' },
       { value: r.unit, className: 'col-unit' },
-      { value: r.multiplier, className: 'col-multiplier' },
       { value: r.lastPrice, className: 'col-price' },
       { value: '', className: 'col-qty' },
       { value: '', className: 'col-notes' },
@@ -104,7 +101,6 @@ export function filterProductsForCatalogPrint(products: OrderProduct[], filters:
           variant.size,
           variant.packaging,
           variant.unit,
-          variant.quantityMultiplier,
           variant.lastPrice,
         ]),
       ].filter(Boolean).join(' ').toLocaleLowerCase();
@@ -173,7 +169,6 @@ export function expandProductsToPrintRows(
           size: p.sizes || '',
           packaging: p.packaging || '',
           unit: p.unit || 'piece',
-          quantityMultiplier: 1,
           lastPrice: p.lastPrice,
         }];
     const category = p.category?.nameAr
@@ -185,7 +180,6 @@ export function expandProductsToPrintRows(
 
     return variants.map((variant) => {
       num += 1;
-      const multiplier = Number(variant.quantityMultiplier ?? 1);
       const price = Number(variant.lastPrice ?? p.lastPrice ?? 0);
       return {
         num,
@@ -196,7 +190,6 @@ export function expandProductsToPrintRows(
         size: variant.size || '—',
         packaging: variant.packaging || '—',
         unit: unitLabel(variant.unit || p.unit || 'piece'),
-        multiplier: Number.isFinite(multiplier) ? `×${multiplier}` : '×1',
         lastPrice: Number.isFinite(price) && price > 0 ? String(price) : '—',
       };
     });
@@ -246,7 +239,7 @@ export function buildItemsCatalogPrintHtml(
     if (groupByCategory) {
       bodyRows.push({
         className: 'cat-header',
-        cells: [{ value: `${t('category')}: ${group.categoryName}`, colSpan: 11 }],
+        cells: [{ value: `${t('category')}: ${group.categoryName}`, colSpan: 10 }],
       });
     }
 
@@ -290,14 +283,13 @@ ${buildPrintHtmlTable({
       { value: t('ordersProductSize'), className: 'col-size' },
       { value: t('ordersProductPackaging'), className: 'col-packaging' },
       { value: t('unit'), className: 'col-unit' },
-      { value: t('ordersVariantMultiplier'), className: 'col-multiplier' },
       { value: t('ordersVariantPrice'), className: 'col-price' },
       { value: t('quantity'), className: 'col-qty' },
       { value: t('ordersPrintCatalogNotes'), className: 'col-notes' },
     ],
   }],
   bodyRows,
-  emptyColSpan: 11,
+  emptyColSpan: 10,
 })}`;
 }
 
@@ -347,7 +339,6 @@ body { font-size: 11px; line-height: 1.35; }
 .col-size { width: 58px; }
 .col-packaging { width: 68px; }
 .col-unit { width: 50px; }
-.col-multiplier { width: 54px; text-align: center; }
 .col-price { width: 56px; text-align: center; direction: ltr; }
 .name-ar { font-weight: 600; font-size: 11px; }
 .name-en { font-size: 10px; color: #64748b; font-weight: 400; }

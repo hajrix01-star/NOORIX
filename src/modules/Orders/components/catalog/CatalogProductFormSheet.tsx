@@ -9,35 +9,25 @@ import type {
   OrderProductRecipeItem,
   OrderProductUnitConversion,
   OrderProductType,
-  OrderProductVariant,
   OrderSection,
 } from '../../../../types/api';
 import { productHasAdvancedVariants } from './catalogProductUtils';
-import { normalizeOrderProductType } from '../../utils/itemsManageModel';
 import {
+  normalizeOrderProductType,
+  type EditableOrderProduct,
+  type OrderCatalogPrice,
+} from '../../utils/itemsManageModel';
+import {
+  catalogConversionUnitValues,
+  buildProductUnitSelectionModel,
   conversionRowsFromUnknown,
   findCatalogConversionSequenceIssue,
   normalizeCatalogUnit,
-  productConvertibleUnitValues,
   productInventoryConversions,
   resolveCatalogUnitMultiplier,
 } from '../../utils/productUnitConversionModel';
 
-export type CatalogProductFormState = {
-  id?: string;
-  nameAr: string;
-  nameEn: string;
-  categoryId: string;
-  sectionIds: string[];
-  productType: OrderProductType;
-  unit: string;
-  simpleLastPrice: string;
-  variants: OrderProductVariant[];
-  inventoryConversions: OrderProductUnitConversion[];
-  conversionTemplateId: string;
-  recipe: OrderProductRecipeItem[];
-  _advanced?: boolean;
-};
+export type CatalogProductFormState = EditableOrderProduct;
 
 type CatalogOption = {
   ar: string;
@@ -64,7 +54,7 @@ type CatalogProductFormSheetProps = {
   onAddSize: () => void;
   onAddPackaging: () => void;
   addVariant: () => void;
-  updateVariant: (idx: number, field: keyof OrderProductVariant, value: string) => void;
+  updateVariant: (idx: number, field: keyof OrderCatalogPrice, value: string) => void;
   removeVariant: (idx: number) => void;
 };
 
@@ -132,7 +122,7 @@ function standardConversionMultiplier(fromUnit: string, toUnit: string): string 
 }
 
 function unitOptionsForProduct(product: OrderProduct | null | undefined, fallbackOptions: UnitOption[]): UnitOption[] {
-  return productConvertibleUnitValues(product).map((value) => ({
+  return buildProductUnitSelectionModel(product).convertibleUnits.map((value) => ({
     value,
     label: unitLabel(value, fallbackOptions),
   }));
@@ -485,11 +475,7 @@ function ConversionEditor({
   );
   const formulaLines = conversionFormulaLines(baseUnit, effectiveConversions, unitOptions);
   const visiblePackaging = String(purchasePackaging || '').trim();
-  const sequenceIssue = findCatalogConversionSequenceIssue({
-    conversions: effectiveConversions,
-    purchaseUnit,
-    baseUnit,
-  });
+  const sequenceIssue = findCatalogConversionSequenceIssue({ conversions: effectiveConversions, baseUnit });
 
   function closeEditor() {
     setDraft(null);
@@ -573,7 +559,6 @@ function ConversionEditor({
       : conversions.map((row, index) => (index === editingIndex ? normalizedDraft : row));
     const nextIssue = findCatalogConversionSequenceIssue({
       conversions: [...templateConversions, ...nextConversions],
-      purchaseUnit,
       baseUnit,
     });
     if (nextIssue?.kind === 'disconnected') {
@@ -769,11 +754,11 @@ function VariantsTable({
   addVariant,
 }: {
   t: (key: string) => string;
-  variants: OrderProductVariant[];
+  variants: OrderCatalogPrice[];
   sizesOptions: CatalogOption[];
   packagingOptions: CatalogOption[];
   unitOptions: UnitOption[];
-  updateVariant: (idx: number, field: keyof OrderProductVariant, value: string) => void;
+  updateVariant: (idx: number, field: keyof OrderCatalogPrice, value: string) => void;
   removeVariant: (idx: number) => void;
   onAddSize: () => void;
   onAddPackaging: () => void;
@@ -795,7 +780,6 @@ function VariantsTable({
               <th className="px-2.5 py-2 text-right font-semibold">وصف الشراء</th>
               <th className="px-2.5 py-2 text-right font-semibold">التغليف الظاهر</th>
               <th className="px-2.5 py-2 text-right font-semibold">وحدة الفاتورة</th>
-              <th className="px-2.5 py-2 text-right font-semibold">كمية الفاتورة</th>
               <th className="px-2.5 py-2 text-right font-semibold">السعر</th>
               <th className="w-10 px-1 py-2" />
             </tr>
@@ -838,32 +822,18 @@ function VariantsTable({
                 <td className="px-2 py-1.5">
                   <Input
                     type="select"
-                    value={variant.unit}
-                    onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-                      const unit = event.target.value;
-                      updateVariant(index, 'unit', unit);
-                      if (unit === 'half_pack') {
-                        updateVariant(index, 'quantityMultiplier', '0.5');
-                      }
-                    }}
+                    value={normalizeCatalogUnit(variant.unit, unitOptions[0]?.value || 'piece')}
+                    onChange={(event: ChangeEvent<HTMLSelectElement>) => updateVariant(index, 'unit', event.target.value)}
                   >
+                    {!unitOptions.some((unit) => unit.value === normalizeCatalogUnit(variant.unit)) && (
+                      <option value={normalizeCatalogUnit(variant.unit)} disabled>
+                        {unitLabel(variant.unit, unitOptions)} (خارج سلسلة التحويل)
+                      </option>
+                    )}
                     {unitOptions.map((unit) => (
                       <option key={unit.value} value={unit.value}>{unit.label}</option>
                     ))}
                   </Input>
-                </td>
-                <td className="px-2 py-1.5">
-                  <Input
-                    type="number"
-                    min="0.0001"
-                    step="0.25"
-                    value={variant.quantityMultiplier ?? '1'}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                      updateVariant(index, 'quantityMultiplier', event.target.value)
-                    }
-                    className="w-20"
-                    title="كمية هذه التركيبة في الفاتورة فقط، وليست معادلة المخزون."
-                  />
                 </td>
                 <td className="px-2 py-1.5">
                   <Input
@@ -938,6 +908,17 @@ export function CatalogProductFormSheet({
   if (!form) return null;
 
   const title = mode === 'edit' ? t('ordersEditProduct') : t('ordersAddProduct');
+  const selectedConversionTemplate = activeConversionTemplates.find(
+    (template) => template.id === form.conversionTemplateId,
+  );
+  const effectiveConversions = [
+    ...conversionRowsFromUnknown(selectedConversionTemplate?.conversions),
+    ...conversionRowsFromUnknown(form.inventoryConversions),
+  ];
+  const priceUnitOptions = catalogConversionUnitValues(form.unit, effectiveConversions).map((value) => ({
+    value,
+    label: unitLabel(value, unitOptions),
+  }));
 
   function updateForm(patch: Partial<CatalogProductFormState>) {
     setFormError('');
@@ -947,15 +928,8 @@ export function CatalogProductFormSheet({
   function handleSave() {
     if (!form) return;
     if (form.productType === 'order') {
-      const selectedTemplate = activeConversionTemplates.find(
-        (template) => template.id === form.conversionTemplateId,
-      );
       const issue = findCatalogConversionSequenceIssue({
-        conversions: [
-          ...conversionRowsFromUnknown(selectedTemplate?.conversions),
-          ...conversionRowsFromUnknown(form.inventoryConversions),
-        ],
-        purchaseUnit: form.variants?.[0]?.unit || form.unit || 'piece',
+        conversions: effectiveConversions,
         baseUnit: form.unit || 'piece',
       });
       if (issue) {
@@ -967,6 +941,16 @@ export function CatalogProductFormSheet({
         );
         return;
       }
+    }
+    const allowedPriceUnits = new Set(priceUnitOptions.map((option) => option.value));
+    const invalidPriceIndex = form.variants.findIndex((variant) => (
+      Boolean(variant.size || variant.packaging || variant.lastPrice)
+      && !allowedPriceUnits.has(normalizeCatalogUnit(variant.unit, form.unit || 'piece'))
+    ));
+    if (invalidPriceIndex >= 0) {
+      setActiveTab('variants');
+      setFormError(`لا يمكن الحفظ: وحدة السعر في الصف ${invalidPriceIndex + 1} ليست ضمن سلسلة التحويل.`);
+      return;
     }
     setFormError('');
     onSave();
@@ -1106,7 +1090,7 @@ export function CatalogProductFormSheet({
               variants={form.variants}
               sizesOptions={sizesOptions}
               packagingOptions={packagingOptions}
-              unitOptions={unitOptions}
+              unitOptions={priceUnitOptions}
               updateVariant={updateVariant}
               removeVariant={removeVariant}
               onAddSize={onAddSize}

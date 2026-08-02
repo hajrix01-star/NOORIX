@@ -18,10 +18,6 @@ export class ProductVariantDto {
   @IsString()
   lastPrice?: string;
 
-  @IsOptional()
-  @IsString()
-  @Matches(/^(?:0*[1-9]\d*(?:\.\d{1,4})?|0*\.\d*[1-9]\d*)$/)
-  quantityMultiplier?: string;
 }
 
 export class ProductRecipeItemDto {

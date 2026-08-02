@@ -9,7 +9,7 @@ import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import type { ProductSearchItem } from '../../../components/common/ProductSearchInput';
 import { DialogActions, Input, AdaptiveSheet, SummaryBar } from '../../../ui';
 import { useOrderSections } from '../../../hooks/useOrders';
-import type { CreateOrderPayload, OrderType, OrderProduct, OrderProductVariant, OrderRecord, UpdateOrderPayload } from '../../../types/api';
+import type { CreateOrderPayload, OrderType, OrderProduct, OrderRecord, UpdateOrderPayload } from '../../../types/api';
 import { OrderDraftItemsTable, OrderProductPicker, OrderSavedSuccess } from './OrderFormModalPieces';
 import { OrderBasicFields } from './OrderBasicFields';
 import { OrderProductAddModal as AddModal } from './OrderProductAddModal';
@@ -20,8 +20,7 @@ import {
   type OrderDraftLine,
   type OrderMutation,
 } from '../utils/orderFormModel';
-
-type SelectableOrderVariant = OrderProductVariant & { _key: string };
+import { buildProductUnitSelectionModel } from '../utils/productUnitConversionModel';
 
 export function OrderFormModal({
   companyId,
@@ -135,56 +134,36 @@ export function OrderFormModal({
     [enrichedItems]);
 
   const tapProduct = useCallback((p: OrderProduct) => {
-    const variants = Array.isArray(p.variants) ? p.variants : [];
-    const sizes = p.sizes ? String(p.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean) : [];
-    const hasVariants = variants.length > 0;
-    const hasSizes = sizes.length > 0;
-
-    if (hasVariants || hasSizes) {
-      setAddModal({
-        product: p,
-        variantKey: hasVariants ? (variants[0]?._key || `${variants[0]?.size||''}|${variants[0]?.packaging||''}|${variants[0]?.unit||''}|0`) : '',
-        size: !hasVariants && hasSizes ? sizes[0] : '',
-        packaging: '',
-        unit: variants[0]?.unit || 'piece',
-        quantity: '1',
-        unitPrice: variants[0]?.lastPrice ? String(variants[0].lastPrice) : (p.lastPrice ? String(p.lastPrice) : ''),
-      });
-    } else {
-      const existIdx = [...items].reverse().findIndex((it) => it.productId === p.id);
-      const actualIdx = existIdx >= 0 ? items.length - 1 - existIdx : -1;
-      if (actualIdx >= 0) {
-        setItems((prev) => {
-          const next = [...prev];
-          next[actualIdx] = { ...next[actualIdx], quantity: String((parseFloat(next[actualIdx].quantity) || 0) + 1) };
-          return next;
-        });
-      } else {
-        setItems((prev) => [...prev, {
-          productId: p.id, size: '', packaging: '', unit: '', quantity: '1',
-          unitPrice: p.lastPrice ? String(p.lastPrice) : '',
-        }]);
-      }
+    const choice = buildProductUnitSelectionModel(p).pricedChoices[0];
+    if (!choice) {
+      onError?.(lang === 'en'
+        ? 'Define a valid priced unit for this product first.'
+        : 'عرّف وحدة مسعّرة صالحة لهذا الصنف أولاً.');
+      return;
     }
-  }, [items]);
+    setAddModal({
+      product: p,
+      variantKey: choice.key,
+      size: choice.size,
+      packaging: choice.packaging,
+      unit: choice.unit,
+      quantity: '1',
+      unitPrice: choice.unitPrice,
+    });
+  }, [lang, onError]);
 
   function confirmAddModal() {
     if (!addModal) return;
     const { product, variantKey, size, packaging, unit, quantity, unitPrice } = addModal;
     if (!quantity || parseFloat(quantity) <= 0) { setAddModal(null); return; }
-    const variants = Array.isArray(product.variants) ? product.variants : [];
+    const choices = buildProductUnitSelectionModel(product).pricedChoices;
     let resolvedSize = size, resolvedPackaging = packaging, resolvedUnit = unit, resolvedPrice = unitPrice;
-    if (variantKey && variants.length > 0) {
-      const v = (variants as OrderProductVariant[]).find((x, i) =>
-        (`${x.size||''}|${x.packaging||''}|${x.unit||''}|${i}`) === variantKey ||
-        (`${x.size||''}|${x.packaging||''}|${x.unit||''}`) === variantKey.split('|').slice(0,3).join('|')
-      ) || variants[0];
-      if (v) {
-        resolvedSize = v.size || '';
-        resolvedPackaging = v.packaging || '';
-        resolvedUnit = v.unit || 'piece';
-        if (!resolvedPrice) resolvedPrice = v.lastPrice ? String(v.lastPrice) : '';
-      }
+    if (variantKey && choices.length > 0) {
+      const choice = choices.find((value) => value.key === variantKey) || choices[0];
+      resolvedSize = choice.size;
+      resolvedPackaging = choice.packaging;
+      resolvedUnit = choice.unit;
+      if (!resolvedPrice) resolvedPrice = choice.unitPrice;
     }
     setItems((prev) => [...prev, {
       productId: product.id,
@@ -207,11 +186,11 @@ export function OrderFormModal({
       next[idx] = { ...next[idx], [field]: value };
       if (field === 'productId') {
         const p = productsById.get(value);
-        const variants = Array.isArray(p?.variants) ? p.variants : [];
-        next[idx].unitPrice = variants[0]?.lastPrice ? String(variants[0].lastPrice) : (p?.lastPrice ? String(p.lastPrice) : '');
-        next[idx].size = '';
-        next[idx].packaging = '';
-        next[idx].unit = variants[0]?.unit || 'piece';
+        const choice = p ? buildProductUnitSelectionModel(p).pricedChoices[0] : undefined;
+        next[idx].unitPrice = choice?.unitPrice || '';
+        next[idx].size = choice?.size || '';
+        next[idx].packaging = choice?.packaging || '';
+        next[idx].unit = choice?.unit || '';
       }
       return next;
     });
@@ -286,13 +265,8 @@ export function OrderFormModal({
     );
   }
 
-  const addModalVariants = addModal
-    ? (Array.isArray(addModal.product.variants) ? addModal.product.variants as OrderProductVariant[] : []).map<SelectableOrderVariant>((x, i) => ({
-        ...x, _key: `${x.size||''}|${x.packaging||''}|${x.unit||''}|${i}`,
-      }))
-    : [];
-  const addModalSizes = addModal
-    ? (addModal.product.sizes ? String(addModal.product.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean) : [])
+  const addModalChoices = addModal
+    ? buildProductUnitSelectionModel(addModal.product).pricedChoices
     : [];
 
   const productName = addModal
@@ -374,8 +348,7 @@ export function OrderFormModal({
         <AddModal
           addModal={addModal}
           productName={productName}
-          variants={addModalVariants}
-          sizes={addModalSizes}
+          choices={addModalChoices}
           t={t}
           setAddModal={setAddModal}
           onConfirm={confirmAddModal}

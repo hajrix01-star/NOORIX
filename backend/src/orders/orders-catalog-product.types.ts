@@ -3,6 +3,9 @@ export type ProductVariantInput = {
   packaging?: string;
   unit?: string;
   lastPrice?: string;
+};
+
+export type PersistedProductVariantInput = ProductVariantInput & {
   quantityMultiplier?: string;
 };
 

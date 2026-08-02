@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildEditableOrderProduct,
   buildOrderProductPayload,
   filterRecipeMaterialProducts,
   filterOrderCategoriesForManageTab,
@@ -95,13 +96,12 @@ describe('itemsManageModel', () => {
         packaging: '',
         unit: 'piece',
         lastPrice: '25',
-        quantityMultiplier: '1',
       }],
     });
   });
 
-  it('preserves packaging conversion multipliers in the catalog payload', () => {
-    expect(buildOrderProductPayload({
+  it('stores catalog prices as size, packaging, unit, and price only', () => {
+    const payload = buildOrderProductPayload({
       nameAr: 'فحم',
       nameEn: 'Charcoal',
       categoryId: '',
@@ -112,20 +112,34 @@ describe('itemsManageModel', () => {
           packaging: 'نصف كرتون',
           unit: 'carton',
           lastPrice: '72.5',
-          quantityMultiplier: '5',
         },
       ],
-    }, 'order')).toMatchObject({
+    }, 'order');
+
+    expect(payload.variants).toEqual([{
+      size: '',
+      packaging: 'نصف كرتون',
+      unit: 'carton',
+      lastPrice: '72.5',
+    }]);
+  });
+
+  it('reads a legacy multiplier without writing it back through the catalog form', () => {
+    const editable = buildEditableOrderProduct({
+      id: 'legacy-charcoal',
       nameAr: 'فحم',
-      productType: 'order',
-      variants: [{
-        size: '',
-        packaging: 'نصف كرتون',
-        unit: 'carton',
-        lastPrice: '72.5',
-        quantityMultiplier: '5',
-      }],
-    });
+      unit: 'piece',
+      variants: [{ unit: 'piece', quantityMultiplier: '5' }],
+    }, 'order');
+
+    expect(editable._advanced).toBe(true);
+    expect(editable.variants).toEqual([{
+      size: '',
+      packaging: '',
+      unit: 'piece',
+      lastPrice: '',
+    }]);
+    expect(buildOrderProductPayload(editable, 'order').variants).toBeUndefined();
   });
 
   it('keeps recipe rows for sale products and omits them for order products', () => {
@@ -200,7 +214,7 @@ describe('itemsManageModel', () => {
       nameAr: 'Charcoal',
       nameEn: 'Charcoal',
       unit: 'piece',
-      variants: [{ size: '', packaging: 'Carton', unit: 'carton', lastPrice: '145', quantityMultiplier: '1' }],
+      variants: [{ size: '', packaging: 'Carton', unit: 'carton', lastPrice: '145' }],
       inventoryConversions: [
         { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
         { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },

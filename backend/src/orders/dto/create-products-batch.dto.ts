@@ -27,10 +27,6 @@ export class ProductVariantBatchDto {
   @Matches(/^\d+(\.\d{1,4})?$/, { message: 'lastPrice يجب أن يكون رقماً غير سالب' })
   lastPrice?: string;
 
-  @IsOptional()
-  @IsString()
-  @Matches(/^(?:0*[1-9]\d*(?:\.\d{1,4})?|0*\.\d*[1-9]\d*)$/)
-  quantityMultiplier?: string;
 }
 
 export class ProductRecipeBatchItemDto {

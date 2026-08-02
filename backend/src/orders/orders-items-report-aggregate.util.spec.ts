@@ -94,34 +94,76 @@ describe('aggregateOrderItemsForRangeReport', () => {
       ],
       category: { nameAr: 'Charcoal', nameEn: 'Charcoal' },
     };
-
-    const report = aggregateOrderItemsForRangeReport([
+    const historicalItem = {
+      productId: charcoal.id,
+      packaging: 'carton',
+      unit: 'carton',
+      quantity: new Prisma.Decimal(2),
+      quantityMultiplier: new Prisma.Decimal(600),
+      unitPrice: new Prisma.Decimal(145),
+      amount: new Prisma.Decimal(290),
+      order: { id: 'order-1', orderDate: new Date('2026-07-01T00:00:00.000Z'), orderType: 'external' },
+    };
+    const reports = [
+      charcoal,
       {
-        productId: charcoal.id,
-        packaging: 'carton',
-        unit: 'carton',
-        quantity: new Prisma.Decimal(2),
-        quantityMultiplier: new Prisma.Decimal(600),
-        unitPrice: new Prisma.Decimal(145),
-        amount: new Prisma.Decimal(290),
-        order: { id: 'order-1', orderDate: new Date('2026-07-01T00:00:00.000Z'), orderType: 'external' },
-        product: charcoal,
+        ...charcoal,
+        inventoryConversions: [
+          { fromUnit: 'carton', toUnit: 'piece', multiplier: '999' },
+        ],
       },
-    ]);
+    ].map((currentProduct) => aggregateOrderItemsForRangeReport([
+      { ...historicalItem, product: currentProduct },
+    ]));
 
-    expect(report.rows).toEqual([
-      expect.objectContaining({
-        productId: 'charcoal-converted',
-        quantity: '2',
-        normalizedQuantity: '1200',
-        baseUnit: 'piece',
-      }),
-    ]);
-    expect(report.rows[0]?.daily).toEqual([
-      expect.objectContaining({
-        normalizedQuantity: '1200',
-      }),
-    ]);
+    for (const report of reports) {
+      expect(report.rows).toEqual([
+        expect.objectContaining({
+          productId: 'charcoal-converted',
+          quantity: '2',
+          normalizedQuantity: '1200',
+          baseUnit: 'piece',
+        }),
+      ]);
+      expect(report.rows[0]?.daily).toEqual([
+        expect.objectContaining({
+          normalizedQuantity: '1200',
+        }),
+      ]);
+    }
+  });
+
+  it('keeps range report quantities on the base snapshot after product conversions change', () => {
+    const historicalItem = {
+      productId: 'charcoal-snapshot',
+      packaging: 'carton',
+      unit: 'carton',
+      quantity: new Prisma.Decimal(2),
+      quantityMultiplier: new Prisma.Decimal(600),
+      inventoryBaseQuantitySnapshot: new Prisma.Decimal(128),
+      unitPrice: new Prisma.Decimal(145),
+      amount: new Prisma.Decimal(290),
+      order: { id: 'order-1', orderDate: new Date('2026-07-01T00:00:00.000Z'), orderType: 'external' },
+    };
+    const productWithConversion = (multiplier: string) => ({
+      id: historicalItem.productId,
+      nameAr: 'Charcoal',
+      nameEn: 'Charcoal',
+      categoryId: 'category-charcoal',
+      unit: 'piece',
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'piece', multiplier },
+      ],
+      category: { nameAr: 'Charcoal', nameEn: 'Charcoal' },
+    });
+
+    const normalizedQuantities = ['64', '999'].map((multiplier) => (
+      aggregateOrderItemsForRangeReport([
+        { ...historicalItem, product: productWithConversion(multiplier) },
+      ]).rows[0]?.normalizedQuantity
+    ));
+
+    expect(normalizedQuantities).toEqual(['128', '128']);
   });
 
   it('falls back to product conversions only when a stored multiplier is missing', () => {
@@ -423,7 +465,7 @@ describe('aggregateRecipeInventoryStock', () => {
     ]);
   });
 
-  it('uses product conversions for legacy rows with a default multiplier of one and a non-base unit', () => {
+  it('keeps a stored multiplier of one after product conversions change', () => {
     const charcoal = {
       id: 'charcoal-legacy',
       nameAr: 'Charcoal',
@@ -435,30 +477,37 @@ describe('aggregateRecipeInventoryStock', () => {
         { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
       ],
     };
-
-    const rows = aggregateRecipeInventoryStock({
-      materialProducts: [charcoal],
-      purchases: [
-        {
-          productId: 'charcoal-legacy',
-          quantity: new Prisma.Decimal(2),
-          unit: 'carton',
-          quantityMultiplier: new Prisma.Decimal(1),
-          product: charcoal,
-        },
-      ],
+    const historicalPurchase = {
+      productId: 'charcoal-legacy',
+      quantity: new Prisma.Decimal(2),
+      unit: 'carton',
+      quantityMultiplier: new Prisma.Decimal(1),
+    };
+    const rowsByConversion = [
+      charcoal,
+      {
+        ...charcoal,
+        inventoryConversions: [
+          { fromUnit: 'carton', toUnit: 'piece', multiplier: '999' },
+        ],
+      },
+    ].map((currentProduct) => aggregateRecipeInventoryStock({
+      materialProducts: [currentProduct],
+      purchases: [{ ...historicalPurchase, product: currentProduct }],
       sales: [],
-    });
+    }));
 
-    expect(rows).toEqual([
-      expect.objectContaining({
-        productId: 'charcoal-legacy',
-        unit: 'piece',
-        purchasedBaseQuantity: '1280',
-        consumedBaseQuantity: '0',
-        balanceBaseQuantity: '1280',
-      }),
-    ]);
+    for (const rows of rowsByConversion) {
+      expect(rows).toEqual([
+        expect.objectContaining({
+          productId: 'charcoal-legacy',
+          unit: 'piece',
+          purchasedBaseQuantity: '2',
+          consumedBaseQuantity: '0',
+          balanceBaseQuantity: '2',
+        }),
+      ]);
+    }
   });
 
   it('recovers a legacy purchase with a drifted unit from its stored multiplier', () => {
@@ -531,13 +580,17 @@ describe('aggregateRecipeInventoryStock', () => {
     ]);
   });
 
-  it('still rejects a legacy purchase when neither conversion nor stored multiplier exists', () => {
+  it('rejects a purchase when its explicit conversion chain is disconnected', () => {
     const material = {
       id: 'unrecoverable-legacy-material',
       nameAr: 'Unrecoverable material',
       nameEn: 'Unrecoverable material',
       productType: 'order',
       unit: 'piece',
+      inventoryConversions: [
+        { fromUnit: 'carton', toUnit: 'box', multiplier: '10' },
+        { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      ],
     };
 
     expect(() => aggregateRecipeInventoryStock({
@@ -546,7 +599,7 @@ describe('aggregateRecipeInventoryStock', () => {
         {
           productId: material.id,
           quantity: new Prisma.Decimal(3),
-          unit: 'piece/ml',
+          unit: 'carton',
           quantityMultiplier: null,
           inventoryBaseQuantitySnapshot: null,
           product: material,
@@ -703,34 +756,38 @@ describe('aggregateRecipeInventoryStock', () => {
   });
 
   it('keeps purchase history on the immutable base quantity snapshot', () => {
-    const material = {
+    const materialWithConversion = (multiplier: string) => ({
       id: 'material-purchase-snapshot',
       nameAr: 'Material',
       nameEn: 'Material',
       productType: 'order',
       unit: 'piece',
       inventoryConversions: [
-        { fromUnit: 'carton', toUnit: 'piece', multiplier: '999' },
+        { fromUnit: 'carton', toUnit: 'piece', multiplier },
       ],
-    };
-
-    const rows = aggregateRecipeInventoryStock({
-      materialProducts: [material],
-      purchases: [{
-        productId: material.id,
-        quantity: new Prisma.Decimal(2),
-        unit: 'carton',
-        quantityMultiplier: new Prisma.Decimal(999),
-        inventoryBaseQuantitySnapshot: new Prisma.Decimal(128),
-        product: material,
-      }],
-      sales: [],
+    });
+    const rowsByConversion = ['64', '999'].map((multiplier) => {
+      const material = materialWithConversion(multiplier);
+      return aggregateRecipeInventoryStock({
+        materialProducts: [material],
+        purchases: [{
+          productId: material.id,
+          quantity: new Prisma.Decimal(2),
+          unit: 'carton',
+          quantityMultiplier: new Prisma.Decimal(999),
+          inventoryBaseQuantitySnapshot: new Prisma.Decimal(128),
+          product: material,
+        }],
+        sales: [],
+      });
     });
 
-    expect(rows[0]).toEqual(expect.objectContaining({
-      purchasedBaseQuantity: '128',
-      balanceBaseQuantity: '128',
-    }));
+    for (const rows of rowsByConversion) {
+      expect(rows[0]).toEqual(expect.objectContaining({
+        purchasedBaseQuantity: '128',
+        balanceBaseQuantity: '128',
+      }));
+    }
   });
 
   it('keeps sale history on the immutable recipe consumption snapshot', () => {

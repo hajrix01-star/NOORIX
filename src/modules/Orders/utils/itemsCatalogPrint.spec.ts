@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildItemsCatalogPdfFilename,
+  buildItemsCatalogPrintHtml,
   expandProductsToPrintRows,
   filterProductsForCatalogPrint,
   groupProductsByCategory,
@@ -116,7 +117,7 @@ describe('expandProductsToPrintRows', () => {
           nameEn: 'Chicken',
           variants: [
             { size: 'small', packaging: 'bag', unit: 'kg' },
-            { size: 'large', packaging: 'box', unit: 'box' },
+            { size: 'large', packaging: 'box', unit: 'box', quantityMultiplier: 10 },
           ],
         },
         { id: 'p2', nameAr: 'Salt', unit: 'piece' },
@@ -129,5 +130,26 @@ describe('expandProductsToPrintRows', () => {
     expect(rows[0]).toMatchObject({ size: 'small', packaging: 'bag', unit: 'kg' });
     expect(rows[1]).toMatchObject({ size: 'large', packaging: 'box', unit: 'box' });
     expect(rows[2]).toMatchObject({ nameAr: 'Salt', unit: 'piece' });
+    expect(rows.every((row) => !('multiplier' in row))).toBe(true);
+  });
+
+  it('omits the legacy multiplier column from catalog print HTML', () => {
+    const html = buildItemsCatalogPrintHtml(
+      [{
+        categoryId: null,
+        categoryName: 'No category',
+        products: [{
+          id: 'p1',
+          nameAr: 'Charcoal',
+          variants: [{ packaging: 'Carton', unit: 'carton', lastPrice: 145, quantityMultiplier: 10 }],
+        }],
+      }],
+      (key) => key,
+      unitLabel,
+      false,
+    );
+
+    expect(html).not.toContain('ordersVariantMultiplier');
+    expect(html).not.toContain('col-multiplier');
   });
 });

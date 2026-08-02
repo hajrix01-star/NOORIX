@@ -68,7 +68,7 @@ type ProductWithUnitConversions = {
 };
 
 export type ProductUnitConversionValidationIssue = {
-  code: 'duplicate' | 'same-unit' | 'invalid-row' | 'ambiguous-source';
+  code: 'duplicate' | 'same-unit' | 'invalid-row' | 'ambiguous-source' | 'cycle' | 'standard-conflict';
   fromUnit?: string;
   toUnit?: string;
   message: string;
@@ -231,6 +231,15 @@ export function validateProductUnitConversions(
       });
       continue;
     }
+    const standardMultiplier = unitPairMultiplier(fromUnit, toUnit);
+    if (standardMultiplier && !multiplier.eq(standardMultiplier)) {
+      issues.push({
+        code: 'standard-conflict',
+        fromUnit,
+        toUnit,
+        message: `Conversion from ${fromUnit} to ${toUnit} conflicts with the standard multiplier ${standardMultiplier.toString()}.`,
+      });
+    }
     const key = `${fromUnit}->${toUnit}`;
     const reverseKey = `${toUnit}->${fromUnit}`;
     if (seen.has(key) || seen.has(reverseKey)) {
@@ -254,34 +263,46 @@ export function validateProductUnitConversions(
     seen.add(key);
   }
 
+  const reportedCycles = new Set<string>();
+  for (const startUnit of sourceTargets.keys()) {
+    const path: string[] = [];
+    const pathIndexes = new Map<string, number>();
+    let currentUnit: string | undefined = startUnit;
+    while (currentUnit && sourceTargets.has(currentUnit)) {
+      const cycleStart = pathIndexes.get(currentUnit);
+      if (cycleStart !== undefined) {
+        const cycleUnits = path.slice(cycleStart);
+        const signature = [...cycleUnits].sort().join('|');
+        if (!reportedCycles.has(signature)) {
+          const toUnit = sourceTargets.get(currentUnit);
+          issues.push({
+            code: 'cycle',
+            fromUnit: currentUnit,
+            toUnit,
+            message: `Conversion chain contains a cycle involving ${cycleUnits.join(', ')}.`,
+          });
+          reportedCycles.add(signature);
+        }
+        break;
+      }
+      pathIndexes.set(currentUnit, path.length);
+      path.push(currentUnit);
+      currentUnit = sourceTargets.get(currentUnit);
+    }
+  }
+
   return issues;
 }
 
 export function validateProductUnitConversionSequence(input: {
   conversions?: ProductUnitConversionInput[] | null;
-  purchaseUnit?: unknown;
   baseUnit?: unknown;
 }): ProductUnitConversionSequenceIssue | null {
-  const purchaseUnit = normalizeUnit(input.purchaseUnit);
   const baseUnit = normalizeUnit(input.baseUnit);
   const rows = productUnitConversionRowsFromUnknown(input.conversions);
-  const requiresConversion = purchaseUnit !== baseUnit;
+  if (rows.length === 0) return null;
 
-  if (rows.length === 0) {
-    return requiresConversion && !hasCommonUnitPath(purchaseUnit, baseUnit)
-      ? {
-          code: 'incomplete',
-          index: 0,
-          expectedFromUnit: baseUnit,
-          actualFromUnit: purchaseUnit,
-          message: `Conversion chain must connect purchase unit ${purchaseUnit} to inventory unit ${baseUnit}.`,
-        }
-      : null;
-  }
-
-  let expectedFromUnit = requiresConversion
-    ? purchaseUnit
-    : normalizeUnit(rows[0]?.fromUnit, '');
+  let expectedFromUnit = normalizeUnit(rows[0]?.fromUnit, '');
   for (const [index, row] of rows.entries()) {
     const actualFromUnit = normalizeUnit(row.fromUnit, '');
     if (actualFromUnit !== expectedFromUnit && !hasCommonUnitPath(expectedFromUnit, actualFromUnit)) {

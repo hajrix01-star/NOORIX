@@ -1,9 +1,9 @@
 import React from 'react';
 import { fmt } from '../../../utils/format';
 import { Button, EditableNumberCell, Input, Modal } from '../../../ui';
-import type { OrderProduct, OrderProductVariant } from '../../../types/api';
+import type { OrderProduct } from '../../../types/api';
+import type { ProductPricedUnitChoice } from '../utils/productUnitConversionModel';
 
-type SelectableOrderVariant = OrderProductVariant & { _key: string };
 type Translation = (key: string) => string;
 type AddModalState = {
   product: OrderProduct;
@@ -18,16 +18,14 @@ type AddModalState = {
 export function OrderProductAddModal({
   addModal,
   productName,
-  variants,
-  sizes,
+  choices,
   t,
   setAddModal,
   onConfirm,
 }: {
   addModal: AddModalState;
   productName: string;
-  variants: SelectableOrderVariant[];
-  sizes: string[];
+  choices: ProductPricedUnitChoice[];
   t: Translation;
   setAddModal: React.Dispatch<React.SetStateAction<AddModalState | null>>;
   onConfirm: () => void;
@@ -35,41 +33,31 @@ export function OrderProductAddModal({
   return (
     <Modal open onClose={() => setAddModal(null)} title={productName} size="sm">
       <div className="flex flex-col gap-4 p-1">
-        {variants.length > 0 && (
+        {choices.length > 0 && (
           <Input
             type="select"
             label={t('ordersProductVariants')}
             value={addModal.variantKey}
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
               const key = event.target.value;
-              const variant = variants.find((value) => value._key === key);
+              const choice = choices.find((value) => value.key === key);
+              if (!choice) return;
               setAddModal((modal) => modal ? {
                 ...modal,
                 variantKey: key,
-                size: variant?.size || '',
-                packaging: variant?.packaging || '',
-                unit: variant?.unit || 'piece',
-                unitPrice: variant?.lastPrice ? String(variant.lastPrice) : modal.unitPrice,
+                size: choice.size,
+                packaging: choice.packaging,
+                unit: choice.unit,
+                unitPrice: choice.unitPrice,
               } : modal);
             }}
           >
-            {variants.map((variant) => (
-              <option key={variant._key} value={variant._key}>
-                {[variant.size, variant.packaging, variant.unit].filter(Boolean).join(' / ') || '-'}
-                {variant.lastPrice ? ` - ${fmt(variant.lastPrice)} SR` : ''}
+            {choices.map((choice) => (
+              <option key={choice.key} value={choice.key}>
+                {[choice.size, choice.packaging, choice.unit].filter(Boolean).join(' / ') || choice.unit}
+                {choice.unitPrice ? ` - ${fmt(choice.unitPrice)} SR` : ''}
               </option>
             ))}
-          </Input>
-        )}
-        {variants.length === 0 && sizes.length > 0 && (
-          <Input
-            type="select"
-            label={t('ordersProductSize')}
-            value={addModal.size}
-            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setAddModal((modal) => modal ? { ...modal, size: event.target.value } : modal)}
-          >
-            <option value="">-</option>
-            {sizes.map((size) => <option key={size} value={size}>{size}</option>)}
           </Input>
         )}
         <div className="flex flex-col gap-1">

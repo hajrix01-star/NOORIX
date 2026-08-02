@@ -38,6 +38,7 @@ export type InputProps = {
   containerClassName?: string;
   children?: React.ReactNode;
   id?: string;
+  onChange?: React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
 } & Record<string, unknown>;
 
 export default function Input({

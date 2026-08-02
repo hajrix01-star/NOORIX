@@ -4,6 +4,9 @@ describe('resolveQuantityMultiplierOrNull', () => {
   it('resolves an explicit conversion chain for new writes', () => {
     const material = {
       unit: 'piece',
+      variants: [
+        { unit: 'carton', quantityMultiplier: '999' },
+      ],
       inventoryConversions: [
         { fromUnit: 'carton', toUnit: 'box', multiplier: '10' },
         { fromUnit: 'box', toUnit: 'piece', multiplier: '64' },
@@ -24,7 +27,7 @@ describe('resolveQuantityMultiplierOrNull', () => {
     ).toBe(1);
   });
 
-  it('resolves the full chain from purchased packaging to inventory unit', () => {
+  it('resolves the invoice unit and does not treat display packaging as stock', () => {
     expect(
       resolveQuantityMultiplierOrNull(
         {
@@ -36,16 +39,28 @@ describe('resolveQuantityMultiplierOrNull', () => {
         },
         { packaging: 'carton', unit: 'box' },
       )?.toNumber(),
-    ).toBe(640);
+    ).toBe(64);
   });
 
-  it('rejects unknown or invalid conversions for new writes', () => {
+  it('rejects a disconnected conversion chain without reading a legacy multiplier', () => {
     expect(
       resolveQuantityMultiplierOrNull(
-        { unit: 'piece' },
+        {
+          unit: 'piece',
+          variants: [
+            { unit: 'carton', quantityMultiplier: '640' },
+          ],
+          inventoryConversions: [
+            { fromUnit: 'carton', toUnit: 'box', multiplier: '10' },
+            { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+          ],
+        },
         { unit: 'carton' },
       ),
     ).toBeNull();
+  });
+
+  it('ignores legacy variant multipliers for current writes', () => {
     expect(
       resolveQuantityMultiplierOrNull(
         {
@@ -54,12 +69,12 @@ describe('resolveQuantityMultiplierOrNull', () => {
             {
               packaging: 'legacy',
               unit: 'piece',
-              quantityMultiplier: 'invalid',
+              quantityMultiplier: '25',
             },
           ],
         },
         { packaging: 'legacy', unit: 'piece' },
-      ),
-    ).toBeNull();
+      )?.toNumber(),
+    ).toBe(1);
   });
 });

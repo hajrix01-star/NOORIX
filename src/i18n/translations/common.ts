@@ -247,6 +247,7 @@ export default {
   confirmDelete: { ar: 'هل تريد حذف هذا العنصر؟', en: 'Are you sure you want to delete this item?' },
   note: { ar: 'ملاحظة', en: 'Note' },
   orders: { ar: 'الطلبات', en: 'Orders' },
+  ordersV3: { ar: 'طلبات 2', en: 'Orders 2' },
   hr: { ar: 'الموارد البشرية', en: 'Human Resources' },
   reports: { ar: 'التقارير', en: 'Reports' },
   settings: { ar: 'الإعدادات', en: 'Settings' },

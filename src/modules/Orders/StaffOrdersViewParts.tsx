@@ -9,11 +9,10 @@ import {
   formatVariantLabel,
   defaultVariantModalState,
 } from './utils/staffOrderBasketUtils';
-import type { OrderProduct, OrderProductVariant } from '../../types/api';
+import type { OrderProduct } from '../../types/api';
 import { StaffCancellationReasonButtons } from './StaffOrderPanelModals';
 import { STAFF_CANCELLATION_REASON_LABEL_KEYS } from './constants/staffCancellationReasons';
-
-type SelectableOrderProductVariant = OrderProductVariant & { _key: string };
+import { buildProductUnitSelectionModel } from './utils/productUnitConversionModel';
 
 export function resolveItemSection(product: OrderProduct | null | undefined, activeFilter: string): string {
   const secs = product?.sections;
@@ -251,58 +250,40 @@ export function VariantPickModal({
 }) {
   const product = variantModal.product;
   const name = lang === 'en' ? (product.nameEn || product.nameAr) : (product.nameAr || product.nameEn);
-  const variants = useMemo(() => {
-    const raw = Array.isArray(product?.variants) ? product.variants : [];
-    return (raw as OrderProductVariant[]).map<SelectableOrderProductVariant>((v, i) => ({
-      ...v,
-      _key: `${v.size || ''}|${v.packaging || ''}|${v.unit || 'piece'}|${i}`,
-    }));
-  }, [product]);
-  const sizes = useMemo(() => {
-    if (!product?.sizes) return [] as string[];
-    return String(product.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean);
-  }, [product]);
-  const selectedVariant = variants.find((variant) => variant._key === variantModal.variantKey);
+  const pricedChoices = useMemo(
+    () => buildProductUnitSelectionModel(product).pricedChoices,
+    [product],
+  );
   const quantityStep = ['pack', 'carton'].includes(variantModal.unit) ? 0.25 : 1;
 
   return (
     <Modal open onClose={onClose} title={name} size="sm">
       <div className="flex flex-col gap-4 p-1">
-        {variants.length > 0 && (
+        {pricedChoices.length > 0 && (
           <Input
             type="select"
             label={t('ordersProductVariants')}
             value={variantModal.variantKey}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
               const key = e.target.value;
-              const v = variants.find((x) => x._key === key);
+              const choice = pricedChoices.find((candidate) => candidate.key === key);
+              if (!choice) return;
               onChange({
                 ...variantModal,
                 variantKey: key,
-                size: v?.size || '',
-                packaging: v?.packaging || '',
-                unit: v?.unit || 'piece',
-                unitPrice: v?.lastPrice ? String(v.lastPrice) : variantModal.unitPrice,
+                size: choice.size,
+                packaging: choice.packaging,
+                unit: choice.unit,
+                unitPrice: String(choice.unitPrice),
               });
             }}
           >
-            {variants.map((v) => (
-              <option key={v._key} value={v._key}>
-                {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'}
-                {v.lastPrice ? ` — ${fmt(v.lastPrice)} SR` : ''}
+            {pricedChoices.map((choice) => (
+              <option key={choice.key} value={choice.key}>
+                {[choice.size, choice.packaging, choice.unit].filter(Boolean).join(' / ') || '—'}
+                {` — ${fmt(choice.unitPrice)} SR`}
               </option>
             ))}
-          </Input>
-        )}
-        {variants.length === 0 && sizes.length > 0 && (
-          <Input
-            type="select"
-            label={t('ordersProductSize')}
-            value={variantModal.size}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange({ ...variantModal, size: e.target.value })}
-          >
-            <option value="">—</option>
-            {sizes.map((s: string) => <option key={s} value={s}>{s}</option>)}
           </Input>
         )}
         <div className="flex flex-col gap-1">

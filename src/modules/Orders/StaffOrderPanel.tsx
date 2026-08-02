@@ -7,6 +7,7 @@ import { orderKeys } from '../../services/queryKeys';
 import {
   type StaffBasketLine,
   defaultVariantModalState,
+  firstProductPricedChoice,
   productHasVariants,
   resolveVariantFromModal,
   staffBasketLineKey,
@@ -163,11 +164,15 @@ export function StaffOrderPanel({
   }, [isSale, editingId, sectionFilter, saleDateStatus?.suggestedDate]);
 
   function tapProduct(product: OrderProduct) {
+    const pricedChoice = firstProductPricedChoice(product);
+    if (!pricedChoice) return;
     if (productHasVariants(product)) {
-      setVariantModal(defaultVariantModalState(product));
+      const nextVariantModal = defaultVariantModalState(product);
+      if (nextVariantModal) setVariantModal(nextVariantModal);
       return;
     }
-    const unit = product.unit || 'piece';
+    const unit = pricedChoice.unit;
+    const pricedProduct = { ...product, unit, lastPrice: pricedChoice.unitPrice };
     const key = staffBasketLineKey({ productId: product.id, size: '', packaging: '', unit });
     const idx = basketLines.findIndex((l) => staffBasketLineKey(l) === key);
     if (idx >= 0 && entryType === 'issue') {
@@ -178,7 +183,7 @@ export function StaffOrderPanel({
       });
     } else {
       setQtyModal({
-        product,
+        product: pricedProduct,
         qty: 1,
         unit,
         cancellationReasons: [],
@@ -230,7 +235,7 @@ export function StaffOrderPanel({
 
   function confirmVariantModal() {
     if (!variantModal) return;
-    const { product, quantity, unitPrice } = variantModal;
+    const { product, quantity } = variantModal;
     if (!quantity || parseFloat(quantity) <= 0) { setVariantModal(null); return; }
     if (entryType === 'cancellation') {
       if (variantModal.cancellationReasons.length === 0) {
@@ -243,6 +248,7 @@ export function StaffOrderPanel({
       }
     }
     const v = resolveVariantFromModal(product, variantModal);
+    if (!v) { setVariantModal(null); return; }
     const sec = resolveItemSection(product, sectionFilter);
     setBasketLines((prev) => [...prev, {
       lineId: createDraftLineId(product.id),

@@ -13,6 +13,8 @@ import {
 import { OrdersCatalogService } from './orders-catalog.service';
 import { OrdersCatalogTranslationService } from './orders-catalog-translation.service';
 import { resolveQuantityMultiplierOrNull } from './orders-quantity-multiplier.util';
+import type { ProductRecipeItemInput, ProductVariantInput } from './orders-catalog-product.types';
+import type { ProductUnitConversionInput } from './orders-unit-conversions.util';
 
 type OrderItemInput = { productId: string; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
 type OrderPaymentMethod = 'external' | 'internal' | 'transfer';
@@ -432,7 +434,7 @@ export class OrdersService {
     return this.catalogTranslations.applyCategoryTranslations(companyId, translations);
   }
 
-  async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>; inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>; conversionTemplateId?: string | null; recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }> }>) {
+  async createProductsBatch(companyId: string, products: Array<{ nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; sectionIds?: string[]; lastPrice?: string; variants?: ProductVariantInput[]; inventoryConversions?: ProductUnitConversionInput[]; conversionTemplateId?: string | null; recipe?: ProductRecipeItemInput[] }>) {
     return this.catalog.createProductsBatch(companyId, products);
   }
 
@@ -451,10 +453,10 @@ export class OrdersService {
     sections?: string[];
     sectionIds?: string[];
     productType?: string;
-    variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>;
-    inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>;
+    variants?: ProductVariantInput[];
+    inventoryConversions?: ProductUnitConversionInput[];
     conversionTemplateId?: string | null;
-    recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }>;
+    recipe?: ProductRecipeItemInput[];
   }) {
     return this.catalog.createProduct(companyId, dto);
   }
@@ -470,10 +472,10 @@ export class OrdersService {
     sections?: string[] | null;
     sectionIds?: string[] | null;
     productType?: string;
-    variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string; quantityMultiplier?: string }>;
-    inventoryConversions?: Array<{ fromUnit?: string; toUnit?: string; multiplier?: string; label?: string }>;
+    variants?: ProductVariantInput[];
+    inventoryConversions?: ProductUnitConversionInput[];
     conversionTemplateId?: string | null;
-    recipe?: Array<{ materialType?: string; materialProductId?: string; quantity?: string; unit?: string }>;
+    recipe?: ProductRecipeItemInput[];
     isActive?: boolean;
   }) {
     return this.catalog.updateProduct(id, companyId, dto);
