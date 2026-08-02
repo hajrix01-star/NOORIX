@@ -41,10 +41,7 @@ export function OrdersV4DocumentLineModal({
 
   if (!item) return null;
   const activeItem = item;
-  const selectedUnit = selectableUnits.find((row) => row.unitId === unitId);
-  const unitStep = selectedUnit?.unit.dimension === 'count'
-    ? 1
-    : 10 ** -Math.min(3, Math.max(0, selectedUnit?.unit.decimalScale ?? 0));
+  const unitStep = 1;
   const numericQuantity = Math.max(unitStep, Number(quantity) || unitStep);
 
   function changeUnit(nextUnitId: string) {
@@ -93,8 +90,8 @@ export function OrdersV4DocumentLineModal({
             </Button>
             <Input
               type="number"
-              min={unitStep}
-              step={unitStep}
+              min="0.000001"
+              step="any"
               containerClassName="contents"
               value={quantity}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => setQuantity(event.target.value)}
