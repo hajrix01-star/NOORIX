@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { OrdersV4Item, OrdersV4Section, OrdersV4Unit } from '../../../types/api';
 import { OrdersV4DocumentItemPicker, filterOrdersV4DocumentItems } from './OrdersV4DocumentItemPicker';
-import { addOrIncrementDraftLine } from './OrdersV4DocumentsTab';
+import { addOrMergeDraftLine } from './OrdersV4DocumentsTab';
 
 afterEach(cleanup);
 
@@ -59,10 +59,17 @@ describe('OrdersV4DocumentItemPicker', () => {
       priceUnitId: unit.id,
     }];
 
-    const next = addOrIncrementDraftLine(current, items[0]);
+    const next = addOrMergeDraftLine(current, {
+      itemId: items[0].id,
+      quantity: '3',
+      unitId: unit.id,
+      unitPrice: '12',
+      priceUnitId: unit.id,
+    });
 
     expect(next).toHaveLength(1);
-    expect(next[0].quantity).toBe('3');
+    expect(next[0].quantity).toBe('5');
+    expect(next[0].unitPrice).toBe('12');
     expect(next[0].key).toBe('line-1');
   });
 
@@ -74,6 +81,7 @@ describe('OrdersV4DocumentItemPicker', () => {
 
   it('renders products as POS buttons and selects by click', () => {
     const onSelect = vi.fn();
+    const onRemove = vi.fn();
     render(
       <OrdersV4DocumentItemPicker
         items={items}
@@ -82,13 +90,16 @@ describe('OrdersV4DocumentItemPicker', () => {
         onSectionChange={() => undefined}
         selectedQuantities={new Map([['item-1', 2]])}
         onSelect={onSelect}
+        onRemove={onRemove}
       />,
     );
 
-    const potatoes = screen.getByRole('button', { name: /بطاطس/ });
+    const potatoes = screen.getByRole('button', { name: 'بطاطس' });
     expect(potatoes.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(potatoes);
     expect(onSelect).toHaveBeenCalledWith(items[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'إزالة بطاطس' }));
+    expect(onRemove).toHaveBeenCalledWith(items[0].id);
   });
 
   it('supports the section buttons and search field', () => {
@@ -102,6 +113,7 @@ describe('OrdersV4DocumentItemPicker', () => {
           onSectionChange={setSectionId}
           selectedQuantities={new Map()}
           onSelect={() => undefined}
+          onRemove={() => undefined}
         />
       );
     }

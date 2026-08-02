@@ -8,7 +8,7 @@ import { OrdersV4CatalogTab } from './components/OrdersV4CatalogTab';
 import { OrdersV4DocumentsTab } from './components/OrdersV4DocumentsTab';
 import { OrdersV4InventoryTab } from './components/OrdersV4InventoryTab';
 import { OrdersV4ItemsReportTab, OrdersV4SalesReportTab } from './components/OrdersV4ReportsTabs';
-import { OrdersV4QueryState } from './OrdersV4Shared';
+import { OrdersV4QueryState, ordersV4NavigationBarClassName, ordersV4NavigationTabClassName } from './OrdersV4Shared';
 import { useOrdersV4Bootstrap } from './useOrdersV4';
 
 type TabId = 'requests' | 'registration' | 'reports' | 'catalog' | 'inventory';
@@ -54,7 +54,16 @@ export default function OrdersV4Screen() {
       {!companyId && <div className="noorix-surface-card p-8 text-center text-noorix-muted">{lang === 'ar' ? 'اختر شركة للبدء' : 'Select a company to continue'}</div>}
       {companyId && tabs.length === 0 && <div className="noorix-surface-card p-8 text-center text-red-700">{lang === 'ar' ? 'لا توجد صلاحية لدخول طلبات V4' : 'No Orders V4 permission'}</div>}
       {companyId && tabs.length > 0 && (
-        <ScreenTabs items={tabs} value={activeTab} onChange={setActiveTab} contentClassName="min-h-[260px] px-1 py-3 sm:px-3">
+        <ScreenTabs
+          items={tabs}
+          value={activeTab}
+          onChange={setActiveTab}
+          variant="segmented"
+          segmentedFlat
+          barClassName={ordersV4NavigationBarClassName}
+          getTabClassName={ordersV4NavigationTabClassName}
+          contentClassName="min-h-[260px] px-1 py-3 sm:px-3"
+        >
           <OrdersV4QueryState loading={bootstrapQuery.isLoading} error={bootstrapQuery.error as Error | null} />
           {!bootstrapQuery.isLoading && activeTab === 'requests' && <OrdersV4DocumentsTab companyId={companyId} documentType="purchase" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreatePurchase} canReverse={canDelete} canReceive={canReceive} />}
           {!bootstrapQuery.isLoading && activeTab === 'registration' && <OrdersV4DocumentsTab companyId={companyId} documentType="registration" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreateRegistration} canReverse={canDelete} />}

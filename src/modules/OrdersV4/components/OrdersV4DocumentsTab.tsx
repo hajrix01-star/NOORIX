@@ -5,21 +5,17 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { OrdersV4Field, OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4Select, OrdersV4Table as SimpleTable, v4Date, v4Number } from '../OrdersV4Shared';
 import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, useReceiveOrdersV4Document, useReverseOrdersV4Document } from '../useOrdersV4';
 import { OrdersV4DocumentItemPicker } from './OrdersV4DocumentItemPicker';
+import { OrdersV4DocumentLineModal, type OrdersV4DocumentLineDraft } from './OrdersV4DocumentLineModal';
 
-type DraftLine = { key: string; itemId: string; quantity: string; unitId: string; unitPrice: string; priceUnitId: string };
+type DraftLine = OrdersV4DocumentLineDraft & { key: string };
 
-function newLine(item: OrdersV4Item): DraftLine {
-  const preferred = item.units.find((row) => row.isActive && row.isOrderEnabled && row.lastPrice != null)
-    ?? item.units.find((row) => row.isActive);
-  const unitId = preferred?.unitId ?? item.inventoryUnitId;
-  return { key: crypto.randomUUID(), itemId: item.id, quantity: '1', unitId, unitPrice: String(preferred?.lastPrice ?? '0'), priceUnitId: unitId };
-}
-
-export function addOrIncrementDraftLine(current: DraftLine[], item: OrdersV4Item): DraftLine[] {
-  const existingIndex = current.findIndex((line) => line.itemId === item.id);
-  if (existingIndex < 0) return [...current, newLine(item)];
+export function addOrMergeDraftLine(current: DraftLine[], draft: OrdersV4DocumentLineDraft): DraftLine[] {
+  const existingIndex = current.findIndex((line) => line.itemId === draft.itemId
+    && line.unitId === draft.unitId
+    && line.priceUnitId === draft.priceUnitId);
+  if (existingIndex < 0) return [...current, { ...draft, key: crypto.randomUUID() }];
   return current.map((line, index) => index === existingIndex
-    ? { ...line, quantity: String(Math.max(0, Number(line.quantity) || 0) + 1) }
+    ? { ...line, quantity: String(Math.max(0, Number(line.quantity) || 0) + Math.max(0, Number(draft.quantity) || 0)), unitPrice: draft.unitPrice }
     : line);
 }
 
@@ -102,6 +98,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   const [pettyCashAmount, setPettyCashAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<DraftLine[]>([]);
+  const [selectedItem, setSelectedItem] = useState<OrdersV4Item | null>(null);
   const isPurchase = documentType === 'purchase';
   const items = (bootstrap?.items ?? []).filter((item) => item.isActive
     && (isPurchase ? item.itemType !== 'sale' : item.itemType !== 'purchased')
@@ -118,6 +115,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
       setLocationId(initialDocument.locationId);
       setPettyCashAmount(String(initialDocument.pettyCashAmount ?? ''));
       setNotes(initialDocument.notes ?? '');
+      setSelectedItem(null);
       setLines(initialDocument.lines.map((line) => ({
         key: crypto.randomUUID(), itemId: line.itemId, quantity: String(line.inputQuantity),
         unitId: line.inputUnit.id, unitPrice: String(line.unitPrice), priceUnitId: line.priceUnit.id,
@@ -131,6 +129,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
     setPettyCashAmount('');
     setNotes('');
     setLines([]);
+    setSelectedItem(null);
   }, [defaultLocationId, initialDocument, open]);
 
   function patchLine(key: string, patch: Partial<DraftLine>) {
@@ -144,7 +143,16 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   }, [lines]);
 
   function addItem(item: OrdersV4Item) {
-    setLines((current) => addOrIncrementDraftLine(current, item));
+    setSelectedItem(item);
+  }
+
+  function confirmItem(draft: OrdersV4DocumentLineDraft) {
+    setLines((current) => addOrMergeDraftLine(current, draft));
+    setSelectedItem(null);
+  }
+
+  function removeItem(itemId: string) {
+    setLines((current) => current.filter((line) => line.itemId !== itemId));
   }
 
   async function submit() {
@@ -223,7 +231,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
         </div>
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/30 p-3">
           <div className="mb-3 text-[13px] font-bold">اختر الأصناف</div>
-          <OrdersV4DocumentItemPicker items={items} sections={(bootstrap?.sections ?? []).filter((row) => row.isActive)} sectionId={sectionId} onSectionChange={setSectionId} selectedQuantities={selectedQuantities} onSelect={addItem} />
+          <OrdersV4DocumentItemPicker items={items} sections={(bootstrap?.sections ?? []).filter((row) => row.isActive)} sectionId={sectionId} onSectionChange={setSectionId} selectedQuantities={selectedQuantities} onSelect={addItem} onRemove={removeItem} />
         </div>
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/30 p-3">
           <div className="mb-3 flex items-center justify-between"><strong className="text-[13px]">الأصناف المضافة</strong><span className="text-[11px] text-noorix-muted">{lines.length} سطر</span></div>
@@ -246,6 +254,13 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
         </div>
         <OrdersV4Field label="ملاحظات"><Input multiline rows={3} value={notes} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(event.target.value)} /></OrdersV4Field>
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">لا ترسل الواجهة أي إجمالي رسمي؛ نواة V4 تحل التحويلات وتحسب كمية الأساس والسعر والتكلفة وحركات المخزون داخل معاملة واحدة.</div>
+        <OrdersV4DocumentLineModal
+          item={selectedItem}
+          isPurchase={isPurchase}
+          isReceiving={!!initialDocument}
+          onClose={() => setSelectedItem(null)}
+          onConfirm={confirmItem}
+        />
       </div>
     </Modal>
   );

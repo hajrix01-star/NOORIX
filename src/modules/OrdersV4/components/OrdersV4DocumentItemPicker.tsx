@@ -24,6 +24,7 @@ export function OrdersV4DocumentItemPicker({
   onSectionChange,
   selectedQuantities,
   onSelect,
+  onRemove,
 }: {
   items: OrdersV4Item[];
   sections: OrdersV4Section[];
@@ -31,6 +32,7 @@ export function OrdersV4DocumentItemPicker({
   onSectionChange: (sectionId: string) => void;
   selectedQuantities: Map<string, number>;
   onSelect: (item: OrdersV4Item) => void;
+  onRemove: (itemId: string) => void;
 }) {
   const [search, setSearch] = useState('');
   const visibleSections = useMemo(
@@ -92,22 +94,36 @@ export function OrdersV4DocumentItemPicker({
             const selectedQuantity = selectedQuantities.get(item.id) ?? 0;
             const selected = selectedQuantity > 0;
             return (
-              <Button
-                key={item.id}
-                variant="raw"
-                type="button"
-                aria-pressed={selected}
-                onClick={() => onSelect(item)}
-                className={`relative min-h-[72px] w-full select-none flex-col justify-center gap-1 rounded-xl border p-2 text-center transition-all ${selected ? 'border-noorix-blue bg-blue-50 shadow-md ring-1 ring-noorix-blue/30' : 'border-noorix-border bg-noorix-surface hover:border-noorix-blue/40 hover:shadow-sm'}`}
-              >
+              <div key={item.id} className="relative">
+                <Button
+                  variant="raw"
+                  type="button"
+                  aria-label={item.nameAr}
+                  aria-pressed={selected}
+                  onClick={() => onSelect(item)}
+                  className={`relative min-h-[72px] w-full select-none flex-col justify-center gap-1 rounded-xl border p-2 text-center transition-all ${selected ? 'border-noorix-blue bg-blue-50 shadow-md ring-1 ring-noorix-blue/30' : 'border-noorix-border bg-noorix-surface hover:border-noorix-blue/40 hover:shadow-sm'}`}
+                >
+                  {selected && (
+                    <span className="absolute start-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-noorix-green px-1 text-[10px] font-bold leading-none text-white">
+                      {v4Number(selectedQuantity, 3)}
+                    </span>
+                  )}
+                  <span className="px-6 text-[12px] font-semibold leading-snug text-noorix-text">{item.nameAr}</span>
+                  <span className="text-[10px] text-noorix-muted">{item.category?.nameAr || 'بدون فئة'} · {item.inventoryUnit.nameAr}</span>
+                </Button>
                 {selected && (
-                  <span className="absolute start-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-noorix-blue px-1 text-[10px] font-bold leading-none text-white">
-                    {v4Number(selectedQuantity, 3)}
-                  </span>
+                  <Button
+                    variant="raw"
+                    type="button"
+                    aria-label={`إزالة ${item.nameAr}`}
+                    title={`إزالة ${item.nameAr}`}
+                    onClick={() => onRemove(item.id)}
+                    className="absolute end-1 top-1 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-noorix-red px-1 text-[11px] font-extrabold leading-none text-white hover:opacity-80"
+                  >
+                    X
+                  </Button>
                 )}
-                <span className="px-1 text-[12px] font-semibold leading-snug text-noorix-text">{item.nameAr}</span>
-                <span className="text-[10px] text-noorix-muted">{item.category?.nameAr || 'بدون فئة'} · {item.inventoryUnit.nameAr}</span>
-              </Button>
+              </div>
             );
           })}
         </div>
