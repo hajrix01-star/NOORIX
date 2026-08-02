@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4Item, OrdersV4ReceivePayload, OrdersV4Summary } from '../../../types/api';
-import { Button, DialogActions, Input, Modal, type SimpleTableColumn, TransactionDatePicker } from '../../../ui';
+import { AdaptiveSheet, Button, DialogActions, Input, Modal, type SimpleTableColumn, TransactionDatePicker } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { OrdersV4Field, OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4Select, OrdersV4Table as SimpleTable, v4Date, v4Number } from '../OrdersV4Shared';
 import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, useReceiveOrdersV4Document, useReverseOrdersV4Document } from '../useOrdersV4';
@@ -247,7 +247,14 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
 
   return (
     <>
-    <Modal open={open} onClose={onClose} size="2xl" title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : 'تسجيل داخلي جديد — طلبات V4'} footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : 'حفظ التسجيل الداخلي', onClick: submit, role: 'save', loading: mutation.isPending }]} />}>
+    <AdaptiveSheet
+      open={open}
+      onClose={onClose}
+      size="2xl"
+      side="start"
+      title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : 'تسجيل داخلي جديد — طلبات V4'}
+      footer={<DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: 'إلغاء', onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : 'حفظ التسجيل الداخلي', onClick: submit, role: 'save', loading: mutation.isPending }]} />}
+    >
       <div className="flex flex-col gap-4">
         <div className={`grid gap-3 sm:grid-cols-2 ${isPurchase ? 'lg:grid-cols-3' : ''}`}>
           <OrdersV4Field label="التاريخ"><TransactionDatePicker value={date} onValueChange={setDate} /></OrdersV4Field>
@@ -312,7 +319,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
           onConfirm={confirmItem}
         />
       </div>
-    </Modal>
+    </AdaptiveSheet>
     <Modal
       open={!!sendWhatsAppPrompt}
       onClose={() => setSendWhatsAppPrompt(null)}
