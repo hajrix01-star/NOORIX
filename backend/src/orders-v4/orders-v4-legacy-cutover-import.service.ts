@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -58,6 +58,8 @@ function parseConsumptionSnapshot(value: unknown): Array<{ productId: string; qu
 
 @Injectable()
 export class OrdersV4LegacyCutoverImportService {
+  private readonly logger = new Logger(OrdersV4LegacyCutoverImportService.name);
+
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly auditService: OrdersV4LegacyCutoverService,
@@ -79,7 +81,8 @@ export class OrdersV4LegacyCutoverImportService {
     const runId = `orders-v4-cutover-${Date.now()}-${legacyStableHash(expectedFingerprint).slice(0, 8)}`;
     const executedAt = new Date();
 
-    return this.prisma.$transaction(async (tx) => {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`;
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:legacy-cutover:${companyId}`}))`;
       await tx.$executeRawUnsafe(`LOCK TABLE order_categories, order_sections, order_catalog_units, order_products, orders, order_items, staff_orders, staff_order_items, inventory_movements IN SHARE MODE`);
@@ -347,7 +350,7 @@ export class OrdersV4LegacyCutoverImportService {
           });
         });
         documentRows.push({
-          id: documentId, tenantId, companyId, documentNumber: `LEGACY-${staffOrder.logRef || staffOrder.id}`,
+          id: documentId, tenantId, companyId, documentNumber: `LEGACY-${staffOrder.logRef || 'SALE'}-${legacyStableHash(staffOrder.id).slice(0, 8)}`,
           documentType: 'registration', status: 'received', paymentMethod: null, documentDate, sectionId, locationId: mainLocationId,
           subtotal: totalAmount, totalAmount, operationalCost, notes: staffOrder.notes, revision: 1,
           idempotencyKey: `legacy-staff-order:${staffOrder.id}`, requestHash: legacyStableHash(staffOrder.id), calculationVersion: 4,
@@ -432,7 +435,13 @@ export class OrdersV4LegacyCutoverImportService {
           inventoryEntries: inventoryTarget._count._all, inventoryQuantity: inventoryTarget._sum.quantityAfter?.toString() ?? '0', inventoryValue: inventoryTarget._sum.valueAfter?.toString() ?? '0', verifiedMappings: mappingCount,
         },
       };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: CUTOVER_TIMEOUT_MS, maxWait: 20_000 });
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: CUTOVER_TIMEOUT_MS, maxWait: 20_000 });
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Orders V4 cutover ${runId} rolled back: ${message}`, error instanceof Error ? error.stack : undefined);
+      throw new BadRequestException(`تم التراجع الكامل عن الترحيل: ${message}`);
+    }
   }
 
   private averageCosts(orders: Array<{ id: string; orderDate: Date; createdAt: Date; items: Array<{ productId: string; amount: Prisma.Decimal; quantity: Prisma.Decimal; quantityMultiplier: Prisma.Decimal; inventoryBaseQuantitySnapshot: Prisma.Decimal | null }> }>) {
