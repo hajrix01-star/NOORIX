@@ -21,6 +21,7 @@ import {
 import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
 import type { OrdersV4ResolvedConversion } from './orders-v4-kernel.types';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
+import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 
 function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
   return {
@@ -69,7 +70,7 @@ export class OrdersV4DocumentsService {
   ) {}
 
   async list(companyId: string, documentType?: OrdersV4DocumentType, startDate?: string, endDate?: string, createdByUserId?: string) {
-    return this.prisma.ordersV4Document.findMany({
+    const documents = await this.prisma.ordersV4Document.findMany({
       where: {
         companyId,
         createdByUserId: createdByUserId || undefined,
@@ -83,6 +84,11 @@ export class OrdersV4DocumentsService {
       },
       orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
     });
+    const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
+    return documents.map((document) => ({
+      ...document,
+      createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
+    }));
   }
 
   async create(companyId: string, input: OrdersV4DocumentInput) {

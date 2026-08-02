@@ -9,6 +9,7 @@ import {
   resolveOrdersV4ContextConversion,
 } from './orders-v4-conversion.context';
 import { ordersV4RangeBounds } from './orders-v4-date.util';
+import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 
 @Injectable()
 export class OrdersV4ReportsService {
@@ -156,11 +157,15 @@ export class OrdersV4ReportsService {
       current.total = current.total.plus(document.totalAmount);
       bySection.set(key, current);
     }
+    const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     return {
       summary: { count: summary.registrationCount, totalAmount: summary.registrationTotal },
       byItem,
       bySection: [...bySection.values()].map((row) => ({ ...row, totalAmount: row.total })),
-      documents,
+      documents: documents.map((document) => ({
+        ...document,
+        createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
+      })),
       kernelVersion: 4,
     };
   }

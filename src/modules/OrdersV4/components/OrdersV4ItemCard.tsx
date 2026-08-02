@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { OrdersV4Bootstrap, OrdersV4Item } from '../../../types/api';
 import { Button, Checkbox, DialogActions, Input, Modal, SimpleTable } from '../../../ui';
-import { OrdersV4Field, OrdersV4Select } from '../OrdersV4Shared';
+import { OrdersV4Field, OrdersV4Select, ordersV4NavigationBarClassName, ordersV4NavigationTabClassName } from '../OrdersV4Shared';
 import type { useOrdersV4CatalogMutations } from '../useOrdersV4';
 import {
   ordersV4CompatibleTargets,
@@ -214,7 +214,7 @@ export function OrdersV4ItemCard({
   }
 
   const tabButton = (id: CardTab, label: string) => (
-    <Button key={id} type="button" variant={tab === id ? 'primary' : 'ghost'} size="sm" onClick={() => setTab(id)}>{label}</Button>
+    <Button key={id} type="button" variant="raw" size="auto" className={ordersV4NavigationTabClassName(null, tab === id)} onClick={() => setTab(id)}>{label}</Button>
   );
 
   return (
@@ -228,7 +228,7 @@ export function OrdersV4ItemCard({
       ]} />}
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-2 rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-1.5">
+        <div className={ordersV4NavigationBarClassName}>
           {tabButton('data', 'معلومات عامة')}
           {item && tabButton('prices', 'السعر')}
           {item && tabButton('definition', item.itemType === 'purchased' ? 'الوحدات والتحويلات' : 'الرسبي')}

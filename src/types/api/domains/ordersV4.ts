@@ -90,6 +90,13 @@ export type OrdersV4Bootstrap = {
   recipes: OrdersV4RecipeVersion[];
 };
 
+export type OrdersV4UserIdentity = {
+  id: string;
+  nameAr?: string | null;
+  nameEn?: string | null;
+  username?: string | null;
+};
+
 export type OrdersV4DocumentLine = {
   id: string;
   lineNumber: number;
@@ -125,6 +132,7 @@ export type OrdersV4Document = {
   subtotal: string;
   totalAmount: string;
   notes?: string | null;
+  createdByUser?: OrdersV4UserIdentity | null;
   section?: OrdersV4Section | null;
   location: OrdersV4Location;
   lines: OrdersV4DocumentLine[];
@@ -179,6 +187,7 @@ export type OrdersV4InventoryBalance = {
   averageUnitCost: string;
   lastSequence: string;
   updatedAt: string;
+  createdByUser?: OrdersV4UserIdentity | null;
 };
 
 export type OrdersV4LedgerEntry = {
@@ -197,6 +206,7 @@ export type OrdersV4LedgerEntry = {
   inventoryUnit: OrdersV4Unit;
   item: OrdersV4Item;
   location: OrdersV4Location;
+  createdByUser?: OrdersV4UserIdentity | null;
 };
 
 export type OrdersV4DataQuality = {
@@ -214,6 +224,7 @@ export type OrdersV4Stocktake = {
   stocktakeDate: string;
   status: string;
   location: OrdersV4Location;
+  createdByUser?: OrdersV4UserIdentity | null;
   lines: Array<{
     id: string;
     expectedQuantity: string;

@@ -1,4 +1,5 @@
 import React from 'react';
+import type { OrdersV4UserIdentity } from '../../types/api';
 import { InlineSelect, SimpleTable, Spinner, type SimpleTableProps } from '../../ui';
 
 export const ordersV4NavigationBarClassName = '!flex !w-full !min-w-0 !flex-wrap !items-center !gap-2 !overflow-visible rounded-xl border border-noorix-border bg-[var(--noorix-bg-muted)] p-2';
@@ -59,6 +60,18 @@ export function v4Number(value: unknown, digits = 2): string {
   return Number.isFinite(number)
     ? new Intl.NumberFormat('en-US', { maximumFractionDigits: digits, minimumFractionDigits: 0 }).format(number)
     : '0';
+}
+
+export function v4ReportNumber(value: unknown): string {
+  return v4Number(value, 1);
+}
+
+export function v4UserLabel(user?: OrdersV4UserIdentity | null): string {
+  if (!user) return '—';
+  const displayName = String(user.nameAr || user.nameEn || '').trim();
+  const username = String(user.username || '').trim();
+  if (displayName && username && displayName !== username) return `${displayName} (${username})`;
+  return displayName || username || '—';
 }
 
 export function v4Date(value: string): string {

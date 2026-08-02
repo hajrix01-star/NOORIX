@@ -6,6 +6,7 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type { OrdersV4StocktakeInput } from './orders-v4.contracts';
 import { ordersV4DateOnly } from './orders-v4-date.util';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
+import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 
 function stocktakeRequestHash(input: OrdersV4StocktakeInput): string {
   return createHash('sha256').update(JSON.stringify({
@@ -55,6 +56,7 @@ export class OrdersV4InventoryService {
       averageUnitCost: entry.averageUnitCostAfter,
       lastSequence: entry.sequence.toString(),
       updatedAt: entry.createdAt,
+      createdByUserId: entry.createdByUserId,
     }));
     for (const location of locations) {
       for (const item of items) {
@@ -72,10 +74,15 @@ export class OrdersV4InventoryService {
           averageUnitCost: new Prisma.Decimal(0),
           lastSequence: '0',
           updatedAt: item.updatedAt,
+          createdByUserId: null,
         });
       }
     }
-    return rows.sort((a, b) => a.itemName.localeCompare(b.itemName, 'ar'));
+    const identities = await loadOrdersV4UserIdentities(this.prisma, rows.map((row) => row.createdByUserId));
+    return rows.map(({ createdByUserId, ...row }) => ({
+      ...row,
+      createdByUser: ordersV4UserIdentity(identities, createdByUserId),
+    })).sort((a, b) => a.itemName.localeCompare(b.itemName, 'ar'));
   }
 
   async ledger(companyId: string, itemId?: string, locationId?: string) {
@@ -85,15 +92,25 @@ export class OrdersV4InventoryService {
       orderBy: { sequence: 'desc' },
       take: 1000,
     });
-    return entries.map((entry) => ({ ...entry, sequence: entry.sequence.toString() }));
+    const identities = await loadOrdersV4UserIdentities(this.prisma, entries.map((entry) => entry.createdByUserId));
+    return entries.map((entry) => ({
+      ...entry,
+      sequence: entry.sequence.toString(),
+      createdByUser: ordersV4UserIdentity(identities, entry.createdByUserId),
+    }));
   }
 
   async listStocktakes(companyId: string) {
-    return this.prisma.ordersV4Stocktake.findMany({
+    const stocktakes = await this.prisma.ordersV4Stocktake.findMany({
       where: { companyId },
       include: { location: true, lines: { include: { item: true, unit: true } } },
       orderBy: [{ stocktakeDate: 'desc' }, { createdAt: 'desc' }],
     });
+    const identities = await loadOrdersV4UserIdentities(this.prisma, stocktakes.map((stocktake) => stocktake.createdByUserId));
+    return stocktakes.map((stocktake) => ({
+      ...stocktake,
+      createdByUser: ordersV4UserIdentity(identities, stocktake.createdByUserId),
+    }));
   }
 
   async createStocktake(companyId: string, input: OrdersV4StocktakeInput) {
