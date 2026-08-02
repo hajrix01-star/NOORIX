@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { OrdersV4Bootstrap, OrdersV4CutoverAudit, OrdersV4CutoverResult, OrdersV4DataQuality, OrdersV4InventoryBalance, OrdersV4LedgerEntry, OrdersV4Stocktake, OrdersV4UserIdentity } from '../../../types/api';
-import { Button, DialogActions, Input, Modal, ScreenTabs, type SimpleTableColumn } from '../../../ui';
+import { AdaptiveSheet, Button, DialogActions, Input, Modal, ScreenTabs, type SimpleTableColumn } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import {
   OrdersV4Field,
@@ -322,7 +322,7 @@ function StocktakeModal({ open, onClose, companyId, bootstrap, balances }: { ope
     await mutation.mutateAsync({ stocktakeDate: date, locationId: effectiveLocation, notes: notes.trim() || undefined, idempotencyKey: crypto.randomUUID(), lines: scopeRows.map((row) => ({ itemId: row.itemId, physicalQuantity: physicalBaseQuantity(row) })) });
     onClose();
   }
-  return <Modal open={open} onClose={onClose} size="xl" title="جرد المخزون" footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose }, { key: 'save', label: 'اعتماد الجرد', role: 'save', onClick: submit, loading: mutation.isPending, disabled: !scopeRows.length }]} />}>
+  return <AdaptiveSheet open={open} onClose={onClose} size="2xl" side="start" closeOnBackdrop={!mutation.isPending} hideClose={mutation.isPending} title="جرد المخزون" footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose, disabled: mutation.isPending }, { key: 'save', label: 'اعتماد الجرد', role: 'save', onClick: submit, loading: mutation.isPending, disabled: !scopeRows.length }]} />}>
     <div className="flex flex-col gap-4">
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-6 text-blue-900">
         الجرد التشغيلي يعتمد تاريخ اليوم بتوقيت السعودية: <b>{date}</b>. الرصيد الدفتري يُعاد احتسابه لحظة الاعتماد لضمان سلامة القيود.
@@ -366,5 +366,5 @@ function StocktakeModal({ open, onClose, companyId, bootstrap, balances }: { ope
         الاعتماد ينشئ مستند جرد وقيود فروقات غير قابلة للحذف. أي تصحيح لاحق يتم بجرد جديد حتى يبقى سجل المخزون كاملاً وقابلاً للمراجعة.
       </div>
     </div>
-  </Modal>;
+  </AdaptiveSheet>;
 }

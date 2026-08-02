@@ -21,7 +21,7 @@ export class OrdersV4ReportsService {
     const cashStart = bounds.gte ?? new Date('1970-01-01T00:00:00.000Z');
     const cashEnd = bounds.lte ? new Date(bounds.lte.getTime() + 86_399_999) : new Date('2999-12-31T23:59:59.999Z');
     const effectiveBounds = { gte: cashStart, lte: cashEnd };
-    const [documents, cashSales, custodyEntries, custodyBalanceAggregate] = await Promise.all([
+    const [documents, cashSales, custodyEntries] = await Promise.all([
       this.prisma.ordersV4Document.findMany({
         where: { companyId, status: 'received', documentDate: bounds },
         select: { documentType: true, paymentMethod: true, totalAmount: true, operationalCost: true },
@@ -41,10 +41,6 @@ export class OrdersV4ReportsService {
         where: { companyId, effectiveAt: effectiveBounds },
         select: { entryType: true, amountDelta: true, reversalOf: { select: { entryType: true } } },
       }),
-      this.prisma.ordersV4CustodyLedgerEntry.aggregate({
-        where: { companyId, effectiveAt: { lte: cashEnd } },
-        _sum: { amountDelta: true },
-      }),
     ]);
     const zero = new Prisma.Decimal(0);
     const sumFinancial = (rows: typeof documents) => rows.reduce((total, row) => total.plus(row.totalAmount), zero).toDecimalPlaces(6);
@@ -63,7 +59,7 @@ export class OrdersV4ReportsService {
       .toDecimalPlaces(6);
     const custodyFunded = custodyFundingDelta.lt(0) ? zero : custodyFundingDelta;
     const custodySpent = custodyPurchaseDelta.gt(0) ? zero : custodyPurchaseDelta.negated().toDecimalPlaces(6);
-    const custodyBalance = calculateOrdersV4FundsBalance([custodyBalanceAggregate._sum.amountDelta ?? 0]);
+    const custodyBalance = calculateOrdersV4FundsBalance(custodyEntries.map((row) => row.amountDelta));
     return {
       purchaseCount: purchases.length,
       registrationCount: registrations.length,

@@ -21,3 +21,26 @@ export function ordersV4RangeBounds(startDate?: string, endDate?: string): { gte
   }
   return bounds;
 }
+
+export function ordersV4SaudiToday(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Riyadh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${value('year')}-${value('month')}-${value('day')}`;
+}
+
+export function ordersV4RecentDateWindow(todayYmd = ordersV4SaudiToday(), inclusiveDays = 7): {
+  startDate: string;
+  endDate: string;
+} {
+  if (!Number.isInteger(inclusiveDays) || inclusiveDays < 1) {
+    throw new BadRequestException('عدد أيام النطاق الحديث غير صالح');
+  }
+  const today = ordersV4DateOnly(todayYmd, 'تاريخ اليوم');
+  today.setUTCDate(today.getUTCDate() - (inclusiveDays - 1));
+  return { startDate: today.toISOString().slice(0, 10), endDate: todayYmd };
+}

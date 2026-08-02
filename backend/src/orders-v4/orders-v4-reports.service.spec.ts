@@ -17,7 +17,6 @@ describe('OrdersV4ReportsService', () => {
       $queryRaw: jest.fn().mockResolvedValue([{ total: decimal(536) }]),
       ordersV4CustodyLedgerEntry: {
         findMany: jest.fn().mockResolvedValue([]),
-        aggregate: jest.fn().mockResolvedValue({ _sum: { amountDelta: null } }),
       },
     };
 
@@ -43,7 +42,6 @@ describe('OrdersV4ReportsService', () => {
           { entryType: 'reversal', amountDelta: decimal(100), reversalOf: { entryType: 'purchase' } },
           { entryType: 'purchase', amountDelta: decimal(-30), reversalOf: null },
         ]),
-        aggregate: jest.fn().mockResolvedValue({ _sum: { amountDelta: decimal(970) } }),
       },
     };
 
@@ -53,5 +51,25 @@ describe('OrdersV4ReportsService', () => {
     expect(summary.custodyFunded.toString()).toBe('1000');
     expect(summary.custodySpent.toString()).toBe('30');
     expect(summary.custodyBalance.toString()).toBe('970');
+  });
+
+  it('starts the custody balance from zero at the beginning of every selected period', async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      { entryType: 'funding', amountDelta: decimal(500), reversalOf: null },
+      { entryType: 'purchase', amountDelta: decimal(-125), reversalOf: null },
+    ]);
+    const prisma = {
+      ordersV4Document: { findMany: jest.fn().mockResolvedValue([]) },
+      $queryRaw: jest.fn().mockResolvedValue([{ total: decimal(0) }]),
+      ordersV4CustodyLedgerEntry: { findMany },
+    };
+
+    const service = new OrdersV4ReportsService(prisma as never);
+    const summary = await service.summary('company-1', '2026-08-01', '2026-08-31');
+
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ companyId: 'company-1', effectiveAt: expect.any(Object) }),
+    }));
+    expect(summary.custodyBalance.toString()).toBe('375');
   });
 });

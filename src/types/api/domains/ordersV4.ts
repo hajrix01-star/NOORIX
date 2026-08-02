@@ -131,7 +131,6 @@ export type OrdersV4Document = {
   sectionId?: string | null;
   locationId: string;
   pettyCashAmount?: string | null;
-  custodyBalanceAfter?: string | null;
   subtotal: string;
   totalAmount: string;
   operationalCost: string;

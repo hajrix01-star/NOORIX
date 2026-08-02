@@ -128,4 +128,23 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'حذف معسل' })[1]);
     expect(onRemove).toHaveBeenCalledWith('line-2');
   });
+
+  it('hides internal-registration overview cards for a submit-only employee', () => {
+    render(
+      <OrdersV4DocumentsTab
+        companyId="company-1"
+        documentType="registration"
+        startDate="2026-07-28"
+        endDate="2026-08-03"
+        bootstrap={bootstrap}
+        canCreate
+        canReport={false}
+        showOverviewCards={false}
+        historyWindowDays={7}
+      />,
+    );
+
+    expect(screen.queryByText('عدد التسجيلات')).toBeNull();
+    expect(screen.getByText(/تسجيلاته الداخلية لآخر 7 أيام فقط/)).toBeTruthy();
+  });
 });

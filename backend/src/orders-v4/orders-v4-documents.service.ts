@@ -84,15 +84,13 @@ export class OrdersV4DocumentsService {
       include: {
         section: true,
         location: true,
-        custodyEntries: { orderBy: { sequence: 'desc' }, take: 1, select: { balanceAfter: true } },
         lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } },
       },
       orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
     });
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
-    return documents.map(({ custodyEntries, ...document }) => ({
+    return documents.map((document) => ({
       ...document,
-      custodyBalanceAfter: custodyEntries[0]?.balanceAfter ?? null,
       createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
     }));
   }

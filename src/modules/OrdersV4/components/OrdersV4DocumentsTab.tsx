@@ -9,6 +9,7 @@ import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, us
 import { OrdersV4DocumentItemPicker } from './OrdersV4DocumentItemPicker';
 import { OrdersV4DocumentLinesTable, type OrdersV4DocumentDraftLine } from './OrdersV4DocumentLinesTable';
 import { OrdersV4DocumentLineModal, type OrdersV4DocumentLineDraft } from './OrdersV4DocumentLineModal';
+import { buildOrdersV4PeriodCustodyBalances } from './ordersV4CustodyPeriod.utils';
 import { buildOrdersV4WhatsAppText } from './ordersV4WhatsApp.utils';
 
 type DraftLine = OrdersV4DocumentDraftLine;
@@ -22,7 +23,7 @@ function OrdersV4PurchaseSummaryCard({ summary }: { summary?: OrdersV4Summary })
         { label: 'العهدة المستلمة خلال الفترة', value: summary?.custodyFunded, className: 'text-noorix-green' },
         { label: 'مشتريات العهدة خلال الفترة', value: summary?.custodySpent, className: 'text-noorix-red' },
       ],
-      resultLabel: 'الرصيد التراكمي حتى نهاية الفترة',
+      resultLabel: 'رصيد العهدة خلال الفترة',
       result: Number(summary?.custodyBalance ?? 0),
     },
     {
@@ -41,7 +42,7 @@ function OrdersV4PurchaseSummaryCard({ summary }: { summary?: OrdersV4Summary })
     <div className="overflow-hidden rounded-lg border border-noorix-border bg-noorix-surface">
       <div className="h-1 bg-gradient-to-r from-noorix-blue to-noorix-green" aria-hidden />
       <div className="flex items-center justify-between gap-2 border-b border-noorix-border px-3 py-2.5 sm:px-4 sm:py-3">
-        <div className="text-[12px] font-bold tracking-[0.04em] text-noorix-muted sm:text-[13px]">ملخص الفترة المختارة والعهدة التراكمية</div>
+        <div className="text-[12px] font-bold tracking-[0.04em] text-noorix-muted sm:text-[13px]">ملخص الفترة المختارة</div>
         <span className="text-[11px] text-noorix-muted">SR</span>
       </div>
       <div className="grid grid-cols-1 divide-y divide-noorix-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
@@ -89,6 +90,8 @@ export function OrdersV4DocumentsTab({
   canReverse = false,
   canUndoReverse = false,
   canReceive = false,
+  showOverviewCards = true,
+  historyWindowDays,
   companyName = '',
   companyLogoUrl = '',
 }: {
@@ -102,6 +105,8 @@ export function OrdersV4DocumentsTab({
   canReverse?: boolean;
   canUndoReverse?: boolean;
   canReceive?: boolean;
+  showOverviewCards?: boolean;
+  historyWindowDays?: number;
   companyName?: string;
   companyLogoUrl?: string;
 }) {
@@ -122,6 +127,10 @@ export function OrdersV4DocumentsTab({
   const documents = documentsQuery.data ?? [];
   const summary = summaryQuery.data;
   const sections = useMemo(() => [...new Map(documents.filter((row) => row.section).map((row) => [row.section!.id, row.section!])).values()], [documents]);
+  const periodCustodyBalanceByDocumentId = useMemo(
+    () => buildOrdersV4PeriodCustodyBalances(documents),
+    [documents],
+  );
   const filteredDocuments = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase('ar');
     return documents.filter((document) => (!needle || `${document.documentNumber} ${document.notes || ''} ${document.section?.nameAr || ''} ${document.location?.nameAr || ''}`.toLocaleLowerCase('ar').includes(needle))
@@ -186,7 +195,10 @@ export function OrdersV4DocumentsTab({
     ...(isPurchase ? [
       { key: 'paymentMethod', label: 'طريقة الدفع', render: (value: unknown) => value === 'custody' ? 'عهدة' : value === 'transfer' ? 'تحويل' : 'نقد المحل' },
       { key: 'pettyCashAmount', label: 'العهدة المستلمة', numeric: true, render: (value: unknown, row: OrdersV4Document) => row.paymentMethod === 'custody' && value != null ? `${v4Number(value)} ر.س` : '—' },
-      { key: 'custodyBalanceAfter', label: 'الرصيد التراكمي', numeric: true, render: (value: unknown, row: OrdersV4Document) => row.status === 'received' && row.paymentMethod === 'custody' && value != null ? `${v4Number(value)} ر.س` : '—' },
+      { key: 'periodCustodyBalance', label: 'رصيد الفترة بعد الطلب', numeric: true, render: (_value: unknown, row: OrdersV4Document) => {
+        const value = periodCustodyBalanceByDocumentId.get(row.id);
+        return value != null ? `${v4Number(value)} ر.س` : '—';
+      } },
     ] : []),
     { key: 'section', label: 'القسم', render: (_value, row) => row.section?.nameAr || '—' },
     { key: 'location', label: 'الموقع', render: (_value, row) => row.location?.nameAr || '—' },
@@ -194,7 +206,7 @@ export function OrdersV4DocumentsTab({
     { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? 'الإجمالي' : 'التكلفة', numeric: true, render: (value) => <strong>{v4Number(value)} ر.س</strong> },
     { key: 'status', label: 'الحالة', render: (value) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : 'معكوس'}</span> },
     { key: 'actions', label: '', render: (_value, row) => <div className="flex gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },
-  ], [canReceive, canReverse, canUndoReverse, isPurchase]);
+  ], [canReceive, canReverse, canUndoReverse, isPurchase, periodCustodyBalanceByDocumentId]);
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -204,14 +216,19 @@ export function OrdersV4DocumentsTab({
           <Button variant="primary" onClick={() => setCreateOpen(true)}>+ {isPurchase ? 'طلب جديد' : 'تسجيل جديد'}</Button>
         </div>
       )}
-      {isPurchase ? <OrdersV4PurchaseSummaryCard summary={summary} /> : (
+      {historyWindowDays && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center text-[12px] font-semibold text-blue-900">
+          يعرض حساب الموظف تسجيلاته الداخلية لآخر {historyWindowDays} أيام فقط.
+        </div>
+      )}
+      {isPurchase ? <OrdersV4PurchaseSummaryCard summary={summary} /> : showOverviewCards ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <OrdersV4Kpi label="عدد التسجيلات" value={summary?.registrationCount ?? 0} />
           <OrdersV4Kpi label="التكلفة المركزية" value={`${v4Number(summary?.registrationTotal)} ر.س`} tone="green" />
           <OrdersV4Kpi label="أسطر التسجيل" value={documents.reduce((sum, row) => sum + row.lines.length, 0)} tone="amber" />
           <OrdersV4Kpi label="نسخة النواة" value="V4" />
         </div>
-      )}
+      ) : null}
       <div className="grid gap-3 rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:grid-cols-2 xl:grid-cols-4">
         <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)} placeholder="رقم المستند أو القسم أو الموقع…" /></OrdersV4Field>
         <OrdersV4Field label="القسم"><OrdersV4Select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)}><option value="">كل الأقسام</option>{sections.map((section) => <option key={section.id} value={section.id}>{section.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>

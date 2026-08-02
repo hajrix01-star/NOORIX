@@ -23,6 +23,7 @@ import type {
   OrdersV4UnitInput,
 } from './orders-v4.contracts';
 import { OrdersV4DocumentsService } from './orders-v4-documents.service';
+import { resolveOrdersV4DocumentListScope } from './orders-v4-document-access.policy';
 import { OrdersV4InventoryService } from './orders-v4-inventory.service';
 import { OrdersV4ItemDefinitionService } from './orders-v4-item-definition.service';
 import { OrdersV4LegacyCutoverService } from './orders-v4-legacy-cutover.service';
@@ -167,7 +168,20 @@ export class OrdersV4Controller {
     if (!canReadAll && (!type || !userCan(user, submitPermission(type)))) {
       throw new ForbiddenException('لا تملك صلاحية قراءة هذا النوع من مستندات V4');
     }
-    return this.documents.list(requireCompanyId(companyId), type, startDate, endDate, canReadAll ? undefined : user.sub);
+    const scope = resolveOrdersV4DocumentListScope({
+      canReadAll,
+      documentType: type,
+      requestedStartDate: startDate,
+      requestedEndDate: endDate,
+      userId: user.sub,
+    });
+    return this.documents.list(
+      requireCompanyId(companyId),
+      type,
+      scope.startDate,
+      scope.endDate,
+      scope.createdByUserId,
+    );
   }
 
   @Post('documents')
