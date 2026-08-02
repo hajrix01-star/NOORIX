@@ -21,12 +21,16 @@ export function OrdersV4ItemCard({
   initialKind,
   data,
   mutations,
+  onManageCategories,
+  onManageUnits,
   onClose,
 }: {
   item: OrdersV4Item | null;
   initialKind: 'purchased' | 'sale';
   data: OrdersV4Bootstrap;
   mutations: Mutations;
+  onManageCategories: () => void;
+  onManageUnits: () => void;
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<CardTab>('data');
@@ -99,6 +103,26 @@ export function OrdersV4ItemCard({
     setSectionIds((current) => checked ? [...new Set([...current, sectionId])] : current.filter((id) => id !== sectionId));
   }
 
+  function unitsPayload() {
+    return {
+      inventoryUnitId,
+      units: unitRows.map((row, sortOrder) => ({
+        ...row,
+        purchaseLabel: row.purchaseLabel.trim() || null,
+        lastPrice: row.lastPrice || null,
+        sortOrder,
+      })),
+    };
+  }
+
+  function removeItemUnit(unitId: string) {
+    setUnitRows((current) => current.filter((entry) => entry.unitId !== unitId));
+    setConversionRows((current) => {
+      const remaining = current.filter((entry) => entry.fromUnitId !== unitId && entry.toUnitId !== unitId);
+      return remaining.length ? remaining : [conversionRow()];
+    });
+  }
+
   async function save() {
     if (!nameAr.trim()) return;
     if (!item) {
@@ -124,20 +148,19 @@ export function OrdersV4ItemCard({
       });
     } else if (tab === 'prices') {
       if (!inventoryUnitId || !unitRows.length) return;
-      await mutations.replaceItemUnits.mutateAsync({
-        id: item.id,
-        body: {
-          inventoryUnitId,
-          units: unitRows.map((row, sortOrder) => ({ ...row, purchaseLabel: row.purchaseLabel.trim() || null, lastPrice: row.lastPrice || null, sortOrder })),
-        },
-      });
+      await mutations.replaceItemUnits.mutateAsync({ id: item.id, body: unitsPayload() });
     } else if (item.itemType === 'purchased') {
-      await mutations.publishConversion.mutateAsync({
-        itemId: item.id,
-        edges: conversionRows.map(({ fromUnitId, toUnitId, factor, reversible, allowDimensionBridge }) => ({
-          fromUnitId, toUnitId, factor, reversible, allowDimensionBridge,
-        })),
-      });
+      if (!inventoryUnitId || !unitRows.length) return;
+      await mutations.replaceItemUnits.mutateAsync({ id: item.id, body: unitsPayload() });
+      const completeEdges = conversionRows.filter((row) => row.fromUnitId && row.toUnitId && Number(row.factor) > 0);
+      if (completeEdges.length) {
+        await mutations.publishConversion.mutateAsync({
+          itemId: item.id,
+          edges: completeEdges.map(({ fromUnitId, toUnitId, factor, reversible, allowDimensionBridge }) => ({
+            fromUnitId, toUnitId, factor, reversible, allowDimensionBridge,
+          })),
+        });
+      }
     } else {
       await mutations.publishRecipe.mutateAsync({
         outputItemId: item.id,
@@ -161,14 +184,14 @@ export function OrdersV4ItemCard({
       title={item ? `بطاقة الصنف — ${item.nameAr}` : `إضافة ${initialKind === 'purchased' ? 'صنف طلبات' : 'صنف تسجيل داخلي'}`}
       footer={<DialogActions actions={[
         { key: 'cancel', label: 'إلغاء', role: 'cancel', disabled: busy, onClick: onClose },
-        { key: 'save', label: tab === 'definition' ? 'تحقق وانشر' : 'حفظ', role: 'save', loading: busy, disabled: busy, onClick: save },
+        { key: 'save', label: tab === 'definition' && item?.itemType === 'purchased' ? 'حفظ الوحدات والتحويلات' : tab === 'definition' ? 'تحقق وانشر' : 'حفظ', role: 'save', loading: busy, disabled: busy, onClick: save },
       ]} />}
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2 rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-1.5">
-          {tabButton('data', 'البيانات')}
-          {item && tabButton('prices', 'الأحجام والأسعار')}
-          {item && tabButton('definition', item.itemType === 'purchased' ? 'التحويلات' : 'الرسبي')}
+          {tabButton('data', 'معلومات عامة')}
+          {item && tabButton('prices', 'السعر')}
+          {item && tabButton('definition', item.itemType === 'purchased' ? 'الوحدات والتحويلات' : 'الرسبي')}
         </div>
 
         {tab === 'data' && (
@@ -178,7 +201,7 @@ export function OrdersV4ItemCard({
             <OrdersV4Field label="SKU"><Input value={sku} onChange={(event) => setSku(event.target.value)} placeholder="اختياري" /></OrdersV4Field>
             {!item && <OrdersV4Field label="نوع الصنف"><OrdersV4Select value={itemType} onChange={(event) => setItemType(event.target.value as 'purchased' | 'sale')}><option value="purchased">صنف طلبات</option><option value="sale">صنف تسجيل داخلي</option></OrdersV4Select></OrdersV4Field>}
             {!item && <OrdersV4Field label="وحدة المخزون"><OrdersV4Select value={inventoryUnitId} onChange={(event) => setInventoryUnitId(event.target.value)}><option value="">اختر</option>{data.units.filter((unit) => unit.isActive).map((unit) => <option key={unit.id} value={unit.id}>{unit.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>}
-            <OrdersV4Field label="الفئة"><OrdersV4Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">بدون فئة</option>{data.categories.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+            <OrdersV4Field label="الفئة"><div className="flex gap-2"><OrdersV4Select className="min-w-0 flex-1" value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">بدون فئة</option>{data.categories.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select><Button type="button" size="sm" onClick={onManageCategories}>إدارة الفئات</Button></div></OrdersV4Field>
             <OrdersV4Field label="الأقسام"><div className="flex flex-wrap gap-2">{data.sections.filter((row) => row.isActive).map((section) => <label key={section.id} className="flex items-center gap-2 rounded-lg border border-noorix-border px-3 py-2 text-[12px]"><Checkbox checked={sectionIds.includes(section.id)} onChange={(event) => toggleSection(section.id, event.target.checked)} />{section.nameAr}</label>)}</div></OrdersV4Field>
             <label className="flex items-center gap-2 text-[12px]"><Checkbox checked={trackInventory} onChange={(event) => setTrackInventory(event.target.checked)} />تتبع المخزون والتكلفة</label>
           </div>
@@ -186,25 +209,29 @@ export function OrdersV4ItemCard({
 
         {tab === 'prices' && item && (
           <div className="flex flex-col gap-3">
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-900">وحدة المخزون تحدد الرصيد. الأسعار مرتبطة بوحدات الطلب والفاتورة وتُحدّث عند الاستلام.</div>
-            <OrdersV4Field label="وحدة الخصم من المخزون"><OrdersV4Select value={inventoryUnitId} onChange={(event) => setInventoryUnitId(event.target.value)}>{unitRows.map((row) => <option key={row.unitId} value={row.unitId}>{data.units.find((unit) => unit.id === row.unitId)?.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-900">تُستورد الوحدات من تبويب «الوحدات والتحويلات». ضع هنا وصف الحجم والسعر الذي يظهر في الطلبات، ويُحدّث آخر السعر عند الاستلام.</div>
             {unitRows.map((row, index) => {
               const unit = data.units.find((candidate) => candidate.id === row.unitId);
-              return <div key={row.unitId} className="grid items-end gap-2 rounded-xl border border-noorix-border p-3 lg:grid-cols-[1fr_1.4fr_1fr_auto_auto]">
+              return <div key={row.unitId} className="grid items-end gap-2 rounded-xl border border-noorix-border p-3 lg:grid-cols-[1fr_1.4fr_1fr_auto]">
                 <div><div className="text-[11px] text-noorix-muted">وحدة الفاتورة</div><strong>{unit?.nameAr}</strong></div>
                 <OrdersV4Field label="وصف الشراء / الحجم"><Input value={row.purchaseLabel} onChange={(event) => setUnitRows((current) => current.map((entry, rowIndex) => rowIndex === index ? { ...entry, purchaseLabel: event.target.value } : entry))} placeholder={`مثال: كبير / ${unit?.nameAr ?? ''}`} /></OrdersV4Field>
                 <OrdersV4Field label="السعر الظاهر"><Input type="number" min="0" step="any" value={row.lastPrice} onChange={(event) => setUnitRows((current) => current.map((entry, rowIndex) => rowIndex === index ? { ...entry, lastPrice: event.target.value } : entry))} /></OrdersV4Field>
                 <label className="flex items-center gap-2 pb-2 text-[12px]"><Checkbox checked={row.isOrderEnabled} onChange={(event) => setUnitRows((current) => current.map((entry, rowIndex) => rowIndex === index ? { ...entry, isOrderEnabled: event.target.checked } : entry))} />تظهر في الطلبات</label>
-                <Button variant="danger" size="sm" disabled={unitRows.length === 1 || row.unitId === inventoryUnitId} onClick={() => setUnitRows((current) => current.filter((_, rowIndex) => rowIndex !== index))}>حذف</Button>
               </div>;
             })}
-            <OrdersV4Field label="+ إضافة وحدة"><OrdersV4Select value="" onChange={(event) => { if (event.target.value) setUnitRows((current) => [...current, { unitId: event.target.value, purchaseLabel: '', lastPrice: '', isOrderEnabled: item.itemType === 'purchased' }]); }}><option value="">اختر وحدة</option>{availableUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
           </div>
         )}
 
         {tab === 'definition' && item?.itemType === 'purchased' && (
           <div className="flex flex-col gap-3">
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-6 text-amber-950"><b>سلسلة المخزون:</b> اكتبها مرة واحدة من العبوة الأكبر إلى الأصغر. وحدة الخصم الحالية: {item.inventoryUnit.nameAr}.</div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-6 text-amber-950"><b>الخطوة 1 — وحدات الصنف:</b> أضف كرتون ثم علبة ثم حبة. بعد ذلك اربطها في المعادلات بالأسفل. الحفظ ينفذ الوحدات والتحويلات بالترتيب الصحيح.</div>
+            <div className="grid gap-3 rounded-xl border border-noorix-border p-3 md:grid-cols-[1fr_1fr_auto]">
+              <OrdersV4Field label="+ إضافة وحدة افتراضية للصنف"><OrdersV4Select value="" onChange={(event) => { if (event.target.value) setUnitRows((current) => [...current, { unitId: event.target.value, purchaseLabel: '', lastPrice: '', isOrderEnabled: true }]); }}><option value="">اختر: حبة، باكيت، كرتون…</option>{availableUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+              <OrdersV4Field label="وحدة المخزون"><OrdersV4Select value={inventoryUnitId} onChange={(event) => setInventoryUnitId(event.target.value)}>{unitRows.map((row) => <option key={row.unitId} value={row.unitId}>{data.units.find((unit) => unit.id === row.unitId)?.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+              <Button type="button" size="sm" onClick={onManageUnits}>إدارة الوحدات</Button>
+            </div>
+            <div className="flex flex-wrap gap-2">{unitRows.map((row) => { const unit = data.units.find((candidate) => candidate.id === row.unitId); return <span key={row.unitId} className="inline-flex items-center gap-2 rounded-full border border-noorix-border bg-noorix-bg-muted px-3 py-1.5 text-[12px]"><b>{unit?.nameAr}</b>{row.unitId === inventoryUnitId && <span className="text-emerald-700">وحدة المخزون</span>}{unitRows.length > 1 && row.unitId !== inventoryUnitId && <Button variant="raw" size="auto" className="text-red-600" onClick={() => removeItemUnit(row.unitId)}>×</Button>}</span>; })}</div>
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-6 text-blue-950"><b>الخطوة 2 — معاملات التحويل:</b> مثال: 1 كرتون = 10 علب، ثم 1 علبة = 64 حبة.</div>
             <div className="flex flex-wrap gap-2">{ordersV4BuiltInTemplates(data.units).map((template) => <Button key={template.name} size="sm" variant="ghost" onClick={() => setConversionRows([{ key: crypto.randomUUID(), fromUnitId: template.fromUnitId, toUnitId: template.toUnitId, factor: template.factor, reversible: true, allowDimensionBridge: false }])}>{template.name}</Button>)}</div>
             {conversionRows.map((row, index) => <div key={row.key} className="grid items-end gap-2 rounded-xl border border-noorix-border p-3 lg:grid-cols-[44px_1fr_1fr_0.7fr_auto]">
               <strong className="pb-2 text-center">{index + 1}</strong>

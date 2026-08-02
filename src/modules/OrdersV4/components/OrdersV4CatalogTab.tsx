@@ -19,7 +19,7 @@ export function OrdersV4CatalogTab({
   bootstrap?: OrdersV4Bootstrap;
   canDelete?: boolean;
 }) {
-  const [tab, setTab] = useState<CatalogTab>('items');
+  const [tab, setTab] = useState<CatalogTab>('sections');
   const [activeItem, setActiveItem] = useState<OrdersV4Item | null | undefined>(undefined);
   const [newItemKind, setNewItemKind] = useState<OrdersV4CatalogItemKind>('purchased');
   const mutations = useOrdersV4CatalogMutations(companyId);
@@ -84,6 +84,8 @@ export function OrdersV4CatalogTab({
         initialKind={activeItem?.itemType ?? newItemKind}
         data={data}
         mutations={mutations}
+        onManageCategories={() => { setActiveItem(undefined); setTab('categories'); }}
+        onManageUnits={() => { setActiveItem(undefined); setTab('units'); }}
         onClose={() => setActiveItem(undefined)}
       />
     )}
