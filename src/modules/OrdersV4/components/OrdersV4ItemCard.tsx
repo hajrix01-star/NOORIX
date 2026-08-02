@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { OrdersV4Bootstrap, OrdersV4Item } from '../../../types/api';
-import { Button, Checkbox, DialogActions, Input, Modal } from '../../../ui';
+import { Button, Checkbox, DialogActions, Input, Modal, SimpleTable } from '../../../ui';
 import { OrdersV4Field, OrdersV4Select } from '../OrdersV4Shared';
 import type { useOrdersV4CatalogMutations } from '../useOrdersV4';
 import {
@@ -107,6 +107,11 @@ export function OrdersV4ItemCard({
   ));
   const busy = mutations.createItem.isPending || mutations.updateItem.isPending
     || mutations.saveItemDefinition.isPending || mutations.publishRecipe.isPending;
+  const selectedCategory = data.categories.find((row) => row.id === categoryId);
+  const selectedInventoryUnit = data.units.find((unit) => unit.id === inventoryUnitId);
+  const activeUnitCount = item?.units.filter((row) => row.isActive).length ?? (inventoryUnitId ? 1 : 0);
+  const pricedUnitCount = item?.units.filter((row) => row.isActive && row.lastPrice != null).length ?? 0;
+  const enabledOrderUnitCount = item?.units.filter((row) => row.isActive && row.isOrderEnabled && row.lastPrice != null).length ?? 0;
 
   function toggleSection(sectionId: string, checked: boolean) {
     setSectionIds((current) => checked ? [...new Set([...current, sectionId])] : current.filter((id) => id !== sectionId));
@@ -230,15 +235,42 @@ export function OrdersV4ItemCard({
         </div>
 
         {tab === 'data' && (
-          <div className="grid gap-4 md:grid-cols-2">
-            <OrdersV4Field label="اسم الصنف (عربي) *"><Input value={nameAr} onChange={(event) => setNameAr(event.target.value)} /></OrdersV4Field>
-            <OrdersV4Field label="اسم الصنف (إنجليزي)"><Input value={nameEn} onChange={(event) => setNameEn(event.target.value)} /></OrdersV4Field>
-            <OrdersV4Field label="SKU"><Input value={sku} onChange={(event) => setSku(event.target.value)} placeholder="اختياري" /></OrdersV4Field>
-            {!item && <OrdersV4Field label="نوع الصنف"><OrdersV4Select value={itemType} onChange={(event) => setItemType(event.target.value as 'purchased' | 'sale')}><option value="purchased">صنف طلبات</option><option value="sale">صنف تسجيل داخلي</option></OrdersV4Select></OrdersV4Field>}
-            {!item && <OrdersV4Field label="وحدة الأساس الأولية"><OrdersV4Select value={inventoryUnitId} onChange={(event) => setInventoryUnitId(event.target.value)}><option value="">اختر</option>{data.units.filter((unit) => unit.isActive).map((unit) => <option key={unit.id} value={unit.id}>{unit.nameAr}</option>)}</OrdersV4Select><div className="mt-1 text-[10px] text-noorix-muted">يمكن بناء السلسلة وتغيير وحدة الأساس بعد إنشاء الصنف.</div></OrdersV4Field>}
-            <OrdersV4Field label="الفئة"><div className="flex gap-2"><OrdersV4Select className="min-w-0 flex-1" value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">بدون فئة</option>{data.categories.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select><Button type="button" size="sm" onClick={onManageCategories}>إدارة الفئات</Button></div></OrdersV4Field>
-            <OrdersV4Field label="الأقسام"><div className="flex flex-wrap gap-2">{data.sections.filter((row) => row.isActive).map((section) => <label key={section.id} className="flex items-center gap-2 rounded-lg border border-noorix-border px-3 py-2 text-[12px]"><Checkbox checked={sectionIds.includes(section.id)} onChange={(event) => toggleSection(section.id, event.target.checked)} />{section.nameAr}</label>)}</div></OrdersV4Field>
-            <label className="flex items-center gap-2 text-[12px]"><Checkbox checked={trackInventory} onChange={(event) => setTrackInventory(event.target.checked)} />تتبع المخزون والتكلفة</label>
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-3 rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div><div className="text-[10px] font-semibold text-noorix-muted">نوع الصنف</div><div className="mt-1 text-[13px] font-bold text-noorix-text">{itemType === 'purchased' ? 'مكوّن مشتريات ومخزون' : 'صنف تسجيل داخلي وبيع'}</div></div>
+              <div><div className="text-[10px] font-semibold text-noorix-muted">الفئة الحالية</div><div className="mt-1 text-[13px] font-bold text-noorix-text">{selectedCategory?.nameAr || 'غير مصنف'}</div></div>
+              <div><div className="text-[10px] font-semibold text-noorix-muted">وحدة المخزون</div><div className="mt-1 text-[13px] font-bold text-noorix-text">{selectedInventoryUnit?.nameAr || 'لم تحدد بعد'}</div></div>
+              <div><div className="text-[10px] font-semibold text-noorix-muted">الحالة التشغيلية</div><div className={`mt-1 text-[13px] font-bold ${trackInventory ? 'text-emerald-700' : 'text-amber-700'}`}>{trackInventory ? 'يتتبع المخزون والتكلفة' : 'دون تتبع مخزون'}</div></div>
+            </div>
+
+            {item && (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="rounded-lg border border-noorix-border bg-white p-3 text-center"><div className="text-[10px] text-noorix-muted">الوحدات المرتبطة</div><strong className="mt-1 block text-[18px] text-noorix-blue">{activeUnitCount}</strong></div>
+                <div className="rounded-lg border border-noorix-border bg-white p-3 text-center"><div className="text-[10px] text-noorix-muted">تغليفات مسعرة</div><strong className="mt-1 block text-[18px] text-emerald-700">{pricedUnitCount}</strong></div>
+                <div className="rounded-lg border border-noorix-border bg-white p-3 text-center"><div className="text-[10px] text-noorix-muted">تظهر في الطلبات</div><strong className="mt-1 block text-[18px] text-amber-700">{enabledOrderUnitCount}</strong></div>
+                <div className="rounded-lg border border-noorix-border bg-white p-3 text-center"><div className="text-[10px] text-noorix-muted">{itemType === 'purchased' ? 'مستويات التحويل' : 'نسخة الرسبي'}</div><strong className="mt-1 block text-[18px] text-noorix-text">{itemType === 'purchased' ? currentConversion?.edges.length ?? 0 : currentRecipe?.version ?? '—'}</strong></div>
+              </div>
+            )}
+
+            <section className="rounded-xl border border-noorix-border bg-white p-3">
+              <div className="mb-3"><h4 className="m-0 text-[13px] font-bold text-noorix-text">هوية الصنف</h4><p className="m-0 mt-1 text-[11px] text-noorix-muted">الاسم والرمز اللذان يظهران في البحث والتقارير والمستندات.</p></div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <OrdersV4Field label="اسم الصنف (عربي) *"><Input value={nameAr} onChange={(event) => setNameAr(event.target.value)} /></OrdersV4Field>
+                <OrdersV4Field label="اسم الصنف (إنجليزي)"><Input value={nameEn} onChange={(event) => setNameEn(event.target.value)} /></OrdersV4Field>
+                <OrdersV4Field label="رمز الصنف SKU"><Input value={sku} onChange={(event) => setSku(event.target.value)} placeholder="رمز مختصر وفريد — اختياري" /></OrdersV4Field>
+                {!item ? <OrdersV4Field label="نوع الصنف"><OrdersV4Select value={itemType} onChange={(event) => setItemType(event.target.value as 'purchased' | 'sale')}><option value="purchased">صنف طلبات ومخزون</option><option value="sale">صنف تسجيل داخلي</option></OrdersV4Select></OrdersV4Field> : <OrdersV4Field label="نوع الصنف"><div className="flex h-9 items-center rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 text-[13px] font-semibold">{itemType === 'purchased' ? 'صنف طلبات ومخزون' : 'صنف تسجيل داخلي'}</div></OrdersV4Field>}
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-noorix-border bg-white p-3">
+              <div className="mb-3"><h4 className="m-0 text-[13px] font-bold text-noorix-text">التصنيف والتشغيل</h4><p className="m-0 mt-1 text-[11px] text-noorix-muted">يحدد مكان ظهور الصنف وكيفية دخوله في المخزون والتكلفة.</p></div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <OrdersV4Field label="الفئة"><div className="flex gap-2"><OrdersV4Select className="min-w-0 flex-1" value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">بدون فئة</option>{data.categories.filter((row) => row.isActive).map((row) => <option key={row.id} value={row.id}>{row.nameAr}</option>)}</OrdersV4Select><Button type="button" size="sm" variant="primary" onClick={onManageCategories}>إدارة الفئات</Button></div></OrdersV4Field>
+                {!item ? <OrdersV4Field label="وحدة المخزون الأولية"><OrdersV4Select value={inventoryUnitId} onChange={(event) => setInventoryUnitId(event.target.value)}><option value="">اختر الوحدة</option>{data.units.filter((unit) => unit.isActive).map((unit) => <option key={unit.id} value={unit.id}>{unit.nameAr}</option>)}</OrdersV4Select><div className="mt-1 text-[10px] text-noorix-muted">يمكن تطوير السلسلة وتغيير وحدة المخزون بعد إنشاء الصنف.</div></OrdersV4Field> : <OrdersV4Field label="وحدة المخزون الحالية"><div className="flex h-9 items-center rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 text-[13px] font-semibold">{selectedInventoryUnit?.nameAr || '—'}</div><div className="mt-1 text-[10px] text-noorix-muted">تُدار من تبويب الوحدات والتحويلات لضمان سلامة الأرصدة.</div></OrdersV4Field>}
+                <OrdersV4Field label="الأقسام المرتبطة" className="md:col-span-2"><div className="flex flex-wrap gap-2">{data.sections.filter((row) => row.isActive).map((section) => <label key={section.id} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] ${sectionIds.includes(section.id) ? 'border-noorix-green bg-emerald-50 text-emerald-800' : 'border-noorix-border bg-white'}`}><Checkbox checked={sectionIds.includes(section.id)} onChange={(event) => toggleSection(section.id, event.target.checked)} />{section.nameAr}</label>)}</div></OrdersV4Field>
+                <label className="md:col-span-2 flex items-center justify-between gap-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2.5 text-[12px]"><span><strong className="block text-noorix-text">تتبع المخزون والتكلفة</strong><span className="mt-0.5 block text-[10px] text-noorix-muted">عند التفعيل تُرحّل الاستلامات والتسجيلات إلى دفتر المخزون المركزي.</span></span><Checkbox checked={trackInventory} onChange={(event) => setTrackInventory(event.target.checked)} /></label>
+              </div>
+            </section>
           </div>
         )}
 
@@ -283,21 +315,20 @@ export function OrdersV4ItemCard({
           <div className="flex flex-col gap-3">
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-6 text-blue-950">ابنِ السلسلة من التغليف الكبير إلى الأصغر. مثال: <b>1 كرتون = 10 علب</b> ثم <b>1 علبة = 64 حبة</b>. السطر الجديد يبدأ تلقائيًا من نهاية السابق.</div>
             {!!orphanPriceUnitIds.length && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-[12px] font-bold text-red-800">غيّرت السلسلة وأصبح هناك تغليف مسعّر خارجها. انتقل إلى تبويب السعر واحذف التغليف المتأثر أو أعده إلى السلسلة.</div>}
-            {conversionRows.map((row, index) => {
-              const fromOptions = index === 0
-                ? data.units.filter((unit) => unit.isActive)
-                : ordersV4CompatibleTargets(data.units, conversionRows, index - 1);
-              const toOptions = ordersV4CompatibleTargets(data.units, conversionRows, index);
-              const fromName = data.units.find((unit) => unit.id === row.fromUnitId)?.nameAr || 'الوحدة';
-              return <div key={row.key} className="grid items-end gap-2 rounded-xl border border-noorix-border bg-noorix-bg-surface p-3 lg:grid-cols-[44px_1fr_1fr_0.75fr_auto]">
-                <strong className="pb-2 text-center">{index + 1}</strong>
-                <OrdersV4Field label="الوحدة"><OrdersV4Select value={row.fromUnitId} onChange={(event) => patchDefinitionRow(index, { fromUnitId: event.target.value })}><option value="">اختر الوحدة الرئيسية</option>{fromOptions.map((unit) => <option key={unit.id} value={unit.id}>{unit.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
-                <OrdersV4Field label="إلى وحدة"><OrdersV4Select value={row.toUnitId} onChange={(event) => patchDefinitionRow(index, { toUnitId: event.target.value })}><option value="">بدون تحويل / اختر الوحدة التالية</option>{toOptions.map((unit) => <option key={unit.id} value={unit.id}>{unit.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
-                <OrdersV4Field label={`كل 1 ${fromName} يحتوي`}><Input type="number" min="0" step="any" disabled={!row.toUnitId} value={row.factor} onChange={(event) => patchDefinitionRow(index, { factor: event.target.value })} /></OrdersV4Field>
-                <Button variant="danger" size="sm" onClick={() => removeDefinitionRow(index)}>حذف</Button>
-              </div>;
-            })}
-            <Button size="sm" disabled={!conversionRows.at(-1)?.toUnitId} onClick={() => setConversionRows((current) => [...current, ordersV4NextDefinitionRow(current)])}>+ إضافة مستوى تحويل</Button>
+            <div className="flex justify-end">
+              <Button variant="primary" size="sm" className="w-fit" disabled={!conversionRows.at(-1)?.toUnitId} onClick={() => setConversionRows((current) => [...current, ordersV4NextDefinitionRow(current)])}>+ إضافة مستوى تحويل</Button>
+            </div>
+            <SimpleTable
+              tableMinWidth={760}
+              data={conversionRows.map((row, index) => ({ ...row, index }))}
+              columns={[
+                { key: 'index', label: '#', align: 'center', render: (value) => Number(value) + 1 },
+                { key: 'fromUnitId', label: 'الوحدة الرئيسية', align: 'center', render: (_value, row) => { const fromOptions = row.index === 0 ? data.units.filter((unit) => unit.isActive) : ordersV4CompatibleTargets(data.units, conversionRows, row.index - 1); return <OrdersV4Select aria-label={`الوحدة الرئيسية للمستوى ${row.index + 1}`} value={row.fromUnitId} onChange={(event) => patchDefinitionRow(row.index, { fromUnitId: event.target.value })}><option value="">اختر الوحدة الرئيسية</option>{fromOptions.map((unit) => <option key={unit.id} value={unit.id}>{unit.nameAr}</option>)}</OrdersV4Select>; } },
+                { key: 'toUnitId', label: 'إلى وحدة', align: 'center', render: (_value, row) => { const toOptions = ordersV4CompatibleTargets(data.units, conversionRows, row.index); return <OrdersV4Select aria-label={`الوحدة الناتجة للمستوى ${row.index + 1}`} value={row.toUnitId} onChange={(event) => patchDefinitionRow(row.index, { toUnitId: event.target.value })}><option value="">اختر الوحدة التالية</option>{toOptions.map((unit) => <option key={unit.id} value={unit.id}>{unit.nameAr}</option>)}</OrdersV4Select>; } },
+                { key: 'factor', label: 'معامل التحويل', align: 'center', render: (_value, row) => <Input aria-label={`معامل التحويل للمستوى ${row.index + 1}`} type="number" min="0" step="any" disabled={!row.toUnitId} value={row.factor} onChange={(event) => patchDefinitionRow(row.index, { factor: event.target.value })} /> },
+                { key: 'key', label: 'الإجراء', align: 'center', render: (_value, row) => <Button variant="danger" size="sm" onClick={() => removeDefinitionRow(row.index)}>حذف</Button> },
+              ]}
+            />
             {!!definitionUnitIds.length && <div className="grid gap-3 rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3 md:grid-cols-2">
               <div><div className="mb-2 text-[11px] font-bold text-noorix-muted">سلسلة الصنف</div><div className="flex flex-wrap items-center gap-2">{definitionUnitIds.map((unitId, index) => <React.Fragment key={unitId}><span className="rounded-full border border-noorix-border bg-white px-3 py-1.5 text-[12px] font-bold">{data.units.find((unit) => unit.id === unitId)?.nameAr}</span>{index < definitionUnitIds.length - 1 && <span>←</span>}</React.Fragment>)}</div></div>
               <OrdersV4Field label="وحدة أساس المخزون"><OrdersV4Select value={inventoryUnitId} onChange={(event) => setInventoryUnitId(event.target.value)}>{definitionUnitIds.map((unitId) => <option key={unitId} value={unitId}>{data.units.find((unit) => unit.id === unitId)?.nameAr}</option>)}</OrdersV4Select><div className="mt-1 text-[10px] text-noorix-muted">تُختار آخر وحدة تلقائيًا، ويمكن تغييرها إلى أي وحدة متصلة.</div></OrdersV4Field>
@@ -311,13 +342,17 @@ export function OrdersV4ItemCard({
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-900"><b>الرسبي:</b> استهلاك مواد المخزون لكل كمية مباعة. التكلفة تُحسب من متوسط آخر 5 طلبات مستلمة.</div>
             <div className="grid gap-3 md:grid-cols-2"><OrdersV4Field label="كمية المخرج"><Input type="number" min="0" step="any" value={outputQuantity} onChange={(event) => setOutputQuantity(event.target.value)} /></OrdersV4Field><OrdersV4Field label="وحدة المخرج"><OrdersV4Select value={outputUnitId} onChange={(event) => setOutputUnitId(event.target.value)}>{unitRows.map((row) => <option key={row.unitId} value={row.unitId}>{data.units.find((unit) => unit.id === row.unitId)?.nameAr}</option>)}</OrdersV4Select></OrdersV4Field></div>
             <Input type="search" value={componentSearch} onChange={(event) => setComponentSearch(event.target.value)} placeholder="بحث في المكونات…" />
-            {recipeRows.map((row) => <div key={row.key} className="grid items-end gap-2 rounded-xl border border-noorix-border p-3 lg:grid-cols-[1.5fr_0.7fr_1fr_auto]">
-              <OrdersV4Field label="المكوّن"><OrdersV4Select value={row.componentItemId} onChange={(event) => { const component = data.items.find((candidate) => candidate.id === event.target.value); setRecipeRows((current) => current.map((entry) => entry.key === row.key ? { ...entry, componentItemId: event.target.value, unitId: component?.inventoryUnitId ?? '' } : entry)); }}><option value="">اختر المكوّن</option>{componentItems.map((component) => <option key={component.id} value={component.id}>{component.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
-              <OrdersV4Field label="الكمية"><Input type="number" min="0" step="any" value={row.quantity} onChange={(event) => setRecipeRows((current) => current.map((entry) => entry.key === row.key ? { ...entry, quantity: event.target.value } : entry))} /></OrdersV4Field>
-              <OrdersV4Field label="الوحدة"><OrdersV4Select value={row.unitId} onChange={(event) => setRecipeRows((current) => current.map((entry) => entry.key === row.key ? { ...entry, unitId: event.target.value } : entry))}>{data.items.find((candidate) => candidate.id === row.componentItemId)?.units.filter((unit) => unit.isActive).map((itemUnit) => <option key={itemUnit.unitId} value={itemUnit.unitId}>{itemUnit.unit.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
-              <Button variant="danger" size="sm" disabled={recipeRows.length === 1} onClick={() => setRecipeRows((current) => current.filter((entry) => entry.key !== row.key))}>حذف</Button>
-            </div>)}
-            <Button size="sm" onClick={() => setRecipeRows((current) => [...current, recipeRow()])}>+ مكوّن</Button>
+            <div className="flex justify-end"><Button variant="primary" size="sm" className="w-fit" onClick={() => setRecipeRows((current) => [...current, recipeRow()])}>+ إضافة مكوّن</Button></div>
+            <SimpleTable
+              tableMinWidth={680}
+              data={recipeRows.map((row, index) => ({ ...row, index }))}
+              columns={[
+                { key: 'componentItemId', label: 'المكوّن', align: 'center', render: (_value, row) => <OrdersV4Select aria-label={`المكوّن ${row.index + 1}`} value={row.componentItemId} onChange={(event) => { const component = data.items.find((candidate) => candidate.id === event.target.value); setRecipeRows((current) => current.map((entry) => entry.key === row.key ? { ...entry, componentItemId: event.target.value, unitId: component?.inventoryUnitId ?? '' } : entry)); }}><option value="">اختر المكوّن</option>{componentItems.map((component) => <option key={component.id} value={component.id}>{component.nameAr}</option>)}</OrdersV4Select> },
+                { key: 'quantity', label: 'الكمية', align: 'center', render: (_value, row) => <Input aria-label={`كمية المكوّن ${row.index + 1}`} type="number" min="0" step="any" value={row.quantity} onChange={(event) => setRecipeRows((current) => current.map((entry) => entry.key === row.key ? { ...entry, quantity: event.target.value } : entry))} /> },
+                { key: 'unitId', label: 'الوحدة', align: 'center', render: (_value, row) => <OrdersV4Select aria-label={`وحدة المكوّن ${row.index + 1}`} value={row.unitId} onChange={(event) => setRecipeRows((current) => current.map((entry) => entry.key === row.key ? { ...entry, unitId: event.target.value } : entry))}>{data.items.find((candidate) => candidate.id === row.componentItemId)?.units.filter((unit) => unit.isActive).map((itemUnit) => <option key={itemUnit.unitId} value={itemUnit.unitId}>{itemUnit.unit.nameAr}</option>)}</OrdersV4Select> },
+                { key: 'key', label: 'الإجراء', align: 'center', render: (_value, row) => <Button variant="danger" size="sm" disabled={recipeRows.length === 1} onClick={() => setRecipeRows((current) => current.filter((entry) => entry.key !== row.key))}>حذف</Button> },
+              ]}
+            />
             {currentRecipe && <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-[12px] text-green-950">التكلفة الحالية: <b>{currentRecipe.estimatedCost} ر.س</b> — النسخة {currentRecipe.version}</div>}
           </div>
         )}

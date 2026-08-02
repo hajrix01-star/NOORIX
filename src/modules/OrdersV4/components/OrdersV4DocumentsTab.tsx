@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4Item, OrdersV4ReceivePayload } from '../../../types/api';
+import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4Item, OrdersV4ReceivePayload, OrdersV4Summary } from '../../../types/api';
 import { Button, DialogActions, Input, Modal, type SimpleTableColumn, TransactionDatePicker } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { OrdersV4Field, OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4Select, OrdersV4Table as SimpleTable, v4Date, v4Number } from '../OrdersV4Shared';
@@ -9,6 +9,61 @@ import { OrdersV4DocumentLineModal, type OrdersV4DocumentLineDraft } from './Ord
 import { buildOrdersV4WhatsAppText } from './ordersV4WhatsApp.utils';
 
 type DraftLine = OrdersV4DocumentLineDraft & { key: string };
+
+function OrdersV4PurchaseSummaryCard({ summary }: { summary?: OrdersV4Summary }) {
+  const panes = [
+    {
+      title: 'عهدة المندوب',
+      tone: 'bg-[var(--color-nx-sales)]',
+      rows: [
+        { label: 'العهدة المستلمة', value: summary?.custodyFunded, className: 'text-noorix-green' },
+        { label: 'مشتريات العهدة', value: summary?.custodySpent, className: 'text-noorix-red' },
+      ],
+      resultLabel: 'رصيد العهدة',
+      result: Number(summary?.custodyBalance ?? 0),
+    },
+    {
+      title: 'نقد المحل والتحويل',
+      tone: 'bg-[var(--color-nx-profit)]',
+      rows: [
+        { label: 'نقد المبيعات المستورد', value: summary?.cashSalesImported, className: 'text-noorix-green' },
+        { label: 'مشتريات نقد المحل', value: summary?.cashUsed, className: 'text-noorix-red' },
+        { label: 'مشتريات التحويل', value: summary?.transferTotal, className: 'text-noorix-muted' },
+      ],
+      resultLabel: 'نقد المحل المتاح',
+      result: Number(summary?.cashAvailable ?? 0),
+    },
+  ];
+  return (
+    <div className="overflow-hidden rounded-lg border border-noorix-border bg-noorix-surface">
+      <div className="h-1 bg-gradient-to-r from-noorix-blue to-noorix-green" aria-hidden />
+      <div className="flex items-center justify-between gap-2 border-b border-noorix-border px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="text-[12px] font-bold tracking-[0.04em] text-noorix-muted sm:text-[13px]">ملخص الطلبات والعهدة</div>
+        <span className="text-[11px] text-noorix-muted">SR</span>
+      </div>
+      <div className="grid grid-cols-1 divide-y divide-noorix-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+        {panes.map((pane) => (
+          <div key={pane.title} className="flex min-w-0 flex-col px-3 py-3 sm:px-4 sm:py-3.5">
+            <div className="mb-2.5 flex items-center gap-2">
+              <span className={`h-4 w-1 shrink-0 rounded-full ${pane.tone}`} aria-hidden />
+              <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-noorix-muted">{pane.title}</div>
+            </div>
+            <div className="overflow-hidden rounded-md border border-noorix-border">
+              <SimpleTable
+                data={pane.rows}
+                columns={[
+                  { key: 'label', label: 'البند' },
+                  { key: 'value', label: 'المبلغ', render: (_value, row) => <span className={`font-semibold tabular-nums ${row.className}`}>{v4Number(row.value)} SR</span> },
+                ]}
+                footer={<tr className="bg-noorix-bg-muted/60 font-bold"><td>{pane.resultLabel}</td><td><span className={`text-[15px] tabular-nums ${pane.result < 0 ? 'text-noorix-red' : 'text-noorix-text'}`}>{v4Number(pane.result)} SR</span></td></tr>}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function addOrMergeDraftLine(current: DraftLine[], draft: OrdersV4DocumentLineDraft): DraftLine[] {
   const existingIndex = current.findIndex((line) => line.itemId === draft.itemId
@@ -54,7 +109,10 @@ export function OrdersV4DocumentsTab({
   const columns = useMemo<SimpleTableColumn<OrdersV4Document>[]>(() => [
     { key: 'documentNumber', label: isPurchase ? 'رقم الطلب' : 'رقم التسجيل', minWidth: 180, render: (value) => <span className="font-bold text-noorix-blue">{String(value)}</span> },
     { key: 'documentDate', label: 'التاريخ', render: (value) => v4Date(String(value)) },
-    ...(isPurchase ? [{ key: 'paymentMethod', label: 'طريقة الدفع', render: (value: unknown) => value === 'custody' ? 'عهدة' : value === 'transfer' ? 'تحويل' : 'نقد المحل' }] : []),
+    ...(isPurchase ? [
+      { key: 'paymentMethod', label: 'طريقة الدفع', render: (value: unknown) => value === 'custody' ? 'عهدة' : value === 'transfer' ? 'تحويل' : 'نقد المحل' },
+      { key: 'pettyCashAmount', label: 'العهدة المستلمة', numeric: true, render: (value: unknown, row: OrdersV4Document) => row.paymentMethod === 'custody' && value != null ? `${v4Number(value)} ر.س` : '—' },
+    ] : []),
     { key: 'section', label: 'القسم', render: (_value, row) => row.section?.nameAr || '—' },
     { key: 'location', label: 'الموقع', render: (_value, row) => row.location?.nameAr || '—' },
     { key: 'lines', label: 'الأسطر', numeric: true, render: (_value, row) => row.lines.length },
@@ -65,19 +123,20 @@ export function OrdersV4DocumentsTab({
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <OrdersV4Kpi label={isPurchase ? 'عدد الطلبات' : 'عدد التسجيلات'} value={isPurchase ? summary?.purchaseCount ?? 0 : summary?.registrationCount ?? 0} />
-        <OrdersV4Kpi label="الإجمالي المركزي" value={`${v4Number(isPurchase ? summary?.purchaseTotal : summary?.registrationTotal)} ر.س`} tone="green" />
-        <OrdersV4Kpi label={isPurchase ? 'رصيد العهدة' : 'أسطر التسجيل'} value={isPurchase ? `${v4Number(summary?.custodyBalance)} ر.س` : documents.reduce((sum, row) => sum + row.lines.length, 0)} tone="amber" />
-        {isPurchase && <OrdersV4Kpi label="نقد المحل المتاح" value={`${v4Number(summary?.cashAvailable)} ر.س`} tone="green" />}
-        <OrdersV4Kpi label="نسخة النواة" value="V4" />
-      </div>
+      {isPurchase ? <OrdersV4PurchaseSummaryCard summary={summary} /> : (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <OrdersV4Kpi label="عدد التسجيلات" value={summary?.registrationCount ?? 0} />
+          <OrdersV4Kpi label="الإجمالي المركزي" value={`${v4Number(summary?.registrationTotal)} ر.س`} tone="green" />
+          <OrdersV4Kpi label="أسطر التسجيل" value={documents.reduce((sum, row) => sum + row.lines.length, 0)} tone="amber" />
+          <OrdersV4Kpi label="نسخة النواة" value="V4" />
+        </div>
+      )}
       <OrdersV4Panel
         title={isPurchase ? 'طلبات الشراء — V4' : 'التسجيل الداخلي — V4'}
         action={canCreate ? <Button variant="primary" onClick={() => setCreateOpen(true)}>+ {isPurchase ? 'طلب جديد' : 'تسجيل جديد'}</Button> : undefined}
       >
         <OrdersV4QueryState loading={documentsQuery.isLoading} error={documentsQuery.error as Error | null} />
-        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={documents} emptyMessage="لا توجد مستندات في الفترة المحددة" tableMinWidth={980} onRowClick={setViewing} />}
+        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={documents} emptyMessage="لا توجد مستندات في الفترة المحددة" tableMinWidth={isPurchase ? 1120 : 980} onRowClick={setViewing} />}
       </OrdersV4Panel>
       {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} />}
       {canReceive && receiving && <OrdersV4DocumentModal open={!!receiving} onClose={() => setReceiving(null)} companyId={companyId} documentType="purchase" bootstrap={bootstrap} initialDocument={receiving} />}
