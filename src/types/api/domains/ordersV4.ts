@@ -220,6 +220,25 @@ export type OrdersV4DataQuality = {
   issues: Array<{ code: string; severity: 'warning' | 'error'; itemId: string; itemName: string; message: string }>;
 };
 
+export type OrdersV4CutoverAudit = {
+  audit: 'orders-v4-legacy-cutover';
+  readOnly: true;
+  generatedAt: string;
+  company: { id: string; nameAr?: string | null; nameEn?: string | null };
+  ready: boolean;
+  sourceFingerprint: string;
+  source: Record<string, string | number>;
+  target: Record<string, string | number>;
+  issueCounts: { errors: number; warnings: number };
+  issues: Array<{
+    severity: 'error' | 'warning';
+    code: string;
+    entity: string;
+    entityId?: string;
+    message: string;
+  }>;
+};
+
 export type OrdersV4Stocktake = {
   id: string;
   stocktakeNumber: string;

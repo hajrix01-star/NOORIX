@@ -3,6 +3,7 @@ import type {
   OrdersV4Bootstrap,
   OrdersV4Category,
   OrdersV4DataQuality,
+  OrdersV4CutoverAudit,
   OrdersV4Document,
   OrdersV4DocumentPayload,
   OrdersV4ReceivePayload,
@@ -75,6 +76,10 @@ export function createOrdersV4Stocktake(companyId: string, body: {
 
 export function getOrdersV4DataQuality(companyId: string): Promise<ApiParsedResult<OrdersV4DataQuality>> {
   return apiGet(`${BASE}/inventory/data-quality`, { companyId });
+}
+
+export function getOrdersV4CutoverAudit(companyId: string): Promise<ApiParsedResult<OrdersV4CutoverAudit>> {
+  return apiGet(`${BASE}/cutover/audit`, { companyId });
 }
 
 export function createOrdersV4Unit(companyId: string, body: { code: string; nameAr: string; nameEn?: string; dimension: string; canonicalFactor?: string | null }): Promise<ApiParsedResult<OrdersV4Unit>> {

@@ -10,6 +10,7 @@ import {
   getOrdersV4Balances,
   getOrdersV4Bootstrap,
   getOrdersV4DataQuality,
+  getOrdersV4CutoverAudit,
   getOrdersV4Documents,
   getOrdersV4ItemsReport,
   getOrdersV4Ledger,
@@ -28,6 +29,7 @@ import {
 import type {
   OrdersV4Bootstrap,
   OrdersV4DataQuality,
+  OrdersV4CutoverAudit,
   OrdersV4Document,
   OrdersV4DocumentPayload,
   OrdersV4ReceivePayload,
@@ -127,6 +129,15 @@ export function useOrdersV4DataQuality(companyId: string) {
     queryFn: () => getOrdersV4DataQuality(companyId),
     fallbackMessage: 'تعذر تحميل جودة بيانات V4',
     enabled: !!companyId,
+  });
+}
+
+export function useOrdersV4CutoverAudit(companyId: string, enabled = false) {
+  return useApiQuery<OrdersV4CutoverAudit>({
+    queryKey: [...ordersV4Keys.inventory(companyId), 'legacy-cutover-audit'],
+    queryFn: () => getOrdersV4CutoverAudit(companyId),
+    fallbackMessage: 'تعذر تدقيق جاهزية ترحيل الطلبات القديم',
+    enabled: enabled && !!companyId,
   });
 }
 

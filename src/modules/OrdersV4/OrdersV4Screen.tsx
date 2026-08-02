@@ -69,7 +69,7 @@ export default function OrdersV4Screen() {
           {!bootstrapQuery.isLoading && activeTab === 'registration' && <OrdersV4DocumentsTab companyId={companyId} documentType="registration" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreateRegistration} canReverse={canDelete} />}
           {!bootstrapQuery.isLoading && activeTab === 'reports' && <ScreenTabs items={[{ id: 'items', label: lang === 'ar' ? 'تقارير الأصناف' : 'Item reports' }, { id: 'registration', label: lang === 'ar' ? 'تقرير داخلي' : 'Internal report' }]} value={reportTab} onChange={(id) => setReportTab(id as 'items' | 'registration')} variant="segmented" segmentedFlat barClassName={ordersV4NavigationBarClassName} getTabClassName={ordersV4NavigationTabClassName} contentClassName="pt-3">{reportTab === 'items' ? <OrdersV4ItemsReportTab companyId={companyId} startDate={dateFilter.startDate} endDate={dateFilter.endDate} /> : <OrdersV4SalesReportTab companyId={companyId} startDate={dateFilter.startDate} endDate={dateFilter.endDate} />}</ScreenTabs>}
           {!bootstrapQuery.isLoading && activeTab === 'catalog' && <OrdersV4CatalogTab companyId={companyId} bootstrap={bootstrapQuery.data} canDelete={canDelete} />}
-          {!bootstrapQuery.isLoading && activeTab === 'inventory' && <OrdersV4InventoryTab companyId={companyId} bootstrap={bootstrapQuery.data} canWrite={canInventoryWrite} />}
+          {!bootstrapQuery.isLoading && activeTab === 'inventory' && <OrdersV4InventoryTab companyId={companyId} bootstrap={bootstrapQuery.data} canWrite={canInventoryWrite} canCutover={canDelete} />}
         </ScreenTabs>
       )}
     </ScreenShell>
