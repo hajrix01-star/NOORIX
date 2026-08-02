@@ -150,7 +150,7 @@ jobs:
       - name: Install/restart API via systemd
         run: |
           export DEPLOY_SHA="${{ github.sha }}"
-          sudo bash "${{ github.workspace }}/deploy/install-noorix-backend-systemd.sh"
+          sudo env DEPLOY_SHA="$DEPLOY_SHA" bash "${{ github.workspace }}/deploy/install-noorix-backend-systemd.sh"
           bash "${{ github.workspace }}/deploy/wait-public-api.sh"
 
       # ── إعادة تحميل Nginx وفحص نهائي ─────────────────────
@@ -161,8 +161,10 @@ jobs:
         run: |
           sudo systemctl reload nginx
           echo "==> Public health check..."
-          curl -sS -f --max-time 30 "https://hajrix.com/api/v1/health" | head -c 500
+          health_json="$(curl -sS -f --max-time 30 "https://hajrix.com/api/v1/health")"
+          echo "$health_json" | head -c 500
           echo ""
+          node -e 'const health = JSON.parse(process.argv[1]); if (health.version !== process.env.GITHUB_SHA) { console.error(`ERROR: live version ${health.version || "null"} does not match ${process.env.GITHUB_SHA}`); process.exit(1); }' "$health_json"
 
       - name: Verify frontend cache headers
         run: bash "${{ github.workspace }}/deploy/verify-frontend-cache-headers.sh" "https://hajrix.com"
