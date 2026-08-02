@@ -5,6 +5,8 @@ set -euo pipefail
 REPO="${NOORIX_ROOT:-/var/www/noorix}"
 UNIT_SRC="$REPO/deploy/noorix-backend.service"
 UNIT_DST=/etc/systemd/system/noorix-backend.service
+UNIT_DROPIN_DIR=/etc/systemd/system/noorix-backend.service.d
+VERSION_DROPIN="$UNIT_DROPIN_DIR/deploy-version.conf"
 
 if [[ ! -f "$UNIT_SRC" ]]; then
   echo "ERROR: missing $UNIT_SRC" >&2
@@ -21,6 +23,24 @@ fi
 
 echo "==> Installing $UNIT_DST"
 sudo cp "$UNIT_SRC" "$UNIT_DST"
+
+# GitHub Actions exports DEPLOY_SHA for this deploy step. Persist it in a
+# systemd drop-in so the API health endpoint can identify the exact live build
+# after systemd starts a fresh shell (and after host restarts).
+if [[ -n "${DEPLOY_SHA:-}" ]]; then
+  if [[ ! "$DEPLOY_SHA" =~ ^[0-9a-fA-F]{7,64}$ ]]; then
+    echo "ERROR: invalid DEPLOY_SHA format" >&2
+    exit 1
+  fi
+  sudo install -d -m 0755 "$UNIT_DROPIN_DIR"
+  printf '[Service]\nEnvironment=DEPLOY_SHA=%s\n' "$DEPLOY_SHA" \
+    | sudo tee "$VERSION_DROPIN" >/dev/null
+  sudo chmod 0644 "$VERSION_DROPIN"
+  echo "==> Persisted deploy version ${DEPLOY_SHA:0:12}"
+else
+  echo "WARN: DEPLOY_SHA is empty; health.version will not identify this deploy" >&2
+fi
+
 sudo systemctl daemon-reload
 sudo systemctl enable noorix-backend.service
 
