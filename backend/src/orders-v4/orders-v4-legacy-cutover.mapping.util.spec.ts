@@ -1,5 +1,6 @@
 import {
   legacyConversionRows,
+  legacyConsolidatedRecipeRows,
   legacyPaymentMethod,
   legacyRecipeRows,
   legacyTargetId,
@@ -18,8 +19,11 @@ describe('Orders V4 legacy cutover mapping', () => {
   it('keeps only valid unique conversion edges', () => {
     const rows = legacyConversionRows([
       { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
+      { fromUnit: 'pack', toUnit: 'carton', multiplier: '0.1' },
       { fromUnit: 'carton', toUnit: 'pack', multiplier: '10' },
       { fromUnit: 'pack', toUnit: 'piece', multiplier: '64' },
+      { fromUnit: 'pack', toUnit: 'kg', multiplier: '2' },
+      { fromUnit: 'piece', toUnit: 'carton', multiplier: '0.0015625' },
       { fromUnit: 'piece', toUnit: 'piece', multiplier: '1' },
     ]);
     expect(rows.map((row) => [row.fromUnitKey, row.toUnitKey, row.factor.toString()])).toEqual([
@@ -33,5 +37,14 @@ describe('Orders V4 legacy cutover mapping', () => {
     expect(legacyPaymentMethod('external')).toBe('custody');
     expect(legacyPaymentMethod('internal')).toBe('cash');
     expect(legacyPaymentMethod('transfer')).toBe('transfer');
+  });
+
+  it('consolidates duplicate recipe components before the unique V4 recipe write', () => {
+    const rows = legacyConsolidatedRecipeRows([
+      { materialProductId: 'material-1', quantity: '2', unit: 'g' },
+      { materialProductId: 'material-1', quantity: '3', unit: 'g' },
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].quantity.toString()).toBe('5');
   });
 });

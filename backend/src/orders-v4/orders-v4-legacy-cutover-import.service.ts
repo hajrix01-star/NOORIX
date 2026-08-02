@@ -8,6 +8,7 @@ import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service
 import { OrdersV4LegacyCutoverService } from './orders-v4-legacy-cutover.service';
 import {
   legacyConversionRows,
+  legacyConsolidatedRecipeRows,
   legacyJsonStringArray,
   legacyPaymentMethod,
   legacyRecipeRows,
@@ -203,7 +204,7 @@ export class OrdersV4LegacyCutoverImportService {
 
       const validRecipes = new Map<string, ReturnType<typeof legacyRecipeRows>>();
       for (const product of saleProducts) {
-        const rows = legacyRecipeRows(product.recipe);
+        const rows = legacyConsolidatedRecipeRows(product.recipe);
         const valid = rows.length > 0 && rows.every((row) => {
           const material = productById.get(row.materialProductId);
           return material?.productType === 'order' && resolveProductUnitMultiplierOrNull(material, row.unitKey, material.unit) != null;

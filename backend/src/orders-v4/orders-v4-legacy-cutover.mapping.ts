@@ -73,6 +73,7 @@ export function legacyVariantRows(value: unknown): Array<{ unitKey: string; labe
 
 export function legacyConversionRows(...values: unknown[]): LegacyConversionRow[] {
   const seen = new Set<string>();
+  const nextUnit = new Map<string, string>();
   const rows: LegacyConversionRow[] = [];
   for (const value of values) {
     for (const row of productUnitConversionRowsFromUnknown(value)) {
@@ -85,8 +86,17 @@ export function legacyConversionRows(...values: unknown[]): LegacyConversionRow[
         continue;
       }
       const pair = `${fromUnitKey}->${toUnitKey}`;
-      if (!fromUnitKey || !toUnitKey || fromUnitKey === toUnitKey || !factor.gt(0) || seen.has(pair)) continue;
+      const reversePair = `${toUnitKey}->${fromUnitKey}`;
+      if (!fromUnitKey || !toUnitKey || fromUnitKey === toUnitKey || !factor.gt(0) || seen.has(pair) || seen.has(reversePair) || nextUnit.has(fromUnitKey)) continue;
+      let cursor: string | undefined = toUnitKey;
+      let createsCycle = false;
+      while (cursor) {
+        if (cursor === fromUnitKey) { createsCycle = true; break; }
+        cursor = nextUnit.get(cursor);
+      }
+      if (createsCycle) continue;
       seen.add(pair);
+      nextUnit.set(fromUnitKey, toUnitKey);
       rows.push({ fromUnitKey, toUnitKey, factor });
     }
   }
@@ -108,6 +118,16 @@ export function legacyRecipeRows(value: unknown): LegacyRecipeRow[] {
     }
     return materialProductId && quantity.gt(0) ? [{ materialProductId, quantity, unitKey }] : [];
   });
+}
+
+export function legacyConsolidatedRecipeRows(value: unknown): LegacyRecipeRow[] {
+  const merged = new Map<string, LegacyRecipeRow>();
+  for (const row of legacyRecipeRows(value)) {
+    const key = `${row.materialProductId}:${row.unitKey}`;
+    const existing = merged.get(key);
+    merged.set(key, existing ? { ...existing, quantity: existing.quantity.plus(row.quantity) } : row);
+  }
+  return [...merged.values()];
 }
 
 export function legacyPaymentMethod(orderType: string): 'custody' | 'cash' | 'transfer' {
