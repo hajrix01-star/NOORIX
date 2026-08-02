@@ -141,7 +141,14 @@ export default function ScreenTabs({
   if (variant === 'segmented') {
     return (
       <div className={cn('flex w-full min-w-0 flex-col', shellClassName)}>
-        <div className={cn(shellClass, 'relative z-[3] w-full min-w-0')}>{bar}</div>
+        <div className={cn(shellClass, 'relative z-[3] flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center')}>
+          <div className="min-w-0 flex-1">{bar}</div>
+          {tabBarEnd != null && tabBarEnd !== false && (
+            <div className="flex shrink-0 items-center justify-end px-1 pb-1 sm:pb-0">
+              {tabBarEnd}
+            </div>
+          )}
+        </div>
         {children != null && (
           <div className={cn(contentClassName)} role="tabpanel">
             {children}
