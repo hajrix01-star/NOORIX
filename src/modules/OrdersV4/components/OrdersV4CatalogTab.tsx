@@ -57,6 +57,11 @@ export function OrdersV4CatalogTab({
       onChange={(value) => setTab(value as CatalogTab)}
       variant="segmented"
       segmentedFlat
+      barClassName="!flex !w-full !min-w-0 !flex-wrap !items-center !gap-2 !overflow-visible rounded-xl border border-noorix-border bg-[var(--noorix-bg-muted)] p-2"
+      getTabClassName={(_item, active) => active
+        ? '!min-h-10 !rounded-lg !border !border-[var(--noorix-accent-green)] !bg-[var(--noorix-accent-green)] !px-4 !py-2 !text-sm !font-extrabold !text-white !shadow-sm'
+        : '!min-h-10 !rounded-lg !border !border-[var(--noorix-border)] !bg-[var(--noorix-bg-surface)] !px-4 !py-2 !text-sm !font-bold !text-[var(--noorix-text-muted)] !shadow-sm hover:!border-[var(--noorix-accent-blue)] hover:!text-[var(--noorix-text)]'
+      }
       contentClassName="pt-3"
     >
       {tab === 'items' ? (
