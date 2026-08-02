@@ -6,6 +6,7 @@ import { OrdersV4Field, OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4
 import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, useReceiveOrdersV4Document, useReverseOrdersV4Document } from '../useOrdersV4';
 import { OrdersV4DocumentItemPicker } from './OrdersV4DocumentItemPicker';
 import { OrdersV4DocumentLineModal, type OrdersV4DocumentLineDraft } from './OrdersV4DocumentLineModal';
+import { buildOrdersV4WhatsAppText } from './ordersV4WhatsApp.utils';
 
 type DraftLine = OrdersV4DocumentLineDraft & { key: string };
 
@@ -99,6 +100,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<DraftLine[]>([]);
   const [selectedItem, setSelectedItem] = useState<OrdersV4Item | null>(null);
+  const [sendWhatsAppPrompt, setSendWhatsAppPrompt] = useState<string | null>(null);
   const isPurchase = documentType === 'purchase';
   const items = (bootstrap?.items ?? []).filter((item) => item.isActive
     && (isPurchase ? item.itemType !== 'sale' : item.itemType !== 'purchased')
@@ -169,7 +171,6 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
       idempotencyKey: crypto.randomUUID(),
       lines: lines.map((line) => ({ itemId: line.itemId, quantity: line.quantity, unitId: line.unitId, unitPrice: line.unitPrice || '0', priceUnitId: line.priceUnitId || line.unitId })),
     };
-    const whatsappWindow = !isPurchase && !initialDocument ? window.open('about:blank', '_blank', 'noopener,noreferrer') : null;
     if (initialDocument) {
       const { documentType: _documentType, ...receiveBody } = payload;
       await receiveMutation.mutateAsync({
@@ -177,19 +178,8 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
         body: { ...receiveBody, revision: initialDocument.revision } as OrdersV4ReceivePayload,
       });
     } else {
-      await createMutation.mutateAsync(payload);
-    }
-    if (whatsappWindow) {
-      const message = [
-        `التسجيل الداخلي — ${date}`,
-        ...lines.map((line) => {
-          const item = items.find((candidate) => candidate.id === line.itemId);
-          const unit = item?.units.find((candidate) => candidate.unitId === line.unitId)?.unit;
-          return `• ${item?.nameAr ?? ''}: ${line.quantity} ${unit?.nameAr ?? ''}`;
-        }),
-        notes ? `ملاحظات: ${notes}` : '',
-      ].filter(Boolean).join('\n');
-      whatsappWindow.location.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      const response = await createMutation.mutateAsync(payload);
+      if (response.data) setSendWhatsAppPrompt(buildOrdersV4WhatsAppText(response.data));
     }
     setLines([]);
     setNotes('');
@@ -197,6 +187,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
   }
 
   return (
+    <>
     <Modal open={open} onClose={onClose} size="2xl" title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : 'تسجيل داخلي جديد — طلبات V4'} footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : 'حفظ التسجيل الداخلي', onClick: submit, role: 'save', loading: mutation.isPending }]} />}>
       <div className="flex flex-col gap-4">
         <div className={`grid gap-3 sm:grid-cols-2 ${isPurchase ? 'lg:grid-cols-3' : ''}`}>
@@ -263,6 +254,34 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, bootstr
         />
       </div>
     </Modal>
+    <Modal
+      open={!!sendWhatsAppPrompt}
+      onClose={() => setSendWhatsAppPrompt(null)}
+      size="sm"
+      title={isPurchase ? 'إرسال الطلب عبر واتساب؟' : 'إرسال التسجيل الداخلي عبر واتساب؟'}
+    >
+      <div className="flex flex-col gap-4 p-1">
+        <p className="m-0 text-[13px] leading-relaxed text-noorix-muted">
+          تم الحفظ بنجاح. هل تريد إرسال التفاصيل الآن عبر واتساب؟
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="ghost" size="md" onClick={() => setSendWhatsAppPrompt(null)}>ليس الآن</Button>
+          <Button
+            variant="success"
+            size="md"
+            onClick={() => {
+              const text = sendWhatsAppPrompt;
+              if (!text) return;
+              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+              setSendWhatsAppPrompt(null);
+            }}
+          >
+            إرسال عبر واتساب
+          </Button>
+        </div>
+      </div>
+    </Modal>
+    </>
   );
 }
 

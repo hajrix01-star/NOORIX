@@ -87,6 +87,29 @@ describe('Orders Core V4 kernel', () => {
     expect(issue.quantityAfter.toString()).toBe('16');
   });
 
+  it('allows operational issues to make inventory negative without an employee override', () => {
+    const issue = calculateOrdersV4Issue({
+      quantity: new Prisma.Decimal(2),
+      value: new Prisma.Decimal(20),
+      averageUnitCost: new Prisma.Decimal(10),
+    }, { quantity: 5 });
+
+    expect(issue.quantityAfter.toString()).toBe('-3');
+    expect(issue.valueAfter.toString()).toBe('-30');
+    expect(issue.averageUnitCostAfter.toString()).toBe('10');
+  });
+
+  it('continues receiving normally while an operational balance is still negative', () => {
+    const receipt = calculateOrdersV4Receipt({
+      quantity: new Prisma.Decimal(-5),
+      value: new Prisma.Decimal(0),
+      averageUnitCost: new Prisma.Decimal(0),
+    }, { quantity: 2, totalValue: 20 });
+
+    expect(receipt.quantityAfter.toString()).toBe('-3');
+    expect(receipt.averageUnitCostAfter.toString()).toBe('10');
+  });
+
   it('normalizes historical prices before calculating the last-five average', () => {
     const cartonToPiece = resolveOrdersV4Conversion({ fromUnitId: 'carton', toUnitId: 'piece', units, edges });
     const normalized = calculateOrdersV4ConvertedUnitPrice('288', cartonToPiece);

@@ -64,10 +64,11 @@ export function calculateOrdersV4Receipt(
   if (totalValue.lt(0)) throw new BadRequestException('قيمة الوارد لا يمكن أن تكون سالبة');
   const quantityAfter = balance.quantity.plus(quantity).toDecimalPlaces(QUANTITY_SCALE);
   const valueAfter = balance.value.plus(totalValue).toDecimalPlaces(MONEY_SCALE);
-  const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(valueAfter, quantityAfter);
+  const incomingUnitCost = calculateOrdersV4InventoryUnitPrice(totalValue, quantity);
+  const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(valueAfter, quantityAfter, incomingUnitCost);
   return {
     quantityDelta: quantity.toDecimalPlaces(QUANTITY_SCALE),
-    unitCost: calculateOrdersV4InventoryUnitPrice(totalValue, quantity),
+    unitCost: incomingUnitCost,
     valueDelta: totalValue.toDecimalPlaces(MONEY_SCALE),
     quantityAfter,
     valueAfter,
@@ -77,14 +78,13 @@ export function calculateOrdersV4Receipt(
 
 export function calculateOrdersV4Issue(
   balance: OrdersV4InventoryBalance,
-  input: { quantity: Prisma.Decimal.Value; allowNegativeStock?: boolean },
+  input: { quantity: Prisma.Decimal.Value },
 ): OrdersV4InventoryCalculation {
   const quantity = decimal(input.quantity, 'كمية الصرف');
   if (quantity.lte(0)) throw new BadRequestException('كمية الصرف يجب أن تكون أكبر من صفر');
   const quantityAfter = balance.quantity.minus(quantity).toDecimalPlaces(QUANTITY_SCALE);
-  if (!input.allowNegativeStock && quantityAfter.lt(0)) {
-    throw new BadRequestException('الرصيد غير كافٍ لإتمام الصرف');
-  }
+  // سياسة V4 المركزية: التسجيل التشغيلي لا يتوقف بسبب نقص المخزون.
+  // العجز يبقى ظاهراً كرصيد سالب في دفتر الحركات إلى أن يغطيه استلام أو جرد.
   const issueValue = quantity.times(balance.averageUnitCost).toDecimalPlaces(MONEY_SCALE);
   const valueAfter = balance.value.minus(issueValue).toDecimalPlaces(MONEY_SCALE);
   const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(valueAfter, quantityAfter, balance.averageUnitCost);
@@ -143,9 +143,15 @@ export function calculateOrdersV4AverageUnitCost(
 ): Prisma.Decimal {
   const totalValue = decimal(totalValueInput, 'القيمة الإجمالية');
   const quantity = decimal(quantityInput, 'كمية حساب متوسط التكلفة');
-  if (quantity.lt(0)) throw new BadRequestException('كمية حساب متوسط التكلفة لا يمكن أن تكون سالبة');
   if (quantity.isZero()) return decimal(zeroQuantityFallback, 'متوسط التكلفة عند نفاد الكمية').toDecimalPlaces(COST_SCALE);
-  return totalValue.div(quantity).toDecimalPlaces(COST_SCALE);
+  const calculated = totalValue.div(quantity);
+  // عند تشغيل المخزون بالسالب قد تكون القيمة والكمية مؤقتاً بعلامتين مختلفتين
+  // (مثلاً صرف بلا تكلفة سابقة ثم استلام جزئي). لا ننشئ متوسط تكلفة سالباً؛
+  // نستخدم آخر/تكلفة الوارد الممررة من العملية صاحبة القرار.
+  if (calculated.lt(0)) {
+    return decimal(zeroQuantityFallback, 'متوسط التكلفة البديل').toDecimalPlaces(COST_SCALE);
+  }
+  return calculated.toDecimalPlaces(COST_SCALE);
 }
 
 export function calculateOrdersV4ConvertedUnitPrice(
