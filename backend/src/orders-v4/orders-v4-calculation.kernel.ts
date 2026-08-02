@@ -78,23 +78,50 @@ export function calculateOrdersV4Receipt(
 
 export function calculateOrdersV4Issue(
   balance: OrdersV4InventoryBalance,
-  input: { quantity: Prisma.Decimal.Value },
+  input: { quantity: Prisma.Decimal.Value; provisionalUnitCost?: Prisma.Decimal.Value },
 ): OrdersV4InventoryCalculation {
   const quantity = decimal(input.quantity, 'كمية الصرف');
   if (quantity.lte(0)) throw new BadRequestException('كمية الصرف يجب أن تكون أكبر من صفر');
   const quantityAfter = balance.quantity.minus(quantity).toDecimalPlaces(QUANTITY_SCALE);
   // سياسة V4 المركزية: التسجيل التشغيلي لا يتوقف بسبب نقص المخزون.
   // العجز يبقى ظاهراً كرصيد سالب في دفتر الحركات إلى أن يغطيه استلام أو جرد.
-  const issueValue = quantity.times(balance.averageUnitCost).toDecimalPlaces(MONEY_SCALE);
+  const provisionalUnitCost = decimal(input.provisionalUnitCost ?? 0, 'تكلفة الصرف المؤقتة');
+  if (provisionalUnitCost.lt(0)) throw new BadRequestException('تكلفة الصرف المؤقتة لا يمكن أن تكون سالبة');
+  const issueUnitCost = balance.averageUnitCost.gt(0) ? balance.averageUnitCost : provisionalUnitCost;
+  const issueValue = quantity.times(issueUnitCost).toDecimalPlaces(MONEY_SCALE);
   const valueAfter = balance.value.minus(issueValue).toDecimalPlaces(MONEY_SCALE);
-  const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(valueAfter, quantityAfter, balance.averageUnitCost);
+  const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(valueAfter, quantityAfter, issueUnitCost);
   return {
     quantityDelta: quantity.negated().toDecimalPlaces(QUANTITY_SCALE),
-    unitCost: balance.averageUnitCost.toDecimalPlaces(COST_SCALE),
+    unitCost: issueUnitCost.toDecimalPlaces(COST_SCALE),
     valueDelta: issueValue.negated(),
     quantityAfter,
     valueAfter,
     averageUnitCostAfter,
+  };
+}
+
+/**
+ * Revalues an existing negative balance at the next real receipt cost before
+ * posting that receipt. This keeps quantity and value on the same cost basis.
+ */
+export function calculateOrdersV4NegativeStockRevaluation(
+  balance: OrdersV4InventoryBalance,
+  incomingUnitCostInput: Prisma.Decimal.Value,
+): OrdersV4InventoryCalculation | null {
+  if (balance.quantity.gte(0)) return null;
+  const incomingUnitCost = decimal(incomingUnitCostInput, 'تكلفة الوارد لمعالجة العجز');
+  if (incomingUnitCost.lt(0)) throw new BadRequestException('تكلفة الوارد لمعالجة العجز لا يمكن أن تكون سالبة');
+  const valueAfter = balance.quantity.times(incomingUnitCost).toDecimalPlaces(MONEY_SCALE);
+  const valueDelta = valueAfter.minus(balance.value).toDecimalPlaces(MONEY_SCALE);
+  if (valueDelta.isZero() && balance.averageUnitCost.eq(incomingUnitCost)) return null;
+  return {
+    quantityDelta: new Prisma.Decimal(0),
+    unitCost: incomingUnitCost.toDecimalPlaces(COST_SCALE),
+    valueDelta,
+    quantityAfter: balance.quantity.toDecimalPlaces(QUANTITY_SCALE),
+    valueAfter,
+    averageUnitCostAfter: incomingUnitCost.toDecimalPlaces(COST_SCALE),
   };
 }
 
@@ -215,7 +242,6 @@ export function calculateOrdersV4Reversal(
   const valueDelta = decimal(original.valueDelta, 'قيمة القيد الأصلي').negated().toDecimalPlaces(MONEY_SCALE);
   const quantityAfter = balance.quantity.plus(quantityDelta).toDecimalPlaces(QUANTITY_SCALE);
   const valueAfter = balance.value.plus(valueDelta).toDecimalPlaces(MONEY_SCALE);
-  if (quantityAfter.lt(0) || valueAfter.lt(0)) throw new BadRequestException('لا يمكن عكس المستند بعد استهلاك رصيده');
   const averageUnitCostAfter = calculateOrdersV4AverageUnitCost(valueAfter, quantityAfter);
   return {
     quantityDelta,

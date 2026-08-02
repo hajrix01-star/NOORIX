@@ -12,7 +12,6 @@ import {
 import { validateOrdersV4ConversionDefinition } from './orders-v4-conversion.kernel';
 import { normalizeOrdersV4ItemDefinition } from './orders-v4-item-definition.kernel';
 import type { OrdersV4ConversionEdgeDefinition } from './orders-v4-kernel.types';
-import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 import { decideOrdersV4VersionPublication, ordersV4DefinitionsEqual, ordersV4StableHash } from './orders-v4-version.kernel';
 
 function optionalPositiveDecimal(value: string | null | undefined, label: string): Prisma.Decimal | null {
@@ -29,10 +28,7 @@ function optionalPositiveDecimal(value: string | null | undefined, label: string
 
 @Injectable()
 export class OrdersV4ItemDefinitionService {
-  constructor(
-    private readonly prisma: TenantPrismaService,
-    private readonly posting: OrdersV4LedgerPostingService,
-  ) {}
+  constructor(private readonly prisma: TenantPrismaService) {}
 
   async save(companyId: string, itemId: string, input: OrdersV4ItemDefinitionInput) {
     const tenantId = TenantContext.getTenantId();
@@ -53,6 +49,9 @@ export class OrdersV4ItemDefinitionService {
       const companyUnits = await tx.ordersV4Unit.findMany({ where: { companyId, isActive: true } });
       const unitDefinitions = ordersV4UnitDefinitions(companyUnits);
       const definition = normalizeOrdersV4ItemDefinition(unitDefinitions, input);
+      if (!definition.unitIds.includes(item.kernelUnitId)) {
+        throw new BadRequestException('لا يمكن إزالة وحدة النواة الثابتة من سلسلة تحويلات الصنف');
+      }
       const definitionUnitIds = [...definition.unitIds].sort();
       for (const unitId of definitionUnitIds) {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:unit:${unitId}`}))`;
@@ -67,7 +66,7 @@ export class OrdersV4ItemDefinitionService {
       for (const unitId of definition.unitIds) {
         resolveOrdersV4ContextConversion({
           fromUnitId: unitId,
-          toUnitId: definition.inventoryUnitId,
+          toUnitId: item.kernelUnitId,
           units: unitDefinitions,
           edges: candidateEdges,
         });
@@ -98,9 +97,9 @@ export class OrdersV4ItemDefinitionService {
       const currentVersion = item.conversionVersions[0];
       const currentEdges = normalizeOrdersV4ConversionEdges(ordersV4EdgeDefinitions(currentVersion?.edges));
       const currentDefinition = currentVersion
-        ? { inventoryUnitId: item.inventoryUnitId, edges: currentEdges }
+        ? { kernelUnitId: item.kernelUnitId, edges: currentEdges }
         : null;
-      const candidateDefinition = { inventoryUnitId: definition.inventoryUnitId, edges: normalizedEdges };
+      const candidateDefinition = { kernelUnitId: item.kernelUnitId, edges: normalizedEdges };
 
       let publishedVersion = currentVersion;
       if (!currentVersion || !ordersV4DefinitionsEqual(currentDefinition, candidateDefinition)) {
@@ -139,32 +138,6 @@ export class OrdersV4ItemDefinitionService {
         });
       }
       if (!publishedVersion) throw new BadRequestException('تعذر نشر تعريف وحدات الصنف');
-
-      if (item.inventoryUnitId !== definition.inventoryUnitId) {
-        const oldToNew = resolveOrdersV4ContextConversion({
-          fromUnitId: item.inventoryUnitId,
-          toUnitId: definition.inventoryUnitId,
-          units: unitDefinitions,
-          edges: candidateEdges,
-        });
-        const locations = await tx.ordersV4InventoryLedgerEntry.findMany({
-          where: { companyId, itemId }, select: { locationId: true }, distinct: ['locationId'],
-        });
-        const changedAt = new Date();
-        for (const { locationId } of locations.sort((a, b) => a.locationId.localeCompare(b.locationId))) {
-          await this.posting.postUnitRebase(tx, {
-            tenantId,
-            companyId,
-            itemId,
-            locationId,
-            effectiveAt: changedAt,
-            oldInventoryUnitId: item.inventoryUnitId,
-            newInventoryUnitId: definition.inventoryUnitId,
-            conversionVersionId: publishedVersion.id,
-            conversion: oldToNew,
-          });
-        }
-      }
 
       const requestedByUnit = new Map(definition.units.map((row) => [row.unitId, row]));
       await tx.ordersV4ItemUnit.updateMany({

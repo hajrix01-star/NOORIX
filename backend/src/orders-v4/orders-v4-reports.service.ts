@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { calculateOrdersV4AverageUnitCost, calculateOrdersV4ConvertedQuantity } from './orders-v4-calculation.kernel';
+import { calculateOrdersV4CashAvailable, calculateOrdersV4FundsBalance } from './orders-v4-funds.kernel';
 import type { OrdersV4DocumentType } from './orders-v4.contracts';
 import {
   ordersV4EdgeDefinitions,
@@ -19,7 +20,8 @@ export class OrdersV4ReportsService {
     const bounds = ordersV4RangeBounds(startDate, endDate);
     const cashStart = bounds.gte ?? new Date('1970-01-01T00:00:00.000Z');
     const cashEnd = bounds.lte ? new Date(bounds.lte.getTime() + 86_399_999) : new Date('2999-12-31T23:59:59.999Z');
-    const [documents, cashSales, custodyEntries] = await Promise.all([
+    const effectiveBounds = { gte: cashStart, lte: cashEnd };
+    const [documents, cashSales, custodyEntries, custodyBalanceAggregate] = await Promise.all([
       this.prisma.ordersV4Document.findMany({
         where: { companyId, status: 'received', documentDate: bounds },
         select: { documentType: true, paymentMethod: true, totalAmount: true, operationalCost: true },
@@ -36,8 +38,12 @@ export class OrdersV4ReportsService {
           AND vault.type = 'cash'
       `),
       this.prisma.ordersV4CustodyLedgerEntry.findMany({
-        where: { companyId, effectiveAt: bounds },
+        where: { companyId, effectiveAt: effectiveBounds },
         select: { entryType: true, amountDelta: true, reversalOf: { select: { entryType: true } } },
+      }),
+      this.prisma.ordersV4CustodyLedgerEntry.aggregate({
+        where: { companyId, effectiveAt: { lte: cashEnd } },
+        _sum: { amountDelta: true },
       }),
     ]);
     const zero = new Prisma.Decimal(0);
@@ -57,7 +63,7 @@ export class OrdersV4ReportsService {
       .toDecimalPlaces(6);
     const custodyFunded = custodyFundingDelta.lt(0) ? zero : custodyFundingDelta;
     const custodySpent = custodyPurchaseDelta.gt(0) ? zero : custodyPurchaseDelta.negated().toDecimalPlaces(6);
-    const custodyBalance = custodyEntries.reduce((total, row) => total.plus(row.amountDelta), zero).toDecimalPlaces(6);
+    const custodyBalance = calculateOrdersV4FundsBalance([custodyBalanceAggregate._sum.amountDelta ?? 0]);
     return {
       purchaseCount: purchases.length,
       registrationCount: registrations.length,
@@ -68,7 +74,7 @@ export class OrdersV4ReportsService {
       transferTotal: sumFinancial(purchases.filter((row) => row.paymentMethod === 'transfer')),
       cashSalesImported,
       cashUsed,
-      cashAvailable: cashSalesImported.minus(cashUsed).toDecimalPlaces(6),
+      cashAvailable: calculateOrdersV4CashAvailable(cashSalesImported, cashUsed),
       custodyFunded,
       custodySpent,
       custodyBalance,
@@ -107,10 +113,19 @@ export class OrdersV4ReportsService {
     }>();
     for (const line of lines) {
       const currentDefinition = line.item.conversionVersions[0];
-      const baseQuantity = calculateOrdersV4ConvertedQuantity(
+      const kernelQuantity = calculateOrdersV4ConvertedQuantity(
         line.baseQuantity,
         resolveOrdersV4ContextConversion({
           fromUnitId: line.baseUnitId,
+          toUnitId: line.item.kernelUnitId,
+          units: unitDefinitions,
+          edges: ordersV4EdgeDefinitions(currentDefinition?.edges),
+        }),
+      );
+      const baseQuantity = calculateOrdersV4ConvertedQuantity(
+        kernelQuantity,
+        resolveOrdersV4ContextConversion({
+          fromUnitId: line.item.kernelUnitId,
           toUnitId: line.item.inventoryUnitId,
           units: unitDefinitions,
           edges: ordersV4EdgeDefinitions(currentDefinition?.edges),

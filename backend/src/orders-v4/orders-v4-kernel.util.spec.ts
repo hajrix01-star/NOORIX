@@ -5,6 +5,7 @@ import {
   calculateOrdersV4Issue,
   calculateOrdersV4LastFiveAverage,
   calculateOrdersV4Line,
+  calculateOrdersV4NegativeStockRevaluation,
   calculateOrdersV4Receipt,
   calculateOrdersV4RecipeComponentCost,
   calculateOrdersV4RecipeUsage,
@@ -108,6 +109,34 @@ describe('Orders Core V4 kernel', () => {
 
     expect(receipt.quantityAfter.toString()).toBe('-3');
     expect(receipt.averageUnitCostAfter.toString()).toBe('10');
+  });
+
+  it('revalues negative inventory before a receipt crosses zero', () => {
+    const negative = {
+      quantity: new Prisma.Decimal(-5),
+      value: new Prisma.Decimal(0),
+      averageUnitCost: new Prisma.Decimal(0),
+    };
+    const revaluation = calculateOrdersV4NegativeStockRevaluation(negative, 10);
+    expect(revaluation?.quantityAfter.toString()).toBe('-5');
+    expect(revaluation?.valueAfter.toString()).toBe('-50');
+
+    const partialReceipt = calculateOrdersV4Receipt({
+      quantity: revaluation!.quantityAfter,
+      value: revaluation!.valueAfter,
+      averageUnitCost: revaluation!.averageUnitCostAfter,
+    }, { quantity: 2, totalValue: 20 });
+    expect(partialReceipt.quantityAfter.toString()).toBe('-3');
+    expect(partialReceipt.valueAfter.toString()).toBe('-30');
+
+    const crossingReceipt = calculateOrdersV4Receipt({
+      quantity: partialReceipt.quantityAfter,
+      value: partialReceipt.valueAfter,
+      averageUnitCost: partialReceipt.averageUnitCostAfter,
+    }, { quantity: 5, totalValue: 50 });
+    expect(crossingReceipt.quantityAfter.toString()).toBe('2');
+    expect(crossingReceipt.valueAfter.toString()).toBe('20');
+    expect(crossingReceipt.averageUnitCostAfter.toString()).toBe('10');
   });
 
   it('normalizes historical prices before calculating the last-five average', () => {

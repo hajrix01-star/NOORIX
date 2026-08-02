@@ -2202,6 +2202,7 @@ model OrdersV4Unit {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   inventoryItems     OrdersV4Item[]                 @relation("OrdersV4InventoryUnit")
+  kernelItems        OrdersV4Item[]                 @relation("OrdersV4KernelUnit")
   itemUnits          OrdersV4ItemUnit[]
   conversionFrom     OrdersV4ConversionEdge[]       @relation("OrdersV4ConversionFromUnit")
   conversionTo       OrdersV4ConversionEdge[]       @relation("OrdersV4ConversionToUnit")
@@ -2272,6 +2273,7 @@ model OrdersV4Item {
   itemType        String   @map("item_type")
   categoryId      String?  @map("category_id")
   inventoryUnitId String   @map("inventory_unit_id")
+  kernelUnitId    String   @map("kernel_unit_id")
   trackInventory  Boolean  @default(true) @map("track_inventory")
   isActive        Boolean  @default(true) @map("is_active")
   sortOrder       Int      @default(0) @map("sort_order")
@@ -2280,6 +2282,7 @@ model OrdersV4Item {
 
   category           OrdersV4Category?              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   inventoryUnit      OrdersV4Unit                   @relation("OrdersV4InventoryUnit", fields: [inventoryUnitId], references: [id], onDelete: Restrict)
+  kernelUnit         OrdersV4Unit                   @relation("OrdersV4KernelUnit", fields: [kernelUnitId], references: [id], onDelete: Restrict)
   units              OrdersV4ItemUnit[]
   sections           OrdersV4ItemSection[]
   conversionVersions OrdersV4ConversionVersion[]
@@ -2295,6 +2298,7 @@ model OrdersV4Item {
   @@index([companyId, itemType, isActive])
   @@index([categoryId])
   @@index([inventoryUnitId])
+  @@index([kernelUnitId])
   @@map("orders_v4_items")
 }
 

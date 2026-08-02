@@ -11,6 +11,15 @@ describe('Orders V4 inventory boundary', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('allows custody-ledger writes only through the central funds posting service', () => {
+    const offenders = readdirSync(__dirname)
+      .filter((name) => name.endsWith('.ts') && !name.endsWith('.spec.ts'))
+      .filter((name) => name !== 'orders-v4-funds-posting.service.ts')
+      .filter((name) => readFileSync(join(__dirname, name), 'utf8').includes('ordersV4CustodyLedgerEntry.create'));
+
+    expect(offenders).toEqual([]);
+  });
+
   it('keeps conversion and inventory arithmetic in the central kernels', () => {
     const allowed = new Set([
       'orders-v4-calculation.kernel.ts',
@@ -64,6 +73,17 @@ describe('Orders V4 inventory boundary', () => {
     expect(controller).toContain("@Patch('catalog/items/:id/definition')");
     expect(controller).not.toContain("@Patch('catalog/items/:id/units')");
     expect(controller).not.toContain("@Post('catalog/conversions/publish')");
+    const catalog = readFileSync(join(__dirname, 'orders-v4-catalog.service.ts'), 'utf8');
+    expect(catalog).not.toContain('replaceItemUnits(');
+    expect(catalog).not.toContain('publishConversion(');
+  });
+
+  it('keeps the immutable kernel unit separate from the editable display unit', () => {
+    const itemDefinition = readFileSync(join(__dirname, 'orders-v4-item-definition.service.ts'), 'utf8');
+    const catalog = readFileSync(join(__dirname, 'orders-v4-catalog.service.ts'), 'utf8');
+    expect(itemDefinition).toContain('toUnitId: item.kernelUnitId');
+    expect(itemDefinition).not.toContain('postUnitRebase');
+    expect(catalog).toContain('kernelUnitId: input.inventoryUnitId');
   });
 
   it('exposes an explicit unit restore lifecycle endpoint', () => {

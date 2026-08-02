@@ -15,7 +15,10 @@ describe('OrdersV4ReportsService', () => {
         ]),
       },
       $queryRaw: jest.fn().mockResolvedValue([{ total: decimal(536) }]),
-      ordersV4CustodyLedgerEntry: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4CustodyLedgerEntry: {
+        findMany: jest.fn().mockResolvedValue([]),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { amountDelta: null } }),
+      },
     };
 
     const service = new OrdersV4ReportsService(prisma as never);
@@ -40,6 +43,7 @@ describe('OrdersV4ReportsService', () => {
           { entryType: 'reversal', amountDelta: decimal(100), reversalOf: { entryType: 'purchase' } },
           { entryType: 'purchase', amountDelta: decimal(-30), reversalOf: null },
         ]),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { amountDelta: decimal(970) } }),
       },
     };
 

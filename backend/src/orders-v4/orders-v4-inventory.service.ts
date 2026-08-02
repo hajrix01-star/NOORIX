@@ -7,6 +7,8 @@ import type { OrdersV4StocktakeInput } from './orders-v4.contracts';
 import { ordersV4DateOnly } from './orders-v4-date.util';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
+import { calculateOrdersV4ConvertedQuantity, calculateOrdersV4ConvertedUnitPrice } from './orders-v4-calculation.kernel';
+import { ordersV4EdgeDefinitions, ordersV4UnitDefinitions, resolveOrdersV4ContextConversion } from './orders-v4-conversion.context';
 
 function stocktakeRequestHash(input: OrdersV4StocktakeInput): string {
   return createHash('sha256').update(JSON.stringify({
@@ -25,39 +27,73 @@ export class OrdersV4InventoryService {
   ) {}
 
   async balances(companyId: string) {
-    const [entries, items, locations] = await Promise.all([
+    const latestIds = await this.prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+      SELECT DISTINCT ON (item_id, location_id) id
+      FROM orders_v4_inventory_ledger
+      WHERE company_id = ${companyId}
+      ORDER BY item_id, location_id, sequence DESC
+    `);
+    const [entries, items, locations, units] = await Promise.all([
       this.prisma.ordersV4InventoryLedgerEntry.findMany({
-        where: { companyId },
-        include: { inventoryUnit: true, item: { include: { inventoryUnit: true, category: true } }, location: true },
+        where: { companyId, id: { in: latestIds.map((row) => row.id) } },
+        include: {
+          inventoryUnit: true,
+          item: {
+            include: {
+              inventoryUnit: true,
+              category: true,
+              conversionVersions: {
+                where: { status: 'published' }, orderBy: { version: 'desc' }, take: 1,
+                include: { edges: true },
+              },
+            },
+          },
+          location: true,
+        },
         orderBy: { sequence: 'desc' },
       }),
       this.prisma.ordersV4Item.findMany({
         where: { companyId, isActive: true, trackInventory: true },
-        include: { inventoryUnit: true, category: true },
+        include: { inventoryUnit: true, kernelUnit: true, category: true },
         orderBy: { nameAr: 'asc' },
       }),
       this.prisma.ordersV4Location.findMany({ where: { companyId, isActive: true }, orderBy: { nameAr: 'asc' } }),
+      this.prisma.ordersV4Unit.findMany({ where: { companyId } }),
     ]);
+    const unitDefinitions = ordersV4UnitDefinitions(units);
     const latest = new Map<string, (typeof entries)[number]>();
     for (const entry of entries) {
       const key = `${entry.itemId}:${entry.locationId}`;
       if (!latest.has(key)) latest.set(key, entry);
     }
-    const rows = [...latest.values()].map((entry) => ({
+    const rows = [...latest.values()].map((entry) => {
+      const conversion = resolveOrdersV4ContextConversion({
+        fromUnitId: entry.inventoryUnitId,
+        toUnitId: entry.item.inventoryUnitId,
+        units: unitDefinitions,
+        edges: ordersV4EdgeDefinitions(entry.item.conversionVersions[0]?.edges),
+      });
+      const displayQuantity = calculateOrdersV4ConvertedQuantity(entry.quantityAfter.abs(), conversion)
+        .times(entry.quantityAfter.isNegative() ? -1 : 1)
+        .toDecimalPlaces(8);
+      return {
       itemId: entry.itemId,
       itemName: entry.item.nameAr,
       categoryName: entry.item.category?.nameAr ?? '',
-      unitCode: entry.inventoryUnit.code,
-      unitName: entry.inventoryUnit.nameAr,
+      unitCode: entry.item.inventoryUnit.code,
+      unitName: entry.item.inventoryUnit.nameAr,
       locationId: entry.locationId,
       locationName: entry.location.nameAr,
-      quantity: entry.quantityAfter,
+      quantity: displayQuantity,
       value: entry.valueAfter,
-      averageUnitCost: entry.averageUnitCostAfter,
+      averageUnitCost: calculateOrdersV4ConvertedUnitPrice(entry.averageUnitCostAfter, conversion),
       lastSequence: entry.sequence.toString(),
       updatedAt: entry.createdAt,
       createdByUserId: entry.createdByUserId,
-    }));
+      kernelQuantity: entry.quantityAfter,
+      kernelUnitCode: entry.inventoryUnit.code,
+      };
+    });
     for (const location of locations) {
       for (const item of items) {
         if (rows.some((row) => row.itemId === item.id && row.locationId === location.id)) continue;
@@ -72,6 +108,8 @@ export class OrdersV4InventoryService {
           quantity: new Prisma.Decimal(0),
           value: new Prisma.Decimal(0),
           averageUnitCost: new Prisma.Decimal(0),
+          kernelQuantity: new Prisma.Decimal(0),
+          kernelUnitCode: item.kernelUnit.code,
           lastSequence: '0',
           updatedAt: item.updatedAt,
           createdByUserId: null,
@@ -132,8 +170,20 @@ export class OrdersV4InventoryService {
       if (!location) throw new BadRequestException('موقع الجرد غير موجود');
       const itemIds = [...new Set(input.lines.map((line) => line.itemId))];
       if (itemIds.length !== input.lines.length) throw new BadRequestException('لا يمكن تكرار الصنف في الجرد');
-      const items = await tx.ordersV4Item.findMany({ where: { companyId, id: { in: itemIds }, isActive: true, trackInventory: true } });
+      const [items, companyUnits] = await Promise.all([
+        tx.ordersV4Item.findMany({
+          where: { companyId, id: { in: itemIds }, isActive: true, trackInventory: true },
+          include: {
+            conversionVersions: {
+              where: { status: 'published' }, orderBy: { version: 'desc' }, take: 1,
+              include: { edges: true },
+            },
+          },
+        }),
+        tx.ordersV4Unit.findMany({ where: { companyId } }),
+      ]);
       if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف الجرد غير صالح');
+      const unitDefinitions = ordersV4UnitDefinitions(companyUnits);
       await this.posting.lockKeys(tx, companyId, itemIds.map((itemId) => ({ itemId, locationId: location.id })));
       const stocktake = await tx.ordersV4Stocktake.create({
         data: {
@@ -148,9 +198,18 @@ export class OrdersV4InventoryService {
       for (const line of [...input.lines].sort((a, b) => a.itemId.localeCompare(b.itemId))) {
         const item = items.find((row) => row.id === line.itemId);
         if (!item) throw new BadRequestException('صنف الجرد غير موجود');
+        const physicalKernelQuantity = calculateOrdersV4ConvertedQuantity(
+          line.physicalQuantity,
+          resolveOrdersV4ContextConversion({
+            fromUnitId: item.inventoryUnitId,
+            toUnitId: item.kernelUnitId,
+            units: unitDefinitions,
+            edges: ordersV4EdgeDefinitions(item.conversionVersions[0]?.edges),
+          }),
+        );
         await this.posting.postStocktakeAdjustment(tx, {
-          tenantId, companyId, itemId: item.id, inventoryUnitId: item.inventoryUnitId, locationId: location.id,
-          stocktakeId: stocktake.id, effectiveAt: date, physicalQuantity: line.physicalQuantity,
+          tenantId, companyId, itemId: item.id, inventoryUnitId: item.kernelUnitId, locationId: location.id,
+          stocktakeId: stocktake.id, effectiveAt: date, physicalQuantity: physicalKernelQuantity,
           stocktakeNumber: stocktake.stocktakeNumber,
         });
       }
@@ -161,30 +220,116 @@ export class OrdersV4InventoryService {
   }
 
   async dataQuality(companyId: string) {
-    const items = await this.prisma.ordersV4Item.findMany({
-      where: { companyId, isActive: true },
-      include: {
-        inventoryUnit: true,
-        conversionVersions: { where: { status: 'published' }, take: 1 },
-        recipeVersions: { where: { status: 'published' }, take: 1 },
-        sections: true,
-      },
-    });
+    const [items, units, ledgerAudit, custodyAudit, documentAudit] = await Promise.all([
+      this.prisma.ordersV4Item.findMany({
+        where: { companyId, isActive: true },
+        include: {
+          inventoryUnit: true,
+          kernelUnit: true,
+          units: true,
+          conversionVersions: {
+            where: { status: 'published' }, orderBy: { version: 'desc' }, take: 1,
+            include: { edges: true },
+          },
+          recipeVersions: {
+            where: { status: 'published' }, orderBy: { version: 'desc' }, take: 1,
+            include: { lines: { include: { componentItem: true } } },
+          },
+          sections: true,
+        },
+      }),
+      this.prisma.ordersV4Unit.findMany({ where: { companyId } }),
+      this.prisma.$queryRaw<Array<{ invalid_count: bigint }>>(Prisma.sql`
+        WITH ordered AS (
+          SELECT item_id, inventory_unit_id, quantity_delta, value_delta, quantity_after, value_after, average_unit_cost_after,
+                 LAG(quantity_after) OVER (PARTITION BY item_id, location_id ORDER BY sequence) AS previous_quantity,
+                 LAG(value_after) OVER (PARTITION BY item_id, location_id ORDER BY sequence) AS previous_value
+          FROM orders_v4_inventory_ledger WHERE company_id = ${companyId}
+        )
+        SELECT COUNT(*)::bigint AS invalid_count FROM ordered
+        WHERE ABS(quantity_after - (COALESCE(previous_quantity, 0) + quantity_delta)) > 0.00000001
+           OR ABS(value_after - (COALESCE(previous_value, 0) + value_delta)) > 0.000001
+           OR average_unit_cost_after < 0
+           OR EXISTS (
+             SELECT 1 FROM orders_v4_items AS item
+             WHERE item.id = ordered.item_id AND item.kernel_unit_id <> ordered.inventory_unit_id
+           )
+      `),
+      this.prisma.$queryRaw<Array<{ invalid_count: bigint }>>(Prisma.sql`
+        WITH ordered AS (
+          SELECT amount_delta, balance_after,
+                 LAG(balance_after) OVER (ORDER BY sequence) AS previous_balance
+          FROM orders_v4_custody_ledger WHERE company_id = ${companyId}
+        )
+        SELECT COUNT(*)::bigint AS invalid_count FROM ordered
+        WHERE ABS(balance_after - (COALESCE(previous_balance, 0) + amount_delta)) > 0.000001
+      `),
+      this.prisma.$queryRaw<Array<{ invalid_count: bigint }>>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS invalid_count
+        FROM orders_v4_documents AS document
+        WHERE document.company_id = ${companyId} AND document.status = 'received'
+          AND ABS(document.operational_cost - COALESCE((
+            SELECT SUM(line.operational_cost) FROM orders_v4_document_lines AS line
+            WHERE line.document_id = document.id
+          ), 0)) > 0.000001
+      `),
+    ]);
+    const componentIds = [...new Set(items.flatMap((item) => item.recipeVersions.flatMap((recipe) => recipe.lines.map((line) => line.componentItemId))))];
+    const pricedComponents = componentIds.length
+      ? new Set((await this.prisma.ordersV4PriceHistory.findMany({
+          where: { companyId, itemId: { in: componentIds }, document: { status: 'received' } },
+          distinct: ['itemId'], select: { itemId: true },
+        })).map((row) => row.itemId))
+      : new Set<string>();
+    const unitDefinitions = ordersV4UnitDefinitions(units);
     const issues = items.flatMap((item) => {
       const rows: Array<{ code: string; severity: 'warning' | 'error'; itemId: string; itemName: string; message: string }> = [];
       if (!item.inventoryUnit.isActive) {
         rows.push({ code: 'INACTIVE_BASE_UNIT', severity: 'error', itemId: item.id, itemName: item.nameAr, message: 'وحدة أساس الصنف معطلة' });
       }
+      if (!item.kernelUnit.isActive) {
+        rows.push({ code: 'INACTIVE_KERNEL_UNIT', severity: 'error', itemId: item.id, itemName: item.nameAr, message: 'وحدة نواة الصنف معطلة' });
+      }
+      const definition = item.conversionVersions[0];
+      for (const configuredUnit of item.units.filter((row) => row.isActive)) {
+        try {
+          resolveOrdersV4ContextConversion({
+            fromUnitId: configuredUnit.unitId,
+            toUnitId: item.kernelUnitId,
+            units: unitDefinitions,
+            edges: ordersV4EdgeDefinitions(definition?.edges),
+          });
+        } catch {
+          rows.push({ code: 'DISCONNECTED_UNIT', severity: 'error', itemId: item.id, itemName: item.nameAr, message: 'إحدى وحدات الصنف غير متصلة بوحدة النواة' });
+          break;
+        }
+      }
       if (item.itemType === 'sale' && item.trackInventory && !item.recipeVersions.length) {
         rows.push({ code: 'MISSING_RECIPE', severity: 'warning', itemId: item.id, itemName: item.nameAr, message: 'صنف البيع لا يملك وصفة منشورة وسيُصرف من رصيده مباشرة' });
+      }
+      for (const recipe of item.recipeVersions) {
+        for (const line of recipe.lines) {
+          if (line.componentItem.itemType !== 'purchased') {
+            rows.push({ code: 'INVALID_RECIPE_COMPONENT', severity: 'error', itemId: item.id, itemName: item.nameAr, message: 'الرسبي يحتوي على مكوّن ليس صنف شراء' });
+          } else if (!pricedComponents.has(line.componentItemId)) {
+            rows.push({ code: 'MISSING_COMPONENT_PRICE', severity: 'error', itemId: item.id, itemName: item.nameAr, message: `لا توجد طلبات مستلمة لتسعير المكوّن ${line.componentItem.nameAr}` });
+          }
+        }
       }
       if (!item.sections.length) {
         rows.push({ code: 'MISSING_SECTION', severity: 'warning', itemId: item.id, itemName: item.nameAr, message: 'الصنف غير مرتبط بقسم' });
       }
       return rows;
     });
+    const systemIssue = (code: string, message: string) => ({
+      code, severity: 'error' as const, itemId: 'system', itemName: 'نواة طلبات V4', message,
+    });
+    if (Number(ledgerAudit[0]?.invalid_count ?? 0) > 0) issues.push(systemIssue('LEDGER_INVARIANT_FAILURE', 'يوجد عدم تطابق في تسلسل كميات أو قيم دفتر المخزون'));
+    if (Number(custodyAudit[0]?.invalid_count ?? 0) > 0) issues.push(systemIssue('CUSTODY_INVARIANT_FAILURE', 'يوجد عدم تطابق في تسلسل رصيد دفتر العهدة'));
+    if (Number(documentAudit[0]?.invalid_count ?? 0) > 0) issues.push(systemIssue('DOCUMENT_COST_MISMATCH', 'إجمالي تكلفة مستند لا يطابق مجموع تكلفة أسطره'));
     return {
       kernelVersion: 4,
+      kernelMode: 'immutable-unit-central-ledgers',
       itemCount: items.length,
       errorCount: issues.filter((issue) => issue.severity === 'error').length,
       warningCount: issues.filter((issue) => issue.severity === 'warning').length,

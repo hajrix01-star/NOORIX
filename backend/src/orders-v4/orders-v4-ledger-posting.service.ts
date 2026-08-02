@@ -3,6 +3,8 @@ import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import {
   calculateOrdersV4Issue,
+  calculateOrdersV4InventoryUnitPrice,
+  calculateOrdersV4NegativeStockRevaluation,
   calculateOrdersV4Receipt,
   calculateOrdersV4Reversal,
   calculateOrdersV4StocktakeAdjustment,
@@ -33,7 +35,34 @@ export class OrdersV4LedgerPostingService {
     conversionVersionId: string | null; sourceSnapshot: Prisma.InputJsonObject;
   }) {
     await this.lockKeys(tx, input.companyId, [{ itemId: input.itemId, locationId: input.locationId }]);
-    const balance = await this.currentBalance(tx, input.companyId, input.itemId, input.locationId, input.inventoryUnitId);
+    let balance = await this.currentBalance(tx, input.companyId, input.itemId, input.locationId, input.inventoryUnitId);
+    const incomingUnitCost = calculateOrdersV4InventoryUnitPrice(input.totalValue, input.quantity);
+    const revaluation = calculateOrdersV4NegativeStockRevaluation(balance, incomingUnitCost);
+    if (revaluation) {
+      await tx.ordersV4InventoryLedgerEntry.create({
+        data: {
+          tenantId: input.tenantId, companyId: input.companyId, itemId: input.itemId,
+          inventoryUnitId: input.inventoryUnitId, locationId: input.locationId,
+          documentLineId: input.documentLineId, effectiveAt: input.effectiveAt,
+          entryType: 'negative_stock_revaluation', ...revaluation,
+          sourceType: 'negative_stock_policy', sourceId: input.sourceId,
+          sourceKey: `${input.sourceKey}:negative-stock-revaluation`,
+          sourceSnapshot: {
+            kernelVersion: 4,
+            policy: 'revalue-negative-balance-at-next-receipt-cost',
+            incomingUnitCost: incomingUnitCost.toString(),
+            receiptSourceSnapshot: input.sourceSnapshot,
+          },
+          conversionVersionId: input.conversionVersionId,
+          createdByUserId: TenantContext.getUserId(),
+        },
+      });
+      balance = {
+        quantity: revaluation.quantityAfter,
+        value: revaluation.valueAfter,
+        averageUnitCost: revaluation.averageUnitCostAfter,
+      };
+    }
     const calculation = calculateOrdersV4Receipt(balance, { quantity: input.quantity, totalValue: input.totalValue });
     return tx.ordersV4InventoryLedgerEntry.create({
       data: {
@@ -50,11 +79,15 @@ export class OrdersV4LedgerPostingService {
     tenantId: string; companyId: string; itemId: string; locationId: string; documentLineId: string;
     inventoryUnitId: string;
     sourceId: string; sourceKey: string; effectiveAt: Date; quantity: Prisma.Decimal;
+    provisionalUnitCost?: Prisma.Decimal;
     conversionVersionId: string | null; recipeVersionId: string | null; sourceSnapshot: Prisma.InputJsonObject;
   }) {
     await this.lockKeys(tx, input.companyId, [{ itemId: input.itemId, locationId: input.locationId }]);
     const balance = await this.currentBalance(tx, input.companyId, input.itemId, input.locationId, input.inventoryUnitId);
-    const calculation = calculateOrdersV4Issue(balance, { quantity: input.quantity });
+    const calculation = calculateOrdersV4Issue(balance, {
+      quantity: input.quantity,
+      provisionalUnitCost: input.provisionalUnitCost,
+    });
     return tx.ordersV4InventoryLedgerEntry.create({
       data: {
         tenantId: input.tenantId, companyId: input.companyId, itemId: input.itemId, inventoryUnitId: input.inventoryUnitId, locationId: input.locationId,

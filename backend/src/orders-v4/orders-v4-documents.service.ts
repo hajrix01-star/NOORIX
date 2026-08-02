@@ -21,6 +21,8 @@ import {
 import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
 import type { OrdersV4ResolvedConversion } from './orders-v4-kernel.types';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
+import { calculateOrdersV4CashAvailable } from './orders-v4-funds.kernel';
+import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 
 function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
@@ -67,6 +69,7 @@ export class OrdersV4DocumentsService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly posting: OrdersV4LedgerPostingService,
+    private readonly fundsPosting: OrdersV4FundsPostingService,
   ) {}
 
   async list(companyId: string, documentType?: OrdersV4DocumentType, startDate?: string, endDate?: string, createdByUserId?: string) {
@@ -97,6 +100,9 @@ export class OrdersV4DocumentsService {
     if (!['purchase', 'registration'].includes(input.documentType)) throw new BadRequestException('نوع مستند V4 غير صالح');
     if (!input.idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     if (!input.lines?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
+    if (new Set(input.lines.map((line) => line.itemId)).size !== input.lines.length) {
+      throw new BadRequestException('لا يمكن تكرار الصنف نفسه في المستند؛ عدّل الكمية في السطر الموجود');
+    }
     if (input.documentType === 'purchase' && !['custody', 'cash', 'transfer'].includes(input.paymentMethod || 'custody')) {
       throw new BadRequestException('طريقة الدفع غير صالحة');
     }
@@ -183,7 +189,7 @@ export class OrdersV4DocumentsService {
         const definitionEdges = ordersV4EdgeDefinitions(definition?.edges);
         const inputConversion = resolveOrdersV4ContextConversion({
           fromUnitId: line.unitId,
-          toUnitId: item.inventoryUnitId,
+          toUnitId: item.kernelUnitId,
           units: unitDefinitions,
           edges: definitionEdges,
         });
@@ -197,7 +203,7 @@ export class OrdersV4DocumentsService {
         }
         const priceConversion = resolveOrdersV4ContextConversion({
           fromUnitId: priceUnitId,
-          toUnitId: item.inventoryUnitId,
+          toUnitId: item.kernelUnitId,
           units: unitDefinitions,
           edges: definitionEdges,
         });
@@ -263,7 +269,7 @@ export class OrdersV4DocumentsService {
             inputQuantity: row.calculation.inputQuantity,
             inputUnitId: row.line.unitId,
             baseQuantity: row.calculation.baseQuantity,
-            baseUnitId: row.item.inventoryUnitId,
+            baseUnitId: row.item.kernelUnitId,
             unitPrice: row.calculation.unitPrice,
             priceUnitId: row.priceUnitId,
             priceQuantity: row.calculation.priceQuantity,
@@ -293,7 +299,7 @@ export class OrdersV4DocumentsService {
             const outputDefinitionEdges = ordersV4EdgeDefinitions(row.definition?.edges);
             const outputConversion = resolveOrdersV4ContextConversion({
               fromUnitId: row.recipe.outputUnitId,
-              toUnitId: row.item.inventoryUnitId,
+              toUnitId: row.item.kernelUnitId,
               units: unitDefinitions,
               edges: outputDefinitionEdges,
             });
@@ -303,7 +309,7 @@ export class OrdersV4DocumentsService {
               const componentEdges = ordersV4EdgeDefinitions(componentDefinition?.edges);
               const componentConversion = resolveOrdersV4ContextConversion({
                 fromUnitId: component.unitId,
-                toUnitId: component.componentItem.inventoryUnitId,
+                toUnitId: component.componentItem.kernelUnitId,
                 units: unitDefinitions,
                 edges: componentEdges,
               });
@@ -314,17 +320,36 @@ export class OrdersV4DocumentsService {
                 componentQuantity: component.quantity,
                 componentConversion,
               });
-              const recentPrices = await tx.ordersV4PriceHistory.findMany({
-                where: { companyId, itemId: component.componentItem.id, document: { status: 'received' } },
-                orderBy: [{ effectiveAt: 'desc' }, { createdAt: 'desc' }],
-                take: 5,
-                select: { inventoryUnitPrice: true, inventoryUnitId: true },
-              });
+              const recentPrices = await tx.$queryRaw<Array<{
+                documentId: string;
+                inventoryUnitPrice: Prisma.Decimal;
+                inventoryUnitId: string;
+              }>>(Prisma.sql`
+                SELECT sample.document_id AS "documentId",
+                       sample.inventory_unit_price AS "inventoryUnitPrice",
+                       sample.inventory_unit_id AS "inventoryUnitId"
+                FROM (
+                  SELECT DISTINCT ON (history.document_id)
+                         history.document_id, history.inventory_unit_price,
+                         history.inventory_unit_id, history.effective_at, history.created_at
+                  FROM orders_v4_price_history AS history
+                  INNER JOIN orders_v4_documents AS document ON document.id = history.document_id
+                  WHERE history.company_id = ${companyId}
+                    AND history.item_id = ${component.componentItem.id}
+                    AND document.status = 'received'
+                  ORDER BY history.document_id, history.effective_at DESC, history.created_at DESC
+                ) AS sample
+                ORDER BY sample.effective_at DESC, sample.created_at DESC
+                LIMIT 5
+              `);
+              if (!recentPrices.length) {
+                throw new BadRequestException(`${component.componentItem.nameAr}: لا توجد طلبات شراء مستلمة لحساب تكلفة الرسبي`);
+              }
               const normalizedPrices = recentPrices.map((price) => calculateOrdersV4ConvertedUnitPrice(
                 price.inventoryUnitPrice,
                 resolveOrdersV4ContextConversion({
                   fromUnitId: price.inventoryUnitId,
-                  toUnitId: component.componentItem.inventoryUnitId,
+                  toUnitId: component.componentItem.kernelUnitId,
                   units: unitDefinitions,
                   edges: componentEdges,
                 }),
@@ -341,10 +366,11 @@ export class OrdersV4DocumentsService {
                 componentCost: componentCost.toString(),
               });
               await this.posting.postIssue(tx, {
-                tenantId, companyId, itemId: component.componentItem.id, inventoryUnitId: component.componentItem.inventoryUnitId, locationId: location.id,
+                  tenantId, companyId, itemId: component.componentItem.id, inventoryUnitId: component.componentItem.kernelUnitId, locationId: location.id,
                 documentLineId: createdLine.id, sourceId: document.id,
                 sourceKey: `document:${document.id}:line:${createdLine.id}:recipe:${component.id}:issue`,
                 effectiveAt: documentDate, quantity: issueQuantity,
+                provisionalUnitCost: averageLastFive,
                 conversionVersionId: componentDefinition?.id || null,
                 recipeVersionId: row.recipe.id,
                 sourceSnapshot: {
@@ -378,7 +404,7 @@ export class OrdersV4DocumentsService {
             });
           } else if (row.item.trackInventory) {
             const issueEntry = await this.posting.postIssue(tx, {
-              tenantId, companyId, itemId: row.item.id, inventoryUnitId: row.item.inventoryUnitId, locationId: location.id,
+              tenantId, companyId, itemId: row.item.id, inventoryUnitId: row.item.kernelUnitId, locationId: location.id,
               documentLineId: createdLine.id, sourceId: document.id,
               sourceKey: `document:${document.id}:line:${createdLine.id}:issue`,
               effectiveAt: documentDate, quantity: row.calculation.baseQuantity,
@@ -432,10 +458,29 @@ export class OrdersV4DocumentsService {
   async receiveLatest(companyId: string, id: string, input: OrdersV4ReceiveInput) {
     if (!input.idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     if (!input.lines?.length) throw new BadRequestException('يجب تسجيل صنف مستلم واحد على الأقل');
+    if (new Set(input.lines.map((line) => line.itemId)).size !== input.lines.length) {
+      throw new BadRequestException('لا يمكن تكرار الصنف نفسه في الاستلام؛ عدّل الكمية في السطر الموجود');
+    }
     if (!Number.isInteger(input.revision) || input.revision < 1) throw new BadRequestException('رقم مراجعة الطلب غير صالح');
     const tenantId = TenantContext.getTenantId();
     const userId = TenantContext.getUserId();
     const receivedDate = ordersV4DateOnly(input.documentDate, 'تاريخ الاستلام');
+    const receiveRequestHash = requestHash({
+      revision: input.revision,
+      documentDate: input.documentDate,
+      paymentMethod: input.paymentMethod ?? 'custody',
+      sectionId: input.sectionId ?? null,
+      locationId: input.locationId,
+      pettyCashAmount: input.pettyCashAmount ?? null,
+      notes: input.notes?.trim() || null,
+      lines: input.lines.map((line) => ({
+        itemId: line.itemId,
+        quantity: String(line.quantity),
+        unitId: line.unitId,
+        unitPrice: String(line.unitPrice ?? 0),
+        priceUnitId: line.priceUnitId || line.unitId,
+      })),
+    });
 
     return this.prisma.withTenant(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
@@ -446,6 +491,9 @@ export class OrdersV4DocumentsService {
       if (!latest || latest.id !== id) throw new BadRequestException('الاستلام والتعديل متاحان لآخر طلب فقط');
       const previousSnapshot = latest.calculationSnapshot as Record<string, unknown>;
       if (latest.status === 'received' && previousSnapshot.receiveIdempotencyKey === input.idempotencyKey.trim()) {
+        if (previousSnapshot.receiveRequestHash !== receiveRequestHash) {
+          throw new BadRequestException('مفتاح منع تكرار الاستلام مستخدم لمحتوى مختلف');
+        }
         return tx.ordersV4Document.findUniqueOrThrow({
           where: { id },
           include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
@@ -481,10 +529,10 @@ export class OrdersV4DocumentsService {
         const definition = item.conversionVersions[0];
         const edges = ordersV4EdgeDefinitions(definition?.edges);
         const inputConversion = resolveOrdersV4ContextConversion({
-          fromUnitId: line.unitId, toUnitId: item.inventoryUnitId, units: unitDefinitions, edges,
+          fromUnitId: line.unitId, toUnitId: item.kernelUnitId, units: unitDefinitions, edges,
         });
         const priceConversion = resolveOrdersV4ContextConversion({
-          fromUnitId: priceUnitId, toUnitId: item.inventoryUnitId, units: unitDefinitions, edges,
+          fromUnitId: priceUnitId, toUnitId: item.kernelUnitId, units: unitDefinitions, edges,
         });
         const calculation = calculateOrdersV4Line({
           inputQuantity: line.quantity,
@@ -498,9 +546,14 @@ export class OrdersV4DocumentsService {
       const subtotal = prepared.reduce((sum, row) => sum.plus(row.calculation.lineTotal), new Prisma.Decimal(0)).toDecimalPlaces(6);
       const paymentMethod = input.paymentMethod || 'custody';
       if (!['custody', 'cash', 'transfer'].includes(paymentMethod)) throw new BadRequestException('طريقة الدفع غير صالحة');
-      const pettyCashAmount = paymentMethod === 'custody' && input.pettyCashAmount != null && input.pettyCashAmount !== ''
-        ? new Prisma.Decimal(input.pettyCashAmount)
-        : null;
+      let pettyCashAmount: Prisma.Decimal | null = null;
+      if (paymentMethod === 'custody' && input.pettyCashAmount != null && input.pettyCashAmount !== '') {
+        try {
+          pettyCashAmount = new Prisma.Decimal(input.pettyCashAmount);
+        } catch {
+          throw new BadRequestException('مبلغ العهدة غير صالح');
+        }
+      }
       if (pettyCashAmount?.lt(0)) throw new BadRequestException('العهدة لا يمكن أن تكون سالبة');
 
       if (paymentMethod === 'cash') {
@@ -515,10 +568,10 @@ export class OrdersV4DocumentsService {
             AND vault.type = 'cash'
         `);
         const used = await tx.ordersV4Document.aggregate({
-          where: { companyId, documentType: 'purchase', status: 'received', paymentMethod: 'cash' },
+          where: { companyId, documentType: 'purchase', status: 'received', paymentMethod: 'cash', documentDate: { lte: receivedDate } },
           _sum: { totalAmount: true },
         });
-        const available = new Prisma.Decimal(cashSales?.total ?? 0).minus(used._sum.totalAmount ?? 0);
+        const available = calculateOrdersV4CashAvailable(cashSales?.total ?? 0, used._sum.totalAmount ?? 0);
         if (subtotal.gt(available)) throw new BadRequestException(`رصيد نقد المحل غير كافٍ. المتاح ${available.toFixed(2)}`);
       }
 
@@ -529,6 +582,7 @@ export class OrdersV4DocumentsService {
         owner: 'orders-v4-calculation-kernel',
         receivedFromRevision: latest.revision,
         receiveIdempotencyKey: input.idempotencyKey.trim(),
+        receiveRequestHash,
         lineCount: prepared.length,
         subtotal: subtotal.toString(),
         operationalCost: subtotal.toString(),
@@ -560,7 +614,7 @@ export class OrdersV4DocumentsService {
             tenantId, companyId, documentId: id, itemId: row.item.id, lineNumber: row.index + 1,
             itemNameSnapshot: row.item.nameAr,
             inputQuantity: row.calculation.inputQuantity, inputUnitId: row.line.unitId,
-            baseQuantity: row.calculation.baseQuantity, baseUnitId: row.item.inventoryUnitId, unitPrice: row.calculation.unitPrice,
+            baseQuantity: row.calculation.baseQuantity, baseUnitId: row.item.kernelUnitId, unitPrice: row.calculation.unitPrice,
             priceUnitId: row.priceUnitId, priceQuantity: row.calculation.priceQuantity,
             lineTotal: row.calculation.lineTotal, conversionVersionId: row.definition?.id || null,
             operationalCost: row.calculation.lineTotal,
@@ -579,7 +633,7 @@ export class OrdersV4DocumentsService {
         const inventoryUnitPrice = calculateOrdersV4InventoryUnitPrice(row.calculation.lineTotal, row.calculation.baseQuantity);
         await tx.ordersV4PriceHistory.create({
           data: {
-            tenantId, companyId, itemId: row.item.id, unitId: row.priceUnitId, inventoryUnitId: row.item.inventoryUnitId,
+            tenantId, companyId, itemId: row.item.id, unitId: row.priceUnitId, inventoryUnitId: row.item.kernelUnitId,
             documentId: id, documentLineId: line.id, unitPrice: row.calculation.unitPrice,
             inventoryUnitPrice, conversionVersionId: row.definition?.id || null, effectiveAt: receivedDate,
           },
@@ -590,7 +644,7 @@ export class OrdersV4DocumentsService {
         });
         if (row.item.trackInventory) {
           await this.posting.postReceipt(tx, {
-            tenantId, companyId, itemId: row.item.id, inventoryUnitId: row.item.inventoryUnitId, locationId: location.id, documentLineId: line.id,
+            tenantId, companyId, itemId: row.item.id, inventoryUnitId: row.item.kernelUnitId, locationId: location.id, documentLineId: line.id,
             sourceId: id, sourceKey: `document:${id}:line:${line.id}:receipt`, effectiveAt: receivedDate,
             quantity: row.calculation.baseQuantity, totalValue: row.calculation.lineTotal,
             conversionVersionId: row.definition?.id || null,
@@ -600,18 +654,9 @@ export class OrdersV4DocumentsService {
       }
 
       if (paymentMethod === 'custody') {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:custody:${companyId}`}))`;
-        const lastEntry = await tx.ordersV4CustodyLedgerEntry.findFirst({ where: { companyId }, orderBy: { sequence: 'desc' } });
-        let balance = lastEntry?.balanceAfter ?? new Prisma.Decimal(0);
-        if (pettyCashAmount?.gt(0)) {
-          balance = balance.plus(pettyCashAmount);
-          await tx.ordersV4CustodyLedgerEntry.create({
-            data: { tenantId, companyId, documentId: id, effectiveAt: receivedDate, entryType: 'funding', amountDelta: pettyCashAmount, balanceAfter: balance, sourceKey: `document:${id}:custody:funding`, sourceSnapshot: { kernelVersion: 4 }, createdByUserId: userId },
-          });
-        }
-        balance = balance.minus(subtotal);
-        await tx.ordersV4CustodyLedgerEntry.create({
-          data: { tenantId, companyId, documentId: id, effectiveAt: receivedDate, entryType: 'purchase', amountDelta: subtotal.negated(), balanceAfter: balance, sourceKey: `document:${id}:custody:purchase`, sourceSnapshot: { kernelVersion: 4 }, createdByUserId: userId },
+        await this.fundsPosting.postPurchase(tx, {
+          tenantId, companyId, documentId: id, effectiveAt: receivedDate,
+          purchaseAmount: subtotal, fundingAmount: pettyCashAmount,
         });
       }
 
@@ -640,7 +685,8 @@ export class OrdersV4DocumentsService {
         where: { companyId, sourceId: original.id }, orderBy: { sequence: 'desc' },
       });
       const ledgerItemIds = [...new Set(originalLedger.map((entry) => entry.itemId))];
-      const [ledgerItems, companyUnits] = await Promise.all([
+      const historicalConversionIds = [...new Set(originalLedger.map((entry) => entry.conversionVersionId).filter(Boolean) as string[])];
+      const [ledgerItems, companyUnits, historicalConversions] = await Promise.all([
         tx.ordersV4Item.findMany({
           where: { companyId, id: { in: ledgerItemIds } },
           include: {
@@ -653,6 +699,10 @@ export class OrdersV4DocumentsService {
           },
         }),
         tx.ordersV4Unit.findMany({ where: { companyId } }),
+        tx.ordersV4ConversionVersion.findMany({
+          where: { companyId, id: { in: historicalConversionIds } },
+          include: { edges: true },
+        }),
       ]);
       const unitDefinitions = ordersV4UnitDefinitions(companyUnits);
       const originalCustody = await tx.ordersV4CustodyLedgerEntry.findMany({
@@ -681,38 +731,29 @@ export class OrdersV4DocumentsService {
         const item = ledgerItems.find((row) => row.id === entry.itemId);
         if (!item) throw new BadRequestException('تعذر العثور على صنف قيد المخزون المراد عكسه');
         const definition = item.conversionVersions[0];
+        const historicalDefinition = historicalConversions.find((row) => row.id === entry.conversionVersionId);
         const currentConversion = resolveOrdersV4ContextConversion({
           fromUnitId: entry.inventoryUnitId,
-          toUnitId: item.inventoryUnitId,
+          toUnitId: item.kernelUnitId,
           units: unitDefinitions,
-          edges: ordersV4EdgeDefinitions(definition?.edges),
+          edges: ordersV4EdgeDefinitions(historicalDefinition?.edges ?? definition?.edges),
         });
         await this.posting.postReversal(tx, {
           tenantId,
           companyId,
           sourceId: reversal.id,
           effectiveAt: reversedAt,
-          currentInventoryUnitId: item.inventoryUnitId,
-          currentConversionVersionId: definition?.id ?? null,
+          currentInventoryUnitId: item.kernelUnitId,
+          currentConversionVersionId: historicalDefinition?.id ?? definition?.id ?? null,
           currentConversion,
           original: entry,
         });
       }
       if (originalCustody.length) {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:custody:${companyId}`}))`;
-        const latestCustody = await tx.ordersV4CustodyLedgerEntry.findFirst({ where: { companyId }, orderBy: { sequence: 'desc' } });
-        let custodyBalance = latestCustody?.balanceAfter ?? new Prisma.Decimal(0);
-        for (const entry of originalCustody) {
-          custodyBalance = custodyBalance.minus(entry.amountDelta);
-          await tx.ordersV4CustodyLedgerEntry.create({
-            data: {
-              tenantId, companyId, documentId: reversal.id, effectiveAt: new Date(), entryType: 'reversal',
-              amountDelta: entry.amountDelta.negated(), balanceAfter: custodyBalance,
-              sourceKey: `reversal:${entry.id}`, sourceSnapshot: { kernelVersion: 4, originalEntryId: entry.id },
-              reversalOfId: entry.id, createdByUserId: TenantContext.getUserId(),
-            },
-          });
-        }
+        await this.fundsPosting.postReversals(tx, {
+          tenantId, companyId, reversalDocumentId: reversal.id,
+          effectiveAt: reversedAt, originals: originalCustody,
+        });
       }
       await tx.ordersV4Document.update({ where: { id: original.id }, data: { status: 'reversed', updatedByUserId: TenantContext.getUserId() } });
       for (const line of original.lines) {
