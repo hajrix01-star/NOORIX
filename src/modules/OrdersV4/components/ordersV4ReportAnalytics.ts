@@ -1,4 +1,4 @@
-import type { OrdersV4Document, OrdersV4ItemsReportRow, OrdersV4Section } from '../../../types/api';
+import type { OrdersV4Document, OrdersV4ItemsReportRow } from '../../../types/api';
 
 export type OrdersV4ReportMetric = 'amount' | 'quantity' | 'documents';
 
@@ -16,8 +16,6 @@ export type OrdersV4DailyReportRow = OrdersV4ReportGroup & {
 };
 
 export type OrdersV4EmployeeReportRow = OrdersV4ReportGroup & { username: string };
-
-export type OrdersV4MissingRegistrationRow = { date: string; sectionId: string; sectionName: string };
 
 function number(value: unknown): number {
   const parsed = Number(value ?? 0);
@@ -129,30 +127,4 @@ export function topItemsBySection(documents: OrdersV4Document[], limit = 5): Arr
     sectionName: group.sectionName,
     items: aggregateItems(group.documents).slice(0, limit),
   })).sort((a, b) => a.sectionName.localeCompare(b.sectionName, 'ar'));
-}
-
-export function findMissingRegistrationDays(
-  documents: OrdersV4Document[],
-  sections: OrdersV4Section[],
-  startDate: string,
-  endDate: string,
-): OrdersV4MissingRegistrationRow[] {
-  const activeSections = sections.filter((section) => section.isActive);
-  if (!startDate || !endDate || activeSections.length === 0) return [];
-  const regularDocuments = documents
-    .filter((document) => document.status === 'received' && (document.registrationEntryType ?? 'issue') === 'issue' && document.sectionId);
-  if (regularDocuments.length === 0) return [];
-  const registered = new Set(regularDocuments
-    .map((document) => `${ymd(document.documentDate)}:${document.sectionId}`));
-  const firstRegistrationDate = regularDocuments.map((document) => ymd(document.documentDate)).sort()[0];
-  const effectiveStartDate = firstRegistrationDate > startDate ? firstRegistrationDate : startDate;
-  const start = new Date(`${effectiveStartDate}T12:00:00Z`);
-  const end = new Date(`${endDate}T12:00:00Z`);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return [];
-  const rows: OrdersV4MissingRegistrationRow[] = [];
-  for (const cursor = new Date(start); cursor <= end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
-    const date = cursor.toISOString().slice(0, 10);
-    for (const section of activeSections) if (!registered.has(`${date}:${section.id}`)) rows.push({ date, sectionId: section.id, sectionName: section.nameAr });
-  }
-  return rows;
 }

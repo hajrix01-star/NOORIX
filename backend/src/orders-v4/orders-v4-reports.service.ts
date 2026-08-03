@@ -9,8 +9,9 @@ import {
   ordersV4UnitDefinitions,
   resolveOrdersV4ContextConversion,
 } from './orders-v4-conversion.context';
-import { ordersV4RangeBounds } from './orders-v4-date.util';
+import { ordersV4RangeBounds, ordersV4SaudiToday } from './orders-v4-date.util';
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
+import { buildOrdersV4RegistrationCoverage } from './orders-v4-registration-coverage.util';
 
 @Injectable()
 export class OrdersV4ReportsService {
@@ -159,13 +160,22 @@ export class OrdersV4ReportsService {
 
   async salesReport(companyId: string, startDate?: string, endDate?: string) {
     const bounds = ordersV4RangeBounds(startDate, endDate);
-    const [summary, byItem, documents] = await Promise.all([
+    const [summary, byItem, documents, coverageDocuments, activeSections] = await Promise.all([
       this.summary(companyId, startDate, endDate),
       this.itemsReport(companyId, 'registration', startDate, endDate),
       this.prisma.ordersV4Document.findMany({
         where: { companyId, documentType: 'registration', documentDate: bounds },
-        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
+        include: { section: true, location: true, lines: { include: { item: { include: { category: true } }, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
         orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
+      }),
+      this.prisma.ordersV4Document.findMany({
+        where: { companyId, documentType: 'registration', registrationEntryType: 'issue', status: 'received' },
+        select: { sectionId: true, documentDate: true },
+      }),
+      this.prisma.ordersV4Section.findMany({
+        where: { companyId, isActive: true },
+        orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+        select: { id: true, nameAr: true },
       }),
     ]);
     const bySection = new Map<string, { sectionId: string; sectionName: string; count: number; total: Prisma.Decimal }>();
@@ -182,6 +192,16 @@ export class OrdersV4ReportsService {
       bySection.set(key, current);
     }
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
+    const today = ordersV4SaudiToday();
+    const registrationCoverage = buildOrdersV4RegistrationCoverage({
+      documents: coverageDocuments,
+      sections: activeSections,
+      startDate: startDate || coverageDocuments.map((row) => row.documentDate.toISOString().slice(0, 10)).sort()[0] || today,
+      endDate: endDate || today,
+      today,
+    });
+    const receivedDocuments = documents.filter((document) => document.status === 'received');
+    const receivedLines = receivedDocuments.flatMap((document) => document.lines);
     return {
       summary: { count: summary.registrationCount, totalAmount: summary.registrationTotal },
       byItem,
@@ -190,6 +210,13 @@ export class OrdersV4ReportsService {
         ...document,
         createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
       })),
+      registrationCoverage,
+      costCoverage: {
+        documents: receivedDocuments.length,
+        zeroCostDocuments: receivedDocuments.filter((document) => document.operationalCost.isZero()).length,
+        lines: receivedLines.length,
+        zeroCostLines: receivedLines.filter((line) => line.operationalCost.isZero()).length,
+      },
       kernelVersion: 4,
     };
   }

@@ -13,9 +13,8 @@ import type {
   OrdersV4CancellationReason,
   OrdersV4Document,
   OrdersV4ItemsReportRow,
-  OrdersV4Section,
 } from '../../../types/api';
-import { Button, DataBar, Input, usePrintPreview, type SimpleTableColumn } from '../../../ui';
+import { Button, DataBar, Input, SearchableOptionsPicker, SmartTable, usePrintPreview, type SimpleTableColumn } from '../../../ui';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintTableHtml } from '../../../utils/printTableHtml';
 import {
@@ -29,20 +28,21 @@ import {
   v4ReportNumber,
   v4UserLabel,
 } from '../OrdersV4Shared';
-import { useOrdersV4Documents } from '../useOrdersV4';
+import { useOrdersV4Documents, useOrdersV4SalesReport } from '../useOrdersV4';
 import { ORDERS_V4_CANCELLATION_REASON_OPTIONS, ordersV4CancellationReasonLabel } from './ordersV4CancellationReasons';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { useTabSearchParam } from '../../../hooks/useTabSearchParam';
 import {
   aggregateDocumentsByDay,
   aggregateDocumentsByEmployee,
   aggregateDocumentsBySection,
   aggregateItems,
-  findMissingRegistrationDays,
   metricValue,
   topItemsBySection,
   type OrdersV4ReportGroup,
   type OrdersV4ReportMetric,
 } from './ordersV4ReportAnalytics';
+import { OrdersV4PurchaseHistorySheet } from './OrdersV4PurchaseHistorySheet';
 
 const CHART_COLORS = ['#15803d', '#2563eb', '#d97706', '#7c3aed', '#0891b2', '#dc2626', '#db2777'];
 
@@ -124,17 +124,20 @@ function ReportViewTabs<T extends string>({ value, items, onChange }: { value: T
   </div>;
 }
 
-type DetailedItemRow = OrdersV4ItemsReportRow & { sections: string; inputUnits: string; paymentMethods: string; lastDate: string };
+type DetailedItemRow = OrdersV4ItemsReportRow & { sections: string; inputUnits: string; recordedQuantities: string; paymentMethods: string; lastDate: string };
 
 function detailedItems(documents: OrdersV4Document[]): DetailedItemRow[] {
   const basic = aggregateItems(documents);
   return basic.map((row) => {
     const matching = documents.flatMap((document) => document.lines.filter((line) => line.itemId === row.itemId).map((line) => ({ document, line })));
     const values = (getter: (entry: (typeof matching)[number]) => string) => [...new Set(matching.map(getter).filter(Boolean))].join('، ');
+    const recorded = new Map<string, number>();
+    matching.forEach(({ line }) => recorded.set(line.inputUnit.nameAr, (recorded.get(line.inputUnit.nameAr) ?? 0) + Number(line.inputQuantity || 0)));
     return {
       ...row,
       sections: values(({ document }) => document.section?.nameAr || 'غير محدد'),
       inputUnits: values(({ line }) => line.inputUnit.nameAr),
+      recordedQuantities: [...recorded.entries()].map(([unitName, quantity]) => `${v4ReportNumber(quantity)} ${unitName}`).join('، '),
       paymentMethods: values(({ document }) => document.paymentMethod === 'custody' ? 'عهدة' : document.paymentMethod === 'cash' ? 'نقد' : document.paymentMethod === 'transfer' ? 'تحويل' : ''),
       lastDate: matching.map(({ document }) => document.documentDate).sort().at(-1) || '',
     };
@@ -146,12 +149,15 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
   const registrationQuery = useOrdersV4Documents(companyId, 'registration', startDate, endDate);
   const [documentType, setDocumentType] = useState<'purchase' | 'registration' | ''>('purchase');
   const [search, setSearch] = useState('');
-  const [sectionId, setSectionId] = useState('');
-  const [category, setCategory] = useState('');
-  const [unit, setUnit] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [sectionIds, setSectionIds] = useState<string[]>([]);
+  const [categoryNames, setCategoryNames] = useState<string[]>([]);
+  const [unitNames, setUnitNames] = useState<string[]>([]);
+  const [packagingNames, setPackagingNames] = useState<string[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [metric, setMetric] = useState<OrdersV4ReportMetric>('amount');
   const [ranking, setRanking] = useState<'all' | 'top' | 'bottom'>('all');
+  const [rankingCount, setRankingCount] = useState(10);
+  const [history, setHistory] = useState<{ itemId?: string; categoryName?: string; title: string } | null>(null);
   const allDocuments = useMemo(() => {
     const purchases = purchaseQuery.data ?? [];
     const registrations = registrationQuery.data ?? [];
@@ -159,16 +165,18 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
   }, [documentType, purchaseQuery.data, registrationQuery.data]);
   const categories = useMemo(() => [...new Set(allDocuments.flatMap((row) => row.lines.map((line) => line.item.category?.nameAr || '')).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [allDocuments]);
   const units = useMemo(() => [...new Set(allDocuments.flatMap((row) => row.lines.map((line) => line.baseUnit.nameAr)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [allDocuments]);
+  const packagings = useMemo(() => [...new Set(allDocuments.flatMap((row) => row.lines.map((line) => line.inputUnit.nameAr)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [allDocuments]);
   const sections = useMemo(() => [...new Map(allDocuments.filter((row) => row.section).map((row) => [row.section!.id, row.section!])).values()], [allDocuments]);
   const filteredDocuments = useMemo(() => {
     const term = normalized(search);
-    return allDocuments.filter((document) => (!sectionId || document.sectionId === sectionId) && (!paymentMethod || document.paymentMethod === paymentMethod)).map((document) => ({
+    return allDocuments.filter((document) => (!sectionIds.length || (document.sectionId && sectionIds.includes(document.sectionId))) && (documentType === 'registration' || !paymentMethods.length || (document.paymentMethod && paymentMethods.includes(document.paymentMethod)))).map((document) => ({
       ...document,
-      lines: document.lines.filter((line) => (!category || line.item.category?.nameAr === category)
-        && (!unit || line.baseUnit.nameAr === unit)
+      lines: document.lines.filter((line) => (!categoryNames.length || categoryNames.includes(line.item.category?.nameAr || ''))
+        && (!unitNames.length || unitNames.includes(line.baseUnit.nameAr))
+        && (!packagingNames.length || packagingNames.includes(line.inputUnit.nameAr))
         && (!term || normalized(`${line.itemNameSnapshot} ${line.item.category?.nameAr || ''} ${line.baseUnit.nameAr}`).includes(term))),
     })).filter((document) => document.lines.length > 0);
-  }, [allDocuments, category, paymentMethod, search, sectionId, unit]);
+  }, [allDocuments, categoryNames, documentType, packagingNames, paymentMethods, search, sectionIds, unitNames]);
   const rows = useMemo(() => detailedItems(filteredDocuments), [filteredDocuments]);
   const displayedRows = useMemo(() => {
     if (ranking === 'all') return rows;
@@ -177,8 +185,8 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
       const bv = metric === 'amount' ? Number(b.totalAmount) : metric === 'quantity' ? Number(b.baseQuantity) : b.documentCount;
       return ranking === 'top' ? bv - av : av - bv;
     });
-    return sorted.slice(0, 10);
-  }, [metric, ranking, rows]);
+    return sorted.slice(0, rankingCount);
+  }, [metric, ranking, rankingCount, rows]);
   const sectionSummary = useMemo(() => aggregateDocumentsBySection(filteredDocuments).sort((a, b) => metricValue(b, metric) - metricValue(a, metric)), [filteredDocuments, metric]);
   const sectionItems = useMemo(() => topItemsBySection(filteredDocuments), [filteredDocuments]);
   const totals = useMemo(() => ({
@@ -188,13 +196,14 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
   }), [filteredDocuments, rows]);
   const loading = purchaseQuery.isLoading || registrationQuery.isLoading;
   const error = (purchaseQuery.error || registrationQuery.error) as Error | null;
-  const reset = () => { setSearch(''); setSectionId(''); setCategory(''); setUnit(''); setPaymentMethod(''); setRanking('all'); };
-  const exportRows = displayedRows.map((row) => ({ القسم: row.sections, الصنف: row.nameAr, الفئة: row.categoryName, التغليف: row.inputUnits, 'وحدة المخزون': row.inventoryUnit, 'الكمية المعيارية': Number(row.baseQuantity), القيمة: Number(row.totalAmount), العمليات: row.documentCount, 'متوسط الوحدة': Number(row.averageUnitCost), 'آخر حركة': row.lastDate }));
+  const reset = () => { setSearch(''); setSectionIds([]); setCategoryNames([]); setUnitNames([]); setPackagingNames([]); setPaymentMethods([]); setRanking('all'); setRankingCount(10); };
+  const exportRows = displayedRows.map((row) => ({ القسم: row.sections, الصنف: row.nameAr, الفئة: row.categoryName, التغليف: row.inputUnits, 'الكمية المسجلة': row.recordedQuantities, 'وحدة المخزون': row.inventoryUnit, 'الكمية المعيارية': Number(row.baseQuantity), القيمة: Number(row.totalAmount), العمليات: row.documentCount, 'متوسط الوحدة': Number(row.averageUnitCost), 'آخر حركة': row.lastDate }));
   const columns: SimpleTableColumn<DetailedItemRow>[] = [
     { key: 'sections', label: 'القسم', minWidth: 130 },
-    { key: 'nameAr', label: 'الصنف', minWidth: 170, render: (value) => <strong>{String(value)}</strong> },
-    { key: 'categoryName', label: 'الفئة' },
+    { key: 'nameAr', label: 'الصنف', minWidth: 170, render: (value, row) => <Button type="button" variant="ghost" className="font-bold text-blue-700 underline" onClick={(event) => { event.stopPropagation(); setHistory({ itemId: row.itemId, title: row.nameAr }); }}>{String(value)}</Button> },
+    { key: 'categoryName', label: 'الفئة', render: (value) => value ? <Button type="button" variant="ghost" className="text-blue-700 underline" onClick={(event) => { event.stopPropagation(); setHistory({ categoryName: String(value), title: String(value) }); }}>{String(value)}</Button> : '—' },
     { key: 'inputUnits', label: 'التغليف / وحدة الإدخال', minWidth: 150 },
+    { key: 'recordedQuantities', label: 'الكمية المسجلة', minWidth: 150 },
     { key: 'inventoryUnit', label: 'وحدة المخزون' },
     { key: 'baseQuantity', label: 'الكمية المعيارية', numeric: true, render: (value) => v4ReportNumber(value) },
     { key: 'totalAmount', label: 'القيمة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
@@ -207,12 +216,13 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
       <ReportsFilterBar>
         <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="الصنف أو الفئة أو الوحدة…" /></OrdersV4Field>
         <OrdersV4Field label="نوع الحركة"><OrdersV4Select value={documentType} onChange={(event) => setDocumentType(event.target.value as typeof documentType)}><option value="purchase">طلبات الشراء</option><option value="registration">التسجيل الداخلي</option><option value="">كل الحركات</option></OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="القسم"><OrdersV4Select value={sectionId} onChange={(event) => setSectionId(event.target.value)}><option value="">كل الأقسام</option>{sections.map((section) => <option key={section.id} value={section.id}>{section.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="الفئة"><OrdersV4Select value={category} onChange={(event) => setCategory(event.target.value)}><option value="">كل الفئات</option>{categories.map((name) => <option key={name}>{name}</option>)}</OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="وحدة المخزون"><OrdersV4Select value={unit} onChange={(event) => setUnit(event.target.value)}><option value="">كل الوحدات</option>{units.map((name) => <option key={name}>{name}</option>)}</OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="طريقة الدفع"><OrdersV4Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} disabled={documentType === 'registration'}><option value="">كل طرق الدفع</option><option value="custody">عهدة</option><option value="cash">نقد</option><option value="transfer">تحويل</option></OrdersV4Select></OrdersV4Field>
+        <OrdersV4Field label="القسم"><SearchableOptionsPicker mode="multiple" values={sectionIds} onChange={setSectionIds} options={sections.map((section) => ({ value: section.id, label: section.nameAr }))} emptyLabel="كل الأقسام" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="الفئة"><SearchableOptionsPicker mode="multiple" values={categoryNames} onChange={setCategoryNames} options={categories.map((name) => ({ value: name, label: name }))} emptyLabel="كل الفئات" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="وحدة المخزون"><SearchableOptionsPicker mode="multiple" values={unitNames} onChange={setUnitNames} options={units.map((name) => ({ value: name, label: name }))} emptyLabel="كل الوحدات" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="التغليف / وحدة الإدخال"><SearchableOptionsPicker mode="multiple" values={packagingNames} onChange={setPackagingNames} options={packagings.map((name) => ({ value: name, label: name }))} emptyLabel="كل التغليفات" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="طريقة الدفع"><SearchableOptionsPicker mode="multiple" values={paymentMethods} onChange={setPaymentMethods} options={[{ value: 'custody', label: 'عهدة' }, { value: 'cash', label: 'نقد' }, { value: 'transfer', label: 'تحويل' }]} emptyLabel="كل طرق الدفع" showClearAll disabled={documentType === 'registration'} /></OrdersV4Field>
         <OrdersV4Field label="مقياس الرسم والترتيب"><OrdersV4Select value={metric} onChange={(event) => setMetric(event.target.value as OrdersV4ReportMetric)}><option value="amount">المبلغ</option><option value="quantity">الكمية المعيارية</option><option value="documents">عدد العمليات</option></OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="عرض النتائج"><div className="flex gap-2"><OrdersV4Select value={ranking} onChange={(event) => setRanking(event.target.value as typeof ranking)} className="flex-1"><option value="all">كل النتائج</option><option value="top">أعلى 10</option><option value="bottom">أقل 10</option></OrdersV4Select><Button size="sm" variant="ghost" onClick={reset}>إعادة ضبط</Button></div></OrdersV4Field>
+        <OrdersV4Field label="عرض النتائج"><div className="flex gap-2"><OrdersV4Select value={ranking} onChange={(event) => setRanking(event.target.value as typeof ranking)} className="flex-1"><option value="all">كل النتائج</option><option value="top">الأعلى</option><option value="bottom">الأقل</option></OrdersV4Select>{ranking !== 'all' && <Input type="number" min={1} max={100} value={rankingCount} onChange={(event) => setRankingCount(Math.max(1, Math.min(100, Number(event.target.value) || 10)))} className="w-[72px]" />}<Button size="sm" variant="ghost" onClick={reset}>إعادة ضبط</Button></div></OrdersV4Field>
       </ReportsFilterBar>
     </OrdersV4Panel>
     <OrdersV4QueryState loading={loading} error={error} />
@@ -230,8 +240,17 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
       <OrdersV4Panel title="أعلى الأصناف داخل كل قسم">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{sectionItems.map((section, index) => <div key={section.sectionId} className="rounded-xl border border-noorix-border p-3"><div className="mb-3 text-[13px] font-extrabold">{section.sectionName}</div><HorizontalBars rows={section.items.map((item) => ({ id: item.itemId, label: item.nameAr, documents: item.documentCount, quantity: Number(item.baseQuantity), amount: Number(item.totalAmount) }))} metric={metric} color={CHART_COLORS[index % CHART_COLORS.length]} /></div>)}</div>
       </OrdersV4Panel>
-      <OrdersV4Panel title="التفاصيل الكاملة"><SimpleTable columns={columns} data={displayedRows} emptyMessage="لا توجد حركة مطابقة للفلاتر" tableMinWidth={1220} /></OrdersV4Panel>
+      <OrdersV4Panel title="التفاصيل الكاملة"><SmartTable
+        columns={columns.map((column) => ({ ...column, align: 'center' }))}
+        data={displayedRows}
+        emptyMessage="لا توجد حركة مطابقة للفلاتر"
+        tableMinWidth={1380}
+        footerCells={displayedRows.length ? <><td colSpan={6} className="px-3 py-2 text-center text-[12px] font-bold text-noorix-muted">إجمالي الفلاتر الحالية</td><td className="px-3 py-2 text-center font-bold tabular-nums">{v4ReportNumber(totals.quantity)}</td><td className="px-3 py-2 text-center font-bold text-emerald-700 tabular-nums">{v4ReportNumber(totals.amount)} ر.س</td><td className="px-3 py-2 text-center font-bold tabular-nums">{totals.documents}</td><td colSpan={2} /></> : null}
+        renderCompactRow={(row) => <button type="button" className="w-full cursor-pointer text-start" onClick={() => setHistory({ itemId: row.itemId, title: row.nameAr })}><div className="flex items-center justify-between gap-2"><strong className="text-blue-700">{row.nameAr}</strong><strong className="text-emerald-700">{v4ReportNumber(row.totalAmount)} ر.س</strong></div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-noorix-muted"><span>{row.sections}</span><span>{row.recordedQuantities}</span><span>معياري: {v4ReportNumber(row.baseQuantity)} {row.inventoryUnit}</span><span>{row.documentCount} عملية</span></div></button>}
+        renderMobileCard={(row) => <button type="button" className="flex w-full flex-col gap-1.5 text-start" onClick={() => setHistory({ itemId: row.itemId, title: row.nameAr })}><div className="flex w-full items-center justify-between gap-2"><strong className="text-blue-700">{row.nameAr}</strong><strong className="text-emerald-700">{v4ReportNumber(row.totalAmount)} ر.س</strong></div><div className="text-[11px] text-noorix-muted">{row.categoryName || '—'} · {row.sections}</div><div className="text-[12px]">المسجلة: {row.recordedQuantities}</div><div className="text-[12px]">المعيارية: {v4ReportNumber(row.baseQuantity)} {row.inventoryUnit}</div></button>}
+      /></OrdersV4Panel>
     </>}
+    {history && <OrdersV4PurchaseHistorySheet documents={purchaseQuery.data ?? []} itemId={history.itemId} categoryName={history.categoryName} title={history.title} onClose={() => setHistory(null)} />}
   </div>;
 }
 
@@ -240,11 +259,13 @@ function statusLabel(status: string): string {
 }
 
 type InternalView = 'operations' | 'missing' | 'items' | 'sections' | 'employees' | 'daily';
+const INTERNAL_REPORT_VIEWS: InternalView[] = ['operations', 'missing', 'items', 'sections', 'employees', 'daily'];
 
-export function OrdersV4SalesReportTab({ companyId, startDate, endDate, sections: catalogSections = [] }: { companyId: string; startDate: string; endDate: string; sections?: OrdersV4Section[] }) {
+export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { companyId: string; startDate: string; endDate: string }) {
   const { t, lang } = useTranslation();
-  const query = useOrdersV4Documents(companyId, 'registration', startDate, endDate);
-  const [activeView, setActiveView] = useState<InternalView>('operations');
+  const query = useOrdersV4SalesReport(companyId, startDate, endDate);
+  const report = query.data;
+  const [activeView, setActiveView] = useTabSearchParam(INTERNAL_REPORT_VIEWS, 'operations', 'ordersV4ReportView', null, undefined, { persistDefault: true });
   const [search, setSearch] = useState('');
   const [sectionId, setSectionId] = useState('');
   const [createdByUserId, setCreatedByUserId] = useState('');
@@ -252,8 +273,13 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate, sections
   const [entryType, setEntryType] = useState<'issue' | 'cancellation' | ''>('');
   const [cancellationReason, setCancellationReason] = useState<OrdersV4CancellationReason | ''>('');
   const [chartMetric, setChartMetric] = useState<OrdersV4ReportMetric>('quantity');
-  const documents = query.data ?? [];
-  const sections = useMemo(() => [...new Map(documents.filter((row) => row.section).map((row) => [row.section!.id, row.section!])).values()].sort((a, b) => a.nameAr.localeCompare(b.nameAr, 'ar')), [documents]);
+  const documents = report?.documents ?? [];
+  const sections = useMemo(() => {
+    const rows = new Map<string, { id: string; nameAr: string }>();
+    report?.registrationCoverage.sections.forEach((section) => rows.set(section.sectionId, { id: section.sectionId, nameAr: section.sectionName }));
+    documents.filter((row) => row.section).forEach((row) => rows.set(row.section!.id, { id: row.section!.id, nameAr: row.section!.nameAr }));
+    return [...rows.values()].sort((a, b) => a.nameAr.localeCompare(b.nameAr, 'ar'));
+  }, [documents, report?.registrationCoverage.sections]);
   const users = useMemo(() => [...new Map(documents.filter((row) => row.createdByUser).map((row) => [row.createdByUser!.id, row.createdByUser!])).values()].sort((a, b) => v4UserLabel(a).localeCompare(v4UserLabel(b), 'ar')), [documents]);
   const filteredDocuments = useMemo(() => {
     const term = normalized(search);
@@ -264,22 +290,25 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate, sections
       && (!cancellationReason || document.lines.some((line) => line.cancellationReasons?.includes(cancellationReason)))
       && (!term || normalized(`${document.documentNumber} ${document.section?.nameAr || ''} ${v4UserLabel(document.createdByUser)} ${document.lines.map((line) => `${line.itemNameSnapshot} ${(line.cancellationReasons ?? []).map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(' ')} ${line.cancellationNote || ''}`).join(' ')}`).includes(term)));
   }, [cancellationReason, createdByUserId, documents, entryType, search, sectionId, status, t]);
-  const byItem = useMemo(() => aggregateItems(filteredDocuments), [filteredDocuments]);
+  const byItem = useMemo(() => aggregateItems(filteredDocuments).map((item) => ({
+    ...item,
+    sections: [...new Set(filteredDocuments.filter((document) => document.lines.some((line) => line.itemId === item.itemId)).map((document) => document.section?.nameAr || 'غير محدد'))].join('، '),
+  })), [filteredDocuments]);
   const bySection = useMemo(() => aggregateDocumentsBySection(filteredDocuments), [filteredDocuments]);
   const byEmployee = useMemo(() => aggregateDocumentsByEmployee(filteredDocuments), [filteredDocuments]);
   const byDay = useMemo(() => aggregateDocumentsByDay(filteredDocuments), [filteredDocuments]);
-  const missingDays = useMemo(() => findMissingRegistrationDays(documents, catalogSections, startDate, endDate), [catalogSections, documents, endDate, startDate]);
+  const missingDays = (report?.registrationCoverage.missingDays ?? []).filter((row) => !sectionId || row.sectionId === sectionId);
   const totalQuantity = filteredDocuments.reduce((sum, row) => sum + row.lines.reduce((lineSum, line) => lineSum + Number(line.baseQuantity || 0), 0), 0);
   const totalAmount = filteredDocuments.reduce((sum, row) => sum + Number(row.operationalCost || 0), 0);
   const affectedSections = new Set(missingDays.map((row) => row.sectionId)).size;
   const exportRows = filteredDocuments.map((row) => ({ المرجع: row.documentNumber, التاريخ: row.documentDate, النوع: (row.registrationEntryType ?? 'issue') === 'cancellation' ? 'إلغاء' : 'تسجيل', القسم: row.section?.nameAr || '', الموظف: v4UserLabel(row.createdByUser), الأصناف: row.lines.length, الكمية: row.lines.reduce((sum, line) => sum + Number(line.baseQuantity || 0), 0), التكلفة: Number(row.operationalCost || 0), الحالة: statusLabel(row.status) }));
-  const itemColumns: SimpleTableColumn<OrdersV4ItemsReportRow>[] = [
-    { key: 'nameAr', label: 'الصنف', minWidth: 170 }, { key: 'categoryName', label: 'الفئة' }, { key: 'documentCount', label: 'التسجيلات', numeric: true },
+  const itemColumns: SimpleTableColumn<(typeof byItem)[number]>[] = [
+    { key: 'nameAr', label: 'الصنف', minWidth: 170 }, { key: 'categoryName', label: 'الفئة' }, { key: 'sections', label: 'الأقسام', minWidth: 140 }, { key: 'documentCount', label: 'التسجيلات', numeric: true },
     { key: 'baseQuantity', label: 'الكمية المعيارية', numeric: true, render: (value, row) => `${v4ReportNumber(value)} ${row.inventoryUnit}` },
     { key: 'totalAmount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
   ];
   const sectionColumns: SimpleTableColumn<(typeof bySection)[number]>[] = [
-    { key: 'label', label: 'القسم' }, { key: 'documents', label: 'التسجيلات', numeric: true }, { key: 'quantity', label: 'الكمية', numeric: true, render: v4ReportNumber }, { key: 'amount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
+    { key: 'label', label: 'القسم' }, { key: 'documents', label: 'التسجيلات', numeric: true }, { key: 'quantity', label: 'الكمية', numeric: true, render: v4ReportNumber }, { key: 'amount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` }, { key: 'average', label: 'متوسط العملية', numeric: true, render: (_value, row) => `${v4ReportNumber(row.documents ? row.amount / row.documents : 0)} ر.س` },
   ];
   const employeeColumns: SimpleTableColumn<(typeof byEmployee)[number]>[] = [
     { key: 'label', label: 'اسم الموظف' }, { key: 'username', label: 'اسم المستخدم', render: (value) => String(value || '—').split('@')[0] }, { key: 'documents', label: 'التسجيلات', numeric: true }, { key: 'quantity', label: 'الكمية', numeric: true, render: v4ReportNumber }, { key: 'amount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
@@ -294,7 +323,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate, sections
     { key: 'documentNumber', label: 'مرجع العملية', minWidth: 170 }, { key: 'documentDate', label: 'التاريخ', render: (value) => v4Date(String(value)) },
     { key: 'registrationEntryType', label: 'النوع', render: (_value, row) => (row.registrationEntryType ?? 'issue') === 'cancellation' ? <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">إلغاء</span> : 'تسجيل داخلي' },
     { key: 'section', label: 'القسم', render: (_value, row) => row.section?.nameAr || '—' }, { key: 'createdByUser', label: 'الموظف (المستخدم)', minWidth: 180, render: (_value, row) => v4UserLabel(row.createdByUser) },
-    { key: 'lines', label: 'الأصناف', numeric: true, render: (_value, row) => row.lines.length }, { key: 'operationalCost', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` }, { key: 'status', label: 'الحالة', render: (value) => statusLabel(String(value)) },
+    { key: 'lines', label: 'الأصناف', numeric: true, render: (_value, row) => row.lines.length }, { key: 'quantity', label: 'الكمية', numeric: true, render: (_value, row) => v4ReportNumber(row.lines.reduce((sum, line) => sum + Number(line.baseQuantity || 0), 0)) }, { key: 'operationalCost', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` }, { key: 'average', label: 'متوسط تكلفة الصنف', numeric: true, render: (_value, row) => `${v4ReportNumber(row.lines.length ? Number(row.operationalCost || 0) / row.lines.length : 0)} ر.س` }, { key: 'status', label: 'الحالة', render: (value) => statusLabel(String(value)) },
     { key: 'cancellationReasons', label: 'أسباب الإلغاء', minWidth: 220, render: (_value, row) => { const reasons = [...new Set(row.lines.flatMap((line) => line.cancellationReasons ?? []))]; return reasons.length ? reasons.map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(lang === 'en' ? ', ' : '، ') : '—'; } },
   ];
   return <div className="flex flex-col gap-4">
@@ -306,13 +335,15 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate, sections
         <OrdersV4Field label="الحالة"><OrdersV4Select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">كل الحالات</option><option value="received">مستلم</option><option value="prepared">معد</option><option value="cancelled">ملغي</option><option value="reversed">معكوس</option></OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label={t('ordersV4CancellationRecordType')}><OrdersV4Select value={entryType} onChange={(event) => setEntryType(event.target.value as typeof entryType)}><option value="">كل السجلات</option><option value="issue">تسجيل داخلي</option><option value="cancellation">تسجيل إلغاء</option></OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label={t('staffCancellationReasons')}><OrdersV4Select value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value as OrdersV4CancellationReason | '')}><option value="">كل الأسباب</option>{ORDERS_V4_CANCELLATION_REASON_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.translationKey)}</option>)}</OrdersV4Select></OrdersV4Field>
+        <div className="flex items-end"><Button size="sm" variant="ghost" onClick={() => { setSearch(''); setSectionId(''); setCreatedByUserId(''); setStatus('received'); setEntryType(''); setCancellationReason(''); }}>إعادة ضبط الفلاتر</Button></div>
       </ReportsFilterBar>
     </OrdersV4Panel>
     <OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} />
     {!query.isLoading && !query.error && <>
       <div className={`rounded-xl border px-4 py-3 ${missingDays.length ? 'border-amber-200 bg-amber-50/60' : 'border-emerald-200 bg-emerald-50/60'}`}>
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-[14px] font-extrabold">انضباط التسجيل اليومي</div><div className="mt-1 text-[12px] text-noorix-muted">{catalogSections.length === 0 ? 'تظهر التغطية بعد توفر أقسام نشطة.' : missingDays.length ? `يوجد ${missingDays.length} يوم/قسم بلا تسجيل في ${affectedSections} قسم.` : 'التسجيل مكتمل لكل الأقسام النشطة خلال الفترة.'}</div></div><div className="flex gap-2"><div className="rounded-lg bg-white px-4 py-2 text-center"><div className="text-[20px] font-extrabold text-amber-700">{missingDays.length}</div><div className="text-[10px] text-noorix-muted">أيام/أقسام ناقصة</div></div><div className="rounded-lg bg-white px-4 py-2 text-center"><div className="text-[20px] font-extrabold text-blue-700">{affectedSections}</div><div className="text-[10px] text-noorix-muted">أقسام متأثرة</div></div></div></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-[14px] font-extrabold">انضباط التسجيل اليومي</div><div className="mt-1 text-[12px] text-noorix-muted">{!report?.registrationCoverage.sections.length ? 'تظهر التغطية بعد بدء التسجيل ووجود أقسام نشطة.' : missingDays.length ? `يوجد ${missingDays.length} يوم/قسم بلا تسجيل في ${affectedSections} قسم.` : 'التسجيل مكتمل لكل الأقسام النشطة خلال الفترة.'}</div></div><div className="flex gap-2"><div className="rounded-lg bg-white px-4 py-2 text-center"><div className="text-[20px] font-extrabold text-amber-700">{missingDays.length}</div><div className="text-[10px] text-noorix-muted">أيام/أقسام ناقصة</div></div><div className="rounded-lg bg-white px-4 py-2 text-center"><div className="text-[20px] font-extrabold text-blue-700">{affectedSections}</div><div className="text-[10px] text-noorix-muted">أقسام متأثرة</div></div></div></div>
       </div>
+      {report?.costCoverage.zeroCostLines ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-800">تنبيه جودة التكلفة: {report.costCoverage.zeroCostLines} من {report.costCoverage.lines} سطر تكلفتها التشغيلية صفر. الكميات والحركات صحيحة، لكن تقارير التكلفة تحتاج استكمال أسعار المكونات أو الرسبي.</div> : null}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <OrdersV4Kpi label="العمليات" value={filteredDocuments.length} /><OrdersV4Kpi label="إجمالي الكميات" value={v4ReportNumber(totalQuantity)} tone="green" /><OrdersV4Kpi label="إجمالي التكلفة" value={`${v4ReportNumber(totalAmount)} ر.س`} tone="green" /><OrdersV4Kpi label="متوسط العملية" value={`${v4ReportNumber(filteredDocuments.length ? totalAmount / filteredDocuments.length : 0)} ر.س`} /><OrdersV4Kpi label="الأصناف" value={byItem.length} /><OrdersV4Kpi label="الأقسام" value={bySection.length} tone="amber" />
       </div>
@@ -335,7 +366,15 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate, sections
       ><TrendChart documents={filteredDocuments} metric={chartMetric} /></OrdersV4Panel>
       <ReportViewTabs value={activeView} onChange={setActiveView} items={[{ id: 'operations', label: 'بالعملية' }, { id: 'missing', label: `أيام بلا تسجيل (${missingDays.length})` }, { id: 'items', label: 'بالصنف' }, { id: 'sections', label: 'بالقسم' }, { id: 'employees', label: 'بالموظف' }, { id: 'daily', label: 'يومياً' }]} />
       <OrdersV4Panel title={activeView === 'operations' ? 'سجل العمليات' : activeView === 'missing' ? 'أيام بلا تسجيل' : activeView === 'items' ? 'التسجيل حسب الصنف' : activeView === 'sections' ? 'التسجيل حسب القسم' : activeView === 'employees' ? 'التسجيل حسب الموظف' : 'التسجيل اليومي'}>
-        {activeView === 'operations' && <SimpleTable columns={documentColumns} data={filteredDocuments} emptyMessage="لا توجد تسجيلات مطابقة" tableMinWidth={1180} />}
+        {activeView === 'operations' && <SmartTable
+          columns={documentColumns.map((column) => ({ ...column, align: 'center' }))}
+          data={filteredDocuments}
+          emptyMessage="لا توجد تسجيلات مطابقة"
+          tableMinWidth={1380}
+          footerCells={filteredDocuments.length ? <><td colSpan={6} className="px-3 py-2 text-center text-[12px] font-bold text-noorix-muted">إجمالي الفلاتر الحالية</td><td className="px-3 py-2 text-center font-bold tabular-nums">{v4ReportNumber(totalQuantity)}</td><td className="px-3 py-2 text-center font-bold text-emerald-700 tabular-nums">{v4ReportNumber(totalAmount)} ر.س</td><td className="px-3 py-2 text-center font-bold tabular-nums">{v4ReportNumber(filteredDocuments.length ? totalAmount / filteredDocuments.length : 0)} ر.س</td><td colSpan={2} /></> : null}
+          renderCompactRow={(row) => <div><div className="flex items-center justify-between gap-2"><strong>{row.documentNumber}</strong><strong className="text-emerald-700">{v4ReportNumber(row.operationalCost)} ر.س</strong></div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-noorix-muted"><span>{v4Date(row.documentDate)}</span><span>{row.section?.nameAr || 'غير محدد'}</span><span>{v4UserLabel(row.createdByUser)}</span><span>{row.lines.length} صنف</span></div></div>}
+          renderMobileCard={(row) => <div className="flex flex-col gap-1.5"><div className="flex items-center justify-between gap-2"><strong>{row.documentNumber}</strong><strong className="text-emerald-700">{v4ReportNumber(row.operationalCost)} ر.س</strong></div><div className="text-[11px] text-noorix-muted">{v4Date(row.documentDate)} · {row.section?.nameAr || 'غير محدد'}</div><div className="text-[12px]">{v4UserLabel(row.createdByUser)} · {row.lines.length} صنف · {v4ReportNumber(row.lines.reduce((sum, line) => sum + Number(line.baseQuantity || 0), 0))}</div></div>}
+        />}
         {activeView === 'missing' && <SimpleTable columns={missingColumns} data={missingDays} emptyMessage="لا توجد أيام ناقصة خلال الفترة" />}
         {activeView === 'items' && <SimpleTable columns={itemColumns} data={byItem} emptyMessage="لا توجد بيانات مطابقة" tableMinWidth={700} />}
         {activeView === 'sections' && <SimpleTable columns={sectionColumns} data={bySection} emptyMessage="لا توجد بيانات مطابقة" />}

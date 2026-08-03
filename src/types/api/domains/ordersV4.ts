@@ -191,6 +191,25 @@ export type OrdersV4SalesReport = {
   byItem: OrdersV4ItemsReportRow[];
   bySection: Array<{ sectionId: string; sectionName: string; count: number; totalAmount: string }>;
   documents: OrdersV4Document[];
+  registrationCoverage: {
+    startDate: string;
+    endDate: string;
+    expectedSectionDays: number;
+    registeredSectionDays: number;
+    missingSectionDays: number;
+    affectedSections: number;
+    sections: Array<{
+      sectionId: string;
+      sectionName: string;
+      firstRegisteredDate: string | null;
+      lastRegisteredDate: string | null;
+      expectedDays: number;
+      registeredDays: number;
+      missingDays: number;
+    }>;
+    missingDays: Array<{ date: string; sectionId: string; sectionName: string }>;
+  };
+  costCoverage: { documents: number; zeroCostDocuments: number; lines: number; zeroCostLines: number };
 };
 
 export type OrdersV4InventoryBalance = {

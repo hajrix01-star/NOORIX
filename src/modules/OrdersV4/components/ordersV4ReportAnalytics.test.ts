@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { OrdersV4Document, OrdersV4Section } from '../../../types/api';
+import type { OrdersV4Document } from '../../../types/api';
 import {
   aggregateDocumentsByDay,
   aggregateDocumentsBySection,
   aggregateItems,
-  findMissingRegistrationDays,
   topItemsBySection,
 } from './ordersV4ReportAnalytics';
 
@@ -76,15 +75,5 @@ describe('orders V4 report analytics', () => {
     const groups = topItemsBySection(documents);
     expect(groups.map((row) => row.sectionName)).toEqual(['بار', 'مطبخ']);
     expect(groups.find((row) => row.sectionId === 'kitchen')?.items[0].totalAmount).toBe('35');
-  });
-
-  it('detects missing active section days and ignores disabled sections', () => {
-    const sections: OrdersV4Section[] = [
-      { id: 'kitchen', code: 'kitchen', nameAr: 'مطبخ', isActive: true },
-      { id: 'bar', code: 'bar', nameAr: 'بار', isActive: true },
-      { id: 'old', code: 'old', nameAr: 'قديم', isActive: false },
-    ];
-    const missing = findMissingRegistrationDays(documents, sections, '2026-08-01', '2026-08-02');
-    expect(missing).toEqual([{ date: '2026-08-01', sectionId: 'bar', sectionName: 'بار' }]);
   });
 });
