@@ -169,7 +169,16 @@ export class OrdersV4IdempotencyDto {
   @IsString() @MaxLength(200) idempotencyKey!: string;
 }
 
-export class OrdersV4DateRangeQueryDto {
+/**
+ * Company context is transported as a query parameter by the shared frontend
+ * client and consumed by CompanyAccessGuard/@CompanyId. Query DTOs must still
+ * declare it because the global ValidationPipe rejects undeclared properties.
+ */
+export abstract class OrdersV4CompanyQueryDto {
+  @IsOptional() @IsString() companyId?: string;
+}
+
+export class OrdersV4DateRangeQueryDto extends OrdersV4CompanyQueryDto {
   @IsOptional() @IsString() @Matches(DATE) startDate?: string;
   @IsOptional() @IsString() @Matches(DATE) endDate?: string;
 }
@@ -183,12 +192,12 @@ export class OrdersV4ItemsReportQueryDto extends OrdersV4DateRangeQueryDto {
   @IsOptional() @IsIn(['purchase', 'registration']) type?: 'purchase' | 'registration';
 }
 
-export class OrdersV4LedgerQueryDto {
+export class OrdersV4LedgerQueryDto extends OrdersV4CompanyQueryDto {
   @IsOptional() @IsString() itemId?: string;
   @IsOptional() @IsString() locationId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(500) limit?: number;
 }
 
-export class OrdersV4LimitQueryDto {
+export class OrdersV4LimitQueryDto extends OrdersV4CompanyQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(500) limit?: number;
 }

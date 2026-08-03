@@ -1,6 +1,14 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { OrdersV4Controller } from './orders-v4.controller';
-import { OrdersV4DocumentDto, OrdersV4StocktakeDto } from './orders-v4.dto';
+import {
+  OrdersV4DateRangeQueryDto,
+  OrdersV4DocumentDto,
+  OrdersV4DocumentsQueryDto,
+  OrdersV4ItemsReportQueryDto,
+  OrdersV4LedgerQueryDto,
+  OrdersV4LimitQueryDto,
+  OrdersV4StocktakeDto,
+} from './orders-v4.dto';
 
 describe('Orders V4 runtime DTO validation', () => {
   const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
@@ -21,5 +29,26 @@ describe('Orders V4 runtime DTO validation', () => {
       .rejects.toBeInstanceOf(BadRequestException);
     await expect(pipe.transform({ ...base, lines: [{ itemId: 'item-1', physicalUnits: [{ unitId: 'carton', quantity: '-2' }] }] }, { type: 'body', metatype: OrdersV4StocktakeDto }))
       .rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it.each([
+    ['documents', OrdersV4DocumentsQueryDto, { type: 'purchase', limit: '250' }],
+    ['summary', OrdersV4DateRangeQueryDto, { startDate: '2026-08-01', endDate: '2026-08-31' }],
+    ['items report', OrdersV4ItemsReportQueryDto, { type: 'registration' }],
+    ['ledger', OrdersV4LedgerQueryDto, { limit: '250' }],
+    ['stocktakes', OrdersV4LimitQueryDto, { limit: '100' }],
+  ])('accepts the shared companyId transport for %s queries', async (_name, metatype, query) => {
+    const transformed = await pipe.transform(
+      { companyId: 'company-1', ...query },
+      { type: 'query', metatype },
+    ) as { companyId?: string };
+    expect(transformed.companyId).toBe('company-1');
+  });
+
+  it('continues to reject unrelated query properties', async () => {
+    await expect(pipe.transform(
+      { companyId: 'company-1', unexpected: 'blocked' },
+      { type: 'query', metatype: OrdersV4DateRangeQueryDto },
+    )).rejects.toBeInstanceOf(BadRequestException);
   });
 });
