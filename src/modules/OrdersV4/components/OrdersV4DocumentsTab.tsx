@@ -264,7 +264,14 @@ export function OrdersV4DocumentsTab({
       } },
     ] : []),
     { key: 'section', label: 'القسم', render: (_value, row) => row.section?.nameAr || '—' },
-    { key: 'lines', label: 'الأسطر', numeric: true, render: (_value, row) => row.lines.length },
+    {
+      key: 'lines',
+      label: isPurchase ? 'الأسطر' : 'الكمية',
+      numeric: true,
+      render: (_value, row) => isPurchase
+        ? row.lines.length
+        : v4Number(row.lines.reduce((sum, line) => sum + Number(line.inputQuantity || 0), 0), 6),
+    },
     { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? 'الإجمالي' : 'التكلفة', numeric: true, render: (value) => <strong>{v4Number(value)} ر.س</strong> },
     { key: 'status', label: 'الحالة', render: (value, row) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : row.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'}</span> },
     { key: 'actions', label: '', render: (_value, row) => <div className="flex flex-wrap gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && !row.calculationSnapshot?.reopenedByDocumentId && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },

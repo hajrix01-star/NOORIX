@@ -58,6 +58,32 @@ afterEach(() => {
 });
 
 describe('OrdersV4DocumentsTab mobile document workflow', () => {
+  it('shows the total registered quantity instead of the line count in internal registration', () => {
+    ordersV4DocumentsMock.documents = [{
+      id: 'registration-1', documentNumber: 'REG4-1', documentType: 'registration', documentDate: '2026-08-03',
+      subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'received',
+      lines: [
+        { id: 'line-1', inputQuantity: '2.5', cancellationReasons: [] },
+        { id: 'line-2', inputQuantity: '1.5', cancellationReasons: [] },
+      ],
+    }];
+
+    render(
+      <OrdersV4DocumentsTab
+        companyId="company-1"
+        documentType="registration"
+        startDate="2026-08-01"
+        endDate="2026-08-31"
+        bootstrap={bootstrap}
+        showOverviewCards={false}
+      />,
+    );
+
+    expect(screen.getByRole('columnheader', { name: 'الكمية' })).toBeTruthy();
+    expect(screen.queryByRole('columnheader', { name: 'الأسطر' })).toBeNull();
+    expect(screen.getByRole('cell', { name: '4' })).toBeTruthy();
+  });
+
   it('removes purchase filters and keeps only the section filter for internal registration', () => {
     const purchase = render(
       <OrdersV4DocumentsTab
