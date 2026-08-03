@@ -19,6 +19,21 @@ if [[ -z "$DATABASE_URL" ]]; then
   exit 1
 fi
 
+database_identity="$(node -e '
+  const parsed = new URL(process.argv[1]);
+  const database = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+  process.stdout.write(`${parsed.hostname}\t${database}`);
+' "$DATABASE_URL")"
+IFS=$'\t' read -r database_host database_name <<<"$database_identity"
+if [[ ! "$database_host" =~ ^(localhost|127\.0\.0\.1|\[::1\])$ ]]; then
+  echo "ERROR: legacy Orders backup requires the production database to be local; refusing remote superuser access" >&2
+  exit 1
+fi
+if [[ ! "$database_name" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+  echo "ERROR: invalid production database name; refusing legacy Orders retirement" >&2
+  exit 1
+fi
+
 table_literals=""
 for table in "${TABLES[@]}"; do
   [[ -n "$table_literals" ]] && table_literals+=","
@@ -46,7 +61,9 @@ args=()
 for table in "${TABLES[@]}"; do args+=(--table="public.${table}"); done
 
 echo "==> Creating immutable pre-retirement backup for ${#TABLES[@]} legacy Orders tables"
-pg_dump --dbname="$DATABASE_URL" --format=custom --no-owner --no-privileges "${args[@]}" --file="$tmp_dump"
+# These tables enforce RLS for the application role. The local PostgreSQL owner is
+# required so the retirement backup contains every tenant, never a filtered subset.
+sudo -u postgres pg_dump --dbname="$database_name" --format=custom --no-owner --no-privileges "${args[@]}" >"$tmp_dump"
 pg_restore --list "$tmp_dump" >/dev/null
 sha256sum "$tmp_dump" >"$tmp_sha"
 
