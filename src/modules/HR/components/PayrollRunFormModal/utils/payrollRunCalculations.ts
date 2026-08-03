@@ -117,6 +117,7 @@ type InvoiceLike = {
   transactionDate?: unknown;
   installmentAmount?: unknown;
   installmentCount?: number | null;
+  invoiceNumber?: unknown;
 };
 
 type DeductionLike = {
@@ -147,6 +148,7 @@ export function buildAdvancesByEmployee(
       isDeferred,
       installmentCount: inv.installmentCount ?? null,
       installmentAmount: instAmt,
+      invoiceNumber: String(inv.invoiceNumber || inv.id || ''),
     };
     if (!map.has(inv.employeeId)) map.set(inv.employeeId, []);
     map.get(inv.employeeId)!.push(row);
@@ -254,6 +256,15 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
       return dateStr;
     })
     .join(' ، ');
+  const advanceChoices = advRows.map((row) => ({
+    advanceId: row.id,
+    invoiceNumber: row.invoiceNumber,
+    transactionDate: row.transactionDate,
+    dateLabel: formatSaudiDate(row.transactionDate),
+    amount: row.remaining,
+    remaining: row.fullRemaining,
+    selected: !row.isDeferred,
+  }));
   const netSalary = computePayrollLineNet({
     grossSalary: grossProrated,
     allowancesAdd: 0,
@@ -287,6 +298,7 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
     netSalary,
     deferAdvances: false,
     advanceDates: advanceDatesLabel,
+    advanceChoices,
     notes: notesParts.join(' | '),
   };
 }

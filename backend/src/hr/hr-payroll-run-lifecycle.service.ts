@@ -23,6 +23,7 @@ import { saudiDateYmd } from './utils/hr-saudi-dates.util';
 import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 import { assertPayrollItemsGrossMatchesCentralSnapshots } from './hr-payroll-gross-source.util';
 import { buildPayrollRunItemsData, buildPayrollRunVaultSplitIds } from './hr-payroll-run-lifecycle-model';
+import { assertPayrollAdvanceSelections } from './hr-payroll-advance-selection.util';
 
 @Injectable()
 export class HrPayrollRunLifecycleService {
@@ -68,6 +69,7 @@ export class HrPayrollRunLifecycleService {
     payrollMonth.setDate(1);
     payrollMonth.setHours(0, 0, 0, 0);
     await this.assertPayrollGrossUsesCentralSnapshots(dto.companyId, payrollMonth, dto.items);
+    await assertPayrollAdvanceSelections(this.prisma, dto.companyId, payrollMonth, dto.items);
 
     const existing = await this.prisma.payrollRun.findFirst({
       where: { companyId: dto.companyId, payrollMonth, status: { not: 'cancelled' } },
@@ -105,6 +107,7 @@ export class HrPayrollRunLifecycleService {
             allowancesAdd: it.allowancesAdd,
             deductions: it.deductions,
             advancesDeduct: it.advancesDeduct,
+            advanceSelections: it.advanceSelections,
             netSalary: it.netSalary,
             notes: it.notes,
           })),
@@ -224,6 +227,12 @@ export class HrPayrollRunLifecycleService {
     if (dto.items) {
       assertPayrollItemsNetConsistent(dto.items as PayrollRunItemDto[]);
       await this.assertPayrollGrossUsesCentralSnapshots(
+        companyId,
+        (data.payrollMonth as Date | undefined) ?? existing.payrollMonth,
+        dto.items as PayrollRunItemDto[],
+      );
+      await assertPayrollAdvanceSelections(
+        this.prisma,
         companyId,
         (data.payrollMonth as Date | undefined) ?? existing.payrollMonth,
         dto.items as PayrollRunItemDto[],

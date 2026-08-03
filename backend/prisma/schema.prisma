@@ -540,7 +540,9 @@ model PayrollRunItem {
   allowancesAdd  Decimal @default(0) @map("allowances_add") @db.Decimal(18, 4) // ط¨ط¯ظ„ط§طھ ط¥ط¶ط§ظپظٹط©
   deductions     Decimal @default(0) @map("deductions") @db.Decimal(18, 4) // ط®طµظˆظ…ط§طھ (ط¬ط²ط§ط،ط§طھ ظˆط؛ظٹط±ظ‡ط§)
   advancesDeduct Decimal @default(0) @map("advances_deduct") @db.Decimal(18, 4) // ط®طµظ… ط§ظ„ط³ظ„ظپ
-  netSalary      Decimal @map("net_salary") @db.Decimal(18, 4)
+  /// Explicit advance choices for this run. An empty array defers every advance for the month.
+  advanceSelections Json? @map("advance_selections")
+  netSalary         Decimal @map("net_salary") @db.Decimal(18, 4)
   notes          String?
 
   payrollRun  PayrollRun            @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)

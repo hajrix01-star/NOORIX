@@ -20,7 +20,18 @@ export type PayrollRunLineItem = {
   netSalary: number;
   deferAdvances: boolean;
   advanceDates: string;
+  advanceChoices: PayrollAdvanceChoice[];
   notes: string | undefined;
+};
+
+export type PayrollAdvanceChoice = {
+  advanceId: string;
+  invoiceNumber: string;
+  transactionDate: unknown;
+  dateLabel: string;
+  amount: number;
+  remaining: number;
+  selected: boolean;
 };
 
 export type PayrollAdvanceDueRow = {
@@ -31,4 +42,5 @@ export type PayrollAdvanceDueRow = {
   isDeferred: boolean;
   installmentCount: number | null;
   installmentAmount: number | null;
+  invoiceNumber: string;
 };

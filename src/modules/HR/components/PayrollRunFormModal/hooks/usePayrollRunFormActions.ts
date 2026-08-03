@@ -1,9 +1,6 @@
 import React, { useCallback } from 'react';
 import { createPayrollRun, updatePayrollRun, throwIfApiFailed } from '../../../../../services/api';
-import {
-  stripPayrollAdvDeferSegment,
-  withPayrollAdvDeferSegment,
-} from '../utils/payrollRunMappers';
+import { stripPayrollAdvDeferSegment } from '../utils/payrollRunMappers';
 import { withComputedPayrollLineNet } from '../../../utils/hrCalculations/payroll';
 import type { PayrollRunFormModalProps, PayrollRunLineItem } from '../types';
 
@@ -17,12 +14,10 @@ type Args = {
   cid: string;
   isEditMode: boolean;
   runId: string | null;
-  monthStr: string;
   alreadyExists: boolean;
   t: (key: string, ...subst: string[]) => string;
   onCreate?: PayrollRunFormModalProps['onCreate'];
   onClose?: PayrollRunFormModalProps['onClose'];
-  getAdvanceMetaForEmployee: (empId: string) => { dueAmount: number; datesLabel: string };
   buildLineForEmployee: (emp: Record<string, unknown> & { id?: string }) => PayrollRunLineItem;
   employees: Array<Record<string, unknown> & { id?: string }>;
 };
@@ -37,12 +32,10 @@ export function usePayrollRunFormActions({
   cid,
   isEditMode,
   runId,
-  monthStr,
   alreadyExists,
   t,
   onCreate,
   onClose,
-  getAdvanceMetaForEmployee,
   buildLineForEmployee,
   employees,
 }: Args) {
@@ -59,28 +52,28 @@ export function usePayrollRunFormActions({
     [setItems],
   );
 
-  const toggleDefer = useCallback(
-    (employeeId: string) => {
+  const toggleAdvance = useCallback(
+    (employeeId: string, advanceId: string) => {
       setItems((prev) =>
         prev.map((row) => {
           if (row.employeeId !== employeeId) return row;
-          const nextRow = { ...row };
-          const turningOn = !nextRow.deferAdvances;
-          nextRow.deferAdvances = turningOn;
-          if (turningOn) {
-            nextRow.advancesDeduct = 0;
-            nextRow.notes = monthStr ? withPayrollAdvDeferSegment(row.notes, monthStr) : row.notes;
-          } else {
-            const advMeta = getAdvanceMetaForEmployee(nextRow.employeeId);
-            nextRow.advancesDeduct = Number(advMeta.dueAmount || 0);
-            const stripped = stripPayrollAdvDeferSegment(row.notes);
-            nextRow.notes = stripped || undefined;
-          }
+          const advanceChoices = row.advanceChoices.map((advance) =>
+            advance.advanceId === advanceId ? { ...advance, selected: !advance.selected } : advance,
+          );
+          const selected = advanceChoices.filter((advance) => advance.selected);
+          const nextRow = {
+            ...row,
+            advanceChoices,
+            advancesDeduct: selected.reduce((sum, advance) => sum + advance.amount, 0),
+            advanceDates: selected.map((advance) => advance.dateLabel).join('، '),
+            deferAdvances: advanceChoices.length > 0 && selected.length === 0,
+            notes: stripPayrollAdvDeferSegment(row.notes) || undefined,
+          };
           return withComputedPayrollLineNet(nextRow);
         }),
       );
     },
-    [setItems, monthStr, getAdvanceMetaForEmployee],
+    [setItems],
   );
 
   const toggleInclude = useCallback(
@@ -116,6 +109,9 @@ export function usePayrollRunFormActions({
           allowancesAdd: i.allowancesAdd,
           deductions: i.deductions,
           advancesDeduct: i.advancesDeduct,
+          advanceSelections: i.advanceChoices
+            .filter((advance) => advance.selected)
+            .map((advance) => ({ advanceId: advance.advanceId, amount: advance.amount })),
           netSalary: i.netSalary,
           notes: i.notes || undefined,
         }));
@@ -171,7 +167,7 @@ export function usePayrollRunFormActions({
 
   return {
     updateItem,
-    toggleDefer,
+    toggleAdvance,
     toggleInclude,
     handleSubmit,
     selectInput,

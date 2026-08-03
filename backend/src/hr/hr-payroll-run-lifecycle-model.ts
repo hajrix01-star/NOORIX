@@ -7,6 +7,7 @@ export type PayrollRunItemCreateData = {
   allowancesAdd: Prisma.Decimal;
   deductions: Prisma.Decimal;
   advancesDeduct: Prisma.Decimal;
+  advanceSelections?: Prisma.InputJsonValue;
   netSalary: Prisma.Decimal;
   notes?: string;
 };
@@ -21,6 +22,7 @@ export function buildPayrollRunItemsData(items: PayrollRunItemDto[]) {
       allowancesAdd: new Prisma.Decimal(item.allowancesAdd ?? 0),
       deductions: new Prisma.Decimal(item.deductions ?? 0),
       advancesDeduct: new Prisma.Decimal(item.advancesDeduct ?? 0),
+      advanceSelections: item.advanceSelections as Prisma.InputJsonValue | undefined,
       netSalary: new Prisma.Decimal(item.netSalary),
       notes: item.notes,
     };

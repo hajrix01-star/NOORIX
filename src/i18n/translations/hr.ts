@@ -547,6 +547,10 @@ export default {
   payrollAdvanceDates: { ar: 'تواريخ السلف', en: 'Advance dates' },
   payrollAutoAdvanceDeduct: { ar: 'خصم السلف الآلي', en: 'Automatic advance deduction' },
   payrollDeferAdvanceDeduct: { ar: 'تأجيل خصم السلف لهذا الشهر', en: 'Defer advance deduction this month' },
+  payrollAdvanceDeferred: { ar: 'مؤجلة', en: 'Deferred' },
+  payrollAdvanceDue: { ar: 'خصم هذا الشهر', en: 'Due this month' },
+  payrollAdvanceRemaining: { ar: 'الرصيد', en: 'Balance' },
+  payrollNoAdvances: { ar: 'لا توجد سلف مستحقة', en: 'No advances due' },
   payrollRunPayVaultSection: {
     ar: 'خزائن صرف المسيرة (فاتورة صرف واحدة لمجموع الرواتب — يمكن التقسيم بين خزنتين)',
     en: 'Payroll payment vaults (one expense invoice for the full run — split across up to two vaults)',

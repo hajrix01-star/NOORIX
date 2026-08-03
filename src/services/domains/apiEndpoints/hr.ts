@@ -41,7 +41,11 @@ type HrPayrollRunLine = JsonRecord & {
   netSalary: number;
   deferAdvances: boolean;
   advanceDates: string;
-  notes: string;
+  advanceSelections?: Array<{
+    advanceId: string;
+    amount: number;
+  }>;
+  notes?: string;
 };
 type HrPayrollRunDetail = JsonRecord & {
   id: string;

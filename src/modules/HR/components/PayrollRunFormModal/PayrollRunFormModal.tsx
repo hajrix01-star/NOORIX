@@ -62,12 +62,10 @@ export function PayrollRunFormModal({
     cid: st.cid,
     isEditMode: st.isEditMode,
     runId: st.runId,
-    monthStr: st.monthStr,
     alreadyExists: rowModel.alreadyExists,
     t: rowModel.t,
     onCreate,
     onClose,
-    getAdvanceMetaForEmployee: rowModel.getAdvanceMetaForEmployee,
     buildLineForEmployee: rowModel.buildLineForEmployee,
     employees: st.employees as Array<Record<string, unknown> & { id?: string }>,
   });
@@ -185,7 +183,7 @@ export function PayrollRunFormModal({
           t={rowModel.t}
           updateItem={actions.updateItem}
           toggleInclude={actions.toggleInclude}
-          toggleDefer={actions.toggleDefer}
+          toggleAdvance={actions.toggleAdvance}
           selectInput={actions.selectInput}
         />
 

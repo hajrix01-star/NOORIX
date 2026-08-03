@@ -16,10 +16,22 @@ import type { PayrollRunLineItem } from '../types';
 import type { HrCompensationSnapshot, HrCompensationSnapshotsResult, HrEmployee } from '../../../../../types/api';
 
 type PayrollRunListItem = Record<string, unknown>;
+type PayrollRunEditItem = Record<string, unknown> & {
+  employeeId?: string;
+  employeeName?: string;
+  employee?: { id?: string; name?: string; nameAr?: string };
+  grossSalary?: unknown;
+  allowancesAdd?: unknown;
+  deductions?: unknown;
+  advancesDeduct?: unknown;
+  netSalary?: unknown;
+  advanceSelections?: Array<{ advanceId?: string; amount?: unknown }> | null;
+  notes?: string;
+};
 type PayrollRunEdit = Record<string, unknown> & {
   payrollMonth?: string | Date;
   notes?: string;
-  items?: PayrollRunLineItem[];
+  items?: PayrollRunEditItem[];
 };
 type HrInvoiceLike = Record<string, unknown>;
 type HrLeaveLike = Record<string, unknown> & {

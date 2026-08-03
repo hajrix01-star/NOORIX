@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { toYmd } from '../../../../../utils/saudiDate';
+import { formatSaudiDate, toYmd } from '../../../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 import { useTranslation } from '../../../../../i18n/useTranslation';
 import {
@@ -47,6 +47,7 @@ type StateShape = {
       allowancesAdd?: unknown;
       deductions?: unknown;
       advancesDeduct?: unknown;
+      advanceSelections?: Array<{ advanceId?: string; amount?: unknown }> | null;
       netSalary?: unknown;
       notes?: string;
     }>;
@@ -203,10 +204,38 @@ export function usePayrollRunRows(state: StateShape) {
       const savedAdvanceDates = extractAdvanceDates(row.notes);
       const savedAdvancesDeduct = Number(row.advancesDeduct ?? 0);
       const deferAdvances = savedAdvancesDeduct <= 0 && !!parseDeferredMonth(row.notes);
-      const currentAdvanceMeta = employeeId
-        ? getAdvanceMetaForEmployee(loadedAdvancesByEmployee, employeeId)
-        : { dueAmount: 0, datesLabel: '' };
-      const advancesDeduct = deferAdvances ? 0 : Number(currentAdvanceMeta.dueAmount || 0);
+      const currentAdvanceRows = employeeId ? loadedAdvancesByEmployee.get(employeeId) || [] : [];
+      const hasExplicitSelections = Array.isArray(row.advanceSelections);
+      const selectedIds = new Set(
+        hasExplicitSelections
+          ? (row.advanceSelections || []).map((selection) => String(selection.advanceId || '')).filter(Boolean)
+          : [],
+      );
+      let legacyAmountLeft = savedAdvancesDeduct;
+      const advanceChoices = currentAdvanceRows.map((advance) => {
+        const selected = hasExplicitSelections
+          ? selectedIds.has(advance.id)
+          : !deferAdvances && legacyAmountLeft > 0 && (() => {
+              legacyAmountLeft -= advance.remaining;
+              return true;
+            })();
+        return {
+          advanceId: advance.id,
+          invoiceNumber: advance.invoiceNumber,
+          transactionDate: advance.transactionDate,
+          dateLabel: formatSaudiDate(advance.transactionDate),
+          amount: advance.remaining,
+          remaining: advance.fullRemaining,
+          selected,
+        };
+      });
+      const advancesDeduct = advanceChoices
+        .filter((advance) => advance.selected)
+        .reduce((sum, advance) => sum + advance.amount, 0);
+      const selectedAdvanceDates = advanceChoices
+        .filter((advance) => advance.selected)
+        .map((advance) => advance.dateLabel)
+        .join('، ');
       const grossSalary = Number(row.grossSalary ?? 0);
       const allowancesAdd = Number(row.allowancesAdd ?? 0);
       const deductions = Number(row.deductions ?? 0);
@@ -218,8 +247,9 @@ export function usePayrollRunRows(state: StateShape) {
         deductions,
         advancesDeduct,
         netSalary: computePayrollLineNet({ grossSalary, allowancesAdd, deductions, advancesDeduct }),
-        deferAdvances,
-        advanceDates: currentAdvanceMeta.datesLabel || savedAdvanceDates,
+        deferAdvances: advanceChoices.length > 0 && advanceChoices.every((advance) => !advance.selected),
+        advanceDates: selectedAdvanceDates || savedAdvanceDates,
+        advanceChoices,
         notes: row.notes || '',
       };
     });

@@ -12,7 +12,7 @@ type Props = {
   t: (key: string, ...subst: string[]) => string;
   updateItem: (idx: number, field: keyof PayrollRunLineItem, value: string) => void;
   toggleInclude: (emp: Record<string, unknown> & { id?: string }) => void;
-  toggleDefer: (employeeId: string) => void;
+  toggleAdvance: (employeeId: string, advanceId: string) => void;
   selectInput: (e: React.FocusEvent<HTMLInputElement>) => void;
 };
 
@@ -23,7 +23,7 @@ export function PayrollRunRowsTable({
   t,
   updateItem,
   toggleInclude,
-  toggleDefer,
+  toggleAdvance,
   selectInput,
 }: Props) {
   return (
@@ -31,13 +31,11 @@ export function PayrollRunRowsTable({
       <table className="payroll-run-table">
         <thead>
           <tr>
-            <th className="w-[26%] min-w-0 text-start">{t('employeeName')}</th>
-            <th className="w-[12%] min-w-0 text-center">{t('payrollAdvanceDates')}</th>
-            <th className="w-[11%] min-w-0 text-center">{t('grossSalary')}</th>
+            <th className="w-[20%] min-w-0 text-start">{t('employeeName')}</th>
+            <th className="w-[10%] min-w-0 text-center">{t('grossSalary')}</th>
             <th className="w-[10%] min-w-0 text-center">{t('payrollAllowances')}</th>
             <th className="w-[10%] min-w-0 text-center">{t('payrollDeductions')}</th>
-            <th className="w-[10%] min-w-0 text-center">{t('payrollAdvances')}</th>
-            <th className="w-[11%] min-w-0 text-center">{t('payrollDeferAdvanceDeduct')}</th>
+            <th className="w-[38%] min-w-[18rem] text-center">{t('payrollAdvances')}</th>
             <th className="w-[12%] min-w-0 text-center">{t('netSalary')}</th>
           </tr>
         </thead>
@@ -64,14 +62,6 @@ export function PayrollRunRowsTable({
                 </td>
                 {included ? (
                   <>
-                    <td
-                      className="text-noorix-muted text-[11px] min-w-0 nx-line-145 align-top text-center"
-                      title={items[idx].advanceDates || ''}
-                    >
-                      <span className="line-clamp-2 break-words inline-block max-w-full text-center">
-                        {items[idx].advanceDates || '—'}
-                      </span>
-                    </td>
                     <td className="font-semibold text-[12px] whitespace-nowrap text-center">
                       <FmtNum n={items[idx].grossSalary} className="payroll-run-cell-num nx-font-numbers" />
                     </td>
@@ -101,35 +91,54 @@ export function PayrollRunRowsTable({
                         aria-label={t('payrollDeductions')}
                       />
                     </td>
-                    <td className="text-center">
-                      <EditableNumberCell
-                        step={1}
-                        className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
-                        value={items[idx].advancesDeduct ?? 0}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          updateItem(idx, 'advancesDeduct', e.target.value)
-                        }
-                        disabled={items[idx].deferAdvances}
-                        selectOnFocus
-                        onFocus={selectInput}
-                        aria-label={t('payrollAdvances')}
-                      />
-                    </td>
-                    <td className="text-center px-1">
-                      <label className="nx-checkbox nx-checkbox--cell-center inline-flex justify-center">
-                        <Checkbox
-                          checked={!!items[idx].deferAdvances}
-                          onChange={() => toggleDefer(emp.id as string)}
-                          aria-label={t('payrollDeferAdvanceDeduct')}
-                        />
-                      </label>
+                    <td className="text-start align-top p-2">
+                      {items[idx].advanceChoices.length ? (
+                        <div className="grid gap-1.5">
+                          {items[idx].advanceChoices.map((advance) => (
+                            <label
+                              key={advance.advanceId}
+                              className={cn(
+                                'flex items-center gap-2 rounded-lg border px-2 py-1.5 cursor-pointer',
+                                advance.selected
+                                  ? 'border-noorix-green/30 bg-noorix-green/5'
+                                  : 'border-noorix-border bg-noorix-bg-muted text-noorix-muted',
+                              )}
+                            >
+                              <Checkbox
+                                checked={advance.selected}
+                                onChange={() => toggleAdvance(emp.id as string, advance.advanceId)}
+                                aria-label={`${t('payrollAdvances')} ${advance.invoiceNumber}`}
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-[11px] font-bold" dir="ltr">
+                                  {advance.invoiceNumber} · {advance.dateLabel}
+                                </span>
+                                <span className="block text-[10px] text-noorix-muted">
+                                  {t('payrollAdvanceDue')}: <FmtNum n={advance.amount} /> · {t('payrollAdvanceRemaining')}:{' '}
+                                  <FmtNum n={advance.remaining} />
+                                </span>
+                              </span>
+                              {!advance.selected ? (
+                                <span className="shrink-0 rounded-full bg-noorix-amber/15 px-2 py-0.5 text-[10px] font-bold text-noorix-amber">
+                                  {t('payrollAdvanceDeferred')}
+                                </span>
+                              ) : null}
+                            </label>
+                          ))}
+                          <div className="text-center text-[11px] font-extrabold">
+                            {t('payrollAdvances')}: <FmtNum n={items[idx].advancesDeduct ?? 0} />
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-noorix-muted text-[11px]">{t('payrollNoAdvances')}</span>
+                      )}
                     </td>
                     <td className="font-extrabold text-[12px] whitespace-nowrap text-center">
                       <FmtNum n={items[idx].netSalary} className="payroll-run-cell-num nx-font-numbers" />
                     </td>
                   </>
                 ) : (
-                  <td colSpan={7} className="text-noorix-muted text-[13px] text-center">
+                  <td colSpan={5} className="text-noorix-muted text-[13px] text-center">
                     —
                   </td>
                 )}

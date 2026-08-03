@@ -21,6 +21,16 @@ export class PayrollRunVaultSplitDto {
   amount: number;
 }
 
+export class PayrollRunAdvanceSelectionDto {
+  @IsString()
+  advanceId: string;
+
+  @IsNumber()
+  @Min(0.01)
+  @Type(() => Number)
+  amount: number;
+}
+
 export class PayrollRunItemDto {
   @IsString()
   employeeId: string;
@@ -47,6 +57,13 @@ export class PayrollRunItemDto {
   @Min(0)
   @Type(() => Number)
   advancesDeduct?: number;
+
+  /** The advances explicitly selected for this payroll run. [] defers them all. */
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PayrollRunAdvanceSelectionDto)
+  advanceSelections?: PayrollRunAdvanceSelectionDto[];
 
   @IsNumber()
   @Min(0)

@@ -56,6 +56,9 @@ describe('payrollRunCalculations smoke', () => {
     expect(line.advancesDeduct).toBe(600);
     expect(line.netSalary).toBe(9837.5);
     expect(line.employeeName).toBe('Test Employee');
+    expect(line.advanceChoices).toEqual([
+      expect.objectContaining({ advanceId: 'adv-1', amount: 600, remaining: 600, selected: true }),
+    ]);
   });
 
   it('adds same-month manual deductions to the payroll line', () => {

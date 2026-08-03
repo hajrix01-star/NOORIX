@@ -1,8 +1,17 @@
+import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { getHrAdvanceBalanceParts } from './hr-advance-balance.util';
 
-type AdvanceSettlementDb = Pick<TenantPrismaService, 'invoice' | 'employeeDeduction'>;
+type ApplyAdvanceSettlementDb = {
+  invoice: Pick<TenantPrismaService['invoice'], 'findMany' | 'update'>;
+  employeeDeduction: Pick<TenantPrismaService['employeeDeduction'], 'create'>;
+};
+
+type ReverseAdvanceSettlementDb = {
+  invoice: Pick<TenantPrismaService['invoice'], 'findFirst' | 'update'>;
+  employeeDeduction: Pick<TenantPrismaService['employeeDeduction'], 'findMany' | 'deleteMany'>;
+};
 
 export function parseAdvanceDeferMonth(notes?: string | null): string {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -14,7 +23,7 @@ export function parseAdvanceDeferMonth(notes?: string | null): string {
  * يُستدعى عند اعتماد المسيرة أو عند الصرف إن لم تُطبَّق من قبل.
  */
 export async function applyPayrollAdvanceSettlements(
-  db: AdvanceSettlementDb,
+  db: ApplyAdvanceSettlementDb,
   run: {
     companyId: string;
     runNumber: string;
@@ -22,6 +31,7 @@ export async function applyPayrollAdvanceSettlements(
     items: Array<{
       employeeId: string;
       advancesDeduct: Prisma.Decimal | null;
+      advanceSelections?: Prisma.JsonValue | null;
       employee: { name: string | null } | null;
     }>;
   },
@@ -34,20 +44,49 @@ export async function applyPayrollAdvanceSettlements(
     let remainingToDeduct = Number(item.advancesDeduct ?? 0);
     if (remainingToDeduct <= 0) continue;
 
+    const explicitSelections = Array.isArray(item.advanceSelections)
+      ? item.advanceSelections
+          .map((value) => {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+            const row = value as Prisma.JsonObject;
+            const advanceId = typeof row.advanceId === 'string' ? row.advanceId : '';
+            const amount = Number(row.amount);
+            return advanceId && Number.isFinite(amount) && amount > 0 ? { advanceId, amount } : null;
+          })
+          .filter((value): value is { advanceId: string; amount: number } => !!value)
+      : null;
+
     const advances = await db.invoice.findMany({
       where: {
         companyId: run.companyId,
         employeeId: item.employeeId,
         kind: 'advance',
         status: 'active',
+        ...(explicitSelections ? { id: { in: explicitSelections.map((row) => row.advanceId) } } : {}),
       },
       orderBy: { transactionDate: 'asc' },
     });
 
-    for (const adv of advances) {
+    const orderedAdvances = explicitSelections
+      ? explicitSelections.map((selection) => ({
+          selection,
+          advance: advances.find((advance) => advance.id === selection.advanceId),
+        }))
+      : advances.map((advance) => ({ selection: null, advance }));
+
+    for (const row of orderedAdvances) {
       if (remainingToDeduct <= 0) break;
+      const adv = row.advance;
+      if (!adv) {
+        throw new BadRequestException('إحدى السلف المحددة لم تعد متاحة. حدّث المسير وحاول مجددًا.');
+      }
       const deferMonth = parseAdvanceDeferMonth(adv.notes);
-      if (deferMonth && deferMonth > runMonth) continue;
+      if (deferMonth && deferMonth > runMonth) {
+        if (explicitSelections) {
+          throw new BadRequestException(`السلفة ${adv.invoiceNumber} مؤجلة إلى شهر لاحق.`);
+        }
+        continue;
+      }
 
       const { remainingAmount: remaining, settledAmount: settled } = getHrAdvanceBalanceParts(adv);
       if (remaining <= 0) continue;
@@ -56,7 +95,13 @@ export async function applyPayrollAdvanceSettlements(
       const cap = adv.installmentAmount
         ? Math.min(Number(adv.installmentAmount), remaining)
         : remaining;
-      const allocate = Math.min(remainingToDeduct, cap);
+      const requested = row.selection?.amount ?? remainingToDeduct;
+      if (row.selection && Math.abs(requested - cap) > 0.01) {
+        throw new BadRequestException(
+          `قيمة السلفة ${adv.invoiceNumber} تغيرت بعد إنشاء المسير. عدّل المسير قبل اعتماده.`,
+        );
+      }
+      const allocate = Math.min(remainingToDeduct, requested, cap);
       const newSettled = settled + allocate;
       const settleNote = `${adv.notes || ''}\n[ADV_PAYROLL] run=${run.runNumber}, amount=${allocate}, date=${txDate}`.trim();
 
@@ -84,6 +129,10 @@ export async function applyPayrollAdvanceSettlements(
 
       remainingToDeduct -= allocate;
     }
+
+    if (explicitSelections && remainingToDeduct > 0.01) {
+      throw new BadRequestException('تعذر تطبيق كامل خصم السلف المحدد. حدّث المسير وحاول مجددًا.');
+    }
   }
 }
 
@@ -92,7 +141,7 @@ export async function applyPayrollAdvanceSettlements(
  * يطابق منطق prisma/delete-payroll-run-company-month.js
  */
 export async function reversePayrollAdvanceSettlementsForDelete(
-  db: AdvanceSettlementDb,
+  db: ReverseAdvanceSettlementDb,
   companyId: string,
   runNumber: string,
 ): Promise<void> {
