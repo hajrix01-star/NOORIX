@@ -19,6 +19,7 @@ vi.mock('../useOrdersV4', () => ({
   useReceiveOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUndoReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useReopenOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
 const bootstrap = {
@@ -137,6 +138,28 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(dialog.className).toContain('h-full');
     expect(dialog.className).toContain('w-[min(100vw,920px)]');
     expect(dialog.className).not.toContain('max-h-[min(92vh,860px)]');
+  });
+
+  it('shows the owner-only reopen warning for a received purchase', () => {
+    ordersV4DocumentsMock.documents = [{
+      id: 'document-1', documentNumber: 'REQ4-1', documentType: 'purchase', documentDate: '2026-08-03',
+      paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'received', canReopen: true, lines: [],
+    }];
+    render(
+      <OrdersV4DocumentsTab
+        companyId="company-1"
+        documentType="purchase"
+        startDate="2026-08-01"
+        endDate="2026-08-31"
+        bootstrap={bootstrap}
+        canReopen
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'إعادة فتح' }));
+    expect(screen.getByRole('dialog', { name: 'إعادة فتح الطلب للتعديل' })).toBeTruthy();
+    expect(screen.getByText(/يُحفظ الطلب الحالي كسجل تدقيق/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'عكس الاستلام وإعادة الفتح' })).toBeTruthy();
   });
 
   it('renders added document lines as one editable table without repeated field headings', () => {

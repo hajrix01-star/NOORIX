@@ -6,11 +6,11 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
   afterEach(() => jest.restoreAllMocks());
 
   it('applies section, category, item, payment, status and search filters before the result limit', async () => {
-    const findMany = jest.fn().mockResolvedValue([]);
-    const prisma = { ordersV4Document: { findMany } };
-    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never);
+    const findMany = jest.fn().mockResolvedValue([{ id: 'document-1', createdByUserId: null }]);
+    const prisma = { ordersV4Document: { findMany, findFirst: jest.fn().mockResolvedValue({ id: 'document-1', status: 'received' }) } };
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never);
 
-    await service.list('company-1', 'purchase', '2026-07-01', '2026-07-31', undefined, 25, {
+    const result = await service.list('company-1', 'purchase', '2026-07-01', '2026-07-31', undefined, 25, {
       search: 'سكر',
       sectionId: 'section-1',
       categoryId: 'category-1',
@@ -34,6 +34,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
         ]),
       }),
     }));
+    expect(result[0]).toMatchObject({ id: 'document-1', canReopen: true });
   });
 
   it('creates a prepared purchase with kernel-calculated quantities and totals', async () => {
@@ -61,7 +62,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
     const posting = { lockKeys: jest.fn() };
     const funds = {};
-    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never);
+    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never);
 
     const result = await service.create('company-1', {
       documentType: 'purchase', documentDate: '2026-08-03', paymentMethod: 'custody',
@@ -107,7 +108,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
     const posting = { lockKeys: jest.fn(), postReceipt: jest.fn().mockResolvedValue({}) };
     const funds = { postPurchase: jest.fn().mockResolvedValue({}) };
-    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never);
+    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never);
 
     const result = await service.receiveLatest('company-1', 'document-1', {
       revision: 1, documentDate: '2026-08-03', paymentMethod: 'custody', locationId: 'main',

@@ -149,6 +149,8 @@ export type OrdersV4Document = {
   totalAmount: string;
   operationalCost: string;
   notes?: string | null;
+  calculationSnapshot?: Record<string, unknown> | null;
+  canReopen?: boolean;
   createdByUser?: OrdersV4UserIdentity | null;
   section?: OrdersV4Section | null;
   location: OrdersV4Location;

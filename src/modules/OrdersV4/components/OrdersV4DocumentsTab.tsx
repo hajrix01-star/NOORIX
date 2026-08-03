@@ -5,7 +5,7 @@ import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintTableHtml } from '../../../utils/printTableHtml';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { OrdersV4Field, OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4Select, OrdersV4Table as SimpleTable, v4Date, v4Number } from '../OrdersV4Shared';
-import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, useReceiveOrdersV4Document, useReverseOrdersV4Document, useUndoReverseOrdersV4Document } from '../useOrdersV4';
+import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, useReceiveOrdersV4Document, useReopenOrdersV4Document, useReverseOrdersV4Document, useUndoReverseOrdersV4Document } from '../useOrdersV4';
 import { OrdersV4DocumentItemPicker } from './OrdersV4DocumentItemPicker';
 import { OrdersV4DocumentLinesTable, type OrdersV4DocumentDraftLine } from './OrdersV4DocumentLinesTable';
 import { OrdersV4DocumentLineModal, type OrdersV4DocumentLineDraft } from './OrdersV4DocumentLineModal';
@@ -141,6 +141,7 @@ export function OrdersV4DocumentsTab({
   canCreate = false,
   canReverse = false,
   canUndoReverse = false,
+  canReopen = false,
   canReceive = false,
   showOverviewCards = true,
   historyWindowDays,
@@ -156,6 +157,7 @@ export function OrdersV4DocumentsTab({
   canCreate?: boolean;
   canReverse?: boolean;
   canUndoReverse?: boolean;
+  canReopen?: boolean;
   canReceive?: boolean;
   showOverviewCards?: boolean;
   historyWindowDays?: number;
@@ -170,6 +172,7 @@ export function OrdersV4DocumentsTab({
   const [receiving, setReceiving] = useState<OrdersV4Document | null>(null);
   const [reverseTarget, setReverseTarget] = useState<OrdersV4Document | null>(null);
   const [undoReverseTarget, setUndoReverseTarget] = useState<OrdersV4Document | null>(null);
+  const [reopenTarget, setReopenTarget] = useState<OrdersV4Document | null>(null);
   const [search, setSearch] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -189,6 +192,7 @@ export function OrdersV4DocumentsTab({
   const summaryQuery = useOrdersV4Summary(companyId, startDate, endDate, canReport);
   const reverseMutation = useReverseOrdersV4Document(companyId);
   const undoReverseMutation = useUndoReverseOrdersV4Document(companyId);
+  const reopenMutation = useReopenOrdersV4Document(companyId);
   const documents = documentsQuery.data ?? [];
   useEffect(() => setResultLimit(250), [categoryFilter, deferredSearch, documentType, endDate, itemFilter, paymentFilter, sectionFilter, startDate, statusFilter]);
   const summary = summaryQuery.data;
@@ -282,9 +286,9 @@ export function OrdersV4DocumentsTab({
     { key: 'section', label: 'القسم', render: (_value, row) => row.section?.nameAr || '—' },
     { key: 'lines', label: 'الأسطر', numeric: true, render: (_value, row) => row.lines.length },
     { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? 'الإجمالي' : 'التكلفة', numeric: true, render: (value) => <strong>{v4Number(value)} ر.س</strong> },
-    { key: 'status', label: 'الحالة', render: (value) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : 'معكوس'}</span> },
-    { key: 'actions', label: '', render: (_value, row) => <div className="flex gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },
-  ], [canReceive, canReverse, canUndoReverse, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
+    { key: 'status', label: 'الحالة', render: (value, row) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : row.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'}</span> },
+    { key: 'actions', label: '', render: (_value, row) => <div className="flex flex-wrap gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{isPurchase && canReopen && row.canReopen && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setReopenTarget(row); }}>إعادة فتح</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && !row.calculationSnapshot?.reopenedByDocumentId && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },
+  ], [canReceive, canReopen, canReverse, canUndoReverse, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -340,6 +344,16 @@ export function OrdersV4DocumentsTab({
           if (!reverseTarget) return;
           await reverseMutation.mutateAsync({ id: reverseTarget.id, idempotencyKey: crypto.randomUUID() });
           setReverseTarget(null);
+        }}
+      />
+      <OrdersV4ReopenConfirmModal
+        document={reopenTarget}
+        busy={reopenMutation.isPending}
+        onClose={() => setReopenTarget(null)}
+        onConfirm={async () => {
+          if (!reopenTarget) return;
+          await reopenMutation.mutateAsync({ id: reopenTarget.id, idempotencyKey: crypto.randomUUID() });
+          setReopenTarget(null);
         }}
       />
       <OrdersV4ReversalConfirmModal
@@ -599,6 +613,39 @@ function OrdersV4ReversalConfirmModal({
   </Modal>;
 }
 
+function OrdersV4ReopenConfirmModal({
+  document,
+  busy,
+  onClose,
+  onConfirm,
+}: {
+  document: OrdersV4Document | null;
+  busy: boolean;
+  onClose: () => void;
+  onConfirm: () => void | Promise<void>;
+}) {
+  return <Modal
+    open={!!document}
+    onClose={onClose}
+    size="sm"
+    title="إعادة فتح الطلب للتعديل"
+    footer={<DialogActions actions={[
+      { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose },
+      { key: 'confirm', label: 'عكس الاستلام وإعادة الفتح', role: 'edit', onClick: onConfirm, loading: busy },
+    ]} />}
+  >
+    {document && <div className="flex flex-col gap-3">
+      <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[13px] leading-7 text-blue-950">
+        سيُعكس أثر الاستلام على المخزون والعهدة والأسعار، ويُحفظ الطلب الحالي كسجل تدقيق، ثم يُنشأ طلب بديل بحالة «بانتظار الاستلام» وبنفس الأصناف ليعدله الكاشير ويستلمه من جديد. العملية متاحة لآخر طلب فقط.
+      </div>
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-noorix-bg-muted p-3 text-[12px]">
+        <span>الطلب: <b>{document.documentNumber}</b></span>
+        <span>الإجمالي: <b>{v4Number(document.totalAmount)} ر.س</b></span>
+      </div>
+    </div>}
+  </Modal>;
+}
+
 function OrdersV4DocumentDetails({ document, onClose, onPrint, onExport, onWhatsApp }: {
   document: OrdersV4Document | null;
   onClose: () => void;
@@ -621,7 +668,13 @@ function OrdersV4DocumentDetails({ document, onClose, onPrint, onExport, onWhats
     { key: 'unitPrice', label: 'سعر الوحدة', numeric: true, render: (value, row) => `${v4Number(value)} / ${row.priceUnit.nameAr}` },
     { key: document?.documentType === 'registration' ? 'operationalCost' : 'lineTotal', label: document?.documentType === 'registration' ? 'التكلفة' : 'الإجمالي', numeric: true, render: (value) => `${v4Number(value)} ر.س` },
   ];
-  const statusLabel = document?.status === 'received' ? 'مستلم' : document?.status === 'prepared' ? 'بانتظار الاستلام' : document?.status === 'reversed' ? 'معكوس' : 'ملغي';
+  const statusLabel = document?.status === 'received'
+    ? 'مستلم'
+    : document?.status === 'prepared'
+      ? 'بانتظار الاستلام'
+      : document?.status === 'reversed'
+        ? document.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'
+        : 'ملغي';
   return <AdaptiveSheet
     open={!!document}
     onClose={onClose}

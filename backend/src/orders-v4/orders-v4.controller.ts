@@ -232,6 +232,16 @@ export class OrdersV4Controller {
     return this.documents.undoReverse(requireCompanyId(companyId), id, body.idempotencyKey);
   }
 
+  @Post('documents/:id/reopen')
+  @Roles('owner')
+  reopenPurchaseDocument(
+    @CompanyId() companyId: string,
+    @Param('id') id: string,
+    @Body() body: OrdersV4IdempotencyDto,
+  ) {
+    return this.documents.reopenLatestPurchase(requireCompanyId(companyId), id, body.idempotencyKey);
+  }
+
   @Get('reports/summary')
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_REPORTS_READ')
   summary(@CompanyId() companyId: string, @Query() query?: OrdersV4DateRangeQueryDto) {

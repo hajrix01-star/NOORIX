@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { TenantContext } from '../common/tenant-context';
@@ -26,6 +26,7 @@ import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
 import { ordersV4DocumentListQuery, type OrdersV4DocumentListFilters } from './orders-v4-document-list-query.util';
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 import { resolveOrdersV4RegistrationEntry } from './orders-v4-registration-cancellation.policy';
+import { OrdersV4DocumentReversalService } from './orders-v4-document-reversal.service';
 
 function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
   return {
@@ -75,6 +76,7 @@ export class OrdersV4DocumentsService {
     private readonly prisma: TenantPrismaService,
     private readonly posting: OrdersV4LedgerPostingService,
     private readonly fundsPosting: OrdersV4FundsPostingService,
+    private readonly reversal: OrdersV4DocumentReversalService,
   ) {}
 
   async list(
@@ -86,12 +88,22 @@ export class OrdersV4DocumentsService {
     limit = 250,
     filters: OrdersV4DocumentListFilters = {},
   ) {
-    const documents = await this.prisma.ordersV4Document.findMany(
-      ordersV4DocumentListQuery(companyId, documentType, startDate, endDate, createdByUserId, limit, filters),
-    );
+    const [documents, latestPurchase] = await Promise.all([
+      this.prisma.ordersV4Document.findMany(
+        ordersV4DocumentListQuery(companyId, documentType, startDate, endDate, createdByUserId, limit, filters),
+      ),
+      documentType === 'purchase'
+        ? this.prisma.ordersV4Document.findFirst({
+          where: { companyId, documentType: 'purchase', reversalOfId: null },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          select: { id: true, status: true },
+        })
+        : Promise.resolve(null),
+    ]);
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     return documents.map((document) => ({
       ...document,
+      canReopen: latestPurchase?.id === document.id && latestPurchase.status === 'received',
       createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
     }));
   }
@@ -746,139 +758,14 @@ export class OrdersV4DocumentsService {
   }
 
   reverse(companyId: string, id: string, idempotencyKey: string) {
-    return this.toggleReversal(companyId, id, idempotencyKey, false);
+    return this.reversal.reverse(companyId, id, idempotencyKey);
   }
 
   undoReverse(companyId: string, id: string, idempotencyKey: string) {
-    return this.toggleReversal(companyId, id, idempotencyKey, true);
+    return this.reversal.undoReverse(companyId, id, idempotencyKey);
   }
 
-  private async toggleReversal(companyId: string, id: string, idempotencyKey: string, undo: boolean) {
-    if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
-    const tenantId = TenantContext.getTenantId();
-    const operation = undo ? 'undo-reverse' : 'reverse';
-    const reversalRequestHash = requestHash({ operation, documentId: id });
-    return this.prisma.withTenant(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:reverse:${companyId}:${id}`}))`;
-      const duplicate = await tx.ordersV4Document.findFirst({ where: { companyId, idempotencyKey: idempotencyKey.trim() } });
-      if (duplicate) {
-        if (duplicate.requestHash !== reversalRequestHash) throw new BadRequestException('مفتاح منع التكرار مستخدم لعملية مختلفة');
-        return duplicate;
-      }
-      const original = await tx.ordersV4Document.findFirst({
-        where: { id, companyId, status: undo ? 'reversed' : 'received', reversalOfId: null }, include: { lines: true },
-      });
-      if (!original) throw new NotFoundException(undo ? 'المستند غير موجود أو لم يتم عكسه' : 'المستند غير موجود أو سبق عكسه');
-      if (original.documentType === 'registration' && original.sectionId) {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:registration-cancellation:${companyId}:${original.documentDate.toISOString()}:${original.sectionId}:${original.locationId}`}))`;
-      }
-      let chainHead = original;
-      const visited = new Set<string>([original.id]);
-      while (true) {
-        const next = await tx.ordersV4Document.findFirst({ where: { companyId, reversalOfId: chainHead.id }, include: { lines: true } });
-        if (!next) break;
-        if (visited.has(next.id)) throw new BadRequestException('تم اكتشاف دورة غير صالحة في سلسلة العكس');
-        visited.add(next.id);
-        chainHead = next;
-      }
-      const originalLedger = await tx.ordersV4InventoryLedgerEntry.findMany({
-        where: { companyId, sourceId: chainHead.id }, orderBy: { sequence: 'desc' },
-      });
-      const ledgerItemIds = [...new Set(originalLedger.map((entry) => entry.itemId))];
-      const historicalConversionIds = [...new Set(originalLedger.map((entry) => entry.conversionVersionId).filter(Boolean) as string[])];
-      const [ledgerItems, companyUnits, historicalConversions] = await Promise.all([
-        tx.ordersV4Item.findMany({
-          where: { companyId, id: { in: ledgerItemIds } },
-          include: {
-            conversionVersions: {
-              where: { status: 'published' },
-              orderBy: { version: 'desc' },
-              take: 1,
-              include: { edges: true },
-            },
-          },
-        }),
-        tx.ordersV4Unit.findMany({ where: { companyId } }),
-        tx.ordersV4ConversionVersion.findMany({
-          where: { companyId, id: { in: historicalConversionIds } },
-          include: { edges: true },
-        }),
-      ]);
-      const unitDefinitions = ordersV4UnitDefinitions(companyUnits);
-      const originalCustody = await tx.ordersV4CustodyLedgerEntry.findMany({
-        where: { companyId, documentId: chainHead.id }, orderBy: { sequence: 'asc' },
-      });
-      await this.posting.lockKeys(tx, companyId, originalLedger.map((entry) => ({ itemId: entry.itemId, locationId: entry.locationId })));
-      const reversal = await tx.ordersV4Document.create({
-        data: {
-          tenantId, companyId,
-          documentNumber: `${original.documentNumber}-${undo ? 'UNDO' : 'R'}-${randomUUID().slice(0, 8).toUpperCase()}`,
-          documentType: original.documentType,
-          registrationEntryType: original.registrationEntryType,
-          paymentMethod: original.paymentMethod,
-          documentDate: new Date(), status: 'reversed', sectionId: original.sectionId,
-          locationId: original.locationId, pettyCashAmount: chainHead.pettyCashAmount?.negated() ?? null,
-          subtotal: chainHead.subtotal.negated(), totalAmount: chainHead.totalAmount.negated(),
-          operationalCost: chainHead.operationalCost.negated(),
-          notes: undo ? `إلغاء عكس ${original.documentNumber}` : `عكس ${original.documentNumber}`,
-          idempotencyKey: idempotencyKey.trim(),
-          requestHash: reversalRequestHash,
-          calculationVersion: 1,
-          calculationSnapshot: {
-            kernelVersion: 4,
-            operation,
-            rootDocumentId: original.id,
-            reversalOfId: chainHead.id,
-            operationalCost: chainHead.operationalCost.negated().toString(),
-          },
-          reversalOfId: chainHead.id, createdByUserId: TenantContext.getUserId(),
-        },
-      });
-      const reversedAt = new Date();
-      for (const entry of originalLedger) {
-        const item = ledgerItems.find((row) => row.id === entry.itemId);
-        if (!item) throw new BadRequestException('تعذر العثور على صنف قيد المخزون المراد عكسه');
-        const definition = item.conversionVersions[0];
-        const historicalDefinition = historicalConversions.find((row) => row.id === entry.conversionVersionId);
-        const currentConversion = resolveOrdersV4ContextConversion({
-          fromUnitId: entry.inventoryUnitId,
-          toUnitId: item.kernelUnitId,
-          units: unitDefinitions,
-          edges: ordersV4EdgeDefinitions(historicalDefinition?.edges ?? definition?.edges),
-        });
-        await this.posting.postReversal(tx, {
-          tenantId,
-          companyId,
-          sourceId: reversal.id,
-          effectiveAt: reversedAt,
-          currentInventoryUnitId: item.kernelUnitId,
-          currentConversionVersionId: historicalDefinition?.id ?? definition?.id ?? null,
-          currentConversion,
-          original: entry,
-        });
-      }
-      if (originalCustody.length) {
-        await this.fundsPosting.postReversals(tx, {
-          tenantId, companyId, reversalDocumentId: reversal.id,
-          effectiveAt: reversedAt, originals: originalCustody,
-        });
-      }
-      await tx.ordersV4Document.update({
-        where: { id: original.id },
-        data: { status: undo ? 'received' : 'reversed', updatedByUserId: TenantContext.getUserId() },
-      });
-      for (const line of original.lines) {
-        const latestPrice = await tx.ordersV4PriceHistory.findFirst({
-          where: { companyId, itemId: line.itemId, unitId: line.priceUnitId, document: { status: 'received' } },
-          orderBy: [{ effectiveAt: 'desc' }, { createdAt: 'desc' }],
-        });
-        await tx.ordersV4ItemUnit.updateMany({
-          where: { companyId, itemId: line.itemId, unitId: line.priceUnitId },
-          data: { lastPrice: latestPrice?.unitPrice ?? null, lastPriceAt: latestPrice?.effectiveAt ?? null },
-        });
-      }
-      return reversal;
-    });
+  reopenLatestPurchase(companyId: string, id: string, idempotencyKey: string) {
+    return this.reversal.reopenLatestPurchase(companyId, id, idempotencyKey);
   }
-
 }

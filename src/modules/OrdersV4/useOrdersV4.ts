@@ -21,6 +21,7 @@ import {
   reverseOrdersV4Document,
   undoReverseOrdersV4Document,
   receiveOrdersV4Document,
+  reopenOrdersV4Document,
   restoreOrdersV4Unit,
   saveOrdersV4ItemDefinition,
   updateOrdersV4Category,
@@ -169,6 +170,15 @@ export function useUndoReverseOrdersV4Document(companyId: string) {
     mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) => undoReverseOrdersV4Document(companyId, id, idempotencyKey),
     invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
     successToast: 'تم إلغاء العكس وإعادة تطبيق الأثر الدفتري للمستند',
+    showErrorToast: true,
+  });
+}
+
+export function useReopenOrdersV4Document(companyId: string) {
+  return useApiMutation({
+    mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) => reopenOrdersV4Document(companyId, id, idempotencyKey),
+    invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
+    successToast: 'تم عكس الاستلام وإنشاء طلب بديل بانتظار تعديل الكاشير',
     showErrorToast: true,
   });
 }
