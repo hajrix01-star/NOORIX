@@ -19,7 +19,13 @@ if [[ -z "$DATABASE_URL" ]]; then
   exit 1
 fi
 
-existing_count="$(psql --dbname="$DATABASE_URL" -Atqc "SELECT count(*) FROM unnest(ARRAY['$(IFS="','"; echo "${TABLES[*]}")']) AS table_name WHERE to_regclass('public.' || table_name) IS NOT NULL")"
+table_literals=""
+for table in "${TABLES[@]}"; do
+  [[ -n "$table_literals" ]] && table_literals+=","
+  table_literals+="'${table}'"
+done
+
+existing_count="$(psql --dbname="$DATABASE_URL" -Atqc "SELECT count(*) FROM unnest(ARRAY[${table_literals}]) AS table_name WHERE to_regclass('public.' || table_name) IS NOT NULL")"
 if [[ "$existing_count" == "0" ]]; then
   echo "==> Legacy Orders tables already retired; no retirement backup required"
   exit 0
