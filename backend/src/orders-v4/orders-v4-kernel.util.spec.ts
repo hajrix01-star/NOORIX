@@ -16,7 +16,7 @@ import {
   calculateOrdersV4UnitRebase,
 } from './orders-v4-calculation.kernel';
 import { resolveOrdersV4Conversion, validateOrdersV4ConversionDefinition } from './orders-v4-conversion.kernel';
-import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
+import { ordersV4DateOnly, ordersV4DateYmd, ordersV4RangeBounds } from './orders-v4-date.util';
 import type { OrdersV4ConversionEdgeDefinition, OrdersV4UnitDefinition } from './orders-v4-kernel.types';
 import { assertOrdersV4UnitDeactivationAllowed } from './orders-v4-unit-governance.kernel';
 import { decideOrdersV4VersionPublication, ordersV4StableHash } from './orders-v4-version.kernel';
@@ -42,6 +42,7 @@ describe('Orders Core V4 kernel', () => {
   });
 
   it('accepts the shared ISO date filter while storing date-only boundaries', () => {
+    expect(ordersV4DateYmd('2026-08-01T00:00:00+03:00', 'date')).toBe('2026-08-01');
     expect(ordersV4DateOnly('2026-08-01T00:00:00+03:00', 'date').toISOString()).toBe('2026-08-01T00:00:00.000Z');
     const range = ordersV4RangeBounds('2026-08-01T00:00:00+03:00', '2026-08-31T23:59:59+03:00');
     expect(range.gte?.toISOString()).toBe('2026-08-01T00:00:00.000Z');

@@ -9,7 +9,7 @@ import {
   ordersV4UnitDefinitions,
   resolveOrdersV4ContextConversion,
 } from './orders-v4-conversion.context';
-import { ordersV4RangeBounds, ordersV4SaudiToday } from './orders-v4-date.util';
+import { ordersV4DateYmd, ordersV4RangeBounds, ordersV4SaudiToday } from './orders-v4-date.util';
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 import { buildOrdersV4RegistrationCoverage } from './orders-v4-registration-coverage.util';
 
@@ -191,11 +191,15 @@ export class OrdersV4ReportsService {
     }
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     const today = ordersV4SaudiToday();
+    const coverageStartDate = startDate
+      ? ordersV4DateYmd(startDate, 'تاريخ البداية')
+      : coverageDocuments.map((row) => row.documentDate.toISOString().slice(0, 10)).sort()[0] || today;
+    const coverageEndDate = endDate ? ordersV4DateYmd(endDate, 'تاريخ النهاية') : today;
     const registrationCoverage = buildOrdersV4RegistrationCoverage({
       documents: coverageDocuments,
       sections: activeSections,
-      startDate: startDate || coverageDocuments.map((row) => row.documentDate.toISOString().slice(0, 10)).sort()[0] || today,
-      endDate: endDate || today,
+      startDate: coverageStartDate,
+      endDate: coverageEndDate,
       today,
     });
     const receivedDocuments = documents.filter((document) => document.status === 'received');

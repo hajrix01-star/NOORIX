@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
-/** Accepts the shared date filter ISO value or a plain YYYY-MM-DD document date. */
-export function ordersV4DateOnly(value: string, label: string): Date {
+/** Accepts the shared date filter ISO value or a plain YYYY-MM-DD value. */
+export function ordersV4DateYmd(value: string, label: string): string {
   const input = String(value ?? '').trim();
   const text = input.slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) throw new BadRequestException(`${label} غير صالح`);
@@ -9,7 +9,12 @@ export function ordersV4DateOnly(value: string, label: string): Date {
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) {
     throw new BadRequestException(`${label} غير صالح`);
   }
-  return date;
+  return text;
+}
+
+/** Converts the validated shared date filter to the date-only database boundary. */
+export function ordersV4DateOnly(value: string, label: string): Date {
+  return new Date(`${ordersV4DateYmd(value, label)}T00:00:00.000Z`);
 }
 
 export function ordersV4RangeBounds(startDate?: string, endDate?: string): { gte?: Date; lte?: Date } {

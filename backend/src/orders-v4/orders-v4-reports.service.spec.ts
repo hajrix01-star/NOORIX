@@ -138,12 +138,17 @@ describe('OrdersV4ReportsService', () => {
     };
 
     const service = new OrdersV4ReportsService(prisma as never);
-    const report = await service.salesReport('company-1', '2026-08-01', '2026-08-03');
+    const report = await service.salesReport(
+      'company-1',
+      '2026-08-01T00:00:00+03:00',
+      '2026-08-03T23:59:59+03:00',
+    );
 
     expect(documentFindMany).toHaveBeenCalledTimes(2);
     expect(report.summary.count).toBe(1);
     expect(report.summary.totalAmount.toString()).toBe('12');
     expect(report.byItem[0]).toMatchObject({ nameAr: 'معسل', documentCount: 1, inventoryUnit: 'حبة' });
     expect(report.byItem[0].baseQuantity.toString()).toBe('3');
+    expect(report.registrationCoverage).toMatchObject({ startDate: '2026-08-01', endDate: '2026-08-03' });
   });
 });
