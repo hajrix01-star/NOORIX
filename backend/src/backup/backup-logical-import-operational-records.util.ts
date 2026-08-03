@@ -6,13 +6,10 @@ import {
 } from './backup-logical-import-helpers.util';
 import { BackupLogicalImportTxParams } from './backup-logical-import-transaction.types';
 import { normalizeSalesDayContextSnapshotInput, salesDayContextJson } from '../sales/sales-day-context.util';
-import { importBackupLogicalOrdersAndInventory } from './backup-logical-import-orders-inventory.util';
+import { importBackupLogicalOrdersV4 } from './backup-logical-import-orders-v4.util';
 
 export type BackupLogicalImportOperationalMaps = {
   dailySalesSummaryMap: Map<string, string>;
-  orderCategoryMap: Map<string, string>;
-  orderProductMap: Map<string, string>;
-  orderMap: Map<string, string>;
   bscatMap: Map<string, string>;
   bankStatementMap: Map<string, string>;
 };
@@ -68,8 +65,7 @@ export async function importBackupLogicalOperationalRecords(
     });
   }
 
-  const { orderCategoryMap, orderProductMap, orderMap } =
-    await importBackupLogicalOrdersAndInventory(tx, p);
+  await importBackupLogicalOrdersV4(tx, p);
 
   const bscatMap = new Map<string, string>();
   for (const c of arr<Record<string, unknown>>(data.bankStatementCategories)) {
@@ -202,5 +198,5 @@ export async function importBackupLogicalOperationalRecords(
     });
   }
 
-  return { dailySalesSummaryMap, orderCategoryMap, orderProductMap, orderMap, bscatMap, bankStatementMap };
+  return { dailySalesSummaryMap, bscatMap, bankStatementMap };
 }

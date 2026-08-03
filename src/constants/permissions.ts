@@ -95,32 +95,6 @@ export const REPORTS_COST_APPS_ACCESS = [PERMISSIONS.VIEW_REPORTS_COST_APPS, PER
 export const REPORTS_TAX_ACCESS = [PERMISSIONS.VIEW_REPORTS_TAX, PERMISSIONS.VIEW_REPORTS, PERMISSIONS.REPORTS_READ];
 export const REPORTS_BANK_ACCESS = [PERMISSIONS.VIEW_REPORTS_BANK, PERMISSIONS.VIEW_REPORTS, PERMISSIONS.REPORTS_READ];
 
-/** دخول قسم الطلبات — مدير أو موظف Staff Orders */
-export const ORDERS_APP_ACCESS = [
-  PERMISSIONS.VIEW_ORDERS,
-  PERMISSIONS.VIEW_INTERNAL_REGISTRATION,
-  PERMISSIONS.ORDERS_STAFF_SUBMIT,
-  PERMISSIONS.STAFF_ORDERS_READ,
-  PERMISSIONS.STAFF_ORDERS_SUBMIT,
-];
-
-/** جلب بيانات الطلبات — واجهة المدير الكاملة */
-export const ORDERS_MANAGER_DATA_ACCESS = [
-  PERMISSIONS.ORDERS_READ,
-  PERMISSIONS.ORDERS_WRITE,
-] as const;
-
-export const ORDERS_STAFF_SUBMIT_ACCESS = [PERMISSIONS.ORDERS_STAFF_SUBMIT] as const;
-
-/** التسجيل الداخلي — مستقل عن إدارة الطلبات */
-export const ORDERS_INTERNAL_REGISTRATION_ACCESS = [
-  PERMISSIONS.STAFF_ORDERS_READ,
-  PERMISSIONS.STAFF_ORDERS_SUBMIT,
-] as const;
-
-/** تقرير التسجيل الداخلي — قراءة مستقلة عن الطلبات */
-export const ORDERS_SALES_REPORT_ACCESS = [PERMISSIONS.STAFF_ORDERS_READ] as const;
-
 /** طلبات V4 — نطاق مستقل بالكامل عن الطلبات القديمة. */
 export const ORDERS_V4_APP_ACCESS: string[] = [
   PERMISSIONS.VIEW_ORDERS_V4,
@@ -179,7 +153,6 @@ export const ROUTE_PERMISSION = {
   '/treasury':      PERMISSIONS.VIEW_VAULTS,
   '/expenses':      PERMISSIONS.VIEW_EXPENSES,
   '/assets':        ASSETS_APP_ACCESS,
-  '/orders':        ORDERS_APP_ACCESS,
   '/orders-v4':     ORDERS_V4_APP_ACCESS,
   '/hr':            HR_APP_ACCESS,
   '/reports':       REPORTS_APP_ACCESS,
@@ -226,7 +199,7 @@ export function getRouteRequiredPermissions(pathname: unknown) {
 
 /**
  * إن وُجدت أي صلاحية داخل قسم يملك مفتاح `view` في المصفوفة، يُضاف تلقائياً عرض الصفحة (VIEW_*)
- * حتى تتطابق القائمة الجانبية مع اختيار «القسم» (مثلاً ORDERS_READ بدون VIEW_ORDERS كان يخفي الطلبات).
+ * حتى تتطابق القائمة الجانبية مع اختيار القسم وصلاحياته التشغيلية.
  */
 export function normalizeModuleViewAccess(
   modules: Array<{ permissions?: Record<string, string> }> | undefined,
@@ -247,7 +220,6 @@ export function normalizeModuleViewAccess(
 /** أول مسار يملك المستخدم صلاحية دخوله — بعد تسجيل الدخول أو زر «عودة» من 403/404 */
 const APP_HOME_ROUTE_SEQUENCE: Array<{ path: string; required: string | string[] }> = [
   { path: '/sales', required: PERMISSIONS.VIEW_SALES },
-  { path: '/orders', required: ORDERS_APP_ACCESS },
   { path: '/orders-v4', required: ORDERS_V4_APP_ACCESS },
   { path: '/settings', required: [...SETTINGS_APP_ACCESS] },
   { path: '/hr', required: [...HR_APP_ACCESS] },

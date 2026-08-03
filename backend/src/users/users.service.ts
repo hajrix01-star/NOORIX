@@ -258,18 +258,12 @@ export class UsersService {
     });
   }
 
-  /**
-   * حذف نهائي — يُتاح فقط للمستخدمين المؤرشَفين.
-   * يحذف StaffOrders أولاً (FK غير nullable)، ثم يتولى Prisma تصفية باقي العلاقات (SetNull/Cascade).
-   */
+  /** حذف نهائي للمستخدم المؤرشف؛ تتولى علاقات Prisma سياسات SetNull/Cascade المعرفة مركزيًا. */
   async hardDelete(id: string, currentUserId: string) {
     if (id === currentUserId) throw new BadRequestException('لا يمكنك حذف حسابك الحالي');
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('المستخدم غير موجود');
     if (user.isActive) throw new BadRequestException('يجب أرشفة المستخدم أولاً قبل الحذف النهائي');
-
-    // StaffOrders لها FK غير nullable — نحذفها صراحةً قبل حذف المستخدم
-    await this.prisma.staffOrder.deleteMany({ where: { userId: id } });
 
     await this.prisma.user.delete({ where: { id } });
     return { id, deleted: true };

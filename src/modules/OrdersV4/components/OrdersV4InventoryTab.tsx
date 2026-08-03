@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { OrdersV4Bootstrap, OrdersV4CutoverAudit, OrdersV4CutoverResult, OrdersV4DataQuality, OrdersV4InventoryBalance, OrdersV4LedgerEntry, OrdersV4Stocktake, OrdersV4UserIdentity } from '../../../types/api';
+import type { OrdersV4Bootstrap, OrdersV4DataQuality, OrdersV4InventoryBalance, OrdersV4LedgerEntry, OrdersV4Stocktake, OrdersV4UserIdentity } from '../../../types/api';
 import { AdaptiveSheet, Button, DialogActions, Input, Modal, ScreenTabs, type SimpleTableColumn } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import {
@@ -15,7 +15,7 @@ import {
   v4Number,
   v4UserLabel,
 } from '../OrdersV4Shared';
-import { useCreateOrdersV4Stocktake, useExecuteOrdersV4Cutover, useOrdersV4Balances, useOrdersV4CutoverAudit, useOrdersV4DataQuality, useOrdersV4Ledger, useOrdersV4Stocktakes } from '../useOrdersV4';
+import { useCreateOrdersV4Stocktake, useOrdersV4Balances, useOrdersV4DataQuality, useOrdersV4Ledger, useOrdersV4Stocktakes } from '../useOrdersV4';
 import { ordersV4CompositeQuantity, ordersV4UnitFactorToBase } from './ordersV4ItemDefinition.utils';
 
 function normalized(value: unknown): string {
@@ -31,16 +31,14 @@ function uniqueUsers(rows: Array<{ createdByUser?: OrdersV4UserIdentity | null }
     .sort((a, b) => v4UserLabel(a).localeCompare(v4UserLabel(b), 'ar'));
 }
 
-export function OrdersV4InventoryTab({ companyId, bootstrap, canWrite = false, canCutover = false }: { companyId: string; bootstrap?: OrdersV4Bootstrap; canWrite?: boolean; canCutover?: boolean }) {
+export function OrdersV4InventoryTab({ companyId, bootstrap, canWrite = false }: { companyId: string; bootstrap?: OrdersV4Bootstrap; canWrite?: boolean }) {
   const [tab, setTab] = useState('balances');
-  const [cutoverRequested, setCutoverRequested] = useState(false);
   const [ledgerLimit, setLedgerLimit] = useState(250);
   const [stocktakeLimit, setStocktakeLimit] = useState(100);
   const balancesQuery = useOrdersV4Balances(companyId);
   const ledgerQuery = useOrdersV4Ledger(companyId, tab === 'ledger', ledgerLimit);
   const stocktakesQuery = useOrdersV4Stocktakes(companyId, tab === 'stocktakes', stocktakeLimit);
   const qualityQuery = useOrdersV4DataQuality(companyId, tab === 'quality');
-  const cutoverQuery = useOrdersV4CutoverAudit(companyId, canCutover && cutoverRequested);
   const [stocktakeOpen, setStocktakeOpen] = useState(false);
   const balances = balancesQuery.data ?? [];
   const totals = useMemo(() => balances.reduce((acc, row) => ({ value: acc.value + Number(row.value || 0), negative: acc.negative + (Number(row.quantity) < 0 ? 1 : 0) }), { value: 0, negative: 0 }), [balances]);
@@ -66,52 +64,8 @@ export function OrdersV4InventoryTab({ companyId, bootstrap, canWrite = false, c
       {tab === 'stocktakes' && <StocktakesTable query={stocktakesQuery} limit={stocktakeLimit} onLoadMore={() => setStocktakeLimit((current) => Math.min(500, current + 100))} onCreate={canWrite ? () => setStocktakeOpen(true) : undefined} />}
       {tab === 'quality' && <QualityTable query={qualityQuery} />}
     </ScreenTabs>
-    {canCutover && !cutoverRequested && <OrdersV4Panel title="تدقيق الانتقال من الطلبات القديم"><Button size="sm" variant="ghost" onClick={() => setCutoverRequested(true)}>تحميل تدقيق الترحيل</Button></OrdersV4Panel>}
-    {canCutover && cutoverRequested && <CutoverAuditPanel companyId={companyId} query={cutoverQuery} />}
     {canWrite && <StocktakeModal open={stocktakeOpen} onClose={() => setStocktakeOpen(false)} companyId={companyId} bootstrap={bootstrap} balances={balances} />}
   </div>;
-}
-
-function CutoverAuditPanel({ companyId, query }: { companyId: string; query: ReturnType<typeof useOrdersV4CutoverAudit> }) {
-  const audit = query.data;
-  const executeMutation = useExecuteOrdersV4Cutover(companyId);
-  const [result, setResult] = useState<OrdersV4CutoverResult | null>(null);
-  const [executeError, setExecuteError] = useState('');
-  const issueColumns: SimpleTableColumn<OrdersV4CutoverAudit['issues'][number]>[] = [
-    { key: 'severity', label: 'المستوى', render: (value) => value === 'error' ? 'خطأ مانع' : 'تنبيه' },
-    { key: 'entity', label: 'الكيان' },
-    { key: 'code', label: 'الرمز' },
-    { key: 'message', label: 'التفاصيل', minWidth: 360 },
-  ];
-  const source = audit?.source ?? {};
-  const target = audit?.target ?? {};
-  const execute = async () => {
-    if (!audit?.ready || executeMutation.isPending) return;
-    setExecuteError('');
-    try {
-      const response = await executeMutation.mutateAsync({ confirmation: 'IMPORT_LEGACY_ORDERS_TO_V4', sourceFingerprint: audit.sourceFingerprint });
-      setResult(response.data ?? null);
-    } catch (error) {
-      setExecuteError(error instanceof Error ? error.message : 'تعذر تنفيذ الترحيل');
-    }
-  };
-  return <OrdersV4Panel title="تدقيق الانتقال من الطلبات القديم إلى طلبات V4" action={audit?.ready ? <Button variant="primary" onClick={execute} disabled={executeMutation.isPending}>{executeMutation.isPending ? 'جارٍ الترحيل والمطابقة…' : 'تنفيذ الترحيل الذري'}</Button> : undefined}>
-    <OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} />
-    {audit && <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <OrdersV4Kpi label="حالة المصدر" value={audit.ready ? 'جاهز' : 'غير جاهز'} tone={audit.ready ? 'green' : 'red'} />
-        <OrdersV4Kpi label="أصناف القديم" value={Number(source.purchasedItems ?? 0) + Number(source.saleItems ?? 0)} />
-        <OrdersV4Kpi label="مستندات القديم" value={Number(source.activePurchaseDocuments ?? 0) + Number(source.registrationDocuments ?? 0)} />
-        <OrdersV4Kpi label="مشكلات مانعة" value={audit.issueCounts.errors} tone={audit.issueCounts.errors ? 'red' : 'green'} />
-      </div>
-      <div className="overflow-x-auto rounded-xl border border-noorix-border bg-white p-3 text-xs" dir="ltr">
-        <pre className="min-w-[760px] whitespace-pre-wrap text-left">{JSON.stringify({ generatedAt: audit.generatedAt, sourceFingerprint: audit.sourceFingerprint, source, target, issueCounts: audit.issueCounts }, null, 2)}</pre>
-      </div>
-      <SimpleTable columns={issueColumns} data={audit.issues} emptyMessage="لا توجد مشكلات في المصدر" tableMinWidth={760} />
-      {executeError && <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800">{executeError}</div>}
-      {result && <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900" dir="ltr"><pre className="whitespace-pre-wrap text-left">{JSON.stringify(result, null, 2)}</pre></div>}
-    </div>}
-  </OrdersV4Panel>;
 }
 
 function BalancesTable({ query, bootstrap }: { query: ReturnType<typeof useOrdersV4Balances>; bootstrap?: OrdersV4Bootstrap }) {

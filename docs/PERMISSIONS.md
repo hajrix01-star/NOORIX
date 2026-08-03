@@ -11,10 +11,10 @@
 | **كشوف البنك** (`/bank-statements`) | `REPORTS_READ` **أو** `VIEW_REPORTS_BANK` | `VIEW_REPORTS_BANK` فقط |
 | **VAT planning** (`/vat-planning`) | `HAJRI_TAX_READ` **أو** `REPORTS_READ` | `HAJRI_TAX_WRITE` فقط |
 | **تقويم لوحة التحكم** (`/dashboard/calendar`) | `VIEW_DASHBOARD` **أو** `REPORTS_READ` | `VIEW_DASHBOARD` فقط |
-| **مسار `/orders`** (frontend) | — | `VIEW_ORDERS` **أو** `STAFF_ORDERS_SUBMIT` **أو** `STAFF_ORDERS_DIGEST` |
-| **واجهة الموظف (POS)** | — | `STAFF_ORDERS_SUBMIT` **بدون** `VIEW_SALES`/`ORDERS_READ`/`ORDERS_WRITE` |
-| **واجهة المدير (طلبات/تقارير)** | — | `VIEW_SALES` **أو** `ORDERS_READ` **أو** `ORDERS_WRITE` |
-| **تقرير مبيعات الموظفين** | `VIEW_SALES`/`ORDERS_READ`/`ORDERS_WRITE`/`STAFF_ORDERS_DIGEST` | — |
+| **مسار `/orders-v4`** (frontend) | `VIEW_ORDERS_V4` | حسب العملية أدناه |
+| **واجهة التسجيل الداخلي للموظف** | `ORDERS_V4_INTERNAL_SUBMIT` | `ORDERS_V4_INTERNAL_SUBMIT` |
+| **واجهة المدير (طلبات/تقارير)** | `ORDERS_V4_READ` / `ORDERS_V4_REPORTS_READ` | `ORDERS_V4_WRITE` |
+| **الحذف والعكس الإداري** | `ORDERS_V4_READ` | `ORDERS_V4_DELETE` |
 | **redirect `/reports`** | — | أول تبويب مسموح (`getFirstAccessibleReportPath`) |
 | **تبويبات التقارير** (UI) | — | فلترة حسب `VIEW_REPORTS_*` + fallbacks |
 
@@ -26,7 +26,7 @@
 | `VIEW_REPORTS_GENERAL` … `VIEW_REPORTS_BANK` | تبويبات فرعية داخل `/reports` |
 | `VIEW_HR` | دخول شاشة HR مع fallback لـ `HR_*` / `VIEW_EMPLOYEES` |
 | `CHAT_FAQ_*` | أسئلة جاهزة في المحادثة الذكية |
-| `STAFF_ORDERS_SUBMIT` / `STAFF_ORDERS_DIGEST` | واجهة Staff داخل `/orders` (المدير الكامل يحتاج `VIEW_ORDERS`) |
+| `ORDERS_V4_INTERNAL_SUBMIT` | واجهة التسجيل الداخلي فقط داخل `/orders-v4` |
 
 ## fallbacks مقصودة (توافق أدوار قديمة)
 
@@ -57,4 +57,4 @@
 1. أزل `REPORTS_READ` من دور → طلب API محمي → **403** (بدون انتظار logout).
 2. دور بـ `REPORTS_READ` فقط (بدون `VIEW_REPORTS_BANK`) → رفع كشف → **403**.
 3. مستخدم `REPORTS_TAX` فقط → `/reports` → `/reports/tax`.
-4. كاشير بـ `STAFF_ORDERS_SUBMIT` → `/orders` يعمل.
+4. موظف بـ `ORDERS_V4_INTERNAL_SUBMIT` → `/orders-v4` يعرض التسجيل الداخلي فقط.

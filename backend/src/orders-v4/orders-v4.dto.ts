@@ -169,11 +169,6 @@ export class OrdersV4IdempotencyDto {
   @IsString() @MaxLength(200) idempotencyKey!: string;
 }
 
-export class OrdersV4CutoverDto {
-  @IsString() @MaxLength(100) confirmation!: string;
-  @IsString() @MaxLength(128) sourceFingerprint!: string;
-}
-
 export class OrdersV4DateRangeQueryDto {
   @IsOptional() @IsString() @Matches(DATE) startDate?: string;
   @IsOptional() @IsString() @Matches(DATE) endDate?: string;

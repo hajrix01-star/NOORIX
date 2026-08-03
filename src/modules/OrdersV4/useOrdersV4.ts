@@ -10,8 +10,6 @@ import {
   getOrdersV4Balances,
   getOrdersV4Bootstrap,
   getOrdersV4DataQuality,
-  getOrdersV4CutoverAudit,
-  executeOrdersV4Cutover,
   getOrdersV4Documents,
   getOrdersV4ItemsReport,
   getOrdersV4Ledger,
@@ -31,7 +29,6 @@ import {
 import type {
   OrdersV4Bootstrap,
   OrdersV4DataQuality,
-  OrdersV4CutoverAudit,
   OrdersV4Document,
   OrdersV4DocumentPayload,
   OrdersV4ReceivePayload,
@@ -44,15 +41,9 @@ import type {
 } from '../../types/api';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { useApiListQuery, useApiQuery } from '../../hooks/useApiQuery';
+import { ordersV4Keys } from '../../services/queryKeys';
 
-export const ordersV4Keys = {
-  root: ['orders-v4'] as const,
-  bootstrap: (companyId: string) => ['orders-v4', 'bootstrap', companyId] as const,
-  documentsRoot: (companyId: string) => ['orders-v4', 'documents', companyId] as const,
-  documents: (companyId: string, type: string, startDate: string, endDate: string, limit: number) => ['orders-v4', 'documents', companyId, type, startDate, endDate, limit] as const,
-  reports: (companyId: string) => ['orders-v4', 'reports', companyId] as const,
-  inventory: (companyId: string) => ['orders-v4', 'inventory', companyId] as const,
-};
+export { ordersV4Keys } from '../../services/queryKeys';
 
 export function useOrdersV4Bootstrap(companyId: string, enabled = true) {
   return useApiQuery<OrdersV4Bootstrap>({
@@ -132,24 +123,6 @@ export function useOrdersV4DataQuality(companyId: string, enabled = true) {
     queryFn: () => getOrdersV4DataQuality(companyId),
     fallbackMessage: 'تعذر تحميل جودة بيانات V4',
     enabled: enabled && !!companyId,
-  });
-}
-
-export function useOrdersV4CutoverAudit(companyId: string, enabled = false) {
-  return useApiQuery<OrdersV4CutoverAudit>({
-    queryKey: [...ordersV4Keys.inventory(companyId), 'legacy-cutover-audit'],
-    queryFn: () => getOrdersV4CutoverAudit(companyId),
-    fallbackMessage: 'تعذر تدقيق جاهزية ترحيل الطلبات القديم',
-    enabled: enabled && !!companyId,
-  });
-}
-
-export function useExecuteOrdersV4Cutover(companyId: string) {
-  return useApiMutation({
-    mutationFn: (body: { confirmation: string; sourceFingerprint: string }) => executeOrdersV4Cutover(companyId, body),
-    invalidateQueries: [ordersV4Keys.root],
-    successToast: 'اكتمل ترحيل الطلبات القديم إلى V4 واجتازت المطابقة',
-    showErrorToast: true,
   });
 }
 

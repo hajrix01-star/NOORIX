@@ -8,8 +8,8 @@ Status: governed; no new raw table is allowed without registry count and reason.
 
 | Metric | Count |
 |---|---:|
-| Manual `<table>` outside `src/ui` | 32 |
-| Files with manual tables outside `src/ui` | 19 |
+| Manual `<table>` outside `src/ui` | 29 |
+| Files with manual tables outside `src/ui` | 16 |
 | `SmartTable` JSX usages | 46 |
 | Files using `SmartTable` JSX | 36 |
 | `SimpleTable` JSX usages | 23 |

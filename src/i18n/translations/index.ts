@@ -10,8 +10,8 @@ import invoices from './invoices';
 import treasury from './treasury';
 import settings from './settings';
 import reports from './reports';
-import orders from './orders';
 import dashboard from './dashboard';
+import ordersV4 from './ordersV4';
 
 const t = Object.assign(
   {},
@@ -23,8 +23,8 @@ const t = Object.assign(
   treasury,
   settings,
   reports,
-  orders,
-  dashboard
+  dashboard,
+  ordersV4
 );
 
 export type TranslationKey = keyof typeof t;

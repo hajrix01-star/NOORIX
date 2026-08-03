@@ -69,25 +69,11 @@ describe('Orders V4 inventory boundary', () => {
     expect(documents).not.toContain('ordersV4InventoryLedgerEntry.create');
   });
 
-  it('routes cutover opening balances through the central ledger posting boundary', () => {
-    const importer = readFileSync(join(__dirname, 'orders-v4-legacy-cutover-import.service.ts'), 'utf8');
-    const posting = readFileSync(join(__dirname, 'orders-v4-ledger-posting.service.ts'), 'utf8');
-    expect(importer).toContain('ledgerPosting.postCutoverOpening');
-    expect(importer).not.toContain('ordersV4InventoryLedgerEntry.create');
-    expect(posting).toContain('calculateOrdersV4OpeningBalance');
-    expect(importer).toContain("legacyTargetId(scope, `${companyId}:${sourceKey}`)");
-    expect(importer).toContain("`${companyId}:${sourceEntity}:${sourceId}`");
-  });
-
-  it('limits the append-only ledger bypass to the privileged cutover transaction', () => {
-    const importer = readFileSync(join(__dirname, 'orders-v4-legacy-cutover-import.service.ts'), 'utf8');
-    const migration = readFileSync(
-      join(__dirname, '../../prisma/migrations/20260802205000_orders_v4_cutover_append_only_guard/migration.sql'),
-      'utf8',
-    );
-    expect(importer).toContain("set_config('app.orders_v4_cutover_mode', 'authorized', true)");
-    expect(migration).toContain("current_setting('app.orders_v4_cutover_mode', true) = 'authorized'");
-    expect(migration).toContain("RAISE EXCEPTION 'Orders V4 audit rows are append-only'");
+  it('has no runtime dependency on the retired Orders module', () => {
+    const moduleSource = readFileSync(join(__dirname, 'orders-v4.module.ts'), 'utf8');
+    const controller = readFileSync(join(__dirname, 'orders-v4.controller.ts'), 'utf8');
+    expect(moduleSource).not.toMatch(/OrdersModule|LegacyCutover|\.\.\/orders/);
+    expect(controller).not.toMatch(/LegacyCutover|orders-v4-legacy-cutover/);
   });
 
   it('declares cutover opening balances as a first-class audited ledger event', () => {

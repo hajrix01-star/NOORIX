@@ -6,7 +6,7 @@ type PeriodCustodyDocument = Pick<
 >;
 
 /**
- * Mirrors the legacy Orders experience: the visible custody balance starts at
+ * The visible non-cumulative custody balance starts at
  * zero for the already date-filtered collection and runs only inside that period.
  * The central custody ledger remains the accounting source of truth.
  */

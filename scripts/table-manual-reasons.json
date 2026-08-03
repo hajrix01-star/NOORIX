@@ -47,21 +47,6 @@
       "decision": "leave",
       "reason": "day-close report and print layout; production-sensitive."
     },
-    "src/modules/Orders/StaffOrdersViewParts.tsx": {
-      "category": "editable-grid",
-      "decision": "leave",
-      "reason": "staff basket table includes quantity editing controls."
-    },
-    "src/modules/Orders/components/OrderFormModalPieces.tsx": {
-      "category": "editable-grid",
-      "decision": "leave",
-      "reason": "order form item table includes product inputs and editable quantities/prices."
-    },
-    "src/modules/Orders/components/catalog/CatalogProductFormSheet.tsx": {
-      "category": "editable-grid",
-      "decision": "leave",
-      "reason": "product variants table contains editable select and number controls."
-    },
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": {
       "category": "purchases-protected",
       "decision": "leave",

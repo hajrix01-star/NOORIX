@@ -71,21 +71,14 @@ model User {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  tenant                        Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  role                          Role                           @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  userCompanies                 UserCompany[]
-  ledgerEntries                 LedgerEntry[]                  @relation("CreatedBy")
-  auditLogs                     AuditLog[]
-  salesSummaries                DailySalesSummary[]            @relation("SalesCreatedBy")
-  backupJobsCreated             BackupJob[]                    @relation("BackupCreatedBy")
-  invoicesCreated               Invoice[]                      @relation("InvoiceCreatedBy")
-  staffOrders                   StaffOrder[]
-  shishaInventoryMovements      ShishaInventoryMovement[]      @relation("ShishaInventoryMovementCreatedBy")
-  shishaStocktakes              ShishaStocktake[]              @relation("ShishaStocktakeCreatedBy")
-  inventoryMovements            InventoryMovement[]            @relation("InventoryMovementCreatedBy")
-  inventoryStocktakes           InventoryStocktake[]           @relation("InventoryStocktakeCreatedBy")
-  inventoryDefinitionVersionsV2 InventoryDefinitionVersionV2[] @relation("InventoryDefinitionVersionV2CreatedBy")
-  inventoryLedgerEntriesV2      InventoryLedgerEntryV2[]       @relation("InventoryLedgerEntryV2CreatedBy")
+  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role              Role                @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  userCompanies     UserCompany[]
+  ledgerEntries     LedgerEntry[]       @relation("CreatedBy")
+  auditLogs         AuditLog[]
+  salesSummaries    DailySalesSummary[] @relation("SalesCreatedBy")
+  backupJobsCreated BackupJob[]         @relation("BackupCreatedBy")
+  invoicesCreated   Invoice[]           @relation("InvoiceCreatedBy")
 
   @@index([tenantId])
   @@map("users")
@@ -111,53 +104,38 @@ model Company {
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
-  tenant                        Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userCompanies                 UserCompany[]
-  suppliers                     Supplier[]
-  vaults                        Vault[]
-  accounts                      Account[]
-  invoices                      Invoice[]
-  ledgerEntries                 LedgerEntry[]
-  auditLogs                     AuditLog[]
-  dailySalesSummaries           DailySalesSummary[]
-  categories                    Category[]
-  employees                     Employee[]
-  payrollRuns                   PayrollRun[]
-  leaves                        Leave[]
-  employeeResidencies           EmployeeResidency[]
-  employeeDocuments             EmployeeDocument[]
-  employeeMovements             EmployeeMovement[]
-  employeeCustomAllowances      EmployeeCustomAllowance[]
-  employeeDeductions            EmployeeDeduction[]
-  fiscalPeriods                 FiscalPeriod[]
-  expenseLines                  ExpenseLine[]
-  orders                        Order[]
-  orderProducts                 OrderProduct[]
-  orderCategories               OrderCategory[]
-  orderSections                 OrderSection[]
-  orderCatalogUnits             OrderCatalogUnit[]
-  orderConversionTemplates      OrderConversionTemplate[]
-  staffOrders                   StaffOrder[]
-  shishaInventorySettings       ShishaInventorySettings?
-  shishaInventoryMovements      ShishaInventoryMovement[]
-  shishaStocktakes              ShishaStocktake[]
-  inventoryMovements            InventoryMovement[]
-  inventoryStocktakes           InventoryStocktake[]
-  inventoryStocktakeLines       InventoryStocktakeLine[]
-  inventoryLocationsV2          InventoryLocationV2[]
-  inventoryDefinitionVersionsV2 InventoryDefinitionVersionV2[]
-  inventoryLedgerEntriesV2      InventoryLedgerEntryV2[]
-  bankStatements                BankStatement[]
-  bankStatementCategories       BankStatementCategory[]
-  bankTreeCategories            BankTreeCategory[]
-  bankClassificationRules       BankClassificationRule[]
-  bankStatementTemplates        BankStatementTemplate[]
-  backupJobs                    BackupJob[]
-  companyAssets                 CompanyAsset[]
-  companyBackupConfig           CompanyBackupConfig?
-  companyInsightSettings        CompanyInsightSettings?
-  vatPlanningQuarters           VatPlanningQuarter[]
-  dashboardCalendarData         DashboardCalendarData[]
+  tenant                   Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userCompanies            UserCompany[]
+  suppliers                Supplier[]
+  vaults                   Vault[]
+  accounts                 Account[]
+  invoices                 Invoice[]
+  ledgerEntries            LedgerEntry[]
+  auditLogs                AuditLog[]
+  dailySalesSummaries      DailySalesSummary[]
+  categories               Category[]
+  employees                Employee[]
+  payrollRuns              PayrollRun[]
+  leaves                   Leave[]
+  employeeResidencies      EmployeeResidency[]
+  employeeDocuments        EmployeeDocument[]
+  employeeMovements        EmployeeMovement[]
+  employeeCustomAllowances EmployeeCustomAllowance[]
+  employeeDeductions       EmployeeDeduction[]
+  fiscalPeriods            FiscalPeriod[]
+  expenseLines             ExpenseLine[]
+  ordersV4LegacyArchives   OrdersV4LegacyArchive[]
+  bankStatements           BankStatement[]
+  bankStatementCategories  BankStatementCategory[]
+  bankTreeCategories       BankTreeCategory[]
+  bankClassificationRules  BankClassificationRule[]
+  bankStatementTemplates   BankStatementTemplate[]
+  backupJobs               BackupJob[]
+  companyAssets            CompanyAsset[]
+  companyBackupConfig      CompanyBackupConfig?
+  companyInsightSettings   CompanyInsightSettings?
+  vatPlanningQuarters      VatPlanningQuarter[]
+  dashboardCalendarData    DashboardCalendarData[]
 
   @@index([tenantId])
   @@map("companies")
@@ -1224,496 +1202,17 @@ model AuditLog {
 }
 
 // â”€â”€ ط§ظ„ط·ظ„ط¨ط§طھ (ظ‚ط³ظ… ط¯ط§ط®ظ„ظٹ â€” ظ„ط§ ط±ط¨ط· ظ…ط­ط§ط³ط¨ظٹ) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-model OrderCategory {
-  id        String   @id @default(cuid())
-  tenantId  String   @map("tenant_id")
-  companyId String   @map("company_id")
-  nameAr    String   @map("name_ar") // ط®ط¶ط±ظˆط§طھطŒ ظ„ط­ظˆظ…طŒ ظ…ط´ط±ظˆط¨ط§طھ
-  nameEn    String?  @map("name_en")
-  sortOrder Int      @default(0) @map("sort_order")
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  products OrderProduct[]
-
-  @@index([tenantId])
-  @@index([companyId])
-  @@map("order_categories")
-}
-
-model OrderSection {
-  id        String   @id @default(cuid())
-  tenantId  String   @map("tenant_id")
-  companyId String   @map("company_id")
-  nameAr    String   @map("name_ar")
-  nameEn    String?  @map("name_en")
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  company              Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  inventoryLocationsV2 InventoryLocationV2[]
-
-  @@index([tenantId])
-  @@index([companyId])
-  @@map("order_sections")
-}
-
-model OrderCatalogUnit {
-  id        String   @id @default(cuid())
-  tenantId  String   @map("tenant_id")
-  companyId String   @map("company_id")
-  code      String
-  nameAr    String   @map("name_ar")
-  nameEn    String?  @map("name_en")
-  kind      String   @default("package")
-  isDefault Boolean  @default(false) @map("is_default")
-  isActive  Boolean  @default(true) @map("is_active")
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@unique([companyId, code])
-  @@index([tenantId])
-  @@index([companyId])
-  @@map("order_catalog_units")
-}
-
-model OrderConversionTemplate {
-  id          String   @id @default(cuid())
-  tenantId    String   @map("tenant_id")
-  companyId   String   @map("company_id")
-  code        String
-  nameAr      String   @map("name_ar")
-  nameEn      String?  @map("name_en")
-  description String?
-  conversions Json?
-  isDefault   Boolean  @default(false) @map("is_default")
-  isActive    Boolean  @default(true) @map("is_active")
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  products OrderProduct[]
-
-  @@unique([companyId, code])
-  @@index([tenantId])
-  @@index([companyId])
-  @@map("order_conversion_templates")
-}
-
-model OrderProduct {
-  id                   String   @id @default(cuid())
-  tenantId             String   @map("tenant_id")
-  companyId            String   @map("company_id")
-  categoryId           String?  @map("category_id")
-  conversionTemplateId String?  @map("conversion_template_id")
-  nameAr               String   @map("name_ar")
-  nameEn               String?  @map("name_en")
-  unit                 String   @default("piece") // piece | kg | box | dozen â€” ط§ظپطھط±ط§ط¶ظٹ ط¹ظ†ط¯ ط¹ط¯ظ… ظˆط¬ظˆط¯ variants
-  sizes                String?  @map("sizes") // ط£ط­ط¬ط§ظ… ظ…طھط§ط­ط©: طµط؛ظٹط±,ظˆط³ط·,ظƒط¨ظٹط± (ظ„ظ„طھظˆط§ظپظ‚ ظ…ط¹ ط§ظ„ط¥طµط¯ط§ط±ط§طھ ط§ظ„ظ‚ط¯ظٹظ…ط©)
-  packaging            String?  @map("packaging") // ط§ظ„طھط؛ظ„ظٹظپ (ظ„ظ„طھظˆط§ظپظ‚ ظ…ط¹ ط§ظ„ط¥طµط¯ط§ط±ط§طھ ط§ظ„ظ‚ط¯ظٹظ…ط©)
-  lastPrice            Decimal  @default(0) @map("last_price") @db.Decimal(18, 4) // ط³ط¹ط± ط§ظپطھط±ط§ط¶ظٹ ط¹ظ†ط¯ ط¹ط¯ظ… ظˆط¬ظˆط¯ variants
-  variants             Json?    @map("variants") // [{size,packaging,unit,lastPrice},...] â€” طھط±ظƒظٹط¨ط§طھ ظ…طھط¹ط¯ط¯ط© ط¨ط£ط³ط¹ط§ط±
-  inventoryConversions Json?    @map("inventory_conversions")
-  recipe               Json?    @map("recipe")
-  sections             Json?    @map("sections") // ["ظ…ط·ط¨ط®","ط¨ط§ط±",...] â€” ط£ط³ظ…ط§ط، ظ„ظ„ط¹ط±ط¶ ظˆط§ظ„ظپظ„ط§طھط± ط§ظ„ظ‚ط¯ظٹظ…ط©
-  sectionIds           Json?    @map("section_ids") // ["cuid",...] â€” ظ…طµط¯ط± ط§ظ„ط±ط¨ط· ط§ظ„ط­ظ‚ظٹظ‚ظٹ
-  productType          String   @default("order") @map("product_type") // order | sale
-  isActive             Boolean  @default(true) @map("is_active")
-  sortOrder            Int      @default(0) @map("sort_order")
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
-
-  company                       Company                        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  category                      OrderCategory?                 @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  conversionTemplate            OrderConversionTemplate?       @relation(fields: [conversionTemplateId], references: [id], onDelete: SetNull)
-  items                         OrderItem[]
-  staffItems                    StaffOrderItem[]
-  inventoryMovements            InventoryMovement[]
-  inventoryStocktakeLines       InventoryStocktakeLine[]
-  inventoryDefinitionVersionsV2 InventoryDefinitionVersionV2[]
-  inventoryLedgerEntriesV2      InventoryLedgerEntryV2[]
-
-  @@unique([companyId, id])
-  @@index([tenantId])
-  @@index([companyId])
-  @@index([companyId, categoryId])
-  @@index([companyId, conversionTemplateId])
-  @@map("order_products")
-}
-
-model InventoryStocktake {
-  id              String   @id @default(cuid())
-  tenantId        String   @map("tenant_id")
-  companyId       String   @map("company_id")
-  stocktakeDate   DateTime @map("stocktake_date") @db.Date
-  status          String   @default("approved")
-  notes           String?  @db.Text
-  createdByUserId String?  @map("created_by_user_id")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  company   Company                  @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  createdBy User?                    @relation("InventoryStocktakeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  lines     InventoryStocktakeLine[]
-  movements InventoryMovement[]
-
-  @@unique([companyId, id])
-  @@unique([companyId, id, stocktakeDate])
-  @@index([tenantId])
-  @@index([companyId, stocktakeDate])
-  @@map("inventory_stocktakes")
-}
-
-model InventoryStocktakeLine {
-  id               String   @id @default(cuid())
-  tenantId         String   @map("tenant_id")
-  companyId        String   @map("company_id")
-  stocktakeId      String   @map("stocktake_id")
-  stocktakeDate    DateTime @map("stocktake_date") @db.Date
-  productId        String   @map("product_id")
-  unit             String
-  expectedQuantity Decimal  @map("expected_quantity") @db.Decimal(18, 6)
-  physicalQuantity Decimal  @map("physical_quantity") @db.Decimal(18, 6)
-  varianceQuantity Decimal  @map("variance_quantity") @db.Decimal(18, 6)
-
-  company   Company            @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  stocktake InventoryStocktake @relation(fields: [stocktakeId], references: [id], onDelete: Restrict)
-  product   OrderProduct       @relation(fields: [productId], references: [id], onDelete: Restrict)
-
-  @@unique([stocktakeId, productId])
-  @@unique([companyId, productId, stocktakeDate])
-  @@index([tenantId])
-  @@index([companyId, productId])
-  @@map("inventory_stocktake_lines")
-}
-
-model InventoryMovement {
-  id              String   @id @default(cuid())
-  tenantId        String   @map("tenant_id")
-  companyId       String   @map("company_id")
-  productId       String   @map("product_id")
-  transactionDate DateTime @map("transaction_date") @db.Date
-  movementType    String   @map("movement_type")
-  quantityBase    Decimal  @map("quantity_base") @db.Decimal(18, 6)
-  stocktakeId     String?  @map("stocktake_id")
-  sourceKey       String   @unique @map("source_key")
-  notes           String?  @db.Text
-  createdByUserId String?  @map("created_by_user_id")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  company   Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  product   OrderProduct        @relation(fields: [productId], references: [id], onDelete: Restrict)
-  stocktake InventoryStocktake? @relation(fields: [stocktakeId], references: [id], onDelete: Restrict)
-  createdBy User?               @relation("InventoryMovementCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId])
-  @@index([companyId, productId, transactionDate])
-  @@index([stocktakeId])
-  @@map("inventory_movements")
-}
-
-model InventoryLocationV2 {
-  id             String   @id @default(cuid())
-  tenantId       String   @map("tenant_id")
-  companyId      String   @map("company_id")
-  code           String
-  nameAr         String   @map("name_ar")
-  nameEn         String?  @map("name_en")
-  kind           String   @default("warehouse")
-  orderSectionId String?  @map("order_section_id")
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  company       Company                  @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  orderSection  OrderSection?            @relation(fields: [orderSectionId], references: [id], onDelete: SetNull)
-  ledgerEntries InventoryLedgerEntryV2[]
-
-  @@unique([companyId, code])
-  @@index([tenantId])
-  @@index([companyId, isActive])
-  @@index([orderSectionId])
-  @@map("inventory_locations_v2")
-}
-
-model InventoryDefinitionVersionV2 {
-  id              String   @id @default(cuid())
-  tenantId        String   @map("tenant_id")
-  companyId       String   @map("company_id")
-  productId       String   @map("product_id")
-  kind            String
-  version         Int
-  schemaVersion   Int      @default(1) @map("schema_version")
-  baseUnit        String   @map("base_unit")
-  payload         Json
-  contentHash     String   @map("content_hash")
-  provenance      String   @default("catalog")
-  status          String   @default("published")
-  createdByUserId String?  @map("created_by_user_id")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  company                 Company                  @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  product                 OrderProduct             @relation(fields: [productId], references: [id], onDelete: Restrict)
-  createdBy               User?                    @relation("InventoryDefinitionVersionV2CreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  orderItems              OrderItem[]              @relation("OrderItemInventoryConversionVersionV2")
-  staffOrderItems         StaffOrderItem[]         @relation("StaffOrderItemInventoryRecipeVersionV2")
-  conversionLedgerEntries InventoryLedgerEntryV2[] @relation("InventoryLedgerConversionVersionV2")
-  recipeLedgerEntries     InventoryLedgerEntryV2[] @relation("InventoryLedgerRecipeVersionV2")
-
-  @@unique([productId, kind, version])
-  @@unique([productId, kind, contentHash])
-  @@index([tenantId])
-  @@index([companyId, productId, kind, status])
-  @@map("inventory_definition_versions_v2")
-}
-
-model InventoryLedgerEntryV2 {
-  id                   String   @id @default(cuid())
-  sequence             BigInt   @unique @default(autoincrement())
-  tenantId             String   @map("tenant_id")
-  companyId            String   @map("company_id")
-  productId            String   @map("product_id")
-  locationId           String   @map("location_id")
-  effectiveAt          DateTime @map("effective_at")
-  entryType            String   @map("entry_type")
-  quantityDelta        Decimal  @map("quantity_delta") @db.Decimal(18, 6)
-  unitCost             Decimal  @map("unit_cost") @db.Decimal(18, 6)
-  valueDelta           Decimal  @map("value_delta") @db.Decimal(18, 6)
-  quantityAfter        Decimal  @map("quantity_after") @db.Decimal(18, 6)
-  valueAfter           Decimal  @map("value_after") @db.Decimal(18, 6)
-  averageUnitCostAfter Decimal  @map("average_unit_cost_after") @db.Decimal(18, 6)
-  sourceKey            String   @map("source_key")
-  sourceHash           String   @map("source_hash")
-  sourceType           String   @map("source_type")
-  sourceSnapshot       Json     @map("source_snapshot")
-  pairKey              String?  @map("pair_key")
-  reversalOfId         String?  @map("reversal_of_id")
-  conversionVersionId  String?  @map("conversion_version_id")
-  recipeVersionId      String?  @map("recipe_version_id")
-  createdByUserId      String?  @map("created_by_user_id")
-  createdAt            DateTime @default(now()) @map("created_at")
-
-  company           Company                       @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  product           OrderProduct                  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  location          InventoryLocationV2           @relation(fields: [locationId], references: [id], onDelete: Restrict)
-  reversalOf        InventoryLedgerEntryV2?       @relation("InventoryLedgerEntryV2Reversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
-  reversals         InventoryLedgerEntryV2[]      @relation("InventoryLedgerEntryV2Reversal")
-  conversionVersion InventoryDefinitionVersionV2? @relation("InventoryLedgerConversionVersionV2", fields: [conversionVersionId], references: [id], onDelete: Restrict)
-  recipeVersion     InventoryDefinitionVersionV2? @relation("InventoryLedgerRecipeVersionV2", fields: [recipeVersionId], references: [id], onDelete: Restrict)
-  createdBy         User?                         @relation("InventoryLedgerEntryV2CreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-
-  @@unique([companyId, sourceKey])
-  @@index([tenantId])
-  @@index([companyId, productId, locationId, sequence])
-  @@index([companyId, effectiveAt])
-  @@index([pairKey])
-  @@index([reversalOfId])
-  @@map("inventory_ledger_entries_v2")
-}
-
-model Order {
-  id                  String   @id @default(cuid())
-  tenantId            String   @map("tenant_id")
-  companyId           String   @map("company_id")
-  orderNumber         String   @map("order_number") // ORD-20260315-001
-  orderDate           DateTime @map("order_date")
-  orderType           String   @map("order_type") // external | internal | transfer
-  pettyCashAmount     Decimal? @map("petty_cash_amount") @db.Decimal(18, 4) // ظ„ظ„ط®ط§ط±ط¬ظٹ ظپظ‚ط·
-  totalAmount         Decimal  @map("total_amount") @db.Decimal(18, 4)
-  notes               String?
-  sourceStaffOrderIds Json?    @map("source_staff_order_ids")
-  status              String   @default("active") @map("status") // active | cancelled
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
-
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  items       OrderItem[]
-  staffOrders StaffOrder[]
-
-  @@unique([companyId, orderNumber])
-  @@index([tenantId])
-  @@index([companyId])
-  @@index([companyId, orderDate])
-  @@map("orders")
-}
-
-model OrderItem {
-  id                             String   @id @default(cuid())
-  orderId                        String   @map("order_id")
-  productId                      String   @map("product_id")
-  size                           String?  @map("size") // ط§ظ„ط­ط¬ظ… ط§ظ„ظ…ط®طھط§ط±
-  packaging                      String?  @map("packaging") // ط§ظ„طھط؛ظ„ظٹظپ ط§ظ„ظ…ط®طھط§ط±
-  unit                           String?  @map("unit") // ط§ظ„ظˆط­ط¯ط© ط§ظ„ظ…ط®طھط§ط±ط© (piece|kg|box|dozen)
-  quantity                       Decimal  @db.Decimal(18, 4)
-  quantityMultiplier             Decimal  @default(1) @map("quantity_multiplier") @db.Decimal(18, 4)
-  inventoryBaseQuantitySnapshot  Decimal? @map("inventory_base_quantity_snapshot") @db.Decimal(18, 6)
-  inventoryConversionVersionIdV2 String?  @map("inventory_conversion_version_id_v2")
-  unitPrice                      Decimal  @map("unit_price") @db.Decimal(18, 4)
-  amount                         Decimal  @db.Decimal(18, 4)
-
-  order                        Order                         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product                      OrderProduct                  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  inventoryConversionVersionV2 InventoryDefinitionVersionV2? @relation("OrderItemInventoryConversionVersionV2", fields: [inventoryConversionVersionIdV2], references: [id], onDelete: Restrict)
-
-  @@index([orderId])
-  @@index([productId])
-  @@index([inventoryConversionVersionIdV2])
-  @@map("order_items")
-}
 
 // â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 // STAFF ORDERS â€” ط·ظ„ط¨ط§طھ ط§ظ„ط£ظ‚ط³ط§ظ… (ظ…ط·ط¨ط®طŒ ط¨ط§ط±طŒ ...)
 // ظ…ظˆط¸ظپ ظٹظڈظ†ط´ط¦ ط§ظ„ط·ظ„ط¨طŒ ط§ظ„ظƒط§ط´ظٹط± ظٹط¬ظ…ط¹ظ‡ط§ ظˆظٹط±ط³ظ„ ظˆط§طھط³ط§ط¨ ظ…ظˆط­ظ‘ط¯
 // â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 
-model StaffOrder {
-  id              String    @id @default(cuid())
-  tenantId        String    @map("tenant_id")
-  companyId       String    @map("company_id")
-  userId          String    @map("user_id")
-  sectionName     String    @map("section_name") // ظ…ط·ط¨ط® | ط¨ط§ط± | ظƒط§ط´ظٹط± | ...
-  orderType       String    @default("order") @map("order_type") // order | sale
-  entryType       String    @default("issue") @map("entry_type") // issue | cancellation
-  status          String    @default("pending") // pending | sent
-  logRef          String?   @map("log_ref") // ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ظ…ط®طھطµط± ظ„ظ„طھط³ط¬ظٹظ„ ط§ظ„ط¯ط§ط®ظ„ظٹ (L-YYMMDD-NNN)
-  saleDate        DateTime? @map("sale_date") @db.Date // ظٹظˆظ… ط§ظ„ظ…ط¨ظٹط¹ط§طھ (ظ„ظ€ orderType=sale)
-  notes           String?
-  sentAt          DateTime? @map("sent_at")
-  purchaseOrderId String?   @map("purchase_order_id")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-
-  company       Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  purchaseOrder Order?           @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
-  items         StaffOrderItem[]
-
-  @@index([tenantId])
-  @@index([companyId])
-  @@index([companyId, status])
-  @@index([companyId, orderType, entryType, saleDate])
-  @@index([companyId, logRef])
-  @@index([userId])
-  @@map("staff_orders")
-}
-
-model StaffOrderItem {
-  id                           String   @id @default(cuid())
-  staffOrderId                 String   @map("staff_order_id")
-  productId                    String   @map("product_id")
-  quantity                     Decimal  @db.Decimal(18, 4)
-  quantityMultiplier           Decimal  @default(1) @map("quantity_multiplier") @db.Decimal(18, 4)
-  inventoryConsumptionSnapshot Json?    @map("inventory_consumption_snapshot")
-  inventoryRecipeVersionIdV2   String?  @map("inventory_recipe_version_id_v2")
-  size                         String?  @map("size")
-  packaging                    String?  @map("packaging")
-  unit                         String?
-  unitPrice                    Decimal  @default(0) @map("unit_price") @db.Decimal(18, 4)
-  notes                        String?
-  cancellationReasons          Json?    @map("cancellation_reasons")
-  createdAt                    DateTime @default(now()) @map("created_at")
-
-  staffOrder               StaffOrder                    @relation(fields: [staffOrderId], references: [id], onDelete: Cascade)
-  product                  OrderProduct                  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  inventoryRecipeVersionV2 InventoryDefinitionVersionV2? @relation("StaffOrderItemInventoryRecipeVersionV2", fields: [inventoryRecipeVersionIdV2], references: [id], onDelete: Restrict)
-
-  @@index([staffOrderId])
-  @@index([productId])
-  @@index([inventoryRecipeVersionIdV2])
-  @@map("staff_order_items")
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // SHISHA INVENTORY — immutable operational ledger under Orders
 // Manual balances are never edited in place. Purchases and approved stocktakes
-// append movements; staff sales are read directly from StaffOrder records.
+// Manual balances are append-only and fully isolated from Orders V4.
 // ═══════════════════════════════════════════════════════════════════════════════
-
-model ShishaInventorySettings {
-  id                                String    @id @default(cuid())
-  tenantId                          String    @map("tenant_id")
-  companyId                         String    @unique @map("company_id")
-  trackingStartedAt                 DateTime  @map("tracking_started_at") @db.Date
-  headsPerKg                        Decimal   @default(39) @map("heads_per_kg") @db.Decimal(10, 4)
-  charcoalPacksPerCarton            Int       @default(10) @map("charcoal_packs_per_carton")
-  charcoalPiecesPerPack             Int       @default(64) @map("charcoal_pieces_per_pack")
-  shishaSectionId                   String?   @map("shisha_section_id")
-  changeProductId                   String?   @map("change_product_id")
-  charcoalConsumptionProductId      String?   @map("charcoal_consumption_product_id")
-  charcoalActualTrackingStartedAt   DateTime? @map("charcoal_actual_tracking_started_at") @db.Date
-  charcoalPurchaseProductId         String?   @map("charcoal_purchase_product_id")
-  charcoalPurchaseTrackingStartedAt DateTime? @map("charcoal_purchase_tracking_started_at")
-  createdAt                         DateTime  @default(now()) @map("created_at")
-  updatedAt                         DateTime  @updatedAt @map("updated_at")
-
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId])
-  @@map("shisha_inventory_settings")
-}
-
-model ShishaInventoryMovement {
-  id              String   @id @default(cuid())
-  tenantId        String   @map("tenant_id")
-  companyId       String   @map("company_id")
-  transactionDate DateTime @map("transaction_date") @db.Date
-  movementType    String   @map("movement_type") // opening | purchase | stocktake_adjustment
-  materialType    String   @map("material_type") // tobacco | hose | charcoal
-  quantityBase    Decimal  @map("quantity_base") @db.Decimal(18, 6) // gram for tobacco, piece otherwise
-  costInclVat     Decimal? @map("cost_incl_vat") @db.Decimal(18, 4)
-  invoiceNumber   String?  @map("invoice_number")
-  supplierName    String?  @map("supplier_name")
-  sourceKey       String?  @unique @map("source_key")
-  stocktakeId     String?  @map("stocktake_id")
-  notes           String?  @db.Text
-  createdByUserId String?  @map("created_by_user_id")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  stocktake ShishaStocktake? @relation(fields: [stocktakeId], references: [id], onDelete: Restrict)
-  createdBy User?            @relation("ShishaInventoryMovementCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId])
-  @@index([companyId, transactionDate])
-  @@index([companyId, materialType, transactionDate])
-  @@index([stocktakeId])
-  @@map("shisha_inventory_movements")
-}
-
-model ShishaStocktake {
-  id                     String   @id @default(cuid())
-  tenantId               String   @map("tenant_id")
-  companyId              String   @map("company_id")
-  stocktakeDate          DateTime @map("stocktake_date") @db.Date
-  status                 String   @default("approved")
-  expectedTobaccoGrams   Decimal  @map("expected_tobacco_grams") @db.Decimal(18, 6)
-  physicalTobaccoGrams   Decimal  @map("physical_tobacco_grams") @db.Decimal(18, 6)
-  tobaccoVarianceGrams   Decimal  @map("tobacco_variance_grams") @db.Decimal(18, 6)
-  expectedHoses          Decimal  @map("expected_hoses") @db.Decimal(18, 6)
-  physicalHoses          Decimal  @map("physical_hoses") @db.Decimal(18, 6)
-  hoseVariance           Decimal  @map("hose_variance") @db.Decimal(18, 6)
-  expectedCharcoalPieces Decimal  @map("expected_charcoal_pieces") @db.Decimal(18, 6)
-  physicalCharcoalPieces Decimal  @map("physical_charcoal_pieces") @db.Decimal(18, 6)
-  charcoalVariancePieces Decimal  @map("charcoal_variance_pieces") @db.Decimal(18, 6)
-  notes                  String?  @db.Text
-  createdByUserId        String?  @map("created_by_user_id")
-  createdAt              DateTime @default(now()) @map("created_at")
-
-  company   Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  createdBy User?                     @relation("ShishaStocktakeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  movements ShishaInventoryMovement[]
-
-  @@unique([companyId, stocktakeDate])
-  @@index([tenantId])
-  @@index([companyId, stocktakeDate])
-  @@map("shisha_stocktakes")
-}
 
 // â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 // â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
@@ -2294,4 +1793,25 @@ model OrdersV4MigrationMap {
   @@index([tenantId])
   @@index([companyId, migrationRunId, status])
   @@map("orders_v4_migration_map")
+}
+
+/// Immutable, non-operational evidence retained when a retired Orders data
+/// path has no safe semantic equivalent in the V4 accounting kernel.
+model OrdersV4LegacyArchive {
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+  companyId      String   @map("company_id")
+  sourceSystem   String   @map("source_system")
+  sourceTable    String   @map("source_table")
+  sourceId       String   @map("source_id")
+  sourceChecksum String   @map("source_checksum")
+  payload        Json
+  archivedAt     DateTime @default(now()) @map("archived_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, sourceSystem, sourceTable, sourceId])
+  @@index([tenantId])
+  @@index([companyId, sourceSystem, sourceTable])
+  @@map("orders_v4_legacy_archives")
 }

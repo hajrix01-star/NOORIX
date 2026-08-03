@@ -70,10 +70,14 @@ custody ledger sequence, and document-to-line operational cost reconciliation.
 The inventory balance query reads only the latest ledger entry for each
 item/location pair and converts it to the selected display unit for presentation.
 
-## Migration readiness
+## Retired-domain boundary
 
-The future legacy migration must map each imported item to one immutable kernel
-unit before importing documents or balances. It must use the same posting and
-versioning boundaries or an equivalent audited bulk-import transaction. Source
-and destination counts, totals, balances, unit paths, recipe costs, custody, and
-cash classifications must be reconciled before any legacy module is removed.
+The one-time legacy cutover mapped every imported item to an immutable kernel
+unit and recorded verified source-to-target identities. Retirement is protected
+by a local verified database backup and a fail-closed migration that reconciles
+document status, line counts, mapped items, base quantities, line totals, and
+document totals before explicitly dropping the old tables without `CASCADE`.
+Rows from the superseded Shisha-only ledger have no operational V4 equivalent;
+they are copied intact to the append-only `orders_v4_legacy_archives` table and
+verified by row count and per-row checksum before their source tables are dropped.
+Normal V4 runtime contains no cutover service or legacy model dependency.

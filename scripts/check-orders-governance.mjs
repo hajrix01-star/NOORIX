@@ -1,183 +1,85 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  operationalQuantityMultiplierFailures,
-  ordersV2SnapshotConventionFailures,
+  LEGACY_ORDERS_PATHS,
+  findLegacyRuntimeReferences,
 } from './orders-governance-rules.mjs';
 
 const root = process.cwd();
 const failures = [];
 
-const strictTargets = [
-  'src/modules/Orders',
-  'src/hooks/useOrders.ts',
-  'src/services/domains/apiEndpoints/orders.ts',
-  'src/services/queryKeys/orders.ts',
-  'src/types/api/domains/orders.ts',
-  'src/utils/ordersExport.ts',
-  'backend/src/orders',
-];
+function read(rel) {
+  const file = path.join(root, rel);
+  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+}
 
-const requiredFiles = [
-  'src/types/api/domains/orders.ts',
-  'src/modules/Orders/utils/ordersReportModel.ts',
-  'src/modules/Orders/components/OrderConfirmModal.tsx',
-  'backend/src/orders/orders-month-summary.util.ts',
-];
-
-const legacyRuntimeTargets = [
-  'src/modules/Orders',
-  'src/hooks/useOrders.ts',
-  'src/hooks/orders',
-  'src/services/domains/apiEndpoints/orders.ts',
-  'src/services/queryKeys/orders.ts',
-  'src/types/api',
-  'backend/src/orders',
-  'backend/src/owner/owner-admin-dashboard.service.ts',
-  'backend/src/owner/owner-admin-dashboard.service.spec.ts',
-];
-
-const legacyShishaRuntimeChecks = [
-  { pattern: /shishaInventory/, message: 'legacy shisha inventory runtime is removed; use recipe inventory instead' },
-  { pattern: /ShishaInventory/, message: 'legacy shisha inventory runtime is removed; use recipe inventory instead' },
-  { pattern: /shisha-inventory/, message: 'legacy shisha inventory endpoint is removed; use recipe inventory instead' },
-  { pattern: /ShishaPurchaseSheet/, message: 'legacy shisha purchase sheet is removed; use orders purchase flow instead' },
-  { pattern: /useShishaInventory/, message: 'legacy shisha inventory hook is removed; use recipe inventory hooks instead' },
-];
-
-const operationalQuantityMultiplierTargets = [
-  'backend/src/orders/dto',
-  'backend/src/orders/orders.controller.ts',
-  'backend/src/orders/orders-staff.types.ts',
-  'backend/src/orders/orders-catalog-product.types.ts',
-  'backend/src/orders/orders.service.ts',
-  'src/services/domains/apiEndpoints/orders.ts',
-  'src/hooks/useOrders.ts',
-  'src/hooks/orders',
-  'src/types/api/domains/orders.ts',
-];
-
-function walk(target, acc = []) {
-  const full = path.join(root, target);
+function walk(rel, acc = []) {
+  const full = path.join(root, rel);
   if (!fs.existsSync(full)) return acc;
   const stat = fs.statSync(full);
   if (stat.isDirectory()) {
     for (const entry of fs.readdirSync(full)) {
-      if (['node_modules', 'dist', 'build'].includes(entry)) continue;
-      walk(path.join(target, entry), acc);
+      if (['node_modules', 'dist', 'build', 'coverage', 'migrations'].includes(entry)) continue;
+      walk(path.join(rel, entry), acc);
     }
-  } else if (/\.(ts|tsx|js|mjs)$/.test(target)) {
-    acc.push(target.replaceAll('\\', '/'));
+  } else if (/\.(?:ts|tsx|js|mjs)$/.test(rel) && !/\.(?:spec|test)\.[cm]?[jt]sx?$/.test(rel)) {
+    acc.push(rel.replaceAll('\\', '/'));
   }
   return acc;
 }
 
-function read(file) {
-  return fs.existsSync(path.join(root, file)) ? fs.readFileSync(path.join(root, file), 'utf8') : '';
+for (const rel of LEGACY_ORDERS_PATHS) {
+  if (fs.existsSync(path.join(root, rel))) failures.push(`${rel}: legacy Orders path must stay deleted`);
 }
 
-function fail(file, message) {
-  failures.push(`${file} - ${message}`);
+for (const rel of ['backend/src', 'src', 'packages/permissions-core/src'].flatMap((dir) => walk(dir))) {
+  for (const match of findLegacyRuntimeReferences(read(rel))) failures.push(`${rel}: ${match}`);
 }
 
-for (const file of requiredFiles) {
-  if (!fs.existsSync(path.join(root, file))) fail(file, 'required orders closure file is missing');
+const appModule = read('backend/src/app.module.ts');
+if (!appModule.includes('OrdersV4Module')) failures.push('backend/src/app.module.ts: Orders V4 module is not registered');
+if (/\bOrdersModule\b/.test(appModule)) failures.push('backend/src/app.module.ts: legacy Orders module is registered');
+
+const v4Module = read('backend/src/orders-v4/orders-v4.module.ts');
+if (/OrdersModule|LegacyCutover|\.\.\/orders/.test(v4Module)) {
+  failures.push('backend/src/orders-v4/orders-v4.module.ts: Orders V4 still depends on legacy Orders');
 }
 
-for (const file of strictTargets.flatMap((target) => walk(target))) {
-  const source = read(file);
-  const checks = [
-    { pattern: /:\s*any\b/, message: 'explicit any is not allowed in orders closure scope' },
-    { pattern: /\bany\[\]/, message: 'any[] is not allowed in orders closure scope' },
-    { pattern: /<\s*any\s*>/, message: 'generic any is not allowed in orders closure scope' },
-    { pattern: /as\s+any\b/, message: 'as any is not allowed in orders closure scope' },
-    { pattern: /as\s+never\b/, message: 'as never is not allowed in orders closure scope' },
-    { pattern: /as\s+unknown\b/, message: 'as unknown is not allowed in orders closure scope' },
-    { pattern: /Record<[^>\n]*\bany\b[^>\n]*>/, message: 'Record with any is not allowed in orders closure scope' },
-    { pattern: /@ts-ignore|@ts-expect-error|eslint-disable/, message: 'compiler or lint suppression is not allowed in orders closure scope' },
-    { pattern: /\bTODO\b|\bFIXME\b/, message: 'open TODO/FIXME markers are not allowed in orders closure scope' },
-    { pattern: /window\.confirm|window\.print\(/, message: 'direct browser confirm/print is not allowed in orders closure scope' },
-  ];
-  for (const check of checks) {
-    if (check.pattern.test(source)) fail(file, check.message);
-  }
-}
-
-for (const file of legacyRuntimeTargets.flatMap((target) => walk(target))) {
-  const source = read(file);
-  for (const check of legacyShishaRuntimeChecks) {
-    if (check.pattern.test(source)) fail(file, check.message);
-  }
-}
-
-for (const file of operationalQuantityMultiplierTargets.flatMap((target) => walk(target))) {
-  for (const message of operationalQuantityMultiplierFailures(file, read(file))) {
-    fail(file, message);
-  }
-}
-
-for (const message of ordersV2SnapshotConventionFailures({
-  schema: read('backend/prisma/schema.prisma'),
-  ordersService: read('backend/src/orders/orders.service.ts'),
-  consumptionSnapshot: read('backend/src/orders/orders-inventory-consumption-snapshot.util.ts'),
-  snapshotSql: read('backend/src/orders/orders-inventory-snapshot.sql.ts'),
-})) {
-  fail('Orders V2 snapshot/schema', message);
-}
-
-const ordersTab = read('src/modules/Orders/components/OrdersTab.tsx');
-if (!ordersTab.includes('useOrdersRangeSummary(companyId, startDate, endDate)')) {
-  fail('src/modules/Orders/components/OrdersTab.tsx', 'orders range summary must come from the backend-owned range summary hook');
-}
-if (/getDailySalesSummaries|salesKeys\.summaries|computeCashSalesTotal|computeOrdersRangeRollup/.test(ordersTab)) {
-  fail('src/modules/Orders/components/OrdersTab.tsx', 'orders screen must not derive official summary numbers from paginated sales data or frontend rollups');
-}
-if (/cashRemaining\s*=\s*cashSales\s*-/.test(read('src/modules/Orders/components/OrdersSummaryCard.tsx'))) {
-  fail('src/modules/Orders/components/OrdersSummaryCard.tsx', 'summary card must not own official cash remaining arithmetic');
-}
-if (!read('src/services/domains/apiEndpoints/orders.ts').includes('getOrdersRangeSummary')) {
-  fail('src/services/domains/apiEndpoints/orders.ts', 'missing backend-owned orders range summary endpoint wrapper');
-}
-if (!read('backend/src/orders/orders.service.ts').includes('getRangeSummary')) {
-  fail('backend/src/orders/orders.service.ts', 'missing backend-owned orders range summary service');
-}
-
-const apiTypes = read('src/types/api/domains/orders.ts');
-for (const requiredType of [
-  'OrderRecord',
-  'OrderSummary',
-  'OrderItemsReportRow',
-  'StaffOrder',
-  'OrderProductPayload',
-  'OrderCategoryPayload',
+const schema = read('backend/prisma/schema.prisma');
+for (const model of [
+  'OrderCategory', 'OrderSection', 'OrderCatalogUnit', 'OrderConversionTemplate', 'OrderProduct',
+  'InventoryStocktake', 'InventoryStocktakeLine', 'InventoryMovement', 'InventoryLocationV2',
+  'InventoryDefinitionVersionV2', 'InventoryLedgerEntryV2', 'Order', 'OrderItem', 'StaffOrder', 'StaffOrderItem',
+  'ShishaInventorySettings', 'ShishaInventoryMovement', 'ShishaStocktake',
 ]) {
-  if (!apiTypes.includes(requiredType)) {
-    fail('src/types/api/domains/orders.ts', `missing central orders contract: ${requiredType}`);
-  }
+  if (new RegExp(`model\\s+${model}\\b`).test(schema)) failures.push(`backend/prisma/schema.prisma: legacy model ${model} remains`);
 }
 
-const packageJson = read('package.json');
-if (!packageJson.includes('"check:orders-governance": "node scripts/check-orders-governance.mjs"')) {
-  fail('package.json', 'missing check:orders-governance script');
+const retirement = read('backend/prisma/migrations/20260803180000_retire_legacy_orders/migration.sql');
+for (const required of [
+  'DROP TABLE IF EXISTS "orders"', 'DROP TABLE IF EXISTS "staff_orders"',
+  'DROP TABLE IF EXISTS "shisha_inventory_settings"', 'orders_v4_legacy_archives',
+  'Shisha archive parity failed', 'Legacy Orders retirement aborted',
+]) {
+  if (!retirement.includes(required)) failures.push(`retirement migration: missing ${required}`);
 }
-if (!packageJson.includes('"test:orders-governance": "vitest run scripts/check-orders-governance.test.mjs"')) {
-  fail('package.json', 'missing focused Orders V2 governance test script');
-}
+if (/DROP TABLE[^;]*CASCADE/i.test(retirement)) failures.push('retirement migration: CASCADE is forbidden');
 
-const consolidatedGovernance = read('scripts/check-system-governance-consolidated.mjs');
-if (!consolidatedGovernance.includes("'check-orders-governance.mjs'")) {
-  fail('scripts/check-system-governance-consolidated.mjs', 'orders governance must run in consolidated governance');
+const backupScript = read('deploy/backup-legacy-orders-before-retirement.sh');
+if (!backupScript.includes('pg_dump') || !backupScript.includes('pg_restore --list') || !backupScript.includes('sha256sum')) {
+  failures.push('deploy/backup-legacy-orders-before-retirement.sh: verified pre-retirement backup is incomplete');
 }
-
-const ciWorkflow = read('.github/workflows/ci.yml');
-if (!ciWorkflow.includes('npm run check:system-governance-consolidated')) {
-  fail('.github/workflows/ci.yml', 'consolidated governance must run in CI');
+for (const table of ['shisha_inventory_settings', 'shisha_inventory_movements', 'shisha_stocktakes']) {
+  if (!backupScript.includes(table)) failures.push(`deploy/backup-legacy-orders-before-retirement.sh: missing ${table}`);
+}
+if (!read('.github/workflows/deploy.yml').includes('backup-legacy-orders-before-retirement.sh')) {
+  failures.push('.github/workflows/deploy.yml: pre-retirement backup is not wired before migrations');
 }
 
 if (failures.length) {
-  console.error('Orders governance failed:\n');
+  console.error('Orders retirement governance failed:\n');
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
 
-console.log('Orders governance passed.');
+console.log('Orders retirement governance passed.');

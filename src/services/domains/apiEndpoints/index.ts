@@ -6,7 +6,6 @@ export * from './accounts-categories-expense';
 export * from './company-assets';
 export * from './sales-summaries';
 export * from './reports';
-export * from './orders';
 export * from './ordersV4';
 export * from './vaults';
 export * from './employees';

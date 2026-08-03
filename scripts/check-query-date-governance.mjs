@@ -20,8 +20,6 @@ const allowedIsoSerializationFiles = new Map([
   ['src/modules/HajriTax/HajriTaxBulkImportModal.tsx', 'import metadata timestamp'],
   ['src/modules/HajriTax/useHajriTaxExports.ts', 'export metadata timestamp'],
   ['src/modules/HajriTax/useHajriTaxScreen.ts', 'import metadata timestamp'],
-  ['src/modules/Orders/utils/itemsCatalogPrint.ts', 'print/export filename timestamp'],
-  ['src/modules/Orders/utils/itemsCatalogWeeklyPrint.ts', 'print/export filename timestamp'],
   ['src/modules/Reports/costAccountingAppsModel.ts', 'cost-accounting scenario model date normalization'],
   ['src/modules/Reports/costAccountingAppsScenario.ts', 'scenario export metadata timestamp'],
   ['src/modules/Reports/costAccountingApps/useCostAccountingAppsSavedScenarios.ts', 'local saved-scenario metadata timestamp'],

@@ -5,16 +5,16 @@ import { matches } from './utils';
 export const ordersHandler: ChatHandler = {
   priority: 40,
   intent: 'orders',
-  matchesIntent: (intent, can) => intent === 'orders' && can(PERMISSIONS.VIEW_SALES),
+  matchesIntent: (intent, can) => intent === 'orders' && can(PERMISSIONS.ORDERS_V4_READ),
   canHandle: (q, can) =>
-    matches(q, ['أصناف', 'صنف', 'منتجات', 'طلبات', 'order', 'product', 'فئات الطلبات']) && can(PERMISSIONS.VIEW_SALES),
+    matches(q, ['أصناف', 'صنف', 'منتجات', 'طلبات', 'order', 'product', 'فئات الطلبات']) && can(PERMISSIONS.ORDERS_V4_READ),
   process: async (ctx) => {
     const { companyId } = ctx;
     const { prisma } = ctx;
     const [orderCount, productCount, catCount] = await Promise.all([
-      prisma.order.count({ where: { companyId } }),
-      prisma.orderProduct.count({ where: { companyId, isActive: true } }),
-      prisma.orderCategory.count({ where: { companyId, isActive: true } }),
+      prisma.ordersV4Document.count({ where: { companyId } }),
+      prisma.ordersV4Item.count({ where: { companyId, isActive: true } }),
+      prisma.ordersV4Category.count({ where: { companyId, isActive: true } }),
     ]);
     return {
       answerAr: `الطلبات: ${orderCount} | أصناف المنتجات: ${productCount} | فئات الطلبات: ${catCount}`,

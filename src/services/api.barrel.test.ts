@@ -18,11 +18,11 @@ describe('services/api barrel (apiEndpoints)', () => {
     expect(typeof api.backupGetCompanyConfig).toBe('function');
   });
 
-  it('re-exports sales, reports, orders, vaults, employees, HR, and suppliers', () => {
+  it('re-exports sales, reports, Orders V4, vaults, employees, HR, and suppliers', () => {
     expect(typeof api.getDailySalesSummaries).toBe('function');
     expect(typeof api.getGeneralProfitLossReport).toBe('function');
     expect(typeof api.upsertVatPlanning).toBe('function');
-    expect(typeof api.getOrders).toBe('function');
+    expect(typeof api.getOrdersV4Documents).toBe('function');
     expect(typeof api.getVaults).toBe('function');
     expect(typeof api.getEmployees).toBe('function');
     expect(typeof api.getPayrollRuns).toBe('function');

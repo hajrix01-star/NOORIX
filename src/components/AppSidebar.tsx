@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, type NavLinkRenderProps } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
-import { hasPermission, hasAnyOfPermissions, HR_APP_ACCESS, SETTINGS_APP_ACCESS, INVOICES_ROUTE_ACCESS, REPORTS_APP_ACCESS, REPORTS_GENERAL_ACCESS, REPORTS_COST_APPS_ACCESS, REPORTS_TAX_ACCESS, REPORTS_BANK_ACCESS, HAJRI_TAX_APP_ACCESS, ASSETS_APP_ACCESS, ORDERS_APP_ACCESS, ORDERS_V4_APP_ACCESS } from '../constants/permissions';
+import { hasPermission, hasAnyOfPermissions, HR_APP_ACCESS, SETTINGS_APP_ACCESS, INVOICES_ROUTE_ACCESS, REPORTS_APP_ACCESS, REPORTS_GENERAL_ACCESS, REPORTS_COST_APPS_ACCESS, REPORTS_TAX_ACCESS, REPORTS_BANK_ACCESS, HAJRI_TAX_APP_ACCESS, ASSETS_APP_ACCESS, ORDERS_V4_APP_ACCESS } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
 import { canAccessThemePreview } from '../utils/themePreviewAccess';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
@@ -36,7 +36,6 @@ const SIDEBAR_LINKS = [
   { to: '/treasury', labelKey: 'vaults', icon: IconDollar, permission: 'VIEW_VAULTS' },
   { to: '/expenses', labelKey: 'fixedAndVariableExpenses', icon: IconWallet, permission: 'VIEW_EXPENSES' },
   { to: '/assets', labelKey: 'assetsRegister', icon: IconMonitor, permission: ASSETS_APP_ACCESS },
-  { to: '/orders', labelKey: 'orders', icon: IconBox, permission: ORDERS_APP_ACCESS },
   { to: '/orders-v4', labelKey: 'ordersV4', icon: IconBox, permission: ORDERS_V4_APP_ACCESS },
   { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: HR_APP_ACCESS },
   { to: '/hajri-tax', labelKey: 'hajriTax', icon: IconDocument, permission: HAJRI_TAX_APP_ACCESS },

@@ -16,7 +16,7 @@ describe('getCompanyIdFromHttpRequest', () => {
   const realCompanyId = '11111111-1111-1111-1111-111111111111';
   const entityId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
-  it('PATCH /orders/:id uses query.companyId, not params.id', () => {
+  it('PATCH /orders-v4/documents/:id uses query.companyId, not params.id', () => {
     const req = mockRequest({
       method: 'PATCH',
       params: { id: entityId },
@@ -26,7 +26,7 @@ describe('getCompanyIdFromHttpRequest', () => {
     expect(getCompanyIdFromHttpRequest(req)).toBe(realCompanyId);
   });
 
-  it('PATCH /orders/:id uses x-company-id when query is absent', () => {
+  it('PATCH /orders-v4/documents/:id uses x-company-id when query is absent', () => {
     const req = mockRequest({
       method: 'PATCH',
       params: { id: entityId },

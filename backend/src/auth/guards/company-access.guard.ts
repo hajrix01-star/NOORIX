@@ -4,7 +4,7 @@
  * ترتيب استخراج companyId (من الأعلى أولويةً) — **مطابق** `getCompanyIdFromHttpRequest`:
  *   POST/PUT/PATCH:  body.companyId → params.companyId → query → x-company-id
  *   GET/DELETE/…:   params.companyId → query → x-company-id
- *   (لا يُستخدم params.id كشركة — يتعارض مع PATCH/GET لموارد مثل /orders/:id)
+ *   (لا يُستخدم params.id كشركة — يتعارض مع PATCH/GET لموارد مثل /orders-v4/documents/:id)
  *
  * التحققات:
  *   1. المستخدم مرتبط بالشركة — يُقرأ من DB (مُخزَّن مؤقتاً 60 ثانية لكل مستخدم)

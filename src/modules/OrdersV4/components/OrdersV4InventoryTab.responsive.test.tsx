@@ -9,7 +9,6 @@ const inventoryFixtures = vi.hoisted(() => ({
   ledgerHook: vi.fn(),
   stocktakesHook: vi.fn(),
   qualityHook: vi.fn(),
-  cutoverHook: vi.fn(),
   createStocktake: vi.fn(),
 }));
 
@@ -20,9 +19,7 @@ vi.mock('../useOrdersV4', () => ({
   useOrdersV4Ledger: (...args: unknown[]) => { inventoryFixtures.ledgerHook(...args); return { data: [], isLoading: false, error: null }; },
   useOrdersV4Stocktakes: (...args: unknown[]) => { inventoryFixtures.stocktakesHook(...args); return { data: [], isLoading: false, error: null }; },
   useOrdersV4DataQuality: (...args: unknown[]) => { inventoryFixtures.qualityHook(...args); return { data: { ready: true, errorCount: 0, warningCount: 0, issues: [] }, isLoading: false, error: null }; },
-  useOrdersV4CutoverAudit: (...args: unknown[]) => { inventoryFixtures.cutoverHook(...args); return { data: undefined, isLoading: false, error: null }; },
   useCreateOrdersV4Stocktake: () => ({ isPending: false, mutateAsync: inventoryFixtures.createStocktake }),
-  useExecuteOrdersV4Cutover: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
 const bootstrap = {
@@ -44,7 +41,6 @@ beforeEach(() => {
   inventoryFixtures.ledgerHook.mockClear();
   inventoryFixtures.stocktakesHook.mockClear();
   inventoryFixtures.qualityHook.mockClear();
-  inventoryFixtures.cutoverHook.mockClear();
   inventoryFixtures.createStocktake.mockReset().mockResolvedValue({});
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
@@ -68,11 +64,10 @@ afterEach(() => {
 
 describe('OrdersV4InventoryTab mobile stocktake workflow', () => {
   it('loads heavy inventory sources only when their tab is opened', () => {
-    render(<OrdersV4InventoryTab companyId="company-1" bootstrap={bootstrap} canWrite canCutover />);
+    render(<OrdersV4InventoryTab companyId="company-1" bootstrap={bootstrap} canWrite />);
     expect(inventoryFixtures.ledgerHook).toHaveBeenLastCalledWith('company-1', false, 250);
     expect(inventoryFixtures.stocktakesHook).toHaveBeenLastCalledWith('company-1', false, 100);
     expect(inventoryFixtures.qualityHook).toHaveBeenLastCalledWith('company-1', false);
-    expect(inventoryFixtures.cutoverHook).toHaveBeenLastCalledWith('company-1', false);
 
     fireEvent.click(screen.getByRole('tab', { name: 'دفتر الحركات' }));
     expect(inventoryFixtures.ledgerHook).toHaveBeenLastCalledWith('company-1', true, 250);

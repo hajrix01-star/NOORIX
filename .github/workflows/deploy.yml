@@ -69,12 +69,6 @@ jobs:
           VITE_BUILD_ID: ${{ github.sha }}
 
       # ── نشر الواجهة إلى مجلد Nginx ──────────────────────
-      - name: Deploy frontend to Nginx root
-        run: |
-          tar czf /tmp/noorix-frontend.tar.gz -C dist .
-          sudo bash deploy/install-frontend.sh /tmp/noorix-frontend.tar.gz "${{ github.sha }}"
-          rm -f /tmp/noorix-frontend.tar.gz
-
       # ── تحديث الخلفية وإعادة بنائها في مسار الإنتاج ────
       - name: Ensure OCR queue infra (Redis or inline fallback)
         run: bash "${{ github.workspace }}/deploy/ensure-ocr-queue-infra.sh"
@@ -125,6 +119,23 @@ jobs:
             || (sleep 5; npx prisma generate) \
             || (sleep 5; npx prisma generate)
 
+          echo "==> clean TypeScript incremental cache before build"
+          rm -f dist/tsconfig.build.tsbuildinfo 2>/dev/null || true
+
+          echo "==> build the replacement API before any destructive migration"
+          npm run build
+
+          if ! grep -rq 'saudi-occasions' "$PROD/dist/dashboard/"; then
+            echo "ERROR: dist built without saudi-occasions route" >&2
+            exit 1
+          fi
+
+          echo "==> quiesce API so backup and retirement observe one exact database state"
+          sudo systemctl stop noorix-backend
+
+          echo "==> protected backup before legacy Orders retirement"
+          bash "$WORKSPACE/deploy/backup-legacy-orders-before-retirement.sh" "$PROD"
+
           echo "==> prisma migrate deploy"
           bash "$WORKSPACE/deploy/prisma-migrate-deploy-with-recovery.sh"
 
@@ -134,24 +145,17 @@ jobs:
           echo "==> backfill sales shift from notes (legacy rows)"
           node scripts/backfill-sales-shift-from-notes.mjs || echo "WARN: shift backfill skipped/failed"
 
-          echo "==> تنظيف TypeScript incremental cache قبل البناء (يمنع أخطاء stale tsbuildinfo)"
-          rm -f dist/tsconfig.build.tsbuildinfo 2>/dev/null || true
+          echo "==> install and start the migrated API"
+          sudo env DEPLOY_SHA="${{ github.sha }}" bash "$WORKSPACE/deploy/install-noorix-backend-systemd.sh"
+          bash "$WORKSPACE/deploy/wait-public-api.sh"
 
-          echo "==> npm run build"
-          npm run build
-
-          echo "==> التحقق من وجود مسار saudi-occasions في dist"
-          if ! grep -rq 'saudi-occasions' "$PROD/dist/dashboard/"; then
-            echo "ERROR: dist built without saudi-occasions route" >&2
-            exit 1
-          fi
-
-      # API عبر systemd (noorix-backend.service) — لا يُقتل عند انتهاء مهمة الـ runner
-      - name: Install/restart API via systemd
+      # Publish the matching frontend only after the protected database migration
+      # and the new API have both succeeded, preventing a half-deployed cutover.
+      - name: Deploy frontend to Nginx root
         run: |
-          export DEPLOY_SHA="${{ github.sha }}"
-          sudo env DEPLOY_SHA="$DEPLOY_SHA" bash "${{ github.workspace }}/deploy/install-noorix-backend-systemd.sh"
-          bash "${{ github.workspace }}/deploy/wait-public-api.sh"
+          tar czf /tmp/noorix-frontend.tar.gz -C dist .
+          sudo bash deploy/install-frontend.sh /tmp/noorix-frontend.tar.gz "${{ github.sha }}"
+          rm -f /tmp/noorix-frontend.tar.gz
 
       # ── إعادة تحميل Nginx وفحص نهائي ─────────────────────
       - name: Ensure Nginx frontend cache rules
