@@ -12,14 +12,14 @@ TABLES=(
 )
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
-  DATABASE_URL="$(cd "$PROD_DIR" && node -e "require('dotenv').config({path:'.env'}); process.stdout.write(process.env.DATABASE_URL || '')")"
+  DATABASE_URL="$(cd "$PROD_DIR" && node -e "require('dotenv').config({path:'.env',quiet:true}); process.stdout.write(process.env.DATABASE_URL || '')")"
 fi
 if [[ -z "$DATABASE_URL" ]]; then
   echo "ERROR: DATABASE_URL is unavailable; refusing legacy Orders retirement" >&2
   exit 1
 fi
 
-existing_count="$(psql "$DATABASE_URL" -Atqc "SELECT count(*) FROM unnest(ARRAY['$(IFS="','"; echo "${TABLES[*]}")']) AS table_name WHERE to_regclass('public.' || table_name) IS NOT NULL")"
+existing_count="$(psql --dbname="$DATABASE_URL" -Atqc "SELECT count(*) FROM unnest(ARRAY['$(IFS="','"; echo "${TABLES[*]}")']) AS table_name WHERE to_regclass('public.' || table_name) IS NOT NULL")"
 if [[ "$existing_count" == "0" ]]; then
   echo "==> Legacy Orders tables already retired; no retirement backup required"
   exit 0
@@ -40,7 +40,7 @@ args=()
 for table in "${TABLES[@]}"; do args+=(--table="public.${table}"); done
 
 echo "==> Creating immutable pre-retirement backup for ${#TABLES[@]} legacy Orders tables"
-pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges "${args[@]}" --file="$tmp_dump"
+pg_dump --dbname="$DATABASE_URL" --format=custom --no-owner --no-privileges "${args[@]}" --file="$tmp_dump"
 pg_restore --list "$tmp_dump" >/dev/null
 sha256sum "$tmp_dump" >"$tmp_sha"
 
