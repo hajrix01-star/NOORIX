@@ -103,6 +103,40 @@ describe('OrdersV4ReportsService', () => {
     expect(rows[0].totalAmount.toString()).toBe('-12');
   });
 
+  it('scopes a line search to matching lines and recalculates document totals from the same snapshot', async () => {
+    const line = (id: string, name: string, amount: number) => ({
+      id,
+      itemId: id,
+      itemNameSnapshot: name,
+      lineTotal: decimal(amount),
+      operationalCost: decimal(amount),
+      cancellationReasons: [],
+      cancellationNote: null,
+      item: { id, nameAr: name, nameEn: null, sku: null, category: { id: 'cat', nameAr: 'مواد', nameEn: null } },
+      inputUnit: { id: 'piece', nameAr: 'حبة' },
+      baseUnit: { id: 'piece', nameAr: 'حبة' },
+      priceUnit: { id: 'piece', nameAr: 'حبة' },
+    });
+    const prisma = {
+      ordersV4Document: { findMany: jest.fn().mockResolvedValue([{
+        id: 'document-1', documentNumber: 'REG-1', documentType: 'registration', documentDate: new Date('2026-08-02'),
+        status: 'received', createdByUserId: null, notes: null, section: { nameAr: 'بار', nameEn: null },
+        location: { id: 'main' }, subtotal: decimal(0), totalAmount: decimal(0), operationalCost: decimal(30),
+        lines: [line('sugar', 'سكر', 10), line('tea', 'شاي', 20)],
+      }]) },
+      ordersV4Section: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Category: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Item: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Unit: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    const service = new OrdersV4ReportsService(prisma as never);
+    const report = await service.activityReport('company-1', 'registration', '2026-08-01', '2026-08-31', { search: 'سكر' });
+
+    expect(report.documents).toHaveLength(1);
+    expect(report.documents[0].lines.map((entry) => entry.itemId)).toEqual(['sugar']);
+    expect(report.documents[0].operationalCost.toString()).toBe('10');
+  });
+
   it('builds the internal report from one period document snapshot without nested report queries', async () => {
     const document = {
       id: 'registration-1',
@@ -133,7 +167,10 @@ describe('OrdersV4ReportsService', () => {
       .mockResolvedValueOnce([{ sectionId: 'bar', documentDate: document.documentDate }]);
     const prisma = {
       ordersV4Document: { findMany: documentFindMany },
-      ordersV4Section: { findMany: jest.fn().mockResolvedValue([{ id: 'bar', nameAr: 'بار' }]) },
+      ordersV4Section: { findMany: jest.fn().mockResolvedValue([{ id: 'bar', code: 'bar', nameAr: 'بار', nameEn: null }]) },
+      ordersV4Category: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Item: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Unit: { findMany: jest.fn().mockResolvedValue([]) },
       user: { findMany: jest.fn().mockResolvedValue([{ id: 'user-1', nameAr: 'عامل', nameEn: null, email: 'staff@example.com' }]) },
     };
 

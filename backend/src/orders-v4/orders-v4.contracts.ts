@@ -12,6 +12,20 @@ export type OrdersV4CancellationReason =
   | 'item_unavailable'
   | 'other';
 
+export type OrdersV4ReportFilters = {
+  sectionIds?: string[];
+  categoryIds?: string[];
+  itemIds?: string[];
+  baseUnitIds?: string[];
+  inputUnitIds?: string[];
+  paymentMethods?: OrdersV4PaymentMethod[];
+  statuses?: Array<'prepared' | 'received' | 'cancelled' | 'reversed'>;
+  registrationEntryTypes?: OrdersV4RegistrationEntryType[];
+  cancellationReasons?: OrdersV4CancellationReason[];
+  createdByUserIds?: string[];
+  search?: string;
+};
+
 export type OrdersV4UnitInput = {
   code: string;
   nameAr: string;

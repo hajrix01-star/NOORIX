@@ -23,6 +23,7 @@ import type { OrdersV4ResolvedConversion } from './orders-v4-kernel.types';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 import { calculateOrdersV4CashAvailable } from './orders-v4-funds.kernel';
 import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
+import { ordersV4DocumentListQuery, type OrdersV4DocumentListFilters } from './orders-v4-document-list-query.util';
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 import { resolveOrdersV4RegistrationEntry } from './orders-v4-registration-cancellation.policy';
 
@@ -76,23 +77,18 @@ export class OrdersV4DocumentsService {
     private readonly fundsPosting: OrdersV4FundsPostingService,
   ) {}
 
-  async list(companyId: string, documentType?: OrdersV4DocumentType, startDate?: string, endDate?: string, createdByUserId?: string, limit = 250) {
-    const documents = await this.prisma.ordersV4Document.findMany({
-      where: {
-        companyId,
-        createdByUserId: createdByUserId || undefined,
-        documentType: documentType || undefined,
-        reversalOfId: null,
-        documentDate: ordersV4RangeBounds(startDate, endDate),
-      },
-      include: {
-        section: true,
-        location: true,
-        lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } },
-      },
-      orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
-      take: Math.max(1, Math.min(2000, limit)),
-    });
+  async list(
+    companyId: string,
+    documentType?: OrdersV4DocumentType,
+    startDate?: string,
+    endDate?: string,
+    createdByUserId?: string,
+    limit = 250,
+    filters: OrdersV4DocumentListFilters = {},
+  ) {
+    const documents = await this.prisma.ordersV4Document.findMany(
+      ordersV4DocumentListQuery(companyId, documentType, startDate, endDate, createdByUserId, limit, filters),
+    );
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     return documents.map((document) => ({
       ...document,
@@ -150,6 +146,7 @@ export class OrdersV4DocumentsService {
         include: {
           inventoryUnit: true,
           units: true,
+          sections: true,
           conversionVersions: {
             where: { status: 'published' },
             include: { edges: true },
@@ -190,6 +187,9 @@ export class OrdersV4DocumentsService {
         if (!item) throw new BadRequestException('صنف V4 غير موجود');
         if (input.documentType === 'purchase' && item.itemType === 'sale') throw new BadRequestException(`${item.nameAr}: صنف بيع لا يقبل مستند شراء`);
         if (input.documentType === 'registration' && item.itemType === 'purchased') throw new BadRequestException(`${item.nameAr}: مادة مشتراة لا تقبل التسجيل الداخلي المباشر`);
+        if (input.sectionId && !item.sections.some((entry) => entry.sectionId === input.sectionId)) {
+          throw new BadRequestException(`${item.nameAr}: الصنف غير مرتبط بالقسم المختار`);
+        }
         const definition = item.conversionVersions[0];
         if (!item.units.some((row) => row.unitId === line.unitId && row.isActive)) {
           throw new BadRequestException(`${item.nameAr}: وحدة الكمية غير مضافة إلى بطاقة الصنف`);
@@ -583,6 +583,7 @@ export class OrdersV4DocumentsService {
         where: { companyId, id: { in: itemIds }, itemType: 'purchased', isActive: true },
         include: {
           units: true,
+          sections: true,
           conversionVersions: { where: { status: 'published' }, include: { edges: true }, orderBy: { version: 'desc' }, take: 1 },
         },
       });
@@ -593,6 +594,9 @@ export class OrdersV4DocumentsService {
       const prepared = input.lines.map((line, index) => {
         const item = itemById.get(line.itemId);
         if (!item) throw new BadRequestException('صنف الاستلام غير موجود');
+        if (input.sectionId && !item.sections.some((entry) => entry.sectionId === input.sectionId)) {
+          throw new BadRequestException(`${item.nameAr}: الصنف غير مرتبط بالقسم المختار`);
+        }
         if (!item.units.some((row) => row.unitId === line.unitId && row.isActive)) {
           throw new BadRequestException(`${item.nameAr}: وحدة الكمية غير مضافة إلى بطاقة الصنف`);
         }

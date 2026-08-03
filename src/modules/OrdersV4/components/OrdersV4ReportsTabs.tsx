@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
   CartesianGrid,
   Legend,
@@ -28,7 +28,7 @@ import {
   v4ReportNumber,
   v4UserLabel,
 } from '../OrdersV4Shared';
-import { useOrdersV4Documents, useOrdersV4SalesReport } from '../useOrdersV4';
+import { useOrdersV4ActivityReport, useOrdersV4SalesReport } from '../useOrdersV4';
 import { ORDERS_V4_CANCELLATION_REASON_OPTIONS, ordersV4CancellationReasonLabel } from './ordersV4CancellationReasons';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useTabSearchParam } from '../../../hooks/useTabSearchParam';
@@ -43,12 +43,9 @@ import {
   type OrdersV4ReportMetric,
 } from './ordersV4ReportAnalytics';
 import { OrdersV4PurchaseHistorySheet } from './OrdersV4PurchaseHistorySheet';
+import { ordersV4ReportFacetOptions } from './ordersV4ReportFilters';
 
 const CHART_COLORS = ['#15803d', '#2563eb', '#d97706', '#7c3aed', '#0891b2', '#dc2626', '#db2777'];
-
-function normalized(value: unknown): string {
-  return String(value ?? '').trim().toLocaleLowerCase('ar');
-}
 
 function ReportsFilterBar({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-3 rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:grid-cols-2 xl:grid-cols-4">{children}</div>;
@@ -146,37 +143,46 @@ function detailedItems(documents: OrdersV4Document[]): DetailedItemRow[] {
 
 export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { companyId: string; startDate: string; endDate: string }) {
   const [documentType, setDocumentType] = useState<'purchase' | 'registration' | ''>('purchase');
-  const purchaseQuery = useOrdersV4Documents(companyId, 'purchase', startDate, endDate, documentType !== 'registration', 2000);
-  const registrationQuery = useOrdersV4Documents(companyId, 'registration', startDate, endDate, documentType !== 'purchase', 2000);
   const [search, setSearch] = useState('');
   const [sectionIds, setSectionIds] = useState<string[]>([]);
-  const [categoryNames, setCategoryNames] = useState<string[]>([]);
-  const [unitNames, setUnitNames] = useState<string[]>([]);
-  const [packagingNames, setPackagingNames] = useState<string[]>([]);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [itemIds, setItemIds] = useState<string[]>([]);
+  const [baseUnitIds, setBaseUnitIds] = useState<string[]>([]);
+  const [inputUnitIds, setInputUnitIds] = useState<string[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [metric, setMetric] = useState<OrdersV4ReportMetric>('amount');
   const [ranking, setRanking] = useState<'all' | 'top' | 'bottom'>('all');
   const [rankingCount, setRankingCount] = useState(10);
   const [history, setHistory] = useState<{ itemId?: string; categoryName?: string; title: string } | null>(null);
-  const allDocuments = useMemo(() => {
-    const purchases = purchaseQuery.data ?? [];
-    const registrations = registrationQuery.data ?? [];
-    return (documentType === 'purchase' ? purchases : documentType === 'registration' ? registrations : [...purchases, ...registrations]).filter((row) => row.status === 'received');
-  }, [documentType, purchaseQuery.data, registrationQuery.data]);
-  const categories = useMemo(() => [...new Set(allDocuments.flatMap((row) => row.lines.map((line) => line.item.category?.nameAr || '')).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [allDocuments]);
-  const units = useMemo(() => [...new Set(allDocuments.flatMap((row) => row.lines.map((line) => line.baseUnit.nameAr)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [allDocuments]);
-  const packagings = useMemo(() => [...new Set(allDocuments.flatMap((row) => row.lines.map((line) => line.inputUnit.nameAr)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [allDocuments]);
-  const sections = useMemo(() => [...new Map(allDocuments.filter((row) => row.section).map((row) => [row.section!.id, row.section!])).values()], [allDocuments]);
-  const filteredDocuments = useMemo(() => {
-    const term = normalized(search);
-    return allDocuments.filter((document) => (!sectionIds.length || (document.sectionId && sectionIds.includes(document.sectionId))) && (documentType === 'registration' || !paymentMethods.length || (document.paymentMethod && paymentMethods.includes(document.paymentMethod)))).map((document) => ({
-      ...document,
-      lines: document.lines.filter((line) => (!categoryNames.length || categoryNames.includes(line.item.category?.nameAr || ''))
-        && (!unitNames.length || unitNames.includes(line.baseUnit.nameAr))
-        && (!packagingNames.length || packagingNames.includes(line.inputUnit.nameAr))
-        && (!term || normalized(`${line.itemNameSnapshot} ${line.item.category?.nameAr || ''} ${line.baseUnit.nameAr}`).includes(term))),
-    })).filter((document) => document.lines.length > 0);
-  }, [allDocuments, categoryNames, documentType, packagingNames, paymentMethods, search, sectionIds, unitNames]);
+  const deferredSearch = useDeferredValue(search);
+  const activityQuery = useOrdersV4ActivityReport(companyId, documentType, startDate, endDate, {
+    search: deferredSearch,
+    sectionIds,
+    categoryIds,
+    itemIds,
+    baseUnitIds,
+    inputUnitIds,
+    paymentMethods: documentType === 'registration' ? [] : paymentMethods as Array<'custody' | 'cash' | 'transfer'>,
+    statuses: ['received'],
+  });
+  const allDocuments = activityQuery.data?.documents ?? [];
+  const facets = activityQuery.data?.facets;
+  const facetOptions = useMemo(() => ordersV4ReportFacetOptions(facets, documentType, sectionIds, categoryIds), [categoryIds, documentType, facets, sectionIds]);
+  const sectionOptions = facetOptions.sections;
+  const categoryOptions = facetOptions.categories;
+  const itemOptions = facetOptions.items;
+  useEffect(() => {
+    const validCategories = new Set(categoryOptions.map((entry) => entry.id));
+    setCategoryIds((current) => current.filter((id) => validCategories.has(id)));
+  }, [categoryOptions]);
+  useEffect(() => {
+    const validItems = new Set(itemOptions.map((entry) => entry.id));
+    setItemIds((current) => current.filter((id) => validItems.has(id)));
+  }, [itemOptions]);
+  useEffect(() => {
+    setSearch(''); setSectionIds([]); setCategoryIds([]); setItemIds([]); setBaseUnitIds([]); setInputUnitIds([]); setPaymentMethods([]);
+  }, [companyId]);
+  const filteredDocuments = allDocuments;
   const rows = useMemo(() => detailedItems(filteredDocuments), [filteredDocuments]);
   const displayedRows = useMemo(() => {
     if (ranking === 'all') return rows;
@@ -194,9 +200,9 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
     quantity: rows.reduce((sum, row) => sum + Number(row.baseQuantity), 0),
     documents: new Set(filteredDocuments.map((row) => row.id)).size,
   }), [filteredDocuments, rows]);
-  const loading = purchaseQuery.isLoading || registrationQuery.isLoading;
-  const error = (purchaseQuery.error || registrationQuery.error) as Error | null;
-  const reset = () => { setSearch(''); setSectionIds([]); setCategoryNames([]); setUnitNames([]); setPackagingNames([]); setPaymentMethods([]); setRanking('all'); setRankingCount(10); };
+  const loading = activityQuery.isLoading;
+  const error = activityQuery.error as Error | null;
+  const reset = () => { setSearch(''); setSectionIds([]); setCategoryIds([]); setItemIds([]); setBaseUnitIds([]); setInputUnitIds([]); setPaymentMethods([]); setRanking('all'); setRankingCount(10); };
   const exportRows = displayedRows.map((row) => ({ القسم: row.sections, الصنف: row.nameAr, الفئة: row.categoryName, التغليف: row.inputUnits, 'الكمية المسجلة': row.recordedQuantities, 'وحدة المخزون': row.inventoryUnit, 'الكمية المعيارية': Number(row.baseQuantity), القيمة: Number(row.totalAmount), العمليات: row.documentCount, 'متوسط الوحدة': Number(row.averageUnitCost), 'آخر حركة': row.lastDate }));
   const columns: SimpleTableColumn<DetailedItemRow>[] = [
     { key: 'sections', label: 'القسم', minWidth: 130 },
@@ -215,11 +221,12 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
     <OrdersV4Panel title="فلاتر تقرير الأصناف" action={<ReportActions rows={exportRows} filename={`orders-v4-items-${startDate}-${endDate}.xlsx`} title="تقرير أصناف طلبات V4" />}>
       <ReportsFilterBar>
         <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="الصنف أو الفئة أو الوحدة…" /></OrdersV4Field>
-        <OrdersV4Field label="نوع الحركة"><OrdersV4Select value={documentType} onChange={(event) => setDocumentType(event.target.value as typeof documentType)}><option value="purchase">طلبات الشراء</option><option value="registration">التسجيل الداخلي</option><option value="">كل الحركات</option></OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="القسم"><SearchableOptionsPicker mode="multiple" values={sectionIds} onChange={setSectionIds} options={sections.map((section) => ({ value: section.id, label: section.nameAr }))} emptyLabel="كل الأقسام" showClearAll /></OrdersV4Field>
-        <OrdersV4Field label="الفئة"><SearchableOptionsPicker mode="multiple" values={categoryNames} onChange={setCategoryNames} options={categories.map((name) => ({ value: name, label: name }))} emptyLabel="كل الفئات" showClearAll /></OrdersV4Field>
-        <OrdersV4Field label="وحدة المخزون"><SearchableOptionsPicker mode="multiple" values={unitNames} onChange={setUnitNames} options={units.map((name) => ({ value: name, label: name }))} emptyLabel="كل الوحدات" showClearAll /></OrdersV4Field>
-        <OrdersV4Field label="التغليف / وحدة الإدخال"><SearchableOptionsPicker mode="multiple" values={packagingNames} onChange={setPackagingNames} options={packagings.map((name) => ({ value: name, label: name }))} emptyLabel="كل التغليفات" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="نوع الحركة"><OrdersV4Select value={documentType} onChange={(event) => { setDocumentType(event.target.value as typeof documentType); reset(); }}><option value="purchase">طلبات الشراء</option><option value="registration">التسجيل الداخلي</option><option value="">كل الحركات</option></OrdersV4Select></OrdersV4Field>
+        <OrdersV4Field label="القسم"><SearchableOptionsPicker mode="multiple" values={sectionIds} onChange={setSectionIds} options={sectionOptions.map((section) => ({ value: section.id, label: section.nameAr }))} emptyLabel="كل الأقسام" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="الفئة"><SearchableOptionsPicker mode="multiple" values={categoryIds} onChange={setCategoryIds} options={categoryOptions.map((category) => ({ value: category.id, label: category.nameAr }))} emptyLabel="كل الفئات" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="الصنف"><SearchableOptionsPicker mode="multiple" values={itemIds} onChange={setItemIds} options={itemOptions.map((item) => ({ value: item.id, label: item.nameAr }))} emptyLabel="كل الأصناف" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="وحدة المخزون"><SearchableOptionsPicker mode="multiple" values={baseUnitIds} onChange={setBaseUnitIds} options={(facets?.units ?? []).map((unit) => ({ value: unit.id, label: unit.nameAr }))} emptyLabel="كل الوحدات" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="التغليف / وحدة الإدخال"><SearchableOptionsPicker mode="multiple" values={inputUnitIds} onChange={setInputUnitIds} options={(facets?.units ?? []).map((unit) => ({ value: unit.id, label: unit.nameAr }))} emptyLabel="كل التغليفات" showClearAll /></OrdersV4Field>
         <OrdersV4Field label="طريقة الدفع"><SearchableOptionsPicker mode="multiple" values={paymentMethods} onChange={setPaymentMethods} options={[{ value: 'custody', label: 'عهدة' }, { value: 'cash', label: 'نقد' }, { value: 'transfer', label: 'تحويل' }]} emptyLabel="كل طرق الدفع" showClearAll disabled={documentType === 'registration'} /></OrdersV4Field>
         <OrdersV4Field label="مقياس الرسم والترتيب"><OrdersV4Select value={metric} onChange={(event) => setMetric(event.target.value as OrdersV4ReportMetric)}><option value="amount">المبلغ</option><option value="quantity">الكمية المعيارية</option><option value="documents">عدد العمليات</option></OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label="عرض النتائج"><div className="flex gap-2"><OrdersV4Select value={ranking} onChange={(event) => setRanking(event.target.value as typeof ranking)} className="flex-1"><option value="all">كل النتائج</option><option value="top">الأعلى</option><option value="bottom">الأقل</option></OrdersV4Select>{ranking !== 'all' && <Input type="number" min={1} max={100} value={rankingCount} onChange={(event) => setRankingCount(Math.max(1, Math.min(100, Number(event.target.value) || 10)))} className="w-[72px]" />}<Button size="sm" variant="ghost" onClick={reset}>إعادة ضبط</Button></div></OrdersV4Field>
@@ -250,7 +257,7 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
         renderMobileCard={(row) => <button type="button" className="flex w-full flex-col gap-1.5 text-start" onClick={() => setHistory({ itemId: row.itemId, title: row.nameAr })}><div className="flex w-full items-center justify-between gap-2"><strong className="text-blue-700">{row.nameAr}</strong><strong className="text-emerald-700">{v4ReportNumber(row.totalAmount)} ر.س</strong></div><div className="text-[11px] text-noorix-muted">{row.categoryName || '—'} · {row.sections}</div><div className="text-[12px]">المسجلة: {row.recordedQuantities}</div><div className="text-[12px]">المعيارية: {v4ReportNumber(row.baseQuantity)} {row.inventoryUnit}</div></button>}
       /></OrdersV4Panel>
     </>}
-    {history && <OrdersV4PurchaseHistorySheet documents={purchaseQuery.data ?? []} itemId={history.itemId} categoryName={history.categoryName} title={history.title} onClose={() => setHistory(null)} />}
+    {history && <OrdersV4PurchaseHistorySheet documents={allDocuments} itemId={history.itemId} categoryName={history.categoryName} title={history.title} onClose={() => setHistory(null)} />}
   </div>;
 }
 
@@ -263,33 +270,45 @@ const INTERNAL_REPORT_VIEWS: InternalView[] = ['operations', 'missing', 'items',
 
 export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { companyId: string; startDate: string; endDate: string }) {
   const { t, lang } = useTranslation();
-  const query = useOrdersV4SalesReport(companyId, startDate, endDate);
-  const report = query.data;
   const [activeView, setActiveView] = useTabSearchParam(INTERNAL_REPORT_VIEWS, 'operations', 'ordersV4ReportView', null, undefined, { persistDefault: true });
   const [search, setSearch] = useState('');
-  const [sectionId, setSectionId] = useState('');
+  const [sectionIds, setSectionIds] = useState<string[]>([]);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [itemIds, setItemIds] = useState<string[]>([]);
   const [createdByUserId, setCreatedByUserId] = useState('');
   const [status, setStatus] = useState('received');
   const [entryType, setEntryType] = useState<'issue' | 'cancellation' | ''>('');
   const [cancellationReason, setCancellationReason] = useState<OrdersV4CancellationReason | ''>('');
   const [chartMetric, setChartMetric] = useState<OrdersV4ReportMetric>('quantity');
+  const deferredSearch = useDeferredValue(search);
+  const query = useOrdersV4SalesReport(companyId, startDate, endDate, {
+    search: deferredSearch,
+    sectionIds,
+    categoryIds,
+    itemIds,
+    statuses: status ? [status as 'prepared' | 'received' | 'cancelled' | 'reversed'] : [],
+    registrationEntryTypes: entryType ? [entryType] : [],
+    cancellationReasons: cancellationReason ? [cancellationReason] : [],
+  });
+  const report = query.data;
   const documents = report?.documents ?? [];
-  const sections = useMemo(() => {
-    const rows = new Map<string, { id: string; nameAr: string }>();
-    report?.registrationCoverage.sections.forEach((section) => rows.set(section.sectionId, { id: section.sectionId, nameAr: section.sectionName }));
-    documents.filter((row) => row.section).forEach((row) => rows.set(row.section!.id, { id: row.section!.id, nameAr: row.section!.nameAr }));
-    return [...rows.values()].sort((a, b) => a.nameAr.localeCompare(b.nameAr, 'ar'));
-  }, [documents, report?.registrationCoverage.sections]);
+  const facetOptions = useMemo(() => ordersV4ReportFacetOptions(report?.facets, 'registration', sectionIds, categoryIds), [categoryIds, report?.facets, sectionIds]);
+  const sections = facetOptions.sections;
+  const categoryOptions = facetOptions.categories;
+  const itemOptions = facetOptions.items;
+  useEffect(() => {
+    const valid = new Set(categoryOptions.map((entry) => entry.id));
+    setCategoryIds((current) => current.filter((id) => valid.has(id)));
+  }, [categoryOptions]);
+  useEffect(() => {
+    const valid = new Set(itemOptions.map((entry) => entry.id));
+    setItemIds((current) => current.filter((id) => valid.has(id)));
+  }, [itemOptions]);
+  useEffect(() => {
+    setSearch(''); setSectionIds([]); setCategoryIds([]); setItemIds([]); setCreatedByUserId(''); setStatus('received'); setEntryType(''); setCancellationReason('');
+  }, [companyId]);
   const users = useMemo(() => [...new Map(documents.filter((row) => row.createdByUser).map((row) => [row.createdByUser!.id, row.createdByUser!])).values()].sort((a, b) => v4UserLabel(a).localeCompare(v4UserLabel(b), 'ar')), [documents]);
-  const filteredDocuments = useMemo(() => {
-    const term = normalized(search);
-    return documents.filter((document) => (!sectionId || document.sectionId === sectionId)
-      && (!createdByUserId || document.createdByUser?.id === createdByUserId)
-      && (!status || document.status === status)
-      && (!entryType || (document.registrationEntryType ?? 'issue') === entryType)
-      && (!cancellationReason || document.lines.some((line) => line.cancellationReasons?.includes(cancellationReason)))
-      && (!term || normalized(`${document.documentNumber} ${document.section?.nameAr || ''} ${v4UserLabel(document.createdByUser)} ${document.lines.map((line) => `${line.itemNameSnapshot} ${(line.cancellationReasons ?? []).map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(' ')} ${line.cancellationNote || ''}`).join(' ')}`).includes(term)));
-  }, [cancellationReason, createdByUserId, documents, entryType, search, sectionId, status, t]);
+  const filteredDocuments = useMemo(() => documents.filter((document) => !createdByUserId || document.createdByUser?.id === createdByUserId), [createdByUserId, documents]);
   const byItem = useMemo(() => aggregateItems(filteredDocuments).map((item) => ({
     ...item,
     sections: [...new Set(filteredDocuments.filter((document) => document.lines.some((line) => line.itemId === item.itemId)).map((document) => document.section?.nameAr || 'غير محدد'))].join('، '),
@@ -297,7 +316,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
   const bySection = useMemo(() => aggregateDocumentsBySection(filteredDocuments), [filteredDocuments]);
   const byEmployee = useMemo(() => aggregateDocumentsByEmployee(filteredDocuments), [filteredDocuments]);
   const byDay = useMemo(() => aggregateDocumentsByDay(filteredDocuments), [filteredDocuments]);
-  const missingDays = (report?.registrationCoverage.missingDays ?? []).filter((row) => !sectionId || row.sectionId === sectionId);
+  const missingDays = (report?.registrationCoverage.missingDays ?? []).filter((row) => !sectionIds.length || sectionIds.includes(row.sectionId));
   const totalQuantity = filteredDocuments.reduce((sum, row) => sum + row.lines.reduce((lineSum, line) => lineSum + Number(line.baseQuantity || 0), 0), 0);
   const totalAmount = filteredDocuments.reduce((sum, row) => sum + Number(row.operationalCost || 0), 0);
   const affectedSections = new Set(missingDays.map((row) => row.sectionId)).size;
@@ -330,12 +349,14 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
     <OrdersV4Panel title="فلاتر التقرير الداخلي" action={<ReportActions rows={exportRows} filename={`orders-v4-internal-${startDate}-${endDate}.xlsx`} title="تقرير التسجيل الداخلي V4" />}>
       <ReportsFilterBar>
         <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="مرجع أو صنف أو موظف…" /></OrdersV4Field>
-        <OrdersV4Field label="القسم"><OrdersV4Select value={sectionId} onChange={(event) => setSectionId(event.target.value)}><option value="">كل الأقسام</option>{sections.map((section) => <option key={section.id} value={section.id}>{section.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+        <OrdersV4Field label="القسم"><SearchableOptionsPicker mode="multiple" values={sectionIds} onChange={setSectionIds} options={sections.map((section) => ({ value: section.id, label: section.nameAr }))} emptyLabel="كل الأقسام" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="الفئة"><SearchableOptionsPicker mode="multiple" values={categoryIds} onChange={setCategoryIds} options={categoryOptions.map((category) => ({ value: category.id, label: category.nameAr }))} emptyLabel="كل الفئات" showClearAll /></OrdersV4Field>
+        <OrdersV4Field label="الصنف"><SearchableOptionsPicker mode="multiple" values={itemIds} onChange={setItemIds} options={itemOptions.map((item) => ({ value: item.id, label: item.nameAr }))} emptyLabel="كل الأصناف" showClearAll /></OrdersV4Field>
         <OrdersV4Field label="الموظف"><OrdersV4Select value={createdByUserId} onChange={(event) => setCreatedByUserId(event.target.value)}><option value="">كل الموظفين</option>{users.map((user) => <option key={user.id} value={user.id}>{v4UserLabel(user)}</option>)}</OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label="الحالة"><OrdersV4Select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">كل الحالات</option><option value="received">مستلم</option><option value="prepared">معد</option><option value="cancelled">ملغي</option><option value="reversed">معكوس</option></OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label={t('ordersV4CancellationRecordType')}><OrdersV4Select value={entryType} onChange={(event) => setEntryType(event.target.value as typeof entryType)}><option value="">كل السجلات</option><option value="issue">تسجيل داخلي</option><option value="cancellation">تسجيل إلغاء</option></OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label={t('staffCancellationReasons')}><OrdersV4Select value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value as OrdersV4CancellationReason | '')}><option value="">كل الأسباب</option>{ORDERS_V4_CANCELLATION_REASON_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.translationKey)}</option>)}</OrdersV4Select></OrdersV4Field>
-        <div className="flex items-end"><Button size="sm" variant="ghost" onClick={() => { setSearch(''); setSectionId(''); setCreatedByUserId(''); setStatus('received'); setEntryType(''); setCancellationReason(''); }}>إعادة ضبط الفلاتر</Button></div>
+        <div className="flex items-end"><Button size="sm" variant="ghost" onClick={() => { setSearch(''); setSectionIds([]); setCategoryIds([]); setItemIds([]); setCreatedByUserId(''); setStatus('received'); setEntryType(''); setCancellationReason(''); }}>إعادة ضبط الفلاتر</Button></div>
       </ReportsFilterBar>
     </OrdersV4Panel>
     <OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} onRetry={() => { void query.refetch(); }} retrying={query.isFetching} />

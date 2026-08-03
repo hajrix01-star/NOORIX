@@ -185,6 +185,41 @@ export type OrdersV4ItemsReportRow = {
   averageUnitCost: string;
 };
 
+export type OrdersV4ReportFilters = {
+  sectionIds?: string[];
+  categoryIds?: string[];
+  itemIds?: string[];
+  baseUnitIds?: string[];
+  inputUnitIds?: string[];
+  paymentMethods?: Array<'custody' | 'cash' | 'transfer'>;
+  statuses?: Array<'prepared' | 'received' | 'cancelled' | 'reversed'>;
+  registrationEntryTypes?: Array<'issue' | 'cancellation'>;
+  cancellationReasons?: OrdersV4CancellationReason[];
+  createdByUserIds?: string[];
+  search?: string;
+};
+
+export type OrdersV4ReportFacets = {
+  sections: Array<{ id: string; code: string; nameAr: string; nameEn?: string | null }>;
+  categories: Array<{ id: string; nameAr: string; nameEn?: string | null }>;
+  items: Array<{
+    id: string;
+    sku?: string | null;
+    nameAr: string;
+    nameEn?: string | null;
+    itemType: 'purchased' | 'sale';
+    categoryId?: string | null;
+    sectionIds: string[];
+  }>;
+  units: Array<{ id: string; code: string; nameAr: string; nameEn?: string | null }>;
+};
+
+export type OrdersV4ActivityReport = {
+  kernelVersion: 4;
+  documents: OrdersV4Document[];
+  facets: OrdersV4ReportFacets;
+};
+
 export type OrdersV4SalesReport = {
   kernelVersion: 4;
   summary: { count: number; totalAmount: string };
@@ -210,6 +245,7 @@ export type OrdersV4SalesReport = {
     missingDays: Array<{ date: string; sectionId: string; sectionName: string }>;
   };
   costCoverage: { documents: number; zeroCostDocuments: number; lines: number; zeroCostLines: number };
+  facets: OrdersV4ReportFacets;
 };
 
 export type OrdersV4InventoryBalance = {

@@ -59,8 +59,8 @@ export function OrdersV4CatalogItems({
   return <div className="flex flex-col gap-4">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="inline-flex max-w-full flex-nowrap overflow-x-auto rounded-xl border border-noorix-border bg-noorix-bg-muted/50 p-1 [scrollbar-width:thin]" role="tablist" aria-label="نوع الأصناف">
-        <Button className="shrink-0 whitespace-nowrap" variant={kind === 'purchased' ? 'primary' : 'raw'} size="sm" role="tab" aria-selected={kind === 'purchased'} onClick={() => { setKind('purchased'); setSelected(new Set()); }}>أصناف الطلبات</Button>
-        <Button className="shrink-0 whitespace-nowrap" variant={kind === 'sale' ? 'primary' : 'raw'} size="sm" role="tab" aria-selected={kind === 'sale'} onClick={() => { setKind('sale'); setSelected(new Set()); }}>أصناف التسجيل الداخلي</Button>
+        <Button className="shrink-0 whitespace-nowrap" variant={kind === 'purchased' ? 'primary' : 'raw'} size="sm" role="tab" aria-selected={kind === 'purchased'} onClick={() => { setKind('purchased'); setCategoryId(''); setSectionId(''); setSelected(new Set()); }}>أصناف الطلبات</Button>
+        <Button className="shrink-0 whitespace-nowrap" variant={kind === 'sale' ? 'primary' : 'raw'} size="sm" role="tab" aria-selected={kind === 'sale'} onClick={() => { setKind('sale'); setCategoryId(''); setSectionId(''); setSelected(new Set()); }}>أصناف التسجيل الداخلي</Button>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button variant="primary" size="sm" onClick={() => onAdd(kind)}>+ إضافة صنف</Button>

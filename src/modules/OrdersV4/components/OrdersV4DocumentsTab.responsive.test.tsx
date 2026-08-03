@@ -5,13 +5,15 @@ import type { OrdersV4Bootstrap, OrdersV4Item } from '../../../types/api';
 import { OrdersV4DocumentLinesTable } from './OrdersV4DocumentLinesTable';
 import { OrdersV4DocumentsTab } from './OrdersV4DocumentsTab';
 
+const ordersV4DocumentsMock = vi.hoisted(() => ({ documents: [] as unknown[] }));
+
 vi.mock('../../../i18n/useTranslation', async () => {
   const translations = await vi.importActual<typeof import('../../../i18n/translations')>('../../../i18n/translations');
   return { useTranslation: () => ({ lang: 'ar', t: (key: string) => translations.getText(key, 'ar') }) };
 });
 
 vi.mock('../useOrdersV4', () => ({
-  useOrdersV4Documents: () => ({ data: [], isLoading: false, error: null }),
+  useOrdersV4Documents: () => ({ data: ordersV4DocumentsMock.documents, isLoading: false, error: null }),
   useOrdersV4Summary: () => ({ data: undefined }),
   useCreateOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReceiveOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
@@ -33,6 +35,7 @@ const bootstrap = {
 } as unknown as OrdersV4Bootstrap;
 
 beforeEach(() => {
+  ordersV4DocumentsMock.documents = [];
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     value: vi.fn().mockImplementation((query: string) => ({
@@ -96,6 +99,44 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(dialog.className).toContain('w-[min(100vw,920px)]');
     expect(dialog.className).not.toContain('max-h-[min(92vh,860px)]');
     expect(screen.queryByLabelText('موقع المخزون')).toBeNull();
+  });
+
+  it('opens document details as a full-height adaptive sheet on mobile', () => {
+    ordersV4DocumentsMock.documents = [{
+      id: 'document-1',
+      documentNumber: 'REQ4-20260803-001',
+      documentType: 'purchase',
+      documentDate: '2026-08-03',
+      paymentMethod: 'custody',
+      pettyCashAmount: '100',
+      subtotal: '12',
+      totalAmount: '12',
+      operationalCost: '12',
+      status: 'received',
+      lines: [{
+        id: 'line-1', lineNumber: 1, itemId: 'item-1', itemNameSnapshot: 'سكر',
+        inputQuantity: '1', baseQuantity: '1', unitPrice: '12', lineTotal: '12', operationalCost: '12',
+        inputUnit: { id: 'unit-1', nameAr: 'كرتون' },
+        baseUnit: { id: 'unit-2', nameAr: 'حبة' },
+        priceUnit: { id: 'unit-1', nameAr: 'كرتون' },
+      }],
+    }];
+
+    render(
+      <OrdersV4DocumentsTab
+        companyId="company-1"
+        documentType="purchase"
+        startDate="2026-08-01"
+        endDate="2026-08-31"
+        bootstrap={bootstrap}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('REQ4-20260803-001'));
+    const dialog = screen.getByRole('dialog', { name: 'REQ4-20260803-001' });
+    expect(dialog.className).toContain('h-full');
+    expect(dialog.className).toContain('w-[min(100vw,920px)]');
+    expect(dialog.className).not.toContain('max-h-[min(92vh,860px)]');
   });
 
   it('renders added document lines as one editable table without repeated field headings', () => {

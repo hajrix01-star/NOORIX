@@ -12,6 +12,7 @@ import { requireCompanyId } from '../common/utils/require-company-id';
 import { OrdersV4CatalogService } from './orders-v4-catalog.service';
 import type { OrdersV4DocumentType } from './orders-v4.contracts';
 import {
+  OrdersV4ActivityReportQueryDto,
   OrdersV4DateRangeQueryDto,
   OrdersV4DocumentDto,
   OrdersV4DocumentsQueryDto,
@@ -34,6 +35,7 @@ import { resolveOrdersV4DocumentListScope } from './orders-v4-document-access.po
 import { OrdersV4InventoryService } from './orders-v4-inventory.service';
 import { OrdersV4ItemDefinitionService } from './orders-v4-item-definition.service';
 import { OrdersV4ReportsService } from './orders-v4-reports.service';
+import { ordersV4ReportFiltersFromQuery } from './orders-v4-report-filters.util';
 
 function userCan(user: JwtUser, permission: Permission): boolean {
   return hasPermission(user.role, permission, user.permissions);
@@ -184,6 +186,14 @@ export class OrdersV4Controller {
       scope.endDate,
       scope.createdByUserId,
       query?.limit,
+      {
+        search: query?.search,
+        sectionId: query?.sectionId,
+        categoryId: query?.categoryId,
+        itemId: query?.itemId,
+        paymentMethod: query?.paymentMethod,
+        status: query?.status,
+      },
     );
   }
 
@@ -228,6 +238,18 @@ export class OrdersV4Controller {
     return this.reports.summary(requireCompanyId(companyId), query?.startDate, query?.endDate);
   }
 
+  @Get('reports/activity')
+  @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_REPORTS_READ')
+  activityReport(@CompanyId() companyId: string, @Query() query?: OrdersV4ActivityReportQueryDto) {
+    return this.reports.activityReport(
+      requireCompanyId(companyId),
+      query?.type,
+      query?.startDate,
+      query?.endDate,
+      ordersV4ReportFiltersFromQuery(query),
+    );
+  }
+
   @Get('reports/items')
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_REPORTS_READ')
   itemReport(
@@ -239,8 +261,13 @@ export class OrdersV4Controller {
 
   @Get('reports/sales')
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_REPORTS_READ')
-  salesReport(@CompanyId() companyId: string, @Query() query?: OrdersV4DateRangeQueryDto) {
-    return this.reports.salesReport(requireCompanyId(companyId), query?.startDate, query?.endDate);
+  salesReport(@CompanyId() companyId: string, @Query() query?: OrdersV4ActivityReportQueryDto) {
+    return this.reports.salesReport(
+      requireCompanyId(companyId),
+      query?.startDate,
+      query?.endDate,
+      ordersV4ReportFiltersFromQuery(query),
+    );
   }
 
   @Get('inventory/balances')

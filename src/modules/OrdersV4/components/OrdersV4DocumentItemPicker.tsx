@@ -1,16 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { OrdersV4Item, OrdersV4Section } from '../../../types/api';
 import { Button, Input } from '../../../ui';
-import { v4Number } from '../OrdersV4Shared';
+import { OrdersV4Select, v4Number } from '../OrdersV4Shared';
 
 export function filterOrdersV4DocumentItems(
   items: OrdersV4Item[],
   sectionId: string,
   search: string,
+  categoryId = '',
 ): OrdersV4Item[] {
   const query = search.trim().toLocaleLowerCase('ar');
   return items.filter((item) => {
     if (sectionId && !item.sections.some(({ section }) => section.id === sectionId)) return false;
+    if (categoryId && item.categoryId !== categoryId) return false;
     if (!query) return true;
     return [item.nameAr, item.nameEn, item.sku, item.category?.nameAr, item.category?.nameEn]
       .some((value) => String(value ?? '').toLocaleLowerCase('ar').includes(query));
@@ -25,6 +27,7 @@ export function OrdersV4DocumentItemPicker({
   selectedQuantities,
   onSelect,
   onRemove,
+  sectionLocked = false,
 }: {
   items: OrdersV4Item[];
   sections: OrdersV4Section[];
@@ -33,16 +36,24 @@ export function OrdersV4DocumentItemPicker({
   selectedQuantities: Map<string, number>;
   onSelect: (item: OrdersV4Item) => void;
   onRemove: (itemId: string) => void;
+  sectionLocked?: boolean;
 }) {
   const [search, setSearch] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const visibleSections = useMemo(
     () => sections.filter((section) => items.some((item) => item.sections.some((entry) => entry.section.id === section.id))),
     [items, sections],
   );
   const filteredItems = useMemo(
-    () => filterOrdersV4DocumentItems(items, sectionId, search),
-    [items, search, sectionId],
+    () => filterOrdersV4DocumentItems(items, sectionId, search, categoryId),
+    [categoryId, items, search, sectionId],
   );
+  const categories = useMemo(() => [...new Map(items
+    .filter((item) => item.category && (!sectionId || item.sections.some((entry) => entry.section.id === sectionId)))
+    .map((item) => [item.category!.id, item.category!])).values()].sort((a, b) => a.nameAr.localeCompare(b.nameAr, 'ar')), [items, sectionId]);
+  useEffect(() => {
+    if (categoryId && !categories.some((category) => category.id === categoryId)) setCategoryId('');
+  }, [categories, categoryId]);
 
   if (items.length === 0) {
     return <div className="rounded-xl border-2 border-dashed border-noorix-border p-5 text-center text-[13px] text-noorix-muted">لا توجد أصناف مؤهلة لهذا المستند.</div>;
@@ -56,6 +67,7 @@ export function OrdersV4DocumentItemPicker({
             variant="raw"
             type="button"
             aria-pressed={!sectionId}
+            disabled={sectionLocked}
             onClick={() => onSectionChange('')}
             className={`rounded-xl border px-3 py-1 text-[12px] font-semibold transition-all ${!sectionId ? 'border-noorix-blue bg-noorix-blue text-white shadow-sm' : 'border-noorix-border bg-noorix-surface text-noorix-text hover:border-noorix-blue/50'}`}
           >
@@ -69,6 +81,7 @@ export function OrdersV4DocumentItemPicker({
                 variant="raw"
                 type="button"
                 aria-pressed={selected}
+                disabled={sectionLocked && !selected}
                 onClick={() => onSectionChange(selected ? '' : section.id)}
                 className={`rounded-xl border px-3 py-1 text-[12px] font-semibold transition-all ${selected ? 'border-noorix-blue bg-noorix-blue text-white shadow-sm' : 'border-noorix-border bg-noorix-surface text-noorix-text hover:border-noorix-blue/50'}`}
               >
@@ -79,14 +92,19 @@ export function OrdersV4DocumentItemPicker({
         </div>
       )}
 
-      <Input
-        type="search"
-        value={search}
-        onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
-        placeholder="ابحث باسم الصنف أو الكود أو الفئة…"
-        prefix="⌕"
-        className="rounded-xl"
-      />
+      {sectionLocked && <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] text-blue-800">لتغيير القسم احذف الأصناف المضافة أولاً؛ هذا يحمي تصنيف المستند والتقرير.</div>}
+
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_220px]">
+        <Input
+          type="search"
+          value={search}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
+          placeholder="ابحث باسم الصنف أو الكود أو الفئة…"
+          prefix="⌕"
+          className="rounded-xl"
+        />
+        <OrdersV4Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} aria-label="فلتر الفئة"><option value="">كل الفئات</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.nameAr}</option>)}</OrdersV4Select>
+      </div>
 
       {filteredItems.length > 0 ? (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">

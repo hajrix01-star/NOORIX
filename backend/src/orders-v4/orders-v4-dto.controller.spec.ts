@@ -1,6 +1,7 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { OrdersV4Controller } from './orders-v4.controller';
 import {
+  OrdersV4ActivityReportQueryDto,
   OrdersV4DateRangeQueryDto,
   OrdersV4DocumentDto,
   OrdersV4DocumentsQueryDto,
@@ -33,6 +34,7 @@ describe('Orders V4 runtime DTO validation', () => {
 
   it.each([
     ['documents', OrdersV4DocumentsQueryDto, { type: 'purchase', limit: '250' }],
+    ['activity report', OrdersV4ActivityReportQueryDto, { type: 'purchase', sectionIds: 'bar,kitchen', categoryIds: 'cat-1' }],
     ['summary', OrdersV4DateRangeQueryDto, { startDate: '2026-08-01', endDate: '2026-08-31' }],
     ['items report', OrdersV4ItemsReportQueryDto, { type: 'registration' }],
     ['ledger', OrdersV4LedgerQueryDto, { limit: '250' }],

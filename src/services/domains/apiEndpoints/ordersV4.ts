@@ -1,5 +1,6 @@
 import type {
   ApiParsedResult,
+  OrdersV4ActivityReport,
   OrdersV4Bootstrap,
   OrdersV4Category,
   OrdersV4DataQuality,
@@ -12,6 +13,7 @@ import type {
   OrdersV4LedgerEntry,
   OrdersV4Location,
   OrdersV4RecipeVersion,
+  OrdersV4ReportFilters,
   OrdersV4SalesReport,
   OrdersV4Section,
   OrdersV4Stocktake,
@@ -22,12 +24,29 @@ import { apiDelete, apiGet, apiPatch, apiPost } from '../../core/apiHttp';
 
 const BASE = '/api/v1/orders-v4';
 
+function reportFilterParams(filters: OrdersV4ReportFilters = {}) {
+  const csv = (values?: string[]) => values?.length ? values.join(',') : undefined;
+  return {
+    sectionIds: csv(filters.sectionIds),
+    categoryIds: csv(filters.categoryIds),
+    itemIds: csv(filters.itemIds),
+    baseUnitIds: csv(filters.baseUnitIds),
+    inputUnitIds: csv(filters.inputUnitIds),
+    paymentMethods: csv(filters.paymentMethods),
+    statuses: csv(filters.statuses),
+    registrationEntryTypes: csv(filters.registrationEntryTypes),
+    cancellationReasons: csv(filters.cancellationReasons),
+    createdByUserIds: csv(filters.createdByUserIds),
+    search: filters.search?.trim() || undefined,
+  };
+}
+
 export function getOrdersV4Bootstrap(companyId: string): Promise<ApiParsedResult<OrdersV4Bootstrap>> {
   return apiGet(`${BASE}/bootstrap`, { companyId });
 }
 
-export function getOrdersV4Documents(companyId: string, type: 'purchase' | 'registration', startDate: string, endDate: string, limit = 250): Promise<ApiParsedResult<OrdersV4Document[]>> {
-  return apiGet(`${BASE}/documents`, { companyId, type, startDate, endDate, limit });
+export function getOrdersV4Documents(companyId: string, type: 'purchase' | 'registration', startDate: string, endDate: string, limit = 250, filters: { search?: string; sectionId?: string; categoryId?: string; itemId?: string; paymentMethod?: string; status?: string } = {}): Promise<ApiParsedResult<OrdersV4Document[]>> {
+  return apiGet(`${BASE}/documents`, { companyId, type, startDate, endDate, limit, ...filters });
 }
 
 export function createOrdersV4Document(companyId: string, body: OrdersV4DocumentPayload): Promise<ApiParsedResult<OrdersV4Document>> {
@@ -54,8 +73,12 @@ export function getOrdersV4ItemsReport(companyId: string, type: 'purchase' | 're
   return apiGet(`${BASE}/reports/items`, { companyId, type, startDate, endDate });
 }
 
-export function getOrdersV4SalesReport(companyId: string, startDate: string, endDate: string): Promise<ApiParsedResult<OrdersV4SalesReport>> {
-  return apiGet(`${BASE}/reports/sales`, { companyId, startDate, endDate });
+export function getOrdersV4ActivityReport(companyId: string, type: 'purchase' | 'registration' | '', startDate: string, endDate: string, filters: OrdersV4ReportFilters = {}): Promise<ApiParsedResult<OrdersV4ActivityReport>> {
+  return apiGet(`${BASE}/reports/activity`, { companyId, type: type || undefined, startDate, endDate, ...reportFilterParams(filters) });
+}
+
+export function getOrdersV4SalesReport(companyId: string, startDate: string, endDate: string, filters: OrdersV4ReportFilters = {}): Promise<ApiParsedResult<OrdersV4SalesReport>> {
+  return apiGet(`${BASE}/reports/sales`, { companyId, startDate, endDate, ...reportFilterParams(filters) });
 }
 
 export function getOrdersV4Balances(companyId: string): Promise<ApiParsedResult<OrdersV4InventoryBalance[]>> {

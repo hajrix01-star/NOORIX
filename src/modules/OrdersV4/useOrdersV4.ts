@@ -8,6 +8,7 @@ import {
   createOrdersV4Unit,
   deactivateOrdersV4Catalog,
   getOrdersV4Balances,
+  getOrdersV4ActivityReport,
   getOrdersV4Bootstrap,
   getOrdersV4DataQuality,
   getOrdersV4Documents,
@@ -28,6 +29,7 @@ import {
 } from '../../services/api';
 import type {
   OrdersV4Bootstrap,
+  OrdersV4ActivityReport,
   OrdersV4DataQuality,
   OrdersV4Document,
   OrdersV4DocumentPayload,
@@ -35,6 +37,7 @@ import type {
   OrdersV4InventoryBalance,
   OrdersV4ItemsReportRow,
   OrdersV4LedgerEntry,
+  OrdersV4ReportFilters,
   OrdersV4SalesReport,
   OrdersV4Stocktake,
   OrdersV4Summary,
@@ -54,12 +57,29 @@ export function useOrdersV4Bootstrap(companyId: string, enabled = true) {
   });
 }
 
-export function useOrdersV4Documents(companyId: string, type: 'purchase' | 'registration', startDate: string, endDate: string, enabled = true, limit = 250) {
+export function useOrdersV4Documents(
+  companyId: string,
+  type: 'purchase' | 'registration',
+  startDate: string,
+  endDate: string,
+  enabled = true,
+  limit = 250,
+  filters: { search?: string; sectionId?: string; categoryId?: string; itemId?: string; paymentMethod?: string; status?: string } = {},
+) {
   return useApiListQuery<OrdersV4Document>({
-    queryKey: ordersV4Keys.documents(companyId, type, startDate, endDate, limit),
-    queryFn: () => getOrdersV4Documents(companyId, type, startDate, endDate, limit),
+    queryKey: [...ordersV4Keys.documents(companyId, type, startDate, endDate, limit), filters],
+    queryFn: () => getOrdersV4Documents(companyId, type, startDate, endDate, limit, filters),
     fallbackMessage: 'تعذر تحميل مستندات طلبات V4',
     enabled: enabled && !!companyId && !!startDate && !!endDate,
+  });
+}
+
+export function useOrdersV4ActivityReport(companyId: string, type: 'purchase' | 'registration' | '', startDate: string, endDate: string, filters: OrdersV4ReportFilters = {}) {
+  return useApiQuery<OrdersV4ActivityReport>({
+    queryKey: [...ordersV4Keys.reports(companyId), 'activity', type, startDate, endDate, filters],
+    queryFn: () => getOrdersV4ActivityReport(companyId, type, startDate, endDate, filters),
+    fallbackMessage: 'تعذر تحميل تقرير حركات طلبات V4',
+    enabled: !!companyId && !!startDate && !!endDate,
   });
 }
 
@@ -81,10 +101,10 @@ export function useOrdersV4ItemsReport(companyId: string, type: 'purchase' | 're
   });
 }
 
-export function useOrdersV4SalesReport(companyId: string, startDate: string, endDate: string) {
+export function useOrdersV4SalesReport(companyId: string, startDate: string, endDate: string, filters: OrdersV4ReportFilters = {}) {
   return useApiQuery<OrdersV4SalesReport>({
-    queryKey: [...ordersV4Keys.reports(companyId), 'sales', startDate, endDate],
-    queryFn: () => getOrdersV4SalesReport(companyId, startDate, endDate),
+    queryKey: [...ordersV4Keys.reports(companyId), 'sales', startDate, endDate, filters],
+    queryFn: () => getOrdersV4SalesReport(companyId, startDate, endDate, filters),
     fallbackMessage: 'تعذر تحميل تقرير التسجيل الداخلي V4',
     enabled: !!companyId && !!startDate && !!endDate,
   });

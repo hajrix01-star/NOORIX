@@ -5,6 +5,37 @@ import { OrdersV4DocumentsService } from './orders-v4-documents.service';
 describe('OrdersV4DocumentsService purchase workflow', () => {
   afterEach(() => jest.restoreAllMocks());
 
+  it('applies section, category, item, payment, status and search filters before the result limit', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const prisma = { ordersV4Document: { findMany } };
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never);
+
+    await service.list('company-1', 'purchase', '2026-07-01', '2026-07-31', undefined, 25, {
+      search: 'سكر',
+      sectionId: 'section-1',
+      categoryId: 'category-1',
+      itemId: 'item-1',
+      paymentMethod: 'custody',
+      status: 'received',
+    });
+
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      take: 25,
+      where: expect.objectContaining({
+        companyId: 'company-1',
+        documentType: 'purchase',
+        sectionId: 'section-1',
+        paymentMethod: 'custody',
+        status: 'received',
+        lines: { some: { itemId: 'item-1', item: { categoryId: 'category-1' } } },
+        OR: expect.arrayContaining([
+          { documentNumber: { contains: 'سكر', mode: 'insensitive' } },
+          { lines: { some: { item: { category: { nameAr: { contains: 'سكر', mode: 'insensitive' } } } } } },
+        ]),
+      }),
+    }));
+  });
+
   it('creates a prepared purchase with kernel-calculated quantities and totals', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('user-1');

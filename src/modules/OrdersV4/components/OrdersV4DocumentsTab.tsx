@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4Item, OrdersV4ReceivePayload, OrdersV4Summary } from '../../../types/api';
 import { AdaptiveSheet, Button, DialogActions, Input, Modal, type SimpleTableColumn, TransactionDatePicker, usePrintPreview } from '../../../ui';
 import { exportToExcel } from '../../../utils/exportUtils';
@@ -164,10 +164,6 @@ export function OrdersV4DocumentsTab({
 }) {
   const { t, lang } = useTranslation();
   const [resultLimit, setResultLimit] = useState(250);
-  const documentsQuery = useOrdersV4Documents(companyId, documentType, startDate, endDate, true, resultLimit);
-  const summaryQuery = useOrdersV4Summary(companyId, startDate, endDate, canReport);
-  const reverseMutation = useReverseOrdersV4Document(companyId);
-  const undoReverseMutation = useUndoReverseOrdersV4Document(companyId);
   const [createOpen, setCreateOpen] = useState(false);
   const [cancellationOpen, setCancellationOpen] = useState(false);
   const [viewing, setViewing] = useState<OrdersV4Document | null>(null);
@@ -178,22 +174,42 @@ export function OrdersV4DocumentsTab({
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [itemFilter, setItemFilter] = useState('');
   const isPurchase = documentType === 'purchase';
+  const deferredSearch = useDeferredValue(search);
+  const documentsQuery = useOrdersV4Documents(companyId, documentType, startDate, endDate, true, resultLimit, {
+    search: deferredSearch,
+    sectionId: sectionFilter || undefined,
+    categoryId: categoryFilter || undefined,
+    itemId: itemFilter || undefined,
+    paymentMethod: isPurchase && paymentFilter !== 'all' ? paymentFilter : undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+  });
+  const summaryQuery = useOrdersV4Summary(companyId, startDate, endDate, canReport);
+  const reverseMutation = useReverseOrdersV4Document(companyId);
+  const undoReverseMutation = useUndoReverseOrdersV4Document(companyId);
   const documents = documentsQuery.data ?? [];
-  useEffect(() => setResultLimit(250), [documentType, endDate, startDate]);
+  useEffect(() => setResultLimit(250), [categoryFilter, deferredSearch, documentType, endDate, itemFilter, paymentFilter, sectionFilter, startDate, statusFilter]);
   const summary = summaryQuery.data;
-  const sections = useMemo(() => [...new Map(documents.filter((row) => row.section).map((row) => [row.section!.id, row.section!])).values()], [documents]);
+  const availableItems = useMemo(() => (bootstrap?.items ?? []).filter((item) => item.itemType === (isPurchase ? 'purchased' : 'sale')), [bootstrap?.items, isPurchase]);
+  const sections = useMemo(() => (bootstrap?.sections ?? []).filter((section) => availableItems.some((item) => item.sections.some((entry) => entry.section.id === section.id))), [availableItems, bootstrap?.sections]);
+  const categories = useMemo(() => (bootstrap?.categories ?? []).filter((category) => availableItems.some((item) => item.categoryId === category.id && (!sectionFilter || item.sections.some((entry) => entry.section.id === sectionFilter)))), [availableItems, bootstrap?.categories, sectionFilter]);
+  const items = useMemo(() => availableItems.filter((item) => (!sectionFilter || item.sections.some((entry) => entry.section.id === sectionFilter)) && (!categoryFilter || item.categoryId === categoryFilter)), [availableItems, categoryFilter, sectionFilter]);
+  useEffect(() => {
+    if (categoryFilter && !categories.some((entry) => entry.id === categoryFilter)) setCategoryFilter('');
+  }, [categories, categoryFilter]);
+  useEffect(() => {
+    if (itemFilter && !items.some((entry) => entry.id === itemFilter)) setItemFilter('');
+  }, [itemFilter, items]);
+  useEffect(() => {
+    setSearch(''); setPaymentFilter('all'); setStatusFilter('all'); setSectionFilter(''); setCategoryFilter(''); setItemFilter('');
+  }, [companyId, documentType]);
   const periodCustodyBalanceByDocumentId = useMemo(
     () => buildOrdersV4PeriodCustodyBalances(documents),
     [documents],
   );
-  const filteredDocuments = useMemo(() => {
-    const needle = search.trim().toLocaleLowerCase('ar');
-    return documents.filter((document) => (!needle || `${document.documentNumber} ${document.notes || ''} ${document.section?.nameAr || ''}`.toLocaleLowerCase('ar').includes(needle))
-      && (paymentFilter === 'all' || document.paymentMethod === paymentFilter)
-      && (statusFilter === 'all' || document.status === statusFilter)
-      && (!sectionFilter || document.sectionId === sectionFilter));
-  }, [documents, paymentFilter, search, sectionFilter, statusFilter]);
+  const filteredDocuments = documents;
   const filteredTotal = useMemo(() => filteredDocuments.reduce((total, document) => total + Number(isPurchase ? document.totalAmount : document.operationalCost), 0), [filteredDocuments, isPurchase]);
   const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
     title: isPurchase ? 'طباعة الطلب' : 'طباعة التسجيل الداخلي',
@@ -293,10 +309,12 @@ export function OrdersV4DocumentsTab({
         </div>
       ) : null}
       <div className="grid gap-3 rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:grid-cols-2 xl:grid-cols-4">
-        <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)} placeholder="رقم المستند أو القسم…" /></OrdersV4Field>
+        <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)} placeholder="رقم المستند أو القسم أو الفئة أو الصنف…" /></OrdersV4Field>
         <OrdersV4Field label="القسم"><OrdersV4Select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)}><option value="">كل الأقسام</option>{sections.map((section) => <option key={section.id} value={section.id}>{section.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+        <OrdersV4Field label="الفئة"><OrdersV4Select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option value="">كل الفئات</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+        <OrdersV4Field label="الصنف"><OrdersV4Select value={itemFilter} onChange={(event) => setItemFilter(event.target.value)}><option value="">كل الأصناف</option>{items.map((item) => <option key={item.id} value={item.id}>{item.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label="الحالة"><OrdersV4Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">كل الحالات</option><option value="prepared">بانتظار الاستلام</option><option value="received">مستلم</option><option value="reversed">معكوس</option><option value="cancelled">ملغي</option></OrdersV4Select></OrdersV4Field>
-        <div className="flex items-end justify-end text-[13px] font-bold text-noorix-text">المطابق: {filteredDocuments.length} — الإجمالي: {v4Number(filteredTotal)} ر.س</div>
+        <div className="flex items-end justify-end text-[13px] font-bold text-noorix-text">المعروض: {filteredDocuments.length} — الإجمالي: {v4Number(filteredTotal)} ر.س</div>
       </div>
       {isPurchase && <div className="flex flex-wrap items-center gap-2" role="group" aria-label="فلترة طريقة الدفع">
         <span className="text-[12px] font-semibold text-noorix-muted">طريقة الدفع:</span>
@@ -486,7 +504,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
         </div>
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/30 p-3">
           <div className="mb-3 text-[13px] font-bold">اختر الأصناف</div>
-          <OrdersV4DocumentItemPicker items={items} sections={(bootstrap?.sections ?? []).filter((row) => row.isActive)} sectionId={sectionId} onSectionChange={setSectionId} selectedQuantities={selectedQuantities} onSelect={addItem} onRemove={removeItem} />
+          <OrdersV4DocumentItemPicker items={items} sections={(bootstrap?.sections ?? []).filter((row) => row.isActive)} sectionId={sectionId} onSectionChange={setSectionId} selectedQuantities={selectedQuantities} onSelect={addItem} onRemove={removeItem} sectionLocked={lines.length > 0} />
         </div>
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/30 p-3">
           <div className="mb-3 flex items-center justify-between"><strong className="text-[13px]">الأصناف المضافة</strong><span className="text-[11px] text-noorix-muted">{lines.length} سطر</span></div>
@@ -604,7 +622,7 @@ function OrdersV4DocumentDetails({ document, onClose, onPrint, onExport, onWhats
     { key: document?.documentType === 'registration' ? 'operationalCost' : 'lineTotal', label: document?.documentType === 'registration' ? 'التكلفة' : 'الإجمالي', numeric: true, render: (value) => `${v4Number(value)} ر.س` },
   ];
   const statusLabel = document?.status === 'received' ? 'مستلم' : document?.status === 'prepared' ? 'بانتظار الاستلام' : document?.status === 'reversed' ? 'معكوس' : 'ملغي';
-  return <Modal
+  return <AdaptiveSheet
     open={!!document}
     onClose={onClose}
     size="xl"
@@ -625,5 +643,5 @@ function OrdersV4DocumentDetails({ document, onClose, onPrint, onExport, onWhats
       <SimpleTable columns={columns} data={document.lines} tableMinWidth={760} />
       {document.notes && <div className="rounded-xl border border-noorix-border p-3 text-[12px]"><b>ملاحظات:</b> {document.notes}</div>}
     </div>}
-  </Modal>;
+  </AdaptiveSheet>;
 }

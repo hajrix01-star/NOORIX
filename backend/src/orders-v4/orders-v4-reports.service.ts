@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { calculateOrdersV4AverageUnitCost, calculateOrdersV4ConvertedSignedQuantity } from './orders-v4-calculation.kernel';
 import { calculateOrdersV4CashAvailable, calculateOrdersV4FundsBalance } from './orders-v4-funds.kernel';
-import type { OrdersV4DocumentType } from './orders-v4.contracts';
+import type { OrdersV4DocumentType, OrdersV4ReportFilters } from './orders-v4.contracts';
 import {
   ordersV4EdgeDefinitions,
   ordersV4UnitDefinitions,
@@ -12,10 +12,141 @@ import {
 import { ordersV4DateYmd, ordersV4RangeBounds, ordersV4SaudiToday } from './orders-v4-date.util';
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 import { buildOrdersV4RegistrationCoverage } from './orders-v4-registration-coverage.util';
+import { ordersV4NormalizedSearch } from './orders-v4-report-filters.util';
 
 @Injectable()
 export class OrdersV4ReportsService {
   constructor(private readonly prisma: TenantPrismaService) {}
+
+  private async reportFacets(companyId: string) {
+    const [sections, categories, items, units] = await Promise.all([
+      this.prisma.ordersV4Section.findMany({
+        where: { companyId },
+        orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+        select: { id: true, code: true, nameAr: true, nameEn: true },
+      }),
+      this.prisma.ordersV4Category.findMany({
+        where: { companyId },
+        orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+        select: { id: true, nameAr: true, nameEn: true },
+      }),
+      this.prisma.ordersV4Item.findMany({
+        where: { companyId },
+        orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+        select: {
+          id: true, sku: true, nameAr: true, nameEn: true, itemType: true, categoryId: true,
+          sections: { select: { sectionId: true } },
+        },
+      }),
+      this.prisma.ordersV4Unit.findMany({
+        where: { companyId },
+        orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+        select: { id: true, code: true, nameAr: true, nameEn: true },
+      }),
+    ]);
+    return {
+      sections,
+      categories,
+      items: items.map((item) => ({ ...item, sectionIds: item.sections.map((entry) => entry.sectionId), sections: undefined })),
+      units,
+    };
+  }
+
+  async activityReport(
+    companyId: string,
+    documentType?: OrdersV4DocumentType,
+    startDate?: string,
+    endDate?: string,
+    filters: OrdersV4ReportFilters = {},
+  ) {
+    const lineWhere: Prisma.OrdersV4DocumentLineWhereInput = {
+      itemId: filters.itemIds?.length ? { in: filters.itemIds } : undefined,
+      baseUnitId: filters.baseUnitIds?.length ? { in: filters.baseUnitIds } : undefined,
+      inputUnitId: filters.inputUnitIds?.length ? { in: filters.inputUnitIds } : undefined,
+      item: filters.categoryIds?.length ? { categoryId: { in: filters.categoryIds } } : undefined,
+    };
+    const hasLineFilter = Boolean(
+      filters.itemIds?.length || filters.categoryIds?.length || filters.baseUnitIds?.length || filters.inputUnitIds?.length,
+    );
+    const where: Prisma.OrdersV4DocumentWhereInput = {
+      companyId,
+      documentType: documentType || undefined,
+      reversalOfId: null,
+      documentDate: ordersV4RangeBounds(startDate, endDate),
+      sectionId: filters.sectionIds?.length ? { in: filters.sectionIds } : undefined,
+      paymentMethod: filters.paymentMethods?.length ? { in: filters.paymentMethods } : undefined,
+      status: filters.statuses?.length ? { in: filters.statuses } : undefined,
+      registrationEntryType: filters.registrationEntryTypes?.length ? { in: filters.registrationEntryTypes } : undefined,
+      createdByUserId: filters.createdByUserIds?.length ? { in: filters.createdByUserIds } : undefined,
+      lines: hasLineFilter ? { some: lineWhere } : undefined,
+    };
+    const [rawDocuments, facets] = await Promise.all([
+      this.prisma.ordersV4Document.findMany({
+        where,
+        include: {
+          section: true,
+          location: true,
+          lines: {
+            where: hasLineFilter ? lineWhere : undefined,
+            include: { item: { include: { category: true } }, inputUnit: true, baseUnit: true, priceUnit: true },
+            orderBy: { lineNumber: 'asc' },
+          },
+        },
+        orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
+      }),
+      this.reportFacets(companyId),
+    ]);
+    const identities = await loadOrdersV4UserIdentities(this.prisma, rawDocuments.map((document) => document.createdByUserId));
+    const term = ordersV4NormalizedSearch(filters.search);
+    const cancellationReasons = new Set<string>(filters.cancellationReasons ?? []);
+    const documents = rawDocuments.flatMap((document) => {
+      const identity = ordersV4UserIdentity(identities, document.createdByUserId);
+      const documentText = ordersV4NormalizedSearch([
+        document.documentNumber,
+        document.notes,
+        document.section?.nameAr,
+        document.section?.nameEn,
+        identity?.nameAr,
+        identity?.nameEn,
+        identity?.username,
+      ].filter(Boolean).join(' '));
+      const documentMatchesSearch = !term || documentText.includes(term);
+      const lines = document.lines.filter((line) => {
+        const reasons = Array.isArray(line.cancellationReasons)
+          ? line.cancellationReasons.map((reason) => String(reason))
+          : [];
+        if (cancellationReasons.size && !reasons.some((reason) => cancellationReasons.has(reason))) return false;
+        if (!term || documentMatchesSearch) return true;
+        return ordersV4NormalizedSearch([
+          line.itemNameSnapshot,
+          line.item.nameAr,
+          line.item.nameEn,
+          line.item.sku,
+          line.item.category?.nameAr,
+          line.item.category?.nameEn,
+          line.inputUnit.nameAr,
+          line.baseUnit.nameAr,
+          line.priceUnit.nameAr,
+          reasons.join(' '),
+          line.cancellationNote,
+        ].filter(Boolean).join(' ')).includes(term);
+      });
+      if (!lines.length) return [];
+      const amount = lines.reduce(
+        (total, line) => total.plus(document.documentType === 'registration' ? line.operationalCost : line.lineTotal),
+        new Prisma.Decimal(0),
+      ).toDecimalPlaces(6);
+      return [{
+        ...document,
+        subtotal: document.documentType === 'purchase' ? amount : document.subtotal,
+        totalAmount: document.documentType === 'purchase' ? amount : document.totalAmount,
+        operationalCost: amount,
+        lines,
+        createdByUser: identity,
+      }];
+    });
+    return { documents, facets, kernelVersion: 4 as const };
+  }
 
   async summary(companyId: string, startDate?: string, endDate?: string) {
     const bounds = ordersV4RangeBounds(startDate, endDate);
@@ -158,24 +289,21 @@ export class OrdersV4ReportsService {
     })).sort((a, b) => b.totalAmount.comparedTo(a.totalAmount));
   }
 
-  async salesReport(companyId: string, startDate?: string, endDate?: string) {
-    const bounds = ordersV4RangeBounds(startDate, endDate);
-    const [documents, coverageDocuments, activeSections] = await Promise.all([
-      this.prisma.ordersV4Document.findMany({
-        where: { companyId, documentType: 'registration', documentDate: bounds },
-        include: { section: true, location: true, lines: { include: { item: { include: { category: true } }, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
-        orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
-      }),
+  async salesReport(
+    companyId: string,
+    startDate?: string,
+    endDate?: string,
+    filters: OrdersV4ReportFilters = {},
+  ) {
+    const [activity, coverageDocuments] = await Promise.all([
+      this.activityReport(companyId, 'registration', startDate, endDate, filters),
       this.prisma.ordersV4Document.findMany({
         where: { companyId, documentType: 'registration', registrationEntryType: 'issue', status: 'received' },
         select: { sectionId: true, documentDate: true },
       }),
-      this.prisma.ordersV4Section.findMany({
-        where: { companyId, isActive: true },
-        orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
-        select: { id: true, nameAr: true },
-      }),
     ]);
+    const documents = activity.documents;
+    const activeSections = activity.facets.sections;
     const bySection = new Map<string, { sectionId: string; sectionName: string; count: number; total: Prisma.Decimal }>();
     for (const document of documents.filter((row) => row.status === 'received')) {
       const key = document.sectionId || 'unassigned';
@@ -189,7 +317,6 @@ export class OrdersV4ReportsService {
       current.total = current.total.plus(document.operationalCost);
       bySection.set(key, current);
     }
-    const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     const today = ordersV4SaudiToday();
     const coverageStartDate = startDate
       ? ordersV4DateYmd(startDate, 'تاريخ البداية')
@@ -246,8 +373,8 @@ export class OrdersV4ReportsService {
       bySection: [...bySection.values()].map((row) => ({ ...row, totalAmount: row.total })),
       documents: documents.map((document) => ({
         ...document,
-        createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
       })),
+      facets: activity.facets,
       registrationCoverage,
       costCoverage: {
         documents: receivedDocuments.length,

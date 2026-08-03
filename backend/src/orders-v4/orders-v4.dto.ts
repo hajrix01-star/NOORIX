@@ -186,10 +186,31 @@ export class OrdersV4DateRangeQueryDto extends OrdersV4CompanyQueryDto {
 export class OrdersV4DocumentsQueryDto extends OrdersV4DateRangeQueryDto {
   @IsOptional() @IsIn(['purchase', 'registration']) type?: 'purchase' | 'registration';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(2000) limit?: number;
+  @IsOptional() @IsString() @MaxLength(200) search?: string;
+  @IsOptional() @IsString() sectionId?: string;
+  @IsOptional() @IsString() categoryId?: string;
+  @IsOptional() @IsString() itemId?: string;
+  @IsOptional() @IsIn(['custody', 'cash', 'transfer']) paymentMethod?: 'custody' | 'cash' | 'transfer';
+  @IsOptional() @IsIn(['prepared', 'received', 'cancelled', 'reversed']) status?: 'prepared' | 'received' | 'cancelled' | 'reversed';
 }
 
 export class OrdersV4ItemsReportQueryDto extends OrdersV4DateRangeQueryDto {
   @IsOptional() @IsIn(['purchase', 'registration']) type?: 'purchase' | 'registration';
+}
+
+export class OrdersV4ActivityReportQueryDto extends OrdersV4DateRangeQueryDto {
+  @IsOptional() @IsIn(['purchase', 'registration']) type?: 'purchase' | 'registration';
+  @IsOptional() @IsString() @MaxLength(5000) sectionIds?: string;
+  @IsOptional() @IsString() @MaxLength(5000) categoryIds?: string;
+  @IsOptional() @IsString() @MaxLength(5000) itemIds?: string;
+  @IsOptional() @IsString() @MaxLength(5000) baseUnitIds?: string;
+  @IsOptional() @IsString() @MaxLength(5000) inputUnitIds?: string;
+  @IsOptional() @IsString() @MaxLength(500) paymentMethods?: string;
+  @IsOptional() @IsString() @MaxLength(500) statuses?: string;
+  @IsOptional() @IsString() @MaxLength(500) registrationEntryTypes?: string;
+  @IsOptional() @IsString() @MaxLength(1000) cancellationReasons?: string;
+  @IsOptional() @IsString() @MaxLength(5000) createdByUserIds?: string;
+  @IsOptional() @IsString() @MaxLength(200) search?: string;
 }
 
 export class OrdersV4LedgerQueryDto extends OrdersV4CompanyQueryDto {
