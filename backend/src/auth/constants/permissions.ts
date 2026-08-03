@@ -69,7 +69,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     permissions: { view: 'VIEW_ASSETS', read: 'ASSETS_READ', write: 'ASSETS_WRITE', delete: 'ASSETS_DELETE' },
   },
   {
-    key: 'ordersV4', labelAr: 'طلبات V4', labelEn: 'Orders V4', icon: '📦',
+    key: 'ordersV4', labelAr: 'طلبات', labelEn: 'Orders', icon: '📦',
     permissions: {
       view: 'VIEW_ORDERS_V4',
       read: 'ORDERS_V4_READ',

@@ -61,7 +61,7 @@ export default function OrdersV4Screen() {
     <ScreenShell variant="data" className="min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2"><ScreenTitle>{lang === 'ar' ? 'طلبات V4' : 'Orders V4'}</ScreenTitle><span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-[10px] font-extrabold text-violet-700">CORE V4</span></div>
+          <ScreenTitle>{lang === 'ar' ? 'طلبات' : 'Orders'}</ScreenTitle>
           <p className="m-0 mt-1 text-[12px] text-noorix-muted">{lang === 'ar' ? 'قسم تشغيلي مستقل للطلبات والتسجيل الداخلي والمخزون والتكلفة والعهدة.' : 'Independent operational orders, internal registration, inventory, costing and custody.'}</p>
         </div>
         {!(activeTab === 'registration' && isInternalRegistrationStaffView) && (
