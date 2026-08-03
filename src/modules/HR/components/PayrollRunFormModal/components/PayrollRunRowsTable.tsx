@@ -5,6 +5,11 @@ import type { PayrollRunLineItem } from '../types';
 
 type Emp = { id?: string; name?: string; nameAr?: string };
 
+function compactAdvanceDate(dateLabel: string): string {
+  const match = dateLabel.match(/^(\d{1,2})[-/](\d{1,2})[-/]\d{4}$/);
+  return match ? `${match[1]}/${match[2]}` : dateLabel;
+}
+
 type Props = {
   displayEmployees: Emp[];
   items: PayrollRunLineItem[];
@@ -93,41 +98,33 @@ export function PayrollRunRowsTable({
                     </td>
                     <td className="text-start align-top p-2">
                       {items[idx].advanceChoices.length ? (
-                        <div className="grid gap-1.5">
+                        <div className="grid grid-cols-3 gap-1">
                           {items[idx].advanceChoices.map((advance) => (
                             <label
                               key={advance.advanceId}
                               className={cn(
-                                'flex items-center gap-2 rounded-lg border px-2 py-1.5 cursor-pointer',
+                                'min-w-0 flex items-center justify-center gap-1 rounded-md border px-1.5 py-1 cursor-pointer',
                                 advance.selected
                                   ? 'border-noorix-green/30 bg-noorix-green/5'
-                                  : 'border-noorix-border bg-noorix-bg-muted text-noorix-muted',
+                                  : 'border-noorix-amber/40 bg-noorix-amber/10 text-noorix-muted',
                               )}
                             >
                               <Checkbox
                                 checked={advance.selected}
                                 onChange={() => toggleAdvance(emp.id as string, advance.advanceId)}
-                                aria-label={`${t('payrollAdvances')} ${advance.invoiceNumber}`}
+                                aria-label={`${t('payrollAdvances')} ${advance.amount} ${compactAdvanceDate(advance.dateLabel)}`}
                               />
-                              <span className="min-w-0 flex-1">
-                                <span className="block truncate text-[11px] font-bold" dir="ltr">
-                                  {advance.invoiceNumber} · {advance.dateLabel}
-                                </span>
-                                <span className="block text-[10px] text-noorix-muted">
-                                  {t('payrollAdvanceDue')}: <FmtNum n={advance.amount} /> · {t('payrollAdvanceRemaining')}:{' '}
-                                  <FmtNum n={advance.remaining} />
-                                </span>
+                              <span
+                                className={cn(
+                                  'min-w-0 truncate text-[11px] font-bold tabular-nums',
+                                  !advance.selected && 'line-through decoration-noorix-amber/70',
+                                )}
+                                dir="ltr"
+                              >
+                                <FmtNum n={advance.amount} /> · {compactAdvanceDate(advance.dateLabel)}
                               </span>
-                              {!advance.selected ? (
-                                <span className="shrink-0 rounded-full bg-noorix-amber/15 px-2 py-0.5 text-[10px] font-bold text-noorix-amber">
-                                  {t('payrollAdvanceDeferred')}
-                                </span>
-                              ) : null}
                             </label>
                           ))}
-                          <div className="text-center text-[11px] font-extrabold">
-                            {t('payrollAdvances')}: <FmtNum n={items[idx].advancesDeduct ?? 0} />
-                          </div>
                         </div>
                       ) : (
                         <span className="text-noorix-muted text-[11px]">{t('payrollNoAdvances')}</span>
