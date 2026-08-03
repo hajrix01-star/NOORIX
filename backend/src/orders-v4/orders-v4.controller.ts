@@ -239,7 +239,7 @@ export class OrdersV4Controller {
     @Param('id') id: string,
     @Body() body: OrdersV4IdempotencyDto,
   ) {
-    return this.documents.reopenLatestPurchase(requireCompanyId(companyId), id, body.idempotencyKey);
+    return this.documents.reopenPurchase(requireCompanyId(companyId), id, body.idempotencyKey);
   }
 
   @Get('reports/summary')

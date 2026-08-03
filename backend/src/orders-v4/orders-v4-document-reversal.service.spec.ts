@@ -35,7 +35,11 @@ function receivedPurchase() {
 }
 
 describe('OrdersV4DocumentReversalService reopen workflow', () => {
-  afterEach(() => jest.restoreAllMocks());
+  beforeEach(() => jest.useFakeTimers().setSystemTime(new Date('2026-08-03T12:00:00.000Z')));
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.useRealTimers();
+  });
 
   it('atomically reverses the received latest purchase and creates an editable prepared replacement', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
@@ -51,7 +55,8 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
     const custodyEntry = { id: 'custody-1', amountDelta: new Prisma.Decimal(-25) };
     const documentFindFirst = jest.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
       if (where.idempotencyKey) return null;
-      if (where.documentType === 'purchase') return original;
+      if (where.id === original.id && where.documentType === 'purchase') return original;
+      if (where.status === 'prepared') return null;
       if (where.id === original.id) return original;
       if (where.reversalOfId) return null;
       return null;
@@ -81,7 +86,7 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
     const funds = { postReversals: jest.fn() };
     const service = new OrdersV4DocumentReversalService(prisma as never, posting as never, funds as never);
 
-    const result = await service.reopenLatestPurchase('company-1', original.id, 'reopen-key-1');
+    const result = await service.reopenPurchase('company-1', original.id, 'reopen-key-1');
 
     expect(result).toBe(replacement);
     expect(documentCreate).toHaveBeenCalledTimes(2);
@@ -117,7 +122,7 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
     }));
   });
 
-  it('rejects reopening a purchase that is not the latest root purchase', async () => {
+  it('rejects reopening a received purchase older than the seven-day owner window', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('owner-1');
     const tx = {
@@ -125,13 +130,32 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
       ordersV4Document: {
         findFirst: jest.fn()
           .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce({ ...receivedPurchase(), id: 'newer-purchase' }),
+          .mockResolvedValueOnce({ ...receivedPurchase(), id: 'older-purchase', documentDate: new Date('2026-07-27T00:00:00.000Z') }),
       },
     };
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
     const service = new OrdersV4DocumentReversalService(prisma as never, {} as never, {} as never);
 
-    await expect(service.reopenLatestPurchase('company-1', 'older-purchase', 'reopen-key-2'))
-      .rejects.toThrow('إعادة الفتح متاحة لآخر طلب فقط');
+    await expect(service.reopenPurchase('company-1', 'older-purchase', 'reopen-key-2'))
+      .rejects.toThrow('إعادة الفتح متاحة للطلبات المستلمة خلال آخر 7 أيام فقط');
+  });
+
+  it('prevents opening a second editable purchase at the same time', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    jest.spyOn(TenantContext, 'getUserId').mockReturnValue('owner-1');
+    const tx = {
+      $executeRaw: jest.fn(),
+      ordersV4Document: {
+        findFirst: jest.fn()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(receivedPurchase())
+          .mockResolvedValueOnce({ id: 'pending-purchase' }),
+      },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const service = new OrdersV4DocumentReversalService(prisma as never, {} as never, {} as never);
+
+    await expect(service.reopenPurchase('company-1', 'purchase-1', 'reopen-key-3'))
+      .rejects.toThrow('يوجد طلب بانتظار الاستلام؛ استلمه قبل إعادة فتح طلب آخر');
   });
 });

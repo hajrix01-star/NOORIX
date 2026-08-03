@@ -27,6 +27,7 @@ import { ordersV4DocumentListQuery, type OrdersV4DocumentListFilters } from './o
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 import { resolveOrdersV4RegistrationEntry } from './orders-v4-registration-cancellation.policy';
 import { OrdersV4DocumentReversalService } from './orders-v4-document-reversal.service';
+import { isOrdersV4ReopenDateEligible } from './orders-v4-reopen.policy';
 
 function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
   return {
@@ -88,22 +89,25 @@ export class OrdersV4DocumentsService {
     limit = 250,
     filters: OrdersV4DocumentListFilters = {},
   ) {
-    const [documents, latestPurchase] = await Promise.all([
+    const [documents, pendingPurchase] = await Promise.all([
       this.prisma.ordersV4Document.findMany(
         ordersV4DocumentListQuery(companyId, documentType, startDate, endDate, createdByUserId, limit, filters),
       ),
       documentType === 'purchase'
         ? this.prisma.ordersV4Document.findFirst({
-          where: { companyId, documentType: 'purchase', reversalOfId: null },
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          select: { id: true, status: true },
+          where: { companyId, documentType: 'purchase', status: 'prepared', reversalOfId: null },
+          select: { id: true },
         })
         : Promise.resolve(null),
     ]);
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     return documents.map((document) => ({
       ...document,
-      canReopen: latestPurchase?.id === document.id && latestPurchase.status === 'received',
+      canReopen: !pendingPurchase
+        && document.documentType === 'purchase'
+        && document.reversalOfId == null
+        && document.status === 'received'
+        && isOrdersV4ReopenDateEligible(document.documentDate),
       createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
     }));
   }
@@ -765,7 +769,7 @@ export class OrdersV4DocumentsService {
     return this.reversal.undoReverse(companyId, id, idempotencyKey);
   }
 
-  reopenLatestPurchase(companyId: string, id: string, idempotencyKey: string) {
-    return this.reversal.reopenLatestPurchase(companyId, id, idempotencyKey);
+  reopenPurchase(companyId: string, id: string, idempotencyKey: string) {
+    return this.reversal.reopenPurchase(companyId, id, idempotencyKey);
   }
 }

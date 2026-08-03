@@ -647,7 +647,7 @@ function OrdersV4ReopenConfirmModal({
   >
     {document && <div className="flex flex-col gap-3">
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[13px] leading-7 text-blue-950">
-        سيُعكس أثر الاستلام على المخزون والعهدة والأسعار، ويُحفظ الطلب الحالي كسجل تدقيق، ثم يُنشأ طلب بديل بحالة «بانتظار الاستلام» وبنفس الأصناف ليعدله الكاشير ويستلمه من جديد. العملية متاحة لآخر طلب فقط.
+        سيُعكس أثر الاستلام على المخزون والعهدة والأسعار، ويُحفظ الطلب الحالي كسجل تدقيق، ثم يُنشأ طلب بديل بحالة «بانتظار الاستلام» وبنفس الأصناف ليعدله الكاشير ويستلمه من جديد. العملية متاحة للطلبات المستلمة خلال آخر 7 أيام، ولا يمكن فتح أكثر من طلب للتعديل في الوقت نفسه.
       </div>
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-noorix-bg-muted p-3 text-[12px]">
         <span>الطلب: <b>{document.documentNumber}</b></span>

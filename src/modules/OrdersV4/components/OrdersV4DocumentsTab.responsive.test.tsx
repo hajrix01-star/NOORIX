@@ -161,6 +161,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'إعادة فتح' }));
     expect(screen.getByRole('dialog', { name: 'إعادة فتح الطلب للتعديل' })).toBeTruthy();
     expect(screen.getByText(/يُحفظ الطلب الحالي كسجل تدقيق/)).toBeTruthy();
+    expect(screen.getByText(/خلال آخر 7 أيام/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'عكس الاستلام وإعادة الفتح' })).toBeTruthy();
   });
 

@@ -1,13 +1,20 @@
 import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import { OrdersV4DocumentsService } from './orders-v4-documents.service';
+import { ordersV4ReopenDateRange } from './orders-v4-reopen.policy';
 
 describe('OrdersV4DocumentsService purchase workflow', () => {
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.useRealTimers();
+  });
 
   it('applies section, category, item, payment, status and search filters before the result limit', async () => {
-    const findMany = jest.fn().mockResolvedValue([{ id: 'document-1', createdByUserId: null }]);
-    const prisma = { ordersV4Document: { findMany, findFirst: jest.fn().mockResolvedValue({ id: 'document-1', status: 'received' }) } };
+    const findMany = jest.fn().mockResolvedValue([{
+      id: 'document-1', documentType: 'purchase', reversalOfId: null, status: 'received',
+      documentDate: ordersV4ReopenDateRange().lte, createdByUserId: null,
+    }]);
+    const prisma = { ordersV4Document: { findMany, findFirst: jest.fn().mockResolvedValue(null) } };
     const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never);
 
     const result = await service.list('company-1', 'purchase', '2026-07-01', '2026-07-31', undefined, 25, {
@@ -35,6 +42,30 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       }),
     }));
     expect(result[0]).toMatchObject({ id: 'document-1', canReopen: true });
+  });
+
+  it('allows reopening received purchases from the last seven days and blocks it while another purchase is pending', async () => {
+    const range = ordersV4ReopenDateRange('2026-08-03');
+    const oldDate = new Date(range.gte);
+    oldDate.setUTCDate(oldDate.getUTCDate() - 1);
+    const documents = [
+      { id: 'within-week', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: range.gte, createdByUserId: null },
+      { id: 'older', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: oldDate, createdByUserId: null },
+    ];
+    const prisma = { ordersV4Document: { findMany: jest.fn().mockResolvedValue(documents), findFirst: jest.fn().mockResolvedValue(null) } };
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never);
+
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-03T12:00:00.000Z'));
+    const result = await service.list('company-1', 'purchase');
+
+    expect(result.map((row) => [row.id, row.canReopen])).toEqual([
+      ['within-week', true],
+      ['older', false],
+    ]);
+
+    prisma.ordersV4Document.findFirst.mockResolvedValue({ id: 'pending-purchase' });
+    const blocked = await service.list('company-1', 'purchase');
+    expect(blocked.every((row) => row.canReopen === false)).toBe(true);
   });
 
   it('creates a prepared purchase with kernel-calculated quantities and totals', async () => {

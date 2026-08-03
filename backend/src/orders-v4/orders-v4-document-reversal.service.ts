@@ -6,6 +6,7 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ordersV4EdgeDefinitions, ordersV4UnitDefinitions, resolveOrdersV4ContextConversion } from './orders-v4-conversion.context';
 import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
+import { isOrdersV4ReopenDateEligible, ORDERS_V4_REOPEN_WINDOW_DAYS } from './orders-v4-reopen.policy';
 
 type OrdersV4Transaction = Prisma.TransactionClient;
 
@@ -39,7 +40,7 @@ export class OrdersV4DocumentReversalService {
     return this.toggle(companyId, id, idempotencyKey, true);
   }
 
-  async reopenLatestPurchase(companyId: string, id: string, idempotencyKey: string) {
+  async reopenPurchase(companyId: string, id: string, idempotencyKey: string) {
     if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     const normalizedKey = idempotencyKey.trim();
     const reopenRequestHash = operationHash({ operation: 'reopen-purchase', documentId: id });
@@ -57,13 +58,20 @@ export class OrdersV4DocumentReversalService {
         return duplicate;
       }
 
-      const latest = await tx.ordersV4Document.findFirst({
-        where: { companyId, documentType: 'purchase', reversalOfId: null },
+      const purchase = await tx.ordersV4Document.findFirst({
+        where: { id, companyId, documentType: 'purchase', reversalOfId: null },
         include: { lines: { orderBy: { lineNumber: 'asc' } } },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       });
-      if (!latest || latest.id !== id) throw new BadRequestException('إعادة الفتح متاحة لآخر طلب فقط');
-      if (latest.status !== 'received') throw new BadRequestException('يمكن إعادة فتح الطلب المستلم فقط');
+      if (!purchase) throw new NotFoundException('طلب الشراء غير موجود');
+      if (purchase.status !== 'received') throw new BadRequestException('يمكن إعادة فتح الطلب المستلم فقط');
+      if (!isOrdersV4ReopenDateEligible(purchase.documentDate)) {
+        throw new BadRequestException(`إعادة الفتح متاحة للطلبات المستلمة خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام فقط`);
+      }
+      const pendingPurchase = await tx.ordersV4Document.findFirst({
+        where: { companyId, documentType: 'purchase', status: 'prepared', reversalOfId: null },
+        select: { id: true },
+      });
+      if (pendingPurchase) throw new BadRequestException('يوجد طلب بانتظار الاستلام؛ استلمه قبل إعادة فتح طلب آخر');
 
       const reversalKey = `reopen-reversal:${reopenRequestHash.slice(0, 48)}`;
       const reversal = await this.toggleInTransaction(tx, companyId, id, reversalKey, false);
@@ -71,36 +79,36 @@ export class OrdersV4DocumentReversalService {
         data: {
           tenantId,
           companyId,
-          documentNumber: purchaseDocumentNumber(latest.documentDate),
+          documentNumber: purchaseDocumentNumber(purchase.documentDate),
           documentType: 'purchase',
           registrationEntryType: null,
           status: 'prepared',
-          paymentMethod: latest.paymentMethod,
-          documentDate: latest.documentDate,
-          sectionId: latest.sectionId,
-          locationId: latest.locationId,
-          pettyCashAmount: latest.pettyCashAmount,
-          subtotal: latest.subtotal,
-          totalAmount: latest.totalAmount,
-          operationalCost: latest.operationalCost,
-          notes: latest.notes,
+          paymentMethod: purchase.paymentMethod,
+          documentDate: purchase.documentDate,
+          sectionId: purchase.sectionId,
+          locationId: purchase.locationId,
+          pettyCashAmount: purchase.pettyCashAmount,
+          subtotal: purchase.subtotal,
+          totalAmount: purchase.totalAmount,
+          operationalCost: purchase.operationalCost,
+          notes: purchase.notes,
           idempotencyKey: normalizedKey,
           requestHash: reopenRequestHash,
-          calculationVersion: latest.calculationVersion,
+          calculationVersion: purchase.calculationVersion,
           calculationSnapshot: {
             kernelVersion: 4,
             owner: 'orders-v4-reopen-workflow',
             operation: 'reopen-replacement',
-            reopenedFromDocumentId: latest.id,
+            reopenedFromDocumentId: purchase.id,
             reversalDocumentId: reversal.id,
-            lineCount: latest.lines.length,
+            lineCount: purchase.lines.length,
           },
           createdByUserId: userId,
           updatedByUserId: userId,
         },
       });
 
-      for (const line of latest.lines) {
+      for (const line of purchase.lines) {
         await tx.ordersV4DocumentLine.create({
           data: {
             tenantId,
@@ -134,10 +142,10 @@ export class OrdersV4DocumentReversalService {
       }
 
       await tx.ordersV4Document.update({
-        where: { id: latest.id },
+        where: { id: purchase.id },
         data: {
           calculationSnapshot: {
-            ...snapshotObject(latest.calculationSnapshot),
+            ...snapshotObject(purchase.calculationSnapshot),
             reopenedByDocumentId: replacement.id,
             reopenReversalDocumentId: reversal.id,
           },
