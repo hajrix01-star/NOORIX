@@ -287,8 +287,8 @@ export function OrdersV4DocumentsTab({
     { key: 'lines', label: 'الأسطر', numeric: true, render: (_value, row) => row.lines.length },
     { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? 'الإجمالي' : 'التكلفة', numeric: true, render: (value) => <strong>{v4Number(value)} ر.س</strong> },
     { key: 'status', label: 'الحالة', render: (value, row) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : row.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'}</span> },
-    { key: 'actions', label: '', render: (_value, row) => <div className="flex flex-wrap gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{isPurchase && canReopen && row.canReopen && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setReopenTarget(row); }}>إعادة فتح</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && !row.calculationSnapshot?.reopenedByDocumentId && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },
-  ], [canReceive, canReopen, canReverse, canUndoReverse, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
+    { key: 'actions', label: '', render: (_value, row) => <div className="flex flex-wrap gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && !row.calculationSnapshot?.reopenedByDocumentId && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },
+  ], [canReceive, canReverse, canUndoReverse, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -334,7 +334,18 @@ export function OrdersV4DocumentsTab({
       {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} />}
       {canCreate && !isPurchase && <OrdersV4DocumentModal open={cancellationOpen} onClose={() => setCancellationOpen(false)} companyId={companyId} documentType="registration" registrationEntryType="cancellation" bootstrap={bootstrap} />}
       {canReceive && receiving && <OrdersV4DocumentModal open={!!receiving} onClose={() => setReceiving(null)} companyId={companyId} documentType="purchase" bootstrap={bootstrap} initialDocument={receiving} />}
-      <OrdersV4DocumentDetails document={viewing} onClose={() => setViewing(null)} onPrint={printDocument} onExport={exportDocument} onWhatsApp={sendDocumentWhatsApp} />
+      <OrdersV4DocumentDetails
+        document={viewing}
+        canReopen={canReopen}
+        onClose={() => setViewing(null)}
+        onPrint={printDocument}
+        onExport={exportDocument}
+        onWhatsApp={sendDocumentWhatsApp}
+        onReopen={(document) => {
+          setViewing(null);
+          setReopenTarget(document);
+        }}
+      />
       <OrdersV4ReversalConfirmModal
         document={reverseTarget}
         mode="reverse"
@@ -646,12 +657,14 @@ function OrdersV4ReopenConfirmModal({
   </Modal>;
 }
 
-function OrdersV4DocumentDetails({ document, onClose, onPrint, onExport, onWhatsApp }: {
+function OrdersV4DocumentDetails({ document, canReopen, onClose, onPrint, onExport, onWhatsApp, onReopen }: {
   document: OrdersV4Document | null;
+  canReopen: boolean;
   onClose: () => void;
   onPrint: (document: OrdersV4Document) => void;
   onExport: (document: OrdersV4Document) => void;
   onWhatsApp: (document: OrdersV4Document) => void;
+  onReopen: (document: OrdersV4Document) => void;
 }) {
   const { t, lang } = useTranslation();
   const columns: SimpleTableColumn<OrdersV4Document['lines'][number]>[] = [
@@ -685,6 +698,9 @@ function OrdersV4DocumentDetails({ document, onClose, onPrint, onExport, onWhats
       { key: 'excel', label: 'تصدير Excel', onClick: () => onExport(document) },
       { key: 'print', label: document.documentType === 'registration' ? 'طباعة التسجيل' : 'طباعة الطلب', onClick: () => onPrint(document) },
       { key: 'whatsapp', label: 'واتساب', role: 'save', onClick: () => onWhatsApp(document) },
+      ...(canReopen && document.documentType === 'purchase' && document.canReopen
+        ? [{ key: 'reopen', label: 'إعادة فتح', role: 'edit' as const, onClick: () => onReopen(document) }]
+        : []),
     ] : [{ key: 'close', label: 'إغلاق', onClick: onClose, role: 'cancel' }]} />}
   >
     {document && <div className="flex flex-col gap-3">

@@ -156,6 +156,8 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
       />,
     );
 
+    expect(screen.queryByRole('button', { name: 'إعادة فتح' })).toBeNull();
+    fireEvent.click(screen.getByText('REQ4-1'));
     fireEvent.click(screen.getByRole('button', { name: 'إعادة فتح' }));
     expect(screen.getByRole('dialog', { name: 'إعادة فتح الطلب للتعديل' })).toBeTruthy();
     expect(screen.getByText(/يُحفظ الطلب الحالي كسجل تدقيق/)).toBeTruthy();
