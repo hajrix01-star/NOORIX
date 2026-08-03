@@ -151,6 +151,67 @@ BEGIN
   END IF;
 END $$;
 
+-- Catalog governance rows that no longer have a live V4 target are historical
+-- configuration, not operational stock. Preserve those exact rows in the
+-- immutable archive instead of resurrecting categories/sections/units that a
+-- user deliberately removed after cutover.
+INSERT INTO "orders_v4_legacy_archives" (
+  "id", "tenant_id", "company_id", "source_system", "source_table",
+  "source_id", "source_checksum", "payload", "archived_at"
+)
+SELECT
+  'legacy-archive-' || md5('order_categories:' || source."company_id" || ':' || source."id"),
+  source."tenant_id", source."company_id", 'legacy-orders-catalog', 'order_categories',
+  source."id", md5(to_jsonb(source)::text), to_jsonb(source), now()
+FROM "order_categories" source
+WHERE NOT EXISTS (
+  SELECT 1 FROM "orders_v4_migration_map" map
+  JOIN "orders_v4_categories" target
+    ON target."id" = map."target_id" AND target."company_id" = source."company_id"
+  WHERE map."company_id" = source."company_id" AND map."source_system" = 'legacy-orders'
+    AND map."source_entity" = 'OrderCategory' AND map."source_id" = source."id"
+    AND map."status" = 'verified'
+)
+ON CONFLICT ("company_id", "source_system", "source_table", "source_id") DO NOTHING;
+
+INSERT INTO "orders_v4_legacy_archives" (
+  "id", "tenant_id", "company_id", "source_system", "source_table",
+  "source_id", "source_checksum", "payload", "archived_at"
+)
+SELECT
+  'legacy-archive-' || md5('order_sections:' || source."company_id" || ':' || source."id"),
+  source."tenant_id", source."company_id", 'legacy-orders-catalog', 'order_sections',
+  source."id", md5(to_jsonb(source)::text), to_jsonb(source), now()
+FROM "order_sections" source
+WHERE NOT EXISTS (
+  SELECT 1 FROM "orders_v4_migration_map" map
+  JOIN "orders_v4_sections" target
+    ON target."id" = map."target_id" AND target."company_id" = source."company_id"
+  WHERE map."company_id" = source."company_id" AND map."source_system" = 'legacy-orders'
+    AND map."source_entity" = 'OrderSection' AND map."source_id" = source."id"
+    AND map."status" = 'verified'
+)
+ON CONFLICT ("company_id", "source_system", "source_table", "source_id") DO NOTHING;
+
+INSERT INTO "orders_v4_legacy_archives" (
+  "id", "tenant_id", "company_id", "source_system", "source_table",
+  "source_id", "source_checksum", "payload", "archived_at"
+)
+SELECT
+  'legacy-archive-' || md5('order_catalog_units:' || source."company_id" || ':' || source."id"),
+  source."tenant_id", source."company_id", 'legacy-orders-catalog', 'order_catalog_units',
+  source."id", md5(to_jsonb(source)::text), to_jsonb(source), now()
+FROM "order_catalog_units" source
+WHERE NOT EXISTS (
+  SELECT 1 FROM "orders_v4_migration_map" map
+  JOIN "orders_v4_units" target
+    ON target."id" = map."target_id" AND target."company_id" = source."company_id"
+  WHERE map."company_id" = source."company_id" AND map."source_system" = 'legacy-orders'
+    AND map."source_entity" = 'OrderCatalogUnit' AND map."source_id" = source."id"
+    AND map."status" = 'verified'
+)
+ON CONFLICT ("company_id", "source_system", "source_table", "source_id") DO NOTHING;
+
 -- The original cutover intentionally imported only internal-sale records.
 -- Preserve historical department requests as prepared V4 purchase requests and
 -- preserve historical cancellation records as independent V4 cancellations.
@@ -439,6 +500,14 @@ BEGIN
       WHERE map."company_id" = source."company_id" AND map."source_system" = 'legacy-orders'
         AND map."source_entity" = 'OrderCategory' AND map."source_id" = source."id" AND map."status" = 'verified'
     )
+    AND NOT EXISTS (
+      SELECT 1 FROM "orders_v4_legacy_archives" archive
+      WHERE archive."company_id" = source."company_id"
+        AND archive."source_system" = 'legacy-orders-catalog'
+        AND archive."source_table" = 'order_categories'
+        AND archive."source_id" = source."id"
+        AND archive."source_checksum" = md5(to_jsonb(source)::text)
+    )
   ) OR EXISTS (
     SELECT 1 FROM "order_sections" source
     WHERE NOT EXISTS (
@@ -447,6 +516,14 @@ BEGIN
       WHERE map."company_id" = source."company_id" AND map."source_system" = 'legacy-orders'
         AND map."source_entity" = 'OrderSection' AND map."source_id" = source."id" AND map."status" = 'verified'
     )
+    AND NOT EXISTS (
+      SELECT 1 FROM "orders_v4_legacy_archives" archive
+      WHERE archive."company_id" = source."company_id"
+        AND archive."source_system" = 'legacy-orders-catalog'
+        AND archive."source_table" = 'order_sections'
+        AND archive."source_id" = source."id"
+        AND archive."source_checksum" = md5(to_jsonb(source)::text)
+    )
   ) OR EXISTS (
     SELECT 1 FROM "order_catalog_units" source
     WHERE NOT EXISTS (
@@ -454,6 +531,14 @@ BEGIN
       JOIN "orders_v4_units" target ON target."id" = map."target_id" AND target."company_id" = source."company_id"
       WHERE map."company_id" = source."company_id" AND map."source_system" = 'legacy-orders'
         AND map."source_entity" = 'OrderCatalogUnit' AND map."source_id" = source."id" AND map."status" = 'verified'
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM "orders_v4_legacy_archives" archive
+      WHERE archive."company_id" = source."company_id"
+        AND archive."source_system" = 'legacy-orders-catalog'
+        AND archive."source_table" = 'order_catalog_units'
+        AND archive."source_id" = source."id"
+        AND archive."source_checksum" = md5(to_jsonb(source)::text)
     )
   ) THEN
     RAISE EXCEPTION 'Legacy Orders retirement aborted: catalog governance parity failed';
