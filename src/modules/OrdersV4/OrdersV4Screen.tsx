@@ -25,7 +25,7 @@ export default function OrdersV4Screen() {
   const companyName = activeCompany?.nameAr || activeCompany?.nameEn || '';
   const companyLogoUrl = String(activeCompany?.logoUrl || '');
   const dateFilter = useDateFilter();
-  const [reportTab, setReportTab] = useTabSearchParam(REPORT_TAB_IDS, 'items', 'ordersV4ReportTab', null, undefined, { persistDefault: true });
+  const [reportTab, setReportTab] = useTabSearchParam(REPORT_TAB_IDS, 'items', 'ordersV4ReportTab');
   const isOwner = String(userRole || '').toLowerCase() === 'owner';
   const admin = ['owner', 'super_admin'].includes(String(userRole || '').toLowerCase());
   const can = (permission: string) => admin || hasPermission(userRole, permission, userPermissions);

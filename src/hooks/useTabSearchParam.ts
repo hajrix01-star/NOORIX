@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 function resolveTabId(
@@ -64,6 +64,11 @@ export function useTabSearchParam(
     () => pickTabFromSearchParams(searchParams, allowedIds, defaultId, paramName, legacyParamName, aliases),
     [searchParams, paramName, legacyParamName, aliasKey, allowedKey, defaultId, allowedIds, aliases],
   );
+  const [activeId, setActiveId] = useState(resolved);
+
+  useEffect(() => {
+    setActiveId(resolved);
+  }, [resolved]);
 
   const setTab = useCallback(
     (id: string) => {
@@ -71,6 +76,10 @@ export function useTabSearchParam(
         ? id
         : (allowedIds.includes(defaultId) ? defaultId : allowedIds[0]);
       if (!nextId) return;
+      // Update the visible tab synchronously. URL navigation can be deferred by
+      // React Router while a heavy report tree is mounted; waiting for it traps
+      // the user on the old tab even though the address bar has already changed.
+      setActiveId(nextId);
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -121,5 +130,5 @@ export function useTabSearchParam(
     );
   }, [allowedIds, allowedKey, aliasKey, paramName, legacyParamName, searchParams, setSearchParams, aliases]);
 
-  return [resolved, setTab] as [string, (id: string) => void];
+  return [activeId, setTab] as [string, (id: string) => void];
 }
