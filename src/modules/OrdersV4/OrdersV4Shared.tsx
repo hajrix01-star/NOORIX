@@ -45,9 +45,9 @@ export function OrdersV4Field({ label, children, className = '' }: { label: stri
   );
 }
 
-export function OrdersV4QueryState({ loading, error }: { loading: boolean; error?: Error | null }) {
+export function OrdersV4QueryState({ loading, error, onRetry, retrying = false }: { loading: boolean; error?: Error | null; onRetry?: () => void; retrying?: boolean }) {
   if (loading) return <div className="flex min-h-40 items-center justify-center"><Spinner /></div>;
-  if (error) return <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">{error.message}</div>;
+  if (error) return <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700"><span>{error.message}</span>{onRetry && <button type="button" disabled={retrying} className="rounded-lg border border-red-300 bg-white px-3 py-2 font-bold disabled:opacity-60" onClick={onRetry}>{retrying ? 'جاري إعادة المحاولة…' : 'إعادة المحاولة'}</button>}</div>;
   return null;
 }
 

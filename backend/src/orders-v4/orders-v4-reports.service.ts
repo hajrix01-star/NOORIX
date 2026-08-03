@@ -160,9 +160,7 @@ export class OrdersV4ReportsService {
 
   async salesReport(companyId: string, startDate?: string, endDate?: string) {
     const bounds = ordersV4RangeBounds(startDate, endDate);
-    const [summary, byItem, documents, coverageDocuments, activeSections] = await Promise.all([
-      this.summary(companyId, startDate, endDate),
-      this.itemsReport(companyId, 'registration', startDate, endDate),
+    const [documents, coverageDocuments, activeSections] = await Promise.all([
       this.prisma.ordersV4Document.findMany({
         where: { companyId, documentType: 'registration', documentDate: bounds },
         include: { section: true, location: true, lines: { include: { item: { include: { category: true } }, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
@@ -202,8 +200,44 @@ export class OrdersV4ReportsService {
     });
     const receivedDocuments = documents.filter((document) => document.status === 'received');
     const receivedLines = receivedDocuments.flatMap((document) => document.lines);
+    const byItemMap = new Map<string, {
+      itemId: string; nameAr: string; categoryName: string; inventoryUnit: string;
+      documentIds: Set<string>; baseQuantity: Prisma.Decimal; totalAmount: Prisma.Decimal;
+    }>();
+    for (const document of receivedDocuments) {
+      for (const line of document.lines) {
+        const row = byItemMap.get(line.itemId) ?? {
+          itemId: line.itemId,
+          nameAr: line.itemNameSnapshot,
+          categoryName: line.item.category?.nameAr ?? '',
+          inventoryUnit: line.baseUnit.nameAr,
+          documentIds: new Set<string>(),
+          baseQuantity: new Prisma.Decimal(0),
+          totalAmount: new Prisma.Decimal(0),
+        };
+        row.documentIds.add(document.id);
+        row.baseQuantity = row.baseQuantity.plus(line.baseQuantity);
+        row.totalAmount = row.totalAmount.plus(line.operationalCost);
+        byItemMap.set(line.itemId, row);
+      }
+    }
+    const byItem = [...byItemMap.values()].map((row) => ({
+      itemId: row.itemId,
+      nameAr: row.nameAr,
+      categoryName: row.categoryName,
+      inventoryUnit: row.inventoryUnit,
+      documentCount: row.documentIds.size,
+      baseQuantity: row.baseQuantity.toDecimalPlaces(8),
+      totalAmount: row.totalAmount.toDecimalPlaces(6),
+      averageUnitCost: calculateOrdersV4AverageUnitCost(row.totalAmount, row.baseQuantity),
+    })).sort((a, b) => b.totalAmount.comparedTo(a.totalAmount));
+    const registrationDocuments = receivedDocuments.filter((document) => document.registrationEntryType !== 'cancellation');
+    const registrationTotal = receivedDocuments.reduce(
+      (total, document) => total.plus(document.operationalCost),
+      new Prisma.Decimal(0),
+    ).toDecimalPlaces(6);
     return {
-      summary: { count: summary.registrationCount, totalAmount: summary.registrationTotal },
+      summary: { count: registrationDocuments.length, totalAmount: registrationTotal },
       byItem,
       bySection: [...bySection.values()].map((row) => ({ ...row, totalAmount: row.total })),
       documents: documents.map((document) => ({

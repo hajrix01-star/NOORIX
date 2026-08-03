@@ -338,7 +338,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
         <div className="flex items-end"><Button size="sm" variant="ghost" onClick={() => { setSearch(''); setSectionId(''); setCreatedByUserId(''); setStatus('received'); setEntryType(''); setCancellationReason(''); }}>إعادة ضبط الفلاتر</Button></div>
       </ReportsFilterBar>
     </OrdersV4Panel>
-    <OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} />
+    <OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} onRetry={() => { void query.refetch(); }} retrying={query.isFetching} />
     {!query.isLoading && !query.error && <>
       <div className={`rounded-xl border px-4 py-3 ${missingDays.length ? 'border-amber-200 bg-amber-50/60' : 'border-emerald-200 bg-emerald-50/60'}`}>
         <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-[14px] font-extrabold">انضباط التسجيل اليومي</div><div className="mt-1 text-[12px] text-noorix-muted">{!report?.registrationCoverage.sections.length ? 'تظهر التغطية بعد بدء التسجيل ووجود أقسام نشطة.' : missingDays.length ? `يوجد ${missingDays.length} يوم/قسم بلا تسجيل في ${affectedSections} قسم.` : 'التسجيل مكتمل لكل الأقسام النشطة خلال الفترة.'}</div></div><div className="flex gap-2"><div className="rounded-lg bg-white px-4 py-2 text-center"><div className="text-[20px] font-extrabold text-amber-700">{missingDays.length}</div><div className="text-[10px] text-noorix-muted">أيام/أقسام ناقصة</div></div><div className="rounded-lg bg-white px-4 py-2 text-center"><div className="text-[20px] font-extrabold text-blue-700">{affectedSections}</div><div className="text-[10px] text-noorix-muted">أقسام متأثرة</div></div></div></div>

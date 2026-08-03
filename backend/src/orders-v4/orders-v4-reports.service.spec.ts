@@ -72,4 +72,48 @@ describe('OrdersV4ReportsService', () => {
     }));
     expect(summary.custodyBalance.toString()).toBe('375');
   });
+
+  it('builds the internal report from one period document snapshot without nested report queries', async () => {
+    const document = {
+      id: 'registration-1',
+      documentNumber: 'REG-1',
+      documentType: 'registration',
+      registrationEntryType: 'issue',
+      documentDate: new Date('2026-08-02T00:00:00.000Z'),
+      status: 'received',
+      sectionId: 'bar',
+      createdByUserId: 'user-1',
+      operationalCost: decimal(12),
+      section: { id: 'bar', nameAr: 'بار' },
+      location: { id: 'main', nameAr: 'الرئيسي' },
+      lines: [{
+        id: 'line-1',
+        itemId: 'item-1',
+        itemNameSnapshot: 'معسل',
+        baseQuantity: decimal(3),
+        operationalCost: decimal(12),
+        item: { category: { nameAr: 'مواد' } },
+        inputUnit: { nameAr: 'علبة' },
+        baseUnit: { nameAr: 'حبة' },
+        priceUnit: { nameAr: 'علبة' },
+      }],
+    };
+    const documentFindMany = jest.fn()
+      .mockResolvedValueOnce([document])
+      .mockResolvedValueOnce([{ sectionId: 'bar', documentDate: document.documentDate }]);
+    const prisma = {
+      ordersV4Document: { findMany: documentFindMany },
+      ordersV4Section: { findMany: jest.fn().mockResolvedValue([{ id: 'bar', nameAr: 'بار' }]) },
+      user: { findMany: jest.fn().mockResolvedValue([{ id: 'user-1', nameAr: 'عامل', nameEn: null, email: 'staff@example.com' }]) },
+    };
+
+    const service = new OrdersV4ReportsService(prisma as never);
+    const report = await service.salesReport('company-1', '2026-08-01', '2026-08-03');
+
+    expect(documentFindMany).toHaveBeenCalledTimes(2);
+    expect(report.summary.count).toBe(1);
+    expect(report.summary.totalAmount.toString()).toBe('12');
+    expect(report.byItem[0]).toMatchObject({ nameAr: 'معسل', documentCount: 1, inventoryUnit: 'حبة' });
+    expect(report.byItem[0].baseQuantity.toString()).toBe('3');
+  });
 });

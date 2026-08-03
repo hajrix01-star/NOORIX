@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -20,6 +20,11 @@ import {
   ordersV4StableHash,
 } from './orders-v4-version.kernel';
 import { assertOrdersV4UnitDeactivationAllowed } from './orders-v4-unit-governance.kernel';
+import {
+  ordersV4CatalogName,
+  ordersV4CatalogNameKey,
+  ordersV4DuplicateItemMessage,
+} from './orders-v4-catalog-name.util';
 import {
   calculateOrdersV4ConvertedQuantity,
   calculateOrdersV4ConvertedUnitPrice,
@@ -68,6 +73,27 @@ function positiveDecimal(value: Prisma.Decimal.Value, label: string): Prisma.Dec
 @Injectable()
 export class OrdersV4CatalogService {
   constructor(private readonly prisma: TenantPrismaService) {}
+
+  private async assertUniqueItemName(
+    tx: Prisma.TransactionClient,
+    companyId: string,
+    nameAr: string,
+    excludeItemId?: string,
+  ): Promise<void> {
+    const nameKey = ordersV4CatalogNameKey(nameAr);
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:item-name:${companyId}:${nameKey}`}))`;
+    const matches = await tx.$queryRaw<Array<{ id: string; nameAr: string; isActive: boolean }>>(Prisma.sql`
+      SELECT "id", "name_ar" AS "nameAr", "is_active" AS "isActive"
+      FROM "orders_v4_items"
+      WHERE "company_id" = ${companyId}
+        AND lower(regexp_replace(btrim("name_ar"), '[[:space:]]+', ' ', 'g')) = ${nameKey}
+        ${excludeItemId ? Prisma.sql`AND "id" <> ${excludeItemId}` : Prisma.empty}
+      ORDER BY "is_active" DESC, "created_at" ASC
+      LIMIT 1
+    `);
+    const existing = matches[0];
+    if (existing) throw new ConflictException(ordersV4DuplicateItemMessage(existing.nameAr, existing.isActive));
+  }
 
   async getBootstrap(companyId: string) {
     const [units, categories, sections, items, locations, conversions, recipes] = await Promise.all([
@@ -260,6 +286,7 @@ export class OrdersV4CatalogService {
   async createItem(companyId: string, input: OrdersV4ItemInput) {
     const tenantId = TenantContext.getTenantId();
     const itemType = input.itemType;
+    const nameAr = ordersV4CatalogName(input.nameAr, 'اسم الصنف');
     if (!['purchased', 'sale'].includes(itemType)) throw new BadRequestException('نوع الصنف غير صالح');
     await this.requireUnit(companyId, input.inventoryUnitId);
     if (input.categoryId) await this.requireCategory(companyId, input.categoryId);
@@ -275,50 +302,55 @@ export class OrdersV4CatalogService {
       throw new BadRequestException('لا يمكن تكرار الوحدة في بطاقة الصنف');
     }
     for (const row of configuredUnits) await this.requireUnit(companyId, row.unitId);
-    return this.prisma.ordersV4Item.create({
-      data: {
-        tenantId,
-        companyId,
-        sku: input.sku?.trim() || null,
-        nameAr: normalizedText(input.nameAr, 'اسم الصنف'),
-        nameEn: input.nameEn?.trim() || null,
-        itemType,
-        categoryId: input.categoryId || null,
-        inventoryUnitId: input.inventoryUnitId,
-        kernelUnitId: input.inventoryUnitId,
-        trackInventory: input.trackInventory !== false,
-        sortOrder: Number(input.sortOrder ?? 0),
-        sections: sectionIds.length
-          ? { create: sectionIds.map((sectionId) => ({ tenantId, companyId, sectionId })) }
-          : undefined,
-        units: {
-          create: configuredUnits.map((row, index) => ({
-            tenantId,
-            companyId,
-            unitId: row.unitId,
-            purchaseLabel: row.purchaseLabel?.trim() || null,
-            isOrderEnabled: row.isOrderEnabled === true && row.lastPrice != null && row.lastPrice !== '',
-            lastPrice: row.lastPrice == null || row.lastPrice === '' ? null : positiveDecimal(row.lastPrice, 'السعر'),
-            sortOrder: Number(row.sortOrder ?? index),
-          })),
+    return this.prisma.withTenant(async (tx) => {
+      await this.assertUniqueItemName(tx, companyId, nameAr);
+      return tx.ordersV4Item.create({
+        data: {
+          tenantId,
+          companyId,
+          sku: input.sku?.trim() || null,
+          nameAr,
+          nameEn: input.nameEn?.trim() || null,
+          itemType,
+          categoryId: input.categoryId || null,
+          inventoryUnitId: input.inventoryUnitId,
+          kernelUnitId: input.inventoryUnitId,
+          trackInventory: input.trackInventory !== false,
+          sortOrder: Number(input.sortOrder ?? 0),
+          sections: sectionIds.length
+            ? { create: sectionIds.map((sectionId) => ({ tenantId, companyId, sectionId })) }
+            : undefined,
+          units: {
+            create: configuredUnits.map((row, index) => ({
+              tenantId,
+              companyId,
+              unitId: row.unitId,
+              purchaseLabel: row.purchaseLabel?.trim() || null,
+              isOrderEnabled: row.isOrderEnabled === true && row.lastPrice != null && row.lastPrice !== '',
+              lastPrice: row.lastPrice == null || row.lastPrice === '' ? null : positiveDecimal(row.lastPrice, 'السعر'),
+              sortOrder: Number(row.sortOrder ?? index),
+            })),
+          },
         },
-      },
-      include: {
-        inventoryUnit: true,
-        category: true,
-        units: { include: { unit: true }, orderBy: { sortOrder: 'asc' } },
-        sections: { include: { section: true } },
-      },
+        include: {
+          inventoryUnit: true,
+          category: true,
+          units: { include: { unit: true }, orderBy: { sortOrder: 'asc' } },
+          sections: { include: { section: true } },
+        },
+      });
     });
   }
 
   async updateItem(companyId: string, itemId: string, input: OrdersV4ItemUpdateInput) {
     const tenantId = TenantContext.getTenantId();
     const sectionIds = [...new Set(input.sectionIds ?? [])];
+    const nameAr = ordersV4CatalogName(input.nameAr, 'اسم الصنف');
     return this.prisma.withTenant(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:item-definition:${itemId}`}))`;
       const item = await tx.ordersV4Item.findFirst({ where: { id: itemId, companyId, isActive: true } });
       if (!item) throw new NotFoundException('صنف V4 غير موجود');
+      await this.assertUniqueItemName(tx, companyId, nameAr, itemId);
       if (input.categoryId) {
         const category = await tx.ordersV4Category.findFirst({ where: { id: input.categoryId, companyId, isActive: true } });
         if (!category) throw new BadRequestException('فئة الصنف غير موجودة أو معطلة');
@@ -332,7 +364,7 @@ export class OrdersV4CatalogService {
         where: { id: itemId },
         data: {
           sku: input.sku?.trim() || null,
-          nameAr: normalizedText(input.nameAr, 'اسم الصنف'),
+          nameAr,
           nameEn: input.nameEn?.trim() || null,
           categoryId: input.categoryId || null,
           trackInventory: input.trackInventory !== false,
