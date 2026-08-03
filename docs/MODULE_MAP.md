@@ -12,7 +12,7 @@
 | الموردين والتصنيفات | `/suppliers` | — | [SUPPLIERS_CATEGORIES.md](modules/SUPPLIERS_CATEGORIES.md) |
 | الخزائن | `/treasury` | — | [TREASURY_VAULTS.md](modules/TREASURY_VAULTS.md) |
 | المصاريف الثابتة والمتغيرة | `/expenses` | — | [EXPENSES_FIXED_VARIABLE.md](modules/EXPENSES_FIXED_VARIABLE.md) |
-| الطلبات | `/orders` | — | [ORDERS.md](modules/ORDERS.md) |
+| الطلبات V4 | `/orders-v4` | `modules/OrdersV4/OrdersV4Screen.tsx` | — |
 | مندوب المشتريات | `/purchasing` | — | [PURCHASING_AGENT.md](modules/PURCHASING_AGENT.md) |
 | الموارد البشرية | `/hr` | — | [HR.md](modules/HR.md) |
 | التقارير | `/reports` | `modules/Reports/ReportsScreen.jsx` | [REPORTS.md](modules/REPORTS.md) |
