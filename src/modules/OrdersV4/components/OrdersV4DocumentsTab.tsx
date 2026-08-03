@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4Item, OrdersV4ReceivePayload, OrdersV4Summary } from '../../../types/api';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4DocumentPreview, OrdersV4Item, OrdersV4ReceivePayload, OrdersV4Summary } from '../../../types/api';
 import { AdaptiveSheet, Button, DialogActions, Input, Modal, type SimpleTableColumn, TransactionDatePicker, usePrintPreview } from '../../../ui';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintTableHtml } from '../../../utils/printTableHtml';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { OrdersV4Field, OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4Select, OrdersV4Table as SimpleTable, v4Date, v4Number } from '../OrdersV4Shared';
-import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, useReceiveOrdersV4Document, useReopenOrdersV4Document, useReverseOrdersV4Document, useUndoReverseOrdersV4Document } from '../useOrdersV4';
+import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, usePreviewOrdersV4Document, useReceiveOrdersV4Document, useReopenOrdersV4Document, useReverseOrdersV4Document, useUndoReverseOrdersV4Document } from '../useOrdersV4';
 import { OrdersV4DocumentItemPicker } from './OrdersV4DocumentItemPicker';
 import { OrdersV4DocumentLinesTable, type OrdersV4DocumentDraftLine } from './OrdersV4DocumentLinesTable';
 import { OrdersV4DocumentLineModal, type OrdersV4DocumentLineDraft } from './OrdersV4DocumentLineModal';
@@ -366,6 +366,8 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
   const { t, lang } = useTranslation();
   const createMutation = useCreateOrdersV4Document(companyId);
   const receiveMutation = useReceiveOrdersV4Document(companyId);
+  const previewMutation = usePreviewOrdersV4Document(companyId);
+  const previewDocument = previewMutation.mutateAsync;
   const mutation = initialDocument ? receiveMutation : createMutation;
   const [date, setDate] = useState(getSaudiToday());
   const [paymentMethod, setPaymentMethod] = useState<'custody' | 'cash' | 'transfer'>('custody');
@@ -376,6 +378,9 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
   const [lines, setLines] = useState<DraftLine[]>([]);
   const [selectedItem, setSelectedItem] = useState<OrdersV4Item | null>(null);
   const [sendWhatsAppPrompt, setSendWhatsAppPrompt] = useState<string | null>(null);
+  const [purchasePreview, setPurchasePreview] = useState<OrdersV4DocumentPreview | null>(null);
+  const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const previewRequestId = useRef(0);
   const isPurchase = documentType === 'purchase';
   const isCancellation = !isPurchase && registrationEntryType === 'cancellation';
   const items = (bootstrap?.items ?? []).filter((item) => item.isActive
@@ -409,6 +414,54 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
     setLines([]);
     setSelectedItem(null);
   }, [defaultLocationId, initialDocument, open]);
+
+  useEffect(() => {
+    const requestId = ++previewRequestId.current;
+    if (!open || !isPurchase) {
+      setPurchasePreview(null);
+      setPreviewState('idle');
+      return;
+    }
+    if (lines.length === 0) {
+      setPurchasePreview(null);
+      setPreviewState('idle');
+      return;
+    }
+    const valid = lines.every((line) => line.itemId && line.unitId && (line.priceUnitId || line.unitId)
+      && Number(line.quantity) > 0 && Number(line.unitPrice || 0) >= 0);
+    if (!valid) {
+      setPurchasePreview(null);
+      setPreviewState('error');
+      return;
+    }
+
+    setPreviewState('loading');
+    const timer = window.setTimeout(() => {
+      void previewDocument({
+        lines: lines.map((line) => ({
+          itemId: line.itemId,
+          quantity: line.quantity,
+          unitId: line.unitId,
+          unitPrice: line.unitPrice || '0',
+          priceUnitId: line.priceUnitId || line.unitId,
+        })),
+      }).then((response) => {
+        if (previewRequestId.current !== requestId) return;
+        if (!response.data) {
+          setPurchasePreview(null);
+          setPreviewState('error');
+          return;
+        }
+        setPurchasePreview(response.data);
+        setPreviewState('ready');
+      }).catch(() => {
+        if (previewRequestId.current !== requestId) return;
+        setPurchasePreview(null);
+        setPreviewState('error');
+      });
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [isPurchase, lines, open, previewDocument]);
 
   function patchLine(key: string, patch: Partial<DraftLine>) {
     setLines((current) => current.map((line) => line.key === key ? { ...line, ...patch } : line));
@@ -472,7 +525,18 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       size="2xl"
       side="start"
       title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : isCancellation ? t('ordersV4CancellationTitle') : 'تسجيل داخلي جديد — طلبات V4'}
-      footer={<DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? t('ordersV4CancellationSaveRecord') : 'حفظ التسجيل الداخلي', onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending }]} />}
+      footer={<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {isPurchase && <div data-testid="orders-v4-live-purchase-total" aria-live="polite" className="flex min-h-11 items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 sm:min-w-64">
+          <div>
+            <div className="text-[11px] font-semibold text-emerald-800">إجمالي الطلب الحالي</div>
+            <div className="text-[10px] text-emerald-700">محسوب بنواة التحويلات المركزية</div>
+          </div>
+          <strong className={`shrink-0 tabular-nums ${previewState === 'error' ? 'text-[12px] text-red-700' : 'text-[20px] text-emerald-950'}`}>
+            {previewState === 'loading' ? 'جارٍ الحساب…' : previewState === 'error' ? 'تحقق من الأسطر' : `${v4Number(purchasePreview?.totalAmount ?? 0)} ر.س`}
+          </strong>
+        </div>}
+        <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? t('ordersV4CancellationSaveRecord') : 'حفظ التسجيل الداخلي', onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: isPurchase && (lines.length === 0 || previewState !== 'ready') }]} />
+      </div>}
     >
       <div className="flex flex-col gap-4">
         {isCancellation && <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-[12px] font-semibold leading-6 text-red-900">{t('ordersV4CancellationIndependentHint')}</div>}
@@ -522,7 +586,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
           />
         </div>
         <OrdersV4Field label="ملاحظات"><Input multiline rows={3} value={notes} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(event.target.value)} /></OrdersV4Field>
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">لا ترسل الواجهة أي إجمالي رسمي؛ نواة V4 تحل التحويلات وتحسب كمية الأساس والسعر والتكلفة وحركات المخزون داخل معاملة واحدة.</div>
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">الإجمالي الظاهر معاينة مباشرة من نواة V4 نفسها؛ عند الحفظ تعيد النواة التحقق والحساب داخل معاملة واحدة قبل اعتماد الطلب.</div>
         <OrdersV4DocumentLineModal
           item={selectedItem}
           isPurchase={isPurchase}

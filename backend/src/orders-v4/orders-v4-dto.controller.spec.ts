@@ -4,6 +4,7 @@ import {
   OrdersV4ActivityReportQueryDto,
   OrdersV4DateRangeQueryDto,
   OrdersV4DocumentDto,
+  OrdersV4DocumentPreviewDto,
   OrdersV4DocumentsQueryDto,
   OrdersV4ItemsReportQueryDto,
   OrdersV4LedgerQueryDto,
@@ -16,8 +17,10 @@ describe('Orders V4 runtime DTO validation', () => {
 
   it('exposes concrete DTO metadata to Nest instead of erased Object contracts', () => {
     const documentTypes = Reflect.getMetadata('design:paramtypes', OrdersV4Controller.prototype, 'createDocument');
+    const previewTypes = Reflect.getMetadata('design:paramtypes', OrdersV4Controller.prototype, 'previewPurchaseDocument');
     const stocktakeTypes = Reflect.getMetadata('design:paramtypes', OrdersV4Controller.prototype, 'createStocktake');
     expect(documentTypes[1]).toBe(OrdersV4DocumentDto);
+    expect(previewTypes[1]).toBe(OrdersV4DocumentPreviewDto);
     expect(stocktakeTypes[1]).toBe(OrdersV4StocktakeDto);
   });
 

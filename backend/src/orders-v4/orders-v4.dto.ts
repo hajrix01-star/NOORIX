@@ -130,6 +130,11 @@ export class OrdersV4DocumentDto {
   lines!: OrdersV4DocumentLineDto[];
 }
 
+export class OrdersV4DocumentPreviewDto {
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(500) @ValidateNested({ each: true }) @Type(() => OrdersV4DocumentLineDto)
+  lines!: OrdersV4DocumentLineDto[];
+}
+
 export class OrdersV4ReceiveDto {
   @IsOptional() @IsIn(['issue', 'cancellation']) registrationEntryType?: 'issue' | 'cancellation';
   @IsString() @Matches(DATE) documentDate!: string;

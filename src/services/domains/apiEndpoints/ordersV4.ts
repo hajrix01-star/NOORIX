@@ -6,6 +6,8 @@ import type {
   OrdersV4DataQuality,
   OrdersV4Document,
   OrdersV4DocumentPayload,
+  OrdersV4DocumentPreview,
+  OrdersV4DocumentPreviewPayload,
   OrdersV4ReceivePayload,
   OrdersV4InventoryBalance,
   OrdersV4Item,
@@ -51,6 +53,10 @@ export function getOrdersV4Documents(companyId: string, type: 'purchase' | 'regi
 
 export function createOrdersV4Document(companyId: string, body: OrdersV4DocumentPayload): Promise<ApiParsedResult<OrdersV4Document>> {
   return apiPost(`${BASE}/documents?companyId=${encodeURIComponent(companyId)}`, body);
+}
+
+export function previewOrdersV4Document(companyId: string, body: OrdersV4DocumentPreviewPayload): Promise<ApiParsedResult<OrdersV4DocumentPreview>> {
+  return apiPost(`${BASE}/documents/preview?companyId=${encodeURIComponent(companyId)}`, body);
 }
 
 export function receiveOrdersV4Document(companyId: string, id: string, body: OrdersV4ReceivePayload): Promise<ApiParsedResult<OrdersV4Document>> {

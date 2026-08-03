@@ -18,6 +18,7 @@ import {
   getOrdersV4Stocktakes,
   getOrdersV4Summary,
   publishOrdersV4Recipe,
+  previewOrdersV4Document,
   reverseOrdersV4Document,
   undoReverseOrdersV4Document,
   receiveOrdersV4Document,
@@ -34,6 +35,7 @@ import type {
   OrdersV4DataQuality,
   OrdersV4Document,
   OrdersV4DocumentPayload,
+  OrdersV4DocumentPreviewPayload,
   OrdersV4ReceivePayload,
   OrdersV4InventoryBalance,
   OrdersV4ItemsReportRow,
@@ -153,6 +155,13 @@ export function useCreateOrdersV4Document(companyId: string) {
     invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId)],
     successToast: 'تم اعتماد مستند V4 وحساب حركاته مركزياً',
     showErrorToast: true,
+  });
+}
+
+export function usePreviewOrdersV4Document(companyId: string) {
+  return useApiMutation({
+    mutationFn: (body: OrdersV4DocumentPreviewPayload) => previewOrdersV4Document(companyId, body),
+    showErrorToast: false,
   });
 }
 

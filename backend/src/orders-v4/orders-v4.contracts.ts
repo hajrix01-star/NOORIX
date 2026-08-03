@@ -126,6 +126,8 @@ export type OrdersV4ReceiveInput = Omit<OrdersV4DocumentInput, 'documentType' | 
   idempotencyKey: string;
 };
 
+export type OrdersV4DocumentPreviewInput = Pick<OrdersV4DocumentInput, 'lines'>;
+
 export type OrdersV4CustodyInput = {
   amount: string;
   effectiveDate: string;

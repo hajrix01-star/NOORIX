@@ -325,4 +325,19 @@ export type OrdersV4DocumentPayload = {
   lines: Array<{ itemId: string; quantity: string; unitId: string; unitPrice?: string; priceUnitId?: string; cancellationReasons?: OrdersV4CancellationReason[] | null; cancellationNote?: string | null }>;
 };
 
+export type OrdersV4DocumentPreview = {
+  kernelVersion: 4;
+  calculationVersion: number;
+  lineCount: number;
+  totalAmount: string;
+  lines: Array<{
+    lineNumber: number;
+    itemId: string;
+    itemName: string;
+    lineTotal: string;
+  }>;
+};
+
+export type OrdersV4DocumentPreviewPayload = Pick<OrdersV4DocumentPayload, 'lines'>;
+
 export type OrdersV4ReceivePayload = Omit<OrdersV4DocumentPayload, 'documentType'> & { revision: number };

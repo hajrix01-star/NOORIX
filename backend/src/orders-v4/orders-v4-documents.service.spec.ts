@@ -111,6 +111,37 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     expect(posting.lockKeys).not.toHaveBeenCalled();
   });
 
+  it('previews the exact purchase total through the central conversion and calculation kernels without writes', async () => {
+    const piece = { id: 'piece', code: 'piece', dimension: 'count', canonicalFactor: new Prisma.Decimal(1) };
+    const box = { id: 'box', code: 'box', dimension: 'package', canonicalFactor: null };
+    const carton = { id: 'carton', code: 'carton', dimension: 'package', canonicalFactor: null };
+    const prisma = {
+      ordersV4Item: { findMany: jest.fn().mockResolvedValue([{
+        id: 'item-1', nameAr: 'سكر', itemType: 'purchased', kernelUnitId: 'piece',
+        units: [piece, box, carton].map((unit) => ({ unitId: unit.id, isActive: true })),
+        conversionVersions: [{ edges: [
+          { id: 'carton-box', fromUnitId: 'carton', toUnitId: 'box', factor: new Prisma.Decimal(10), reversible: true, allowDimensionBridge: false },
+          { id: 'box-piece', fromUnitId: 'box', toUnitId: 'piece', factor: new Prisma.Decimal(64), reversible: true, allowDimensionBridge: true },
+        ] }],
+      }]) },
+      ordersV4Unit: { findMany: jest.fn().mockResolvedValue([piece, box, carton]) },
+    };
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never);
+
+    const result = await service.previewPurchase('company-1', [{
+      itemId: 'item-1', quantity: '2', unitId: 'carton', unitPrice: '20', priceUnitId: 'box',
+    }]);
+
+    expect(result).toEqual(expect.objectContaining({
+      kernelVersion: 4,
+      calculationVersion: 1,
+      lineCount: 1,
+      totalAmount: '400',
+    }));
+    expect(result.lines[0]).toMatchObject({ itemId: 'item-1', lineTotal: '400' });
+    expect(prisma.ordersV4Item.findMany).toHaveBeenCalledTimes(1);
+  });
+
   it('receives the latest purchase and posts price, inventory and custody atomically', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('cashier-1');

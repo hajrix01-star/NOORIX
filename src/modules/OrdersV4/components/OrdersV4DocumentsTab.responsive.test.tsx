@@ -1,11 +1,12 @@
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OrdersV4Bootstrap, OrdersV4Item } from '../../../types/api';
 import { OrdersV4DocumentLinesTable } from './OrdersV4DocumentLinesTable';
 import { OrdersV4DocumentsTab } from './OrdersV4DocumentsTab';
 
 const ordersV4DocumentsMock = vi.hoisted(() => ({ documents: [] as unknown[] }));
+const previewDocumentMock = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../i18n/useTranslation', async () => {
   const translations = await vi.importActual<typeof import('../../../i18n/translations')>('../../../i18n/translations');
@@ -16,6 +17,7 @@ vi.mock('../useOrdersV4', () => ({
   useOrdersV4Documents: () => ({ data: ordersV4DocumentsMock.documents, isLoading: false, error: null }),
   useOrdersV4Summary: () => ({ data: undefined }),
   useCreateOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  usePreviewOrdersV4Document: () => ({ isPending: false, mutateAsync: previewDocumentMock }),
   useReceiveOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUndoReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
@@ -37,6 +39,11 @@ const bootstrap = {
 
 beforeEach(() => {
   ordersV4DocumentsMock.documents = [];
+  previewDocumentMock.mockReset();
+  previewDocumentMock.mockResolvedValue({ data: {
+    kernelVersion: 4, calculationVersion: 1, lineCount: 1, totalAmount: '15',
+    lines: [{ lineNumber: 1, itemId: 'item-1', itemName: 'معسل', lineTotal: '15' }],
+  } });
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     value: vi.fn().mockImplementation((query: string) => ({
@@ -276,6 +283,37 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(onPatch).toHaveBeenCalledWith('line-1', { quantity: '3' });
     fireEvent.click(screen.getAllByRole('button', { name: 'حذف معسل' })[1]);
     expect(onRemove).toHaveBeenCalledWith('line-2');
+  });
+
+  it('shows the kernel-calculated purchase total inside the creation sheet before saving', async () => {
+    const item = {
+      id: 'item-1', nameAr: 'معسل', itemType: 'purchased', inventoryUnitId: 'unit-1',
+      inventoryUnit: { id: 'unit-1', code: 'box', nameAr: 'علبة', dimension: 'count', decimalScale: 3, isActive: true },
+      units: [{
+        id: 'item-unit-1', unitId: 'unit-1',
+        unit: { id: 'unit-1', code: 'box', nameAr: 'علبة', dimension: 'count', decimalScale: 3, isActive: true },
+        isOrderEnabled: true, isActive: true, sortOrder: 0, lastPrice: '15',
+      }],
+      trackInventory: true, isActive: true, sections: [],
+    } as unknown as OrdersV4Item;
+
+    render(<OrdersV4DocumentsTab
+      companyId="company-1"
+      documentType="purchase"
+      startDate="2026-08-01"
+      endDate="2026-08-31"
+      bootstrap={{ ...bootstrap, items: [item] } as OrdersV4Bootstrap}
+      canCreate
+    />);
+
+    fireEvent.click(screen.getByRole('button', { name: /طلب جديد/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'معسل' }));
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة' }));
+
+    await waitFor(() => expect(previewDocumentMock).toHaveBeenCalledWith({
+      lines: [{ itemId: 'item-1', quantity: '1', unitId: 'unit-1', unitPrice: '15', priceUnitId: 'unit-1' }],
+    }));
+    await waitFor(() => expect(screen.getByTestId('orders-v4-live-purchase-total').textContent).toContain('15'));
   });
 
   it('opens cancellation through the same internal-registration sheet', () => {

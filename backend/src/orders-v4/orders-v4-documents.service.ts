@@ -112,6 +112,84 @@ export class OrdersV4DocumentsService {
     }));
   }
 
+  /**
+   * Read-only purchase total preview. It deliberately uses the same conversion
+   * resolver and calculation kernel as document creation, without creating a
+   * document, ledger entry, price history row, or funds movement.
+   */
+  async previewPurchase(companyId: string, lines: OrdersV4DocumentInput['lines']) {
+    if (!lines?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
+    if (new Set(lines.map((line) => line.itemId)).size !== lines.length) {
+      throw new BadRequestException('لا يمكن تكرار الصنف نفسه في الطلب؛ عدّل الكمية في السطر الموجود');
+    }
+
+    const itemIds = lines.map((line) => line.itemId);
+    const [items, units] = await Promise.all([
+      this.prisma.ordersV4Item.findMany({
+        where: { companyId, id: { in: itemIds }, isActive: true },
+        include: {
+          units: true,
+          conversionVersions: {
+            where: { status: 'published' },
+            include: { edges: true },
+            orderBy: { version: 'desc' },
+            take: 1,
+          },
+        },
+      }),
+      this.prisma.ordersV4Unit.findMany({ where: { companyId, isActive: true } }),
+    ]);
+    if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف الطلب غير موجود أو غير فعال');
+
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    const unitDefinitions = ordersV4UnitDefinitions(units);
+    const calculatedLines = lines.map((line, index) => {
+      const item = itemById.get(line.itemId);
+      if (!item || item.itemType === 'sale') throw new BadRequestException('صنف بيع لا يقبل طلب شراء');
+      if (!item.units.some((row) => row.unitId === line.unitId && row.isActive)) {
+        throw new BadRequestException(`${item.nameAr}: وحدة الكمية غير مضافة إلى بطاقة الصنف`);
+      }
+      const priceUnitId = line.priceUnitId || line.unitId;
+      if (!item.units.some((row) => row.unitId === priceUnitId && row.isActive)) {
+        throw new BadRequestException(`${item.nameAr}: وحدة السعر غير مضافة إلى بطاقة الصنف`);
+      }
+      const edges = ordersV4EdgeDefinitions(item.conversionVersions[0]?.edges);
+      const calculation = calculateOrdersV4Line({
+        inputQuantity: line.quantity,
+        unitPrice: line.unitPrice ?? 0,
+        inputConversion: resolveOrdersV4ContextConversion({
+          fromUnitId: line.unitId,
+          toUnitId: item.kernelUnitId,
+          units: unitDefinitions,
+          edges,
+        }),
+        priceConversion: resolveOrdersV4ContextConversion({
+          fromUnitId: priceUnitId,
+          toUnitId: item.kernelUnitId,
+          units: unitDefinitions,
+          edges,
+        }),
+      });
+      return {
+        lineNumber: index + 1,
+        itemId: item.id,
+        itemName: item.nameAr,
+        lineTotal: calculation.lineTotal.toString(),
+      };
+    });
+    const totalAmount = calculatedLines
+      .reduce((sum, line) => sum.plus(line.lineTotal), new Prisma.Decimal(0))
+      .toDecimalPlaces(6);
+
+    return {
+      kernelVersion: 4 as const,
+      calculationVersion: 1,
+      lineCount: calculatedLines.length,
+      totalAmount: totalAmount.toString(),
+      lines: calculatedLines,
+    };
+  }
+
   async create(companyId: string, input: OrdersV4DocumentInput) {
     const tenantId = TenantContext.getTenantId();
     const userId = TenantContext.getUserId();

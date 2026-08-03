@@ -15,6 +15,7 @@ import {
   OrdersV4ActivityReportQueryDto,
   OrdersV4DateRangeQueryDto,
   OrdersV4DocumentDto,
+  OrdersV4DocumentPreviewDto,
   OrdersV4DocumentsQueryDto,
   OrdersV4IdempotencyDto,
   OrdersV4ItemDefinitionDto,
@@ -204,6 +205,15 @@ export class OrdersV4Controller {
       throw new ForbiddenException('لا تملك صلاحية إنشاء هذا النوع من مستندات V4');
     }
     return this.documents.create(requireCompanyId(companyId), body);
+  }
+
+  @Post('documents/preview')
+  @RequireAnyPermission('ORDERS_V4_WRITE', 'ORDERS_V4_STAFF_SUBMIT', 'ORDERS_V4_CASHIER_RECEIVE')
+  previewPurchaseDocument(
+    @CompanyId() companyId: string,
+    @Body() body: OrdersV4DocumentPreviewDto,
+  ) {
+    return this.documents.previewPurchase(requireCompanyId(companyId), body.lines);
   }
 
   @Patch('documents/:id/receive')
