@@ -2,6 +2,8 @@ import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
   calculateOrdersV4ConvertedUnitPrice,
+  calculateOrdersV4ConvertedQuantity,
+  calculateOrdersV4ConvertedSignedQuantity,
   calculateOrdersV4Issue,
   calculateOrdersV4LastFiveAverage,
   calculateOrdersV4Line,
@@ -33,6 +35,12 @@ const edges: OrdersV4ConversionEdgeDefinition[] = [
 ];
 
 describe('Orders Core V4 kernel', () => {
+  it('keeps negative input blocked operationally while allowing signed audit conversion', () => {
+    const conversion = resolveOrdersV4Conversion({ fromUnitId: 'pack', toUnitId: 'piece', units, edges });
+    expect(() => calculateOrdersV4ConvertedQuantity('-2', conversion)).toThrow(BadRequestException);
+    expect(calculateOrdersV4ConvertedSignedQuantity('-2', conversion).toString()).toBe('-48');
+  });
+
   it('accepts the shared ISO date filter while storing date-only boundaries', () => {
     expect(ordersV4DateOnly('2026-08-01T00:00:00+03:00', 'date').toISOString()).toBe('2026-08-01T00:00:00.000Z');
     const range = ordersV4RangeBounds('2026-08-01T00:00:00+03:00', '2026-08-31T23:59:59+03:00');

@@ -48,26 +48,27 @@ import { useApiListQuery, useApiQuery } from '../../hooks/useApiQuery';
 export const ordersV4Keys = {
   root: ['orders-v4'] as const,
   bootstrap: (companyId: string) => ['orders-v4', 'bootstrap', companyId] as const,
-  documents: (companyId: string, type: string, startDate: string, endDate: string) => ['orders-v4', 'documents', companyId, type, startDate, endDate] as const,
+  documentsRoot: (companyId: string) => ['orders-v4', 'documents', companyId] as const,
+  documents: (companyId: string, type: string, startDate: string, endDate: string, limit: number) => ['orders-v4', 'documents', companyId, type, startDate, endDate, limit] as const,
   reports: (companyId: string) => ['orders-v4', 'reports', companyId] as const,
   inventory: (companyId: string) => ['orders-v4', 'inventory', companyId] as const,
 };
 
-export function useOrdersV4Bootstrap(companyId: string) {
+export function useOrdersV4Bootstrap(companyId: string, enabled = true) {
   return useApiQuery<OrdersV4Bootstrap>({
     queryKey: ordersV4Keys.bootstrap(companyId),
     queryFn: () => getOrdersV4Bootstrap(companyId),
     fallbackMessage: 'تعذر تحميل كتالوج طلبات V4',
-    enabled: !!companyId,
+    enabled: enabled && !!companyId,
   });
 }
 
-export function useOrdersV4Documents(companyId: string, type: 'purchase' | 'registration', startDate: string, endDate: string) {
+export function useOrdersV4Documents(companyId: string, type: 'purchase' | 'registration', startDate: string, endDate: string, enabled = true, limit = 250) {
   return useApiListQuery<OrdersV4Document>({
-    queryKey: ordersV4Keys.documents(companyId, type, startDate, endDate),
-    queryFn: () => getOrdersV4Documents(companyId, type, startDate, endDate),
+    queryKey: ordersV4Keys.documents(companyId, type, startDate, endDate, limit),
+    queryFn: () => getOrdersV4Documents(companyId, type, startDate, endDate, limit),
     fallbackMessage: 'تعذر تحميل مستندات طلبات V4',
-    enabled: !!companyId && !!startDate && !!endDate,
+    enabled: enabled && !!companyId && !!startDate && !!endDate,
   });
 }
 
@@ -107,30 +108,30 @@ export function useOrdersV4Balances(companyId: string) {
   });
 }
 
-export function useOrdersV4Ledger(companyId: string) {
+export function useOrdersV4Ledger(companyId: string, enabled = true, limit = 250) {
   return useApiListQuery<OrdersV4LedgerEntry>({
-    queryKey: [...ordersV4Keys.inventory(companyId), 'ledger'],
-    queryFn: () => getOrdersV4Ledger(companyId),
+    queryKey: [...ordersV4Keys.inventory(companyId), 'ledger', limit],
+    queryFn: () => getOrdersV4Ledger(companyId, limit),
     fallbackMessage: 'تعذر تحميل دفتر V4',
-    enabled: !!companyId,
+    enabled: enabled && !!companyId,
   });
 }
 
-export function useOrdersV4Stocktakes(companyId: string) {
+export function useOrdersV4Stocktakes(companyId: string, enabled = true, limit = 100) {
   return useApiListQuery<OrdersV4Stocktake>({
-    queryKey: [...ordersV4Keys.inventory(companyId), 'stocktakes'],
-    queryFn: () => getOrdersV4Stocktakes(companyId),
+    queryKey: [...ordersV4Keys.inventory(companyId), 'stocktakes', limit],
+    queryFn: () => getOrdersV4Stocktakes(companyId, limit),
     fallbackMessage: 'تعذر تحميل سجل الجرد V4',
-    enabled: !!companyId,
+    enabled: enabled && !!companyId,
   });
 }
 
-export function useOrdersV4DataQuality(companyId: string) {
+export function useOrdersV4DataQuality(companyId: string, enabled = true) {
   return useApiQuery<OrdersV4DataQuality>({
     queryKey: [...ordersV4Keys.inventory(companyId), 'quality'],
     queryFn: () => getOrdersV4DataQuality(companyId),
     fallbackMessage: 'تعذر تحميل جودة بيانات V4',
-    enabled: !!companyId,
+    enabled: enabled && !!companyId,
   });
 }
 
@@ -155,7 +156,7 @@ export function useExecuteOrdersV4Cutover(companyId: string) {
 export function useCreateOrdersV4Document(companyId: string) {
   return useApiMutation({
     mutationFn: (body: OrdersV4DocumentPayload) => createOrdersV4Document(companyId, body),
-    invalidateQueries: [ordersV4Keys.root],
+    invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId)],
     successToast: 'تم اعتماد مستند V4 وحساب حركاته مركزياً',
     showErrorToast: true,
   });
@@ -164,7 +165,7 @@ export function useCreateOrdersV4Document(companyId: string) {
 export function useReverseOrdersV4Document(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) => reverseOrdersV4Document(companyId, id, idempotencyKey),
-    invalidateQueries: [ordersV4Keys.root],
+    invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
     successToast: 'تم عكس مستند V4',
     showErrorToast: true,
   });
@@ -173,7 +174,7 @@ export function useReverseOrdersV4Document(companyId: string) {
 export function useUndoReverseOrdersV4Document(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) => undoReverseOrdersV4Document(companyId, id, idempotencyKey),
-    invalidateQueries: [ordersV4Keys.root],
+    invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
     successToast: 'تم إلغاء العكس وإعادة تطبيق الأثر الدفتري للمستند',
     showErrorToast: true,
   });
@@ -182,7 +183,7 @@ export function useUndoReverseOrdersV4Document(companyId: string) {
 export function useReceiveOrdersV4Document(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, body }: { id: string; body: OrdersV4ReceivePayload }) => receiveOrdersV4Document(companyId, id, body),
-    invalidateQueries: [ordersV4Keys.root],
+    invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
     successToast: 'تم استلام الطلب وترحيل المخزون والأسعار وطريقة الدفع',
     showErrorToast: true,
   });
@@ -190,8 +191,8 @@ export function useReceiveOrdersV4Document(companyId: string) {
 
 export function useCreateOrdersV4Stocktake(companyId: string) {
   return useApiMutation({
-    mutationFn: (body: { stocktakeDate: string; locationId: string; notes?: string; idempotencyKey: string; lines: Array<{ itemId: string; physicalQuantity: string }> }) => createOrdersV4Stocktake(companyId, body),
-    invalidateQueries: [ordersV4Keys.root],
+    mutationFn: (body: { stocktakeDate: string; locationId: string; notes?: string; idempotencyKey: string; lines: Array<{ itemId: string; physicalUnits: Array<{ unitId: string; quantity: string }> }> }) => createOrdersV4Stocktake(companyId, body),
+    invalidateQueries: [ordersV4Keys.inventory(companyId), ordersV4Keys.reports(companyId)],
     successToast: 'تم اعتماد جرد V4 وتسجيل فروق الدفتر',
   });
 }

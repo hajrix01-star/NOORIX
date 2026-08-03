@@ -25,7 +25,6 @@ export default function OrdersV4Screen() {
   const companyName = activeCompany?.nameAr || activeCompany?.nameEn || '';
   const companyLogoUrl = String(activeCompany?.logoUrl || '');
   const dateFilter = useDateFilter();
-  const bootstrapQuery = useOrdersV4Bootstrap(companyId);
   const [reportTab, setReportTab] = useTabSearchParam(REPORT_TAB_IDS, 'items', 'ordersV4ReportTab', null, undefined, { persistDefault: true });
   const isOwner = String(userRole || '').toLowerCase() === 'owner';
   const admin = ['owner', 'super_admin'].includes(String(userRole || '').toLowerCase());
@@ -55,6 +54,8 @@ export default function OrdersV4Screen() {
   }, [canCreatePurchase, canCreateRegistration, canInventoryWrite, canRead, canReport, canWrite, lang]);
   const tabIds = useMemo(() => tabs.map((tab) => tab.id), [tabs]);
   const [activeTab, setActiveTab] = useTabSearchParam(tabIds, tabIds[0] ?? 'requests', 'ordersV4Tab', 'tab', undefined, { persistDefault: true });
+  const needsBootstrap = activeTab !== 'reports';
+  const bootstrapQuery = useOrdersV4Bootstrap(companyId, needsBootstrap);
 
   return (
     <ScreenShell variant="data" className="min-w-0">
@@ -80,7 +81,7 @@ export default function OrdersV4Screen() {
           getTabClassName={ordersV4NavigationTabClassName}
           contentClassName="min-h-[260px] px-1 py-3 sm:px-3"
         >
-          <OrdersV4QueryState loading={bootstrapQuery.isLoading} error={bootstrapQuery.error as Error | null} />
+          {needsBootstrap && <OrdersV4QueryState loading={bootstrapQuery.isLoading} error={bootstrapQuery.error as Error | null} />}
           {!bootstrapQuery.isLoading && activeTab === 'requests' && <OrdersV4DocumentsTab companyId={companyId} documentType="purchase" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreatePurchase} canReverse={canDelete} canUndoReverse={isOwner} canReceive={canReceive} companyName={companyName} companyLogoUrl={companyLogoUrl} />}
           {!bootstrapQuery.isLoading && activeTab === 'registration' && <OrdersV4DocumentsTab companyId={companyId} documentType="registration" startDate={isInternalRegistrationStaffView ? registrationPresentation.startDate : dateFilter.startDate} endDate={isInternalRegistrationStaffView ? registrationPresentation.endDate : dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreateRegistration} canReverse={canDelete} canUndoReverse={isOwner} showOverviewCards={!isInternalRegistrationStaffView} historyWindowDays={isInternalRegistrationStaffView ? 7 : undefined} companyName={companyName} companyLogoUrl={companyLogoUrl} />}
           {!bootstrapQuery.isLoading && activeTab === 'reports' && <ScreenTabs items={[{ id: 'items', label: lang === 'ar' ? 'تقارير الأصناف' : 'Item reports' }, { id: 'registration', label: lang === 'ar' ? 'تقرير داخلي' : 'Internal report' }]} value={reportTab} onChange={(id) => setReportTab(id as ReportTabId)} variant="segmented" segmentedFlat barClassName={ordersV4NavigationBarClassName} getTabClassName={ordersV4NavigationTabClassName} contentClassName="pt-3">{reportTab === 'items' ? <OrdersV4ItemsReportTab companyId={companyId} startDate={dateFilter.startDate} endDate={dateFilter.endDate} /> : <OrdersV4SalesReportTab companyId={companyId} startDate={dateFilter.startDate} endDate={dateFilter.endDate} />}</ScreenTabs>}

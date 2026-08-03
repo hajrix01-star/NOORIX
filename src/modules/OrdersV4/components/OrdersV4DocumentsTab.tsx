@@ -163,7 +163,8 @@ export function OrdersV4DocumentsTab({
   companyLogoUrl?: string;
 }) {
   const { t, lang } = useTranslation();
-  const documentsQuery = useOrdersV4Documents(companyId, documentType, startDate, endDate);
+  const [resultLimit, setResultLimit] = useState(250);
+  const documentsQuery = useOrdersV4Documents(companyId, documentType, startDate, endDate, true, resultLimit);
   const summaryQuery = useOrdersV4Summary(companyId, startDate, endDate, canReport);
   const reverseMutation = useReverseOrdersV4Document(companyId);
   const undoReverseMutation = useUndoReverseOrdersV4Document(companyId);
@@ -179,6 +180,7 @@ export function OrdersV4DocumentsTab({
   const [sectionFilter, setSectionFilter] = useState('');
   const isPurchase = documentType === 'purchase';
   const documents = documentsQuery.data ?? [];
+  useEffect(() => setResultLimit(250), [documentType, endDate, startDate]);
   const summary = summaryQuery.data;
   const sections = useMemo(() => [...new Map(documents.filter((row) => row.section).map((row) => [row.section!.id, row.section!])).values()], [documents]);
   const periodCustodyBalanceByDocumentId = useMemo(
@@ -305,6 +307,7 @@ export function OrdersV4DocumentsTab({
       >
         <OrdersV4QueryState loading={documentsQuery.isLoading} error={documentsQuery.error as Error | null} />
         {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage="لا توجد مستندات مطابقة للفترة والفلاتر" tableMinWidth={isPurchase ? 1240 : 980} onRowClick={setViewing} />}
+        {!documentsQuery.isLoading && documents.length >= resultLimit && resultLimit < 2000 && <div className="mt-3 flex justify-center"><Button size="sm" variant="ghost" onClick={() => setResultLimit((current) => Math.min(2000, current + 250))}>تحميل 250 سجلًا إضافيًا</Button></div>}
       </OrdersV4Panel>
       {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} />}
       {canCreate && !isPurchase && <OrdersV4DocumentModal open={cancellationOpen} onClose={() => setCancellationOpen(false)} companyId={companyId} documentType="registration" registrationEntryType="cancellation" bootstrap={bootstrap} />}

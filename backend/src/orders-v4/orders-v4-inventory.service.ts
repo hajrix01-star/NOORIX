@@ -15,7 +15,15 @@ function stocktakeRequestHash(input: OrdersV4StocktakeInput): string {
     stocktakeDate: input.stocktakeDate,
     locationId: input.locationId,
     notes: input.notes?.trim() || null,
-    lines: input.lines.map((line) => ({ itemId: line.itemId, physicalQuantity: String(line.physicalQuantity) })),
+    lines: [...input.lines]
+      .sort((left, right) => left.itemId.localeCompare(right.itemId))
+      .map((line) => ({
+        itemId: line.itemId,
+        physicalQuantity: line.physicalQuantity == null ? null : String(line.physicalQuantity),
+        physicalUnits: [...(line.physicalUnits ?? [])]
+          .sort((left, right) => left.unitId.localeCompare(right.unitId))
+          .map((row) => ({ unitId: row.unitId, quantity: String(row.quantity) })),
+      })),
   })).digest('hex');
 }
 
@@ -123,12 +131,12 @@ export class OrdersV4InventoryService {
     })).sort((a, b) => a.itemName.localeCompare(b.itemName, 'ar'));
   }
 
-  async ledger(companyId: string, itemId?: string, locationId?: string) {
+  async ledger(companyId: string, itemId?: string, locationId?: string, limit = 250) {
     const entries = await this.prisma.ordersV4InventoryLedgerEntry.findMany({
       where: { companyId, itemId: itemId || undefined, locationId: locationId || undefined },
       include: { inventoryUnit: true, item: { include: { inventoryUnit: true } }, location: true },
       orderBy: { sequence: 'desc' },
-      take: 1000,
+      take: Math.max(1, Math.min(500, limit)),
     });
     const identities = await loadOrdersV4UserIdentities(this.prisma, entries.map((entry) => entry.createdByUserId));
     return entries.map((entry) => ({
@@ -138,11 +146,12 @@ export class OrdersV4InventoryService {
     }));
   }
 
-  async listStocktakes(companyId: string) {
+  async listStocktakes(companyId: string, limit = 100) {
     const stocktakes = await this.prisma.ordersV4Stocktake.findMany({
       where: { companyId },
       include: { location: true, lines: { include: { item: true, unit: true } } },
       orderBy: [{ stocktakeDate: 'desc' }, { createdAt: 'desc' }],
+      take: Math.max(1, Math.min(500, limit)),
     });
     const identities = await loadOrdersV4UserIdentities(this.prisma, stocktakes.map((stocktake) => stocktake.createdByUserId));
     return stocktakes.map((stocktake) => ({
@@ -174,6 +183,7 @@ export class OrdersV4InventoryService {
         tx.ordersV4Item.findMany({
           where: { companyId, id: { in: itemIds }, isActive: true, trackInventory: true },
           include: {
+            units: { where: { isActive: true } },
             conversionVersions: {
               where: { status: 'published' }, orderBy: { version: 'desc' }, take: 1,
               include: { edges: true },
@@ -198,15 +208,35 @@ export class OrdersV4InventoryService {
       for (const line of [...input.lines].sort((a, b) => a.itemId.localeCompare(b.itemId))) {
         const item = items.find((row) => row.id === line.itemId);
         if (!item) throw new BadRequestException('صنف الجرد غير موجود');
-        const physicalKernelQuantity = calculateOrdersV4ConvertedQuantity(
-          line.physicalQuantity,
-          resolveOrdersV4ContextConversion({
-            fromUnitId: item.inventoryUnitId,
-            toUnitId: item.kernelUnitId,
-            units: unitDefinitions,
-            edges: ordersV4EdgeDefinitions(item.conversionVersions[0]?.edges),
-          }),
-        );
+        const physicalInputs = line.physicalUnits?.length
+          ? line.physicalUnits
+          : line.physicalQuantity == null
+            ? []
+            : [{ unitId: item.inventoryUnitId, quantity: line.physicalQuantity }];
+        if (!physicalInputs.length) throw new BadRequestException('يجب إدخال كمية الجرد لكل صنف');
+        if (new Set(physicalInputs.map((row) => row.unitId)).size !== physicalInputs.length) {
+          throw new BadRequestException('لا يمكن تكرار الوحدة في جرد الصنف');
+        }
+        const allowedUnitIds = new Set([
+          item.inventoryUnitId,
+          item.kernelUnitId,
+          ...item.units.map((row) => row.unitId),
+        ]);
+        const physicalKernelQuantity = physicalInputs.reduce((total, physical) => {
+          if (!allowedUnitIds.has(physical.unitId)) {
+            throw new BadRequestException('إحدى وحدات الجرد غير مرتبطة بالصنف');
+          }
+          const converted = calculateOrdersV4ConvertedQuantity(
+            physical.quantity,
+            resolveOrdersV4ContextConversion({
+              fromUnitId: physical.unitId,
+              toUnitId: item.kernelUnitId,
+              units: unitDefinitions,
+              edges: ordersV4EdgeDefinitions(item.conversionVersions[0]?.edges),
+            }),
+          );
+          return total.plus(converted);
+        }, new Prisma.Decimal(0)).toDecimalPlaces(8);
         await this.posting.postStocktakeAdjustment(tx, {
           tenantId, companyId, itemId: item.id, inventoryUnitId: item.kernelUnitId, locationId: location.id,
           stocktakeId: stocktake.id, effectiveAt: date, physicalQuantity: physicalKernelQuantity,

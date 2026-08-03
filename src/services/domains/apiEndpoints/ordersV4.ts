@@ -28,8 +28,8 @@ export function getOrdersV4Bootstrap(companyId: string): Promise<ApiParsedResult
   return apiGet(`${BASE}/bootstrap`, { companyId });
 }
 
-export function getOrdersV4Documents(companyId: string, type: 'purchase' | 'registration', startDate: string, endDate: string): Promise<ApiParsedResult<OrdersV4Document[]>> {
-  return apiGet(`${BASE}/documents`, { companyId, type, startDate, endDate });
+export function getOrdersV4Documents(companyId: string, type: 'purchase' | 'registration', startDate: string, endDate: string, limit = 250): Promise<ApiParsedResult<OrdersV4Document[]>> {
+  return apiGet(`${BASE}/documents`, { companyId, type, startDate, endDate, limit });
 }
 
 export function createOrdersV4Document(companyId: string, body: OrdersV4DocumentPayload): Promise<ApiParsedResult<OrdersV4Document>> {
@@ -64,17 +64,17 @@ export function getOrdersV4Balances(companyId: string): Promise<ApiParsedResult<
   return apiGet(`${BASE}/inventory/balances`, { companyId });
 }
 
-export function getOrdersV4Ledger(companyId: string): Promise<ApiParsedResult<OrdersV4LedgerEntry[]>> {
-  return apiGet(`${BASE}/inventory/ledger`, { companyId });
+export function getOrdersV4Ledger(companyId: string, limit = 250): Promise<ApiParsedResult<OrdersV4LedgerEntry[]>> {
+  return apiGet(`${BASE}/inventory/ledger`, { companyId, limit });
 }
 
-export function getOrdersV4Stocktakes(companyId: string): Promise<ApiParsedResult<OrdersV4Stocktake[]>> {
-  return apiGet(`${BASE}/inventory/stocktakes`, { companyId });
+export function getOrdersV4Stocktakes(companyId: string, limit = 100): Promise<ApiParsedResult<OrdersV4Stocktake[]>> {
+  return apiGet(`${BASE}/inventory/stocktakes`, { companyId, limit });
 }
 
 export function createOrdersV4Stocktake(companyId: string, body: {
   stocktakeDate: string; locationId: string; notes?: string; idempotencyKey: string;
-  lines: Array<{ itemId: string; physicalQuantity: string }>;
+  lines: Array<{ itemId: string; physicalUnits: Array<{ unitId: string; quantity: string }> }>;
 }): Promise<ApiParsedResult<OrdersV4Stocktake>> {
   return apiPost(`${BASE}/inventory/stocktakes?companyId=${encodeURIComponent(companyId)}`, body);
 }

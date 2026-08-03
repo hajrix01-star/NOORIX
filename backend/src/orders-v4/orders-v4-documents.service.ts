@@ -76,7 +76,7 @@ export class OrdersV4DocumentsService {
     private readonly fundsPosting: OrdersV4FundsPostingService,
   ) {}
 
-  async list(companyId: string, documentType?: OrdersV4DocumentType, startDate?: string, endDate?: string, createdByUserId?: string) {
+  async list(companyId: string, documentType?: OrdersV4DocumentType, startDate?: string, endDate?: string, createdByUserId?: string, limit = 250) {
     const documents = await this.prisma.ordersV4Document.findMany({
       where: {
         companyId,
@@ -91,6 +91,7 @@ export class OrdersV4DocumentsService {
         lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } },
       },
       orderBy: [{ documentDate: 'desc' }, { createdAt: 'desc' }],
+      take: Math.max(1, Math.min(2000, limit)),
     });
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     return documents.map((document) => ({

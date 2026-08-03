@@ -221,6 +221,22 @@ export function calculateOrdersV4ConvertedQuantity(
   return sourceQuantity.times(sourceToTargetConversion.factor).toDecimalPlaces(QUANTITY_SCALE);
 }
 
+/**
+ * Converts an already-posted signed quantity for reporting and audit views.
+ * Operational inputs must continue to use calculateOrdersV4ConvertedQuantity,
+ * which deliberately rejects negative user input.
+ */
+export function calculateOrdersV4ConvertedSignedQuantity(
+  sourceQuantityInput: Prisma.Decimal.Value,
+  sourceToTargetConversion: OrdersV4ResolvedConversion,
+): Prisma.Decimal {
+  const sourceQuantity = decimal(sourceQuantityInput, 'الكمية المرحلة المراد تحويلها');
+  if (sourceToTargetConversion.factor.lte(0)) {
+    throw new BadRequestException('معامل تحويل الكمية المرحلة غير صالح');
+  }
+  return sourceQuantity.times(sourceToTargetConversion.factor).toDecimalPlaces(QUANTITY_SCALE);
+}
+
 export function calculateOrdersV4RecipeUsage(input: {
   registeredBaseQuantity: Prisma.Decimal.Value;
   recipeOutputQuantity: Prisma.Decimal.Value;

@@ -145,9 +145,9 @@ function detailedItems(documents: OrdersV4Document[]): DetailedItemRow[] {
 }
 
 export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { companyId: string; startDate: string; endDate: string }) {
-  const purchaseQuery = useOrdersV4Documents(companyId, 'purchase', startDate, endDate);
-  const registrationQuery = useOrdersV4Documents(companyId, 'registration', startDate, endDate);
   const [documentType, setDocumentType] = useState<'purchase' | 'registration' | ''>('purchase');
+  const purchaseQuery = useOrdersV4Documents(companyId, 'purchase', startDate, endDate, documentType !== 'registration', 2000);
+  const registrationQuery = useOrdersV4Documents(companyId, 'registration', startDate, endDate, documentType !== 'purchase', 2000);
   const [search, setSearch] = useState('');
   const [sectionIds, setSectionIds] = useState<string[]>([]);
   const [categoryNames, setCategoryNames] = useState<string[]>([]);

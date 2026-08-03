@@ -10,18 +10,26 @@ import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { requireCompanyId } from '../common/utils/require-company-id';
 import { OrdersV4CatalogService } from './orders-v4-catalog.service';
-import type {
-  OrdersV4DocumentInput,
-  OrdersV4DocumentType,
-  OrdersV4ItemInput,
-  OrdersV4ItemDefinitionInput,
-  OrdersV4ItemUpdateInput,
-  OrdersV4NamedInput,
-  OrdersV4RecipePublishInput,
-  OrdersV4ReceiveInput,
-  OrdersV4StocktakeInput,
-  OrdersV4UnitInput,
-} from './orders-v4.contracts';
+import type { OrdersV4DocumentType } from './orders-v4.contracts';
+import {
+  OrdersV4CutoverDto,
+  OrdersV4DateRangeQueryDto,
+  OrdersV4DocumentDto,
+  OrdersV4DocumentsQueryDto,
+  OrdersV4IdempotencyDto,
+  OrdersV4ItemDefinitionDto,
+  OrdersV4ItemDto,
+  OrdersV4ItemsReportQueryDto,
+  OrdersV4ItemUpdateDto,
+  OrdersV4LedgerQueryDto,
+  OrdersV4LimitQueryDto,
+  OrdersV4LocationDto,
+  OrdersV4NamedDto,
+  OrdersV4ReceiveDto,
+  OrdersV4RecipePublishDto,
+  OrdersV4StocktakeDto,
+  OrdersV4UnitDto,
+} from './orders-v4.dto';
 import { OrdersV4DocumentsService } from './orders-v4-documents.service';
 import { resolveOrdersV4DocumentListScope } from './orders-v4-document-access.policy';
 import { OrdersV4InventoryService } from './orders-v4-inventory.service';
@@ -70,19 +78,19 @@ export class OrdersV4Controller {
 
   @Post('catalog/units')
   @RequirePermission('ORDERS_V4_WRITE')
-  createUnit(@CompanyId() companyId: string, @Body() body: OrdersV4UnitInput) {
+  createUnit(@CompanyId() companyId: string, @Body() body: OrdersV4UnitDto) {
     return this.catalog.createUnit(requireCompanyId(companyId), body);
   }
 
   @Post('catalog/categories')
   @RequirePermission('ORDERS_V4_WRITE')
-  createCategory(@CompanyId() companyId: string, @Body() body: OrdersV4NamedInput) {
+  createCategory(@CompanyId() companyId: string, @Body() body: OrdersV4NamedDto) {
     return this.catalog.createCategory(requireCompanyId(companyId), body);
   }
 
   @Post('catalog/sections')
   @RequirePermission('ORDERS_V4_WRITE')
-  createSection(@CompanyId() companyId: string, @Body() body: OrdersV4NamedInput) {
+  createSection(@CompanyId() companyId: string, @Body() body: OrdersV4NamedDto) {
     return this.catalog.createSection(requireCompanyId(companyId), body);
   }
 
@@ -90,32 +98,32 @@ export class OrdersV4Controller {
   @RequirePermission('ORDERS_V4_WRITE')
   createLocation(
     @CompanyId() companyId: string,
-    @Body() body: OrdersV4NamedInput & { kind?: string; sectionId?: string | null },
+    @Body() body: OrdersV4LocationDto,
   ) {
     return this.catalog.createLocation(requireCompanyId(companyId), body);
   }
 
   @Post('catalog/items')
   @RequirePermission('ORDERS_V4_WRITE')
-  createItem(@CompanyId() companyId: string, @Body() body: OrdersV4ItemInput) {
+  createItem(@CompanyId() companyId: string, @Body() body: OrdersV4ItemDto) {
     return this.catalog.createItem(requireCompanyId(companyId), body);
   }
 
   @Patch('catalog/items/:id')
   @RequirePermission('ORDERS_V4_WRITE')
-  updateItem(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4ItemUpdateInput) {
+  updateItem(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4ItemUpdateDto) {
     return this.catalog.updateItem(requireCompanyId(companyId), id, body);
   }
 
   @Patch('catalog/categories/:id')
   @RequirePermission('ORDERS_V4_WRITE')
-  updateCategory(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4NamedInput) {
+  updateCategory(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4NamedDto) {
     return this.catalog.updateCategory(requireCompanyId(companyId), id, body);
   }
 
   @Patch('catalog/sections/:id')
   @RequirePermission('ORDERS_V4_WRITE')
-  updateSection(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4NamedInput) {
+  updateSection(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4NamedDto) {
     return this.catalog.updateSection(requireCompanyId(companyId), id, body);
   }
 
@@ -124,14 +132,14 @@ export class OrdersV4Controller {
   saveItemDefinition(
     @CompanyId() companyId: string,
     @Param('id') id: string,
-    @Body() body: OrdersV4ItemDefinitionInput,
+    @Body() body: OrdersV4ItemDefinitionDto,
   ) {
     return this.itemDefinitions.save(requireCompanyId(companyId), id, body);
   }
 
   @Post('catalog/recipes/publish')
   @RequirePermission('ORDERS_V4_WRITE')
-  publishRecipe(@CompanyId() companyId: string, @Body() body: OrdersV4RecipePublishInput) {
+  publishRecipe(@CompanyId() companyId: string, @Body() body: OrdersV4RecipePublishDto) {
     return this.catalog.publishRecipe(requireCompanyId(companyId), body);
   }
 
@@ -158,11 +166,10 @@ export class OrdersV4Controller {
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_WRITE', 'ORDERS_V4_STAFF_SUBMIT', 'ORDERS_V4_INTERNAL_SUBMIT')
   listDocuments(
     @CompanyId() companyId: string,
-    @Query('type') type?: OrdersV4DocumentType,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query() query?: OrdersV4DocumentsQueryDto,
     @CurrentUser() user?: JwtUser,
   ) {
+    const { type, startDate, endDate } = query ?? {};
     if (!user) throw new ForbiddenException('غير مصادق');
     const canReadAll = userCan(user, PERMISSIONS.ORDERS_V4_READ) || userCan(user, PERMISSIONS.ORDERS_V4_WRITE);
     if (!canReadAll && (!type || !userCan(user, submitPermission(type)))) {
@@ -181,12 +188,13 @@ export class OrdersV4Controller {
       scope.startDate,
       scope.endDate,
       scope.createdByUserId,
+      query?.limit,
     );
   }
 
   @Post('documents')
   @RequireAnyPermission('ORDERS_V4_WRITE', 'ORDERS_V4_STAFF_SUBMIT', 'ORDERS_V4_INTERNAL_SUBMIT')
-  createDocument(@CompanyId() companyId: string, @Body() body: OrdersV4DocumentInput, @CurrentUser() user: JwtUser) {
+  createDocument(@CompanyId() companyId: string, @Body() body: OrdersV4DocumentDto, @CurrentUser() user: JwtUser) {
     if (!userCan(user, PERMISSIONS.ORDERS_V4_WRITE) && !userCan(user, submitPermission(body.documentType))) {
       throw new ForbiddenException('لا تملك صلاحية إنشاء هذا النوع من مستندات V4');
     }
@@ -195,7 +203,7 @@ export class OrdersV4Controller {
 
   @Patch('documents/:id/receive')
   @RequireAnyPermission('ORDERS_V4_WRITE', 'ORDERS_V4_CASHIER_RECEIVE')
-  receiveLatest(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4ReceiveInput) {
+  receiveLatest(@CompanyId() companyId: string, @Param('id') id: string, @Body() body: OrdersV4ReceiveDto) {
     return this.documents.receiveLatest(requireCompanyId(companyId), id, body);
   }
 
@@ -204,9 +212,9 @@ export class OrdersV4Controller {
   reverseDocument(
     @CompanyId() companyId: string,
     @Param('id') id: string,
-    @Body() body: { idempotencyKey?: string },
+    @Body() body: OrdersV4IdempotencyDto,
   ) {
-    return this.documents.reverse(requireCompanyId(companyId), id, body.idempotencyKey || '');
+    return this.documents.reverse(requireCompanyId(companyId), id, body.idempotencyKey);
   }
 
   @Post('documents/:id/undo-reverse')
@@ -214,32 +222,30 @@ export class OrdersV4Controller {
   undoReverseDocument(
     @CompanyId() companyId: string,
     @Param('id') id: string,
-    @Body() body: { idempotencyKey?: string },
+    @Body() body: OrdersV4IdempotencyDto,
   ) {
-    return this.documents.undoReverse(requireCompanyId(companyId), id, body.idempotencyKey || '');
+    return this.documents.undoReverse(requireCompanyId(companyId), id, body.idempotencyKey);
   }
 
   @Get('reports/summary')
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_REPORTS_READ')
-  summary(@CompanyId() companyId: string, @Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
-    return this.reports.summary(requireCompanyId(companyId), startDate, endDate);
+  summary(@CompanyId() companyId: string, @Query() query?: OrdersV4DateRangeQueryDto) {
+    return this.reports.summary(requireCompanyId(companyId), query?.startDate, query?.endDate);
   }
 
   @Get('reports/items')
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_REPORTS_READ')
   itemReport(
     @CompanyId() companyId: string,
-    @Query('type') type?: OrdersV4DocumentType,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query() query?: OrdersV4ItemsReportQueryDto,
   ) {
-    return this.reports.itemsReport(requireCompanyId(companyId), type, startDate, endDate);
+    return this.reports.itemsReport(requireCompanyId(companyId), query?.type, query?.startDate, query?.endDate);
   }
 
   @Get('reports/sales')
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_REPORTS_READ')
-  salesReport(@CompanyId() companyId: string, @Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
-    return this.reports.salesReport(requireCompanyId(companyId), startDate, endDate);
+  salesReport(@CompanyId() companyId: string, @Query() query?: OrdersV4DateRangeQueryDto) {
+    return this.reports.salesReport(requireCompanyId(companyId), query?.startDate, query?.endDate);
   }
 
   @Get('inventory/balances')
@@ -252,21 +258,20 @@ export class OrdersV4Controller {
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_REPORTS_READ', 'ORDERS_V4_INVENTORY_WRITE')
   ledger(
     @CompanyId() companyId: string,
-    @Query('itemId') itemId?: string,
-    @Query('locationId') locationId?: string,
+    @Query() query?: OrdersV4LedgerQueryDto,
   ) {
-    return this.inventory.ledger(requireCompanyId(companyId), itemId, locationId);
+    return this.inventory.ledger(requireCompanyId(companyId), query?.itemId, query?.locationId, query?.limit);
   }
 
   @Get('inventory/stocktakes')
   @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_INVENTORY_WRITE')
-  stocktakes(@CompanyId() companyId: string) {
-    return this.inventory.listStocktakes(requireCompanyId(companyId));
+  stocktakes(@CompanyId() companyId: string, @Query() query?: OrdersV4LimitQueryDto) {
+    return this.inventory.listStocktakes(requireCompanyId(companyId), query?.limit);
   }
 
   @Post('inventory/stocktakes')
   @RequirePermission('ORDERS_V4_INVENTORY_WRITE')
-  createStocktake(@CompanyId() companyId: string, @Body() body: OrdersV4StocktakeInput) {
+  createStocktake(@CompanyId() companyId: string, @Body() body: OrdersV4StocktakeDto) {
     return this.inventory.createStocktake(requireCompanyId(companyId), body);
   }
 
@@ -286,7 +291,7 @@ export class OrdersV4Controller {
   @RequirePermission('ORDERS_V4_DELETE')
   cutoverExecute(
     @CompanyId() companyId: string,
-    @Body() body: { confirmation?: string; sourceFingerprint?: string },
+    @Body() body: OrdersV4CutoverDto,
   ) {
     return this.legacyCutoverImport.execute(requireCompanyId(companyId), body);
   }

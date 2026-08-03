@@ -2075,6 +2075,9 @@ model OrdersV4Document {
   @@index([tenantId])
   @@index([companyId, documentType, documentDate])
   @@index([companyId, documentType, registrationEntryType, documentDate])
+  @@index([companyId, status, documentDate], map: "orders_v4_documents_company_status_document_date_idx")
+  @@index([companyId, createdByUserId, documentType, documentDate], map: "orders_v4_documents_creator_type_document_date_idx")
+  @@index([companyId, documentType, registrationEntryType, status, documentDate], map: "orders_v4_documents_registration_status_date_idx")
   @@index([companyId, status, createdAt])
   @@map("orders_v4_documents")
 }
@@ -2221,6 +2224,7 @@ model OrdersV4CustodyLedgerEntry {
   @@unique([reversalOfId])
   @@index([tenantId])
   @@index([companyId, sequence])
+  @@index([companyId, effectiveAt], map: "orders_v4_custody_company_effective_at_idx")
   @@map("orders_v4_custody_ledger")
 }
 

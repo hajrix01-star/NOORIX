@@ -33,11 +33,14 @@ function uniqueUsers(rows: Array<{ createdByUser?: OrdersV4UserIdentity | null }
 
 export function OrdersV4InventoryTab({ companyId, bootstrap, canWrite = false, canCutover = false }: { companyId: string; bootstrap?: OrdersV4Bootstrap; canWrite?: boolean; canCutover?: boolean }) {
   const [tab, setTab] = useState('balances');
+  const [cutoverRequested, setCutoverRequested] = useState(false);
+  const [ledgerLimit, setLedgerLimit] = useState(250);
+  const [stocktakeLimit, setStocktakeLimit] = useState(100);
   const balancesQuery = useOrdersV4Balances(companyId);
-  const ledgerQuery = useOrdersV4Ledger(companyId);
-  const stocktakesQuery = useOrdersV4Stocktakes(companyId);
-  const qualityQuery = useOrdersV4DataQuality(companyId);
-  const cutoverQuery = useOrdersV4CutoverAudit(companyId, canCutover);
+  const ledgerQuery = useOrdersV4Ledger(companyId, tab === 'ledger', ledgerLimit);
+  const stocktakesQuery = useOrdersV4Stocktakes(companyId, tab === 'stocktakes', stocktakeLimit);
+  const qualityQuery = useOrdersV4DataQuality(companyId, tab === 'quality');
+  const cutoverQuery = useOrdersV4CutoverAudit(companyId, canCutover && cutoverRequested);
   const [stocktakeOpen, setStocktakeOpen] = useState(false);
   const balances = balancesQuery.data ?? [];
   const totals = useMemo(() => balances.reduce((acc, row) => ({ value: acc.value + Number(row.value || 0), negative: acc.negative + (Number(row.quantity) < 0 ? 1 : 0) }), { value: 0, negative: 0 }), [balances]);
@@ -46,7 +49,7 @@ export function OrdersV4InventoryTab({ companyId, bootstrap, canWrite = false, c
       <OrdersV4Kpi label="أرصدة الأصناف" value={balances.length} />
       <OrdersV4Kpi label="قيمة المخزون" value={`${v4Number(totals.value)} ر.س`} tone="green" />
       <OrdersV4Kpi label="أرصدة سالبة" value={totals.negative} tone={totals.negative ? 'red' : 'green'} />
-      <OrdersV4Kpi label="جودة البيانات" value={qualityQuery.data?.ready ? 'جاهز' : `${qualityQuery.data?.errorCount ?? 0} خطأ`} tone={qualityQuery.data?.ready ? 'green' : 'amber'} />
+      <OrdersV4Kpi label="جودة البيانات" value={qualityQuery.data ? (qualityQuery.data.ready ? 'جاهز' : `${qualityQuery.data.errorCount} خطأ`) : 'عند الطلب'} tone={qualityQuery.data?.ready ? 'green' : 'amber'} />
     </div>
     <ScreenTabs
       items={[{ id: 'balances', label: 'الأرصدة والتكلفة' }, { id: 'ledger', label: 'دفتر الحركات' }, { id: 'stocktakes', label: 'الجرد' }, { id: 'quality', label: 'جودة البيانات' }]}
@@ -59,11 +62,12 @@ export function OrdersV4InventoryTab({ companyId, bootstrap, canWrite = false, c
       contentClassName="pt-3"
     >
       {tab === 'balances' && <BalancesTable query={balancesQuery} bootstrap={bootstrap} />}
-      {tab === 'ledger' && <LedgerTable query={ledgerQuery} />}
-      {tab === 'stocktakes' && <StocktakesTable query={stocktakesQuery} onCreate={canWrite ? () => setStocktakeOpen(true) : undefined} />}
+      {tab === 'ledger' && <LedgerTable query={ledgerQuery} limit={ledgerLimit} onLoadMore={() => setLedgerLimit((current) => Math.min(500, current + 250))} />}
+      {tab === 'stocktakes' && <StocktakesTable query={stocktakesQuery} limit={stocktakeLimit} onLoadMore={() => setStocktakeLimit((current) => Math.min(500, current + 100))} onCreate={canWrite ? () => setStocktakeOpen(true) : undefined} />}
       {tab === 'quality' && <QualityTable query={qualityQuery} />}
     </ScreenTabs>
-    {canCutover && <CutoverAuditPanel companyId={companyId} query={cutoverQuery} />}
+    {canCutover && !cutoverRequested && <OrdersV4Panel title="تدقيق الانتقال من الطلبات القديم"><Button size="sm" variant="ghost" onClick={() => setCutoverRequested(true)}>تحميل تدقيق الترحيل</Button></OrdersV4Panel>}
+    {canCutover && cutoverRequested && <CutoverAuditPanel companyId={companyId} query={cutoverQuery} />}
     {canWrite && <StocktakeModal open={stocktakeOpen} onClose={() => setStocktakeOpen(false)} companyId={companyId} bootstrap={bootstrap} balances={balances} />}
   </div>;
 }
@@ -157,7 +161,7 @@ function BalancesTable({ query, bootstrap }: { query: ReturnType<typeof useOrder
   </OrdersV4Panel>;
 }
 
-function LedgerTable({ query }: { query: ReturnType<typeof useOrdersV4Ledger> }) {
+function LedgerTable({ query, limit, onLoadMore }: { query: ReturnType<typeof useOrdersV4Ledger>; limit: number; onLoadMore: () => void }) {
   const [search, setSearch] = useState('');
   const [itemId, setItemId] = useState('');
   const [locationId, setLocationId] = useState('');
@@ -198,10 +202,11 @@ function LedgerTable({ query }: { query: ReturnType<typeof useOrdersV4Ledger> })
     </InventoryFilterBar>
     <OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} />
     {!query.isLoading && <SimpleTable columns={columns} data={filteredRows} tableMinWidth={1320} emptyMessage="لا توجد قيود مطابقة للفلاتر" />}
+    {!query.isLoading && rows.length >= limit && limit < 500 && <div className="mt-3 flex justify-center"><Button size="sm" variant="ghost" onClick={onLoadMore}>تحميل 250 قيدًا إضافيًا</Button></div>}
   </OrdersV4Panel>;
 }
 
-function StocktakesTable({ query, onCreate }: { query: ReturnType<typeof useOrdersV4Stocktakes>; onCreate?: () => void }) {
+function StocktakesTable({ query, limit, onLoadMore, onCreate }: { query: ReturnType<typeof useOrdersV4Stocktakes>; limit: number; onLoadMore: () => void; onCreate?: () => void }) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [createdByUserId, setCreatedByUserId] = useState('');
@@ -230,6 +235,7 @@ function StocktakesTable({ query, onCreate }: { query: ReturnType<typeof useOrde
     </InventoryFilterBar>
     <OrdersV4QueryState loading={query.isLoading} error={query.error as Error | null} />
     {!query.isLoading && <SimpleTable columns={columns} data={filteredRows} emptyMessage="لا توجد جلسات جرد مطابقة" tableMinWidth={980} />}
+    {!query.isLoading && rows.length >= limit && limit < 500 && <div className="mt-3 flex justify-center"><Button size="sm" variant="ghost" onClick={onLoadMore}>تحميل 100 جلسة إضافية</Button></div>}
   </OrdersV4Panel>;
 }
 
@@ -305,6 +311,16 @@ function StocktakeModal({ open, onClose, companyId, bootstrap, balances }: { ope
     }, 0));
   }
 
+  function physicalUnitInputs(row: OrdersV4InventoryBalance) {
+    const values = physical[row.itemId];
+    const entered = Object.entries(values ?? {}).filter(([, value]) => value !== '');
+    if (!entered.length) {
+      const item = itemById.get(row.itemId);
+      return [{ unitId: item?.inventoryUnitId ?? '', quantity: String(row.quantity) }];
+    }
+    return entered.map(([unitId, quantity]) => ({ unitId, quantity }));
+  }
+
   function setPhysicalValue(row: OrdersV4InventoryBalance, unitId: string, value: string) {
     setPhysical((current) => ({
       ...current,
@@ -314,7 +330,13 @@ function StocktakeModal({ open, onClose, companyId, bootstrap, balances }: { ope
 
   async function submit() {
     if (!effectiveLocation || !scopeRows.length) return;
-    await mutation.mutateAsync({ stocktakeDate: date, locationId: effectiveLocation, notes: notes.trim() || undefined, idempotencyKey: crypto.randomUUID(), lines: scopeRows.map((row) => ({ itemId: row.itemId, physicalQuantity: physicalBaseQuantity(row) })) });
+    await mutation.mutateAsync({
+      stocktakeDate: date,
+      locationId: effectiveLocation,
+      notes: notes.trim() || undefined,
+      idempotencyKey: crypto.randomUUID(),
+      lines: scopeRows.map((row) => ({ itemId: row.itemId, physicalUnits: physicalUnitInputs(row) })),
+    });
     onClose();
   }
   return <AdaptiveSheet open={open} onClose={onClose} size="2xl" side="start" closeOnBackdrop={!mutation.isPending} hideClose={mutation.isPending} title="جرد المخزون" footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose, disabled: mutation.isPending }, { key: 'save', label: 'اعتماد الجرد', role: 'save', onClick: submit, loading: mutation.isPending, disabled: !scopeRows.length }]} />}>
@@ -361,7 +383,7 @@ function StocktakeModal({ open, onClose, companyId, bootstrap, balances }: { ope
                 <div className="grid gap-1.5">{units.map((unit) => {
                   const stored = physical[row.itemId];
                   const value = stored ? stored[unit.unitId] ?? '' : unit.unitId === item?.inventoryUnitId ? String(row.quantity) : '';
-                  return <label key={unit.unitId} className="min-w-0"><span className="mb-0.5 block text-center text-[9px] text-noorix-muted">{unit.unit.nameAr}</span><Input className="h-9 text-center font-bold tabular-nums" type="number" step="any" value={value} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPhysicalValue(row, unit.unitId, event.target.value)} /></label>;
+                  return <label key={unit.unitId} className="min-w-0"><span className="mb-0.5 block text-center text-[9px] text-noorix-muted">{unit.unit.nameAr}</span><Input className="h-9 text-center font-bold tabular-nums" type="number" min="0" step="any" value={value} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPhysicalValue(row, unit.unitId, event.target.value)} /></label>;
                 })}</div>
                 <div className="mt-1 text-center text-[9px] text-noorix-muted">الإجمالي: {physicalDisplay}</div>
               </div>

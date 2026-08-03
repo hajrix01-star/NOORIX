@@ -73,6 +73,36 @@ describe('OrdersV4ReportsService', () => {
     expect(summary.custodyBalance.toString()).toBe('375');
   });
 
+  it('keeps registration cancellation quantities signed in the item report', async () => {
+    const prisma = {
+      ordersV4DocumentLine: {
+        findMany: jest.fn().mockResolvedValue([{
+          itemId: 'item-1',
+          documentId: 'document-1',
+          baseQuantity: decimal(-3),
+          baseUnitId: 'piece',
+          operationalCost: decimal(-12),
+          item: {
+            id: 'item-1', nameAr: 'معسل', kernelUnitId: 'piece', inventoryUnitId: 'piece',
+            category: { nameAr: 'مواد' },
+            inventoryUnit: { id: 'piece', nameAr: 'حبة' },
+            conversionVersions: [],
+          },
+        }]),
+      },
+      ordersV4Unit: {
+        findMany: jest.fn().mockResolvedValue([{ id: 'piece', code: 'piece', dimension: 'count', canonicalFactor: decimal(1) }]),
+      },
+    };
+
+    const service = new OrdersV4ReportsService(prisma as never);
+    const rows = await service.itemsReport('company-1', 'registration', '2026-08-01', '2026-08-31');
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].baseQuantity.toString()).toBe('-3');
+    expect(rows[0].totalAmount.toString()).toBe('-12');
+  });
+
   it('builds the internal report from one period document snapshot without nested report queries', async () => {
     const document = {
       id: 'registration-1',

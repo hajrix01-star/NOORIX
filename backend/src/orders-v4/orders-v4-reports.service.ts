@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { calculateOrdersV4AverageUnitCost, calculateOrdersV4ConvertedQuantity } from './orders-v4-calculation.kernel';
+import { calculateOrdersV4AverageUnitCost, calculateOrdersV4ConvertedSignedQuantity } from './orders-v4-calculation.kernel';
 import { calculateOrdersV4CashAvailable, calculateOrdersV4FundsBalance } from './orders-v4-funds.kernel';
 import type { OrdersV4DocumentType } from './orders-v4.contracts';
 import {
@@ -114,7 +114,7 @@ export class OrdersV4ReportsService {
     }>();
     for (const line of lines) {
       const currentDefinition = line.item.conversionVersions[0];
-      const kernelQuantity = calculateOrdersV4ConvertedQuantity(
+      const kernelQuantity = calculateOrdersV4ConvertedSignedQuantity(
         line.baseQuantity,
         resolveOrdersV4ContextConversion({
           fromUnitId: line.baseUnitId,
@@ -123,7 +123,7 @@ export class OrdersV4ReportsService {
           edges: ordersV4EdgeDefinitions(currentDefinition?.edges),
         }),
       );
-      const baseQuantity = calculateOrdersV4ConvertedQuantity(
+      const baseQuantity = calculateOrdersV4ConvertedSignedQuantity(
         kernelQuantity,
         resolveOrdersV4ContextConversion({
           fromUnitId: line.item.kernelUnitId,

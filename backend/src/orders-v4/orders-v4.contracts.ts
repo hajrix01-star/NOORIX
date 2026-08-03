@@ -124,5 +124,10 @@ export type OrdersV4StocktakeInput = {
   locationId: string;
   notes?: string | null;
   idempotencyKey: string;
-  lines: Array<{ itemId: string; physicalQuantity: string }>;
+  lines: Array<{
+    itemId: string;
+    /** Backward-compatible inventory-unit quantity. New clients send physicalUnits. */
+    physicalQuantity?: string;
+    physicalUnits?: Array<{ unitId: string; quantity: string }>;
+  }>;
 };
