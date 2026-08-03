@@ -22,7 +22,7 @@ export default function HajriTaxLayout() {
       </div>
 
       <div className="noorix-surface-card p-0 overflow-hidden">
-        <div className="noorix-tab-bar flex gap-0 border-b border-noorix-border overflow-x-auto [-webkit-overflow-scrolling:touch]">
+        <div className="noorix-tab-bar flex gap-2 overflow-x-auto border-b border-noorix-border bg-noorix-bg-muted p-2 [-webkit-overflow-scrolling:touch]">
           {HAJRI_TABS.map((link) => (
             <NavLink
               key={link.to}
@@ -30,10 +30,10 @@ export default function HajriTaxLayout() {
               end={'end' in link ? link.end : undefined}
               className={({ isActive }) =>
                 cn(
-                  'm-0 shrink-0 whitespace-nowrap rounded-none border-0 border-b-2 px-[18px] py-3 text-[14px] no-underline transition-colors',
+                  'm-0 shrink-0 whitespace-nowrap rounded-lg border px-[18px] py-2.5 text-[14px] no-underline shadow-sm transition-colors',
                   isActive
-                    ? 'border-b-transparent bg-transparent font-extrabold text-noorix-green'
-                    : 'border-b-transparent bg-transparent font-medium text-noorix-muted hover:text-noorix-text',
+                    ? 'border-noorix-green bg-noorix-green font-extrabold text-white'
+                    : 'border-noorix-border bg-noorix-surface font-bold text-noorix-muted hover:border-noorix-blue hover:text-noorix-text',
                 )
               }
             >

@@ -928,15 +928,16 @@
 .nx-connected-tab-btn {
   min-height: 32px;
   padding: 0 12px;
-  border: 0;
+  border: 1px solid var(--noorix-border);
   border-radius: 8px;
-  background: transparent;
+  background: var(--noorix-bg-surface);
   color: var(--noorix-text-muted);
   font-size: 13px;
   font-weight: 700;
   line-height: 1.35;
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(65, 52, 31, 0.07);
   transition:
+    border-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
     background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
     color 180ms cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -949,15 +950,18 @@
 }
 
 .nx-connected-tab-btn--idle:hover {
-  background: var(--noorix-bg-muted);
+  border-color: var(--noorix-accent-blue);
+  background: var(--noorix-bg-surface);
   color: var(--noorix-text);
+  box-shadow: 0 2px 6px rgba(20, 112, 68, 0.12);
 }
 
 .nx-connected-tab-btn--active,
 .nx-connected-tab-btn--active:hover {
-  background: transparent;
-  color: var(--noorix-accent-green);
-  box-shadow: none;
+  border-color: var(--noorix-accent-green);
+  background: var(--noorix-accent-green);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(20, 112, 68, 0.18);
   font-weight: 800;
 }
 

@@ -29,4 +29,20 @@ describe('ConnectedTabStrip', () => {
     );
     expect(container.querySelectorAll('.invisible').length).toBeGreaterThan(0);
   });
+
+  it('uses the centralized filled state for active tabs and bordered state for idle tabs', () => {
+    const { container } = render(
+      <ConnectedTabStrip items={items} value="a" onChange={() => {}} compactMobile />,
+    );
+
+    const activeTab = container.querySelector('[role="tab"][aria-selected="true"]');
+    const idleTab = container.querySelector('[role="tab"][aria-selected="false"]');
+
+    expect(activeTab?.className).toContain('nx-connected-tab-btn--active');
+    expect(activeTab?.className).toContain('!bg-[var(--noorix-accent-green)]');
+    expect(activeTab?.className).toContain('!text-white');
+    expect(idleTab?.className).toContain('nx-connected-tab-btn--idle');
+    expect(idleTab?.className).toContain('!bg-[var(--noorix-bg-surface)]');
+    expect(idleTab?.className).toContain('!border-[var(--noorix-border)]');
+  });
 });

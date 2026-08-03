@@ -113,7 +113,9 @@ export default function ConnectedTabStrip({
                             ),
                       )
                     : 'text-[14px] leading-normal whitespace-nowrap',
-                  active ? 'nx-connected-tab-btn--active' : 'nx-connected-tab-btn--idle',
+                  active
+                    ? 'nx-connected-tab-btn--active !border !border-[var(--noorix-accent-green)] !bg-[var(--noorix-accent-green)] !font-extrabold !text-white !shadow-sm'
+                    : 'nx-connected-tab-btn--idle !border !border-[var(--noorix-border)] !bg-[var(--noorix-bg-surface)] !font-bold !text-[var(--noorix-text-muted)] !shadow-sm hover:!border-[var(--noorix-accent-blue)] hover:!bg-[var(--noorix-bg-surface)] hover:!text-[var(--noorix-text)]',
                 )}
                 onClick={() => {
                   if (item.id !== value) onChange(item.id);
