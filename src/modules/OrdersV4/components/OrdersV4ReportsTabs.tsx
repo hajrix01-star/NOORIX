@@ -106,7 +106,11 @@ function TrendChart({ documents, metric }: { documents: OrdersV4Document[]; metr
         <CartesianGrid strokeDasharray="3 3" opacity={0.35} />
         <XAxis dataKey="date" tickFormatter={(value) => String(value).slice(5)} tick={{ fontSize: 11 }} />
         <YAxis tick={{ fontSize: 11 }} width={55} />
-        <Tooltip formatter={(value) => [v4ReportNumber(value), metricLabel(metric)]} labelFormatter={(value) => v4Date(String(value))} />
+        <Tooltip
+          formatter={(value) => [v4ReportNumber(value), metricLabel(metric)]}
+          labelFormatter={(value) => `\u200E${String(value).slice(0, 10)}\u200E`}
+          contentStyle={{ direction: 'rtl', textAlign: 'right' }}
+        />
         <Legend wrapperStyle={{ fontSize: 12, direction: 'rtl' }} />
         {sections.map((section, index) => <Line key={section} type="monotone" dataKey={section} name={section} stroke={CHART_COLORS[index % CHART_COLORS.length]} strokeWidth={2.5} dot={{ r: 2 }} connectNulls />)}
       </LineChart>
@@ -247,6 +251,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate, sections
   const [status, setStatus] = useState('received');
   const [entryType, setEntryType] = useState<'issue' | 'cancellation' | ''>('');
   const [cancellationReason, setCancellationReason] = useState<OrdersV4CancellationReason | ''>('');
+  const [chartMetric, setChartMetric] = useState<OrdersV4ReportMetric>('quantity');
   const documents = query.data ?? [];
   const sections = useMemo(() => [...new Map(documents.filter((row) => row.section).map((row) => [row.section!.id, row.section!])).values()].sort((a, b) => a.nameAr.localeCompare(b.nameAr, 'ar')), [documents]);
   const users = useMemo(() => [...new Map(documents.filter((row) => row.createdByUser).map((row) => [row.createdByUser!.id, row.createdByUser!])).values()].sort((a, b) => v4UserLabel(a).localeCompare(v4UserLabel(b), 'ar')), [documents]);
@@ -311,7 +316,23 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate, sections
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <OrdersV4Kpi label="العمليات" value={filteredDocuments.length} /><OrdersV4Kpi label="إجمالي الكميات" value={v4ReportNumber(totalQuantity)} tone="green" /><OrdersV4Kpi label="إجمالي التكلفة" value={`${v4ReportNumber(totalAmount)} ر.س`} tone="green" /><OrdersV4Kpi label="متوسط العملية" value={`${v4ReportNumber(filteredDocuments.length ? totalAmount / filteredDocuments.length : 0)} ر.س`} /><OrdersV4Kpi label="الأصناف" value={byItem.length} /><OrdersV4Kpi label="الأقسام" value={bySection.length} tone="amber" />
       </div>
-      <OrdersV4Panel title="الاتجاه اليومي للتسجيل حسب القسم"><TrendChart documents={filteredDocuments} metric="amount" /></OrdersV4Panel>
+      <OrdersV4Panel
+        title={`الاتجاه اليومي للتسجيل حسب القسم — ${metricLabel(chartMetric)}`}
+        action={<div className="flex max-w-full gap-1 overflow-x-auto print:hidden">
+          {([
+            { id: 'quantity', label: 'الكمية' },
+            { id: 'documents', label: 'العمليات' },
+            { id: 'amount', label: 'التكلفة' },
+          ] as Array<{ id: OrdersV4ReportMetric; label: string }>).map((option) => <Button
+            key={option.id}
+            type="button"
+            size="sm"
+            variant={chartMetric === option.id ? 'primary' : 'ghost'}
+            className="shrink-0 whitespace-nowrap"
+            onClick={() => setChartMetric(option.id)}
+          >{option.label}</Button>)}
+        </div>}
+      ><TrendChart documents={filteredDocuments} metric={chartMetric} /></OrdersV4Panel>
       <ReportViewTabs value={activeView} onChange={setActiveView} items={[{ id: 'operations', label: 'بالعملية' }, { id: 'missing', label: `أيام بلا تسجيل (${missingDays.length})` }, { id: 'items', label: 'بالصنف' }, { id: 'sections', label: 'بالقسم' }, { id: 'employees', label: 'بالموظف' }, { id: 'daily', label: 'يومياً' }]} />
       <OrdersV4Panel title={activeView === 'operations' ? 'سجل العمليات' : activeView === 'missing' ? 'أيام بلا تسجيل' : activeView === 'items' ? 'التسجيل حسب الصنف' : activeView === 'sections' ? 'التسجيل حسب القسم' : activeView === 'employees' ? 'التسجيل حسب الموظف' : 'التسجيل اليومي'}>
         {activeView === 'operations' && <SimpleTable columns={documentColumns} data={filteredDocuments} emptyMessage="لا توجد تسجيلات مطابقة" tableMinWidth={1180} />}
