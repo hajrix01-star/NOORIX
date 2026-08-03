@@ -58,6 +58,40 @@ afterEach(() => {
 });
 
 describe('OrdersV4DocumentsTab mobile document workflow', () => {
+  it('removes purchase filters and keeps only the section filter for internal registration', () => {
+    const purchase = render(
+      <OrdersV4DocumentsTab
+        companyId="company-1"
+        documentType="purchase"
+        startDate="2026-08-01"
+        endDate="2026-08-31"
+        bootstrap={bootstrap}
+      />,
+    );
+
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    expect(screen.queryAllByRole('combobox')).toHaveLength(0);
+    expect(screen.queryByRole('group', { name: 'فلترة طريقة الدفع' })).toBeNull();
+    purchase.unmount();
+
+    render(
+      <OrdersV4DocumentsTab
+        companyId="company-1"
+        documentType="registration"
+        startDate="2026-08-01"
+        endDate="2026-08-31"
+        bootstrap={bootstrap}
+      />,
+    );
+
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    expect(screen.getAllByRole('combobox')).toHaveLength(1);
+    expect(screen.getByRole('option', { name: 'كل الأقسام' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: 'كل الفئات' })).toBeNull();
+    expect(screen.queryByRole('option', { name: 'كل الأصناف' })).toBeNull();
+    expect(screen.queryByRole('option', { name: 'كل الحالات' })).toBeNull();
+  });
+
   it('renders the purchase period summary as cards rather than a table', () => {
     render(
       <OrdersV4DocumentsTab

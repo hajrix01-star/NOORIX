@@ -1,4 +1,4 @@
-import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4Item, OrdersV4ReceivePayload, OrdersV4Summary } from '../../../types/api';
 import { AdaptiveSheet, Button, DialogActions, Input, Modal, type SimpleTableColumn, TransactionDatePicker, usePrintPreview } from '../../../ui';
 import { exportToExcel } from '../../../utils/exportUtils';
@@ -173,48 +173,28 @@ export function OrdersV4DocumentsTab({
   const [reverseTarget, setReverseTarget] = useState<OrdersV4Document | null>(null);
   const [undoReverseTarget, setUndoReverseTarget] = useState<OrdersV4Document | null>(null);
   const [reopenTarget, setReopenTarget] = useState<OrdersV4Document | null>(null);
-  const [search, setSearch] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [itemFilter, setItemFilter] = useState('');
   const isPurchase = documentType === 'purchase';
-  const deferredSearch = useDeferredValue(search);
   const documentsQuery = useOrdersV4Documents(companyId, documentType, startDate, endDate, true, resultLimit, {
-    search: deferredSearch,
-    sectionId: sectionFilter || undefined,
-    categoryId: categoryFilter || undefined,
-    itemId: itemFilter || undefined,
-    paymentMethod: isPurchase && paymentFilter !== 'all' ? paymentFilter : undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
+    sectionId: !isPurchase && sectionFilter ? sectionFilter : undefined,
   });
   const summaryQuery = useOrdersV4Summary(companyId, startDate, endDate, canReport);
   const reverseMutation = useReverseOrdersV4Document(companyId);
   const undoReverseMutation = useUndoReverseOrdersV4Document(companyId);
   const reopenMutation = useReopenOrdersV4Document(companyId);
   const documents = documentsQuery.data ?? [];
-  useEffect(() => setResultLimit(250), [categoryFilter, deferredSearch, documentType, endDate, itemFilter, paymentFilter, sectionFilter, startDate, statusFilter]);
+  useEffect(() => setResultLimit(250), [documentType, endDate, sectionFilter, startDate]);
   const summary = summaryQuery.data;
   const availableItems = useMemo(() => (bootstrap?.items ?? []).filter((item) => item.itemType === (isPurchase ? 'purchased' : 'sale')), [bootstrap?.items, isPurchase]);
   const sections = useMemo(() => (bootstrap?.sections ?? []).filter((section) => availableItems.some((item) => item.sections.some((entry) => entry.section.id === section.id))), [availableItems, bootstrap?.sections]);
-  const categories = useMemo(() => (bootstrap?.categories ?? []).filter((category) => availableItems.some((item) => item.categoryId === category.id && (!sectionFilter || item.sections.some((entry) => entry.section.id === sectionFilter)))), [availableItems, bootstrap?.categories, sectionFilter]);
-  const items = useMemo(() => availableItems.filter((item) => (!sectionFilter || item.sections.some((entry) => entry.section.id === sectionFilter)) && (!categoryFilter || item.categoryId === categoryFilter)), [availableItems, categoryFilter, sectionFilter]);
   useEffect(() => {
-    if (categoryFilter && !categories.some((entry) => entry.id === categoryFilter)) setCategoryFilter('');
-  }, [categories, categoryFilter]);
-  useEffect(() => {
-    if (itemFilter && !items.some((entry) => entry.id === itemFilter)) setItemFilter('');
-  }, [itemFilter, items]);
-  useEffect(() => {
-    setSearch(''); setPaymentFilter('all'); setStatusFilter('all'); setSectionFilter(''); setCategoryFilter(''); setItemFilter('');
+    setSectionFilter('');
   }, [companyId, documentType]);
   const periodCustodyBalanceByDocumentId = useMemo(
     () => buildOrdersV4PeriodCustodyBalances(documents),
     [documents],
   );
   const filteredDocuments = documents;
-  const filteredTotal = useMemo(() => filteredDocuments.reduce((total, document) => total + Number(isPurchase ? document.totalAmount : document.operationalCost), 0), [filteredDocuments, isPurchase]);
   const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
     title: isPurchase ? 'طباعة الطلب' : 'طباعة التسجيل الداخلي',
     closeLabel: 'إغلاق',
@@ -312,23 +292,14 @@ export function OrdersV4DocumentsTab({
           <OrdersV4Kpi label={t('ordersV4CancellationRecords')} value={summary?.cancellationCount ?? 0} tone="red" />
         </div>
       ) : null}
-      <div className="grid gap-3 rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:grid-cols-2 xl:grid-cols-4">
-        <OrdersV4Field label="بحث"><Input type="search" value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)} placeholder="رقم المستند أو القسم أو الفئة أو الصنف…" /></OrdersV4Field>
+      {!isPurchase && <div className="w-full rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:max-w-md">
         <OrdersV4Field label="القسم"><OrdersV4Select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)}><option value="">كل الأقسام</option>{sections.map((section) => <option key={section.id} value={section.id}>{section.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="الفئة"><OrdersV4Select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option value="">كل الفئات</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="الصنف"><OrdersV4Select value={itemFilter} onChange={(event) => setItemFilter(event.target.value)}><option value="">كل الأصناف</option>{items.map((item) => <option key={item.id} value={item.id}>{item.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="الحالة"><OrdersV4Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">كل الحالات</option><option value="prepared">بانتظار الاستلام</option><option value="received">مستلم</option><option value="reversed">معكوس</option><option value="cancelled">ملغي</option></OrdersV4Select></OrdersV4Field>
-        <div className="flex items-end justify-end text-[13px] font-bold text-noorix-text">المعروض: {filteredDocuments.length} — الإجمالي: {v4Number(filteredTotal)} ر.س</div>
-      </div>
-      {isPurchase && <div className="flex flex-wrap items-center gap-2" role="group" aria-label="فلترة طريقة الدفع">
-        <span className="text-[12px] font-semibold text-noorix-muted">طريقة الدفع:</span>
-        {([['all', 'الكل'], ['custody', 'عهدة'], ['cash', 'نقد المحل'], ['transfer', 'تحويل']] as const).map(([value, label]) => <Button key={value} size="sm" variant={paymentFilter === value ? 'primary' : 'ghost'} onClick={() => setPaymentFilter(value)}>{label}</Button>)}
       </div>}
       <OrdersV4Panel
         title={isPurchase ? 'طلبات الشراء — V4' : 'التسجيل الداخلي — V4'}
       >
         <OrdersV4QueryState loading={documentsQuery.isLoading} error={documentsQuery.error as Error | null} />
-        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage="لا توجد مستندات مطابقة للفترة والفلاتر" tableMinWidth={isPurchase ? 1240 : 980} onRowClick={setViewing} />}
+        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage="لا توجد مستندات ضمن الفترة المحددة" tableMinWidth={isPurchase ? 1240 : 980} onRowClick={setViewing} />}
         {!documentsQuery.isLoading && documents.length >= resultLimit && resultLimit < 2000 && <div className="mt-3 flex justify-center"><Button size="sm" variant="ghost" onClick={() => setResultLimit((current) => Math.min(2000, current + 250))}>تحميل 250 سجلًا إضافيًا</Button></div>}
       </OrdersV4Panel>
       {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} />}
