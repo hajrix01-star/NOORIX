@@ -906,25 +906,6 @@
   box-sizing: border-box;
 }
 
-@media (max-width: 640px) {
-  .nx-connected-tab-strip--scroll {
-    mask-image: linear-gradient(
-      to left,
-      transparent 0,
-      #000 10px,
-      #000 calc(100% - 10px),
-      transparent 100%
-    );
-    -webkit-mask-image: linear-gradient(
-      to left,
-      transparent 0,
-      #000 10px,
-      #000 calc(100% - 10px),
-      transparent 100%
-    );
-  }
-}
-
 .nx-connected-tab-btn {
   min-height: 32px;
   padding: 0 12px;

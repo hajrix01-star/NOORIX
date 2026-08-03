@@ -5701,19 +5701,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     }
   }
 
-  /* غلاف تبويبات: تلاشي خفيف عند الحافة (مؤشر تمرير على الجوال) */
+  /* غلاف تبويبات بلا قناع حواف حتى تظهر الأزرار كاملة على الجوال */
   .nx-tab-bar-fade-wrap { position: relative; }
-  .nx-tab-bar-fade-wrap::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    inset-inline-end: 0;
-    width: 1.75rem;
-    pointer-events: none;
-    z-index: 1;
-    background: linear-gradient(to left, var(--noorix-bg-surface), transparent);
-  }
   .nx-tab-btn {
     flex: 0 0 auto;
     flex-shrink: 0;
