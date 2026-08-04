@@ -330,6 +330,8 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'معسل' }));
     fireEvent.click(screen.getByRole('button', { name: 'إضافة' }));
 
+    expect(screen.getByTestId('orders-v4-live-purchase-total').textContent).toContain('15');
+    expect(screen.getByTestId('orders-v4-live-purchase-total').textContent).not.toContain('جارٍ الحساب');
     await waitFor(() => expect(previewDocumentMock).toHaveBeenCalledWith({
       lines: [{ itemId: 'item-1', quantity: '1', unitId: 'unit-1', unitPrice: '15', priceUnitId: 'unit-1' }],
     }));

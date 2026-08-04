@@ -391,6 +391,25 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
     && (!isPurchase || !!initialDocument || item.units.some((row) => row.isActive && row.isOrderEnabled && row.lastPrice != null)));
   const units = (bootstrap?.units ?? []).filter((unit) => unit.isActive);
   const defaultLocationId = bootstrap?.locations.find((row) => row.isActive)?.id || '';
+  const previewInputValid = useMemo(() => lines.length > 0 && lines.every((line) => line.itemId && line.unitId
+    && (line.priceUnitId || line.unitId) && Number(line.quantity) > 0 && Number(line.unitPrice || 0) >= 0), [lines]);
+  const instantPurchaseTotal = useMemo(() => {
+    if (!isPurchase || lines.length === 0) return 0;
+    let total = 0;
+    for (const line of lines) {
+      if ((line.priceUnitId || line.unitId) !== line.unitId) return null;
+      const quantity = Number(line.quantity);
+      const unitPrice = Number(line.unitPrice || 0);
+      if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice) || quantity <= 0 || unitPrice < 0) return null;
+      total += quantity * unitPrice;
+    }
+    return total;
+  }, [isPurchase, lines]);
+  const displayedPurchaseTotal = lines.length === 0
+    ? 0
+    : previewInputValid
+      ? instantPurchaseTotal ?? purchasePreview?.totalAmount ?? null
+      : null;
 
   useEffect(() => {
     if (!open) return;
@@ -430,9 +449,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       setPreviewState('idle');
       return;
     }
-    const valid = lines.every((line) => line.itemId && line.unitId && (line.priceUnitId || line.unitId)
-      && Number(line.quantity) > 0 && Number(line.unitPrice || 0) >= 0);
-    if (!valid) {
+    if (!previewInputValid) {
       setPurchasePreview(null);
       setPreviewState('error');
       return;
@@ -462,9 +479,9 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
         setPurchasePreview(null);
         setPreviewState('error');
       });
-    }, 350);
+    }, 120);
     return () => window.clearTimeout(timer);
-  }, [isPurchase, lines, open, previewDocument]);
+  }, [isPurchase, lines, open, previewDocument, previewInputValid]);
 
   function patchLine(key: string, patch: Partial<DraftLine>) {
     setLines((current) => current.map((line) => line.key === key ? { ...line, ...patch } : line));
@@ -531,11 +548,15 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       footer={<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {isPurchase && <div data-testid="orders-v4-live-purchase-total" aria-live="polite" className="flex min-h-11 items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 sm:min-w-64">
           <div>
-            <div className="text-[11px] font-semibold text-emerald-800">إجمالي الطلب الحالي</div>
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800">
+              <span>إجمالي الطلب الحالي</span>
+              {previewState === 'loading' && <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] text-emerald-700">يتم التحقق…</span>}
+              {previewState === 'error' && <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] text-red-700">تعذر التحقق</span>}
+            </div>
             <div className="text-[10px] text-emerald-700">محسوب بنواة التحويلات المركزية</div>
           </div>
-          <strong className={`shrink-0 tabular-nums ${previewState === 'error' ? 'text-[12px] text-red-700' : 'text-[20px] text-emerald-950'}`}>
-            {previewState === 'loading' ? 'جارٍ الحساب…' : previewState === 'error' ? 'تحقق من الأسطر' : `${v4Number(purchasePreview?.totalAmount ?? 0)} ر.س`}
+          <strong className="shrink-0 text-[20px] tabular-nums text-emerald-950">
+            {displayedPurchaseTotal == null ? '—' : `${v4Number(displayedPurchaseTotal)} ر.س`}
           </strong>
         </div>}
         <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? t('ordersV4CancellationSaveRecord') : 'حفظ التسجيل الداخلي', onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: isPurchase && (lines.length === 0 || previewState !== 'ready') }]} />
