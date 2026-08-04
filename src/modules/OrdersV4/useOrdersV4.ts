@@ -187,7 +187,7 @@ export function useReopenOrdersV4Document(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) => reopenOrdersV4Document(companyId, id, idempotencyKey),
     invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
-    successToast: 'تم عكس الاستلام وإنشاء طلب بديل بانتظار تعديل الكاشير',
+    successToast: 'تم فتح الطلب للتعديل',
     showErrorToast: true,
   });
 }
@@ -196,7 +196,7 @@ export function useReceiveOrdersV4Document(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, body }: { id: string; body: OrdersV4ReceivePayload }) => receiveOrdersV4Document(companyId, id, body),
     invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
-    successToast: 'تم استلام الطلب وترحيل المخزون والأسعار وطريقة الدفع',
+    successToast: 'تم حفظ الطلب وترحيل المخزون والأسعار وطريقة الدفع',
     showErrorToast: true,
   });
 }

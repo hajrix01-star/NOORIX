@@ -151,6 +151,7 @@ export type OrdersV4Document = {
   notes?: string | null;
   calculationSnapshot?: Record<string, unknown> | null;
   canReopen?: boolean;
+  editMode?: 'standard' | 'correction';
   createdByUser?: OrdersV4UserIdentity | null;
   section?: OrdersV4Section | null;
   location: OrdersV4Location;
@@ -340,4 +341,4 @@ export type OrdersV4DocumentPreview = {
 
 export type OrdersV4DocumentPreviewPayload = Pick<OrdersV4DocumentPayload, 'lines'>;
 
-export type OrdersV4ReceivePayload = Omit<OrdersV4DocumentPayload, 'documentType'> & { revision: number };
+export type OrdersV4ReceivePayload = Omit<OrdersV4DocumentPayload, 'documentType'> & { revision: number; editMode?: 'standard' | 'correction' };

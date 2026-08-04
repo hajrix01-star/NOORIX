@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import { OrdersV4DocumentsService } from './orders-v4-documents.service';
+import { OrdersV4PurchaseCorrectionService } from './orders-v4-purchase-correction.service';
 import { ordersV4ReopenDateRange } from './orders-v4-reopen.policy';
 
 describe('OrdersV4DocumentsService purchase workflow', () => {
@@ -15,7 +16,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       documentDate: ordersV4ReopenDateRange().lte, createdByUserId: null,
     }]);
     const prisma = { ordersV4Document: { findMany, findFirst: jest.fn().mockResolvedValue(null) } };
-    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never);
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
 
     const result = await service.list('company-1', 'purchase', '2026-07-01', '2026-07-31', undefined, 25, {
       search: 'سكر',
@@ -44,7 +45,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     expect(result[0]).toMatchObject({ id: 'document-1', canReopen: true });
   });
 
-  it('allows reopening received purchases from the last seven days and blocks it while another purchase is pending', async () => {
+  it('allows smart editing during the last seven days even while another purchase is pending', async () => {
     const range = ordersV4ReopenDateRange('2026-08-03');
     const oldDate = new Date(range.gte);
     oldDate.setUTCDate(oldDate.getUTCDate() - 1);
@@ -53,7 +54,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       { id: 'older', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: oldDate, createdByUserId: null },
     ];
     const prisma = { ordersV4Document: { findMany: jest.fn().mockResolvedValue(documents), findFirst: jest.fn().mockResolvedValue(null) } };
-    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never);
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
 
     jest.useFakeTimers().setSystemTime(new Date('2026-08-03T12:00:00.000Z'));
     const result = await service.list('company-1', 'purchase');
@@ -64,8 +65,11 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     ]);
 
     prisma.ordersV4Document.findFirst.mockResolvedValue({ id: 'pending-purchase' });
-    const blocked = await service.list('company-1', 'purchase');
-    expect(blocked.every((row) => row.canReopen === false)).toBe(true);
+    const withPending = await service.list('company-1', 'purchase');
+    expect(withPending.map((row) => [row.id, row.canReopen])).toEqual([
+      ['within-week', true],
+      ['older', false],
+    ]);
   });
 
   it('marks exactly the latest five received purchases as reopenable for the cashier', async () => {
@@ -81,7 +85,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       .mockResolvedValueOnce(documents)
       .mockResolvedValueOnce(documents.slice(0, 5).map(({ id }) => ({ id })));
     const prisma = { ordersV4Document: { findMany, findFirst: jest.fn().mockResolvedValue(null) } };
-    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never);
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
 
     const result = await service.list('company-1', 'purchase', undefined, undefined, undefined, 250, {}, 'cashier');
 
@@ -121,7 +125,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
     const posting = { lockKeys: jest.fn() };
     const funds = {};
-    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never);
+    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never, {} as never);
 
     const result = await service.create('company-1', {
       documentType: 'purchase', documentDate: '2026-08-03', paymentMethod: 'custody',
@@ -154,7 +158,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       }]) },
       ordersV4Unit: { findMany: jest.fn().mockResolvedValue([piece, box, carton]) },
     };
-    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never);
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
 
     const result = await service.previewPurchase('company-1', [{
       itemId: 'item-1', quantity: '2', unitId: 'carton', unitPrice: '20', priceUnitId: 'box',
@@ -198,7 +202,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
     const posting = { lockKeys: jest.fn(), postReceipt: jest.fn().mockResolvedValue({}) };
     const funds = { postPurchase: jest.fn().mockResolvedValue({}) };
-    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never);
+    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never, {} as never);
 
     const result = await service.receiveLatest('company-1', 'document-1', {
       revision: 1, documentDate: '2026-08-03', paymentMethod: 'custody', locationId: 'main',
@@ -213,5 +217,70 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       documentId: 'document-1', purchaseAmount: new Prisma.Decimal(24),
     }));
     expect(tx.ordersV4PriceHistory.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('corrects a received purchase atomically while preserving the newer pending purchase', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-03T12:00:00.000Z'));
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    jest.spyOn(TenantContext, 'getUserId').mockReturnValue('cashier-1');
+    const unit = { id: 'piece', code: 'piece', nameAr: 'حبة', dimension: 'count', canonicalFactor: new Prisma.Decimal(1) };
+    const original = {
+      id: 'received-1', status: 'received', revision: 2, documentType: 'purchase', reversalOfId: null,
+      documentDate: new Date('2026-08-02T00:00:00.000Z'), paymentMethod: 'custody', calculationVersion: 1,
+      calculationSnapshot: { kernelVersion: 4 },
+    };
+    const replacement = { id: 'corrected-1', status: 'prepared', revision: 1 };
+    const corrected = { id: 'corrected-1', status: 'received', lines: [] };
+    const findFirst = jest.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(original)
+      .mockResolvedValueOnce({ id: 'pending-2' });
+    const tx = {
+      $executeRaw: jest.fn(),
+      ordersV4Document: {
+        findFirst,
+        create: jest.fn().mockResolvedValue(replacement),
+        update: jest.fn(),
+        findUniqueOrThrow: jest.fn().mockResolvedValue(corrected),
+      },
+      ordersV4Location: { findFirst: jest.fn().mockResolvedValue({ id: 'main' }) },
+      ordersV4Item: { findMany: jest.fn().mockResolvedValue([{
+        id: 'item-1', nameAr: 'سكر', itemType: 'purchased', trackInventory: true,
+        inventoryUnitId: 'piece', kernelUnitId: 'piece',
+        units: [{ unitId: 'piece', isActive: true }], sections: [], conversionVersions: [],
+      }]) },
+      ordersV4Unit: { findMany: jest.fn().mockResolvedValue([unit]) },
+      ordersV4DocumentLine: {
+        deleteMany: jest.fn(),
+        create: jest.fn().mockResolvedValue({ id: 'corrected-line-1' }),
+      },
+      ordersV4PriceHistory: { create: jest.fn() },
+      ordersV4ItemUnit: { updateMany: jest.fn() },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const posting = { lockKeys: jest.fn(), postReceipt: jest.fn().mockResolvedValue({}) };
+    const funds = { postPurchase: jest.fn().mockResolvedValue({}) };
+    const reversal = { reverseInTransaction: jest.fn().mockResolvedValue({ id: 'reversal-1' }) };
+    const correction = new OrdersV4PurchaseCorrectionService(reversal as never);
+    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, reversal as never, correction);
+
+    const result = await service.receiveLatest('company-1', original.id, {
+      editMode: 'correction', revision: 2, documentDate: '2026-08-02', paymentMethod: 'custody', locationId: 'main',
+      idempotencyKey: 'correct-1', lines: [{ itemId: 'item-1', quantity: '3', unitId: 'piece', unitPrice: '12', priceUnitId: 'piece' }],
+    });
+
+    expect(result).toBe(corrected);
+    expect(reversal.reverseInTransaction).toHaveBeenCalledWith(tx, 'company-1', original.id, expect.stringContaining('correction-reversal:'));
+    expect(tx.ordersV4Document.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'prepared', requestHash: expect.any(String) }),
+    }));
+    expect(tx.ordersV4Document.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: original.id },
+      data: expect.objectContaining({ calculationSnapshot: expect.objectContaining({ correctedByDocumentId: replacement.id }) }),
+    }));
+    expect(posting.postReceipt).toHaveBeenCalledWith(tx, expect.objectContaining({
+      sourceId: replacement.id, quantity: new Prisma.Decimal(3), totalValue: new Prisma.Decimal(36),
+    }));
+    expect(funds.postPurchase).toHaveBeenCalledWith(tx, expect.objectContaining({ documentId: replacement.id }));
   });
 });

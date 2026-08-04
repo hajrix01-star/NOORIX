@@ -275,7 +275,7 @@ export function OrdersV4DocumentsTab({
         : v4Number(row.lines.reduce((sum, line) => sum + Number(line.inputQuantity || 0), 0), 6),
     },
     { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? 'الإجمالي' : 'التكلفة', numeric: true, render: (value) => <strong>{v4Number(value)} ر.س</strong> },
-    { key: 'status', label: 'الحالة', render: (value, row) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : row.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'}</span> },
+    { key: 'status', label: 'الحالة', render: (value, row) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? row.calculationSnapshot?.operation === 'direct-correction' ? 'مستلم مصحح' : 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : row.calculationSnapshot?.correctedByDocumentId ? 'تم تصحيحه' : row.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'}</span> },
     { key: 'actions', label: '', render: (_value, row) => <div className="flex flex-wrap gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && !row.calculationSnapshot?.reopenedByDocumentId && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },
   ], [canReceive, canReverse, canUndoReverse, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
 
@@ -344,8 +344,9 @@ export function OrdersV4DocumentsTab({
         onClose={() => setReopenTarget(null)}
         onConfirm={async () => {
           if (!reopenTarget) return;
-          await reopenMutation.mutateAsync({ id: reopenTarget.id, idempotencyKey: crypto.randomUUID() });
+          const response = await reopenMutation.mutateAsync({ id: reopenTarget.id, idempotencyKey: crypto.randomUUID() });
           setReopenTarget(null);
+          if (response.data) setReceiving(response.data);
         }}
       />
       <OrdersV4ReversalConfirmModal
@@ -526,7 +527,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       const { documentType: _documentType, ...receiveBody } = payload;
       await receiveMutation.mutateAsync({
         id: initialDocument.id,
-        body: { ...receiveBody, revision: initialDocument.revision } as OrdersV4ReceivePayload,
+        body: { ...receiveBody, revision: initialDocument.revision, editMode: initialDocument.editMode ?? 'standard' } as OrdersV4ReceivePayload,
       });
     } else {
       const response = await createMutation.mutateAsync(payload);
@@ -544,7 +545,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       onClose={onClose}
       size="2xl"
       side="start"
-      title={initialDocument ? `استلام ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : isCancellation ? t('ordersV4CancellationTitle') : 'تسجيل داخلي جديد — طلبات V4'}
+      title={initialDocument ? `${initialDocument.editMode === 'correction' ? 'تعديل' : 'استلام'} ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : isCancellation ? t('ordersV4CancellationTitle') : 'تسجيل داخلي جديد — طلبات V4'}
       footer={<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {isPurchase && <div data-testid="orders-v4-live-purchase-total" aria-live="polite" className="flex min-h-11 items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 sm:min-w-64">
           <div>
@@ -559,7 +560,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
             {displayedPurchaseTotal == null ? '—' : `${v4Number(displayedPurchaseTotal)} ر.س`}
           </strong>
         </div>}
-        <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? t('ordersV4CancellationSaveRecord') : 'حفظ التسجيل الداخلي', onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: isPurchase && (lines.length === 0 || previewState !== 'ready') }]} />
+        <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument?.editMode === 'correction' ? 'حفظ التعديل' : initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? t('ordersV4CancellationSaveRecord') : 'حفظ التسجيل الداخلي', onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: isPurchase && (lines.length === 0 || previewState !== 'ready') }]} />
       </div>}
     >
       <div className="flex flex-col gap-4">
@@ -707,15 +708,15 @@ function OrdersV4ReopenConfirmModal({
     open={!!document}
     onClose={onClose}
     size="sm"
-    title="إعادة فتح الطلب للتعديل"
+    title="تعديل الطلب"
     footer={<DialogActions actions={[
       { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose },
-      { key: 'confirm', label: 'عكس الاستلام وإعادة الفتح', role: 'edit', onClick: onConfirm, loading: busy },
+      { key: 'confirm', label: 'فتح للتعديل', role: 'edit', onClick: onConfirm, loading: busy },
     ]} />}
   >
     {document && <div className="flex flex-col gap-3">
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[13px] leading-7 text-blue-950">
-        سيُعكس أثر الاستلام على المخزون والعهدة والأسعار، ويُحفظ الطلب الحالي كسجل تدقيق، ثم يُنشأ طلب بديل بحالة «بانتظار الاستلام» وبنفس الأصناف ليعدله الكاشير ويستلمه من جديد. {cashierMode ? 'هذه الصلاحية متاحة للكاشير ضمن آخر 5 طلبات مستلمة دون موافقة المالك.' : 'صلاحية المالك متاحة للطلبات المستلمة خلال آخر 7 أيام.'} لا يمكن فتح أكثر من طلب للتعديل في الوقت نفسه.
+        سيفتح الطلب في نافذة التعديل نفسها. تختار النواة تلقائيًا المسار الآمن: إعادة فتح عادية عند عدم وجود طلب معلّق، أو تصحيح ذري مباشر عند وجود طلب آخر بانتظار الاستلام، مع حفظ سجل التدقيق وترحيل المخزون والعهدة والأسعار بصورة مركزية. {cashierMode ? 'هذه الصلاحية متاحة للكاشير ضمن آخر 5 طلبات مستلمة دون موافقة المالك.' : 'صلاحية المالك متاحة للطلبات المستلمة خلال آخر 7 أيام.'}
       </div>
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-noorix-bg-muted p-3 text-[12px]">
         <span>الطلب: <b>{document.documentNumber}</b></span>
@@ -750,11 +751,11 @@ function OrdersV4DocumentDetails({ document, canReopen, onClose, onPrint, onExpo
     { key: document?.documentType === 'registration' ? 'operationalCost' : 'lineTotal', label: document?.documentType === 'registration' ? 'التكلفة' : 'الإجمالي', numeric: true, render: (value) => `${v4Number(value)} ر.س` },
   ];
   const statusLabel = document?.status === 'received'
-    ? 'مستلم'
+    ? document.calculationSnapshot?.operation === 'direct-correction' ? 'مستلم مصحح' : 'مستلم'
     : document?.status === 'prepared'
       ? 'بانتظار الاستلام'
       : document?.status === 'reversed'
-        ? document.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'
+        ? document.calculationSnapshot?.correctedByDocumentId ? 'تم تصحيحه' : document.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'
         : 'ملغي';
   return <AdaptiveSheet
     open={!!document}
@@ -767,7 +768,7 @@ function OrdersV4DocumentDetails({ document, canReopen, onClose, onPrint, onExpo
       { key: 'print', label: document.documentType === 'registration' ? 'طباعة التسجيل' : 'طباعة الطلب', onClick: () => onPrint(document) },
       { key: 'whatsapp', label: 'واتساب', role: 'save', onClick: () => onWhatsApp(document) },
       ...(canReopen && document.documentType === 'purchase' && document.canReopen
-        ? [{ key: 'reopen', label: 'إعادة فتح', role: 'edit' as const, onClick: () => onReopen(document) }]
+        ? [{ key: 'reopen', label: 'تعديل الطلب', role: 'edit' as const, onClick: () => onReopen(document) }]
         : []),
     ] : [{ key: 'close', label: 'إغلاق', onClick: onClose, role: 'cancel' }]} />}
   >

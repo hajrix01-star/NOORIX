@@ -162,9 +162,10 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
       .rejects.toThrow('إعادة الفتح متاحة للطلبات المستلمة خلال آخر 7 أيام فقط');
   });
 
-  it('prevents opening a second editable purchase at the same time', async () => {
+  it('selects direct correction without mutating data when another purchase is pending', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('owner-1');
+    const correctionDocument = { ...receivedPurchase(), editMode: 'correction' };
     const tx = {
       $executeRaw: jest.fn(),
       ordersV4Document: {
@@ -172,12 +173,14 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce(receivedPurchase())
           .mockResolvedValueOnce({ id: 'pending-purchase' }),
+        findUniqueOrThrow: jest.fn().mockResolvedValue(correctionDocument),
       },
     };
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
     const service = new OrdersV4DocumentReversalService(prisma as never, {} as never, {} as never);
 
     await expect(service.reopenPurchase('company-1', 'purchase-1', 'reopen-key-3'))
-      .rejects.toThrow('يوجد طلب بانتظار الاستلام؛ استلمه قبل إعادة فتح طلب آخر');
+      .resolves.toMatchObject({ id: 'purchase-1', editMode: 'correction' });
+    expect(tx.ordersV4Document.findUniqueOrThrow).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'purchase-1' } }));
   });
 });

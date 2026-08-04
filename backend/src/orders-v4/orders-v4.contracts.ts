@@ -124,6 +124,7 @@ export type OrdersV4DocumentInput = {
 export type OrdersV4ReceiveInput = Omit<OrdersV4DocumentInput, 'documentType' | 'idempotencyKey'> & {
   revision: number;
   idempotencyKey: string;
+  editMode?: 'standard' | 'correction';
 };
 
 export type OrdersV4DocumentPreviewInput = Pick<OrdersV4DocumentInput, 'lines'>;

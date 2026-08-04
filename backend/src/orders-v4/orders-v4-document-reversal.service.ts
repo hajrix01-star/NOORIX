@@ -81,10 +81,22 @@ export class OrdersV4DocumentReversalService {
         }
       }
       const pendingPurchase = await tx.ordersV4Document.findFirst({
-        where: { companyId, documentType: 'purchase', status: 'prepared', reversalOfId: null },
+        where: {
+          companyId,
+          documentType: 'purchase',
+          status: 'prepared',
+          reversalOfId: null,
+          documentDate: { gte: purchase.documentDate },
+        },
         select: { id: true },
       });
-      if (pendingPurchase) throw new BadRequestException('يوجد طلب بانتظار الاستلام؛ استلمه قبل إعادة فتح طلب آخر');
+      if (pendingPurchase) {
+        const correctionDocument = await tx.ordersV4Document.findUniqueOrThrow({
+          where: { id: purchase.id },
+          include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
+        });
+        return { ...correctionDocument, editMode: 'correction' as const };
+      }
 
       const reversalKey = `reopen-reversal:${reopenRequestHash.slice(0, 48)}`;
       const reversal = await this.toggleInTransaction(tx, companyId, id, reversalKey, false);
@@ -176,6 +188,15 @@ export class OrdersV4DocumentReversalService {
   private toggle(companyId: string, id: string, idempotencyKey: string, undo: boolean) {
     if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     return this.prisma.withTenant((tx) => this.toggleInTransaction(tx, companyId, id, idempotencyKey.trim(), undo));
+  }
+
+  async reverseInTransaction(
+    tx: OrdersV4Transaction,
+    companyId: string,
+    id: string,
+    idempotencyKey: string,
+  ) {
+    return this.toggleInTransaction(tx, companyId, id, idempotencyKey, false);
   }
 
   private async toggleInTransaction(

@@ -136,6 +136,7 @@ export class OrdersV4DocumentPreviewDto {
 }
 
 export class OrdersV4ReceiveDto {
+  @IsOptional() @IsIn(['standard', 'correction']) editMode?: 'standard' | 'correction';
   @IsOptional() @IsIn(['issue', 'cancellation']) registrationEntryType?: 'issue' | 'cancellation';
   @IsString() @Matches(DATE) documentDate!: string;
   @IsOptional() @IsIn(['custody', 'cash', 'transfer']) paymentMethod?: 'custody' | 'cash' | 'transfer' | null;

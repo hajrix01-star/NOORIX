@@ -7,6 +7,8 @@ import { OrdersV4DocumentsTab } from './OrdersV4DocumentsTab';
 
 const ordersV4DocumentsMock = vi.hoisted(() => ({ documents: [] as unknown[] }));
 const previewDocumentMock = vi.hoisted(() => vi.fn());
+const reopenDocumentMock = vi.hoisted(() => vi.fn());
+const receiveDocumentMock = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../i18n/useTranslation', async () => {
   const translations = await vi.importActual<typeof import('../../../i18n/translations')>('../../../i18n/translations');
@@ -18,10 +20,10 @@ vi.mock('../useOrdersV4', () => ({
   useOrdersV4Summary: () => ({ data: undefined }),
   useCreateOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   usePreviewOrdersV4Document: () => ({ isPending: false, mutateAsync: previewDocumentMock }),
-  useReceiveOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useReceiveOrdersV4Document: () => ({ isPending: false, mutateAsync: receiveDocumentMock }),
   useReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUndoReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
-  useReopenOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useReopenOrdersV4Document: () => ({ isPending: false, mutateAsync: reopenDocumentMock }),
 }));
 
 const bootstrap = {
@@ -40,6 +42,8 @@ const bootstrap = {
 beforeEach(() => {
   ordersV4DocumentsMock.documents = [];
   previewDocumentMock.mockReset();
+  reopenDocumentMock.mockReset();
+  receiveDocumentMock.mockReset();
   previewDocumentMock.mockResolvedValue({ data: {
     kernelVersion: 4, calculationVersion: 1, lineCount: 1, totalAmount: '15',
     lines: [{ lineNumber: 1, itemId: 'item-1', itemName: 'معسل', lineTotal: '15' }],
@@ -223,13 +227,13 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'إعادة فتح' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'تعديل الطلب' })).toBeNull();
     fireEvent.click(screen.getByText('REQ4-1'));
-    fireEvent.click(screen.getByRole('button', { name: 'إعادة فتح' }));
-    expect(screen.getByRole('dialog', { name: 'إعادة فتح الطلب للتعديل' })).toBeTruthy();
-    expect(screen.getByText(/يُحفظ الطلب الحالي كسجل تدقيق/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'تعديل الطلب' }));
+    expect(screen.getByRole('dialog', { name: 'تعديل الطلب' })).toBeTruthy();
+    expect(screen.getByText(/تختار النواة تلقائيًا المسار الآمن/)).toBeTruthy();
     expect(screen.getByText(/خلال آخر 7 أيام/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'عكس الاستلام وإعادة الفتح' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'فتح للتعديل' })).toBeTruthy();
   });
 
   it('explains the cashier permission to edit the latest five received purchases', () => {
@@ -248,8 +252,34 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     />);
 
     fireEvent.click(screen.getByText('REQ4-1'));
-    fireEvent.click(screen.getByRole('button', { name: 'إعادة فتح' }));
+    fireEvent.click(screen.getByRole('button', { name: 'تعديل الطلب' }));
     expect(screen.getByText(/آخر 5 طلبات مستلمة دون موافقة المالك/)).toBeTruthy();
+  });
+
+  it('opens the same edit sheet when the server selects direct correction mode', async () => {
+    const document = {
+      id: 'document-1', documentNumber: 'REQ4-1', documentType: 'purchase', documentDate: '2026-08-03',
+      paymentMethod: 'custody', pettyCashAmount: '20', subtotal: '12', totalAmount: '12', operationalCost: '12',
+      status: 'received', revision: 2, locationId: 'location-1', canReopen: true, editMode: 'correction', lines: [],
+    };
+    ordersV4DocumentsMock.documents = [document];
+    reopenDocumentMock.mockResolvedValue({ data: document });
+    render(<OrdersV4DocumentsTab
+      companyId="company-1"
+      documentType="purchase"
+      startDate="2026-08-01"
+      endDate="2026-08-31"
+      bootstrap={bootstrap}
+      canReopen
+      canReceive
+    />);
+
+    fireEvent.click(screen.getByText('REQ4-1'));
+    fireEvent.click(screen.getByRole('button', { name: 'تعديل الطلب' }));
+    fireEvent.click(screen.getByRole('button', { name: 'فتح للتعديل' }));
+
+    expect(await screen.findByRole('dialog', { name: 'تعديل REQ4-1' })).toBeTruthy();
+    expect(reopenDocumentMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'document-1' }));
   });
 
   it('renders added document lines as one editable table without repeated field headings', () => {
