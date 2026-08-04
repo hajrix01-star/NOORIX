@@ -232,6 +232,26 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(screen.getByRole('button', { name: 'عكس الاستلام وإعادة الفتح' })).toBeTruthy();
   });
 
+  it('explains the cashier permission to edit the latest five received purchases', () => {
+    ordersV4DocumentsMock.documents = [{
+      id: 'document-1', documentNumber: 'REQ4-1', documentType: 'purchase', documentDate: '2026-08-03',
+      paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'received', canReopen: true, lines: [],
+    }];
+    render(<OrdersV4DocumentsTab
+      companyId="company-1"
+      documentType="purchase"
+      startDate="2026-08-01"
+      endDate="2026-08-31"
+      bootstrap={bootstrap}
+      canReopen
+      reopenAsCashier
+    />);
+
+    fireEvent.click(screen.getByText('REQ4-1'));
+    fireEvent.click(screen.getByRole('button', { name: 'إعادة فتح' }));
+    expect(screen.getByText(/آخر 5 طلبات مستلمة دون موافقة المالك/)).toBeTruthy();
+  });
+
   it('renders added document lines as one editable table without repeated field headings', () => {
     const item = {
       id: 'item-1',

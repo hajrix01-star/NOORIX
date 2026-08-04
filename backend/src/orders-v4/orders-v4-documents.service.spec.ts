@@ -68,6 +68,34 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     expect(blocked.every((row) => row.canReopen === false)).toBe(true);
   });
 
+  it('marks exactly the latest five received purchases as reopenable for the cashier', async () => {
+    const documents = Array.from({ length: 6 }, (_, index) => ({
+      id: `purchase-${index + 1}`,
+      documentType: 'purchase',
+      reversalOfId: null,
+      status: 'received',
+      documentDate: new Date('2026-08-03T00:00:00.000Z'),
+      createdByUserId: null,
+    }));
+    const findMany = jest.fn()
+      .mockResolvedValueOnce(documents)
+      .mockResolvedValueOnce(documents.slice(0, 5).map(({ id }) => ({ id })));
+    const prisma = { ordersV4Document: { findMany, findFirst: jest.fn().mockResolvedValue(null) } };
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never);
+
+    const result = await service.list('company-1', 'purchase', undefined, undefined, undefined, 250, {}, 'cashier');
+
+    expect(result.map((row) => [row.id, row.canReopen])).toEqual([
+      ['purchase-1', true],
+      ['purchase-2', true],
+      ['purchase-3', true],
+      ['purchase-4', true],
+      ['purchase-5', true],
+      ['purchase-6', false],
+    ]);
+    expect(findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ take: 5 }));
+  });
+
   it('creates a prepared purchase with kernel-calculated quantities and totals', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('user-1');

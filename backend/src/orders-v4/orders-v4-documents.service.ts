@@ -27,7 +27,12 @@ import { ordersV4DocumentListQuery, type OrdersV4DocumentListFilters } from './o
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 import { resolveOrdersV4RegistrationEntry } from './orders-v4-registration-cancellation.policy';
 import { OrdersV4DocumentReversalService } from './orders-v4-document-reversal.service';
-import { isOrdersV4ReopenDateEligible } from './orders-v4-reopen.policy';
+import {
+  isOrdersV4CashierReopenEligible,
+  isOrdersV4ReopenDateEligible,
+  ordersV4CashierRecentPurchasesQuery,
+  type OrdersV4ReopenAccess,
+} from './orders-v4-reopen.policy';
 
 function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
   return {
@@ -88,8 +93,9 @@ export class OrdersV4DocumentsService {
     createdByUserId?: string,
     limit = 250,
     filters: OrdersV4DocumentListFilters = {},
+    reopenAccess: OrdersV4ReopenAccess | 'none' = 'owner',
   ) {
-    const [documents, pendingPurchase] = await Promise.all([
+    const [documents, pendingPurchase, cashierRecentPurchases] = await Promise.all([
       this.prisma.ordersV4Document.findMany(
         ordersV4DocumentListQuery(companyId, documentType, startDate, endDate, createdByUserId, limit, filters),
       ),
@@ -99,7 +105,11 @@ export class OrdersV4DocumentsService {
           select: { id: true },
         })
         : Promise.resolve(null),
+      documentType === 'purchase' && reopenAccess === 'cashier'
+        ? this.prisma.ordersV4Document.findMany(ordersV4CashierRecentPurchasesQuery(companyId))
+        : Promise.resolve([]),
     ]);
+    const cashierRecentPurchaseIds = cashierRecentPurchases.map((document) => document.id);
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     return documents.map((document) => ({
       ...document,
@@ -107,7 +117,11 @@ export class OrdersV4DocumentsService {
         && document.documentType === 'purchase'
         && document.reversalOfId == null
         && document.status === 'received'
-        && isOrdersV4ReopenDateEligible(document.documentDate),
+        && (reopenAccess === 'owner'
+          ? isOrdersV4ReopenDateEligible(document.documentDate)
+          : reopenAccess === 'cashier'
+            ? isOrdersV4CashierReopenEligible(document.id, cashierRecentPurchaseIds)
+            : false),
       createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
     }));
   }
@@ -847,7 +861,7 @@ export class OrdersV4DocumentsService {
     return this.reversal.undoReverse(companyId, id, idempotencyKey);
   }
 
-  reopenPurchase(companyId: string, id: string, idempotencyKey: string) {
-    return this.reversal.reopenPurchase(companyId, id, idempotencyKey);
+  reopenPurchase(companyId: string, id: string, idempotencyKey: string, access: OrdersV4ReopenAccess = 'owner') {
+    return this.reversal.reopenPurchase(companyId, id, idempotencyKey, access);
   }
 }

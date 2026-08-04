@@ -60,7 +60,7 @@ export class OrdersV4Controller {
   ) {}
 
   @Get('bootstrap')
-  @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_WRITE', 'ORDERS_V4_STAFF_SUBMIT', 'ORDERS_V4_INTERNAL_SUBMIT', 'ORDERS_V4_REPORTS_READ', 'ORDERS_V4_INVENTORY_WRITE')
+  @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_WRITE', 'ORDERS_V4_STAFF_SUBMIT', 'ORDERS_V4_INTERNAL_SUBMIT', 'ORDERS_V4_REPORTS_READ', 'ORDERS_V4_INVENTORY_WRITE', 'ORDERS_V4_CASHIER_RECEIVE')
   bootstrap(@CompanyId() companyId: string, @CurrentUser() user: JwtUser) {
     const hasBroaderAccess = [
       PERMISSIONS.ORDERS_V4_READ,
@@ -68,6 +68,7 @@ export class OrdersV4Controller {
       PERMISSIONS.ORDERS_V4_STAFF_SUBMIT,
       PERMISSIONS.ORDERS_V4_REPORTS_READ,
       PERMISSIONS.ORDERS_V4_INVENTORY_WRITE,
+      PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE,
     ].some((permission) => userCan(user, permission));
     return hasBroaderAccess
       ? this.catalog.getBootstrap(requireCompanyId(companyId))
@@ -161,7 +162,7 @@ export class OrdersV4Controller {
   }
 
   @Get('documents')
-  @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_WRITE', 'ORDERS_V4_STAFF_SUBMIT', 'ORDERS_V4_INTERNAL_SUBMIT')
+  @RequireAnyPermission('ORDERS_V4_READ', 'ORDERS_V4_WRITE', 'ORDERS_V4_STAFF_SUBMIT', 'ORDERS_V4_INTERNAL_SUBMIT', 'ORDERS_V4_CASHIER_RECEIVE')
   listDocuments(
     @CompanyId() companyId: string,
     @Query() query?: OrdersV4DocumentsQueryDto,
@@ -169,7 +170,9 @@ export class OrdersV4Controller {
   ) {
     const { type, startDate, endDate } = query ?? {};
     if (!user) throw new ForbiddenException('غير مصادق');
-    const canReadAll = userCan(user, PERMISSIONS.ORDERS_V4_READ) || userCan(user, PERMISSIONS.ORDERS_V4_WRITE);
+    const canReadAll = userCan(user, PERMISSIONS.ORDERS_V4_READ)
+      || userCan(user, PERMISSIONS.ORDERS_V4_WRITE)
+      || (type === 'purchase' && userCan(user, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE));
     if (!canReadAll && (!type || !userCan(user, submitPermission(type)))) {
       throw new ForbiddenException('لا تملك صلاحية قراءة هذا النوع من مستندات V4');
     }
@@ -195,6 +198,9 @@ export class OrdersV4Controller {
         paymentMethod: query?.paymentMethod,
         status: query?.status,
       },
+      String(user.role || '').toLowerCase() === 'owner'
+        ? 'owner'
+        : userCan(user, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE) ? 'cashier' : 'none',
     );
   }
 
@@ -243,13 +249,23 @@ export class OrdersV4Controller {
   }
 
   @Post('documents/:id/reopen')
-  @Roles('owner')
+  @RequireAnyPermission('ORDERS_V4_WRITE', 'ORDERS_V4_CASHIER_RECEIVE')
   reopenPurchaseDocument(
     @CompanyId() companyId: string,
     @Param('id') id: string,
     @Body() body: OrdersV4IdempotencyDto,
+    @CurrentUser() user: JwtUser,
   ) {
-    return this.documents.reopenPurchase(requireCompanyId(companyId), id, body.idempotencyKey);
+    const isOwner = String(user.role || '').toLowerCase() === 'owner';
+    if (!isOwner && !userCan(user, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE)) {
+      throw new ForbiddenException('إعادة فتح الطلب متاحة للمالك أو الكاشير المخول فقط');
+    }
+    return this.documents.reopenPurchase(
+      requireCompanyId(companyId),
+      id,
+      body.idempotencyKey,
+      isOwner ? 'owner' : 'cashier',
+    );
   }
 
   @Get('reports/summary')

@@ -6,7 +6,14 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ordersV4EdgeDefinitions, ordersV4UnitDefinitions, resolveOrdersV4ContextConversion } from './orders-v4-conversion.context';
 import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
-import { isOrdersV4ReopenDateEligible, ORDERS_V4_REOPEN_WINDOW_DAYS } from './orders-v4-reopen.policy';
+import {
+  isOrdersV4CashierReopenEligible,
+  isOrdersV4ReopenDateEligible,
+  ORDERS_V4_CASHIER_REOPEN_LIMIT,
+  ORDERS_V4_REOPEN_WINDOW_DAYS,
+  ordersV4CashierRecentPurchasesQuery,
+  type OrdersV4ReopenAccess,
+} from './orders-v4-reopen.policy';
 
 type OrdersV4Transaction = Prisma.TransactionClient;
 
@@ -40,7 +47,7 @@ export class OrdersV4DocumentReversalService {
     return this.toggle(companyId, id, idempotencyKey, true);
   }
 
-  async reopenPurchase(companyId: string, id: string, idempotencyKey: string) {
+  async reopenPurchase(companyId: string, id: string, idempotencyKey: string, access: OrdersV4ReopenAccess = 'owner') {
     if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     const normalizedKey = idempotencyKey.trim();
     const reopenRequestHash = operationHash({ operation: 'reopen-purchase', documentId: id });
@@ -64,8 +71,14 @@ export class OrdersV4DocumentReversalService {
       });
       if (!purchase) throw new NotFoundException('طلب الشراء غير موجود');
       if (purchase.status !== 'received') throw new BadRequestException('يمكن إعادة فتح الطلب المستلم فقط');
-      if (!isOrdersV4ReopenDateEligible(purchase.documentDate)) {
+      if (access === 'owner' && !isOrdersV4ReopenDateEligible(purchase.documentDate)) {
         throw new BadRequestException(`إعادة الفتح متاحة للطلبات المستلمة خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام فقط`);
+      }
+      if (access === 'cashier') {
+        const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentPurchasesQuery(companyId));
+        if (!isOrdersV4CashierReopenEligible(purchase.id, recentPurchases.map((document) => document.id))) {
+          throw new BadRequestException(`يمكن للكاشير تعديل آخر ${ORDERS_V4_CASHIER_REOPEN_LIMIT} طلبات مستلمة فقط`);
+        }
       }
       const pendingPurchase = await tx.ordersV4Document.findFirst({
         where: { companyId, documentType: 'purchase', status: 'prepared', reversalOfId: null },

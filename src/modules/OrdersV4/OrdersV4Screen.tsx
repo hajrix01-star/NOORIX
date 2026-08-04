@@ -45,13 +45,13 @@ export default function OrdersV4Screen() {
   const isInternalRegistrationStaffView = registrationPresentation.staffLimited;
   const tabs = useMemo<Array<{ id: TabId; label: string }>>(() => {
     const result: Array<{ id: TabId; label: string }> = [];
-    if (canRead || canCreatePurchase) result.push({ id: 'requests', label: lang === 'ar' ? 'الطلبات' : 'Requests' });
+    if (canRead || canCreatePurchase || canReceive) result.push({ id: 'requests', label: lang === 'ar' ? 'الطلبات' : 'Requests' });
     if (canRead || canCreateRegistration) result.push({ id: 'registration', label: lang === 'ar' ? 'التسجيل الداخلي' : 'Internal registration' });
     if (canReport) result.push({ id: 'reports', label: lang === 'ar' ? 'التقارير' : 'Reports' });
     if (canWrite) result.push({ id: 'catalog', label: lang === 'ar' ? 'إدارة الأصناف' : 'Catalog' });
     if (canRead || canInventoryWrite) result.push({ id: 'inventory', label: lang === 'ar' ? 'المخزون والتكلفة' : 'Inventory & cost' });
     return result;
-  }, [canCreatePurchase, canCreateRegistration, canInventoryWrite, canRead, canReport, canWrite, lang]);
+  }, [canCreatePurchase, canCreateRegistration, canInventoryWrite, canRead, canReceive, canReport, canWrite, lang]);
   const tabIds = useMemo(() => tabs.map((tab) => tab.id), [tabs]);
   const [activeTab, setActiveTab] = useTabSearchParam(tabIds, tabIds[0] ?? 'requests', 'ordersV4Tab', 'tab', undefined, { persistDefault: true });
   const needsBootstrap = activeTab !== 'reports';
@@ -82,7 +82,7 @@ export default function OrdersV4Screen() {
           contentClassName="min-h-[260px] px-1 py-3 sm:px-3"
         >
           {needsBootstrap && <OrdersV4QueryState loading={bootstrapQuery.isLoading} error={bootstrapQuery.error as Error | null} />}
-          {!bootstrapQuery.isLoading && activeTab === 'requests' && <OrdersV4DocumentsTab companyId={companyId} documentType="purchase" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreatePurchase} canReverse={canDelete} canUndoReverse={isOwner} canReopen={isOwner} canReceive={canReceive} companyName={companyName} companyLogoUrl={companyLogoUrl} />}
+          {!bootstrapQuery.isLoading && activeTab === 'requests' && <OrdersV4DocumentsTab companyId={companyId} documentType="purchase" startDate={dateFilter.startDate} endDate={dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreatePurchase} canReverse={canDelete} canUndoReverse={isOwner} canReopen={isOwner || can(PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE)} reopenAsCashier={!isOwner && can(PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE)} canReceive={canReceive} companyName={companyName} companyLogoUrl={companyLogoUrl} />}
           {!bootstrapQuery.isLoading && activeTab === 'registration' && <OrdersV4DocumentsTab companyId={companyId} documentType="registration" startDate={isInternalRegistrationStaffView ? registrationPresentation.startDate : dateFilter.startDate} endDate={isInternalRegistrationStaffView ? registrationPresentation.endDate : dateFilter.endDate} bootstrap={bootstrapQuery.data} canReport={canReport} canCreate={canCreateRegistration} canReverse={canDelete} canUndoReverse={isOwner} showOverviewCards={!isInternalRegistrationStaffView} historyWindowDays={isInternalRegistrationStaffView ? 7 : undefined} companyName={companyName} companyLogoUrl={companyLogoUrl} />}
           {!bootstrapQuery.isLoading && activeTab === 'reports' && <ScreenTabs items={[{ id: 'items', label: lang === 'ar' ? 'تقارير الأصناف' : 'Item reports' }, { id: 'registration', label: lang === 'ar' ? 'تقرير داخلي' : 'Internal report' }]} value={reportTab} onChange={(id) => setReportTab(id as ReportTabId)} variant="segmented" segmentedFlat barClassName={ordersV4NavigationBarClassName} getTabClassName={ordersV4NavigationTabClassName} contentClassName="pt-3">{reportTab === 'items' ? <OrdersV4ItemsReportTab companyId={companyId} startDate={dateFilter.startDate} endDate={dateFilter.endDate} /> : <OrdersV4SalesReportTab companyId={companyId} startDate={dateFilter.startDate} endDate={dateFilter.endDate} />}</ScreenTabs>}
           {!bootstrapQuery.isLoading && activeTab === 'catalog' && <OrdersV4CatalogTab companyId={companyId} bootstrap={bootstrapQuery.data} canDelete={canDelete} />}
