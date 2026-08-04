@@ -3,6 +3,7 @@ import type { OrdersV4CancellationReason, OrdersV4Item } from '../../../types/ap
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, DialogActions, Input, Modal } from '../../../ui';
 import { OrdersV4Field, OrdersV4Select, v4Number } from '../OrdersV4Shared';
+import { ordersV4LocalizedName } from '../ordersV4Localization';
 import { ORDERS_V4_CANCELLATION_REASON_OPTIONS } from './ordersV4CancellationReasons';
 
 export type OrdersV4DocumentLineDraft = {
@@ -30,7 +31,7 @@ export function OrdersV4DocumentLineModal({
   onClose: () => void;
   onConfirm: (draft: OrdersV4DocumentLineDraft) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const selectableUnits = useMemo(() => (item?.units ?? []).filter((row) => row.isActive
     && (!isPurchase || isReceiving || (row.isOrderEnabled && row.lastPrice != null))), [isPurchase, isReceiving, item]);
   const [unitId, setUnitId] = useState('');
@@ -80,25 +81,25 @@ export function OrdersV4DocumentLineModal({
       open
       onClose={onClose}
       size="sm"
-      title={activeItem.nameAr}
+      title={ordersV4LocalizedName(activeItem, lang)}
       footer={<DialogActions actions={[
-        { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose },
+        { key: 'cancel', label: t('cancel'), role: 'cancel', onClick: onClose },
         { key: 'add', label: isCancellation ? t('ordersV4CancellationAddLine') : t('add'), role: isCancellation ? 'danger' : 'save', onClick: confirm, disabled: !unitId || Number(quantity) <= 0 || (isCancellation && (!cancellationReasons.length || (cancellationReasons.includes('other') && !cancellationNote.trim()))) },
       ]} />}
     >
       <div className="flex flex-col gap-5">
-        <OrdersV4Field label="التغليف والوحدة">
+        <OrdersV4Field label={t('ordersV4PackagingUnit')}>
           <OrdersV4Select value={unitId} onChange={(event) => changeUnit(event.target.value)}>
             {selectableUnits.map((row) => (
               <option key={row.unitId} value={row.unitId}>
-                {row.purchaseLabel || row.unit.nameAr}{row.lastPrice != null ? ` - ${v4Number(row.lastPrice)} ر.س` : ''}
+                {lang === 'en' ? ordersV4LocalizedName(row.unit, lang) : (row.purchaseLabel || ordersV4LocalizedName(row.unit, lang))}{row.lastPrice != null ? ` - ${v4Number(row.lastPrice)} ${lang === 'en' ? 'SR' : 'ر.س'}` : ''}
               </option>
             ))}
           </OrdersV4Select>
         </OrdersV4Field>
 
         <div className="flex flex-col gap-2">
-          <span className="text-center text-[12px] text-noorix-muted">الكمية</span>
+          <span className="text-center text-[12px] text-noorix-muted">{t('ordersV4Quantity')}</span>
           <div className="flex items-center justify-center gap-4">
             <Button
               type="button"
@@ -152,12 +153,12 @@ export function OrdersV4DocumentLineModal({
         )}
 
         {isPurchase ? (
-          <OrdersV4Field label="سعر الوحدة (ر.س)">
+          <OrdersV4Field label={`${t('ordersV4UnitPrice')} (${lang === 'en' ? 'SR' : 'ر.س'})`}>
             <Input type="number" min="0" step="any" value={unitPrice} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setUnitPrice(event.target.value)} />
           </OrdersV4Field>
         ) : Number(unitPrice) > 0 ? (
           <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3 text-center text-[12px] text-noorix-muted">
-            السعر المعتمد: <b className="text-noorix-text">{v4Number(unitPrice)} ر.س</b>
+            {t('ordersV4ApprovedPrice')}: <b className="text-noorix-text">{v4Number(unitPrice)} {lang === 'en' ? 'SR' : 'ر.س'}</b>
           </div>
         ) : null}
       </div>

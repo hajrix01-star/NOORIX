@@ -131,9 +131,9 @@ export class OrdersV4LedgerPostingService {
   }) {
     await this.lockKeys(tx, input.companyId, [{ itemId: input.itemId, locationId: input.locationId }]);
     const balance = await this.currentBalance(tx, input.companyId, input.itemId, input.locationId, input.inventoryUnitId);
-    const calculation = calculateOrdersV4Receipt(balance, {
+    const calculation = calculateOrdersV4Issue(balance, {
       quantity: input.quantity,
-      totalValue: input.quantity.times(input.unitCost).toDecimalPlaces(6),
+      provisionalUnitCost: input.unitCost,
     });
     return tx.ordersV4InventoryLedgerEntry.create({
       data: {

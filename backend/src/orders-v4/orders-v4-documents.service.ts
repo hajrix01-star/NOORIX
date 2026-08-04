@@ -329,8 +329,10 @@ export class OrdersV4DocumentsService {
       });
 
       const subtotal = prepared.reduce((sum, row) => sum.plus(row.calculation.lineTotal), new Prisma.Decimal(0)).toDecimalPlaces(6);
-      const documentDirection = isRegistrationCancellation ? new Prisma.Decimal(-1) : new Prisma.Decimal(1);
-      const signedSubtotal = subtotal.times(documentDirection).toDecimalPlaces(6);
+      // A cancellation is an independent waste/control record, not a reversal of an earlier
+      // registration. Its quantities and cost therefore stay positive while inventory posting
+      // consumes the affected stock through the central issue kernel.
+      const signedSubtotal = subtotal;
       const initialOperationalCost = input.documentType === 'purchase' ? signedSubtotal : new Prisma.Decimal(0);
       const inventoryKeys = prepared.flatMap((row) => {
         if (input.documentType === 'purchase') return row.item.trackInventory ? [{ itemId: row.item.id, locationId: location.id }] : [];
@@ -342,34 +344,6 @@ export class OrdersV4DocumentsService {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:registration-cancellation:${companyId}:${documentDate.toISOString()}:${input.sectionId}:${location.id}`}))`;
       }
       if (input.documentType === 'registration') await this.posting.lockKeys(tx, companyId, inventoryKeys);
-      if (isRegistrationCancellation) {
-        const historicalLines = await tx.ordersV4DocumentLine.findMany({
-          where: {
-            companyId,
-            itemId: { in: itemIds },
-            document: {
-              documentType: 'registration',
-              registrationEntryType: { in: ['issue', 'cancellation'] },
-              status: 'received',
-              reversalOfId: null,
-              documentDate,
-              sectionId: input.sectionId,
-              locationId: location.id,
-            },
-          },
-          select: { itemId: true, baseQuantity: true },
-        });
-        const availableByItem = new Map<string, Prisma.Decimal>();
-        for (const line of historicalLines) {
-          availableByItem.set(line.itemId, (availableByItem.get(line.itemId) ?? new Prisma.Decimal(0)).plus(line.baseQuantity));
-        }
-        for (const row of prepared) {
-          const available = availableByItem.get(row.item.id) ?? new Prisma.Decimal(0);
-          if (row.calculation.baseQuantity.gt(available)) {
-            throw new BadRequestException(`${row.item.nameAr}: كمية الإلغاء تتجاوز صافي الكمية المسجلة في القسم لهذا اليوم (${available.toString()})`);
-          }
-        }
-      }
       const document = await tx.ordersV4Document.create({
         data: {
           tenantId,
@@ -404,7 +378,7 @@ export class OrdersV4DocumentsService {
 
       let registrationOperationalCost = new Prisma.Decimal(0);
       for (const row of prepared) {
-        const lineDirection = isRegistrationCancellation ? new Prisma.Decimal(-1) : new Prisma.Decimal(1);
+        const lineDirection = new Prisma.Decimal(1);
         const createdLine = await tx.ordersV4DocumentLine.create({
           data: {
             tenantId,

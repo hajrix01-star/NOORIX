@@ -12,7 +12,10 @@ const receiveDocumentMock = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../i18n/useTranslation', async () => {
   const translations = await vi.importActual<typeof import('../../../i18n/translations')>('../../../i18n/translations');
-  return { useTranslation: () => ({ lang: 'ar', t: (key: string) => translations.getText(key, 'ar') }) };
+  return { useTranslation: () => ({
+    lang: 'ar',
+    t: (key: string, ...replacements: Array<string | number>) => translations.getText(key, 'ar', ...replacements),
+  }) };
 });
 
 vi.mock('../useOrdersV4', () => ({

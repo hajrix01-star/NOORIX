@@ -64,8 +64,11 @@ describe('Orders V4 inventory boundary', () => {
     const documents = readFileSync(join(__dirname, 'orders-v4-documents.service.ts'), 'utf8');
     expect(posting).toContain('postRegistrationCancellation');
     expect(posting).toContain("entryType: 'registration_cancellation'");
-    expect(posting).toContain('calculateOrdersV4Receipt');
+    const cancellationMethod = posting.slice(posting.indexOf('async postRegistrationCancellation'), posting.indexOf('async postStocktakeAdjustment'));
+    expect(cancellationMethod).toContain('calculateOrdersV4Issue');
+    expect(cancellationMethod).not.toContain('calculateOrdersV4Receipt');
     expect(documents).toContain('this.posting.postRegistrationCancellation');
+    expect(documents).not.toContain('كمية الإلغاء تتجاوز صافي الكمية المسجلة');
     expect(documents).not.toContain('ordersV4InventoryLedgerEntry.create');
   });
 
@@ -91,7 +94,7 @@ describe('Orders V4 inventory boundary', () => {
       join(__dirname, '../../../src/modules/OrdersV4/components/OrdersV4DocumentsTab.tsx'),
       'utf8',
     );
-    expect(documentTab).toContain('row.baseUnit.nameAr');
+    expect(documentTab).toContain('ordersV4LocalizedName(row.baseUnit, lang)');
     expect(documentTab).not.toContain('row.item.inventoryUnit.nameAr}` },');
   });
 

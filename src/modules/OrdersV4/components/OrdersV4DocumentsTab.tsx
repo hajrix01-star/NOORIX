@@ -13,6 +13,7 @@ import { buildOrdersV4PeriodCustodyBalances } from './ordersV4CustodyPeriod.util
 import { buildOrdersV4WhatsAppText } from './ordersV4WhatsApp.utils';
 import { ordersV4CancellationReasonLabel } from './ordersV4CancellationReasons';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { ordersV4LocalizedName } from '../ordersV4Localization';
 
 type DraftLine = OrdersV4DocumentDraftLine;
 
@@ -255,8 +256,8 @@ export function OrdersV4DocumentsTab({
         return reasons.length ? reasons.map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(lang === 'en' ? ', ' : '، ') : '—';
       } },
     ] as SimpleTableColumn<OrdersV4Document>[] : []),
-    { key: 'documentNumber', label: isPurchase ? 'رقم الطلب' : 'رقم التسجيل', minWidth: 180, render: (value) => <span className="font-bold text-noorix-blue">{String(value)}</span> },
-    { key: 'documentDate', label: 'التاريخ', render: (value) => v4Date(String(value)) },
+    { key: 'documentNumber', label: isPurchase ? 'رقم الطلب' : t('ordersV4RegistrationNumber'), minWidth: 180, render: (value) => <span className="font-bold text-noorix-blue">{String(value)}</span> },
+    { key: 'documentDate', label: t('ordersV4Date'), render: (value) => v4Date(String(value)) },
     ...(isPurchase ? [
       { key: 'paymentMethod', label: 'طريقة الدفع', render: (value: unknown) => value === 'custody' ? 'عهدة' : value === 'transfer' ? 'تحويل' : 'نقد المحل' },
       { key: 'pettyCashAmount', label: 'العهدة المستلمة', numeric: true, render: (value: unknown, row: OrdersV4Document) => row.paymentMethod === 'custody' && value != null ? `${v4Number(value)} ر.س` : '—' },
@@ -265,17 +266,17 @@ export function OrdersV4DocumentsTab({
         return value != null ? `${v4Number(value)} ر.س` : '—';
       } },
     ] : []),
-    { key: 'section', label: 'القسم', render: (_value, row) => row.section?.nameAr || '—' },
+    { key: 'section', label: t('ordersV4Section'), render: (_value, row) => ordersV4LocalizedName(row.section, lang) },
     {
       key: 'lines',
-      label: isPurchase ? 'الأسطر' : 'الكمية',
+      label: isPurchase ? 'الأسطر' : t('ordersV4Quantity'),
       numeric: true,
       render: (_value, row) => isPurchase
         ? row.lines.length
         : v4Number(row.lines.reduce((sum, line) => sum + Number(line.inputQuantity || 0), 0), 6),
     },
-    { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? 'الإجمالي' : 'التكلفة', numeric: true, render: (value) => <strong>{v4Number(value)} ر.س</strong> },
-    { key: 'status', label: 'الحالة', render: (value, row) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? row.calculationSnapshot?.operation === 'direct-correction' ? 'مستلم مصحح' : 'مستلم' : value === 'prepared' ? 'بانتظار الاستلام' : row.calculationSnapshot?.correctedByDocumentId ? 'تم تصحيحه' : row.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'}</span> },
+    { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? t('ordersV4Total') : t('ordersV4Cost'), numeric: true, render: (value) => <strong>{v4Number(value)} {lang === 'en' ? 'SR' : 'ر.س'}</strong> },
+    { key: 'status', label: t('ordersV4Status'), render: (value, row) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? row.calculationSnapshot?.operation === 'direct-correction' ? t('ordersV4StatusCorrectedReceived') : t('ordersV4StatusReceived') : value === 'prepared' ? t('ordersV4StatusAwaitingReceipt') : row.calculationSnapshot?.correctedByDocumentId ? t('ordersV4StatusCorrected') : row.calculationSnapshot?.reopenedByDocumentId ? t('ordersV4StatusReopened') : t('ordersV4StatusReversed')}</span> },
     { key: 'actions', label: '', render: (_value, row) => <div className="flex flex-wrap gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && !row.calculationSnapshot?.reopenedByDocumentId && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },
   ], [canReceive, canReverse, canUndoReverse, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
 
@@ -283,33 +284,33 @@ export function OrdersV4DocumentsTab({
     <div className="flex min-w-0 flex-col gap-4">
       {printPreviewModal}
       {canCreate && (
-        <div className="flex flex-wrap justify-start gap-2" role="toolbar" aria-label={isPurchase ? 'إجراءات الطلبات' : 'إجراءات التسجيل الداخلي'}>
-          <Button variant="primary" onClick={() => setCreateOpen(true)}>+ {isPurchase ? 'طلب جديد' : 'تسجيل جديد'}</Button>
+        <div className="flex flex-wrap justify-start gap-2" role="toolbar" aria-label={isPurchase ? 'إجراءات الطلبات' : t('ordersV4InternalActions')}>
+          <Button variant="primary" onClick={() => setCreateOpen(true)}>+ {isPurchase ? 'طلب جديد' : t('ordersV4NewRegistration')}</Button>
           {!isPurchase && <Button variant="ghost" className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100" onClick={() => setCancellationOpen(true)}>{t('staffCancellationStart')}</Button>}
         </div>
       )}
       {historyWindowDays && (
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center text-[12px] font-semibold text-blue-900">
-          يعرض حساب الموظف تسجيلاته الداخلية لآخر {historyWindowDays} أيام فقط.
+          {t('ordersV4EmployeeHistoryWindow', historyWindowDays)}
         </div>
       )}
       {isPurchase ? <OrdersV4PurchaseSummaryCards summary={summary} /> : showOverviewCards ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <OrdersV4Kpi label="عدد التسجيلات" value={summary?.registrationCount ?? 0} />
-          <OrdersV4Kpi label="التكلفة المركزية" value={`${v4Number(summary?.registrationTotal)} ر.س`} tone="green" />
-          <OrdersV4Kpi label="أسطر التسجيل" value={documents.reduce((sum, row) => sum + row.lines.length, 0)} tone="amber" />
+          <OrdersV4Kpi label={t('ordersV4RegistrationCount')} value={summary?.registrationCount ?? 0} />
+          <OrdersV4Kpi label={t('ordersV4CentralCost')} value={`${v4Number(summary?.registrationTotal)} ${lang === 'en' ? 'SR' : 'ر.س'}`} tone="green" />
+          <OrdersV4Kpi label={t('ordersV4RegistrationLines')} value={documents.reduce((sum, row) => sum + row.lines.length, 0)} tone="amber" />
           <OrdersV4Kpi label={t('ordersV4CancellationRecords')} value={summary?.cancellationCount ?? 0} tone="red" />
         </div>
       ) : null}
       {!isPurchase && <div className="w-full rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:max-w-md">
-        <OrdersV4Field label="القسم"><OrdersV4Select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)}><option value="">كل الأقسام</option>{sections.map((section) => <option key={section.id} value={section.id}>{section.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
+        <OrdersV4Field label={t('ordersV4Section')}><OrdersV4Select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)}><option value="">{t('ordersV4AllSections')}</option>{sections.map((section) => <option key={section.id} value={section.id}>{ordersV4LocalizedName(section, lang)}</option>)}</OrdersV4Select></OrdersV4Field>
       </div>}
       <OrdersV4Panel
-        title={isPurchase ? 'طلبات الشراء — V4' : 'التسجيل الداخلي — V4'}
+        title={isPurchase ? 'طلبات الشراء — V4' : t('ordersV4InternalTitle')}
       >
         <OrdersV4QueryState loading={documentsQuery.isLoading} error={documentsQuery.error as Error | null} />
-        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage="لا توجد مستندات ضمن الفترة المحددة" tableMinWidth={isPurchase ? 1240 : 980} onRowClick={setViewing} />}
-        {!documentsQuery.isLoading && documents.length >= resultLimit && resultLimit < 2000 && <div className="mt-3 flex justify-center"><Button size="sm" variant="ghost" onClick={() => setResultLimit((current) => Math.min(2000, current + 250))}>تحميل 250 سجلًا إضافيًا</Button></div>}
+        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage={t('ordersV4NoDocuments')} tableMinWidth={isPurchase ? 1240 : 980} onRowClick={setViewing} />}
+        {!documentsQuery.isLoading && documents.length >= resultLimit && resultLimit < 2000 && <div className="mt-3 flex justify-center"><Button size="sm" variant="ghost" onClick={() => setResultLimit((current) => Math.min(2000, current + 250))}>{t('ordersV4LoadMore')}</Button></div>}
       </OrdersV4Panel>
       {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} />}
       {canCreate && !isPurchase && <OrdersV4DocumentModal open={cancellationOpen} onClose={() => setCancellationOpen(false)} companyId={companyId} documentType="registration" registrationEntryType="cancellation" bootstrap={bootstrap} />}
@@ -545,7 +546,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       onClose={onClose}
       size="2xl"
       side="start"
-      title={initialDocument ? `${initialDocument.editMode === 'correction' ? 'تعديل' : 'استلام'} ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : isCancellation ? t('ordersV4CancellationTitle') : 'تسجيل داخلي جديد — طلبات V4'}
+      title={initialDocument ? `${initialDocument.editMode === 'correction' ? 'تعديل' : 'استلام'} ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : isCancellation ? t('ordersV4CancellationTitle') : t('ordersV4NewInternalRegistrationTitle')}
       footer={<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {isPurchase && <div data-testid="orders-v4-live-purchase-total" aria-live="polite" className="flex min-h-11 items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 sm:min-w-64">
           <div>
@@ -560,13 +561,13 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
             {displayedPurchaseTotal == null ? '—' : `${v4Number(displayedPurchaseTotal)} ر.س`}
           </strong>
         </div>}
-        <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument?.editMode === 'correction' ? 'حفظ التعديل' : initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? t('ordersV4CancellationSaveRecord') : 'حفظ التسجيل الداخلي', onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: isPurchase && (lines.length === 0 || previewState !== 'ready') }]} />
+        <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument?.editMode === 'correction' ? 'حفظ التعديل' : initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? t('ordersV4CancellationSaveRecord') : t('ordersV4SaveInternalRegistration'), onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: isPurchase && (lines.length === 0 || previewState !== 'ready') }]} />
       </div>}
     >
       <div className="flex flex-col gap-4">
         {isCancellation && <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-[12px] font-semibold leading-6 text-red-900">{t('ordersV4CancellationIndependentHint')}</div>}
         <div className={`grid gap-3 sm:grid-cols-2 ${isPurchase ? 'lg:grid-cols-3' : ''}`}>
-          <OrdersV4Field label="التاريخ"><TransactionDatePicker value={date} onValueChange={setDate} /></OrdersV4Field>
+          <OrdersV4Field label={t('ordersV4Date')}><TransactionDatePicker value={date} onValueChange={setDate} /></OrdersV4Field>
           {isPurchase && (
             <OrdersV4Field label="طريقة الدفع">
               <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="طريقة الدفع">
@@ -595,11 +596,11 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
           {isPurchase && paymentMethod === 'custody' && <OrdersV4Field label="مبلغ العهدة"><Input type="number" min="0" step="0.01" value={pettyCashAmount} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPettyCashAmount(event.target.value)} /></OrdersV4Field>}
         </div>
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/30 p-3">
-          <div className="mb-3 text-[13px] font-bold">اختر الأصناف</div>
+          <div className="mb-3 text-[13px] font-bold">{t('ordersV4ChooseItems')}</div>
           <OrdersV4DocumentItemPicker items={items} sections={(bootstrap?.sections ?? []).filter((row) => row.isActive)} sectionId={sectionId} onSectionChange={setSectionId} selectedQuantities={selectedQuantities} onSelect={addItem} onRemove={removeItem} sectionLocked={lines.length > 0} />
         </div>
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/30 p-3">
-          <div className="mb-3 flex items-center justify-between"><strong className="text-[13px]">الأصناف المضافة</strong><span className="text-[11px] text-noorix-muted">{lines.length} سطر</span></div>
+          <div className="mb-3 flex items-center justify-between"><strong className="text-[13px]">{t('ordersV4AddedItems')}</strong><span className="text-[11px] text-noorix-muted">{t('ordersV4LineCount', lines.length)}</span></div>
           <OrdersV4DocumentLinesTable
             lines={lines}
             items={items}
@@ -610,8 +611,8 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
             onRemove={(key) => setLines((current) => current.filter((row) => row.key !== key))}
           />
         </div>
-        <OrdersV4Field label="ملاحظات"><Input multiline rows={3} value={notes} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(event.target.value)} /></OrdersV4Field>
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">الإجمالي الظاهر معاينة مباشرة من نواة V4 نفسها؛ عند الحفظ تعيد النواة التحقق والحساب داخل معاملة واحدة قبل اعتماد الطلب.</div>
+        <OrdersV4Field label={t('ordersV4Notes')}><Input multiline rows={3} value={notes} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(event.target.value)} /></OrdersV4Field>
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">{t('ordersV4KernelPreviewHint')}</div>
         <OrdersV4DocumentLineModal
           item={selectedItem}
           isPurchase={isPurchase}
@@ -626,14 +627,14 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       open={!!sendWhatsAppPrompt}
       onClose={() => setSendWhatsAppPrompt(null)}
       size="sm"
-      title={isPurchase ? 'إرسال الطلب عبر واتساب؟' : 'إرسال التسجيل الداخلي عبر واتساب؟'}
+      title={isPurchase ? 'إرسال الطلب عبر واتساب؟' : t('ordersV4InternalWhatsappPromptTitle')}
     >
       <div className="flex flex-col gap-4 p-1">
         <p className="m-0 text-[13px] leading-relaxed text-noorix-muted">
-          تم الحفظ بنجاح. هل تريد إرسال التفاصيل الآن عبر واتساب؟
+          {t('ordersV4WhatsappSavedPrompt')}
         </p>
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="ghost" size="md" onClick={() => setSendWhatsAppPrompt(null)}>ليس الآن</Button>
+          <Button variant="ghost" size="md" onClick={() => setSendWhatsAppPrompt(null)}>{t('ordersV4NotNow')}</Button>
           <Button
             variant="success"
             size="md"
@@ -644,7 +645,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
               setSendWhatsAppPrompt(null);
             }}
           >
-            إرسال عبر واتساب
+            {t('ordersV4SendWhatsapp')}
           </Button>
         </div>
       </div>
@@ -744,42 +745,42 @@ function OrdersV4DocumentDetails({ document, canReopen, onClose, onPrint, onExpo
       render: (_value: unknown, row: OrdersV4Document['lines'][number]) => <div className="flex flex-col gap-1"><span>{(row.cancellationReasons ?? []).map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(lang === 'en' ? ', ' : '، ')}</span>{row.cancellationNote && <small className="text-noorix-muted">{row.cancellationNote}</small>}</div>,
     } as SimpleTableColumn<OrdersV4Document['lines'][number]>] : []),
     { key: 'lineNumber', label: '#' },
-    { key: 'itemNameSnapshot', label: 'الصنف' },
-    { key: 'inputQuantity', label: 'الكمية المدخلة', numeric: true, render: (value, row) => `${v4Number(value, 6)} ${row.inputUnit.nameAr}` },
-    { key: 'baseQuantity', label: 'كمية الأساس وقت المستند', numeric: true, render: (value, row) => `${v4Number(value, 6)} ${row.baseUnit.nameAr}` },
-    { key: 'unitPrice', label: 'سعر الوحدة', numeric: true, render: (value, row) => `${v4Number(value)} / ${row.priceUnit.nameAr}` },
-    { key: document?.documentType === 'registration' ? 'operationalCost' : 'lineTotal', label: document?.documentType === 'registration' ? 'التكلفة' : 'الإجمالي', numeric: true, render: (value) => `${v4Number(value)} ر.س` },
+    { key: 'itemNameSnapshot', label: t('ordersV4Item'), render: (_value, row) => ordersV4LocalizedName(row.item, lang, row.itemNameSnapshot) },
+    { key: 'inputQuantity', label: t('ordersV4InputQuantity'), numeric: true, render: (value, row) => `${v4Number(value, 6)} ${ordersV4LocalizedName(row.inputUnit, lang)}` },
+    { key: 'baseQuantity', label: t('ordersV4BaseQuantityAtDocument'), numeric: true, render: (value, row) => `${v4Number(value, 6)} ${ordersV4LocalizedName(row.baseUnit, lang)}` },
+    { key: 'unitPrice', label: t('ordersV4UnitPrice'), numeric: true, render: (value, row) => `${v4Number(value)} / ${ordersV4LocalizedName(row.priceUnit, lang)}` },
+    { key: document?.documentType === 'registration' ? 'operationalCost' : 'lineTotal', label: document?.documentType === 'registration' ? t('ordersV4Cost') : t('ordersV4Total'), numeric: true, render: (value) => `${v4Number(value)} ${lang === 'en' ? 'SR' : 'ر.س'}` },
   ];
   const statusLabel = document?.status === 'received'
-    ? document.calculationSnapshot?.operation === 'direct-correction' ? 'مستلم مصحح' : 'مستلم'
+    ? document.calculationSnapshot?.operation === 'direct-correction' ? t('ordersV4StatusCorrectedReceived') : t('ordersV4StatusReceived')
     : document?.status === 'prepared'
-      ? 'بانتظار الاستلام'
+      ? t('ordersV4StatusAwaitingReceipt')
       : document?.status === 'reversed'
-        ? document.calculationSnapshot?.correctedByDocumentId ? 'تم تصحيحه' : document.calculationSnapshot?.reopenedByDocumentId ? 'أعيد فتحه' : 'معكوس'
-        : 'ملغي';
+        ? document.calculationSnapshot?.correctedByDocumentId ? t('ordersV4StatusCorrected') : document.calculationSnapshot?.reopenedByDocumentId ? t('ordersV4StatusReopened') : t('ordersV4StatusReversed')
+        : t('ordersV4StatusCancelled');
   return <AdaptiveSheet
     open={!!document}
     onClose={onClose}
     size="xl"
     title={document?.documentNumber}
     footer={<DialogActions actions={document ? [
-      { key: 'close', label: 'إغلاق', onClick: onClose, role: 'cancel' },
-      { key: 'excel', label: 'تصدير Excel', onClick: () => onExport(document) },
-      { key: 'print', label: document.documentType === 'registration' ? 'طباعة التسجيل' : 'طباعة الطلب', onClick: () => onPrint(document) },
-      { key: 'whatsapp', label: 'واتساب', role: 'save', onClick: () => onWhatsApp(document) },
+      { key: 'close', label: t('ordersV4Close'), onClick: onClose, role: 'cancel' },
+      { key: 'excel', label: t('ordersV4ExportExcel'), onClick: () => onExport(document) },
+      { key: 'print', label: document.documentType === 'registration' ? t('ordersV4PrintRegistration') : 'طباعة الطلب', onClick: () => onPrint(document) },
+      { key: 'whatsapp', label: t('ordersV4Whatsapp'), role: 'save', onClick: () => onWhatsApp(document) },
       ...(canReopen && document.documentType === 'purchase' && document.canReopen
         ? [{ key: 'reopen', label: 'تعديل الطلب', role: 'edit' as const, onClick: () => onReopen(document) }]
         : []),
-    ] : [{ key: 'close', label: 'إغلاق', onClick: onClose, role: 'cancel' }]} />}
+    ] : [{ key: 'close', label: t('ordersV4Close'), onClick: onClose, role: 'cancel' }]} />}
   >
     {document && <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-noorix-bg-muted p-3 text-[12px] sm:grid-cols-4">
-        <span>التاريخ: <b>{v4Date(document.documentDate)}</b></span>
-        <span>الحالة: <b>{statusLabel}</b></span>
-        <span>{document.documentType === 'registration' ? 'التكلفة' : 'الإجمالي'}: <b>{v4Number(document.documentType === 'registration' ? document.operationalCost : document.totalAmount)} ر.س</b></span>
+        <span>{t('ordersV4Date')}: <b>{v4Date(document.documentDate)}</b></span>
+        <span>{t('ordersV4Status')}: <b>{statusLabel}</b></span>
+        <span>{document.documentType === 'registration' ? t('ordersV4Cost') : t('ordersV4Total')}: <b>{v4Number(document.documentType === 'registration' ? document.operationalCost : document.totalAmount)} {lang === 'en' ? 'SR' : 'ر.س'}</b></span>
       </div>
       <SimpleTable columns={columns} data={document.lines} tableMinWidth={760} />
-      {document.notes && <div className="rounded-xl border border-noorix-border p-3 text-[12px]"><b>ملاحظات:</b> {document.notes}</div>}
+      {document.notes && <div className="rounded-xl border border-noorix-border p-3 text-[12px]"><b>{t('ordersV4Notes')}:</b> {document.notes}</div>}
     </div>}
   </AdaptiveSheet>;
 }
