@@ -5,6 +5,16 @@ import type { OrdersV4Item, OrdersV4Section, OrdersV4Unit } from '../../../types
 import { OrdersV4DocumentItemPicker, filterOrdersV4DocumentItems } from './OrdersV4DocumentItemPicker';
 import { addOrMergeDraftLine } from './OrdersV4DocumentsTab';
 
+vi.mock('../../../i18n/useTranslation', async () => {
+  const translations = await vi.importActual<typeof import('../../../i18n/translations')>('../../../i18n/translations');
+  return {
+    useTranslation: () => ({
+      lang: 'ar',
+      t: (key: string, ...replacements: Array<string | number>) => translations.getText(key, 'ar', ...replacements),
+    }),
+  };
+});
+
 afterEach(cleanup);
 
 const unit: OrdersV4Unit = {
