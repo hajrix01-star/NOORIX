@@ -186,7 +186,7 @@ export function BackupCommandCenter({
                 label={t('backupSystemEnabled')}
                 containerClassName="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none"
               />
-              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
                 <ScheduleNumberInput id="backup-system-hour" label={t('backupSystemHour')} value={sysForm.scheduleHour} min={0} max={23} fallback={0} onValue={(scheduleHour) => setSysForm((previous) => ({ ...previous, scheduleHour }))} />
                 <ScheduleNumberInput id="backup-system-minute" label={t('backupSystemMinute')} value={sysForm.scheduleMinute} min={0} max={59} fallback={0} onValue={(scheduleMinute) => setSysForm((previous) => ({ ...previous, scheduleMinute }))} />
                 <ScheduleNumberInput id="backup-system-retention" label={t('backupSystemRetention')} value={sysForm.retentionCount} min={1} max={50} fallback={10} onValue={(retentionCount) => setSysForm((previous) => ({ ...previous, retentionCount }))} />
@@ -262,7 +262,7 @@ export function BackupCommandCenter({
                   label={t('backupCompanyDailyEnabled')}
                   containerClassName="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none"
                 />
-                <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
                   <ScheduleNumberInput id="backup-company-hour" label={t('backupSystemHour')} value={coForm.scheduleHour} min={0} max={23} fallback={0} disabled={!companyId} onValue={(scheduleHour) => setCoForm((previous) => ({ ...previous, scheduleHour }))} />
                   <ScheduleNumberInput id="backup-company-minute" label={t('backupSystemMinute')} value={coForm.scheduleMinute} min={0} max={59} fallback={0} disabled={!companyId} onValue={(scheduleMinute) => setCoForm((previous) => ({ ...previous, scheduleMinute }))} />
                   <ScheduleNumberInput id="backup-company-retention" label={t('backupCompanyRetention')} value={coForm.retentionCount} min={1} max={50} fallback={5} disabled={!companyId} onValue={(retentionCount) => setCoForm((previous) => ({ ...previous, retentionCount }))} />
