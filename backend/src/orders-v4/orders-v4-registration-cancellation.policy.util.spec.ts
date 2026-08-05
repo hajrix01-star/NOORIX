@@ -24,6 +24,18 @@ describe('Orders V4 registration cancellation policy', () => {
     }))).toEqual({ entryType: 'cancellation' });
   });
 
+  it('accepts employee meals and hospitality as controlled reasons', () => {
+    expect(resolveOrdersV4RegistrationEntry(input({
+      registrationEntryType: 'cancellation',
+      lines: [{
+        itemId: 'item-1',
+        quantity: '1',
+        unitId: 'unit-1',
+        cancellationReasons: ['employee_meal', 'hospitality'],
+      }],
+    }))).toEqual({ entryType: 'cancellation' });
+  });
+
   it('requires an explanation for other', () => {
     expect(() => resolveOrdersV4RegistrationEntry(input({
       registrationEntryType: 'cancellation',

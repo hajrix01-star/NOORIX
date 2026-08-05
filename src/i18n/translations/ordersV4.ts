@@ -82,6 +82,8 @@ export default {
   staffCancellationReasonDuplicateOrder: { ar: 'طلب مكرر', en: 'Duplicate order' },
   staffCancellationReasonCustomerChangedMind: { ar: 'العميل غيّر رأيه', en: 'Customer changed their mind' },
   staffCancellationReasonItemUnavailable: { ar: 'الصنف غير متوفر', en: 'Item unavailable' },
+  staffCancellationReasonEmployeeMeal: { ar: 'أكل موظفين', en: 'Employee meals' },
+  staffCancellationReasonHospitality: { ar: 'ضيافة', en: 'Hospitality' },
   staffCancellationReasonOther: { ar: 'أخرى', en: 'Other' },
   staffCancellationAddItem: { ar: 'إضافة إلى سلة الإلغاء', en: 'Add to cancellation basket' },
   staffCancellationSave: { ar: 'حفظ الإلغاء', en: 'Save cancellation' },

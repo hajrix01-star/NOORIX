@@ -10,6 +10,8 @@ export type OrdersV4CancellationReason =
   | 'duplicate_order'
   | 'customer_changed_mind'
   | 'item_unavailable'
+  | 'employee_meal'
+  | 'hospitality'
   | 'other';
 
 export type OrdersV4ReportFilters = {

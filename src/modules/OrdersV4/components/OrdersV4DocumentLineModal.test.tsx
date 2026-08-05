@@ -83,14 +83,14 @@ describe('OrdersV4DocumentLineModal', () => {
 
     const add = screen.getByRole('button', { name: 'إضافة الإلغاء' });
     expect(add).toHaveProperty('disabled', true);
-    fireEvent.click(screen.getByRole('button', { name: 'خطأ في الطلب' }));
-    fireEvent.click(screen.getByRole('button', { name: 'طلب مكرر' }));
+    fireEvent.click(screen.getByRole('button', { name: 'أكل موظفين' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ضيافة' }));
     fireEvent.click(add);
 
     expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
       itemId: item.id,
       quantity: '1',
-      cancellationReasons: ['order_error', 'duplicate_order'],
+      cancellationReasons: ['employee_meal', 'hospitality'],
     }));
   });
 });

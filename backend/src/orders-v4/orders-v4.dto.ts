@@ -15,6 +15,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import type { OrdersV4CancellationReason } from './orders-v4.contracts';
+import { ORDERS_V4_CANCELLATION_REASONS } from './orders-v4-registration-cancellation.policy';
 
 const NON_NEGATIVE_DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 const POSITIVE_DECIMAL = /^(?:(?:0\.(?:0*?[1-9]\d*))|(?:[1-9]\d*(?:\.\d+)?))$/;
@@ -109,10 +110,9 @@ export class OrdersV4DocumentLineDto {
   @IsString() unitId!: string;
   @IsOptional() @IsString() @Matches(NON_NEGATIVE_DECIMAL) unitPrice?: string;
   @IsOptional() @IsString() priceUnitId?: string;
-  @IsOptional() @IsArray() @ArrayMaxSize(9) @IsIn([
-    'customer_disliked', 'replaced_item', 'order_error', 'registration_error', 'delayed_order',
-    'duplicate_order', 'customer_changed_mind', 'item_unavailable', 'other',
-  ], { each: true }) cancellationReasons?: OrdersV4CancellationReason[] | null;
+  @IsOptional() @IsArray() @ArrayMaxSize(ORDERS_V4_CANCELLATION_REASONS.length)
+  @IsIn([...ORDERS_V4_CANCELLATION_REASONS], { each: true })
+  cancellationReasons?: OrdersV4CancellationReason[] | null;
   @IsOptional() @IsString() @MaxLength(1000) cancellationNote?: string | null;
 }
 

@@ -13,6 +13,8 @@ export const ORDERS_V4_CANCELLATION_REASON_OPTIONS: Array<{
   { value: 'duplicate_order', translationKey: 'staffCancellationReasonDuplicateOrder' },
   { value: 'customer_changed_mind', translationKey: 'staffCancellationReasonCustomerChangedMind' },
   { value: 'item_unavailable', translationKey: 'staffCancellationReasonItemUnavailable' },
+  { value: 'employee_meal', translationKey: 'staffCancellationReasonEmployeeMeal' },
+  { value: 'hospitality', translationKey: 'staffCancellationReasonHospitality' },
   { value: 'other', translationKey: 'staffCancellationReasonOther' },
 ];
 

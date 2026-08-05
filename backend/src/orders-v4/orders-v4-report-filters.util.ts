@@ -5,14 +5,12 @@ import type {
   OrdersV4ReportFilters,
 } from './orders-v4.contracts';
 import type { OrdersV4ActivityReportQueryDto } from './orders-v4.dto';
+import { ORDERS_V4_CANCELLATION_REASONS } from './orders-v4-registration-cancellation.policy';
 
 const PAYMENT_METHODS = new Set<OrdersV4PaymentMethod>(['custody', 'cash', 'transfer']);
 const STATUSES = new Set<NonNullable<OrdersV4ReportFilters['statuses']>[number]>(['prepared', 'received', 'cancelled', 'reversed']);
 const ENTRY_TYPES = new Set<OrdersV4RegistrationEntryType>(['issue', 'cancellation']);
-const CANCELLATION_REASONS = new Set<OrdersV4CancellationReason>([
-  'customer_disliked', 'replaced_item', 'order_error', 'registration_error', 'delayed_order',
-  'duplicate_order', 'customer_changed_mind', 'item_unavailable', 'other',
-]);
+const CANCELLATION_REASONS = new Set<OrdersV4CancellationReason>(ORDERS_V4_CANCELLATION_REASONS);
 
 export function ordersV4CsvValues(value?: string): string[] {
   return [...new Set(String(value ?? '').split(',').map((entry) => entry.trim()).filter(Boolean))];
