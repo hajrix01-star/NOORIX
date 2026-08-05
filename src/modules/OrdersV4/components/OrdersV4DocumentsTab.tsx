@@ -279,9 +279,14 @@ export function OrdersV4DocumentsTab({
         : v4Number(row.lines.reduce((sum, line) => sum + Number(line.inputQuantity || 0), 0), 6),
     },
     { key: isPurchase ? 'totalAmount' : 'operationalCost', label: isPurchase ? t('ordersV4Total') : t('ordersV4Cost'), numeric: true, render: (value) => <strong>{v4Number(value)} {lang === 'en' ? 'SR' : 'ر.س'}</strong> },
-    { key: 'status', label: t('ordersV4Status'), render: (value, row) => <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? row.calculationSnapshot?.operation === 'direct-correction' ? t('ordersV4StatusCorrectedReceived') : t('ordersV4StatusReceived') : value === 'prepared' ? t('ordersV4StatusAwaitingReceipt') : row.calculationSnapshot?.correctedByDocumentId ? t('ordersV4StatusCorrected') : row.calculationSnapshot?.reopenedByDocumentId ? t('ordersV4StatusReopened') : t('ordersV4StatusReversed')}</span> },
-    { key: 'actions', label: '', render: (_value, row) => <div className="flex flex-wrap gap-1">{isPurchase && canReceive && row.status === 'prepared' && <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>استلام</Button>}{canReverse && row.status === 'received' && <Button size="sm" variant="ghost" className="border-amber-300 text-amber-700" onClick={(event) => { event.stopPropagation(); setReverseTarget(row); }}>عكس</Button>}{canUndoReverse && row.status === 'reversed' && !row.calculationSnapshot?.reopenedByDocumentId && <Button size="sm" variant="ghost" className="border-blue-300 text-blue-700" onClick={(event) => { event.stopPropagation(); setUndoReverseTarget(row); }}>إلغاء العكس</Button>}</div> },
-  ], [canReceive, canReverse, canUndoReverse, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
+    {
+      key: 'status',
+      label: t('ordersV4Status'),
+      render: (value, row) => isPurchase && value === 'prepared' && canReceive
+        ? <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>{t('ordersV4StatusAwaitingReceipt')}</Button>
+        : <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? row.calculationSnapshot?.operation === 'direct-correction' ? t('ordersV4StatusCorrectedReceived') : t('ordersV4StatusReceived') : value === 'prepared' ? t('ordersV4StatusAwaitingReceipt') : row.calculationSnapshot?.correctedByDocumentId ? t('ordersV4StatusCorrected') : row.calculationSnapshot?.reopenedByDocumentId ? t('ordersV4StatusReopened') : t('ordersV4StatusReversed')}</span>,
+    },
+  ], [canReceive, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -312,7 +317,7 @@ export function OrdersV4DocumentsTab({
         title={isPurchase ? 'طلبات الشراء — V4' : t('ordersV4InternalTitle')}
       >
         <OrdersV4QueryState loading={documentsQuery.isLoading} error={documentsQuery.error as Error | null} />
-        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage={t('ordersV4NoDocuments')} tableMinWidth={isPurchase ? 1240 : 980} onRowClick={setViewing} />}
+        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage={t('ordersV4NoDocuments')} tableMinWidth={isPurchase ? 1160 : 900} getRowClassName={(row) => row.status === 'reversed' ? 'orders-v4-document-row--reversed' : undefined} onRowClick={setViewing} />}
         {!documentsQuery.isLoading && documents.length >= resultLimit && resultLimit < 2000 && <div className="mt-3 flex justify-center"><Button size="sm" variant="ghost" onClick={() => setResultLimit((current) => Math.min(2000, current + 250))}>{t('ordersV4LoadMore')}</Button></div>}
       </OrdersV4Panel>
       {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} suggestedDate={suggestedDocumentDate} />}
@@ -321,6 +326,8 @@ export function OrdersV4DocumentsTab({
       <OrdersV4DocumentDetails
         document={viewing}
         canReopen={canReopen}
+        canReverse={canReverse}
+        canUndoReverse={canUndoReverse}
         onClose={() => setViewing(null)}
         onPrint={printDocument}
         onExport={exportDocument}
@@ -328,6 +335,14 @@ export function OrdersV4DocumentsTab({
         onReopen={(document) => {
           setViewing(null);
           setReopenTarget(document);
+        }}
+        onReverse={(document) => {
+          setViewing(null);
+          setReverseTarget(document);
+        }}
+        onUndoReverse={(document) => {
+          setViewing(null);
+          setUndoReverseTarget(document);
         }}
       />
       <OrdersV4ReversalConfirmModal
@@ -739,14 +754,18 @@ function OrdersV4ReopenConfirmModal({
   </Modal>;
 }
 
-function OrdersV4DocumentDetails({ document, canReopen, onClose, onPrint, onExport, onWhatsApp, onReopen }: {
+function OrdersV4DocumentDetails({ document, canReopen, canReverse, canUndoReverse, onClose, onPrint, onExport, onWhatsApp, onReopen, onReverse, onUndoReverse }: {
   document: OrdersV4Document | null;
   canReopen: boolean;
+  canReverse: boolean;
+  canUndoReverse: boolean;
   onClose: () => void;
   onPrint: (document: OrdersV4Document) => void;
   onExport: (document: OrdersV4Document) => void;
   onWhatsApp: (document: OrdersV4Document) => void;
   onReopen: (document: OrdersV4Document) => void;
+  onReverse: (document: OrdersV4Document) => void;
+  onUndoReverse: (document: OrdersV4Document) => void;
 }) {
   const { t, lang } = useTranslation();
   const columns: SimpleTableColumn<OrdersV4Document['lines'][number]>[] = [
@@ -782,6 +801,12 @@ function OrdersV4DocumentDetails({ document, canReopen, onClose, onPrint, onExpo
       { key: 'whatsapp', label: t('ordersV4Whatsapp'), role: 'save', onClick: () => onWhatsApp(document) },
       ...(canReopen && document.documentType === 'purchase' && document.canReopen
         ? [{ key: 'reopen', label: 'تعديل الطلب', role: 'edit' as const, onClick: () => onReopen(document) }]
+        : []),
+      ...(canReverse && document.status === 'received'
+        ? [{ key: 'reverse', label: 'عكس الطلب', role: 'danger' as const, onClick: () => onReverse(document) }]
+        : []),
+      ...(canUndoReverse && document.status === 'reversed' && !document.calculationSnapshot?.reopenedByDocumentId
+        ? [{ key: 'undo-reverse', label: 'إلغاء العكس', role: 'edit' as const, onClick: () => onUndoReverse(document) }]
         : []),
     ] : [{ key: 'close', label: t('ordersV4Close'), onClick: onClose, role: 'cancel' }]} />}
   >

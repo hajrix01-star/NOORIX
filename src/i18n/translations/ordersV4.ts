@@ -40,7 +40,7 @@ export default {
   ordersV4Status: { ar: 'الحالة', en: 'Status' },
   ordersV4StatusReceived: { ar: 'مستلم', en: 'Received' },
   ordersV4StatusCorrectedReceived: { ar: 'مستلم مصحح', en: 'Received · corrected' },
-  ordersV4StatusAwaitingReceipt: { ar: 'بانتظار الاستلام', en: 'Awaiting receipt' },
+  ordersV4StatusAwaitingReceipt: { ar: 'استلام', en: 'Receive' },
   ordersV4StatusCorrected: { ar: 'تم تصحيحه', en: 'Corrected' },
   ordersV4StatusReopened: { ar: 'أعيد فتحه', en: 'Reopened' },
   ordersV4StatusReversed: { ar: 'معكوس', en: 'Reversed' },

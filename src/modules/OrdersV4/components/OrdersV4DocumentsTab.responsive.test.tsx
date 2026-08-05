@@ -9,6 +9,8 @@ const ordersV4DocumentsMock = vi.hoisted(() => ({ documents: [] as unknown[] }))
 const previewDocumentMock = vi.hoisted(() => vi.fn());
 const reopenDocumentMock = vi.hoisted(() => vi.fn());
 const receiveDocumentMock = vi.hoisted(() => vi.fn());
+const reverseDocumentMock = vi.hoisted(() => vi.fn());
+const undoReverseDocumentMock = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../i18n/useTranslation', async () => {
   const translations = await vi.importActual<typeof import('../../../i18n/translations')>('../../../i18n/translations');
@@ -24,8 +26,8 @@ vi.mock('../useOrdersV4', () => ({
   useCreateOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   usePreviewOrdersV4Document: () => ({ isPending: false, mutateAsync: previewDocumentMock }),
   useReceiveOrdersV4Document: () => ({ isPending: false, mutateAsync: receiveDocumentMock }),
-  useReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
-  useUndoReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: reverseDocumentMock }),
+  useUndoReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: undoReverseDocumentMock }),
   useReopenOrdersV4Document: () => ({ isPending: false, mutateAsync: reopenDocumentMock }),
 }));
 
@@ -47,6 +49,8 @@ beforeEach(() => {
   previewDocumentMock.mockReset();
   reopenDocumentMock.mockReset();
   receiveDocumentMock.mockReset();
+  reverseDocumentMock.mockReset();
+  undoReverseDocumentMock.mockReset();
   previewDocumentMock.mockResolvedValue({ data: {
     kernelVersion: 4, calculationVersion: 1, lineCount: 1, totalAmount: '15',
     lines: [{ lineNumber: 1, itemId: 'item-1', itemName: 'معسل', lineTotal: '15' }],
@@ -235,6 +239,68 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(dialog.className).toContain('h-full');
     expect(dialog.className).toContain('w-[min(100vw,920px)]');
     expect(dialog.className).not.toContain('max-h-[min(92vh,860px)]');
+  });
+
+  it('uses the status cell itself as the purchase receipt action without an extra actions column', () => {
+    ordersV4DocumentsMock.documents = [{
+      id: 'prepared-1', documentNumber: 'REQ4-PREPARED', documentType: 'purchase', documentDate: '2026-08-03',
+      paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'prepared', lines: [],
+    }];
+
+    render(<OrdersV4DocumentsTab
+      companyId="company-1"
+      documentType="purchase"
+      startDate="2026-08-01"
+      endDate="2026-08-31"
+      bootstrap={bootstrap}
+      canReceive
+    />);
+
+    expect(screen.getAllByRole('columnheader').every((header) => header.textContent?.trim())).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'استلام' }));
+    expect(screen.getByRole('dialog', { name: 'استلام REQ4-PREPARED' })).toBeTruthy();
+  });
+
+  it('keeps reversal controls inside document details and marks reversed rows with a full red strike', () => {
+    ordersV4DocumentsMock.documents = [{
+      id: 'reversed-1', documentNumber: 'REQ4-REVERSED', documentType: 'purchase', documentDate: '2026-08-03',
+      paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'reversed', lines: [],
+    }];
+
+    render(<OrdersV4DocumentsTab
+      companyId="company-1"
+      documentType="purchase"
+      startDate="2026-08-01"
+      endDate="2026-08-31"
+      bootstrap={bootstrap}
+      canUndoReverse
+    />);
+
+    expect(screen.queryByRole('button', { name: 'إلغاء العكس' })).toBeNull();
+    const row = screen.getByText('REQ4-REVERSED').closest('tr');
+    expect(row?.className).toContain('orders-v4-document-row--reversed');
+    fireEvent.click(screen.getByText('REQ4-REVERSED'));
+    expect(screen.getByRole('button', { name: 'إلغاء العكس' })).toBeTruthy();
+  });
+
+  it('shows reverse only after opening a received document', () => {
+    ordersV4DocumentsMock.documents = [{
+      id: 'received-1', documentNumber: 'REQ4-RECEIVED', documentType: 'purchase', documentDate: '2026-08-03',
+      paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'received', lines: [],
+    }];
+
+    render(<OrdersV4DocumentsTab
+      companyId="company-1"
+      documentType="purchase"
+      startDate="2026-08-01"
+      endDate="2026-08-31"
+      bootstrap={bootstrap}
+      canReverse
+    />);
+
+    expect(screen.queryByRole('button', { name: 'عكس الطلب' })).toBeNull();
+    fireEvent.click(screen.getByText('REQ4-RECEIVED'));
+    expect(screen.getByRole('button', { name: 'عكس الطلب' })).toBeTruthy();
   });
 
   it('shows the owner-only reopen warning for a received purchase', () => {
