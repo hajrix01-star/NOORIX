@@ -176,6 +176,29 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(screen.queryByLabelText('موقع المخزون')).toBeNull();
   });
 
+  it('suggests the calendar day after the latest document while keeping the date control editable', () => {
+    ordersV4DocumentsMock.documents = [{
+      id: 'registration-10', documentNumber: 'REG4-10', documentType: 'registration',
+      documentDate: '2026-08-10T00:00:00.000Z', subtotal: '0', totalAmount: '0',
+      operationalCost: '0', status: 'received', lines: [],
+    }];
+
+    render(<OrdersV4DocumentsTab
+      companyId="company-1"
+      documentType="registration"
+      startDate="2026-08-01"
+      endDate="2026-08-31"
+      bootstrap={bootstrap}
+      canCreate
+    />);
+
+    fireEvent.click(screen.getByRole('button', { name: /تسجيل جديد/ }));
+    const dateButton = screen.getByRole('button', { name: 'التاريخ' });
+    expect(dateButton.getAttribute('title')).toBe('2026-08-11');
+    expect(dateButton.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(dateButton.hasAttribute('disabled')).toBe(false);
+  });
+
   it('opens document details as a full-height adaptive sheet on mobile', () => {
     ordersV4DocumentsMock.documents = [{
       id: 'document-1',
