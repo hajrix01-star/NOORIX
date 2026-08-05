@@ -20,7 +20,7 @@ describe('Orders V4 registration cancellation policy', () => {
   it('accepts an independent cancellation with a controlled reason', () => {
     expect(resolveOrdersV4RegistrationEntry(input({
       registrationEntryType: 'cancellation',
-      lines: [{ itemId: 'item-1', quantity: '1', unitId: 'unit-1', cancellationReasons: ['order_error', 'delayed_order'] }],
+      lines: [{ itemId: 'item-1', quantity: '1', unitId: 'unit-1', cancellationReasons: ['customer_cancellation', 'operational_reason'] }],
     }))).toEqual({ entryType: 'cancellation' });
   });
 
@@ -47,7 +47,7 @@ describe('Orders V4 registration cancellation policy', () => {
     expect(() => resolveOrdersV4RegistrationEntry(input({
       documentType: 'purchase',
       registrationEntryType: 'cancellation',
-      lines: [{ itemId: 'item-1', quantity: '1', unitId: 'unit-1', cancellationReasons: ['order_error'] }],
+      lines: [{ itemId: 'item-1', quantity: '1', unitId: 'unit-1', cancellationReasons: ['operational_reason'] }],
     }))).toThrow('بيانات الإلغاء متاحة للتسجيل الداخلي فقط');
   });
 });

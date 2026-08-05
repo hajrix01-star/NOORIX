@@ -67,13 +67,13 @@ describe('buildOrdersV4WhatsAppText', () => {
       lines: [{
         ...document().lines[0],
         inputQuantity: '-2',
-        cancellationReasons: ['order_error', 'duplicate_order'],
+        cancellationReasons: ['operational_reason'],
         cancellationNote: 'اختبار رقابي',
       }],
     }));
 
     expect(text).toContain('سجل إلغاء');
-    expect(text).toContain('خطأ في الطلب، طلب مكرر');
+    expect(text).toContain('سبب تشغيلي');
     expect(text).toContain('اختبار رقابي');
   });
 
@@ -84,13 +84,13 @@ describe('buildOrdersV4WhatsAppText', () => {
       lines: [{
         ...document().lines[0],
         inputQuantity: '-1',
-        cancellationReasons: ['customer_changed_mind', 'item_unavailable'],
+        cancellationReasons: ['customer_cancellation', 'operational_reason'],
         cancellationNote: 'English control note',
       }],
     }), 'en');
 
     expect(text).toContain('Cancellation record');
-    expect(text).toContain('Reason: Customer changed their mind, Item unavailable');
+    expect(text).toContain('Reason: Customer cancellation, Operational reason');
     expect(text).toContain('Details: English control note');
     expect(text).not.toContain('السبب');
   });

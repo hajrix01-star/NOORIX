@@ -6,14 +6,9 @@ import type {
 } from './orders-v4.contracts';
 
 export const ORDERS_V4_CANCELLATION_REASONS = [
-  'customer_disliked',
+  'customer_cancellation',
+  'operational_reason',
   'replaced_item',
-  'order_error',
-  'registration_error',
-  'delayed_order',
-  'duplicate_order',
-  'customer_changed_mind',
-  'item_unavailable',
   'employee_meal',
   'hospitality',
   'other',

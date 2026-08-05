@@ -6,13 +6,13 @@ describe('Orders V4 report filters', () => {
       sectionIds: 'bar, kitchen,bar',
       paymentMethods: 'cash,invalid,custody',
       statuses: 'received,unknown',
-      cancellationReasons: 'order_error,employee_meal,hospitality,invalid',
+      cancellationReasons: 'operational_reason,employee_meal,hospitality,invalid',
       search: '  سكر  ',
     })).toMatchObject({
       sectionIds: ['bar', 'kitchen'],
       paymentMethods: ['cash', 'custody'],
       statuses: ['received'],
-      cancellationReasons: ['order_error', 'employee_meal', 'hospitality'],
+      cancellationReasons: ['operational_reason', 'employee_meal', 'hospitality'],
       search: 'سكر',
     });
   });

@@ -98,14 +98,9 @@ export type OrdersV4UserIdentity = {
 };
 
 export type OrdersV4CancellationReason =
-  | 'customer_disliked'
+  | 'customer_cancellation'
   | 'replaced_item'
-  | 'order_error'
-  | 'registration_error'
-  | 'delayed_order'
-  | 'duplicate_order'
-  | 'customer_changed_mind'
-  | 'item_unavailable'
+  | 'operational_reason'
   | 'employee_meal'
   | 'hospitality'
   | 'other';
