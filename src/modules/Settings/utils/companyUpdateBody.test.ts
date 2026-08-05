@@ -27,6 +27,24 @@ describe('buildCompanyUpdateBody', () => {
     });
     expect(body).not.toHaveProperty('salesShiftsEnabled');
   });
+
+  it('includes a changed display order as a positive integer', () => {
+    const body = buildCompanyUpdateBody({
+      nameAr: 'شركة',
+      sortOrder: 2.9,
+      _initial: { sortOrder: 5 },
+    });
+    expect(body.sortOrder).toBe(2);
+  });
+
+  it('omits an unchanged display order', () => {
+    const body = buildCompanyUpdateBody({
+      nameAr: 'شركة',
+      sortOrder: 3,
+      _initial: { sortOrder: 3 },
+    });
+    expect(body).not.toHaveProperty('sortOrder');
+  });
 });
 
 describe('mergeCompanySavePatch', () => {

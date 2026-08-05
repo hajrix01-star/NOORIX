@@ -27,12 +27,15 @@ export function buildCompanyUpdateBody(editModal: Record<string, unknown> | null
   };
 
   const body: Record<string, unknown> = { nameAr };
+  const sortOrder = Math.max(1, Math.trunc(Number(editModal?.sortOrder) || 1));
+  const initialSortOrder = Math.max(1, Math.trunc(Number(initial.sortOrder) || 1));
   if (current.nameEn !== baseline.nameEn) body.nameEn = current.nameEn;
   if (current.taxNumber !== baseline.taxNumber) body.taxNumber = current.taxNumber;
   if (current.phone !== baseline.phone) body.phone = current.phone;
   if (current.address !== baseline.address) body.address = current.address;
   if (current.email !== baseline.email) body.email = current.email;
   if (current.logoUrl !== baseline.logoUrl) body.logoUrl = current.logoUrl;
+  if (sortOrder !== initialSortOrder) body.sortOrder = sortOrder;
 
   return body;
 }

@@ -10,6 +10,10 @@ export async function createImportedCompany(
   >,
 ): Promise<void> {
   const { tenantId, newCompanyId, nameAr, resolvedNameEn, co } = p;
+  const lastCompany = await tx.company.aggregate({
+    where: { tenantId, isArchived: false },
+    _max: { sortOrder: true },
+  });
 
   await tx.company.create({
     data: {
@@ -26,6 +30,7 @@ export async function createImportedCompany(
       vatEnabledForSales: Boolean(co.vatEnabledForSales),
       vatRatePercent: dec(co.vatRatePercent ?? 15),
       salesShiftsEnabled: Boolean(co.salesShiftsEnabled),
+      sortOrder: (lastCompany._max.sortOrder ?? 0) + 1,
     },
   });
 }

@@ -34,6 +34,7 @@ export type CompanyEditModal = SettingsCompany & {
   email: string;
   logoUrl: string;
   isArchived: boolean;
+  sortOrder: number;
   _initial: {
     nameEn: string;
     taxNumber: string;
@@ -41,6 +42,7 @@ export type CompanyEditModal = SettingsCompany & {
     address: string;
     email: string;
     logoUrl: string;
+    sortOrder: number;
   };
 };
 
@@ -101,6 +103,7 @@ export function buildCompanyEditModal(company: SettingsCompany): CompanyEditModa
     email: company.email || '',
     logoUrl: company.logoUrl || '',
     isArchived: !!company.isArchived,
+    sortOrder: Math.max(1, Number(company.sortOrder) || 1),
     _initial: {
       nameEn: company.nameEn || '',
       taxNumber: company.taxNumber || '',
@@ -108,6 +111,7 @@ export function buildCompanyEditModal(company: SettingsCompany): CompanyEditModa
       address: company.address || '',
       email: company.email || '',
       logoUrl: company.logoUrl || '',
+      sortOrder: Math.max(1, Number(company.sortOrder) || 1),
     },
   };
 }

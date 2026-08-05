@@ -10,6 +10,7 @@ export type CompanyListItem = {
   /** بعض الشاشات تعرض اسمًا موحّداً */
   name?: string | null;
   taxNumber?: string | null;
+  sortOrder?: number | null;
 };
 
 /** قيمة `AppContext` — تُبنى في `App.tsx` */

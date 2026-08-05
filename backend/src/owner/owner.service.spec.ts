@@ -79,7 +79,8 @@ describe('OwnerService', () => {
 
     expect(prisma.company.findMany).toHaveBeenCalledWith({
       where: { id: { in: ['c1'] }, isArchived: false },
-      select: { id: true, nameAr: true, nameEn: true },
+      select: { id: true, nameAr: true, nameEn: true, sortOrder: true },
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
     });
     expect(reportsService.getGeneralProfitLoss).toHaveBeenCalledTimes(1);
     expect(result.companies.map((company) => company.id)).toEqual(['c1']);

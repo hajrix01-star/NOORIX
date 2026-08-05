@@ -18,7 +18,8 @@ type OwnerPrismaReader = {
   company: {
     findMany(args: {
       where: { id: { in: string[] }; isArchived: false };
-      select: { id: true; nameAr: true; nameEn: true };
+      select: { id: true; nameAr: true; nameEn: true; sortOrder: true };
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }];
     }): Promise<OwnerOverviewCompany[]>;
   };
 };
@@ -68,9 +69,10 @@ export class OwnerService {
     const bounds    = month ? monthBounds(year, month) : null;
     const companies = await this.prisma.company.findMany({
       where: { id: { in: companyIds }, isArchived: false },
-      select: { id: true, nameAr: true, nameEn: true },
+      select: { id: true, nameAr: true, nameEn: true, sortOrder: true },
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
     });
-    const activeCompanyIds = companyIds.filter((companyId) => companies.some((company) => company.id === companyId));
+    const activeCompanyIds = companies.map((company) => company.id);
     const companyById = new Map(companies.map((company) => [company.id, company]));
 
     const [plResults, dailyResults] = await Promise.all([

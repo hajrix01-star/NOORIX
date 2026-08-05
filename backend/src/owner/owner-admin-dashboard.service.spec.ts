@@ -157,7 +157,8 @@ describe('OwnerAdminDashboardService', () => {
         isArchived: false,
         tenantId: 'tenant-1',
       },
-      select: { id: true, nameAr: true, nameEn: true },
+      select: { id: true, nameAr: true, nameEn: true, sortOrder: true },
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
     });
     expect(rawCalls[0]?.[1]).toEqual(new Date('2026-06-30T00:00:00.000Z'));
     expect(rawCalls[0]?.[2]).toEqual(new Date('2026-07-18T23:59:59.999Z'));

@@ -92,6 +92,10 @@ export default function CompaniesTab({
       return 'تم حفظ تعديلات الشركة.';
     },
     onSuccess: (res: CompanyUpdateResult, variables: CompanyUpdateVariables) => {
+      if (variables.body.sortOrder !== undefined) {
+        setEditModal(null);
+        return;
+      }
       const merged = mergeCompanySavePatch(res, variables);
       if (merged) {
         const { id, patch } = merged;
@@ -312,6 +316,17 @@ export default function CompaniesTab({
               <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))]">
                 <Input type="text" label="الاسم بالعربي *" value={editModal.nameAr} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, nameAr: event.target.value } : previous))} required />
                 <Input type="text" label="الاسم بالإنجليزي" value={editModal.nameEn} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, nameEn: event.target.value } : previous))} />
+              </div>
+              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3">
+                <Input
+                  type="number"
+                  min={1}
+                  max={10000}
+                  label="ترتيب الظهور"
+                  hint="الشركة رقم 1 تظهر أولًا في مبدّل الشركات والإعدادات والتقارير العامة. يعيد النظام ترقيم بقية الشركات تلقائيًا."
+                  value={editModal.sortOrder}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, sortOrder: Math.max(1, Math.trunc(Number(event.target.value) || 1)) } : previous))}
+                />
               </div>
               <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))]">
                 <Input type="text" label="الرقم الضريبي" value={editModal.taxNumber} onChange={(event: ChangeEvent<HTMLInputElement>) => setEditModal((previous) => (previous ? { ...previous, taxNumber: event.target.value } : previous))} placeholder="300000000000003" />

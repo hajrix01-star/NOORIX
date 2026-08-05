@@ -15,12 +15,16 @@ import { buildOwnerAdminDashboardExecutiveSnapshot, type OwnerExecutiveDailySale
 type MetricKey = 'sales' | 'purchases' | 'expenses';
 type Direction = 'up' | 'down' | 'stable';
 
-type CompanyReference = { id: string; nameAr: string; nameEn: string | null };
+type CompanyReference = { id: string; nameAr: string; nameEn: string | null; sortOrder?: number };
 
 type AdminDashboardPrisma = {
   $queryRaw<T>(query: TemplateStringsArray, ...values: unknown[]): Promise<T>;
   company: {
-    findMany(args: { where: { id: { in: string[] }; isArchived: false; tenantId: string }; select: { id: true; nameAr: true; nameEn: true } }): Promise<CompanyReference[]>;
+    findMany(args: {
+      where: { id: { in: string[] }; isArchived: false; tenantId: string };
+      select: { id: true; nameAr: true; nameEn: true; sortOrder: true };
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }];
+    }): Promise<CompanyReference[]>;
   };
 };
 
@@ -217,7 +221,8 @@ export class OwnerAdminDashboardService {
 
     const companies = await this.prisma.company.findMany({
       where: { id: { in: companyIds }, isArchived: false, tenantId },
-      select: { id: true, nameAr: true, nameEn: true },
+      select: { id: true, nameAr: true, nameEn: true, sortOrder: true },
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
     });
 
     const companyData = await Promise.all(

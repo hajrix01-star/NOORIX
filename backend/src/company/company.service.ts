@@ -14,17 +14,24 @@ export class CompanyService {
 
   async create(dto: CreateCompanyDto) {
     const tenantId = TenantContext.getTenantId();
-    const company = await this.prisma.company.create({
-      data: {
-        tenantId,
-        nameAr:    dto.nameAr.trim(),
-        nameEn:    (dto.nameEn    ?? '').trim() || null,
-        logoUrl:   dto.logoUrl   ?? null,
-        phone:     (dto.phone    ?? '').trim() || null,
-        address:   (dto.address  ?? '').trim() || null,
-        taxNumber: (dto.taxNumber ?? '').trim() || null,
-        email:     (dto.email    ?? '').trim() || null,
-      },
+    const company = await this.prisma.withTenant(async (tx) => {
+      const last = await tx.company.aggregate({
+        where: { isArchived: false },
+        _max: { sortOrder: true },
+      });
+      return tx.company.create({
+        data: {
+          tenantId,
+          nameAr:    dto.nameAr.trim(),
+          nameEn:    (dto.nameEn    ?? '').trim() || null,
+          logoUrl:   dto.logoUrl   ?? null,
+          phone:     (dto.phone    ?? '').trim() || null,
+          address:   (dto.address  ?? '').trim() || null,
+          taxNumber: (dto.taxNumber ?? '').trim() || null,
+          email:     (dto.email    ?? '').trim() || null,
+          sortOrder: (last._max.sortOrder ?? 0) + 1,
+        },
+      });
     });
     await this.accountingInit.initializeCompanyAccounting(tenantId, company.id);
     return company;
@@ -37,7 +44,7 @@ export class CompanyService {
     }
     return this.prisma.company.findMany({
       where: Object.keys(where).length ? where : undefined,
-      orderBy: { nameAr: 'asc' },
+      orderBy: [{ isArchived: 'asc' }, { sortOrder: 'asc' }, { nameAr: 'asc' }],
     });
   }
 
@@ -60,9 +67,44 @@ export class CompanyService {
     if (dto.vatEnabledForSales !== undefined) data.vatEnabledForSales = dto.vatEnabledForSales;
     if (dto.vatRatePercent !== undefined) data.vatRatePercent = dto.vatRatePercent;
     if (dto.salesShiftsEnabled !== undefined) data.salesShiftsEnabled = dto.salesShiftsEnabled;
-    return this.prisma.company.update({
-      where: { id },
-      data: data as Parameters<TenantPrismaService['company']['update']>[0]['data'],
+    const requiresOrderNormalization = dto.sortOrder !== undefined || dto.isArchived !== undefined;
+    if (!requiresOrderNormalization) {
+      return this.prisma.company.update({
+        where: { id },
+        data: data as Parameters<TenantPrismaService['company']['update']>[0]['data'],
+      });
+    }
+
+    return this.prisma.withTenant(async (tx) => {
+      if (Object.keys(data).length > 0) {
+        await tx.company.update({
+          where: { id },
+          data: data as Parameters<TenantPrismaService['company']['update']>[0]['data'],
+        });
+      }
+
+      const activeCompanies = await tx.company.findMany({
+        where: { isArchived: false },
+        select: { id: true, sortOrder: true },
+        orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+      });
+      const target = activeCompanies.find((company) => company.id === id);
+      const ordered = target
+        ? activeCompanies.filter((company) => company.id !== id)
+        : activeCompanies.slice();
+      if (target) {
+        const requested = dto.sortOrder ?? target.sortOrder;
+        const targetIndex = Math.max(0, Math.min(ordered.length, requested - 1));
+        ordered.splice(targetIndex, 0, target);
+      }
+
+      for (const [index, company] of ordered.entries()) {
+        const nextOrder = index + 1;
+        if (company.sortOrder === nextOrder) continue;
+        await tx.company.update({ where: { id: company.id }, data: { sortOrder: nextOrder } });
+      }
+
+      return tx.company.findUniqueOrThrow({ where: { id } });
     });
   }
 

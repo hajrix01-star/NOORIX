@@ -98,6 +98,7 @@ model Company {
   taxNumber          String?  @map("tax_number")
   email              String?
   isArchived         Boolean  @default(false) @map("is_archived")
+  sortOrder          Int      @default(0) @map("sort_order")
   vatEnabledForSales Boolean  @default(false) @map("vat_enabled_for_sales")
   vatRatePercent     Decimal  @default(15) @map("vat_rate_percent") @db.Decimal(5, 2)
   salesShiftsEnabled Boolean  @default(false) @map("sales_shifts_enabled")
@@ -138,6 +139,7 @@ model Company {
   dashboardCalendarData    DashboardCalendarData[]
 
   @@index([tenantId])
+  @@index([tenantId, sortOrder])
   @@map("companies")
 }
 

@@ -18,6 +18,7 @@ export type SettingsCompany = {
   email?: string | null;
   logoUrl?: string | null;
   isArchived?: boolean | null;
+  sortOrder?: number | null;
   vatEnabledForSales?: boolean | null;
   vatRatePercent?: number | string | null;
 };

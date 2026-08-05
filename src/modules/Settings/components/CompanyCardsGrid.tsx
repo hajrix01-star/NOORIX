@@ -33,6 +33,7 @@ export function CompanyCardsGrid({ companies, updateMutation, onOpenEdit }: Comp
               )}
             </div>
             <span className="noorix-exec-card__title">{company.nameAr}</span>
+            <span className="ms-auto shrink-0 rounded-full border border-noorix-border bg-noorix-bg-muted px-2 py-0.5 text-[11px] font-bold text-noorix-muted">#{Math.max(1, Number(company.sortOrder) || 1)}</span>
           </div>
           <div className="noorix-exec-card__total">
             <span className="noorix-exec-card__amount text-[18px]">{company.nameEn || company.nameAr}</span>

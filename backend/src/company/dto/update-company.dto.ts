@@ -16,6 +16,7 @@ export const updateCompanySchema = z.object({
   taxNumber: z.string().optional().nullable(),
   email: z.union([z.string().email(), z.literal('')]).optional().nullable(),
   isArchived: z.boolean().optional(),
+  sortOrder: z.number().int().min(1).max(10000).optional(),
   vatEnabledForSales: z.boolean().optional(),
   vatRatePercent: z.number().min(0).max(100).optional(),
   salesShiftsEnabled: z.boolean().optional(),
