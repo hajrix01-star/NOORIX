@@ -695,21 +695,23 @@ function OrdersV4ReversalConfirmModal({
   onConfirm: () => void | Promise<void>;
 }) {
   const undo = mode === 'undo';
+  const entity = document?.documentType === 'registration' ? 'التسجيل' : 'الطلب';
+  const actionLabel = undo ? `استعادة ${entity}` : `إلغاء ${entity}`;
   return <Modal
     open={!!document}
     onClose={onClose}
     size="sm"
-    title={undo ? 'تنبيه: إلغاء عكس المستند' : 'تنبيه قبل عكس المستند'}
+    title={undo ? `تنبيه: استعادة ${entity}` : `تنبيه قبل إلغاء ${entity}`}
     footer={<DialogActions actions={[
       { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose },
-      { key: 'confirm', label: undo ? 'تأكيد إلغاء العكس' : 'تأكيد العكس', role: undo ? 'save' : 'danger', onClick: onConfirm, loading: busy },
+      { key: 'confirm', label: `تأكيد ${actionLabel}`, role: undo ? 'save' : 'danger', onClick: onConfirm, loading: busy },
     ]} />}
   >
     {document && <div className="flex flex-col gap-3">
       <div className={`rounded-xl border p-3 text-[13px] leading-7 ${undo ? 'border-blue-200 bg-blue-50 text-blue-900' : 'border-amber-300 bg-amber-50 text-amber-950'}`}>
         {undo
-          ? 'هذه صلاحية للمالك فقط. سيتم إنشاء قيد جديد يلغي أثر قيد العكس ويعيد المستند إلى حالة مستلم، مع بقاء جميع القيود السابقة محفوظة للمراجعة.'
-          : 'العكس لا يحذف المستند. سيتم إنشاء قيد عكسي مستقل يعكس أثر المخزون والعهدة والتكلفة، ويبقى المستند وسلسلة القيود محفوظين. يستطيع المالك فقط إلغاء العكس لاحقاً.'}
+          ? `هذه صلاحية للمالك فقط. ستتم استعادة ${entity} وإعادة أثره على المخزون والعهدة والتكلفة، مع بقاء جميع القيود السابقة محفوظة للمراجعة.`
+          : `إلغاء ${entity} لا يحذف بياناته. سينشئ النظام قيدًا محاسبيًا عكسيًا يلغي أثر المخزون والعهدة والتكلفة، مع حفظ المستند وسجل المراجعة. يستطيع المالك استعادته لاحقًا.`}
       </div>
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-noorix-bg-muted p-3 text-[12px]">
         <span>المستند: <b>{document.documentNumber}</b></span>
@@ -803,10 +805,10 @@ function OrdersV4DocumentDetails({ document, canReopen, canReverse, canUndoRever
         ? [{ key: 'reopen', label: 'تعديل الطلب', role: 'edit' as const, onClick: () => onReopen(document) }]
         : []),
       ...(canReverse && document.status === 'received'
-        ? [{ key: 'reverse', label: 'عكس الطلب', role: 'danger' as const, onClick: () => onReverse(document) }]
+        ? [{ key: 'reverse', label: document.documentType === 'registration' ? 'إلغاء التسجيل' : 'إلغاء الطلب', role: 'danger' as const, onClick: () => onReverse(document) }]
         : []),
       ...(canUndoReverse && document.status === 'reversed' && !document.calculationSnapshot?.reopenedByDocumentId
-        ? [{ key: 'undo-reverse', label: 'إلغاء العكس', role: 'edit' as const, onClick: () => onUndoReverse(document) }]
+        ? [{ key: 'undo-reverse', label: document.documentType === 'registration' ? 'استعادة التسجيل' : 'استعادة الطلب', role: 'edit' as const, onClick: () => onUndoReverse(document) }]
         : []),
     ] : [{ key: 'close', label: t('ordersV4Close'), onClick: onClose, role: 'cancel' }]} />}
   >

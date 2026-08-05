@@ -43,7 +43,7 @@ export default {
   ordersV4StatusAwaitingReceipt: { ar: 'استلام', en: 'Receive' },
   ordersV4StatusCorrected: { ar: 'تم تصحيحه', en: 'Corrected' },
   ordersV4StatusReopened: { ar: 'أعيد فتحه', en: 'Reopened' },
-  ordersV4StatusReversed: { ar: 'معكوس', en: 'Reversed' },
+  ordersV4StatusReversed: { ar: 'ملغي', en: 'Cancelled' },
   ordersV4StatusCancelled: { ar: 'ملغي', en: 'Cancelled' },
   ordersV4InternalActions: { ar: 'إجراءات التسجيل الداخلي', en: 'Internal registration actions' },
   ordersV4NewRegistration: { ar: 'تسجيل جديد', en: 'New registration' },

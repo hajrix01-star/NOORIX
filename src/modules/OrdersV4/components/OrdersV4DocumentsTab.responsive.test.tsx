@@ -276,11 +276,11 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
       canUndoReverse
     />);
 
-    expect(screen.queryByRole('button', { name: 'إلغاء العكس' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'استعادة الطلب' })).toBeNull();
     const row = screen.getByText('REQ4-REVERSED').closest('tr');
     expect(row?.className).toContain('orders-v4-document-row--reversed');
     fireEvent.click(screen.getByText('REQ4-REVERSED'));
-    expect(screen.getByRole('button', { name: 'إلغاء العكس' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'استعادة الطلب' })).toBeTruthy();
   });
 
   it('shows reverse only after opening a received document', () => {
@@ -298,9 +298,9 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
       canReverse
     />);
 
-    expect(screen.queryByRole('button', { name: 'عكس الطلب' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'إلغاء الطلب' })).toBeNull();
     fireEvent.click(screen.getByText('REQ4-RECEIVED'));
-    expect(screen.getByRole('button', { name: 'عكس الطلب' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'إلغاء الطلب' })).toBeTruthy();
   });
 
   it('shows the owner-only reopen warning for a received purchase', () => {

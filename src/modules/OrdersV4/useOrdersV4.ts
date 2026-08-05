@@ -169,7 +169,7 @@ export function useReverseOrdersV4Document(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) => reverseOrdersV4Document(companyId, id, idempotencyKey),
     invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
-    successToast: 'تم عكس مستند V4',
+    successToast: 'تم إلغاء المستند مع حفظ سجل المراجعة',
     showErrorToast: true,
   });
 }
@@ -178,7 +178,7 @@ export function useUndoReverseOrdersV4Document(companyId: string) {
   return useApiMutation({
     mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) => undoReverseOrdersV4Document(companyId, id, idempotencyKey),
     invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
-    successToast: 'تم إلغاء العكس وإعادة تطبيق الأثر الدفتري للمستند',
+    successToast: 'تمت استعادة المستند وإعادة تطبيق أثره الدفتري',
     showErrorToast: true,
   });
 }

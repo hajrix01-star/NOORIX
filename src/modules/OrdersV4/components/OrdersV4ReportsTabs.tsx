@@ -262,7 +262,7 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
 }
 
 function statusLabel(status: string): string {
-  return status === 'received' ? 'مستلم' : status === 'prepared' ? 'معد' : status === 'cancelled' ? 'ملغي' : status === 'reversed' ? 'معكوس' : status;
+  return status === 'received' ? 'مستلم' : status === 'prepared' ? 'معد' : status === 'cancelled' ? 'ملغي' : status === 'reversed' ? 'ملغي بعد الترحيل' : status;
 }
 
 type InternalView = 'operations' | 'missing' | 'items' | 'sections' | 'employees' | 'daily';
@@ -353,7 +353,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
         <OrdersV4Field label="الفئة"><SearchableOptionsPicker mode="multiple" values={categoryIds} onChange={setCategoryIds} options={categoryOptions.map((category) => ({ value: category.id, label: category.nameAr }))} emptyLabel="كل الفئات" showClearAll /></OrdersV4Field>
         <OrdersV4Field label="الصنف"><SearchableOptionsPicker mode="multiple" values={itemIds} onChange={setItemIds} options={itemOptions.map((item) => ({ value: item.id, label: item.nameAr }))} emptyLabel="كل الأصناف" showClearAll /></OrdersV4Field>
         <OrdersV4Field label="الموظف"><OrdersV4Select value={createdByUserId} onChange={(event) => setCreatedByUserId(event.target.value)}><option value="">كل الموظفين</option>{users.map((user) => <option key={user.id} value={user.id}>{v4UserLabel(user)}</option>)}</OrdersV4Select></OrdersV4Field>
-        <OrdersV4Field label="الحالة"><OrdersV4Select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">كل الحالات</option><option value="received">مستلم</option><option value="prepared">معد</option><option value="cancelled">ملغي</option><option value="reversed">معكوس</option></OrdersV4Select></OrdersV4Field>
+        <OrdersV4Field label="الحالة"><OrdersV4Select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">كل الحالات</option><option value="received">مستلم</option><option value="prepared">معد</option><option value="cancelled">ملغي</option><option value="reversed">ملغي بعد الترحيل</option></OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label={t('ordersV4CancellationRecordType')}><OrdersV4Select value={entryType} onChange={(event) => setEntryType(event.target.value as typeof entryType)}><option value="">كل السجلات</option><option value="issue">تسجيل داخلي</option><option value="cancellation">تسجيل إلغاء</option></OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label={t('staffCancellationReasons')}><OrdersV4Select value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value as OrdersV4CancellationReason | '')}><option value="">كل الأسباب</option>{ORDERS_V4_CANCELLATION_REASON_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.translationKey)}</option>)}</OrdersV4Select></OrdersV4Field>
         <div className="flex items-end"><Button size="sm" variant="ghost" onClick={() => { setSearch(''); setSectionIds([]); setCategoryIds([]); setItemIds([]); setCreatedByUserId(''); setStatus('received'); setEntryType(''); setCancellationReason(''); }}>إعادة ضبط الفلاتر</Button></div>
