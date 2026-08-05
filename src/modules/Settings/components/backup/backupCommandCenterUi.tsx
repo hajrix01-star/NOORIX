@@ -52,7 +52,7 @@ export function ScheduleNumberInput({ id, label, value, min, max, fallback, disa
       min={min}
       max={max}
       label={label}
-      className="noorix-bank-filter"
+      containerClassName="min-w-0"
       value={value}
       onChange={(event: ChangeEvent<HTMLInputElement>) =>
         onValue(Math.min(max, Math.max(min, Number(event.target.value) || fallback)))

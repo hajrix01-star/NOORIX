@@ -160,10 +160,10 @@ export function BackupCommandCenter({
       />
 
       {canSystemBackup && (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
           <Card padding="sm" className="flex flex-col gap-3 min-w-0 border-l-[3px] border-l-nx-profit">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div>
+            <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div className="min-w-0">
                 <h3 className="m-0 text-[14px] font-extrabold text-noorix-text">{t('backupSystemHeading')}</h3>
                 <p className="m-0 mt-1 text-[12px] text-noorix-muted leading-relaxed">{t('backupSystemFullArchiveHint')}</p>
               </div>
@@ -171,7 +171,7 @@ export function BackupCommandCenter({
                 type="button"
                 variant="primary"
                 size="sm"
-                className="min-h-[40px] md:min-w-[190px]"
+                className="min-h-[40px] w-full lg:w-auto lg:min-w-[190px]"
                 disabled={runFullArchiveMut.isPending}
                 onClick={() => runFullArchiveMut.mutate()}
               >
@@ -179,56 +179,29 @@ export function BackupCommandCenter({
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(160px,0.9fr)_repeat(3,minmax(92px,0.55fr))_auto] md:items-end">
+            <div className="flex min-w-0 flex-col gap-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/25 p-3">
               <Checkbox
                 checked={sysForm.enabled}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => setSysForm((previous) => ({ ...previous, enabled: event.target.checked }))}
                 label={t('backupSystemEnabled')}
-                containerClassName="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none pb-2"
+                containerClassName="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none"
               />
-              <ScheduleNumberInput
-                id="backup-system-hour"
-                label={t('backupSystemHour')}
-                value={sysForm.scheduleHour}
-                min={0}
-                max={23}
-                fallback={0}
-                onValue={(scheduleHour) => setSysForm((previous) => ({ ...previous, scheduleHour }))}
-              />
-              <ScheduleNumberInput
-                id="backup-system-minute"
-                label={t('backupSystemMinute')}
-                value={sysForm.scheduleMinute}
-                min={0}
-                max={59}
-                fallback={0}
-                onValue={(scheduleMinute) => setSysForm((previous) => ({ ...previous, scheduleMinute }))}
-              />
-              <ScheduleNumberInput
-                id="backup-system-retention"
-                label={t('backupSystemRetention')}
-                value={sysForm.retentionCount}
-                min={1}
-                max={50}
-                fallback={10}
-                onValue={(retentionCount) => setSysForm((previous) => ({ ...previous, retentionCount }))}
-              />
-              <Button
-                type="button"
-                size="sm"
-                className="min-h-[40px]"
-                disabled={saveSysMut.isPending}
-                onClick={() =>
-                  saveSysMut.mutate({
-                    enabled: sysForm.enabled,
-                    scheduleHour: sysForm.scheduleHour,
-                    scheduleMinute: sysForm.scheduleMinute,
-                    retentionCount: sysForm.retentionCount,
-                  })
-                }
-              >
-                {saveSysMut.isPending ? t('loading') : t('backupSystemSave')}
-              </Button>
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
+                <ScheduleNumberInput id="backup-system-hour" label={t('backupSystemHour')} value={sysForm.scheduleHour} min={0} max={23} fallback={0} onValue={(scheduleHour) => setSysForm((previous) => ({ ...previous, scheduleHour }))} />
+                <ScheduleNumberInput id="backup-system-minute" label={t('backupSystemMinute')} value={sysForm.scheduleMinute} min={0} max={59} fallback={0} onValue={(scheduleMinute) => setSysForm((previous) => ({ ...previous, scheduleMinute }))} />
+                <ScheduleNumberInput id="backup-system-retention" label={t('backupSystemRetention')} value={sysForm.retentionCount} min={1} max={50} fallback={10} onValue={(retentionCount) => setSysForm((previous) => ({ ...previous, retentionCount }))} />
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-[40px] w-full sm:w-auto"
+                  disabled={saveSysMut.isPending}
+                  onClick={() => saveSysMut.mutate({ enabled: sysForm.enabled, scheduleHour: sysForm.scheduleHour, scheduleMinute: sysForm.scheduleMinute, retentionCount: sysForm.retentionCount })}
+                >
+                  {saveSysMut.isPending ? t('loading') : t('backupSystemSave')}
+                </Button>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-noorix-border bg-noorix-bg-muted/40 px-3 py-2">
@@ -251,10 +224,11 @@ export function BackupCommandCenter({
                 {label('لقطة منطقية للشركة للاستيراد كشركة جديدة عند الحاجة.', 'Logical company snapshot for importing as a new company when needed.')}
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
               <Input
                 type="select"
                 label={t('backupCompanyPick')}
+                containerClassName="min-w-0"
                 value={companyId}
                 onChange={(event: ChangeEvent<HTMLSelectElement>) => setCompanyId(event.target.value)}
                 disabled={!activeCompanies.length}
@@ -269,18 +243,18 @@ export function BackupCommandCenter({
                 type="button"
                 size="sm"
                 variant="primary"
-                className="min-h-[40px]"
+                className="min-h-[40px] w-full sm:w-auto"
                 disabled={!companyId || !activeCompanies.length || triggerMut.isPending}
                 onClick={() => triggerMut.mutate()}
               >
                 {triggerMut.isPending ? t('loading') : t('backupRunNow')}
               </Button>
             </div>
-            <details className="rounded-md border border-noorix-border bg-noorix-bg-muted/30 px-3 py-2">
+            <details className="min-w-0 overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/30 px-3 py-2">
               <summary className="cursor-pointer text-[12px] font-bold text-noorix-muted list-none [&::-webkit-details-marker]:hidden">
                 {t('backupCompanyScheduleTitle')}
               </summary>
-              <div className="mt-3 grid grid-cols-1 gap-2">
+              <div className="mt-3 flex min-w-0 flex-col gap-3">
                 <Checkbox
                   checked={coForm.enabled}
                   onChange={(event: ChangeEvent<HTMLInputElement>) => setCoForm((previous) => ({ ...previous, enabled: event.target.checked }))}
@@ -288,18 +262,19 @@ export function BackupCommandCenter({
                   label={t('backupCompanyDailyEnabled')}
                   containerClassName="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none"
                 />
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
                   <ScheduleNumberInput id="backup-company-hour" label={t('backupSystemHour')} value={coForm.scheduleHour} min={0} max={23} fallback={0} disabled={!companyId} onValue={(scheduleHour) => setCoForm((previous) => ({ ...previous, scheduleHour }))} />
                   <ScheduleNumberInput id="backup-company-minute" label={t('backupSystemMinute')} value={coForm.scheduleMinute} min={0} max={59} fallback={0} disabled={!companyId} onValue={(scheduleMinute) => setCoForm((previous) => ({ ...previous, scheduleMinute }))} />
                   <ScheduleNumberInput id="backup-company-retention" label={t('backupCompanyRetention')} value={coForm.retentionCount} min={1} max={50} fallback={5} disabled={!companyId} onValue={(retentionCount) => setCoForm((previous) => ({ ...previous, retentionCount }))} />
                 </div>
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col gap-3 border-t border-noorix-border pt-3 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-[11px] text-noorix-muted">
                     {t('backupCompanyLastRun')}: <strong dir="ltr">{coCfgRes?.success && coCfgRes.data?.lastRunDayRiyadh ? coCfgRes.data.lastRunDayRiyadh : '-'}</strong>
                   </span>
                   <Button
                     type="button"
                     size="sm"
+                    className="min-h-[40px] w-full sm:w-auto"
                     disabled={!companyId || saveCoMut.isPending}
                     onClick={() =>
                       saveCoMut.mutate({
