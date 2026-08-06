@@ -61,6 +61,18 @@ describe('buildInvoiceListQueryParts', () => {
     });
   });
 
+  it('matches report categories across invoice, expense line, and supplier category links', () => {
+    const { where } = buildInvoiceListQueryParts(query({ categoryId: 'category-1,category-2' }));
+
+    expect(where).toMatchObject({
+      OR: [
+        { categoryId: { in: ['category-1', 'category-2'] } },
+        { expenseLine: { is: { categoryId: { in: ['category-1', 'category-2'] } } } },
+        { supplier: { is: { supplierCategoryId: { in: ['category-1', 'category-2'] } } } },
+      ],
+    });
+  });
+
   it('filters vaults by direct vault and split allocations', () => {
     const { where } = buildInvoiceListQueryParts(query({ vaultId: 'vault-1' }));
 

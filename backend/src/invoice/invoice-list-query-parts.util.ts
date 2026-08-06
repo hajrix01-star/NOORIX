@@ -22,6 +22,18 @@ function buildSupplierCategoryFilter(supplierCategoryId?: string): Prisma.Invoic
   return { supplier: { is: { supplierCategoryId: { in: ids } } } };
 }
 
+function buildCategoryFilter(categoryId?: string): Prisma.InvoiceWhereInput {
+  const ids = parseCsvTokens(categoryId);
+  if (!ids.length) return {};
+  return {
+    OR: [
+      { categoryId: { in: ids } },
+      { expenseLine: { is: { categoryId: { in: ids } } } },
+      { supplier: { is: { supplierCategoryId: { in: ids } } } },
+    ],
+  };
+}
+
 function buildVaultFilter(vaultId?: string): Prisma.InvoiceWhereInput {
   const ids = parseCsvTokens(vaultId);
   if (!ids.length) return {};
@@ -81,7 +93,7 @@ export function buildInvoiceListQueryParts({
   const kindFilter = kindIds.length ? { kind: { in: kindIds } } : {};
   const supplierFilter = buildSupplierFilter(supplierId);
   const supplierCategoryFilter = buildSupplierCategoryFilter(supplierCategoryId);
-  const categoryFilter = categoryId ? { categoryId } : {};
+  const categoryFilter = buildCategoryFilter(categoryId);
   const expenseLineFilter = expenseLineId ? { expenseLineId } : {};
   const expenseLinePresenceFilter: Prisma.InvoiceWhereInput =
     requireExpenseLine === true ? { expenseLineId: { not: null } } : {};

@@ -7,6 +7,7 @@ import { AuditLogService } from '../audit/audit-log.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
 import { VaultsService } from '../vaults/vaults.service';
 import { toYmd } from '../common/utils/to-ymd.util';
+import { expandCategoryTreeIds } from '../common/utils/category-tree.util';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
@@ -320,7 +321,19 @@ export class InvoiceService {
 
   async findAll(query: InvoiceListQueryContract, includeExecSummary = true) {
     const { companyId } = query;
-    const { where, orderBy, size, p, aggKey, activeWhere } = buildInvoiceListQueryParts(query);
+    let effectiveQuery = query;
+    const requestedCategoryIds = [...new Set(
+      String(query.categoryId || '').split(',').map((id) => id.trim()).filter(Boolean),
+    )];
+    if (requestedCategoryIds.length) {
+      const categoryRows = await this.prisma.category.findMany({
+        where: { companyId },
+        select: { id: true, parentId: true },
+      });
+      const expandedCategoryIds = expandCategoryTreeIds(requestedCategoryIds, categoryRows);
+      effectiveQuery = { ...query, categoryId: [...expandedCategoryIds].sort().join(',') };
+    }
+    const { where, orderBy, size, p, aggKey, activeWhere } = buildInvoiceListQueryParts(effectiveQuery);
     const aggTtlMs = 60_000;
     const aggNow = Date.now();
     const hitAgg = this.invoiceListAggCache.get(aggKey);

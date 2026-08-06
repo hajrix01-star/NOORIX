@@ -1,17 +1,11 @@
 import type { CategoryNode } from './reports-general-profit-loss-model.util';
+import { expandCategoryTreeIds } from '../common/utils/category-tree.util';
 
 export function getCategoryAndDescendantIds(
   categoryId: string,
   categories: Map<string, CategoryNode>,
 ): Set<string> {
-  const set = new Set<string>([categoryId]);
-  for (const cat of categories.values()) {
-    if (cat.parentId === categoryId) {
-      set.add(cat.id);
-      for (const id of getCategoryAndDescendantIds(cat.id, categories)) set.add(id);
-    }
-  }
-  return set;
+  return expandCategoryTreeIds([categoryId], categories.values());
 }
 
 /** هل catId فرع (أو أعمق) تحت ancestorId — للمشتريات: فئة المورد الفرعية تحت فئة سطر الفاتورة */
