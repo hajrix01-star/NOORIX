@@ -116,14 +116,11 @@ export function isPurchaseBatchLineValid(
     const normalized = normalizePurchaseBatchLine(row);
     if (new Decimal(normalized.totalAmount || 0).lte(0)) return false;
 
-    if (normalized.supplierId) {
-      if (isSupplierInvoiceNumberRequired(normalized)) {
-        return !!(normalized.supplierInvoiceNumber || normalized.invoiceNumber);
-      }
-      return true;
+    if (isSupplierInvoiceNumberRequired(normalized)) {
+      return !!(normalized.supplierInvoiceNumber || normalized.invoiceNumber);
     }
 
-    if (normalized.expenseLineId) return true;
+    if (normalized.supplierId || normalized.expenseLineId) return true;
 
     if (
       (normalized.kind === 'expense' || normalized.kind === 'fixed_expense') &&

@@ -61,6 +61,25 @@ describe('purchaseBatchRules', () => {
     }, '')).toBe(true);
   });
 
+  it('rejects a taxable variable expense line without a supplier invoice number', () => {
+    expect(isPurchaseBatchLineValid({
+      kind: 'expense',
+      expenseLineId: 'line-electricity',
+      totalInclusive: 115,
+      isTaxable: true,
+    }, '')).toBe(false);
+  });
+
+  it('accepts a taxable variable expense line after its supplier invoice number is provided', () => {
+    expect(isPurchaseBatchLineValid({
+      kind: 'expense',
+      expenseLineId: 'line-electricity',
+      supplierInvoiceNumber: 'ELEC-1',
+      totalInclusive: 115,
+      isTaxable: true,
+    }, '')).toBe(true);
+  });
+
   it('accepts government/HR expense with supplier and no invoice number', () => {
     expect(isPurchaseBatchLineValid({
       kind: 'hr_expense',

@@ -38,6 +38,7 @@ type CommonProps = {
   disabled?: boolean;
   id?: string;
   'aria-label'?: string;
+  invalid?: boolean;
   size?: 'sm' | 'md';
   /** تسمية فوق الحقل (نماذج) */
   label?: React.ReactNode;
@@ -79,6 +80,7 @@ export function SearchableOptionsPicker(props: SearchableOptionsPickerProps) {
     disabled,
     id,
     'aria-label': ariaLabel,
+    invalid,
     size = 'md',
     label,
     emptyLabel,
@@ -319,6 +321,7 @@ export function SearchableOptionsPicker(props: SearchableOptionsPickerProps) {
       aria-expanded={open}
       aria-haspopup="listbox"
       aria-label={openListAria}
+      aria-invalid={invalid || undefined}
       onClick={() => !disabled && setOpen((o) => !o)}
       className={cn(TRIGGER_BASE, SIZE_TRIGGER[size] ?? SIZE_TRIGGER.md, className)}
     >

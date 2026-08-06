@@ -23,7 +23,7 @@ import {
 import { loadInvoiceListInflowByVault } from './invoice-list-inflow-by-vault.util';
 import { loadInvoiceDayCloseReport } from './invoice-day-close-report.util';
 import { loadPurchaseBatchSummaries } from './invoice-purchase-batch-summaries.util';
-import { filterValidInvoiceBatchLineItems } from './invoice-batch-valid-items.util';
+import { requireAllInvoiceBatchLineItemsValid } from './invoice-batch-valid-items.util';
 import { buildOutflowDtosForInvoiceBatch } from './invoice-batch-build-dtos.util';
 import {
   assertCreateInvoiceSupplierInvoiceNumberIfRequired,
@@ -143,10 +143,7 @@ export class InvoiceService {
     try {
       const batchId = `B-${randomUUID()}`;
       const batchNotesPart = dto.batchNotes?.trim() || '';
-      const validItems = filterValidInvoiceBatchLineItems(dto.items, batchNotesPart);
-      if (validItems.length === 0) {
-        throw new BadRequestException('لا توجد فواتير صالحة للحفظ.');
-      }
+      const validItems = requireAllInvoiceBatchLineItemsValid(dto.items, batchNotesPart);
       const txDate = toYmd(
         typeof dto.transactionDate === 'string' ? dto.transactionDate : new Date(dto.transactionDate),
       );

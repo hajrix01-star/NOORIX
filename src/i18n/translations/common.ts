@@ -233,6 +233,37 @@ export default {
   expenseCoverageColumn: { ar: 'التغطية', en: 'Coverage' },
   expenseRecordNew: { ar: '+ تسجيل مصروف جديد', en: '+ Record new expense' },
   expenseBatchRowsValidHint: { ar: 'جاهزة للحفظ', en: 'Ready to save' },
+  expenseBatchRowsStatus: {
+    ar: '{0} جاهزة للحفظ • {1} تحتاج إكمال',
+    en: '{0} ready to save • {1} need attention',
+  },
+  expenseBatchLineRequired: {
+    ar: 'اختر بند المصروف لهذا الصف.',
+    en: 'Select an expense line for this row.',
+  },
+  expenseBatchLineInvalid: {
+    ar: 'بند المصروف المحدد غير متاح؛ أعد اختياره.',
+    en: 'The selected expense line is unavailable. Select it again.',
+  },
+  expenseBatchAmountRequired: {
+    ar: 'أدخل مبلغاً أكبر من صفر.',
+    en: 'Enter an amount greater than zero.',
+  },
+  expenseBatchSupplierInvoiceRequired: {
+    ar: 'رقم فاتورة المورد مطلوب لهذا المصروف الخاضع للضريبة.',
+    en: 'A supplier invoice number is required for this taxable expense.',
+  },
+  expenseBatchFixInvalidRows: {
+    ar: 'أكمل {0} صف/صفوف قبل الحفظ. لن يتم حفظ أي صف بشكل جزئي.',
+    en: 'Complete {0} row(s) before saving. No rows will be saved partially.',
+  },
+  expenseBatchDraftTotalsHint: {
+    ar: 'مجاميع المسودة تشمل كل الصفوف التي تحتوي على بند ومبلغ صحيح، حتى تكتمل بيانات الحفظ المطلوبة.',
+    en: 'Draft totals include every row with a valid expense line and amount, even while required save details are incomplete.',
+  },
+  expenseBatchDraftNet: { ar: 'صافي المسودة', en: 'Draft net' },
+  expenseBatchDraftVat: { ar: 'ضريبة المسودة', en: 'Draft VAT' },
+  expenseBatchDraftTotal: { ar: 'إجمالي المسودة', en: 'Draft total' },
   expenseBatchAddRow: { ar: '+ إضافة صف', en: '+ Add row' },
   savedSuccessfully: { ar: 'تم الحفظ بنجاح', en: 'Saved successfully' },
   apiRequestFailed: { ar: 'فشل الطلب', en: 'Request failed' },

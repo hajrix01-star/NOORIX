@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import { isSupplierInvoiceNumberRequired } from '@noorix/finance-core';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type { OutflowDto } from '../financial-core/dto/financial-operation.dto';
 import type { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
@@ -46,6 +47,18 @@ export async function buildOutflowDtosForInvoiceBatch(
         kind = resolveOutflowKind(line.kind);
         debitAccountId = debitAccountId || line.category?.accountId || undefined;
       }
+    }
+
+    if (
+      isSupplierInvoiceNumberRequired({
+        kind,
+        supplierId,
+        expenseLineId: item.expenseLineId,
+        isTaxable: item.isTaxable,
+      }) &&
+      !(item.supplierInvoiceNumber ?? item.invoiceNumber)?.trim()
+    ) {
+      throw new Error('رقم فاتورة المورد مطلوب للمصروف الخاضع للضريبة. لم يتم حفظ أي صف.');
     }
 
     const total = new Decimal(String(item.totalAmount));

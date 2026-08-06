@@ -10,16 +10,24 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Checkbox, TransactionDatePicker, Input, ScreenShell, cn, FmtNum, SmartTable, SearchableOptionsPicker, SummaryBar } from '../../../ui';
+import { Button, Checkbox, TransactionDatePicker, Input, ScreenShell, cn, FmtNum, SmartTable, SearchableOptionsPicker } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import type { ExpenseLineRecord } from '../../../types/api';
+import {
+  ExpenseBatchAmountField,
+  ExpenseBatchLinePickerField,
+  ExpenseBatchSupplierInvoiceField,
+} from './ExpenseBatchValidatedFields';
+import { ExpenseBatchFooter } from './ExpenseBatchFooter';
 import {
   buildExpenseBatchPayload,
   buildExpenseBatchRows,
   buildExpenseBatchViewRows,
   canShowExpensePaymentExemption,
+  invalidExpenseBatchRows,
   paymentVaultOptions,
   summarizeExpenseBatchDraft,
+  validateExpenseBatchRow,
   validExpenseBatchRows,
   type ExpenseBatchRow,
   type ExpenseBatchViewRow,
@@ -69,12 +77,18 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
 
   const vaultPickerOptions = useMemo(() => paymentVaultOptions(activeVaults, lang), [activeVaults, lang]);
   const validRows = useMemo(() => validExpenseBatchRows(rows, expenseLines), [rows, expenseLines]);
+  const invalidRows = useMemo(() => invalidExpenseBatchRows(rows, expenseLines), [rows, expenseLines]);
+  const rowValidationByKey = useMemo(
+    () => new Map(rows.map((row) => [row.key, validateExpenseBatchRow(row, expenseLines)])),
+    [rows, expenseLines],
+  );
   const tableData = useMemo(() => buildExpenseBatchViewRows(rows, expenseLines, lang, vatRateDecimal), [rows, expenseLines, lang, vatRateDecimal]);
   const summary = useMemo(() => summarizeExpenseBatchDraft(rows, expenseLines, vatRateDecimal), [rows, expenseLines, vatRateDecimal]);
 
   const saveMutation = useApiMutation({
     mutationFn: async () => {
       if (!vaultId) throw new Error(t('expenseBatchSelectVault'));
+      if (invalidRows.length > 0) throw new Error(t('expenseBatchFixInvalidRows', invalidRows.length));
       if (validRows.length === 0) throw new Error(t('expenseBatchNoValidRows'));
       return createInvoiceBatch(buildExpenseBatchPayload({
         companyId,
@@ -122,22 +136,20 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
     const index = row.index - 1;
     const line = expenseLines.find((item) => item.id === row.expenseLineId);
     const showExempt = canShowExpensePaymentExemption(line);
+    const validation = rowValidationByKey.get(row.key) ?? validateExpenseBatchRow(row, expenseLines);
     return (
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[13px] font-bold text-noorix-text">#{row.index}</span>
           <Button variant="danger" size="sm" className="min-h-[44px] sm:min-h-0" onClick={() => removeRow(index)}>{t('delete')}</Button>
         </div>
-        <SearchableOptionsPicker
+        <ExpenseBatchLinePickerField
           label={t('expenseLineNameCol')}
-          size="sm"
-          allowEmpty
-          emptyValue=""
-          emptyLabel={t('select')}
+          rowIndex={row.index}
           value={row.expenseLineId}
           onChange={(value) => updateRow(index, { expenseLineId: value })}
           options={expenseLinePickerOptions}
-          aria-label={t('expenseLineNameCol')}
+          validation={validation}
         />
         <div className="nx-mc__grid nx-mc__grid--2">
           <div>
@@ -159,22 +171,19 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
             containerClassName="cursor-pointer items-center text-[13px] font-medium text-noorix-text"
           />
         ) : null}
-        <Input
+        <ExpenseBatchSupplierInvoiceField
           label={t('supplierInvoiceNumber')}
-          type="text"
-          size="sm"
+          rowIndex={row.index}
           value={row.supplierInvoiceNumber}
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateRow(index, { supplierInvoiceNumber: event.target.value })}
-          placeholder={t('optional')}
+          validation={validation}
         />
-        <Input
+        <ExpenseBatchAmountField
           label={t('total')}
-          type="number"
-          step="0.01"
-          min="0"
+          rowIndex={row.index}
           value={row.totalInclusive}
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateRow(index, { totalInclusive: event.target.value })}
-          placeholder="0.00"
+          validation={validation}
         />
         <div className="nx-mc__grid nx-mc__grid--2">
           <div>
@@ -212,18 +221,18 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
       key: 'expenseLineId',
       size: 'name',
       label: t('expenseLineNameCol'),
-      render: (_value, row) => (
-        <SearchableOptionsPicker
-          size="sm"
-          allowEmpty
-          emptyValue=""
-          emptyLabel={t('select')}
-          value={row.expenseLineId}
-          onChange={(value) => updateRow(row.index - 1, { expenseLineId: value })}
-          options={expenseLinePickerOptions}
-          aria-label={t('expenseLineNameCol')}
-        />
-      ),
+      render: (_value, row) => {
+        const validation = rowValidationByKey.get(row.key) ?? validateExpenseBatchRow(row, expenseLines);
+        return (
+          <ExpenseBatchLinePickerField
+            rowIndex={row.index}
+            value={row.expenseLineId}
+            onChange={(value) => updateRow(row.index - 1, { expenseLineId: value })}
+            options={expenseLinePickerOptions}
+            validation={validation}
+          />
+        );
+      },
     },
     { key: 'categoryName', size: 'name', label: t('category'), render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
     { key: 'supplierName', size: 'supplier', label: t('supplier'), render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
@@ -250,30 +259,33 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
       key: 'supplierInvoiceNumber',
       size: 'document',
       label: t('supplierInvoiceNumber'),
-      render: (value, row) => (
-        <Input
-          type="text"
-          size="sm"
-          value={String(value || '')}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateRow(row.index - 1, { supplierInvoiceNumber: event.target.value })}
-          placeholder={t('optional')}
-        />
-      ),
+      render: (value, row) => {
+        const validation = rowValidationByKey.get(row.key) ?? validateExpenseBatchRow(row, expenseLines);
+        return (
+          <ExpenseBatchSupplierInvoiceField
+            rowIndex={row.index}
+            value={String(value || '')}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateRow(row.index - 1, { supplierInvoiceNumber: event.target.value })}
+            validation={validation}
+          />
+        );
+      },
     },
     {
       key: 'totalInclusive',
       size: 'money-md',
       label: t('total'),
-      render: (value, row) => (
-        <Input
-          type="number"
-          step="0.01"
-          min="0"
-          value={String(value || '')}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateRow(row.index - 1, { totalInclusive: event.target.value })}
-          placeholder="0.00"
-        />
-      ),
+      render: (value, row) => {
+        const validation = rowValidationByKey.get(row.key) ?? validateExpenseBatchRow(row, expenseLines);
+        return (
+          <ExpenseBatchAmountField
+            rowIndex={row.index}
+            value={String(value || '')}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateRow(row.index - 1, { totalInclusive: event.target.value })}
+            validation={validation}
+          />
+        );
+      },
     },
     { key: 'net', size: 'money-sm', label: t('expenseTaxBreakdownNet'), numeric: true, render: (value) => <FmtNum n={Number(value)} className="nx-cell-num nx-cell-num--green" /> },
     { key: 'tax', size: 'tax', label: t('expenseTaxBreakdownVat'), numeric: true, render: (value) => <FmtNum n={Number(value)} className="nx-cell-num text-noorix-amber" /> },
@@ -366,30 +378,13 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
         stripeMobileCards
       />
 
-      <SummaryBar
-        className="mt-6"
-        items={[
-          {
-            key: 'rows',
-            label: t('rows'),
-            value: rows.length,
-            tone: 'blue',
-            helper: `${summary.count} ${t('expenseBatchRowsValidHint')}`,
-          },
-          { key: 'net', label: t('expenseTaxBreakdownNet'), value: summary.totalNet, tone: 'green', currency: 'SR' },
-          { key: 'tax', label: t('expenseTaxBreakdownVat'), value: summary.totalTax, tone: 'amber', currency: 'SR' },
-          { key: 'total', label: t('total'), value: summary.total, currency: 'SR' },
-        ]}
+      <ExpenseBatchFooter
+        summary={summary}
+        rowCount={rows.length}
+        hasVault={!!vaultId}
+        isSaving={saveMutation.isPending}
+        onSave={() => saveMutation.mutate(undefined)}
       />
-      <Button
-        variant="primary"
-        size="md"
-        onClick={() => saveMutation.mutate(undefined)}
-        disabled={saveMutation.isPending || validRows.length === 0 || !vaultId}
-        className="mt-3 w-full min-h-[44px] sm:min-h-0"
-      >
-        {saveMutation.isPending ? t('saving') : t('save')}
-      </Button>
     </ScreenShell>
   );
 }

@@ -62,7 +62,12 @@ export type ExpenseDraftSummary = {
   totalNet: number;
   totalTax: number;
   total: number;
+  /** Number of entered rows that are fully ready to persist. */
   count: number;
+  /** Number of entered rows that must be corrected before the batch can be saved. */
+  invalidCount: number;
+  /** Number of rows included in the live draft totals. */
+  draftCount: number;
 };
 
 export type ExpensePaymentExportSource = Omit<Partial<ExpenseLinePaymentRecord>, 'id' | 'supplier' | 'expenseLine'> & {

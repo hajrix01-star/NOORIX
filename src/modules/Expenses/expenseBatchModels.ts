@@ -1,4 +1,4 @@
-import { splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
+import { roundAmountAsNumber, splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
 import type {
   ExpenseBatchCreatePayload,
   ExpenseBatchItemPayload,
@@ -17,6 +17,93 @@ import {
   parseOptionalMoney,
   parseRequiredMoney,
 } from './expenseSharedModels';
+
+export const EXPENSE_BATCH_INVALID_ROWS_ERROR = 'EXPENSE_BATCH_INVALID_ROWS';
+
+export type ExpenseBatchRowErrorKey =
+  | 'expenseBatchLineRequired'
+  | 'expenseBatchLineInvalid'
+  | 'expenseBatchAmountRequired'
+  | 'expenseBatchSupplierInvoiceRequired';
+
+export type ExpenseBatchRowValidation = {
+  isEmpty: boolean;
+  isCalculable: boolean;
+  isValid: boolean;
+  amount: number | null;
+  taxable: boolean;
+  supplierInvoiceNumberRequired: boolean;
+  expenseLineError?: ExpenseBatchRowErrorKey;
+  amountError?: ExpenseBatchRowErrorKey;
+  supplierInvoiceNumberError?: ExpenseBatchRowErrorKey;
+};
+
+export function isExpenseBatchRowEmpty(row: ExpenseBatchRow): boolean {
+  return (
+    !row.expenseLineId.trim() &&
+    !row.supplierInvoiceNumber.trim() &&
+    !row.totalInclusive.trim() &&
+    !row.notes.trim() &&
+    !row.warrantyFollowUp &&
+    !row.exemptThisPayment
+  );
+}
+
+export function validateExpenseBatchRow(
+  row: ExpenseBatchRow,
+  expenseLines: ExpenseLineRecord[],
+): ExpenseBatchRowValidation {
+  const isEmpty = isExpenseBatchRowEmpty(row);
+  if (isEmpty) {
+    return {
+      isEmpty: true,
+      isCalculable: false,
+      isValid: false,
+      amount: null,
+      taxable: false,
+      supplierInvoiceNumberRequired: false,
+    };
+  }
+
+  const line = expenseLines.find((item) => item.id === row.expenseLineId);
+  const amount = parseOptionalMoney(row.totalInclusive);
+  const taxable = isExpensePaymentTaxable(line, row.exemptThisPayment);
+  const supplierInvoiceNumberRequired = isExpenseSupplierInvoiceNumberRequired(line, taxable);
+  const expenseLineError: ExpenseBatchRowErrorKey | undefined =
+    !row.expenseLineId.trim()
+      ? 'expenseBatchLineRequired'
+      : !line
+        ? 'expenseBatchLineInvalid'
+        : undefined;
+  const amountError: ExpenseBatchRowErrorKey | undefined =
+    amount == null || amount <= 0 ? 'expenseBatchAmountRequired' : undefined;
+  const supplierInvoiceNumberError: ExpenseBatchRowErrorKey | undefined =
+    supplierInvoiceNumberRequired && !row.supplierInvoiceNumber.trim()
+      ? 'expenseBatchSupplierInvoiceRequired'
+      : undefined;
+
+  return {
+    isEmpty: false,
+    isCalculable: Boolean(line && amount != null && amount > 0),
+    isValid: !expenseLineError && !amountError && !supplierInvoiceNumberError,
+    amount,
+    taxable,
+    supplierInvoiceNumberRequired,
+    ...(expenseLineError ? { expenseLineError } : {}),
+    ...(amountError ? { amountError } : {}),
+    ...(supplierInvoiceNumberError ? { supplierInvoiceNumberError } : {}),
+  };
+}
+
+export function invalidExpenseBatchRows(
+  rows: ExpenseBatchRow[],
+  expenseLines: ExpenseLineRecord[],
+): ExpenseBatchRow[] {
+  return rows.filter((row) => {
+    const validation = validateExpenseBatchRow(row, expenseLines);
+    return !validation.isEmpty && !validation.isValid;
+  });
+}
 
 export function createExpenseBatchRow(seed: number): ExpenseBatchRow {
   return {
@@ -58,17 +145,7 @@ export function buildExpenseBatchViewRows(
 }
 
 export function validExpenseBatchRows(rows: ExpenseBatchRow[], expenseLines: ExpenseLineRecord[]): ExpenseBatchRow[] {
-  return rows.filter((row) => {
-    const amount = parseOptionalMoney(row.totalInclusive);
-    if (!row.expenseLineId || amount == null || amount <= 0) return false;
-    const line = expenseLines.find((item) => item.id === row.expenseLineId);
-    const taxable = isExpensePaymentTaxable(line, row.exemptThisPayment);
-    if (
-      isExpenseSupplierInvoiceNumberRequired(line, taxable) &&
-      !row.supplierInvoiceNumber.trim()
-    ) return false;
-    return Boolean(line);
-  });
+  return rows.filter((row) => validateExpenseBatchRow(row, expenseLines).isValid);
 }
 
 export function summarizeExpenseBatchDraft(
@@ -79,16 +156,24 @@ export function summarizeExpenseBatchDraft(
   let totalNet = 0;
   let totalTax = 0;
   let total = 0;
-  for (const row of validExpenseBatchRows(rows, expenseLines)) {
-    const line = expenseLines.find((item) => item.id === row.expenseLineId);
-    const amount = parseRequiredMoney(row.totalInclusive);
-    const taxable = isExpensePaymentTaxable(line, row.exemptThisPayment);
-    const { net, tax } = splitTaxFromTotalAsNumbers(amount, taxable, vatRateDecimal);
+  const validations = rows.map((row) => validateExpenseBatchRow(row, expenseLines));
+  for (let index = 0; index < rows.length; index += 1) {
+    const validation = validations[index];
+    if (!validation.isCalculable || validation.amount == null) continue;
+    const amount = validation.amount;
+    const { net, tax } = splitTaxFromTotalAsNumbers(amount, validation.taxable, vatRateDecimal);
     totalNet += net;
     totalTax += tax;
     total += amount;
   }
-  return { totalNet, totalTax, total, count: validExpenseBatchRows(rows, expenseLines).length };
+  return {
+    totalNet: roundAmountAsNumber(totalNet),
+    totalTax: roundAmountAsNumber(totalTax),
+    total: roundAmountAsNumber(total),
+    count: validations.filter((validation) => validation.isValid).length,
+    invalidCount: validations.filter((validation) => !validation.isEmpty && !validation.isValid).length,
+    draftCount: validations.filter((validation) => validation.isCalculable).length,
+  };
 }
 
 export function buildExpenseBatchPayload(params: {
@@ -99,12 +184,17 @@ export function buildExpenseBatchPayload(params: {
   expenseLines: ExpenseLineRecord[];
   idempotencyKey: string;
 }): ExpenseBatchCreatePayload {
+  const invalidRows = invalidExpenseBatchRows(params.rows, params.expenseLines);
+  if (invalidRows.length > 0) {
+    throw new Error(EXPENSE_BATCH_INVALID_ROWS_ERROR);
+  }
+  const validRows = validExpenseBatchRows(params.rows, params.expenseLines);
   return {
     companyId: params.companyId,
     transactionDate: params.batchDate,
     vaultId: params.vaultId,
     idempotencyKey: params.idempotencyKey,
-    items: validExpenseBatchRows(params.rows, params.expenseLines).map((row): ExpenseBatchItemPayload => {
+    items: validRows.map((row): ExpenseBatchItemPayload => {
       const line = params.expenseLines.find((item) => item.id === row.expenseLineId);
       if (!line) throw new Error('Invalid expense line');
       const lineName = expenseLineDisplayName(line, 'ar') || expenseLineDisplayName(line, 'en');
