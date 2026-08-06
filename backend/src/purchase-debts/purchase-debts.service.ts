@@ -7,6 +7,7 @@ import {
   normalizeSupplierInvoiceDedupKey,
 } from '../invoice/invoice-supplier-invoice-dedup.util';
 import { CreatePurchaseDebtDto } from './dto/create-purchase-debt.dto';
+import { CreatePurchaseDebtBatchDto } from './dto/create-purchase-debt-batch.dto';
 import { PurchaseDebtQueryDto } from './dto/purchase-debt-query.dto';
 import { UpdatePurchaseDebtDto } from './dto/update-purchase-debt.dto';
 import { toYmd } from '../common/utils/to-ymd.util';
@@ -240,6 +241,112 @@ export class PurchaseDebtsService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ConflictException('هذه الفاتورة مسجلة مسبقًا لنفس المورد.');
+      }
+      throw error;
+    }
+  }
+
+  async createBatch(companyId: string, dto: CreatePurchaseDebtBatchDto, userId: string) {
+    const prepared = dto.items.map((item, index) => {
+      const invoiceNumber = item.supplierInvoiceNumber.trim();
+      const normalizedInvoiceKey = normalizeSupplierInvoiceDedupKey(invoiceNumber);
+      if (!normalizedInvoiceKey) {
+        throw new BadRequestException(`رقم فاتورة المورد مطلوب في السطر ${index + 1}.`);
+      }
+      assertHistoricalInvoiceDate(item.invoiceDate);
+      return { item, invoiceNumber, normalizedInvoiceKey, rowNumber: index + 1 };
+    });
+
+    const seen = new Map<string, number>();
+    for (const entry of prepared) {
+      const compoundKey = `${entry.item.supplierId}\u0001${entry.normalizedInvoiceKey}`;
+      const firstRow = seen.get(compoundKey);
+      if (firstRow != null) {
+        throw new BadRequestException(
+          `تكرار داخل الدفعة: نفس المورد ورقم الفاتورة في السطر ${firstRow} والسطر ${entry.rowNumber}.`,
+        );
+      }
+      seen.set(compoundKey, entry.rowNumber);
+    }
+
+    const tenantId = TenantContext.getTenantId();
+    try {
+      return await this.prisma.withTenant(async (tx) => {
+        const supplierIds = [...new Set(prepared.map((entry) => entry.item.supplierId))];
+        const suppliers = await tx.supplier.findMany({
+          where: { id: { in: supplierIds }, companyId, isDeleted: false },
+          select: { id: true },
+        });
+        const validSupplierIds = new Set(suppliers.map((supplier) => supplier.id));
+        const invalidEntry = prepared.find((entry) => !validSupplierIds.has(entry.item.supplierId));
+        if (invalidEntry) {
+          throw new BadRequestException(`المورد في السطر ${invalidEntry.rowNumber} غير موجود في هذه الشركة.`);
+        }
+
+        const stagedRecords = await tx.purchaseDebtRecord.findMany({
+          where: {
+            companyId,
+            OR: prepared.map((entry) => ({
+              supplierId: entry.item.supplierId,
+              normalizedInvoiceKey: entry.normalizedInvoiceKey,
+            })),
+          },
+          select: { supplierId: true, normalizedInvoiceKey: true },
+        });
+        const stagedKeys = new Set(stagedRecords.map(
+          (record) => `${record.supplierId}\u0001${record.normalizedInvoiceKey}`,
+        ));
+        const stagedDuplicate = prepared.find((entry) => stagedKeys.has(
+          `${entry.item.supplierId}\u0001${entry.normalizedInvoiceKey}`,
+        ));
+        if (stagedDuplicate) {
+          throw new ConflictException(
+            `الفاتورة في السطر ${stagedDuplicate.rowNumber} مسجلة مسبقًا لنفس المورد. لم يتم حفظ أي سجل من الدفعة.`,
+          );
+        }
+
+        for (const entry of prepared) {
+          await assertNoActiveDuplicateSupplierInvoiceDedupKey(tx, {
+            companyId,
+            supplierId: entry.item.supplierId,
+            dedupKey: entry.normalizedInvoiceKey,
+          });
+        }
+
+        const records = [];
+        for (const entry of prepared) {
+          const record = await tx.purchaseDebtRecord.create({
+            data: {
+              tenantId,
+              companyId,
+              supplierId: entry.item.supplierId,
+              supplierInvoiceNumber: entry.invoiceNumber,
+              normalizedInvoiceKey: entry.normalizedInvoiceKey,
+              invoiceDate: new Date(entry.item.invoiceDate),
+              totalAmount: entry.item.totalAmount,
+              isTaxable: entry.item.isTaxable !== false,
+              notes: entry.item.notes?.trim() || null,
+              createdByUserId: userId,
+            },
+            include: itemInclude,
+          });
+          await tx.auditLog.create({ data: {
+            tenantId,
+            companyId,
+            userId,
+            action: 'create',
+            entity: 'purchase_debt_record',
+            entityId: record.id,
+            newValue: snapshot(record),
+          } });
+          records.push(record);
+        }
+
+        return { count: records.length, items: records };
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('إحدى الفواتير مسجلة مسبقًا لنفس المورد. لم يتم حفظ أي سجل من الدفعة.');
       }
       throw error;
     }

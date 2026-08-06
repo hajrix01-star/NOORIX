@@ -7,6 +7,7 @@ import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { requireCompanyId } from '../common/utils/require-company-id';
 import { CreatePurchaseDebtDto } from './dto/create-purchase-debt.dto';
+import { CreatePurchaseDebtBatchDto } from './dto/create-purchase-debt-batch.dto';
 import { PurchaseDebtQueryDto } from './dto/purchase-debt-query.dto';
 import { UpdatePurchaseDebtDto } from './dto/update-purchase-debt.dto';
 import { PurchaseDebtsService } from './purchase-debts.service';
@@ -30,6 +31,16 @@ export class PurchaseDebtsController {
     @CurrentUser() user: JwtUser,
   ) {
     return this.service.create(requireCompanyId(companyId), dto, user.sub);
+  }
+
+  @Post('batch')
+  @RequirePermission('PURCHASES_WRITE')
+  createBatch(
+    @CompanyId() companyId: string,
+    @Body() dto: CreatePurchaseDebtBatchDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.service.createBatch(requireCompanyId(companyId), dto, user.sub);
   }
 
   @Patch(':id')

@@ -16,6 +16,7 @@ import {
 import { purchaseKeys } from '../../../../services/queryKeys';
 import type { PurchaseBatchSupplier } from '../purchaseBatchTypes';
 import PurchaseDebtFormModal, { type PurchaseDebtFormValue } from './PurchaseDebtFormModal';
+import PurchaseDebtBatchModal from './PurchaseDebtBatchModal';
 
 type Props = {
   companyId: string;
@@ -44,6 +45,7 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [formOpen, setFormOpen] = useState(false);
+  const [batchOpen, setBatchOpen] = useState(false);
   const [editing, setEditing] = useState<PurchaseDebtRecord | null>(null);
   const debouncedSearch = useDebouncedValue(filters.q.trim(), 300);
 
@@ -172,6 +174,7 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
             disabled={selectedRecords.length === 0}
             onClick={() => onImport(selectedRecords)}
           >{ar ? `إضافة للإدخال الجماعي (${selectedRecords.length})` : `Add to batch entry (${selectedRecords.length})`}</Button>
+          <Button variant="success" onClick={() => setBatchOpen(true)}>+ {ar ? 'إدخال جماعي للمديونيات' : 'Batch debt entry'}</Button>
           <Button variant="success" onClick={() => { setEditing(null); setFormOpen(true); }}>+ {ar ? 'مديونية سابقة' : 'Previous debt'}</Button>
         </div>
       </div>
@@ -258,6 +261,13 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
         saving={saveMutation.isPending}
         onClose={() => { setFormOpen(false); setEditing(null); }}
         onSave={(value) => saveMutation.mutate(value)}
+      />
+      <PurchaseDebtBatchModal
+        open={batchOpen}
+        lang={lang}
+        suppliers={suppliers}
+        onClose={() => setBatchOpen(false)}
+        onSaved={refresh}
       />
     </div>
   );

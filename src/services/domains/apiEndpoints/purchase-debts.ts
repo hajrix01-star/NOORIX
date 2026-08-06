@@ -40,6 +40,20 @@ export type PurchaseDebtListResponse = {
   summary: PurchaseDebtSummary;
 };
 
+export type PurchaseDebtCreateInput = {
+  supplierId: string;
+  supplierInvoiceNumber: string;
+  invoiceDate: string;
+  totalAmount: number;
+  isTaxable?: boolean;
+  notes?: string;
+};
+
+export type PurchaseDebtBatchCreateResponse = {
+  count: number;
+  items: PurchaseDebtRecord[];
+};
+
 export type PurchaseDebtQuery = {
   status?: PurchaseDebtStatus | '';
   supplierId?: string;
@@ -71,6 +85,12 @@ export function getPurchaseDebts(query: PurchaseDebtQuery): Promise<ApiParsedRes
 
 export function createPurchaseDebt(body: unknown): Promise<ApiParsedResult<PurchaseDebtRecord>> {
   return apiPost('/api/v1/purchase-debts', body);
+}
+
+export function createPurchaseDebtsBatch(
+  items: PurchaseDebtCreateInput[],
+): Promise<ApiParsedResult<PurchaseDebtBatchCreateResponse>> {
+  return apiPost('/api/v1/purchase-debts/batch', { items });
 }
 
 export function updatePurchaseDebt(id: string, body: unknown): Promise<ApiParsedResult<PurchaseDebtRecord>> {
