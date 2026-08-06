@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { Button, Card, Checkbox, FileTrigger, FormRow, Input, SearchableOptionsPicker, TransactionDatePicker, cn } from '../../../ui';
+import { Badge, Button, Card, Checkbox, FileTrigger, FormRow, Input, SearchableOptionsPicker, TransactionDatePicker, cn } from '../../../ui';
 import { isWarrantyFollowUpKind } from '../utils/batchRowModel';
 import { purchaseBatchCategoryLabel } from '../batch/purchaseBatchDisplayModel';
 import { BatchNetTaxReadonly, BatchSupplierBookmarkButton, BatchSupplierPickInner, BatchTaxToggleButton } from './BatchRowParts';
@@ -22,6 +22,7 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
   } = useBatchRowLogic({
     row, index, suppliers, categories, onUpdate, maxInvoiceDate, vatRateDecimal,
   });
+  const isImportedDebt = !!row.legacyDebtId;
 
   const dateTitle = useMemo(
     () => (maxInvoiceDate ? `${t('date')} - <= ${maxInvoiceDate}` : undefined),
@@ -77,7 +78,12 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
           <label htmlFor={ids.supplier} className="mb-1 block text-[11px] font-semibold text-noorix-muted">
             {t('supplier')}
           </label>
-          <BatchSupplierPickInner
+          {isImportedDebt ? (
+            <div className="flex min-h-[40px] items-center justify-between gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3">
+              <span className="truncate text-[13px] font-semibold">{row.legacyDebtSupplierName || row.supplierId}</span>
+              <Badge size="sm" color="violet">{lang === 'en' ? 'Previous debt' : 'مديونية سابقة'}</Badge>
+            </div>
+          ) : <BatchSupplierPickInner
             suppliers={suppliers}
             row={row}
             bookmarkedIds={bookmarkedIds}
@@ -86,7 +92,7 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
             t={t}
             bookmarkSize="none"
             supplierInputId={ids.supplier}
-          />
+          />}
         </div>
 
         <FormRow cols={1} gap="sm">
@@ -95,6 +101,7 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
             label={t('supplierInvoiceNumber')}
             size="sm"
             value={row.invoiceNumber}
+            readOnly={isImportedDebt}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'invoiceNumber', e.target.value)}
             placeholder={t('invoiceNumberPlaceholder')}
             className="w-full"
@@ -107,6 +114,7 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
             step="0.1"
             size="sm"
             value={row.totalInclusive}
+            readOnly={isImportedDebt}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'totalInclusive', e.target.value)}
             placeholder={t('amountPlaceholderZero')}
             className="w-full font-bold nx-font-numbers"
@@ -115,7 +123,9 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
 
         <BatchNetTaxReadonly net={net} tax={tax} variant="stack" t={t} />
 
-        <TransactionDatePicker
+        {isImportedDebt ? (
+          <Input label={t('date')} value={row.invoiceDate} readOnly />
+        ) : <TransactionDatePicker
           id={ids.invoiceDate}
           label={t('date')}
           size="sm"
@@ -124,9 +134,11 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
           onValueChange={(v) => onUpdate(index, 'invoiceDate', maxInvoiceDate && v > maxInvoiceDate ? maxInvoiceDate : v)}
           className={cn('w-full', dateErrorClass(maxInvoiceDate, row.invoiceDate))}
           title={dateTitle}
-        />
+        />}
 
-        <SearchableOptionsPicker
+        {isImportedDebt ? (
+          <Input label={t('type')} value={t('purchaseType')} readOnly />
+        ) : <SearchableOptionsPicker
           id={ids.kind}
           label={t('type')}
           mode="single"
@@ -142,9 +154,9 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
           }}
           options={kindOptions}
           size="sm"
-        />
+        />}
 
-        {isWarrantyFollowUpKind(row.kind) ? (
+        {!isImportedDebt && isWarrantyFollowUpKind(row.kind) ? (
           <Checkbox
             checked={!!row.warrantyFollowUp}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
@@ -154,7 +166,7 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
           />
         ) : null}
 
-        <SearchableOptionsPicker
+        {!isImportedDebt ? <SearchableOptionsPicker
           id={ids.category}
           label={t('category')}
           mode="single"
@@ -168,15 +180,18 @@ export const BatchRowStack = memo(function BatchRowStack(props: BatchRowSharedPr
           emptyValue=""
           emptyLabel={t('categoryPlaceholder')}
           size="sm"
-        />
+        /> : null}
 
-        <BatchTaxToggleButton row={row} index={index} onUpdate={onUpdate} t={t} density="stack" />
+        {isImportedDebt ? (
+          <Input label={t('taxPct')} value={row.isTaxable ? '15%' : '—'} readOnly />
+        ) : <BatchTaxToggleButton row={row} index={index} onUpdate={onUpdate} t={t} density="stack" />}
 
         <Input
           id={ids.notes}
           label={t('notes')}
           size="sm"
           value={row.notes || ''}
+          readOnly={isImportedDebt}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'notes', e.target.value)}
           placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? t('batchNotesPlaceholderServiceName') : t('batchNotesPlaceholderEllipsis')}
           className="w-full"

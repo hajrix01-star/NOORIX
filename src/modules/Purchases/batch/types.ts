@@ -1,4 +1,4 @@
-export type PurchasesBatchTabId = 'entry' | 'history';
+export type PurchasesBatchTabId = 'entry' | 'history' | 'debts';
 
 export type {
   BatchTranslateFn,

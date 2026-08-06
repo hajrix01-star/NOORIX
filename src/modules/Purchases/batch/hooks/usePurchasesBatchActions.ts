@@ -13,7 +13,7 @@ import {
   uploadInvoiceAttachment,
 } from '../../../../services/api';
 import { supplierKeys } from '../../../../services/queryKeys';
-import { filterValidRowsForBatchSave } from '../utils/purchasesBatchGuards';
+import { filterValidRowsForBatchSave, isRowValidForBatchSave } from '../utils/purchasesBatchGuards';
 import { createEmptyPurchasesBatchRow } from '../constants';
 import {
   buildPurchaseBatchInvoiceUpdatePayload,
@@ -144,6 +144,9 @@ export function usePurchasesBatchActions(options: {
   const saveMutation = useApiMutation({
     mutationFn: async (): Promise<PurchaseBatchSaveResult> => {
       const batchPart = batchNotes.trim();
+      if (rows.some((row) => row.legacyDebtId && !isRowValidForBatchSave(row, batchPart))) {
+        throw new Error(t('purchaseDebtImportedRowIncomplete'));
+      }
       const validRows = filterValidRowsForBatchSave(rows, batchPart);
       if (!validRows.length) throw new Error(t('noValidRows'));
 

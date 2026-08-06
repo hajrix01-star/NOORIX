@@ -11,6 +11,7 @@ import { importBackupLogicalInvoicesAndAssets } from './backup-logical-import-in
 import { importBackupLogicalOperationalRecords } from './backup-logical-import-operational-records.util';
 import { mapImportedLedgerRef } from './backup-logical-import-ledger-ref.util';
 import { BackupLogicalImportTxParams } from './backup-logical-import-transaction.types';
+import { importBackupLogicalPurchaseDebts } from './backup-logical-import-purchase-debts.util';
 
 /**
  * جسم الاستيراد المنطقي داخل transaction — نفس التسلسل والخرائط.
@@ -34,6 +35,7 @@ export async function runBackupLogicalImportInTransaction(
     employeeMap,
     dailySalesSummaryMap,
   });
+  await importBackupLogicalPurchaseDebts(tx, p, { supplierMap, invoiceMap });
 
         // استثناء مقصود: استيراد لقطة منطقية — إعادة قيود من النسخة الاحتياطية (لا يمر بـ processOutflow/processInflow).
         for (const le of arr<Record<string, unknown>>(data.ledgerEntries)) {

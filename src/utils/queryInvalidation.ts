@@ -47,6 +47,7 @@ const FINANCIAL_QUERY_PREFIXES: readonly QueryKey[] = [
   salesKeys.channelsRoot(),
   salesKeys.entryContextRoot(),
   purchaseKeys.batchSummariesRoot(),
+  purchaseKeys.debtsRoot(),
   ledgerKeys.root(),
   reportKeys.root(),
   categoryKeys.root(),

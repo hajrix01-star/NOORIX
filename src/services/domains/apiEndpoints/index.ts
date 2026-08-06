@@ -12,6 +12,7 @@ export * from './employees';
 export * from './hr';
 export * from './suppliers';
 export * from './invoices';
+export * from './purchase-debts';
 export * from './backup';
 export * from './dashboard-overview';
 export * from './owner-overview';

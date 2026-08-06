@@ -3,7 +3,7 @@ import type { BatchTranslateFn, PurchaseBatchEntryRow } from './purchaseBatchTyp
 
 export const PAGE_SIZE = 50;
 
-export const PURCHASE_TAB_IDS = ['entry', 'history'] as const;
+export const PURCHASE_TAB_IDS = ['entry', 'history', 'debts'] as const;
 
 let purchaseBatchRowKeySeed = 0;
 
@@ -11,6 +11,7 @@ export function getPurchaseBatchTabs(t: BatchTranslateFn) {
   return [
     { id: 'entry', label: t('tabNewBatch'), icon: '' },
     { id: 'history', label: t('tabSavedBatches'), icon: '' },
+    { id: 'debts', label: t('purchaseDebtsTab'), icon: '' },
   ] satisfies Array<{ id: (typeof PURCHASE_TAB_IDS)[number]; label: string; icon: string }>;
 }
 

@@ -36,6 +36,7 @@ export class FinancialCancelService {
     return this.db.withTenant(async (tx) => {
       // ── [A] إلغاء الوثيقة الأصلية ────────────────────────
       let oldSnapshot: Record<string, unknown> = {};
+      let purchaseDebtReopened = false;
 
       if (dto.referenceType === 'invoice' || dto.referenceType === 'salary' || dto.referenceType === 'advance') {
         const inv = await tx.invoice.findFirst({
@@ -50,6 +51,31 @@ export class FinancialCancelService {
           where: { id: dto.referenceId },
           data:  { status: 'cancelled' },
         });
+
+        const promotedDebt = await tx.purchaseDebtRecord.findFirst({
+          where: { companyId: dto.companyId, promotedInvoiceId: dto.referenceId, status: 'promoted' },
+          select: { id: true },
+        });
+        if (promotedDebt) {
+          await tx.purchaseDebtRecord.update({
+            where: { id: promotedDebt.id },
+            data: {
+              status: 'pending', promotedAt: null, promotedByUserId: null,
+              promotedInvoiceId: null, promotionBatchId: null, promotionIdempotencyKey: null,
+              promotionInvoiceIds: [],
+            },
+          });
+          await tx.auditLog.create({
+            data: {
+              tenantId, companyId: dto.companyId, userId, action: 'update',
+              entity: 'purchase_debt_record', entityId: promotedDebt.id,
+              oldValue: { status: 'promoted', promotedInvoiceId: dto.referenceId } as JsonObject,
+              newValue: { status: 'pending', reopenedBecauseInvoiceCancelled: dto.referenceId } as JsonObject,
+              createdAt: entryDate,
+            },
+          });
+          purchaseDebtReopened = true;
+        }
 
       } else if (dto.referenceType === 'sale') {
         const summary = await tx.dailySalesSummary.findFirst({
@@ -105,6 +131,7 @@ export class FinancialCancelService {
         referenceType:  dto.referenceType,
         referenceId:    dto.referenceId,
         ledgersCancelled: ledgerCount.count,
+        purchaseDebtReopened,
       };
     });
   }

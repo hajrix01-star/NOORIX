@@ -71,14 +71,16 @@ model User {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  role              Role                @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  userCompanies     UserCompany[]
-  ledgerEntries     LedgerEntry[]       @relation("CreatedBy")
-  auditLogs         AuditLog[]
-  salesSummaries    DailySalesSummary[] @relation("SalesCreatedBy")
-  backupJobsCreated BackupJob[]         @relation("BackupCreatedBy")
-  invoicesCreated   Invoice[]           @relation("InvoiceCreatedBy")
+  tenant                Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role                  Role                 @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  userCompanies         UserCompany[]
+  ledgerEntries         LedgerEntry[]        @relation("CreatedBy")
+  auditLogs             AuditLog[]
+  salesSummaries        DailySalesSummary[]  @relation("SalesCreatedBy")
+  backupJobsCreated     BackupJob[]          @relation("BackupCreatedBy")
+  invoicesCreated       Invoice[]            @relation("InvoiceCreatedBy")
+  purchaseDebtsCreated  PurchaseDebtRecord[] @relation("PurchaseDebtCreatedBy")
+  purchaseDebtsPromoted PurchaseDebtRecord[] @relation("PurchaseDebtPromotedBy")
 
   @@index([tenantId])
   @@map("users")
@@ -137,6 +139,7 @@ model Company {
   companyInsightSettings   CompanyInsightSettings?
   vatPlanningQuarters      VatPlanningQuarter[]
   dashboardCalendarData    DashboardCalendarData[]
+  purchaseDebtRecords      PurchaseDebtRecord[]
 
   @@index([tenantId])
   @@index([tenantId, sortOrder])
@@ -817,6 +820,7 @@ model Supplier {
   expenseLines        ExpenseLine[]
   companyAssets       CompanyAsset[]
   employeeResidencies EmployeeResidency[]
+  purchaseDebtRecords PurchaseDebtRecord[]
 
   @@unique([companyId, directoryEntryId])
   @@index([tenantId])
@@ -1027,6 +1031,7 @@ model Invoice {
   leaveSalarySettlement LeaveSalarySettlement?
   employeeResidency     EmployeeResidency?
   companyAssets         CompanyAsset[]
+  purchaseDebtSource    PurchaseDebtRecord?      @relation("PurchaseDebtConvertedInvoice")
 
   @@unique([companyId, invoiceNumber])
   @@index([tenantId])
@@ -1041,6 +1046,45 @@ model Invoice {
   @@index([companyId, kind, warrantyFollowUp, warrantyFollowUpDone])
   @@index([companyId, createdByUserId])
   @@map("invoices")
+}
+
+/// سجل تشغيلي لفواتير الموردين القديمة قبل ترحيلها إلى فاتورة مشتريات فعلية.
+/// لا يشارك في القيود أو التقارير المالية حتى يتم الترحيل الذري عبر دفعة المشتريات.
+model PurchaseDebtRecord {
+  id                    String    @id @default(cuid())
+  tenantId              String    @map("tenant_id")
+  companyId             String    @map("company_id")
+  supplierId            String    @map("supplier_id")
+  supplierInvoiceNumber String    @map("supplier_invoice_number")
+  normalizedInvoiceKey  String    @map("normalized_invoice_key")
+  invoiceDate           DateTime  @map("invoice_date")
+  totalAmount           Decimal   @map("total_amount") @db.Decimal(18, 4)
+  isTaxable             Boolean   @default(true) @map("is_taxable")
+  notes                 String?
+  status                String    @default("pending") // pending | promoting | promoted | cancelled
+  createdByUserId       String    @map("created_by_user_id")
+  promotedByUserId      String?   @map("promoted_by_user_id")
+  promotedAt            DateTime? @map("promoted_at")
+  promotedInvoiceId     String?   @unique @map("promoted_invoice_id")
+  promotionBatchId      String?   @map("promotion_batch_id")
+  promotionIdempotencyKey String? @map("promotion_idempotency_key")
+  promotionInvoiceIds   String[]  @default([]) @map("promotion_invoice_ids")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  createdByUser   User     @relation("PurchaseDebtCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  promotedByUser  User?    @relation("PurchaseDebtPromotedBy", fields: [promotedByUserId], references: [id], onDelete: SetNull)
+  promotedInvoice Invoice? @relation("PurchaseDebtConvertedInvoice", fields: [promotedInvoiceId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, supplierId, normalizedInvoiceKey])
+  @@index([tenantId])
+  @@index([companyId, status, invoiceDate])
+  @@index([companyId, promotedAt])
+  @@index([companyId, promotionIdempotencyKey])
+  @@index([companyId, supplierId])
+  @@map("purchase_debt_records")
 }
 
 /// ط³ط¬ظ„ ط£طµظˆظ„ طھط´ط؛ظٹظ„ظٹ (ط¨ط¯ظˆظ† ط¥ظ‡ظ„ط§ظƒ) â€” ط¶ظ…ط§ظ†طŒ ظ…ط¯ط©طŒ ط±ط¨ط· ط§ط®طھظٹط§ط±ظٹ ط¨ظپط§طھظˆط±ط©/ظ…ظˆط±ط¯

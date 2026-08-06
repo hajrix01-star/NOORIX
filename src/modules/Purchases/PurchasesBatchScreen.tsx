@@ -20,6 +20,9 @@ import PurchasesBatchSummary from './batch/components/PurchasesBatchSummary';
 import PurchasesBatchFilters from './batch/components/PurchasesBatchFilters';
 import PurchasesBatchTable from './batch/components/PurchasesBatchTable';
 import PurchasesBatchModals from './batch/components/PurchasesBatchModals';
+import PurchaseDebtsTab from './batch/components/PurchaseDebtsTab';
+import { createEmptyPurchasesBatchRow } from './batch/constants';
+import type { PurchaseDebtRecord } from '../../services/api';
 
 export default function PurchasesBatchScreen() {
   const { activeCompanyId, language, companies } = useApp();
@@ -85,6 +88,32 @@ export default function PurchasesBatchScreen() {
   );
 
   const hasCompany = !!companyId;
+  const handleImportDebts = (records: PurchaseDebtRecord[]) => {
+    state.setRows((currentRows) => {
+      const existing = new Set(currentRows.map((row) => row.legacyDebtId).filter(Boolean));
+      const imported = records
+        .filter((record) => !existing.has(record.id))
+        .map((record) => ({
+          ...createEmptyPurchasesBatchRow(),
+          legacyDebtId: record.id,
+          legacyDebtSupplierName: lang === 'en'
+            ? (record.supplier.nameEn || record.supplier.nameAr)
+            : (record.supplier.nameAr || record.supplier.nameEn || ''),
+          supplierId: record.supplierId,
+          invoiceNumber: record.supplierInvoiceNumber,
+          totalInclusive: String(record.totalAmount),
+          invoiceDate: String(record.invoiceDate).slice(0, 10),
+          kind: 'purchase' as const,
+          isTaxable: record.isTaxable,
+          notes: record.notes || '',
+        }));
+      const meaningful = currentRows.filter((row) =>
+        row.legacyDebtId || row.supplierId || row.invoiceNumber || row.totalInclusive || row.notes,
+      );
+      return [...meaningful, ...imported];
+    });
+    state.setActiveTab('entry');
+  };
   const handlePrintCurrentDraftBatch = () => {
     if (data.summary.count === 0) return;
     const supplierById = new Map(data.suppliers.map((supplier) => [supplier.id, supplier]));
@@ -221,6 +250,15 @@ export default function PurchasesBatchScreen() {
                 totalAmount={data.totalAmount}
               />
             </div>
+          )}
+
+          {state.activeTab === 'debts' && (
+            <PurchaseDebtsTab
+              companyId={companyId}
+              lang={lang}
+              suppliers={data.suppliers}
+              onImport={handleImportDebts}
+            />
           )}
         </ScreenTabs>
       )}

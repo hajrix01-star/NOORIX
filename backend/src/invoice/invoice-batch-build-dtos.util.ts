@@ -1,6 +1,7 @@
 import Decimal from 'decimal.js';
 import { isSupplierInvoiceNumberRequired } from '@noorix/finance-core';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import type { Prisma } from '@prisma/client';
 import type { OutflowDto } from '../financial-core/dto/financial-operation.dto';
 import type { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
@@ -20,7 +21,7 @@ function combineLineAndBatchNotes(lineNotes: string | undefined, batchNotesPart:
 }
 
 export async function buildOutflowDtosForInvoiceBatch(
-  prisma: TenantPrismaService,
+  prisma: TenantPrismaService | Pick<Prisma.TransactionClient, 'expenseLine'>,
   companyId: string,
   validItems: CreateInvoiceBatchDto['items'],
   txDate: string,

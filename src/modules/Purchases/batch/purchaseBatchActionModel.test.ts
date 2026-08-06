@@ -34,7 +34,8 @@ function row(overrides: Partial<PurchaseBatchEntryRow> = {}): PurchaseBatchEntry
 
 describe('purchaseBatchActionModel', () => {
   it('builds a normalized save payload from a row', () => {
-    expect(buildPurchaseBatchItemPayload(row({ warrantyFollowUp: true }), t)).toMatchObject({
+    expect(buildPurchaseBatchItemPayload(row({ legacyDebtId: 'debt-1', warrantyFollowUp: true }), t)).toMatchObject({
+      legacyDebtId: 'debt-1',
       supplierId: 'supplier-1',
       supplierInvoiceNumber: 'INV-1',
       kind: 'purchase',

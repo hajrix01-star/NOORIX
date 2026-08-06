@@ -8,6 +8,7 @@ import type {
 import type { CreateInvoiceBatchResult } from '../../../types/api';
 
 export type PurchaseBatchItemPayload = {
+  legacyDebtId?: string;
   supplierId?: string;
   expenseLineId?: string;
   invoiceNumber?: string;
@@ -48,6 +49,7 @@ export function buildPurchaseBatchItemPayload(row: PurchaseBatchEntryRow, t: Bat
   const notes = prefixedPurchaseBatchNotes(kind, normalized.notes, t);
 
   return {
+    legacyDebtId: row.legacyDebtId,
     supplierId: normalized.supplierId,
     expenseLineId: normalized.expenseLineId,
     invoiceNumber: normalized.invoiceNumber,

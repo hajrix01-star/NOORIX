@@ -76,6 +76,7 @@ export async function buildCompanyLogicalSnapshot(
     bankTreeCategories,
     bankClassificationRules,
     bankStatementTemplates,
+    purchaseDebtRecords,
     userCompanies,
   ] = await Promise.all([
     prisma.supplier.findMany({ where }),
@@ -122,6 +123,7 @@ export async function buildCompanyLogicalSnapshot(
     prisma.bankTreeCategory.findMany({ where }),
     prisma.bankClassificationRule.findMany({ where }),
     prisma.bankStatementTemplate.findMany({ where }),
+    prisma.purchaseDebtRecord.findMany({ where }),
     prisma.userCompany.findMany({ where }),
   ]);
 
@@ -222,6 +224,7 @@ export async function buildCompanyLogicalSnapshot(
     bankTreeCategories: bankTreeCategories.length,
     bankClassificationRules: bankClassificationRules.length,
     bankStatementTemplates: bankStatementTemplates.length,
+    purchaseDebtRecords: purchaseDebtRecords.length,
     userCompanies: userCompanies.length,
     dailySalesChannels: dailySalesChannels.length,
     payrollRunItems: payrollRunItems.length,
@@ -279,6 +282,7 @@ export async function buildCompanyLogicalSnapshot(
     bankTreeCategories,
     bankClassificationRules,
     bankStatementTemplates,
+    purchaseDebtRecords,
     userCompanies,
     dailySalesChannels,
     payrollRunItems,
@@ -309,7 +313,7 @@ export async function buildCompanyLogicalSnapshot(
   return {
     meta: {
       format: 'noorix-company-logical',
-      version: 7,
+      version: 8,
       exportedAt: new Date().toISOString(),
       companyId,
       tenantId: company.tenantId,

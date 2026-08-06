@@ -4,7 +4,7 @@
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Checkbox, TransactionDatePicker, FileTrigger, SearchableOptionsPicker, cn } from '../../../ui';
+import { Input, Button, Checkbox, TransactionDatePicker, FileTrigger, SearchableOptionsPicker, Badge, cn } from '../../../ui';
 import { useBatchRowLogic } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
@@ -32,6 +32,7 @@ function BatchRowTable(props: BatchRowSharedProps) {
   } = useBatchRowLogic({
     row, index, suppliers, categories, onUpdate, maxInvoiceDate, vatRateDecimal,
   });
+  const isImportedDebt = !!row.legacyDebtId;
 
   const dateTitle = useMemo(
     () => (maxInvoiceDate ? `${t('date')} - ${maxInvoiceDate}` : undefined),
@@ -61,7 +62,12 @@ function BatchRowTable(props: BatchRowSharedProps) {
       </td>
 
       <td style={cp}>
-        <BatchSupplierPickInner
+        {isImportedDebt ? (
+          <div className="flex flex-col gap-1">
+            <span className="truncate text-[12px] font-semibold">{row.legacyDebtSupplierName || row.supplierId}</span>
+            <Badge size="sm" color="violet">{lang === 'en' ? 'Previous debt' : 'مديونية سابقة'}</Badge>
+          </div>
+        ) : <BatchSupplierPickInner
           suppliers={suppliers}
           row={row}
           bookmarkedIds={bookmarkedIds}
@@ -69,12 +75,13 @@ function BatchRowTable(props: BatchRowSharedProps) {
           handleSupplierChange={handleSupplierChange}
           t={t}
           bookmarkSize="compact"
-        />
+        />}
       </td>
 
       <td style={cp}>
         <Input
           value={row.invoiceNumber}
+          readOnly={isImportedDebt}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'invoiceNumber', e.target.value)}
           placeholder={t('invoiceNumberPlaceholder')}
           className="text-center w-full"
@@ -89,6 +96,7 @@ function BatchRowTable(props: BatchRowSharedProps) {
           min="0"
           step="0.1"
           value={row.totalInclusive}
+          readOnly={isImportedDebt}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'totalInclusive', e.target.value)}
           placeholder={t('amountPlaceholderZero')}
           className="font-bold text-[13px] w-full text-right nx-font-numbers"
@@ -102,7 +110,7 @@ function BatchRowTable(props: BatchRowSharedProps) {
       </td>
 
       <td style={cp}>
-        <TransactionDatePicker
+        {isImportedDebt ? <span className="block text-center text-[12px] nx-font-numbers">{row.invoiceDate}</span> : <TransactionDatePicker
           dir="ltr"
           value={row.invoiceDate}
           max={maxInvoiceDate || undefined}
@@ -117,11 +125,11 @@ function BatchRowTable(props: BatchRowSharedProps) {
           style={inputSm}
           title={dateTitle}
           aria-label={`${t('date')} - ${t('batchRowLineAriaLabel', index + 1)}`}
-        />
+        />}
       </td>
 
       <td style={cp}>
-        <SearchableOptionsPicker
+        {isImportedDebt ? <Badge color="blue">{t('purchaseType')}</Badge> : <SearchableOptionsPicker
           mode="single"
           value={row.kind}
           onChange={(value: string) => {
@@ -136,11 +144,11 @@ function BatchRowTable(props: BatchRowSharedProps) {
           options={kindOptions}
           size="sm"
           aria-label={`${t('type')} - ${t('batchRowLineAriaLabel', index + 1)}`}
-        />
+        />}
       </td>
 
       <td className="text-center align-middle" style={cp}>
-        {isWarrantyFollowUpKind(row.kind) ? (
+        {!isImportedDebt && isWarrantyFollowUpKind(row.kind) ? (
           <Checkbox
             checked={!!row.warrantyFollowUp}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
@@ -155,7 +163,7 @@ function BatchRowTable(props: BatchRowSharedProps) {
       </td>
 
       <td style={cp}>
-        <SearchableOptionsPicker
+        {isImportedDebt ? <span className="text-noorix-muted">—</span> : <SearchableOptionsPicker
           mode="single"
           value={row.categoryId || ''}
           onChange={(value: string) => {
@@ -168,16 +176,19 @@ function BatchRowTable(props: BatchRowSharedProps) {
           emptyLabel={t('categoryPlaceholder')}
           size="sm"
           aria-label={`${t('category')} - ${t('batchRowLineAriaLabel', index + 1)}`}
-        />
+        />}
       </td>
 
       <td className="text-center" style={cp}>
-        <BatchTaxToggleButton row={row} index={index} onUpdate={onUpdate} t={t} density="table" />
+        {isImportedDebt
+          ? <Badge color={row.isTaxable ? 'amber' : 'gray'}>{row.isTaxable ? '15%' : '—'}</Badge>
+          : <BatchTaxToggleButton row={row} index={index} onUpdate={onUpdate} t={t} density="table" />}
       </td>
 
       <td style={cp}>
         <Input
           value={row.notes || ''}
+          readOnly={isImportedDebt}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'notes', e.target.value)}
           placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? t('batchNotesPlaceholderServiceName') : t('batchNotesPlaceholderEllipsis')}
           className="w-full"

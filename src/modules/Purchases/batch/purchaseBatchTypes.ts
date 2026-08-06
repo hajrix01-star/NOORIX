@@ -37,6 +37,8 @@ export type PurchaseBatchVault = PurchaseBatchNamedEntity & {
 
 export type PurchaseBatchEntryRow = PurchaseBatchLineLike & {
   key: string;
+  legacyDebtId?: string;
+  legacyDebtSupplierName?: string;
   kind: PurchaseBatchKind;
   supplierId: string;
   invoiceNumber: string;

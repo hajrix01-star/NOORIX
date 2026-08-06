@@ -95,6 +95,8 @@ export default {
   batchPurchasesDesc: { ar: 'إدخال عدة فواتير موردين دفعة واحدة', en: 'Enter multiple supplier invoices in one batch' },
   tabNewBatch: { ar: 'إدخال دفعة جديدة', en: 'New batch entry' },
   tabSavedBatches: { ar: 'الدفعات المحفوظة', en: 'Saved batches' },
+  purchaseDebtsTab: { ar: 'المديونيات السابقة', en: 'Previous debts' },
+  purchaseDebtImportedRowIncomplete: { ar: 'تعذر الحفظ: يوجد سجل مديونية مستورد غير مكتمل. أعد استيراده ثم حاول مرة أخرى.', en: 'Save blocked: an imported debt row is incomplete. Re-import it and try again.' },
   noValidRows: { ar: 'لا توجد صفوف صالحة للحفظ.', en: 'No valid rows to save.' },
   savedInvoicesCount: { ar: 'تم حفظ {0} فاتورة — دفعة {1}', en: 'Saved {0} invoices — batch {1}' },
   cancelBatchConfirm: { ar: 'إلغاء دفعة "{0}" ({1} فاتورة)؟', en: 'Cancel batch "{0}" ({1} invoices)?' },

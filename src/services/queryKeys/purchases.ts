@@ -8,4 +8,9 @@ export const purchaseKeys = {
     ['purchase-batch-summaries', query.companyId, query.startDate, query.endDate, query.q, query.lang] as const,
 
   batchSummariesRoot: () => ['purchase-batch-summaries'] as const,
+
+  debts: (companyId: string, query: Record<string, unknown>) =>
+    ['purchase-debts', companyId, query] as const,
+
+  debtsRoot: () => ['purchase-debts'] as const,
 };

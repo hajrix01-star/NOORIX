@@ -39,6 +39,13 @@ import {
   resolveInvoiceCancelReferenceId,
   resolveInvoiceCancelReferenceType,
 } from './invoice-cancel-reference.util';
+import {
+  completePurchaseDebtPromotion,
+  loadPurchaseDebtPromotionReplay,
+  PurchaseDebtReservationConflict,
+  reserveAndHydratePurchaseDebtItems,
+} from './invoice-batch-purchase-debt.util';
+import { TenantContext } from '../common/tenant-context';
 
 type InvoiceKindAggRow = {
   kind: string;
@@ -149,6 +156,81 @@ export class InvoiceService {
       );
 
       const vatRatePercent = await this.loadCompanyVatRatePercent(dto.companyId);
+      const hasPurchaseDebt = validItems.some((item) => !!item.legacyDebtId?.trim());
+      if (hasPurchaseDebt) {
+        const replay = await loadPurchaseDebtPromotionReplay(
+          this.prisma,
+          dto.companyId,
+          validItems.flatMap((item) => item.legacyDebtId?.trim() ? [item.legacyDebtId.trim()] : []),
+          dto.idempotencyKey,
+        );
+        if (replay) {
+          return {
+            batchId: replay.batchId,
+            count: replay.invoices.length,
+            invoices: replay.invoices.map((invoice) => toPublicInvoiceView(invoice)),
+          };
+        }
+        const tenantId = TenantContext.getTenantId();
+        const resolvedUserId = userId?.trim();
+        if (!resolvedUserId) throw new BadRequestException('تعذر تحديد المستخدم الذي نفذ الترحيل.');
+        let results;
+        try {
+          results = await this.prisma.withTenant(async (tx) => {
+            const prepared = await reserveAndHydratePurchaseDebtItems(tx, dto.companyId, validItems);
+            const atomicDtos = await buildOutflowDtosForInvoiceBatch(
+              tx,
+              dto.companyId,
+              prepared.items,
+              txDate,
+              batchId,
+              dto.vaultId ?? undefined,
+              batchNotesPart,
+              vatRatePercent,
+            );
+            const atomicResults = await this.financialCore.processOutflowBatchInTransaction(
+              tx,
+              atomicDtos,
+              resolvedUserId,
+              tenantId,
+            );
+            await completePurchaseDebtPromotion(
+              tx,
+              dto.companyId,
+              prepared.debts,
+              atomicResults,
+              batchId,
+              resolvedUserId,
+              tenantId,
+              dto.idempotencyKey,
+            );
+            return atomicResults;
+          });
+        } catch (error) {
+          if (error instanceof PurchaseDebtReservationConflict && dto.idempotencyKey) {
+            const concurrentReplay = await loadPurchaseDebtPromotionReplay(
+              this.prisma,
+              dto.companyId,
+              validItems.flatMap((item) => item.legacyDebtId?.trim() ? [item.legacyDebtId.trim()] : []),
+              dto.idempotencyKey,
+            );
+            if (concurrentReplay) {
+              return {
+                batchId: concurrentReplay.batchId,
+                count: concurrentReplay.invoices.length,
+                invoices: concurrentReplay.invoices.map((invoice) => toPublicInvoiceView(invoice)),
+              };
+            }
+          }
+          throw error;
+        }
+        this.clearInvoiceListAggCacheForCompany(dto.companyId);
+        return {
+          batchId,
+          count: results.length,
+          invoices: results.map((r) => toPublicInvoiceView(r.invoice)),
+        };
+      }
       const dtos = await buildOutflowDtosForInvoiceBatch(
         this.prisma,
         dto.companyId,

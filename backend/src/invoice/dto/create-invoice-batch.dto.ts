@@ -27,6 +27,10 @@ const INVOICE_KINDS = [
 export class BatchInvoiceItemDto {
   @IsOptional()
   @IsString()
+  legacyDebtId?: string;
+
+  @IsOptional()
+  @IsString()
   supplierId?: string;
 
   @IsOptional()
