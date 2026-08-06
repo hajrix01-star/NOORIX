@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Checkbox, DateField, Input, Modal, SearchableOptionsPicker } from '../../../../ui';
+import { Checkbox, DateField, DialogActions, Input, Modal, SearchableOptionsPicker } from '../../../../ui';
 import { getSaudiToday } from '../../../../utils/saudiDate';
 import type { PurchaseDebtRecord } from '../../../../services/api';
 import type { PurchaseBatchSupplier } from '../purchaseBatchTypes';
@@ -69,10 +69,10 @@ export default function PurchaseDebtFormModal({ open, lang, suppliers, editing, 
       title={editing ? (ar ? 'تعديل مديونية سابقة' : 'Edit previous debt') : (ar ? 'تسجيل مديونية سابقة' : 'Register previous debt')}
       size="md"
       footer={(
-        <>
-          <Button onClick={onClose} disabled={saving}>{ar ? 'إلغاء' : 'Cancel'}</Button>
-          <Button variant="primary" loading={saving} onClick={submit}>{ar ? 'حفظ السجل' : 'Save record'}</Button>
-        </>
+        <DialogActions actions={[
+          { key: 'cancel', label: ar ? 'إلغاء' : 'Cancel', role: 'cancel', onClick: onClose, disabled: saving },
+          { key: 'save', label: ar ? 'حفظ السجل' : 'Save record', role: 'save', onClick: submit, loading: saving, disabled: saving },
+        ]} />
       )}
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
