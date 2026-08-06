@@ -253,6 +253,7 @@ export default {
     ar: 'رقم فاتورة المورد مطلوب لهذا المصروف الخاضع للضريبة.',
     en: 'A supplier invoice number is required for this taxable expense.',
   },
+  expenseBatchRequiredShort: { ar: 'مطلوب', en: 'Required' },
   expenseBatchFixInvalidRows: {
     ar: 'أكمل {0} صف/صفوف قبل الحفظ. لن يتم حفظ أي صف بشكل جزئي.',
     en: 'Complete {0} row(s) before saving. No rows will be saved partially.',

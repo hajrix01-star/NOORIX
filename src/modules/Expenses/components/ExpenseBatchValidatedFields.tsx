@@ -1,5 +1,5 @@
 import React from 'react';
-import { Input, SearchableOptionsPicker, cn } from '../../../ui';
+import { Input, SearchableOptionsPicker } from '../../../ui';
 import type { SearchableOption } from '../../../ui/filters/SearchableOptionsPicker';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { ExpenseBatchRowValidation } from '../expenseModels';
@@ -26,24 +26,18 @@ export function ExpenseBatchLinePickerField({
 }: ExpenseBatchLinePickerFieldProps) {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col gap-1">
-      <SearchableOptionsPicker
-        label={label}
-        size="sm"
-        allowEmpty
-        emptyValue=""
-        emptyLabel={t('select')}
-        value={value}
-        onChange={onChange}
-        options={options}
-        aria-label={`${t('expenseLineNameCol')} - ${rowIndex}`}
-        invalid={!!validation.expenseLineError}
-        className={cn(validation.expenseLineError && 'border-noorix-red focus:border-noorix-red focus:ring-noorix-red/30')}
-      />
-      {validation.expenseLineError ? (
-        <p role="alert" className="text-[11px] font-medium text-noorix-red">{t(validation.expenseLineError)}</p>
-      ) : null}
-    </div>
+    <SearchableOptionsPicker
+      label={label}
+      size="sm"
+      allowEmpty
+      emptyValue=""
+      emptyLabel={t('select')}
+      value={value}
+      onChange={onChange}
+      options={options}
+      aria-label={`${t('expenseLineNameCol')} - ${rowIndex}`}
+      invalid={!!validation.expenseLineError}
+    />
   );
 }
 
@@ -69,8 +63,8 @@ export function ExpenseBatchSupplierInvoiceField({
       required={validation.supplierInvoiceNumberRequired}
       value={value}
       onChange={onChange}
-      placeholder={validation.supplierInvoiceNumberRequired ? t('invoiceNumberRequired') : t('optional')}
-      error={validation.supplierInvoiceNumberError ? t(validation.supplierInvoiceNumberError) : undefined}
+      placeholder={validation.supplierInvoiceNumberRequired ? t('expenseBatchRequiredShort') : t('optional')}
+      aria-invalid={validation.supplierInvoiceNumberError ? true : undefined}
       aria-label={`${t('supplierInvoiceNumber')} - ${rowIndex}`}
     />
   );
@@ -99,7 +93,7 @@ export function ExpenseBatchAmountField({
       value={value}
       onChange={onChange}
       placeholder="0.00"
-      error={validation.amountError ? t(validation.amountError) : undefined}
+      aria-invalid={validation.amountError ? true : undefined}
       aria-label={`${t('total')} - ${rowIndex}`}
     />
   );

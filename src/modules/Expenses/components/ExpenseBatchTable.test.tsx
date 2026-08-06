@@ -79,7 +79,7 @@ describe('ExpenseBatchTable all-or-nothing validation', () => {
 
     expect((saveButton as HTMLButtonElement).disabled).toBe(true);
     expect(supplierInvoiceInput.getAttribute('aria-invalid')).toBe('true');
-    expect(screen.getByText(/أكمل 1 صف/)).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByText('إجمالي المسودة')).toBeTruthy();
 
     fireEvent.change(supplierInvoiceInput, { target: { value: 'ELEC-2026-08' } });

@@ -14,14 +14,8 @@ export function ExpenseBatchFooter({ summary, rowCount, hasVault, isSaving, onSa
   const { t } = useTranslation();
   return (
     <>
-      {summary.invalidCount > 0 ? (
-        <div className="mt-4 rounded-lg border border-noorix-red/30 bg-noorix-red/10 px-3 py-2 text-[13px] font-semibold text-noorix-red" role="alert">
-          {t('expenseBatchFixInvalidRows', summary.invalidCount)}
-        </div>
-      ) : null}
-      {summary.draftCount > 0 ? <p className="mt-3 text-[12px] text-noorix-muted">{t('expenseBatchDraftTotalsHint')}</p> : null}
       <SummaryBar
-        className="mt-6"
+        className="mt-5"
         items={[
           { key: 'rows', label: t('rows'), value: rowCount, tone: 'blue', helper: t('expenseBatchRowsStatus', summary.count, summary.invalidCount) },
           { key: 'net', label: t('expenseBatchDraftNet'), value: summary.totalNet, tone: 'green', currency: 'SR' },
