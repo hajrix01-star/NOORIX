@@ -36,6 +36,7 @@ export default {
   reportOpenTrend: { ar: 'عرض الاتجاه', en: 'Open trend' },
   reportNoData: { ar: 'لا توجد بيانات للتقرير في هذه السنة.', en: 'No report data for this year.' },
   reportInvoiceNumber: { ar: 'رقم الفاتورة', en: 'Invoice number' },
+  reportDocumentNumber: { ar: 'رقم المستند', en: 'Document number' },
   reportSupplier: { ar: 'المورد', en: 'Supplier' },
   reportNetAmount: { ar: 'الصافي', en: 'Net amount' },
   reportTaxAmount: { ar: 'VAT', en: 'VAT' },
@@ -91,6 +92,12 @@ export default {
   reportAmountBasisGross: { ar: 'الأرقام في التقرير العام شاملة ضريبة القيمة المضافة حسب عقد التقرير المحاسبي.', en: 'General P&L amounts are VAT-inclusive by accounting report contract.' },
   reportTimeline: { ar: 'الخط الزمني السنوي', en: 'Yearly timeline' },
   reportInvoicesCount: { ar: 'عدد الفواتير', en: 'Invoice count' },
+  reportDocumentsCount: { ar: 'عدد المستندات', en: 'Document count' },
+  reportLedgerContribution: { ar: 'مبلغ البند', en: 'Line-item amount' },
+  reportDocumentsReconciliationError: {
+    ar: 'تنبيه رقابي: مجموع المستندات لا يطابق مبلغ البند للفترة. أعد تحميل التقرير، وإذا استمر التنبيه فتحتاج البيانات إلى مراجعة محاسبية.',
+    en: 'Control warning: document totals do not match the line-item amount for this period. Reload the report; if it persists, the accounting data needs review.',
+  },
   reportFocusedMonthDesc: {
     ar: 'عند اختيار شهر: الطباعة تعرض ملخصاً تنفيذياً ثم جدول البنود حسب المستوى المختار (1–3) على صفحة A4 واحدة (مع ضغط تلقائي عند كثرة الأسطر). التصدير PDF/Excel يطابق نفس المستوى مع أعمدة الشهر والتراكمي السنة.',
     en: 'When a month is selected: print shows an executive summary then the line table at your chosen level (1–3) on one A4 page (auto-shrinks if many lines). PDF/Excel export matches the same level with month and year-to-date columns.',

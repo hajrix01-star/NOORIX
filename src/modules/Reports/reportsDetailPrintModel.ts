@@ -34,7 +34,7 @@ export function buildReportsDetailPrintDocument({
   const detailItems = data.items ?? [];
   const body = data.kind === 'derived'
     ? buildDerivedDetailsPrintTable(detailItems, t, lang)
-    : buildInvoiceDetailsPrintTable(detailItems, t, lang);
+    : buildInvoiceDetailsPrintTable(data, detailItems, t, lang);
 
   return {
     title: t('reportDetails'),
@@ -66,17 +66,22 @@ function buildDerivedDetailsPrintTable(detailItems: readonly ReportDetailItem[],
   });
 }
 
-function buildInvoiceDetailsPrintTable(detailItems: readonly ReportDetailItem[], t: TranslateFn, lang: string) {
+function buildInvoiceDetailsPrintTable(
+  data: ReportsDetailData,
+  detailItems: readonly ReportDetailItem[],
+  t: TranslateFn,
+  lang: string,
+) {
+  const isLedgerDetail = data.detailSource === 'ledger';
   return buildPrintHtmlTable({
     wrapperClassName: null,
     headerRows: [{
       cells: [
         { value: t('transactionDate') },
-        { value: t('reportInvoiceNumber') },
+        { value: isLedgerDetail ? t('reportDocumentNumber') : t('reportInvoiceNumber') },
         { value: t('reportSourceOrSupplier') },
-        { value: t('reportAmountInclTax'), align: 'end' },
-        { value: t('reportNetAmount'), align: 'end' },
-        { value: t('reportTaxAmount'), align: 'end' },
+        { value: isLedgerDetail ? t('reportLedgerContribution') : t('reportAmountInclTax'), align: 'end' },
+        { value: t('reportSalesShare'), align: 'end' },
         { value: t('notes') },
       ],
     }],
@@ -85,9 +90,8 @@ function buildInvoiceDetailsPrintTable(detailItems: readonly ReportDetailItem[],
         { value: toYmd(item.transactionDate) },
         { value: item.summaryNumber || item.invoiceNumber || '—' },
         { value: reportDetailSourceName(item, lang) },
-        { value: item.totalAmount, align: 'end' },
-        { value: item.netAmount, align: 'end' },
-        { value: item.taxAmount, align: 'end' },
+        { value: fmt(Number(item.reportAmount ?? item.totalAmount ?? 0)), align: 'end' },
+        { value: item.percentOfSales == null ? '—' : `${item.percentOfSales}%`, align: 'end' },
         { value: item.notes || '—' },
       ],
     })),

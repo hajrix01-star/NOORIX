@@ -24,6 +24,7 @@ import { resolveExpenseTreeNode } from './reports-expense-tree.util';
 import { formatReportMoneyInteger, formatReportPercentNumber } from '../common/utils/report-display-format.util';
 import { loadPlPeriodTotals } from './reports-pl-period-totals.util';
 import { buildGeneralProfitLossTrend } from './reports-pl-trend.util';
+import { reconcilePlDetailItems } from './reports-pl-detail-reconciliation.util';
 
 function resolveCategoryLedgerAccountItemKey(
   categories: Map<string, CategoryNode>,
@@ -128,6 +129,7 @@ export class ReportsService {
       expenseLineNameEn: string | null;
       summaryNumber: string | null;
       channelNames: Array<{ nameAr: string; nameEn: string | null; amount: string }>;
+      reportAmount: string;
       totalAmount: string;
       netAmount: string;
       taxAmount: string;
@@ -136,10 +138,13 @@ export class ReportsService {
 
     const useInvoiceGross = !!itemKey && !itemKey.startsWith('account:') && !ledgerAccountItemKey;
     let invoiceGrossMonths: Decimal[] | null = null;
+    let detailSource: 'ledger' | 'invoices' = 'invoices';
 
     if (itemKey?.startsWith('account:')) {
+      detailSource = 'ledger';
       detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey as GroupKey, itemKey);
     } else if (ledgerAccountItemKey) {
+      detailSource = 'ledger';
       detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey as GroupKey, ledgerAccountItemKey);
     } else {
       const [detailResult, grossMonths] = await Promise.all([
@@ -192,6 +197,14 @@ export class ReportsService {
         ? { labelAr: selectedRow.labelAr, labelEn: selectedRow.labelEn || selectedRow.labelAr }
         : title;
 
+    const detailReconciliation = reconcilePlDetailItems(
+      detailItems,
+      month != null
+        ? salesGroup?.months?.[month - 1] ?? '0'
+        : salesGroup?.total ?? '0',
+      contextAmount,
+    );
+
     return {
       kind: 'invoices',
       month: month ?? null,
@@ -205,8 +218,12 @@ export class ReportsService {
       contextPercentOfSales,
       annualAmount,
       annualPercentOfSales,
-      invoiceCount: detailItems.length,
-      items: detailItems,
+      detailSource,
+      invoiceCount: detailReconciliation.items.length,
+      documentsAmount: detailReconciliation.documentsAmount,
+      documentsComplete: detailReconciliation.documentsComplete,
+      documentsMatchContext: detailReconciliation.documentsMatchContext,
+      items: detailReconciliation.items,
     };
   }
 

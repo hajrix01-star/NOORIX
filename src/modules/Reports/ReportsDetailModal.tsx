@@ -134,6 +134,8 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
 
   const invoiceRows: ReportDetailItem[] = (data as ReportsDetailData | undefined)?.items ?? [];
   const invoiceTotal = invoiceRows.length;
+  const isLedgerDetail = (data as ReportsDetailData | undefined)?.detailSource === 'ledger';
+  const documentsMatchContext = (data as ReportsDetailData | undefined)?.documentsMatchContext;
   const invoicePageRows = useMemo(() => {
     const start = (invoiceListPage - 1) * DETAIL_INVOICES_PAGE_SIZE;
     return invoiceRows.slice(start, start + DETAIL_INVOICES_PAGE_SIZE);
@@ -206,6 +208,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           }}
           contentClassName="nx-tab-content px-0 pt-3 pb-1 min-h-[160px]"
           animateContent={false}
+          compactAll
         >
           {activeTab === 'summary' && (
             <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
@@ -224,7 +227,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     <MetricCard.Value value={percentText(displayContextPercent)} />
                   </MetricCard>
                   <MetricCard color="var(--color-nx-purchases)">
-                    <MetricCard.Header label={t('reportInvoicesCount')} />
+                    <MetricCard.Header label={isLedgerDetail ? t('reportDocumentsCount') : t('reportInvoicesCount')} />
                     <MetricCard.Value value={Number(data.invoiceCount || 0).toLocaleString('en')} />
                   </MetricCard>
                 </>
@@ -280,24 +283,34 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     )}
                   </div>
                   <div className="text-[12px] text-noorix-muted inline-flex flex-wrap items-baseline gap-x-1">
-                    {t('reportAnnualTotal')}:
+                    {data.month ? t('reportMonthTotal') : t('reportAnnualTotal')}:
                     <strong className="nx-font-numbers inline-flex items-baseline gap-x-1">
-                      <span>{!isEmptyMetric(displayAnnualAmount) ? fmt(Number(displayAnnualAmount)) : '—'}</span>
-                      {!isEmptyMetric(displayAnnualAmount) && <span className="nx-sar">SR</span>}
+                      <span>{!isEmptyMetric(displayContextAmount) ? fmt(Number(displayContextAmount)) : '—'}</span>
+                      {!isEmptyMetric(displayContextAmount) && <span className="nx-sar">SR</span>}
                     </strong>
                   </div>
                 </div>
+                {documentsMatchContext === false && (
+                  <div className="mx-3 mt-3 rounded-lg border border-noorix-red/25 bg-noorix-red/10 px-3 py-2 text-[12px] font-semibold text-noorix-red" role="alert">
+                    {t('reportDocumentsReconciliationError')}
+                  </div>
+                )}
                 <SmartTable
                   total={invoiceTotal}
                   page={invoiceListPage}
                   pageSize={DETAIL_INVOICES_PAGE_SIZE}
                   onPageChange={setInvoiceListPage}
+                  tableId="reports-detail-documents"
+                  columnSizingMode="adaptive"
+                  tableLayout="auto"
+                  tableMinWidth={920}
+                  innerPadding={0}
                   columns={[
-                    { key: 'transactionDate', label: t('transactionDate'),
+                    { key: 'transactionDate', label: t('transactionDate'), kind: 'date', size: 'date', minWidth: 118,
                       render: (value: unknown) => toYmd(value) },
-                    { key: 'invoiceNumber', label: t('reportInvoiceNumber'),
+                    { key: 'invoiceNumber', label: isLedgerDetail ? t('reportDocumentNumber') : t('reportInvoiceNumber'), kind: 'id', size: 'serial-code', minWidth: 138,
                       render: (_value: unknown, item: ReportDetailItem) => <span className="font-bold">{item.summaryNumber || item.invoiceNumber || '—'}</span> },
-                    { key: 'supplier', label: t('reportSourceOrSupplier'),
+                    { key: 'supplier', label: t('reportSourceOrSupplier'), kind: 'text', size: 'supplier', minWidth: 190,
                       render: (_value: unknown, item: ReportDetailItem) => (
                         <div>
                           <div className="font-semibold truncate" title={reportDetailSourceName(item, lang)}>
@@ -310,16 +323,16 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                           )}
                         </div>
                       ) },
-                    { key: 'totalAmount', label: t('reportAmountInclTax'), numeric: true,
-                      render: (value: unknown) => (
+                    { key: 'totalAmount', label: isLedgerDetail ? t('reportLedgerContribution') : t('reportAmountInclTax'), kind: 'money', size: 'money-md', minWidth: 128, numeric: true,
+                      render: (_value: unknown, item: ReportDetailItem) => (
                         <span className="nx-font-numbers font-bold inline-flex items-baseline gap-x-1">
-                          <span>{fmt(Number(value))}</span>
+                          <span>{fmt(Number(item.reportAmount ?? item.totalAmount ?? 0))}</span>
                           <span className="nx-sar">SR</span>
                         </span>
                       ) },
-                    { key: 'percentOfSales', label: t('reportSalesShare'),
+                    { key: 'percentOfSales', label: t('reportSalesShare'), kind: 'number', minWidth: 142, numeric: true,
                       render: (_value: unknown, item: ReportDetailItem) => <span className="nx-font-numbers text-nx-profit">{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
-                    { key: 'notes', label: t('notes'),
+                    { key: 'notes', label: t('notes'), kind: 'text', minWidth: 210,
                       render: (value: unknown) => <span className="text-noorix-muted truncate">{truncateText(value)}</span> },
                   ]}
                   data={invoicePageRows}

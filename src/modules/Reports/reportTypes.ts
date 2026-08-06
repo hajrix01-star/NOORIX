@@ -67,6 +67,7 @@ export type ReportDetailInvoiceItem = {
   supplierNameEn?: string | null;
   itemLabelAr?: string | null;
   itemLabelEn?: string | null;
+  reportAmount?: string | number | null;
   totalAmount?: string | number | null;
   netAmount?: string | number | null;
   taxAmount?: string | number | null;
@@ -92,7 +93,11 @@ export type ReportDetailsData = {
   contextAmount?: string | number | null;
   annualAmount?: string | number | null;
   contextPercentOfSales?: string | number | null;
+  detailSource?: 'ledger' | 'invoices';
   invoiceCount?: string | number | null;
+  documentsAmount?: string | number | null;
+  documentsComplete?: boolean | null;
+  documentsMatchContext?: boolean | null;
   items?: Array<ReportDetailInvoiceItem | ReportDetailDerivedItem>;
 };
 

@@ -136,6 +136,7 @@ export async function loadPlDetailFromLedger(
     expenseLineNameEn: string | null;
     summaryNumber: string | null;
     channelNames: Array<{ nameAr: string; nameEn: string | null; amount: string }>;
+    reportAmount: string;
     totalAmount: string;
     netAmount: string;
     taxAmount: string;
@@ -145,9 +146,14 @@ export async function loadPlDetailFromLedger(
   for (const e of entries) {
     const inv = invMap.get(e.referenceId) ?? invBySummaryId.get(e.referenceId);
     const ledgerAmt = plDec(e.amount);
-    const displayTotal = inv ? plDec(inv.totalAmount) : ledgerAmt;
-    const displayNet = inv ? plDec(inv.netAmount) : ledgerAmt;
-    const displayTax = inv ? plDec(inv.taxAmount) : plDec(0);
+    /**
+     * هذا الصف يشرح مساهمة قيد محدد في بند التقرير، لا قيمة الفاتورة كاملة.
+     * استخدام إجمالي الفاتورة هنا كان يجعل جدول المستندات يختلف عن الملخص
+     * عندما تحتوي الفاتورة على أكثر من حساب/بند محاسبي.
+     */
+    const displayTotal = ledgerAmt;
+    const displayNet = ledgerAmt;
+    const displayTax = plDec(0);
     const kind = inv?.kind || e.referenceType || '—';
     result.push({
       id: e.id,
@@ -171,6 +177,7 @@ export async function loadPlDetailFromLedger(
         nameEn: ch.vault.nameEn,
         amount: formatReportMoneyInteger(plDec(ch.amount)),
       })),
+      reportAmount: displayTotal.toFixed(4),
       totalAmount: formatReportMoneyInteger(displayTotal),
       netAmount: formatReportMoneyInteger(displayNet),
       taxAmount: formatReportTaxAmount(displayTax),
@@ -383,6 +390,7 @@ export async function loadPlDetailInvoices(
       expenseLineNameEn: invoice.expenseLine?.nameEn || null,
       summaryNumber: invoice.dailySalesSummary?.summaryNumber || null,
       channelNames,
+      reportAmount: displayTotal.toFixed(4),
       totalAmount: formatReportMoneyInteger(displayTotal),
       netAmount: formatReportMoneyInteger(displayNet),
       taxAmount: formatReportTaxAmount(displayTax),
