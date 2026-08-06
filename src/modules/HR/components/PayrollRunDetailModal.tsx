@@ -108,6 +108,7 @@ export function PayrollRunDetailModal({
       rowAdvances: t('advancesDeduct'),
       rowNet: t('netSalary'),
       netPayableTitle: t('payrollSlipNetPayableTitle'),
+      netPayableTitleEn: getText('payrollSlipNetPayableTitle', 'en'),
       netOnlyNoteAr: getText('payrollSlipNetOnlyNoteAr', 'ar'),
       netOnlyNoteEn: getText('payrollSlipNetOnlyNoteEn', 'en'),
       declarationAr: getText('payrollSlipAckAr', 'ar'),

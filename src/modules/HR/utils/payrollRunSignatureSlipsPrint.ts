@@ -61,78 +61,113 @@ function buildLogoInner(logoUrl: unknown) {
 }
 
 const SLIP_PRINT_CSS = `
-body { font-family: 'Noto Sans Arabic', 'IBM Plex Sans', Tahoma, sans-serif; }
-.ps-wrap { direction: rtl; color: #1a2a3a; }
+body {
+  font-family: 'Noto Sans Arabic', 'IBM Plex Sans', Tahoma, sans-serif;
+  background: #f4f6f8;
+}
+.ps-wrap { direction: rtl; color: #17212b; }
 .ps-slip {
   max-width: 210mm;
   margin: 0 auto 24px;
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
   overflow: hidden;
   page-break-after: always;
   page-break-inside: avoid;
 }
 .ps-slip:last-child { page-break-after: auto; margin-bottom: 0; }
 .ps-head {
-  background: #1a3c5e;
-  padding: 14px 18px;
+  padding: 18px 20px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  border-bottom: 4px solid #c9a227;
+  gap: 20px;
+  border-top: 4px solid #185fa5;
+  border-bottom: 1px solid #e5e9ee;
 }
+.ps-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .ps-head-logo {
-  width: 64px; height: 64px; flex-shrink: 0;
-  background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-  padding: 4px; overflow: hidden;
+  width: 52px; height: 52px; flex-shrink: 0;
+  border: 1px solid #e2e7ec; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  padding: 5px; overflow: hidden;
 }
 .ps-head-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .ps-logo-ph { font-size: 9px; color: #94a3b8; text-align: center; line-height: 1.3; }
-.ps-head-spacer { width: 64px; flex-shrink: 0; }
-.ps-head-mid { flex: 1; text-align: center; min-width: 0; }
-.ps-co-ar { font-size: 15px; font-weight: 800; color: #c9a227; }
-.ps-co-en { font-size: 11px; color: #c8d8e8; margin-top: 3px; direction: ltr; }
-.ps-title-ar { font-size: 15px; font-weight: 700; color: #fff; margin-top: 6px; }
-.ps-title-en { font-size: 10px; color: #aac4de; margin-top: 4px; direction: ltr; }
-.ps-sub { font-size: 10px; color: #c8e0f0; margin-top: 4px; }
-.ps-body { padding: 16px 18px 12px; }
+.ps-brand-copy { min-width: 0; }
+.ps-co-ar { font-size: 15px; font-weight: 800; color: #17212b; }
+.ps-co-en { font-size: 10px; color: #6b7785; margin-top: 2px; direction: ltr; }
+.ps-head-mid { text-align: left; min-width: 250px; }
+.ps-title-ar { font-size: 18px; font-weight: 800; color: #17212b; }
+.ps-title-en { font-size: 10px; color: #6b7785; margin-top: 2px; direction: ltr; }
+.ps-sub { display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ps-meta-chip {
+  padding: 3px 8px; border-radius: 999px; background: #f3f6f9; color: #465465;
+  font-size: 9px; font-weight: 700; white-space: nowrap;
+}
+.ps-body { padding: 17px 20px 18px; }
+.ps-section { margin-top: 16px; }
+.ps-section:first-child { margin-top: 0; }
+.ps-sec-title {
+  color: #17212b; font-size: 11px; font-weight: 800;
+  padding: 0 0 7px; margin: 0 0 9px;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  border-bottom: 1px solid #dfe4ea;
+}
+.ps-sec-title::before {
+  content: ''; width: 4px; height: 16px; border-radius: 999px; background: #185fa5; flex-shrink: 0;
+}
+.ps-sec-title > span:first-of-type { margin-left: auto; }
+.ps-sec-title-en { font-size: 9px; color: #7b8794; font-weight: 600; direction: ltr; }
 .ps-emp-grid {
   display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px;
-  background: #d0d8e4; border: 1px solid #d0d8e4; border-radius: 4px; overflow: hidden; margin-bottom: 14px;
+  background: #e3e8ed; border: 1px solid #e3e8ed; border-radius: 8px; overflow: hidden;
 }
-.ps-emp-cell { background: #fff; padding: 8px 10px; }
-.ps-emp-lbl { font-size: 9px; color: #5a7a9a; font-weight: 700; display: block; }
-.ps-emp-val { font-size: 12px; font-weight: 800; color: #1a2a3a; margin-top: 2px; }
-.ps-sec-title {
-  background: #1a3c5e; color: #fff; font-size: 11px; font-weight: 700;
-  padding: 6px 12px; border-radius: 4px; margin: 0 0 10px;
-  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+.ps-emp-cell { background: #fff; padding: 9px 11px; min-height: 52px; }
+.ps-emp-name { grid-column: span 2; }
+.ps-emp-lbl { font-size: 8.5px; color: #728091; font-weight: 700; display: block; }
+.ps-emp-val { font-size: 11.5px; font-weight: 800; color: #17212b; margin-top: 3px; display: block; }
+.ps-net-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  border: 1px solid #cfe0ef; border-radius: 10px; background: #f4f9fd; padding: 13px 16px;
 }
-.ps-sec-title-en { font-size: 9px; color: #dbeafe; font-weight: 600; }
-.ps-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
-.ps-table th, .ps-table td { border: 1px solid #d0d8e4; padding: 7px 10px; text-align: right; }
-.ps-table thead th { background: #1a3c5e; color: #fff; font-weight: 700; }
-.ps-table tfoot td { background: #eef2f7; font-weight: 800; }
-.ps-table .td-num { text-align: center; font-weight: 800; color: #1a3c5e; }
-.ps-note { font-size: 10px; color: #64748b; line-height: 1.5; margin-bottom: 12px; text-align: justify; }
-.ps-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
-.ps-sig-box { border: 1px solid #d0d8e4; border-radius: 6px; overflow: hidden; page-break-inside: avoid; }
-.ps-sig-hd { background: #dce6f1; padding: 7px 10px; text-align: center; }
-.ps-sig-t-ar { font-size: 11px; font-weight: 700; color: #1a3c5e; }
-.ps-sig-t-en { font-size: 9px; color: #6a8aaa; margin-top: 2px; direction: ltr; }
-.ps-sig-space { height: 56px; }
-.ps-sig-ft { background: #f9fbfd; border-top: 1px solid #e0e8f0; padding: 7px 10px; font-size: 9px; color: #6a8aaa; text-align: center; }
-.ps-sig-ft strong { display: block; font-size: 10px; color: #1a3c5e; font-weight: 800; margin-bottom: 3px; }
+.ps-net-label { color: #31506b; font-size: 11px; font-weight: 800; }
+.ps-net-label-en { color: #7b8794; font-size: 8.5px; font-weight: 600; direction: ltr; margin-top: 2px; }
+.ps-net-amount { color: #185fa5; font-size: 22px; font-weight: 800; direction: ltr; white-space: nowrap; letter-spacing: -0.2px; }
+.ps-net-currency { font-size: 9px; color: #607386; font-weight: 700; margin-left: 3px; letter-spacing: 0; }
+.ps-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 10.5px; border: 1px solid #dfe4ea; border-radius: 8px; overflow: hidden; }
+.ps-table th, .ps-table td { border: 0; border-bottom: 1px solid #e8ecf0; padding: 7px 10px; text-align: right; }
+.ps-table th + th, .ps-table td + td { border-right: 1px solid #e8ecf0; }
+.ps-table tr:last-child td { border-bottom: 0; }
+.ps-table thead th { background: #f3f6f9; color: #465465; font-weight: 800; }
+.ps-table tfoot td { background: #f4f9fd; font-weight: 800; color: #185fa5; }
+.ps-table .td-num { text-align: left; font-weight: 800; color: #17212b; direction: ltr; }
+.ps-note { font-size: 8.5px; color: #6f7c8b; line-height: 1.55; margin: 8px 2px 0; }
+.ps-declaration { border-right: 3px solid #d2dae2; padding: 2px 10px 2px 0; margin-top: 13px; }
+.ps-declaration .ps-note { margin: 0; }
+.ps-declaration .ps-note + .ps-note { margin-top: 4px; }
+.ps-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.ps-sig-box { padding-top: 2px; page-break-inside: avoid; }
+.ps-sig-hd { text-align: right; }
+.ps-sig-t-ar { font-size: 10.5px; font-weight: 800; color: #2a3745; }
+.ps-sig-t-en { font-size: 8.5px; color: #7b8794; margin-top: 1px; direction: ltr; text-align: right; }
+.ps-sig-space { height: 48px; border-bottom: 1px solid #9ba7b3; }
+.ps-sig-ft { padding-top: 6px; font-size: 8.5px; color: #7b8794; display: flex; justify-content: space-between; gap: 8px; }
+.ps-sig-ft strong { color: #465465; font-size: 9px; font-weight: 700; }
 .ps-foot {
-  background: #1a3c5e; color: #8ab0d0; font-size: 9px; padding: 8px 16px;
-  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; border-top: 3px solid #c9a227;
+  color: #718091; font-size: 8px; padding: 10px 20px 12px;
+  display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;
+  border-top: 1px solid #e5e9ee;
 }
-.ps-legal { font-size: 6.5pt; line-height: 1.35; color: #64748b; text-align: center; padding: 6px 8px 4px; border-bottom: 1px dotted #cbd5e1; }
+.ps-foot-copy { max-width: 72%; }
+.ps-legal { font-size: 7px; line-height: 1.45; color: #8793a0; margin-top: 4px; }
+.print-footer { display: none; }
 @media print {
-  body { padding: 0 !important; }
-  .ps-slip { border: none; border-radius: 0; max-width: none; margin: 0; }
+  body { padding: 0 !important; background: #fff; }
+  .ps-slip { border: 0; border-radius: 0; box-shadow: none; max-width: none; margin: 0; }
 }
 `.trim();
 
@@ -165,9 +200,14 @@ export function buildPayrollRunEmployeeSlipsPrintHtml({
     day: 'numeric',
   });
 
-  const coAr = esc(companyName || '—');
-  const coEn = esc(String(companyNameEn || '').trim());
-  const enLine = coEn ? `<div class="ps-co-en">${coEn}</div>` : '';
+  const companyNameText = String(companyName || '').trim();
+  const companyNameEnText = String(companyNameEn || '').trim();
+  const coAr = esc(companyNameText || '—');
+  const coEn = esc(companyNameEnText);
+  const enLine =
+    companyNameEnText && companyNameEnText.toLocaleLowerCase() !== companyNameText.toLocaleLowerCase()
+      ? `<div class="ps-co-en">${coEn}</div>`
+      : '';
 
   const pages = items
     .map((row) => {
@@ -183,111 +223,128 @@ export function buildPayrollRunEmployeeSlipsPrintHtml({
       let breakdownHtml = '';
       if (netOnly) {
         breakdownHtml = `
-        <div class="ps-sec-title">
-          <span>${esc(labels.sectionBreakdownAr)}</span>
-          <span class="ps-sec-title-en">${esc(labels.sectionBreakdownEn)}</span>
-        </div>
-        <table class="ps-table">
-          <thead><tr><th>${esc(labels.colItem)}</th><th>${esc(labels.colAmount)}</th></tr></thead>
-          <tbody>
-            <tr><td>${esc(labels.netPayableTitle)}</td><td class="td-num">${esc(hrFmt(summary.netSalary))} SR</td></tr>
-          </tbody>
-        </table>
-        <p class="ps-note" dir="rtl">${esc(labels.netOnlyNoteAr)}</p>
-        <p class="ps-note" dir="ltr">${esc(labels.netOnlyNoteEn)}</p>`;
+        <section class="ps-section">
+          <div class="ps-sec-title">
+            <span>${esc(labels.sectionBreakdownAr)}</span>
+            <span class="ps-sec-title-en">${esc(labels.sectionBreakdownEn)}</span>
+          </div>
+          <div class="ps-net-card">
+            <div>
+              <div class="ps-net-label">${esc(labels.netPayableTitle)}</div>
+              <div class="ps-net-label-en">${esc(labels.netPayableTitleEn)}</div>
+            </div>
+            <div class="ps-net-amount"><span class="ps-net-currency">SAR</span>${esc(hrFmt(summary.netSalary))}</div>
+          </div>
+          <p class="ps-note" dir="rtl">${esc(labels.netOnlyNoteAr)}</p>
+          <p class="ps-note" dir="ltr">${esc(labels.netOnlyNoteEn)}</p>
+        </section>`;
       } else {
         const rows = [];
         rows.push(
-          `<tr><td>${esc(labels.rowGross)}</td><td class="td-num">${esc(hrFmt(summary.grossSalary))} SR</td></tr>`,
+          `<tr><td>${esc(labels.rowGross)}</td><td class="td-num">SAR ${esc(hrFmt(summary.grossSalary))}</td></tr>`,
         );
         if (summary.allowancesAdd > 0) {
           rows.push(
-            `<tr><td>${esc(labels.rowAllowances)}</td><td class="td-num">${esc(hrFmt(summary.allowancesAdd))} SR</td></tr>`,
+            `<tr><td>${esc(labels.rowAllowances)}</td><td class="td-num">SAR ${esc(hrFmt(summary.allowancesAdd))}</td></tr>`,
           );
         }
         rows.push(
-          `<tr><td>${esc(labels.rowBeforeDed)}</td><td class="td-num">${esc(hrFmt(summary.beforeDeductions))} SR</td></tr>`,
+          `<tr><td>${esc(labels.rowBeforeDed)}</td><td class="td-num">SAR ${esc(hrFmt(summary.beforeDeductions))}</td></tr>`,
         );
         if (summary.payrollDeductions > 0) {
-          rows.push(`<tr><td>${esc(labels.rowDeductions)}</td><td class="td-num">${esc(hrFmt(summary.payrollDeductions))} SR</td></tr>`);
+          rows.push(`<tr><td>${esc(labels.rowDeductions)}</td><td class="td-num">SAR ${esc(hrFmt(summary.payrollDeductions))}</td></tr>`);
         }
         if (summary.advancesDeduct > 0) {
-          rows.push(`<tr><td>${esc(labels.rowAdvances)}</td><td class="td-num">${esc(hrFmt(summary.advancesDeduct))} SR</td></tr>`);
+          rows.push(`<tr><td>${esc(labels.rowAdvances)}</td><td class="td-num">SAR ${esc(hrFmt(summary.advancesDeduct))}</td></tr>`);
         }
         breakdownHtml = `
-        <div class="ps-sec-title">
-          <span>${esc(labels.sectionBreakdownAr)}</span>
-          <span class="ps-sec-title-en">${esc(labels.sectionBreakdownEn)}</span>
-        </div>
-        <table class="ps-table">
-          <thead><tr><th>${esc(labels.colItem)}</th><th>${esc(labels.colAmount)}</th></tr></thead>
-          <tbody>${rows.join('')}</tbody>
-          <tfoot><tr><td>${esc(labels.rowNet)}</td><td class="td-num">${esc(hrFmt(summary.netSalary))} SR</td></tr></tfoot>
-        </table>`;
+        <section class="ps-section">
+          <div class="ps-sec-title">
+            <span>${esc(labels.sectionBreakdownAr)}</span>
+            <span class="ps-sec-title-en">${esc(labels.sectionBreakdownEn)}</span>
+          </div>
+          <table class="ps-table">
+            <thead><tr><th>${esc(labels.colItem)}</th><th>${esc(labels.colAmount)}</th></tr></thead>
+            <tbody>${rows.join('')}</tbody>
+            <tfoot><tr><td>${esc(labels.rowNet)}</td><td class="td-num">SAR ${esc(hrFmt(summary.netSalary))}</td></tr></tfoot>
+          </table>
+        </section>`;
       }
 
       const decl =
         labels.declarationAr || labels.declarationEn
-          ? `<p class="ps-note" dir="rtl">${esc(labels.declarationAr)}</p><p class="ps-note" dir="ltr">${esc(labels.declarationEn)}</p>`
+          ? `<div class="ps-declaration"><p class="ps-note" dir="rtl">${esc(labels.declarationAr)}</p><p class="ps-note" dir="ltr">${esc(labels.declarationEn)}</p></div>`
           : '';
 
       const empNameEsc = esc(displayName);
       const sigs = `
-        <div class="ps-sec-title">
-          <span>${esc(labels.sectionSigAr)}</span>
-          <span class="ps-sec-title-en">${esc(labels.sectionSigEn)}</span>
-        </div>
-        <div class="ps-sig-grid">
-          <div class="ps-sig-box">
-            <div class="ps-sig-hd">
-              <div class="ps-sig-t-ar">${esc(labels.sigEmployeeAr)}</div>
-              <div class="ps-sig-t-en">${esc(labels.sigEmployeeEn)}</div>
-            </div>
-            <div class="ps-sig-space"></div>
-            <div class="ps-sig-ft"><strong>${empNameEsc}</strong>${esc(labels.sigDateLine)}</div>
+        <section class="ps-section">
+          <div class="ps-sec-title">
+            <span>${esc(labels.sectionSigAr)}</span>
+            <span class="ps-sec-title-en">${esc(labels.sectionSigEn)}</span>
           </div>
-          <div class="ps-sig-box">
-            <div class="ps-sig-hd">
-              <div class="ps-sig-t-ar">${esc(labels.sigEmployerAr)}</div>
-              <div class="ps-sig-t-en">${esc(labels.sigEmployerEn)}</div>
+          <div class="ps-sig-grid">
+            <div class="ps-sig-box">
+              <div class="ps-sig-hd">
+                <div class="ps-sig-t-ar">${esc(labels.sigEmployeeAr)}</div>
+                <div class="ps-sig-t-en">${esc(labels.sigEmployeeEn)}</div>
+              </div>
+              <div class="ps-sig-space"></div>
+              <div class="ps-sig-ft"><strong>${empNameEsc}</strong><span>${esc(labels.sigDateLine)}</span></div>
             </div>
-            <div class="ps-sig-space"></div>
-            <div class="ps-sig-ft"><strong>${coAr}</strong>${esc(labels.sigDateLine)}</div>
+            <div class="ps-sig-box">
+              <div class="ps-sig-hd">
+                <div class="ps-sig-t-ar">${esc(labels.sigEmployerAr)}</div>
+                <div class="ps-sig-t-en">${esc(labels.sigEmployerEn)}</div>
+              </div>
+              <div class="ps-sig-space"></div>
+              <div class="ps-sig-ft"><strong>${coAr}</strong><span>${esc(labels.sigDateLine)}</span></div>
+            </div>
           </div>
-        </div>`;
+        </section>`;
 
       return `
       <div class="ps-slip">
-        <div class="ps-legal" dir="rtl">${esc(labels.legalRefAr)}<div dir="ltr" style="margin-top:2px">${esc(labels.legalRefEn)}</div></div>
         <header class="ps-head">
-          <div class="ps-head-logo">${buildLogoInner(companyLogo)}</div>
-          <div class="ps-head-mid">
-            <div class="ps-co-ar">${coAr}</div>
-            ${enLine}
-            <div class="ps-title-ar">${esc(labels.docTitleAr)} — ${empNameEsc}</div>
-            <div class="ps-title-en">${esc(labels.docTitleEn)} — ${empNameEsc}</div>
-            <div class="ps-sub">${esc(labels.runLabel)}: ${esc(run.runNumber || '')} · ${esc(labels.lblPayrollMonth)}: ${esc(monthLabel)}</div>
+          <div class="ps-brand">
+            <div class="ps-head-logo">${buildLogoInner(companyLogo)}</div>
+            <div class="ps-brand-copy">
+              <div class="ps-co-ar">${coAr}</div>
+              ${enLine}
+            </div>
           </div>
-          <div class="ps-head-spacer" aria-hidden="true"></div>
+          <div class="ps-head-mid">
+            <div class="ps-title-ar">${esc(labels.docTitleAr)}</div>
+            <div class="ps-title-en">${esc(labels.docTitleEn)}</div>
+            <div class="ps-sub">
+              <span class="ps-meta-chip">${esc(labels.runLabel)}: ${esc(run.runNumber || '')}</span>
+              <span class="ps-meta-chip">${esc(labels.lblPayrollMonth)}: ${esc(monthLabel)}</span>
+            </div>
+          </div>
         </header>
         <div class="ps-body">
-          <div class="ps-sec-title">
-            <span>${esc(labels.sectionEmpAr)}</span>
-            <span class="ps-sec-title-en">${esc(labels.sectionEmpEn)}</span>
-          </div>
-          <div class="ps-emp-grid">
-            <div class="ps-emp-cell"><span class="ps-emp-lbl">${esc(labels.lblName)}</span><span class="ps-emp-val">${empNameEsc}</span></div>
-            <div class="ps-emp-cell"><span class="ps-emp-lbl">${esc(labels.lblIqama)}</span><span class="ps-emp-val">${iqama}</span></div>
-            <div class="ps-emp-cell"><span class="ps-emp-lbl">${esc(labels.lblJob)}</span><span class="ps-emp-val">${job}</span></div>
-            <div class="ps-emp-cell"><span class="ps-emp-lbl">${esc(labels.lblSerial)}</span><span class="ps-emp-val">${serial}</span></div>
-            <div class="ps-emp-cell" style="grid-column: span 2"><span class="ps-emp-lbl">${esc(labels.lblJoin)}</span><span class="ps-emp-val">${esc(join)}</span></div>
-          </div>
+          <section class="ps-section">
+            <div class="ps-sec-title">
+              <span>${esc(labels.sectionEmpAr)}</span>
+              <span class="ps-sec-title-en">${esc(labels.sectionEmpEn)}</span>
+            </div>
+            <div class="ps-emp-grid">
+              <div class="ps-emp-cell ps-emp-name"><span class="ps-emp-lbl">${esc(labels.lblName)}</span><span class="ps-emp-val">${empNameEsc}</span></div>
+              <div class="ps-emp-cell"><span class="ps-emp-lbl">${esc(labels.lblSerial)}</span><span class="ps-emp-val">${serial}</span></div>
+              <div class="ps-emp-cell"><span class="ps-emp-lbl">${esc(labels.lblIqama)}</span><span class="ps-emp-val">${iqama}</span></div>
+              <div class="ps-emp-cell"><span class="ps-emp-lbl">${esc(labels.lblJob)}</span><span class="ps-emp-val">${job}</span></div>
+              <div class="ps-emp-cell"><span class="ps-emp-lbl">${esc(labels.lblJoin)}</span><span class="ps-emp-val">${esc(join)}</span></div>
+            </div>
+          </section>
           ${breakdownHtml}
           ${decl}
           ${sigs}
         </div>
         <footer class="ps-foot">
-          <span>${esc(labels.footerLeft)}</span>
+          <div class="ps-foot-copy">
+            <div>${esc(labels.footerLeft)}</div>
+            <div class="ps-legal" dir="rtl">${esc(labels.legalRefAr)}<div dir="ltr">${esc(labels.legalRefEn)}</div></div>
+          </div>
           <span>${esc(labels.issueLabel)}: ${esc(issueDate)}</span>
         </footer>
       </div>`;

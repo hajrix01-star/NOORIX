@@ -490,7 +490,7 @@ export default {
     en: 'When enabled, extra allowance lines are hidden; net pay is shown prominently for signature.',
   },
   payrollSlipConfirmPrint: { ar: 'طباعة', en: 'Print' },
-  payrollSlipDocTitle: { ar: 'مسير راتب — استلام وتوقيع', en: 'Payroll slip — receipt & signature' },
+  payrollSlipDocTitle: { ar: 'مسير راتب الموظف', en: 'Employee payroll slip' },
   payrollSlipLegalRefAr: {
     ar: 'مرجع نظامي: نظام العمل (م/51) ولائحته — وثيقة توقيع إدارية.',
     en: 'مرجع نظامي: نظام العمل (م/51) ولائحته — وثيقة توقيع إدارية.',
