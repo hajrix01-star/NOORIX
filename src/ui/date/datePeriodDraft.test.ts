@@ -30,11 +30,19 @@ describe('date period draft helpers', () => {
     });
   });
 
-  it('normalizes the month UI mode into the months period mode', () => {
+  it('opens month mode as a single-month selection by default', () => {
     const change = getDatePeriodModeChange(baseDraft, 'month', { year: 2026, month: 7, day: 4 });
 
     expect(change.openPanel).toBe('month');
-    expect(change.patch).toMatchObject({ mode: 'months' });
+    expect(change.patch).toMatchObject({
+      mode: 'month',
+      selYear: 2026,
+      selMonth: 7,
+      monthRangeStartYear: 2026,
+      monthRangeStartMonth: 7,
+      monthRangeEndYear: 2026,
+      monthRangeEndMonth: 7,
+    });
   });
 
   it('prepares a quarter filter without calculating dates in the UI', () => {

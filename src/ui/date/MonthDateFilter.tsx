@@ -26,7 +26,7 @@ export default function MonthDateFilter({ year, month, onChange, className }: Mo
       return;
     }
     lastSyncedPropKeyRef.current = propKey;
-    filter.setMode('months');
+    filter.setMode('month');
     filter.setSelYear(year);
     filter.setSelMonth(month);
     filter.setMonthRangeStartYear(year);
@@ -69,6 +69,7 @@ export default function MonthDateFilter({ year, month, onChange, className }: Mo
         filter={filter}
         modes={['month']}
         showBadge={false}
+        allowMonthRange={false}
         onApply={handleApply}
         className={className}
       />

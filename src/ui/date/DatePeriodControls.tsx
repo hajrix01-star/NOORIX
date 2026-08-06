@@ -8,6 +8,45 @@ export type DatePeriodModeOption = {
   label: React.ReactNode;
 };
 
+export type DatePeriodSelectionKind = 'single' | 'range';
+
+export type DatePeriodSelectionToggleProps = {
+  value: DatePeriodSelectionKind;
+  singleLabel: React.ReactNode;
+  rangeLabel: React.ReactNode;
+  ariaLabel: string;
+  onChange: (value: DatePeriodSelectionKind) => void;
+};
+
+export function DatePeriodSelectionToggle({
+  value,
+  singleLabel,
+  rangeLabel,
+  ariaLabel,
+  onChange,
+}: DatePeriodSelectionToggleProps) {
+  return (
+    <div className="ndfb-selection-toggle" role="group" aria-label={ariaLabel}>
+      {([
+        { value: 'single' as const, label: singleLabel },
+        { value: 'range' as const, label: rangeLabel },
+      ]).map((option) => (
+        <Button
+          key={option.value}
+          type="button"
+          size="auto"
+          variant="raw"
+          className={`ndfb-selection-toggle__button${value === option.value ? ' ndfb-selection-toggle__button--active' : ''}`}
+          aria-pressed={value === option.value}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 export type DatePeriodModeGroupProps = {
   mode: DatePeriodMode;
   options: DatePeriodModeOption[];

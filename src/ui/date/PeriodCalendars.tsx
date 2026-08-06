@@ -7,7 +7,12 @@ import {
   type DatePeriodState,
 } from './datePeriod';
 import Button from '../Button';
-import { DatePeriodSelect, type DatePeriodSelectOption } from './DatePeriodControls';
+import {
+  DatePeriodSelect,
+  DatePeriodSelectionToggle,
+  type DatePeriodSelectOption,
+  type DatePeriodSelectionKind,
+} from './DatePeriodControls';
 
 export type DatePeriodCalendarProps = {
   draft: DatePeriodState;
@@ -18,6 +23,11 @@ export type DatePeriodCalendarProps = {
 export type MonthRangeCalendarProps = DatePeriodCalendarProps & {
   monthNames: string[];
   yearLabel: string;
+  selectionKind: DatePeriodSelectionKind;
+  singleLabel: string;
+  rangeLabel: string;
+  selectionLabel: string;
+  onSelectionKindChange?: (value: DatePeriodSelectionKind) => void;
 };
 
 export type YearRangeCalendarProps = DatePeriodCalendarProps & {
@@ -53,11 +63,15 @@ function monthOptions(monthNames: string[]): DatePeriodSelectOption[] {
   return monthNames.map((name, index) => ({ value: index + 1, label: name }));
 }
 
-function isMonthInDraftRange(draft: DatePeriodState, year: number, month: number) {
+function getMonthDraftRangeState(draft: DatePeriodState, year: number, month: number) {
   const start = monthIndex(draft.monthRangeStartYear, draft.monthRangeStartMonth);
   const end = monthIndex(draft.monthRangeEndYear, draft.monthRangeEndMonth);
   const value = monthIndex(year, month);
-  return value >= Math.min(start, end) && value <= Math.max(start, end);
+  const low = Math.min(start, end);
+  const high = Math.max(start, end);
+  if (value < low || value > high) return 'none';
+  if (value === low || value === high) return 'edge';
+  return 'middle';
 }
 
 export function MonthRangeCalendar({
@@ -66,6 +80,11 @@ export function MonthRangeCalendar({
   years,
   updateDraft,
   yearLabel,
+  selectionKind,
+  singleLabel,
+  rangeLabel,
+  selectionLabel,
+  onSelectionKindChange,
 }: MonthRangeCalendarProps) {
   const [anchor, setAnchor] = useState<{ year: number; month: number } | null>(null);
   const calendarYear = draft.monthRangeStartYear || draft.selYear;
@@ -75,16 +94,39 @@ export function MonthRangeCalendar({
   );
 
   const selectYear = (year: number) => {
+    const month = selectionKind === 'single'
+      ? (draft.selMonth || draft.monthRangeStartMonth || 1)
+      : (draft.monthRangeStartMonth || draft.selMonth || 1);
     updateDraft({
+      mode: selectionKind === 'single' ? 'month' : 'months',
+      selYear: year,
+      selMonth: month,
       monthRangeStartYear: year,
+      monthRangeStartMonth: month,
       monthRangeEndYear: year,
+      monthRangeEndMonth: month,
     });
     setAnchor(null);
   };
 
   const selectMonth = (month: number) => {
+    if (selectionKind === 'single') {
+      updateDraft({
+        mode: 'month',
+        selYear: calendarYear,
+        selMonth: month,
+        monthRangeStartYear: calendarYear,
+        monthRangeStartMonth: month,
+        monthRangeEndYear: calendarYear,
+        monthRangeEndMonth: month,
+      });
+      setAnchor(null);
+      return;
+    }
+
     if (!anchor || hasRange || draft.monthRangeStartYear !== calendarYear || draft.monthRangeEndYear !== calendarYear) {
       updateDraft({
+        mode: 'months',
         monthRangeStartYear: calendarYear,
         monthRangeStartMonth: month,
         monthRangeEndYear: calendarYear,
@@ -95,6 +137,7 @@ export function MonthRangeCalendar({
     }
 
     updateDraft({
+      mode: 'months',
       monthRangeStartYear: anchor.year,
       monthRangeStartMonth: anchor.month,
       monthRangeEndYear: calendarYear,
@@ -105,6 +148,15 @@ export function MonthRangeCalendar({
 
   return (
     <div className="ndfb-calendar ndfb-calendar--months">
+      {onSelectionKindChange && (
+        <DatePeriodSelectionToggle
+          value={selectionKind}
+          singleLabel={singleLabel}
+          rangeLabel={rangeLabel}
+          ariaLabel={selectionLabel}
+          onChange={onSelectionKindChange}
+        />
+      )}
       <div className="ndfb-calendar-panel">
         <div className="ndfb-calendar-panel__head">
           <span>{yearLabel}</span>
@@ -119,14 +171,21 @@ export function MonthRangeCalendar({
         <div className="ndfb-month-grid">
           {monthNames.map((name, index) => {
             const month = index + 1;
-            const active = isMonthInDraftRange(draft, calendarYear, month);
+            const rangeState = selectionKind === 'single'
+              ? (draft.selYear === calendarYear && draft.selMonth === month ? 'edge' : 'none')
+              : getMonthDraftRangeState(draft, calendarYear, month);
             return (
               <Button
                 variant="raw"
                 key={month}
                 type="button"
-                className={`ndfb-month-cell${active ? ' ndfb-month-cell--active' : ''}`}
+                className={[
+                  'ndfb-month-cell',
+                  rangeState === 'edge' ? 'ndfb-month-cell--active ndfb-month-cell--range-edge' : '',
+                  rangeState === 'middle' ? 'ndfb-month-cell--range-middle' : '',
+                ].filter(Boolean).join(' ')}
                 aria-label={name}
+                aria-pressed={rangeState !== 'none'}
                 onClick={() => selectMonth(month)}
               >
                 {name}

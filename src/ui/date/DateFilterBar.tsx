@@ -9,11 +9,18 @@ import {
 } from './datePeriod';
 import DateRangeField from './DateRangeField';
 import { DayRangeCalendar, MonthRangeCalendar, QuarterCalendar, YearRangeCalendar } from './PeriodCalendars';
-import { DatePeriodActions, DatePeriodBadge, DatePeriodModeGroup, type DatePeriodModeOption } from './DatePeriodControls';
+import {
+  DatePeriodActions,
+  DatePeriodBadge,
+  DatePeriodModeGroup,
+  type DatePeriodModeOption,
+  type DatePeriodSelectionKind,
+} from './DatePeriodControls';
 import { cn } from '../cn';
 import {
   applyDatePeriodDraft,
   areDatePeriodStatesEqual,
+  cloneDatePeriodState,
   getDatePeriodModeChange,
   toDatePeriodUiMode,
   useDatePeriodDraft,
@@ -26,6 +33,7 @@ export type DateFilterBarProps = {
   modes?: DatePeriodMode[];
   showBadge?: boolean;
   showActions?: boolean;
+  allowMonthRange?: boolean;
   onApply?: (state: DatePeriodState) => void;
   className?: string;
 };
@@ -37,6 +45,7 @@ export default function DateFilterBar({
   modes = DEFAULT_MODES,
   showBadge = true,
   showActions = true,
+  allowMonthRange = true,
   onApply,
   className = '',
 }: DateFilterBarProps) {
@@ -45,14 +54,14 @@ export default function DateFilterBar({
   const years = useMemo(() => [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3], [now.year]);
   const monthNames = useMemo(() => getGregorianMonthNames(lang), [lang]);
   const weekdayNames = useMemo(() => getGregorianWeekdayNames(lang), [lang]);
-  const { draft, updateDraft } = useDatePeriodDraft(filter);
+  const { draft, updateDraft, setDraft } = useDatePeriodDraft(filter);
   const [openPanel, setOpenPanel] = useState<DatePeriodMode | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const anchorRef = useRef<HTMLElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null);
   const mode = toDatePeriodUiMode(draft.mode);
-  const draftLabel = buildDatePeriodLabel(draft, now);
+  const appliedLabel = buildDatePeriodLabel(filter.state, now);
   const isDirty = !areDatePeriodStatesEqual(filter.state, draft);
 
   const availableModes = useMemo(
@@ -83,6 +92,12 @@ export default function DateFilterBar({
       setOpenPanel(null);
       return;
     }
+    if (openPanel && toDatePeriodUiMode(openPanel) === toDatePeriodUiMode(nextMode)) {
+      setDraft(cloneDatePeriodState(filter.state));
+      setPopoverStyle(null);
+      setOpenPanel(null);
+      return;
+    }
     const change = getDatePeriodModeChange(draft, nextMode, now);
     updateDraft(change.patch);
     setPopoverStyle(null);
@@ -95,6 +110,12 @@ export default function DateFilterBar({
     updateDraft(change.patch);
     setOpenPanel(null);
   }, [availableModes, draft, fallbackMode, mode, now, updateDraft]);
+
+  const cancel = () => {
+    setDraft(cloneDatePeriodState(filter.state));
+    setPopoverStyle(null);
+    setOpenPanel(null);
+  };
 
   useLayoutEffect(() => {
     if (!openPanel) return undefined;
@@ -123,21 +144,40 @@ export default function DateFilterBar({
       if (!(target instanceof Node)) return;
       if (rootRef.current?.contains(target)) return;
       if (popoverRef.current?.contains(target)) return;
-      setPopoverStyle(null);
-      setOpenPanel(null);
+      cancel();
     };
     updatePopoverPosition();
     window.addEventListener('resize', updatePopoverPosition);
     window.addEventListener('scroll', updatePopoverPosition, true);
     document.addEventListener('mousedown', closeOnOutsidePointer);
     document.addEventListener('touchstart', closeOnOutsidePointer);
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') cancel();
+    };
+    document.addEventListener('keydown', closeOnEscape);
     return () => {
       window.removeEventListener('resize', updatePopoverPosition);
       window.removeEventListener('scroll', updatePopoverPosition, true);
       document.removeEventListener('mousedown', closeOnOutsidePointer);
       document.removeEventListener('touchstart', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
     };
-  }, [lang, openPanel]);
+  }, [lang, openPanel, filter.state]);
+
+  const monthSelectionKind: DatePeriodSelectionKind = draft.mode === 'months' ? 'range' : 'single';
+  const setMonthSelectionKind = (value: DatePeriodSelectionKind) => {
+    const year = draft.mode === 'months' ? draft.monthRangeStartYear : draft.selYear;
+    const month = draft.mode === 'months' ? draft.monthRangeStartMonth : draft.selMonth;
+    updateDraft({
+      mode: value === 'range' ? 'months' : 'month',
+      selYear: year,
+      selMonth: month,
+      monthRangeStartYear: year,
+      monthRangeStartMonth: month,
+      monthRangeEndYear: year,
+      monthRangeEndMonth: month,
+    });
+  };
 
   const apply = () => {
     if (!isDirty) {
@@ -173,6 +213,11 @@ export default function DateFilterBar({
           years={years}
           updateDraft={updateDraft}
           yearLabel={t('dateFilterYear')}
+          selectionKind={allowMonthRange ? monthSelectionKind : 'single'}
+          singleLabel={lang === 'ar' ? 'شهر واحد' : 'Single month'}
+          rangeLabel={lang === 'ar' ? 'نطاق أشهر' : 'Month range'}
+          selectionLabel={lang === 'ar' ? 'طريقة اختيار الشهر' : 'Month selection type'}
+          onSelectionKindChange={allowMonthRange ? setMonthSelectionKind : undefined}
         />
       )}
 
@@ -244,7 +289,7 @@ export default function DateFilterBar({
         onModeChange={setMode}
       />
 
-      {showBadge && mode !== 'all' && <DatePeriodBadge label={draftLabel} pending={isDirty} />}
+      {showBadge && toDatePeriodUiMode(filter.state.mode) !== 'all' && <DatePeriodBadge label={appliedLabel} />}
       {popover ? createPortal(popover, document.body) : null}
     </div>
   );

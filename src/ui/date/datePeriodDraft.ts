@@ -24,7 +24,7 @@ export type DatePeriodDraftFilter = {
 };
 
 export function normalizeDatePeriodMode(mode: DatePeriodMode): DatePeriodMode {
-  return mode === 'month' ? 'months' : mode;
+  return mode;
 }
 
 export function toDatePeriodUiMode(mode: DatePeriodMode): DatePeriodMode {
@@ -87,6 +87,28 @@ export function getDatePeriodModeChange(
   now: DatePeriodNow,
 ): { patch: Partial<DatePeriodState>; openPanel: DatePeriodMode | null } {
   const normalized = normalizeDatePeriodMode(nextMode);
+
+  if (normalized === 'month' || normalized === 'months') {
+    const monthMode = draft.mode === 'month' || draft.mode === 'months'
+      ? draft.mode
+      : 'month';
+    const selectedYear = draft.selYear || now.year;
+    const selectedMonth = draft.selMonth || now.month;
+    return {
+      patch: monthMode === 'month'
+        ? {
+            mode: 'month',
+            selYear: selectedYear,
+            selMonth: selectedMonth,
+            monthRangeStartYear: selectedYear,
+            monthRangeStartMonth: selectedMonth,
+            monthRangeEndYear: selectedYear,
+            monthRangeEndMonth: selectedMonth,
+          }
+        : { mode: 'months' },
+      openPanel: 'month',
+    };
+  }
 
   if (normalized === 'day') {
     const day = draft.selDay || ymd(now.year, now.month, now.day);

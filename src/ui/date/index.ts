@@ -19,12 +19,20 @@ export type {
   QuarterCalendarProps,
   YearRangeCalendarProps,
 } from './PeriodCalendars';
-export { DatePeriodActions, DatePeriodBadge, DatePeriodModeGroup, DatePeriodSelect } from './DatePeriodControls';
+export {
+  DatePeriodActions,
+  DatePeriodBadge,
+  DatePeriodModeGroup,
+  DatePeriodSelect,
+  DatePeriodSelectionToggle,
+} from './DatePeriodControls';
 export type {
   DatePeriodActionsProps,
   DatePeriodBadgeProps,
   DatePeriodModeGroupProps,
   DatePeriodModeOption,
+  DatePeriodSelectionKind,
+  DatePeriodSelectionToggleProps,
   DatePeriodSelectOption,
   DatePeriodSelectProps,
 } from './DatePeriodControls';

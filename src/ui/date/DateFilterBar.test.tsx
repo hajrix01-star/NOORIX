@@ -54,10 +54,11 @@ afterEach(() => {
 });
 
 describe('DateFilterBar', () => {
-  it('keeps month filtering in one calendar control and supports multi-month selection', () => {
+  it('keeps month filtering in one calendar control and supports an explicit month range', () => {
     renderFilter();
 
     fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Month range' }));
 
     const now = getSaudiNow();
     const startMonth = now.month > 1 ? now.month - 1 : now.month;
@@ -72,6 +73,20 @@ describe('DateFilterBar', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByTestId('applied-label').textContent).toBe(expectedLabel);
     expect(screen.queryByRole('button', { name: MONTH_NAMES_EN[now.month - 1] })).toBeNull();
+  });
+
+  it('selects exactly one month in single-month mode', () => {
+    renderFilter();
+
+    const now = getSaudiNow();
+    const selectedMonth = now.month === 1 ? 2 : 1;
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+
+    expect(screen.getByRole('button', { name: 'Single month' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: MONTH_NAMES_EN[selectedMonth - 1] }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(screen.getByTestId('applied-label').textContent).toBe(`${MONTH_NAMES_EN[selectedMonth - 1]} ${now.year}`);
   });
 
   it('does not update the applied period until Apply is clicked', () => {
@@ -90,12 +105,16 @@ describe('DateFilterBar', () => {
   it('closes the compact period popover when clicking outside', () => {
     renderFilter();
 
+    const appliedLabel = screen.getByTestId('applied-label').textContent;
     fireEvent.click(screen.getByRole('button', { name: 'Month' }));
     expect(screen.getByRole('dialog', { name: 'Period' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Jan' }));
 
     fireEvent.mouseDown(document.body);
 
     expect(screen.queryByRole('dialog', { name: 'Period' })).toBeNull();
+    expect(screen.getByTestId('applied-label').textContent).toBe(appliedLabel);
+    expect(document.querySelector('.ndfb-period-badge')?.textContent).toBe(appliedLabel);
   });
 
   it('applies all mode immediately without opening the old inline panel', () => {

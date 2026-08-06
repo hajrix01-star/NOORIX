@@ -8,7 +8,7 @@ import {
   type DatePeriodState,
 } from './datePeriod';
 
-export function useDateFilter(initialMode: DatePeriodMode = 'months') {
+export function useDateFilter(initialMode: DatePeriodMode = 'month') {
   const now = getSaudiNow();
 
   const [mode, setMode] = useState<DatePeriodMode>(initialMode);
