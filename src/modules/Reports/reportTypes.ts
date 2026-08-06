@@ -67,6 +67,8 @@ export type ReportDetailInvoiceItem = {
   supplierNameEn?: string | null;
   itemLabelAr?: string | null;
   itemLabelEn?: string | null;
+  sourceReferenceId?: string | null;
+  sourceItemKey?: string | null;
   reportAmount?: string | number | null;
   totalAmount?: string | number | null;
   netAmount?: string | number | null;

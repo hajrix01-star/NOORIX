@@ -24,16 +24,11 @@ import { resolveExpenseTreeNode } from './reports-expense-tree.util';
 import { formatReportMoneyInteger, formatReportPercentNumber } from '../common/utils/report-display-format.util';
 import { loadPlPeriodTotals } from './reports-pl-period-totals.util';
 import { buildGeneralProfitLossTrend } from './reports-pl-trend.util';
-import { reconcilePlDetailItems } from './reports-pl-detail-reconciliation.util';
-
-function resolveCategoryLedgerAccountItemKey(
-  categories: Map<string, CategoryNode>,
-  itemKey?: string,
-): string | null {
-  if (!itemKey?.startsWith('category:')) return null;
-  const category = categories.get(itemKey.replace('category:', ''));
-  return category?.accountId ? `account:${category.accountId}` : null;
-}
+import {
+  mergePlCategoryDetailItems,
+  reconcilePlDetailItems,
+} from './reports-pl-detail-reconciliation.util';
+import { getCategoryAndDescendantIds } from './reports-category-descendants.util';
 
 @Injectable()
 export class ReportsService {
@@ -109,7 +104,6 @@ export class ReportsService {
     });
     const categories = new Map(catRows.map((c) => [c.id, { ...c } as CategoryNode]));
     const title = resolvePlDetailTitle(groupKey, itemKey, categories);
-    const ledgerAccountItemKey = resolveCategoryLedgerAccountItemKey(categories, itemKey);
 
     let detailItems: Array<{
       id: string;
@@ -129,6 +123,8 @@ export class ReportsService {
       expenseLineNameEn: string | null;
       summaryNumber: string | null;
       channelNames: Array<{ nameAr: string; nameEn: string | null; amount: string }>;
+      sourceReferenceId: string;
+      sourceItemKey: string;
       reportAmount: string;
       totalAmount: string;
       netAmount: string;
@@ -136,16 +132,40 @@ export class ReportsService {
       notes: string | null;
     }>;
 
-    const useInvoiceGross = !!itemKey && !itemKey.startsWith('account:') && !ledgerAccountItemKey;
+    const isCategoryItem = !!itemKey?.startsWith('category:');
+    const useInvoiceGross = !!itemKey && !itemKey.startsWith('account:') && !isCategoryItem;
     let invoiceGrossMonths: Decimal[] | null = null;
     let detailSource: 'ledger' | 'invoices' = 'invoices';
 
     if (itemKey?.startsWith('account:')) {
       detailSource = 'ledger';
       detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey as GroupKey, itemKey);
-    } else if (ledgerAccountItemKey) {
-      detailSource = 'ledger';
-      detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey as GroupKey, ledgerAccountItemKey);
+    } else if (isCategoryItem && itemKey) {
+      const categoryIds = getCategoryAndDescendantIds(
+        itemKey.replace('category:', ''),
+        categories,
+      );
+      const categoryAccountKeys = [...new Set(
+        [...categoryIds]
+          .map((categoryId) => categories.get(categoryId)?.accountId)
+          .filter((accountId): accountId is string => !!accountId)
+          .map((accountId) => `account:${accountId}`),
+      )];
+      const [invoiceItems, ...ledgerItemGroups] = await Promise.all([
+        loadPlDetailInvoices(this.prisma, companyId, year, month, groupKey as GroupKey, itemKey, categories),
+        ...categoryAccountKeys.map((accountKey) =>
+          loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey as GroupKey, accountKey, categories),
+        ),
+      ]);
+      const acceptedItemKeys = new Set([
+        ...[...categoryIds].map((categoryId) => `category:${categoryId}`),
+        ...invoiceItems.map((invoiceItem) => invoiceItem.itemKey),
+      ]);
+      detailItems = mergePlCategoryDetailItems(
+        invoiceItems,
+        ledgerItemGroups.flat(),
+        acceptedItemKeys,
+      );
     } else {
       const [detailResult, grossMonths] = await Promise.all([
         loadPlDetailInvoices(this.prisma, companyId, year, month, groupKey, itemKey, categories),

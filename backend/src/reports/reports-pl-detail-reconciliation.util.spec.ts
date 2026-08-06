@@ -1,4 +1,7 @@
-import { reconcilePlDetailItems } from './reports-pl-detail-reconciliation.util';
+import {
+  mergePlCategoryDetailItems,
+  reconcilePlDetailItems,
+} from './reports-pl-detail-reconciliation.util';
 
 describe('P&L detail reconciliation', () => {
   it('reconciles the period amount and calculates each document share of sales', () => {
@@ -31,5 +34,34 @@ describe('P&L detail reconciliation', () => {
       '100',
       1,
     ).documentsMatchContext).toBeNull();
+  });
+
+  it('merges all category branches and excludes duplicate invoice ledger entries', () => {
+    const invoiceItems = [
+      { id: 'tobacco-license', reportAmount: '30020', transactionDate: '2026-07-26' },
+      { id: 'tobacco-fee', reportAmount: '4320', transactionDate: '2026-07-15' },
+      { id: 'hr-1', reportAmount: '2162', transactionDate: '2026-07-31' },
+      { id: 'hr-2', reportAmount: '300', transactionDate: '2026-07-24' },
+      { id: 'hr-3', reportAmount: '300', transactionDate: '2026-07-24' },
+    ];
+    const ledgerItems = [
+      { id: 'ledger-duplicate', sourceReferenceId: 'tobacco-license', reportAmount: '30020', transactionDate: '2026-07-26' },
+      { id: 'ledger-open-24', sourceReferenceId: 'open-24', sourceItemKey: 'category:government', reportAmount: '3044', transactionDate: '2026-07-31' },
+      { id: 'ledger-vat', sourceReferenceId: 'vat-15', sourceItemKey: 'category:government', reportAmount: '6598', transactionDate: '2026-07-31' },
+      { id: 'ledger-gosi', sourceReferenceId: 'gosi', sourceItemKey: 'category:government', reportAmount: '3000', transactionDate: '2026-07-07' },
+      { id: 'ledger-gosi', sourceReferenceId: 'gosi', sourceItemKey: 'category:government', reportAmount: '3000', transactionDate: '2026-07-07' },
+      { id: 'ledger-other', sourceReferenceId: 'other', sourceItemKey: 'category:rent', reportAmount: '1000', transactionDate: '2026-07-01' },
+    ];
+
+    const merged = mergePlCategoryDetailItems(
+      invoiceItems,
+      ledgerItems,
+      new Set(['category:government']),
+    );
+    const result = reconcilePlDetailItems(merged, '158131', '49744');
+
+    expect(merged).toHaveLength(8);
+    expect(result.documentsAmount).toBe('49744');
+    expect(result.documentsMatchContext).toBe(true);
   });
 });

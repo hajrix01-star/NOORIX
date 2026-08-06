@@ -10,7 +10,7 @@ import {
 } from './reports-general-profit-loss-model.util';
 import { getCategoryAndDescendantIds } from './reports-category-descendants.util';
 import { plDec } from './reports-pl-math.util';
-import { resolvePlItemMeta } from './reports-pl-item-meta.util';
+import { resolvePlCategoryMeta, resolvePlItemMeta } from './reports-pl-item-meta.util';
 import { formatReportMoneyInteger, formatReportTaxAmount } from '../common/utils/report-display-format.util';
 
 type PlInvoiceDetailPrisma = {
@@ -42,6 +42,7 @@ export async function loadPlDetailFromLedger(
   month: number | undefined,
   groupKey: GroupKey,
   itemKey: string,
+  categories?: Map<string, CategoryNode>,
 ) {
   const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
   const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
@@ -103,8 +104,9 @@ export async function loadPlDetailFromLedger(
       netAmount: true,
       taxAmount: true,
       notes: true,
-      supplier: { select: { nameAr: true, nameEn: true } },
-      expenseLine: { select: { nameAr: true, nameEn: true } },
+      categoryId: true,
+      supplier: { select: { nameAr: true, nameEn: true, supplierCategoryId: true } },
+      expenseLine: { select: { id: true, nameAr: true, nameEn: true, categoryId: true } },
       dailySalesSummary: {
         select: {
           summaryNumber: true,
@@ -136,12 +138,18 @@ export async function loadPlDetailFromLedger(
     expenseLineNameEn: string | null;
     summaryNumber: string | null;
     channelNames: Array<{ nameAr: string; nameEn: string | null; amount: string }>;
+    sourceReferenceId: string;
+    sourceItemKey: string;
     reportAmount: string;
     totalAmount: string;
     netAmount: string;
     taxAmount: string;
     notes: string | null;
   }> = [];
+
+  const accountCategory = categories
+    ? [...categories.values()].find((category) => category.accountId === accountId && !category.parentId)
+    : null;
 
   for (const e of entries) {
     const inv = invMap.get(e.referenceId) ?? invBySummaryId.get(e.referenceId);
@@ -155,6 +163,12 @@ export async function loadPlDetailFromLedger(
     const displayNet = ledgerAmt;
     const displayTax = plDec(0);
     const kind = inv?.kind || e.referenceType || '—';
+    const resolvedItemMeta = inv && categories
+      ? resolvePlItemMeta(inv as unknown as ReportInvoice, groupKey, categories)
+      : null;
+    const sourceItemMeta = resolvedItemMeta?.key.startsWith('kind:') && accountCategory && categories
+      ? resolvePlCategoryMeta(accountCategory, categories)
+      : resolvedItemMeta;
     result.push({
       id: e.id,
       invoiceNumber: inv?.invoiceNumber || e.referenceId?.slice(0, 12) || '—',
@@ -177,6 +191,8 @@ export async function loadPlDetailFromLedger(
         nameEn: ch.vault.nameEn,
         amount: formatReportMoneyInteger(plDec(ch.amount)),
       })),
+      sourceReferenceId: e.referenceId,
+      sourceItemKey: sourceItemMeta?.key || itemKey,
       reportAmount: displayTotal.toFixed(4),
       totalAmount: formatReportMoneyInteger(displayTotal),
       netAmount: formatReportMoneyInteger(displayNet),
@@ -390,6 +406,8 @@ export async function loadPlDetailInvoices(
       expenseLineNameEn: invoice.expenseLine?.nameEn || null,
       summaryNumber: invoice.dailySalesSummary?.summaryNumber || null,
       channelNames,
+      sourceReferenceId: invoice.id,
+      sourceItemKey: itemMeta.key,
       reportAmount: displayTotal.toFixed(4),
       totalAmount: formatReportMoneyInteger(displayTotal),
       netAmount: formatReportMoneyInteger(displayNet),
