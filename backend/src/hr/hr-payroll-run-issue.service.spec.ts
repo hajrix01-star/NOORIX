@@ -73,6 +73,52 @@ describe('HrPayrollRunIssueService', () => {
     });
   });
 
+  it('forwards an arbitrary number of exact vault allocations to the accounting core', async () => {
+    const tx = {
+      payrollRun: {
+        findFirst: jest.fn().mockResolvedValue({ advanceSettlementsAppliedAt: new Date('2026-06-30T00:00:00.000Z') }),
+      },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const prisma: TenantPrismaService = Object.assign(Object.create(TenantPrismaService.prototype), {
+      payrollRun: { findFirst: jest.fn().mockResolvedValue(baseRun) },
+      invoice: { findFirst: jest.fn().mockResolvedValue(null) },
+      vault: { findFirst: jest.fn().mockResolvedValue({ id: 'vault-default' }) },
+      $transaction: jest.fn((fn) => fn(tx)),
+    });
+    const accountingCore: AccountingCoreService = Object.assign(Object.create(AccountingCoreService.prototype), {
+      postPayrollPaymentBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-1' } }]),
+    });
+    const audit: AuditLogService = Object.assign(Object.create(AuditLogService.prototype), {
+      log: jest.fn().mockResolvedValue(undefined),
+    });
+    const service = new HrPayrollRunIssueService(prisma, audit, accountingCore);
+
+    await service.issuePayrollPayment({
+      payrollRunId: 'run-1',
+      transactionDate: '2026-06-30',
+      vaultSplits: [
+        { vaultId: 'vault-1', amount: 400 },
+        { vaultId: 'vault-2', amount: 350 },
+        { vaultId: 'vault-3', amount: 250 },
+      ],
+    });
+
+    expect(accountingCore.postPayrollPaymentBatchInTransaction).toHaveBeenCalledWith(
+      tx,
+      [expect.objectContaining({
+        totalAmount: '1000',
+        vaultSplits: [
+          { vaultId: 'vault-1', amount: '400' },
+          { vaultId: 'vault-2', amount: '350' },
+          { vaultId: 'vault-3', amount: '250' },
+        ],
+      })],
+      undefined,
+      'tenant-1',
+    );
+  });
+
   it('treats an existing salary invoice as an idempotent replay', async () => {
     const prisma: TenantPrismaService = Object.assign(Object.create(TenantPrismaService.prototype), {
       payrollRun: { findFirst: jest.fn().mockResolvedValue(baseRun) },

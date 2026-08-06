@@ -64,11 +64,6 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const [detailRunId, setDetailRunId] = useState<string | null>(null);
   const [payModalRun, setPayModalRun] = useState<PayrollPayModalRun | null>(null);
   const [payTransactionDate, setPayTransactionDate] = useState(() => getSaudiToday());
-  const [payVaultId, setPayVaultId] = useState('');
-  const [paySecondVaultId, setPaySecondVaultId] = useState('');
-  const [paySecondAmount, setPaySecondAmount] = useState('');
-  const [paySecondEnabled, setPaySecondEnabled] = useState(false);
-  const [payVaultError, setPayVaultError] = useState('');
   const { showToast } = useToast();
   const { paymentVaults = [] } = useVaults({ companyId });
   const queryClient = useQueryClient();
@@ -100,11 +95,6 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
     onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
       setPayModalRun(null);
-      setPayVaultId('');
-      setPaySecondVaultId('');
-      setPaySecondAmount('');
-      setPaySecondEnabled(false);
-      setPayVaultError('');
     },
   });
 
@@ -116,11 +106,6 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
       netTotal: row.netTotal,
     });
     setPayTransactionDate(lastDayOfPayrollMonth(row.monthRaw) || getSaudiToday());
-    setPayVaultId('');
-    setPaySecondVaultId('');
-    setPaySecondAmount('');
-    setPaySecondEnabled(false);
-    setPayVaultError('');
   }, []);
 
   const deleteRunMutation = useApiMutation<unknown, { id: string }>({
@@ -366,21 +351,11 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
       <PayrollPayModal
         run={payModalRun}
         transactionDate={payTransactionDate}
-        vaultId={payVaultId}
-        secondVaultId={paySecondVaultId}
-        secondAmount={paySecondAmount}
-        secondEnabled={paySecondEnabled}
-        vaultError={payVaultError}
         paymentVaults={paymentVaults}
         lang={lang}
         isPending={issuePaymentMutation.isPending}
         t={t}
         onTransactionDateChange={setPayTransactionDate}
-        onVaultIdChange={setPayVaultId}
-        onSecondVaultIdChange={setPaySecondVaultId}
-        onSecondAmountChange={setPaySecondAmount}
-        onSecondEnabledChange={setPaySecondEnabled}
-        onVaultErrorChange={setPayVaultError}
         onClose={() => {
           if (issuePaymentMutation.isPending) return;
           setPayModalRun(null);
