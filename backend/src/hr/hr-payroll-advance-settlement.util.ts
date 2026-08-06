@@ -91,14 +91,17 @@ export async function applyPayrollAdvanceSettlements(
       const { remainingAmount: remaining, settledAmount: settled } = getHrAdvanceBalanceParts(adv);
       if (remaining <= 0) continue;
 
-      // إن كانت السلفة بأقساط محددة، اقتطع القسط فقط — لا الرصيد الكامل
-      const cap = adv.installmentAmount
-        ? Math.min(Number(adv.installmentAmount), remaining)
-        : remaining;
+      // الاختيار الصريح هو مبلغ هذا المسير فقط؛ لا يغيّر القسط المركزي للسلفة.
+      // المسيرات القديمة التي لا تملك اختيارات صريحة تستمر على منطق القسط السابق.
+      const cap = row.selection
+        ? remaining
+        : adv.installmentAmount
+          ? Math.min(Number(adv.installmentAmount), remaining)
+          : remaining;
       const requested = row.selection?.amount ?? remainingToDeduct;
-      if (row.selection && Math.abs(requested - cap) > 0.01) {
+      if (row.selection && requested - remaining > 0.01) {
         throw new BadRequestException(
-          `قيمة السلفة ${adv.invoiceNumber} تغيرت بعد إنشاء المسير. عدّل المسير قبل اعتماده.`,
+          `قيمة خصم السلفة ${adv.invoiceNumber} تتجاوز رصيدها الحالي. عدّل المسير قبل اعتماده.`,
         );
       }
       const allocate = Math.min(remainingToDeduct, requested, cap);

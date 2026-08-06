@@ -184,6 +184,7 @@ export function PayrollRunFormModal({
           updateItem={actions.updateItem}
           toggleInclude={actions.toggleInclude}
           toggleAdvance={actions.toggleAdvance}
+          updateAdvanceAmount={actions.updateAdvanceAmount}
           selectInput={actions.selectInput}
         />
 

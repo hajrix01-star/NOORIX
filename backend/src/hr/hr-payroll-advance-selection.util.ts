@@ -16,8 +16,9 @@ function monthKey(date: Date): string {
 
 /**
  * Treats advance selections as authoritative payroll input. This prevents a client from
- * selecting another employee's advance, changing the central installment, or deducting
- * the same advance twice in one run. Undefined keeps backward compatibility for old drafts.
+ * selecting another employee's advance, exceeding its live balance, or deducting the same
+ * advance twice in one run. The selected amount belongs to this run only and never mutates
+ * the advance's central installment. Undefined keeps backward compatibility for old drafts.
  */
 export async function assertPayrollAdvanceSelections(
   db: AdvanceSelectionDb,
@@ -64,15 +65,18 @@ export async function assertPayrollAdvanceSelections(
       if (remainingAmount <= 0) {
         throw new BadRequestException(`السلفة ${advance.invoiceNumber} مسددة بالفعل.`);
       }
-      const dueAmount = advance.installmentAmount
-        ? Math.min(Number(advance.installmentAmount), remainingAmount)
-        : remainingAmount;
-      if (Math.abs(Number(selection.amount) - dueAmount) > MONEY_EPSILON) {
+      const selectedAmount = Number(selection.amount);
+      if (!Number.isFinite(selectedAmount) || selectedAmount <= 0) {
         throw new BadRequestException(
-          `قيمة خصم السلفة ${advance.invoiceNumber} تغيرت. حدّث المسير لاعتماد القسط المركزي الحالي.`,
+          `قيمة خصم السلفة ${advance.invoiceNumber} يجب أن تكون أكبر من صفر.`,
         );
       }
-      selectedTotal += dueAmount;
+      if (selectedAmount - remainingAmount > MONEY_EPSILON) {
+        throw new BadRequestException(
+          `قيمة خصم السلفة ${advance.invoiceNumber} تتجاوز الرصيد المتبقي. حدّث المسير وحاول مجددًا.`,
+        );
+      }
+      selectedTotal += selectedAmount;
     }
     if (Math.abs(selectedTotal - Number(item.advancesDeduct ?? 0)) > MONEY_EPSILON) {
       throw new BadRequestException('إجمالي خصم السلف لا يطابق السلف المحددة.');

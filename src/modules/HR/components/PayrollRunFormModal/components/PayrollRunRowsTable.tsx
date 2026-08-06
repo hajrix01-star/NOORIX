@@ -18,6 +18,7 @@ type Props = {
   updateItem: (idx: number, field: keyof PayrollRunLineItem, value: string) => void;
   toggleInclude: (emp: Record<string, unknown> & { id?: string }) => void;
   toggleAdvance: (employeeId: string, advanceId: string) => void;
+  updateAdvanceAmount: (employeeId: string, advanceId: string, value: string) => void;
   selectInput: (e: React.FocusEvent<HTMLInputElement>) => void;
 };
 
@@ -29,6 +30,7 @@ export function PayrollRunRowsTable({
   updateItem,
   toggleInclude,
   toggleAdvance,
+  updateAdvanceAmount,
   selectInput,
 }: Props) {
   return (
@@ -100,10 +102,10 @@ export function PayrollRunRowsTable({
                       {items[idx].advanceChoices.length ? (
                         <div className="grid grid-cols-3 gap-1">
                           {items[idx].advanceChoices.map((advance) => (
-                            <label
+                            <div
                               key={advance.advanceId}
                               className={cn(
-                                'min-w-0 flex items-center justify-center gap-1 rounded-md border px-1.5 py-1 cursor-pointer',
+                                'min-w-0 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-1 rounded-md border px-1.5 py-1',
                                 advance.selected
                                   ? 'border-noorix-green/30 bg-noorix-green/5'
                                   : 'border-noorix-amber/40 bg-noorix-amber/10 text-noorix-muted',
@@ -114,16 +116,30 @@ export function PayrollRunRowsTable({
                                 onChange={() => toggleAdvance(emp.id as string, advance.advanceId)}
                                 aria-label={`${t('payrollAdvances')} ${advance.amount} ${compactAdvanceDate(advance.dateLabel)}`}
                               />
+                              <EditableNumberCell
+                                value={advance.amount}
+                                min="0.01"
+                                max={advance.remaining}
+                                step="0.01"
+                                disabled={!advance.selected}
+                                selectOnFocus
+                                align="end"
+                                className="h-7 !px-1 text-[11px] font-bold"
+                                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                                  updateAdvanceAmount(emp.id as string, advance.advanceId, event.target.value)
+                                }
+                                aria-label={`${t('payrollAdvanceDeductionAmount')} ${compactAdvanceDate(advance.dateLabel)}`}
+                              />
                               <span
                                 className={cn(
-                                  'min-w-0 truncate text-[11px] font-bold tabular-nums',
+                                  'col-start-2 min-w-0 truncate text-[10px] text-center tabular-nums',
                                   !advance.selected && 'line-through decoration-noorix-amber/70',
                                 )}
                                 dir="ltr"
                               >
-                                <FmtNum n={advance.amount} /> · {compactAdvanceDate(advance.dateLabel)}
+                                {compactAdvanceDate(advance.dateLabel)}
                               </span>
-                            </label>
+                            </div>
                           ))}
                         </div>
                       ) : (

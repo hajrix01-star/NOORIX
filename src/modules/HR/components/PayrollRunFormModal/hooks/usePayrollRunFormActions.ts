@@ -76,6 +76,28 @@ export function usePayrollRunFormActions({
     [setItems],
   );
 
+  const updateAdvanceAmount = useCallback(
+    (employeeId: string, advanceId: string, value: string) => {
+      const parsed = Number(value);
+      const amount = Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : 0;
+      setItems((prev) =>
+        prev.map((row) => {
+          if (row.employeeId !== employeeId) return row;
+          const advanceChoices = row.advanceChoices.map((advance) =>
+            advance.advanceId === advanceId ? { ...advance, amount } : advance,
+          );
+          const selected = advanceChoices.filter((advance) => advance.selected);
+          return withComputedPayrollLineNet({
+            ...row,
+            advanceChoices,
+            advancesDeduct: selected.reduce((sum, advance) => sum + advance.amount, 0),
+          });
+        }),
+      );
+    },
+    [setItems],
+  );
+
   const toggleInclude = useCallback(
     (emp: Record<string, unknown> & { id?: string }) => {
       const idx = items.findIndex((i) => i.employeeId === emp.id);
@@ -99,6 +121,15 @@ export function usePayrollRunFormActions({
       }
       if (alreadyExists) {
         setError(t('payrollMonthExists') || 'مسيرة لهذا الشهر موجودة مسبقاً');
+        return;
+      }
+      const selectedAdvances = items.flatMap((item) => item.advanceChoices.filter((advance) => advance.selected));
+      if (selectedAdvances.some((advance) => !Number.isFinite(advance.amount) || advance.amount <= 0)) {
+        setError(t('payrollAdvanceAmountInvalid'));
+        return;
+      }
+      if (selectedAdvances.some((advance) => advance.amount - advance.remaining > 0.01)) {
+        setError(t('payrollAdvanceAmountExceedsBalance'));
         return;
       }
       setSubmitting(true);
@@ -168,6 +199,7 @@ export function usePayrollRunFormActions({
   return {
     updateItem,
     toggleAdvance,
+    updateAdvanceAmount,
     toggleInclude,
     handleSubmit,
     selectInput,

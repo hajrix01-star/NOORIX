@@ -550,6 +550,9 @@ export default {
   payrollAdvanceDeferred: { ar: 'مؤجلة', en: 'Deferred' },
   payrollAdvanceDue: { ar: 'خصم هذا الشهر', en: 'Due this month' },
   payrollAdvanceRemaining: { ar: 'الرصيد', en: 'Balance' },
+  payrollAdvanceDeductionAmount: { ar: 'مبلغ خصم السلفة', en: 'Advance deduction amount' },
+  payrollAdvanceAmountInvalid: { ar: 'مبلغ خصم السلفة المحددة يجب أن يكون أكبر من صفر', en: 'The selected advance deduction must be greater than zero' },
+  payrollAdvanceAmountExceedsBalance: { ar: 'مبلغ خصم إحدى السلف يتجاوز رصيدها المتبقي', en: 'An advance deduction exceeds its remaining balance' },
   payrollNoAdvances: { ar: 'لا توجد سلف مستحقة', en: 'No advances due' },
   payrollRunPayVaultSection: {
     ar: 'خزائن صرف المسيرة (فاتورة صرف واحدة لمجموع الرواتب — يمكن التقسيم بين خزنتين)',

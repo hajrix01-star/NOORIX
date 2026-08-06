@@ -46,7 +46,7 @@ describe('payroll advance selection validation', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('rejects a changed installment instead of trusting the browser amount', async () => {
+  it('accepts a partial deduction for this run without changing the central installment', async () => {
     const db = dbWith([
       {
         id: 'adv-1',
@@ -70,6 +70,33 @@ describe('payroll advance selection validation', () => {
           netSalary: 4800,
         },
       ]),
-    ).rejects.toThrow('قيمة خصم السلفة');
+    ).resolves.toBeUndefined();
+  });
+
+  it('rejects a deduction that exceeds the live remaining balance', async () => {
+    const db = dbWith([
+      {
+        id: 'adv-1',
+        employeeId: 'emp-1',
+        invoiceNumber: 'ADV-001',
+        totalAmount: 1000,
+        settledAmount: 800,
+        installmentAmount: 250,
+        status: 'active',
+        notes: null,
+      },
+    ]);
+
+    await expect(
+      assertPayrollAdvanceSelections(db, 'company-1', payrollMonth, [
+        {
+          employeeId: 'emp-1',
+          grossSalary: 5000,
+          advancesDeduct: 250,
+          advanceSelections: [{ advanceId: 'adv-1', amount: 250 }],
+          netSalary: 4750,
+        },
+      ]),
+    ).rejects.toThrow('تتجاوز الرصيد المتبقي');
   });
 });

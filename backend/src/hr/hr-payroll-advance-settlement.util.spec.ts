@@ -34,8 +34,8 @@ describe('payroll advance settlement selections', () => {
         items: [
           {
             employeeId: 'emp-1',
-            advancesDeduct: new Prisma.Decimal(200),
-            advanceSelections: [{ advanceId: 'adv-2', amount: 200 }],
+            advancesDeduct: new Prisma.Decimal(125),
+            advanceSelections: [{ advanceId: 'adv-2', amount: 125 }],
             employee: { name: 'Employee' },
           },
         ],
@@ -54,7 +54,13 @@ describe('payroll advance settlement selections', () => {
     );
     expect(createDeduction).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ referenceId: 'adv-2', amount: new Prisma.Decimal(200) }),
+        data: expect.objectContaining({ referenceId: 'adv-2', amount: new Prisma.Decimal(125) }),
+      }),
+    );
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'adv-2' },
+        data: expect.objectContaining({ settledAmount: new Prisma.Decimal(125) }),
       }),
     );
   });

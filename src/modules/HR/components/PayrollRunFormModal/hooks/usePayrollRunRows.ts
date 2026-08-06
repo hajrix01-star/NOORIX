@@ -206,15 +206,17 @@ export function usePayrollRunRows(state: StateShape) {
       const deferAdvances = savedAdvancesDeduct <= 0 && !!parseDeferredMonth(row.notes);
       const currentAdvanceRows = employeeId ? loadedAdvancesByEmployee.get(employeeId) || [] : [];
       const hasExplicitSelections = Array.isArray(row.advanceSelections);
-      const selectedIds = new Set(
+      const selectedAmounts = new Map(
         hasExplicitSelections
-          ? (row.advanceSelections || []).map((selection) => String(selection.advanceId || '')).filter(Boolean)
+          ? (row.advanceSelections || [])
+              .map((selection) => [String(selection.advanceId || ''), Number(selection.amount)] as const)
+              .filter(([advanceId, amount]) => !!advanceId && Number.isFinite(amount) && amount > 0)
           : [],
       );
       let legacyAmountLeft = savedAdvancesDeduct;
       const advanceChoices = currentAdvanceRows.map((advance) => {
         const selected = hasExplicitSelections
-          ? selectedIds.has(advance.id)
+          ? selectedAmounts.has(advance.id)
           : !deferAdvances && legacyAmountLeft > 0 && (() => {
               legacyAmountLeft -= advance.remaining;
               return true;
@@ -224,7 +226,7 @@ export function usePayrollRunRows(state: StateShape) {
           invoiceNumber: advance.invoiceNumber,
           transactionDate: advance.transactionDate,
           dateLabel: formatSaudiDate(advance.transactionDate),
-          amount: advance.remaining,
+          amount: selected ? (selectedAmounts.get(advance.id) ?? advance.remaining) : advance.remaining,
           remaining: advance.fullRemaining,
           selected,
         };
