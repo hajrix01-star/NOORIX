@@ -77,6 +77,14 @@ export function PayrollRunFormModal({
       ? t('save') || 'حفظ'
       : t('create') || 'إنشاء';
   const totalLabel = t('payrollTotal');
+  const refreshRows = async () => {
+    if (st.isEditMode) {
+      rowModel.loadEditingItems();
+      return;
+    }
+    const result = await st.refetchCompensationSnapshots();
+    if (!result.isError) st.setItems([]);
+  };
 
   const primaryDisabled = useMemo(
     () =>
@@ -149,12 +157,8 @@ export function PayrollRunFormModal({
           <Button
             type="button"
             size="sm"
-            disabled={
-              st.compensationSnapshotsLoading ||
-              !!st.compensationSnapshotsError ||
-              rowModel.missingCentralSalaryEmployeeIds.length > 0
-            }
-            onClick={st.isEditMode ? rowModel.loadEditingItems : rowModel.initItems}
+            disabled={st.compensationSnapshotsLoading}
+            onClick={() => void refreshRows()}
           >
             {rowModel.t('refresh') || 'تحديث'}
           </Button>
@@ -167,12 +171,20 @@ export function PayrollRunFormModal({
             {st.compensationSnapshotsError instanceof Error ? st.compensationSnapshotsError.message : t('loadingError')}
           </div>
         ) : null}
-        {rowModel.missingCentralSalaryEmployeeIds.length > 0 ? (
+        {!st.compensationSnapshotsLoading && rowModel.missingCentralSalaryEmployeeIds.length > 0 ? (
           <div
             className="text-[13px] font-semibold mt-1 rounded-lg p-3 shrink-0 bg-noorix-red/15 border border-noorix-red/25 text-noorix-red"
             role="alert"
           >
             {t('loadingError')}
+          </div>
+        ) : null}
+        {!st.compensationSnapshotsLoading && !st.compensationSnapshotsError && rowModel.excludedUnapprovedSalaryEmployeeIds.length > 0 ? (
+          <div
+            className="text-[13px] font-semibold mt-1 rounded-lg p-3 shrink-0 bg-noorix-amber/15 border border-noorix-amber/25 text-noorix-amber"
+            role="status"
+          >
+            {t('payrollEmployeesWithoutApprovedSalaryExcluded', String(rowModel.excludedUnapprovedSalaryEmployeeIds.length))}
           </div>
         ) : null}
 

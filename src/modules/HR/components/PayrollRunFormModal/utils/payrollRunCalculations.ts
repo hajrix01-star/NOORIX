@@ -25,6 +25,37 @@ type PayrollCompensationTotalSnapshot = {
   };
 };
 
+export function hasApprovedPayrollSalary(snapshot: PayrollCompensationTotalSnapshot | null | undefined): boolean {
+  const total = Number(snapshot?.salaryPackage?.total);
+  return Number.isFinite(total) && total > 0;
+}
+
+export function partitionPayrollEmployeesBySalary<T extends { id?: string }>(
+  employees: T[],
+  compensationSnapshotByEmployeeId: ReadonlyMap<string, PayrollCompensationTotalSnapshot>,
+): { included: T[]; missingEmployeeIds: string[]; excludedEmployeeIds: string[] } {
+  const included: T[] = [];
+  const missingEmployeeIds: string[] = [];
+  const excludedEmployeeIds: string[] = [];
+
+  for (const employee of employees) {
+    const employeeId = String(employee.id || '');
+    if (!employeeId) continue;
+    const snapshot = compensationSnapshotByEmployeeId.get(employeeId);
+    if (!snapshot) {
+      missingEmployeeIds.push(employeeId);
+      continue;
+    }
+    if (!hasApprovedPayrollSalary(snapshot)) {
+      excludedEmployeeIds.push(employeeId);
+      continue;
+    }
+    included.push(employee);
+  }
+
+  return { included, missingEmployeeIds, excludedEmployeeIds };
+}
+
 export function computeLeaveSettledEmployeeIds(
   leaveSalarySettlements: Array<{ employeeId?: string }>,
 ): Set<string> {
@@ -229,7 +260,7 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
   const pm = payrollMonth || defaultMonth;
   const compensationSnapshot = emp.id ? compensationSnapshotByEmployeeId.get(String(emp.id)) : null;
   const fullGross = Number(compensationSnapshot?.salaryPackage?.total);
-  if (!Number.isFinite(fullGross) || fullGross <= 0) {
+  if (!hasApprovedPayrollSalary(compensationSnapshot)) {
     throw new Error(t('loadingError'));
   }
   const pr = getEmploymentProrationInMonth(emp, pm);

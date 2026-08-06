@@ -4,11 +4,30 @@ import {
   buildAdvancesByEmployee,
   buildManualDeductionsByEmployee,
   buildPayrollLineForEmployee,
+  hasApprovedPayrollSalary,
+  partitionPayrollEmployeesBySalary,
 } from './payrollRunCalculations';
 
 const t = (key: string, ...args: string[]) => `${key}:${args.join(',')}`;
 
 describe('payrollRunCalculations smoke', () => {
+  it('keeps approved salaries and excludes zero-salary employees without throwing', () => {
+    const employees = [{ id: 'paid' }, { id: 'zero' }, { id: 'missing' }];
+    const snapshots = new Map([
+      ['paid', { salaryPackage: { total: '4050' } }],
+      ['zero', { salaryPackage: { total: 0 } }],
+    ]);
+
+    expect(hasApprovedPayrollSalary(snapshots.get('paid'))).toBe(true);
+    expect(hasApprovedPayrollSalary(snapshots.get('zero'))).toBe(false);
+    expect(hasApprovedPayrollSalary(undefined)).toBe(false);
+    expect(partitionPayrollEmployeesBySalary(employees, snapshots)).toEqual({
+      included: [{ id: 'paid' }],
+      missingEmployeeIds: ['missing'],
+      excludedEmployeeIds: ['zero'],
+    });
+  });
+
   it('builds a payroll line using central salary package and advance balance helpers', () => {
     const emp = {
       id: 'emp-1',

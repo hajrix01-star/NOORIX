@@ -100,6 +100,7 @@ export function usePayrollRunFormState({
     data: compensationSnapshots,
     isLoading: compensationSnapshotsLoading,
     error: compensationSnapshotsError,
+    refetch: refetchCompensationSnapshots,
   } = useApiQuery<HrCompensationSnapshotsResult>({
     queryKey: hrKeys.compensationSnapshots(cid, employeeIds),
     queryFn: () => getEmployeeCompensationSnapshots(cid, employeeIds),
@@ -165,6 +166,7 @@ export function usePayrollRunFormState({
     compensationSnapshotByEmployeeId,
     compensationSnapshotsLoading,
     compensationSnapshotsError,
+    refetchCompensationSnapshots,
     advances,
     deductions,
     leaves,
