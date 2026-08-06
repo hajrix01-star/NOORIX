@@ -99,4 +99,31 @@ describe('payroll advance selection validation', () => {
       ]),
     ).rejects.toThrow('تتجاوز الرصيد المتبقي');
   });
+
+  it('rejects selecting an advance dated after the payroll month', async () => {
+    const db = dbWith([
+      {
+        id: 'adv-future',
+        employeeId: 'emp-1',
+        invoiceNumber: 'ADV-FUTURE',
+        transactionDate: new Date('2026-09-02T00:00:00.000Z'),
+        totalAmount: 500,
+        settledAmount: 0,
+        status: 'active',
+        notes: null,
+      },
+    ]);
+
+    await expect(
+      assertPayrollAdvanceSelections(db, 'company-1', payrollMonth, [
+        {
+          employeeId: 'emp-1',
+          grossSalary: 5000,
+          advancesDeduct: 500,
+          advanceSelections: [{ advanceId: 'adv-future', amount: 500 }],
+          netSalary: 4500,
+        },
+      ]),
+    ).rejects.toThrow('تاريخها بعد شهر المسير');
+  });
 });

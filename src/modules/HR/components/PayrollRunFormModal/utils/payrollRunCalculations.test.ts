@@ -121,4 +121,19 @@ describe('payrollRunCalculations smoke', () => {
 
     expect(manualDeductionsByEmployee.get('emp-1')).toBeUndefined();
   });
+
+  it('shows only advances due in the payroll month or earlier and releases deferred advances in their target month', () => {
+    const advances = [
+      { id: 'adv-june', employeeId: 'emp-1', status: 'active', totalAmount: 100, settledAmount: 0, transactionDate: '2026-06-10' },
+      { id: 'adv-july', employeeId: 'emp-1', status: 'active', totalAmount: 200, settledAmount: 0, transactionDate: '2026-07-10' },
+      { id: 'adv-august', employeeId: 'emp-1', status: 'active', totalAmount: 300, settledAmount: 0, transactionDate: '2026-08-10' },
+      { id: 'adv-deferred', employeeId: 'emp-1', status: 'active', totalAmount: 400, settledAmount: 0, transactionDate: '2026-06-15', notes: '[ADV_DEFER] 2026-08' },
+    ];
+
+    const julyIds = (buildAdvancesByEmployee(advances, '2026-07-01').get('emp-1') || []).map((row) => row.id);
+    expect(julyIds).toEqual(['adv-june', 'adv-july']);
+
+    const augustIds = (buildAdvancesByEmployee(advances, '2026-08-01').get('emp-1') || []).map((row) => row.id);
+    expect(augustIds).toEqual(['adv-june', 'adv-july', 'adv-august', 'adv-deferred']);
+  });
 });

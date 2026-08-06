@@ -57,6 +57,9 @@ export async function assertPayrollAdvanceSelections(
       if (!advance || advance.employeeId !== item.employeeId) {
         throw new BadRequestException('إحدى السلف المحددة غير متاحة لهذا الموظف. حدّث المسير وحاول مجددًا.');
       }
+      if (advance.transactionDate && monthKey(advance.transactionDate) > runMonth) {
+        throw new BadRequestException(`السلفة ${advance.invoiceNumber} تاريخها بعد شهر المسير المحدد.`);
+      }
       const deferMonth = parseAdvanceDeferMonth(advance.notes);
       if (deferMonth && deferMonth > runMonth) {
         throw new BadRequestException(`السلفة ${advance.invoiceNumber} مؤجلة إلى شهر لاحق.`);

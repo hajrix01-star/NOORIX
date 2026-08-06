@@ -10,6 +10,7 @@ describe('payroll advance settlement selections', () => {
       totalAmount: new Prisma.Decimal(800),
       settledAmount: new Prisma.Decimal(0),
       installmentAmount: new Prisma.Decimal(200),
+      transactionDate: new Date('2026-07-15T00:00:00.000Z'),
       notes: null,
     };
     const findMany = jest.fn().mockResolvedValue([selectedAdvance]);

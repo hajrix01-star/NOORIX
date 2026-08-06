@@ -80,6 +80,15 @@ export async function applyPayrollAdvanceSettlements(
       if (!adv) {
         throw new BadRequestException('إحدى السلف المحددة لم تعد متاحة. حدّث المسير وحاول مجددًا.');
       }
+      const advanceMonth = adv.transactionDate
+        ? `${adv.transactionDate.getFullYear()}-${String(adv.transactionDate.getMonth() + 1).padStart(2, '0')}`
+        : '';
+      if (advanceMonth > runMonth) {
+        if (explicitSelections) {
+          throw new BadRequestException(`السلفة ${adv.invoiceNumber} تاريخها بعد شهر المسير المحدد.`);
+        }
+        continue;
+      }
       const deferMonth = parseAdvanceDeferMonth(adv.notes);
       if (deferMonth && deferMonth > runMonth) {
         if (explicitSelections) {

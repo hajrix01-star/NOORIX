@@ -132,12 +132,15 @@ export function buildAdvancesByEmployee(
   monthStr: string,
 ): Map<string, PayrollAdvanceDueRow[]> {
   const map = new Map<string, PayrollAdvanceDueRow[]>();
+  const payrollMonthKey = String(monthStr || '').slice(0, 7);
   for (const inv of advances || []) {
     if (!inv?.employeeId || inv?.status === 'cancelled') continue;
     const { remainingAmount: remaining } = getAdvanceBalanceParts(inv);
     if (remaining <= 0) continue;
+    const advanceMonthKey = formatSaudiDateISO(inv.transactionDate).slice(0, 7);
+    if (/^\d{4}-\d{2}$/.test(advanceMonthKey) && advanceMonthKey > payrollMonthKey) continue;
     const deferMonth = parseDeferredMonth(inv.notes);
-    const isDeferred = !!deferMonth && deferMonth > monthStr;
+    if (deferMonth && deferMonth > payrollMonthKey) continue;
     const instAmt = inv.installmentAmount ? Number(inv.installmentAmount) : null;
     const dueThisMonth = instAmt ? Math.min(instAmt, remaining) : remaining;
     const row: PayrollAdvanceDueRow = {
@@ -145,7 +148,7 @@ export function buildAdvancesByEmployee(
       transactionDate: inv.transactionDate,
       remaining: dueThisMonth,
       fullRemaining: remaining,
-      isDeferred,
+      isDeferred: false,
       installmentCount: inv.installmentCount ?? null,
       installmentAmount: instAmt,
       invoiceNumber: String(inv.invoiceNumber || inv.id || ''),

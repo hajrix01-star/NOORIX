@@ -45,11 +45,15 @@ describe('PayrollRunRowsTable advance deduction amount', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', {
+      name: 'payrollAdvanceDeductionAmount 31/03',
+    }));
     const amountInput = screen.getByRole('spinbutton', {
       name: 'payrollAdvanceDeductionAmount 31/03',
     });
     expect(amountInput.getAttribute('max')).toBe('1400');
     fireEvent.change(amountInput, { target: { value: '200' } });
+    fireEvent.blur(amountInput);
     expect(updateAdvanceAmount).toHaveBeenCalledWith('emp-1', 'adv-1', '200');
   });
 });
