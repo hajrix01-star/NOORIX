@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { createHash, randomUUID } from 'node:crypto';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import {
@@ -19,63 +18,34 @@ import {
   resolveOrdersV4ContextConversion,
 } from './orders-v4-conversion.context';
 import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
-import type { OrdersV4ResolvedConversion } from './orders-v4-kernel.types';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 import { calculateOrdersV4CashAvailable } from './orders-v4-funds.kernel';
 import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
 import { ordersV4DocumentListQuery, type OrdersV4DocumentListFilters } from './orders-v4-document-list-query.util';
 import { loadOrdersV4UserIdentities, ordersV4UserIdentity } from './orders-v4-user-identity.util';
 import { resolveOrdersV4RegistrationEntry } from './orders-v4-registration-cancellation.policy';
+import {
+  ordersV4OperationKeyHash,
+  ordersV4RequestHash,
+  persistOrdersV4OperationReplay,
+  readOrdersV4OperationReplay,
+} from './orders-v4-operation-idempotency.util';
 import { OrdersV4DocumentReversalService } from './orders-v4-document-reversal.service';
 import { OrdersV4PurchaseCorrectionService } from './orders-v4-purchase-correction.service';
 import {
-  isOrdersV4CashierReopenEligible,
+  ordersV4ConversionSnapshot,
+  ordersV4DocumentNumber,
+  ordersV4DocumentRequestHash,
+} from './orders-v4-document-format.util';
+import {
+  isOrdersV4CashierEditEligible,
+  isOrdersV4OwnerEditEligible,
+  ORDERS_V4_CASHIER_EDIT_LIMIT,
+  ORDERS_V4_REOPEN_WINDOW_DAYS,
+  ordersV4CashierRecentEditablePurchasesQuery,
   isOrdersV4ReopenDateEligible,
-  ordersV4CashierRecentPurchasesQuery,
   type OrdersV4ReopenAccess,
 } from './orders-v4-reopen.policy';
-
-function conversionSnapshot(resolved: OrdersV4ResolvedConversion) {
-  return {
-    fromUnitId: resolved.fromUnitId,
-    toUnitId: resolved.toUnitId,
-    factor: resolved.factor.toString(),
-    source: resolved.source,
-    path: resolved.path,
-  };
-}
-
-function documentNumber(documentType: OrdersV4DocumentType, date: Date, registrationEntryType?: 'issue' | 'cancellation' | null): string {
-  const datePart = date.toISOString().slice(0, 10).replaceAll('-', '');
-  const prefix = documentType === 'purchase' ? 'REQ4' : registrationEntryType === 'cancellation' ? 'CAN4' : 'REG4';
-  return `${prefix}-${datePart}-${randomUUID().slice(0, 8).toUpperCase()}`;
-}
-
-function requestHash(value: object): string {
-  return createHash('sha256').update(JSON.stringify(value)).digest('hex');
-}
-
-function documentRequestHash(input: OrdersV4DocumentInput): string {
-  return requestHash({
-    documentType: input.documentType,
-    registrationEntryType: input.registrationEntryType ?? (input.documentType === 'registration' ? 'issue' : null),
-    documentDate: input.documentDate,
-    paymentMethod: input.paymentMethod ?? null,
-    sectionId: input.sectionId ?? null,
-    locationId: input.locationId,
-    pettyCashAmount: input.pettyCashAmount ?? null,
-    notes: input.notes?.trim() || null,
-    lines: input.lines.map((line) => ({
-      itemId: line.itemId,
-      quantity: String(line.quantity),
-      unitId: line.unitId,
-      unitPrice: String(line.unitPrice ?? 0),
-      priceUnitId: line.priceUnitId || line.unitId,
-      cancellationReasons: line.cancellationReasons ?? null,
-      cancellationNote: line.cancellationNote?.trim() || null,
-    })),
-  });
-}
 
 @Injectable()
 export class OrdersV4DocumentsService {
@@ -101,21 +71,27 @@ export class OrdersV4DocumentsService {
       this.prisma.ordersV4Document.findMany(
         ordersV4DocumentListQuery(companyId, documentType, startDate, endDate, createdByUserId, limit, filters),
       ),
-      documentType === 'purchase' && reopenAccess === 'cashier'
-        ? this.prisma.ordersV4Document.findMany(ordersV4CashierRecentPurchasesQuery(companyId))
+      documentType === 'purchase' && reopenAccess !== 'none'
+        ? this.prisma.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId))
         : Promise.resolve([]),
     ]);
     const cashierRecentPurchaseIds = cashierRecentPurchases.map((document) => document.id);
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     return documents.map((document) => ({
       ...document,
+      canReceive: document.documentType === 'purchase'
+        && document.reversalOfId == null
+        && document.status === 'prepared'
+        && (reopenAccess === 'owner'
+          ? isOrdersV4OwnerEditEligible(document.id, document.documentDate, cashierRecentPurchaseIds)
+          : reopenAccess === 'cashier' && isOrdersV4CashierEditEligible(document.id, cashierRecentPurchaseIds)),
       canReopen: document.documentType === 'purchase'
         && document.reversalOfId == null
         && document.status === 'received'
         && (reopenAccess === 'owner'
-          ? isOrdersV4ReopenDateEligible(document.documentDate)
+          ? isOrdersV4OwnerEditEligible(document.id, document.documentDate, cashierRecentPurchaseIds)
           : reopenAccess === 'cashier'
-            ? isOrdersV4CashierReopenEligible(document.id, cashierRecentPurchaseIds)
+            ? isOrdersV4CashierEditEligible(document.id, cashierRecentPurchaseIds)
             : false),
       createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
     }));
@@ -215,7 +191,7 @@ export class OrdersV4DocumentsService {
     }
     if (input.documentType === 'registration' && input.paymentMethod) throw new BadRequestException('التسجيل الداخلي لا يقبل طريقة دفع');
     const documentDate = ordersV4DateOnly(input.documentDate, 'تاريخ المستند');
-    const inputRequestHash = documentRequestHash(input);
+    const inputRequestHash = ordersV4DocumentRequestHash(input);
     let pettyCashAmount: Prisma.Decimal | null = null;
     if (input.documentType === 'purchase' && input.paymentMethod === 'custody' && input.pettyCashAmount != null && input.pettyCashAmount !== '') {
       try {
@@ -227,6 +203,9 @@ export class OrdersV4DocumentsService {
     }
 
     return this.prisma.withTenant(async (tx) => {
+      if (input.documentType === 'purchase') {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
+      }
       const duplicate = await tx.ordersV4Document.findFirst({
         where: { companyId, idempotencyKey: input.idempotencyKey.trim() },
         include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true } } },
@@ -348,7 +327,7 @@ export class OrdersV4DocumentsService {
         data: {
           tenantId,
           companyId,
-          documentNumber: documentNumber(input.documentType, documentDate, registrationEntry.entryType),
+          documentNumber: ordersV4DocumentNumber(input.documentType, documentDate, registrationEntry.entryType),
           documentType: input.documentType,
           registrationEntryType: registrationEntry.entryType,
           paymentMethod: input.documentType === 'purchase' ? input.paymentMethod || 'custody' : null,
@@ -401,8 +380,8 @@ export class OrdersV4DocumentsService {
             cancellationReasons: isRegistrationCancellation ? row.line.cancellationReasons ?? [] : undefined,
             cancellationNote: isRegistrationCancellation ? row.line.cancellationNote?.trim() || null : null,
             conversionSnapshot: {
-              input: conversionSnapshot(row.calculation.inputConversion),
-              price: conversionSnapshot(row.calculation.priceConversion),
+              input: ordersV4ConversionSnapshot(row.calculation.inputConversion),
+              price: ordersV4ConversionSnapshot(row.calculation.priceConversion),
             },
             calculationSnapshot: {
               kernelVersion: 4,
@@ -606,7 +585,7 @@ export class OrdersV4DocumentsService {
     });
   }
 
-  async receiveLatest(companyId: string, id: string, input: OrdersV4ReceiveInput, access: OrdersV4ReopenAccess = 'owner') {
+  async receivePurchase(companyId: string, id: string, input: OrdersV4ReceiveInput, access: OrdersV4ReopenAccess = 'owner') {
     if (!input.idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     if (!input.lines?.length) throw new BadRequestException('يجب تسجيل صنف مستلم واحد على الأقل');
     if (new Set(input.lines.map((line) => line.itemId)).size !== input.lines.length) {
@@ -616,7 +595,9 @@ export class OrdersV4DocumentsService {
     const tenantId = TenantContext.getTenantId();
     const userId = TenantContext.getUserId();
     const receivedDate = ordersV4DateOnly(input.documentDate, 'تاريخ الاستلام');
-    const receiveRequestHash = requestHash({
+    const receiveRequestHash = ordersV4RequestHash({
+      documentId: id,
+      editMode: input.editMode === 'correction' ? 'correction' : 'standard',
       revision: input.revision,
       documentDate: input.documentDate,
       paymentMethod: input.paymentMethod ?? 'custody',
@@ -633,10 +614,21 @@ export class OrdersV4DocumentsService {
       })),
     });
     const correctionMode = input.editMode === 'correction';
-    const correctionRequestHash = requestHash({ operation: 'correct-received-purchase', documentId: id, receiveRequestHash });
+    const correctionRequestHash = ordersV4RequestHash({ operation: 'correct-received-purchase', documentId: id, receiveRequestHash });
+    const receiveOperationKeyHash = ordersV4OperationKeyHash('receive-purchase', input.idempotencyKey);
 
     return this.prisma.withTenant(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
+      const replay = await readOrdersV4OperationReplay(tx, tenantId, companyId, receiveOperationKeyHash);
+      if (replay) {
+        if (replay.requestHash !== receiveRequestHash) {
+          throw new BadRequestException('مفتاح منع تكرار الاستلام مستخدم لطلب أو محتوى مختلف');
+        }
+        return replay.response;
+      }
+      const persistReceiveReplay = (response: unknown) => persistOrdersV4OperationReplay(
+        tx, tenantId, companyId, receiveOperationKeyHash, receiveRequestHash, response,
+      );
       let targetId = id;
       let receivedFromRevision = input.revision;
       let correctionSnapshot: Prisma.InputJsonObject = {};
@@ -660,24 +652,36 @@ export class OrdersV4DocumentsService {
         inheritedPaymentMethod = correction.inheritedPaymentMethod;
         inheritedPettyCashAmount = correction.inheritedPettyCashAmount;
       } else {
-        const latest = await tx.ordersV4Document.findFirst({
-          where: { companyId, documentType: 'purchase', reversalOfId: null },
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        const purchase = await tx.ordersV4Document.findFirst({
+          where: { id, companyId, documentType: 'purchase', reversalOfId: null },
         });
-        if (!latest || latest.id !== id) throw new BadRequestException('الاستلام والتعديل متاحان لآخر طلب فقط');
-        const previousSnapshot = latest.calculationSnapshot as Record<string, unknown>;
-        if (latest.status === 'received' && previousSnapshot.receiveIdempotencyKey === input.idempotencyKey.trim()) {
+        if (!purchase) throw new BadRequestException('طلب الشراء غير موجود');
+        const previousSnapshot = purchase.calculationSnapshot as Record<string, unknown>;
+        if (purchase.status === 'received' && previousSnapshot.receiveIdempotencyKey === input.idempotencyKey.trim()) {
           if (previousSnapshot.receiveRequestHash !== receiveRequestHash) {
             throw new BadRequestException('مفتاح منع تكرار الاستلام مستخدم لمحتوى مختلف');
           }
-          return tx.ordersV4Document.findUniqueOrThrow({
+          const result = await tx.ordersV4Document.findUniqueOrThrow({
             where: { id },
             include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
           });
+          await persistReceiveReplay(result);
+          return result;
         }
-        if (latest.status !== 'prepared') throw new BadRequestException('آخر طلب ليس في حالة انتظار الاستلام');
-        if (latest.revision !== input.revision) throw new BadRequestException('تم تعديل الطلب؛ أعد تحميله قبل الاستلام');
-        receivedFromRevision = latest.revision;
+        if (access === 'cashier') {
+          const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId));
+          if (!isOrdersV4CashierEditEligible(purchase.id, recentPurchases.map((document) => document.id))) {
+            throw new BadRequestException(`يمكن للكاشير تعديل أو استلام آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات فقط`);
+          }
+        } else if (!isOrdersV4ReopenDateEligible(purchase.documentDate)) {
+          const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId));
+          if (!isOrdersV4OwnerEditEligible(purchase.id, purchase.documentDate, recentPurchases.map((document) => document.id))) {
+            throw new BadRequestException(`الاستلام متاح خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام أو ضمن آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات`);
+          }
+        }
+        if (purchase.status !== 'prepared') throw new BadRequestException('الطلب ليس في حالة انتظار الاستلام');
+        if (purchase.revision !== input.revision) throw new BadRequestException('تم تعديل الطلب؛ أعد تحميله قبل الاستلام');
+        receivedFromRevision = purchase.revision;
       }
 
       const location = await tx.ordersV4Location.findFirst({ where: { id: input.locationId, companyId, isActive: true } });
@@ -804,8 +808,8 @@ export class OrdersV4DocumentsService {
             lineTotal: row.calculation.lineTotal, conversionVersionId: row.definition?.id || null,
             operationalCost: row.calculation.lineTotal,
             conversionSnapshot: {
-              input: conversionSnapshot(row.calculation.inputConversion),
-              price: conversionSnapshot(row.calculation.priceConversion),
+              input: ordersV4ConversionSnapshot(row.calculation.inputConversion),
+              price: ordersV4ConversionSnapshot(row.calculation.priceConversion),
             },
             calculationSnapshot: {
               kernelVersion: 4,
@@ -845,10 +849,12 @@ export class OrdersV4DocumentsService {
         });
       }
 
-      return tx.ordersV4Document.findUniqueOrThrow({
+      const result = await tx.ordersV4Document.findUniqueOrThrow({
         where: { id: targetId },
         include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
       });
+      await persistReceiveReplay(result);
+      return result;
     });
   }
 

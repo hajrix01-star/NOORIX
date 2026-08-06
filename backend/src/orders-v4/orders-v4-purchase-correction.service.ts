@@ -4,11 +4,12 @@ import { randomUUID } from 'node:crypto';
 import type { OrdersV4ReceiveInput } from './orders-v4.contracts';
 import { OrdersV4DocumentReversalService } from './orders-v4-document-reversal.service';
 import {
-  isOrdersV4CashierReopenEligible,
+  isOrdersV4CashierEditEligible,
+  isOrdersV4OwnerEditEligible,
   isOrdersV4ReopenDateEligible,
-  ORDERS_V4_CASHIER_REOPEN_LIMIT,
+  ORDERS_V4_CASHIER_EDIT_LIMIT,
   ORDERS_V4_REOPEN_WINDOW_DAYS,
-  ordersV4CashierRecentPurchasesQuery,
+  ordersV4CashierRecentEditablePurchasesQuery,
   type OrdersV4ReopenAccess,
 } from './orders-v4-reopen.policy';
 
@@ -69,12 +70,14 @@ export class OrdersV4PurchaseCorrectionService {
     if (!original) throw new BadRequestException('الطلب المستلم غير موجود أو سبق تعديله');
     if (original.revision !== input.revision) throw new BadRequestException('تم تعديل الطلب؛ أعد تحميله قبل الحفظ');
     if (context.access === 'owner' && !isOrdersV4ReopenDateEligible(original.documentDate)) {
-      throw new BadRequestException(`تعديل الطلب متاح للطلبات المستلمة خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام فقط`);
-    }
-    if (context.access === 'cashier') {
-      const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentPurchasesQuery(context.companyId));
-      if (!isOrdersV4CashierReopenEligible(original.id, recentPurchases.map((document) => document.id))) {
-        throw new BadRequestException(`يمكن للكاشير تعديل آخر ${ORDERS_V4_CASHIER_REOPEN_LIMIT} طلبات مستلمة فقط`);
+      const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(context.companyId));
+      if (!isOrdersV4OwnerEditEligible(original.id, original.documentDate, recentPurchases.map((document) => document.id))) {
+        throw new BadRequestException(`تعديل الطلب متاح خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام أو ضمن آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات`);
+      }
+    } else if (context.access === 'cashier') {
+      const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(context.companyId));
+      if (!isOrdersV4CashierEditEligible(original.id, recentPurchases.map((document) => document.id))) {
+        throw new BadRequestException(`يمكن للكاشير تعديل أو استلام آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات فقط`);
       }
     }
     const pendingPurchase = await tx.ordersV4Document.findFirst({
@@ -83,11 +86,10 @@ export class OrdersV4PurchaseCorrectionService {
         documentType: 'purchase',
         status: 'prepared',
         reversalOfId: null,
-        documentDate: { gte: original.documentDate },
       },
       select: { id: true },
     });
-    if (!pendingPurchase) throw new BadRequestException('تغيرت حالة الطلب الأحدث؛ أغلق النافذة وافتح الطلب للتعديل من جديد');
+    if (!pendingPurchase) throw new BadRequestException('لم يعد هناك طلب بانتظار الاستلام؛ أغلق النافذة وافتح الطلب للتعديل من جديد');
 
     const reversal = await this.reversal.reverseInTransaction(
       tx,

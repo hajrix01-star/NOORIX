@@ -7,11 +7,17 @@ import { ordersV4EdgeDefinitions, ordersV4UnitDefinitions, resolveOrdersV4Contex
 import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 import {
-  isOrdersV4CashierReopenEligible,
+  ordersV4OperationKeyHash,
+  persistOrdersV4OperationReplay,
+  readOrdersV4OperationReplay,
+} from './orders-v4-operation-idempotency.util';
+import {
+  isOrdersV4CashierEditEligible,
+  isOrdersV4OwnerEditEligible,
   isOrdersV4ReopenDateEligible,
-  ORDERS_V4_CASHIER_REOPEN_LIMIT,
+  ORDERS_V4_CASHIER_EDIT_LIMIT,
   ORDERS_V4_REOPEN_WINDOW_DAYS,
-  ordersV4CashierRecentPurchasesQuery,
+  ordersV4CashierRecentEditablePurchasesQuery,
   type OrdersV4ReopenAccess,
 } from './orders-v4-reopen.policy';
 
@@ -51,11 +57,19 @@ export class OrdersV4DocumentReversalService {
     if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     const normalizedKey = idempotencyKey.trim();
     const reopenRequestHash = operationHash({ operation: 'reopen-purchase', documentId: id });
+    const reopenOperationKeyHash = ordersV4OperationKeyHash('reopen-purchase', normalizedKey);
     const tenantId = TenantContext.getTenantId();
     const userId = TenantContext.getUserId();
 
     return this.prisma.withTenant(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
+      const replay = await readOrdersV4OperationReplay(tx, tenantId, companyId, reopenOperationKeyHash);
+      if (replay) {
+        if (replay.requestHash !== reopenRequestHash) {
+          throw new BadRequestException('مفتاح منع تكرار إعادة الفتح مستخدم لطلب مختلف');
+        }
+        return replay.response;
+      }
       const duplicate = await tx.ordersV4Document.findFirst({
         where: { companyId, idempotencyKey: normalizedKey },
         include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
@@ -72,12 +86,14 @@ export class OrdersV4DocumentReversalService {
       if (!purchase) throw new NotFoundException('طلب الشراء غير موجود');
       if (purchase.status !== 'received') throw new BadRequestException('يمكن إعادة فتح الطلب المستلم فقط');
       if (access === 'owner' && !isOrdersV4ReopenDateEligible(purchase.documentDate)) {
-        throw new BadRequestException(`إعادة الفتح متاحة للطلبات المستلمة خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام فقط`);
-      }
-      if (access === 'cashier') {
-        const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentPurchasesQuery(companyId));
-        if (!isOrdersV4CashierReopenEligible(purchase.id, recentPurchases.map((document) => document.id))) {
-          throw new BadRequestException(`يمكن للكاشير تعديل آخر ${ORDERS_V4_CASHIER_REOPEN_LIMIT} طلبات مستلمة فقط`);
+        const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId));
+        if (!isOrdersV4OwnerEditEligible(purchase.id, purchase.documentDate, recentPurchases.map((document) => document.id))) {
+          throw new BadRequestException(`إعادة الفتح متاحة خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام أو ضمن آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات`);
+        }
+      } else if (access === 'cashier') {
+        const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId));
+        if (!isOrdersV4CashierEditEligible(purchase.id, recentPurchases.map((document) => document.id))) {
+          throw new BadRequestException(`يمكن للكاشير تعديل أو استلام آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات فقط`);
         }
       }
       const pendingPurchase = await tx.ordersV4Document.findFirst({
@@ -86,7 +102,6 @@ export class OrdersV4DocumentReversalService {
           documentType: 'purchase',
           status: 'prepared',
           reversalOfId: null,
-          documentDate: { gte: purchase.documentDate },
         },
         select: { id: true },
       });
@@ -95,7 +110,11 @@ export class OrdersV4DocumentReversalService {
           where: { id: purchase.id },
           include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
         });
-        return { ...correctionDocument, editMode: 'correction' as const };
+        const result = { ...correctionDocument, editMode: 'correction' as const };
+        await persistOrdersV4OperationReplay(
+          tx, tenantId, companyId, reopenOperationKeyHash, reopenRequestHash, result,
+        );
+        return result;
       }
 
       const reversalKey = `reopen-reversal:${reopenRequestHash.slice(0, 48)}`;
@@ -187,7 +206,12 @@ export class OrdersV4DocumentReversalService {
 
   private toggle(companyId: string, id: string, idempotencyKey: string, undo: boolean) {
     if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
-    return this.prisma.withTenant((tx) => this.toggleInTransaction(tx, companyId, id, idempotencyKey.trim(), undo));
+    return this.prisma.withTenant(async (tx) => {
+      if (undo) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
+      }
+      return this.toggleInTransaction(tx, companyId, id, idempotencyKey.trim(), undo);
+    });
   }
 
   async reverseInTransaction(

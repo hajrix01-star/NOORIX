@@ -200,7 +200,9 @@ export class OrdersV4Controller {
       },
       String(user.role || '').toLowerCase() === 'owner'
         ? 'owner'
-        : userCan(user, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE) ? 'cashier' : 'none',
+        : userCan(user, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE) || userCan(user, PERMISSIONS.ORDERS_V4_WRITE)
+          ? 'cashier'
+          : 'none',
     );
   }
 
@@ -224,17 +226,20 @@ export class OrdersV4Controller {
 
   @Patch('documents/:id/receive')
   @RequireAnyPermission('ORDERS_V4_WRITE', 'ORDERS_V4_CASHIER_RECEIVE')
-  receiveLatest(
+  receivePurchase(
     @CompanyId() companyId: string,
     @Param('id') id: string,
     @Body() body: OrdersV4ReceiveDto,
     @CurrentUser() user: JwtUser,
   ) {
     const isOwner = String(user.role || '').toLowerCase() === 'owner';
-    if (body.editMode === 'correction' && !isOwner && !userCan(user, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE)) {
+    const canEditPurchase = isOwner
+      || userCan(user, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE)
+      || userCan(user, PERMISSIONS.ORDERS_V4_WRITE);
+    if (body.editMode === 'correction' && !canEditPurchase) {
       throw new ForbiddenException('تعديل الطلب المستلم متاح للمالك أو الكاشير المخول فقط');
     }
-    return this.documents.receiveLatest(
+    return this.documents.receivePurchase(
       requireCompanyId(companyId),
       id,
       body,
@@ -271,7 +276,10 @@ export class OrdersV4Controller {
     @CurrentUser() user: JwtUser,
   ) {
     const isOwner = String(user.role || '').toLowerCase() === 'owner';
-    if (!isOwner && !userCan(user, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE)) {
+    const canEditPurchase = isOwner
+      || userCan(user, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE)
+      || userCan(user, PERMISSIONS.ORDERS_V4_WRITE);
+    if (!canEditPurchase) {
       throw new ForbiddenException('إعادة فتح الطلب متاحة للمالك أو الكاشير المخول فقط');
     }
     return this.documents.reopenPurchase(

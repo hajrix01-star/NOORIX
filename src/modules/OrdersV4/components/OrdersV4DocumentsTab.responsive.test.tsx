@@ -244,7 +244,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
   it('uses the status cell itself as the purchase receipt action without an extra actions column', () => {
     ordersV4DocumentsMock.documents = [{
       id: 'prepared-1', documentNumber: 'REQ4-PREPARED', documentType: 'purchase', documentDate: '2026-08-03',
-      paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'prepared', lines: [],
+      paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'prepared', canReceive: true, lines: [],
     }];
 
     render(<OrdersV4DocumentsTab
@@ -259,6 +259,24 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(screen.getAllByRole('columnheader').every((header) => header.textContent?.trim())).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'استلام' }));
     expect(screen.getByRole('dialog', { name: 'استلام REQ4-PREPARED' })).toBeTruthy();
+  });
+
+  it('does not offer receipt for a prepared purchase outside the server-authorized latest-five window', () => {
+    ordersV4DocumentsMock.documents = [{
+      id: 'prepared-6', documentNumber: 'REQ4-PREPARED-6', documentType: 'purchase', documentDate: '2026-08-03',
+      paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'prepared', canReceive: false, lines: [],
+    }];
+
+    render(<OrdersV4DocumentsTab
+      companyId="company-1"
+      documentType="purchase"
+      startDate="2026-08-01"
+      endDate="2026-08-31"
+      bootstrap={bootstrap}
+      canReceive
+    />);
+
+    expect(screen.queryByRole('button', { name: 'استلام' })).toBeNull();
   });
 
   it('keeps reversal controls inside document details and marks reversed rows with a full red strike', () => {
@@ -324,11 +342,11 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'تعديل الطلب' }));
     expect(screen.getByRole('dialog', { name: 'تعديل الطلب' })).toBeTruthy();
     expect(screen.getByText(/تختار النواة تلقائيًا المسار الآمن/)).toBeTruthy();
-    expect(screen.getByText(/خلال آخر 7 أيام/)).toBeTruthy();
+    expect(screen.getByText(/خلال آخر 7 أيام، وكذلك ضمن آخر 5 طلبات/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'فتح للتعديل' })).toBeTruthy();
   });
 
-  it('explains the cashier permission to edit the latest five received purchases', () => {
+  it('explains the cashier permission across the mixed latest-five purchase window', () => {
     ordersV4DocumentsMock.documents = [{
       id: 'document-1', documentNumber: 'REQ4-1', documentType: 'purchase', documentDate: '2026-08-03',
       paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'received', canReopen: true, lines: [],
@@ -345,7 +363,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
 
     fireEvent.click(screen.getByText('REQ4-1'));
     fireEvent.click(screen.getByRole('button', { name: 'تعديل الطلب' }));
-    expect(screen.getByText(/آخر 5 طلبات مستلمة دون موافقة المالك/)).toBeTruthy();
+    expect(screen.getByText(/آخر 5 طلبات شراء، سواء كانت بانتظار الاستلام أو مستلمة/)).toBeTruthy();
   });
 
   it('opens the same edit sheet when the server selects direct correction mode', async () => {

@@ -1,4 +1,6 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { PERMISSIONS } from '../auth/constants/permissions';
+import type { JwtUser } from '../auth/decorators/current-user.decorator';
 import { OrdersV4Controller } from './orders-v4.controller';
 import {
   OrdersV4ActivityReportQueryDto,
@@ -55,5 +57,44 @@ describe('Orders V4 runtime DTO validation', () => {
       { companyId: 'company-1', unexpected: 'blocked' },
       { type: 'query', metatype: OrdersV4DateRangeQueryDto },
     )).rejects.toBeInstanceOf(BadRequestException);
+  });
+});
+
+describe('Orders V4 purchase edit permission consistency', () => {
+  it('lets a WRITE-only user reopen and save a received-purchase correction as cashier access', () => {
+    const documents = {
+      receivePurchase: jest.fn().mockReturnValue({ id: 'purchase-1' }),
+      reopenPurchase: jest.fn().mockReturnValue({ id: 'purchase-1', editMode: 'correction' }),
+    };
+    const controller = new OrdersV4Controller(
+      {} as never,
+      documents as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+    const writeOnlyUser: JwtUser = {
+      sub: 'writer-1',
+      email: 'writer@example.com',
+      role: 'manager',
+      companyIds: ['company-1'],
+      permissions: [PERMISSIONS.ORDERS_V4_WRITE],
+    };
+
+    expect(() => controller.reopenPurchaseDocument(
+      'company-1',
+      'purchase-1',
+      { idempotencyKey: 'reopen-1' },
+      writeOnlyUser,
+    )).not.toThrow();
+    expect(() => controller.receivePurchase(
+      'company-1',
+      'purchase-1',
+      { editMode: 'correction' } as never,
+      writeOnlyUser,
+    )).not.toThrow();
+
+    expect(documents.reopenPurchase).toHaveBeenCalledWith('company-1', 'purchase-1', 'reopen-1', 'cashier');
+    expect(documents.receivePurchase).toHaveBeenCalledWith('company-1', 'purchase-1', expect.objectContaining({ editMode: 'correction' }), 'cashier');
   });
 });

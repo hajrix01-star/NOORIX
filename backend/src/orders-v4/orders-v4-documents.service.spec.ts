@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { createHash } from 'node:crypto';
 import { TenantContext } from '../common/tenant-context';
 import { OrdersV4DocumentsService } from './orders-v4-documents.service';
 import { OrdersV4PurchaseCorrectionService } from './orders-v4-purchase-correction.service';
@@ -52,8 +53,14 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const documents = [
       { id: 'within-week', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: range.gte, createdByUserId: null },
       { id: 'older', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: oldDate, createdByUserId: null },
+      { id: 'old-prepared', documentType: 'purchase', reversalOfId: null, status: 'prepared', documentDate: oldDate, createdByUserId: null },
     ];
-    const prisma = { ordersV4Document: { findMany: jest.fn().mockResolvedValue(documents), findFirst: jest.fn().mockResolvedValue(null) } };
+    const recentWithoutOlder = [{ id: 'within-week' }, { id: 'newer-2' }, { id: 'newer-3' }, { id: 'newer-4' }, { id: 'newer-5' }];
+    const prisma = { ordersV4Document: { findMany: jest.fn()
+      .mockResolvedValueOnce(documents)
+      .mockResolvedValueOnce(recentWithoutOlder)
+      .mockResolvedValueOnce(documents)
+      .mockResolvedValueOnce(recentWithoutOlder), findFirst: jest.fn().mockResolvedValue(null) } };
     const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
 
     jest.useFakeTimers().setSystemTime(new Date('2026-08-03T12:00:00.000Z'));
@@ -62,22 +69,25 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     expect(result.map((row) => [row.id, row.canReopen])).toEqual([
       ['within-week', true],
       ['older', false],
+      ['old-prepared', false],
     ]);
+    expect(result.find((row) => row.id === 'old-prepared')?.canReceive).toBe(false);
 
     prisma.ordersV4Document.findFirst.mockResolvedValue({ id: 'pending-purchase' });
     const withPending = await service.list('company-1', 'purchase');
     expect(withPending.map((row) => [row.id, row.canReopen])).toEqual([
       ['within-week', true],
       ['older', false],
+      ['old-prepared', false],
     ]);
   });
 
-  it('marks exactly the latest five received purchases as reopenable for the cashier', async () => {
+  it('uses one mixed latest-five window for cashier receipt and reopening', async () => {
     const documents = Array.from({ length: 6 }, (_, index) => ({
       id: `purchase-${index + 1}`,
       documentType: 'purchase',
       reversalOfId: null,
-      status: 'received',
+      status: index % 2 === 0 ? 'prepared' : 'received',
       documentDate: new Date('2026-08-03T00:00:00.000Z'),
       createdByUserId: null,
     }));
@@ -89,15 +99,19 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
 
     const result = await service.list('company-1', 'purchase', undefined, undefined, undefined, 250, {}, 'cashier');
 
-    expect(result.map((row) => [row.id, row.canReopen])).toEqual([
-      ['purchase-1', true],
-      ['purchase-2', true],
-      ['purchase-3', true],
-      ['purchase-4', true],
-      ['purchase-5', true],
-      ['purchase-6', false],
+    expect(result.map((row) => [row.id, row.canReceive, row.canReopen])).toEqual([
+      ['purchase-1', true, false],
+      ['purchase-2', false, true],
+      ['purchase-3', true, false],
+      ['purchase-4', false, true],
+      ['purchase-5', true, false],
+      ['purchase-6', false, false],
     ]);
-    expect(findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ take: 5 }));
+    expect(findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      take: 5,
+      where: expect.objectContaining({ status: { in: ['prepared', 'received'] } }),
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    }));
   });
 
   it('creates a prepared purchase with kernel-calculated quantities and totals', async () => {
@@ -106,6 +120,8 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const document = { id: 'document-1', documentNumber: 'REQ4-1' };
     const unit = { id: 'piece', code: 'piece', nameAr: 'حبة', dimension: 'count', canonicalFactor: new Prisma.Decimal(1) };
     const tx = {
+      $executeRaw: jest.fn(),
+      idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
       ordersV4Document: {
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue(document),
@@ -174,14 +190,18 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     expect(prisma.ordersV4Item.findMany).toHaveBeenCalledTimes(1);
   });
 
-  it('receives the latest purchase and posts price, inventory and custody atomically', async () => {
+  it('receives an eligible purchase and posts price, inventory and custody atomically', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('cashier-1');
     const unit = { id: 'piece', code: 'piece', nameAr: 'حبة', dimension: 'count', canonicalFactor: new Prisma.Decimal(1) };
     const tx = {
       $executeRaw: jest.fn(),
+      idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
       ordersV4Document: {
         findFirst: jest.fn().mockResolvedValue({ id: 'document-1', status: 'prepared', revision: 1, calculationSnapshot: {} }),
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'newer-1' }, { id: 'newer-2' }, { id: 'newer-3' }, { id: 'newer-4' }, { id: 'document-1' },
+        ]),
         update: jest.fn(),
         findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'document-1', status: 'received', lines: [] }),
       },
@@ -204,10 +224,10 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const funds = { postPurchase: jest.fn().mockResolvedValue({}) };
     const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never, {} as never);
 
-    const result = await service.receiveLatest('company-1', 'document-1', {
+    const result = await service.receivePurchase('company-1', 'document-1', {
       revision: 1, documentDate: '2026-08-03', paymentMethod: 'custody', locationId: 'main',
       idempotencyKey: 'receive-1', lines: [{ itemId: 'item-1', quantity: '2', unitId: 'piece', unitPrice: '12', priceUnitId: 'piece' }],
-    });
+    }, 'cashier');
 
     expect(result).toMatchObject({ id: 'document-1', status: 'received' });
     expect(posting.postReceipt).toHaveBeenCalledWith(tx, expect.objectContaining({
@@ -217,6 +237,108 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       documentId: 'document-1', purchaseAmount: new Prisma.Decimal(24),
     }));
     expect(tx.ordersV4PriceHistory.create).toHaveBeenCalledTimes(1);
+    const storedReplay = tx.idempotencyKey.upsert.mock.calls[0][0].create.resultJson;
+    tx.idempotencyKey.findFirst.mockResolvedValue({ resultJson: storedReplay });
+    await expect(service.receivePurchase('company-1', 'document-1', {
+      editMode: 'correction', revision: 1, documentDate: '2026-08-03', paymentMethod: 'custody', locationId: 'main',
+      idempotencyKey: 'receive-1', lines: [{ itemId: 'item-1', quantity: '2', unitId: 'piece', unitPrice: '12', priceUnitId: 'piece' }],
+    }, 'cashier')).rejects.toThrow('مفتاح منع تكرار الاستلام مستخدم لطلب أو محتوى مختلف');
+    await expect(service.receivePurchase('company-1', 'different-document', {
+      revision: 1, documentDate: '2026-08-03', paymentMethod: 'custody', locationId: 'main',
+      idempotencyKey: 'receive-1', lines: [{ itemId: 'item-1', quantity: '2', unitId: 'piece', unitPrice: '12', priceUnitId: 'piece' }],
+    }, 'cashier')).rejects.toThrow('مفتاح منع تكرار الاستلام مستخدم لطلب أو محتوى مختلف');
+  });
+
+  it('rejects an owner receipt outside both the seven-day and latest-five windows', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    jest.spyOn(TenantContext, 'getUserId').mockReturnValue('owner-1');
+    const tx = {
+      $executeRaw: jest.fn(),
+      idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
+      ordersV4Document: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'old-prepared', status: 'prepared', revision: 1,
+          documentDate: new Date('2020-01-01T00:00:00.000Z'), calculationSnapshot: {},
+        }),
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'newer-1' }, { id: 'newer-2' }, { id: 'newer-3' }, { id: 'newer-4' }, { id: 'newer-5' },
+        ]),
+      },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
+
+    await expect(service.receivePurchase('company-1', 'old-prepared', {
+      revision: 1, documentDate: '2020-01-01', paymentMethod: 'custody', locationId: 'main',
+      idempotencyKey: 'old-owner-receipt', lines: [{ itemId: 'item-1', quantity: '1', unitId: 'piece', unitPrice: '1', priceUnitId: 'piece' }],
+    }, 'owner')).rejects.toThrow('الاستلام متاح خلال آخر 7 أيام أو ضمن آخر 5 طلبات');
+  });
+
+  it('rejects the sixth active purchase before any inventory or funds posting', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    jest.spyOn(TenantContext, 'getUserId').mockReturnValue('cashier-1');
+    const tx = {
+      $executeRaw: jest.fn(),
+      idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
+      ordersV4Document: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'purchase-6', status: 'prepared', revision: 1, calculationSnapshot: {} }),
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'purchase-1' }, { id: 'purchase-2' }, { id: 'purchase-3' }, { id: 'purchase-4' }, { id: 'purchase-5' },
+        ]),
+      },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const posting = { postReceipt: jest.fn() };
+    const funds = { postPurchase: jest.fn() };
+    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never, {} as never);
+
+    await expect(service.receivePurchase('company-1', 'purchase-6', {
+      revision: 1, documentDate: '2026-08-03', paymentMethod: 'custody', locationId: 'main',
+      idempotencyKey: 'receive-6', lines: [{ itemId: 'item-1', quantity: '1', unitId: 'piece', unitPrice: '1', priceUnitId: 'piece' }],
+    }, 'cashier')).rejects.toThrow('يمكن للكاشير تعديل أو استلام آخر 5 طلبات فقط');
+
+    expect(posting.postReceipt).not.toHaveBeenCalled();
+    expect(funds.postPurchase).not.toHaveBeenCalled();
+  });
+
+  it('returns an exact idempotent retry even after the purchase leaves the latest-five window', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    jest.spyOn(TenantContext, 'getUserId').mockReturnValue('cashier-1');
+    const input = {
+      revision: 1, documentDate: '2026-08-03', paymentMethod: 'custody' as const, locationId: 'main',
+      idempotencyKey: 'receive-retry', lines: [{ itemId: 'item-1', quantity: '1', unitId: 'piece', unitPrice: '1', priceUnitId: 'piece' }],
+    };
+    const expectedHash = createHash('sha256').update(JSON.stringify({
+      documentId: 'old-received',
+      editMode: 'standard',
+      revision: input.revision,
+      documentDate: input.documentDate,
+      paymentMethod: input.paymentMethod,
+      sectionId: null,
+      locationId: input.locationId,
+      pettyCashAmount: null,
+      notes: null,
+      lines: input.lines.map((line) => ({ ...line, quantity: String(line.quantity), unitPrice: String(line.unitPrice) })),
+    })).digest('hex');
+    const received = {
+      id: 'old-received', status: 'received', revision: 2,
+      calculationSnapshot: { receiveIdempotencyKey: input.idempotencyKey, receiveRequestHash: expectedHash },
+      lines: [],
+    };
+    const tx = {
+      $executeRaw: jest.fn(),
+      idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
+      ordersV4Document: {
+        findFirst: jest.fn().mockResolvedValue(received),
+        findMany: jest.fn(),
+        findUniqueOrThrow: jest.fn().mockResolvedValue(received),
+      },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
+
+    await expect(service.receivePurchase('company-1', received.id, input, 'cashier')).resolves.toBe(received);
+    expect(tx.ordersV4Document.findMany).not.toHaveBeenCalled();
   });
 
   it('corrects a received purchase atomically while preserving the newer pending purchase', async () => {
@@ -237,8 +359,10 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       .mockResolvedValueOnce({ id: 'pending-2' });
     const tx = {
       $executeRaw: jest.fn(),
+      idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
       ordersV4Document: {
         findFirst,
+        findMany: jest.fn().mockResolvedValue([{ id: 'pending-2' }, { id: original.id }]),
         create: jest.fn().mockResolvedValue(replacement),
         update: jest.fn(),
         findUniqueOrThrow: jest.fn().mockResolvedValue(corrected),
@@ -264,10 +388,10 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const correction = new OrdersV4PurchaseCorrectionService(reversal as never);
     const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, reversal as never, correction);
 
-    const result = await service.receiveLatest('company-1', original.id, {
+    const result = await service.receivePurchase('company-1', original.id, {
       editMode: 'correction', revision: 2, documentDate: '2026-08-02', paymentMethod: 'custody', locationId: 'main',
       idempotencyKey: 'correct-1', lines: [{ itemId: 'item-1', quantity: '3', unitId: 'piece', unitPrice: '12', priceUnitId: 'piece' }],
-    });
+    }, 'cashier');
 
     expect(result).toBe(corrected);
     expect(reversal.reverseInTransaction).toHaveBeenCalledWith(tx, 'company-1', original.id, expect.stringContaining('correction-reversal:'));

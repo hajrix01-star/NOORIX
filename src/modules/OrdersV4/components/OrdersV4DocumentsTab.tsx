@@ -282,7 +282,7 @@ export function OrdersV4DocumentsTab({
     {
       key: 'status',
       label: t('ordersV4Status'),
-      render: (value, row) => isPurchase && value === 'prepared' && canReceive
+      render: (value, row) => isPurchase && value === 'prepared' && canReceive && row.canReceive === true
         ? <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>{t('ordersV4StatusAwaitingReceipt')}</Button>
         : <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? row.calculationSnapshot?.operation === 'direct-correction' ? t('ordersV4StatusCorrectedReceived') : t('ordersV4StatusReceived') : value === 'prepared' ? t('ordersV4StatusAwaitingReceipt') : row.calculationSnapshot?.correctedByDocumentId ? t('ordersV4StatusCorrected') : row.calculationSnapshot?.reopenedByDocumentId ? t('ordersV4StatusReopened') : t('ordersV4StatusReversed')}</span>,
     },
@@ -746,7 +746,7 @@ function OrdersV4ReopenConfirmModal({
   >
     {document && <div className="flex flex-col gap-3">
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[13px] leading-7 text-blue-950">
-        سيفتح الطلب في نافذة التعديل نفسها. تختار النواة تلقائيًا المسار الآمن: إعادة فتح عادية عند عدم وجود طلب معلّق، أو تصحيح ذري مباشر عند وجود طلب آخر بانتظار الاستلام، مع حفظ سجل التدقيق وترحيل المخزون والعهدة والأسعار بصورة مركزية. {cashierMode ? 'هذه الصلاحية متاحة للكاشير ضمن آخر 5 طلبات مستلمة دون موافقة المالك.' : 'صلاحية المالك متاحة للطلبات المستلمة خلال آخر 7 أيام.'}
+        سيفتح الطلب في نافذة التعديل نفسها. تختار النواة تلقائيًا المسار الآمن: إعادة فتح عادية عند عدم وجود طلب معلّق، أو تصحيح ذري مباشر عند وجود طلب آخر بانتظار الاستلام، مع حفظ سجل التدقيق وترحيل المخزون والعهدة والأسعار بصورة مركزية. {cashierMode ? 'هذه الصلاحية متاحة للكاشير ضمن آخر 5 طلبات شراء، سواء كانت بانتظار الاستلام أو مستلمة، دون موافقة المالك.' : 'صلاحية المالك متاحة خلال آخر 7 أيام، وكذلك ضمن آخر 5 طلبات حتى لا تكون صلاحية المالك أقل من الكاشير.'}
       </div>
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-noorix-bg-muted p-3 text-[12px]">
         <span>الطلب: <b>{document.documentNumber}</b></span>
