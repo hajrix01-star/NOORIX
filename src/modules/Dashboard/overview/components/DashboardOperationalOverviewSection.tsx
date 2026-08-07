@@ -1,5 +1,6 @@
 import React from 'react';
-import { FmtNum } from '../../../../ui';
+import { FmtNum, SimpleTable } from '../../../../ui';
+import type { SimpleTableColumn } from '../../../../ui/SimpleTable';
 import type { DashboardOperationalOverview } from '../../../../types/api/domains/dashboard';
 import { DashboardOverviewBreakdownTable } from './DashboardOverviewBreakdownTable';
 
@@ -27,6 +28,39 @@ function Ratio({ value }: { value: number | null }) {
 }
 
 export function DashboardOperationalOverviewSection({ overview, lang, t }: Props) {
+  type FixedDetail = DashboardOperationalOverview['fixedExpenses']['details'][number];
+  const fixedExpenseColumns: SimpleTableColumn<FixedDetail>[] = [
+    {
+      key: 'nameAr', label: t('dashboardFixedExpenseItem'), align: 'center', minWidth: 150,
+      render: (_value, row) => (
+        <span className="font-semibold text-noorix-text">
+          {(lang === 'ar' ? row.nameAr || row.nameEn : row.nameEn || row.nameAr) || row.invoiceNumber || t('notSpecified')}
+        </span>
+      ),
+    },
+    {
+      key: 'sourceAr', label: t('dashboardFixedExpenseSource'), align: 'center', minWidth: 130,
+      render: (_value, row) => (
+        <span>{(lang === 'ar' ? row.sourceAr || row.sourceEn : row.sourceEn || row.sourceAr) || '—'}</span>
+      ),
+    },
+    {
+      key: 'transactionDate', label: t('date'), align: 'center', minWidth: 110,
+      render: (value) => <span dir="ltr" className="nx-font-numbers">{String(value || '—')}</span>,
+    },
+    {
+      key: 'amount', label: t('dashboardPeriodAmount'), align: 'center', numeric: true, minWidth: 120,
+      render: (value) => <Money value={String(value ?? 0)} />,
+    },
+    {
+      key: 'sharePct', label: t('dashboardFixedExpenseShare'), align: 'center', numeric: true, minWidth: 105,
+      render: (value) => (
+        <span dir="ltr" className="nx-font-numbers font-bold text-nx-sales">
+          {value == null ? '—' : `${Number(value).toFixed(1)}%`}
+        </span>
+      ),
+    },
+  ];
   const categories = (overview.purchases.categories ?? []).map((row, index) => ({
     key: row.categoryId ?? `uncategorized-${index}`,
     label: (lang === 'ar' ? row.nameAr || row.nameEn : row.nameEn || row.nameAr) || t('notSpecified'),
@@ -54,6 +88,20 @@ export function DashboardOperationalOverviewSection({ overview, lang, t }: Props
         <div className="mx-4 mb-4 flex items-center justify-between rounded-lg border border-noorix-border px-3 py-2 text-[12px] sm:mx-5 sm:mb-5">
           <span className="text-noorix-muted">{t('dashboardFixedExpenseInvoices')}</span>
           <span className="nx-font-numbers font-bold text-noorix-text"><FmtNum n={overview.fixedExpenses.invoiceCount} /></span>
+        </div>
+        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+          <SimpleTable<FixedDetail>
+            columns={fixedExpenseColumns}
+            data={overview.fixedExpenses.details}
+            tableMinWidth={650}
+            compact
+            emptyMessage={t('dashboardNoFixedExpenseDetails')}
+          />
+          {overview.fixedExpenses.detailsLimited ? (
+            <p className="m-0 mt-2 text-center text-[11px] text-noorix-muted">
+              {t('dashboardFixedExpenseDetailsLimited')}
+            </p>
+          ) : null}
         </div>
       </article>
 

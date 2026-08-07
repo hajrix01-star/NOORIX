@@ -13,10 +13,24 @@ type PurchaseCategoryRow = {
   sharePct?: number | null;
 };
 
+type FixedExpenseDetailRow = {
+  invoiceId?: string;
+  invoiceNumber?: string;
+  transactionDate?: string;
+  nameAr?: string | null;
+  nameEn?: string | null;
+  sourceAr?: string | null;
+  sourceEn?: string | null;
+  amount?: string | number | null;
+  sharePct?: number | null;
+};
+
 type PeriodData = {
   totalsByKind?: Record<string, PeriodKindTotal>;
   purchaseCategoryBreakdown?: PurchaseCategoryRow[];
   purchaseCategoryTotal?: string | number | null;
+  fixedExpenseDetails?: FixedExpenseDetailRow[];
+  fixedExpenseDetailsLimited?: boolean;
 } | null;
 
 type KpiCard = {
@@ -45,6 +59,8 @@ export function buildDashboardOperationalOverview(
       amount: fixedExpenses.toString(),
       invoiceCount: fixedExpenseKind?.invoiceCount ?? 0,
       shareOfSalesPct: percentageOf(fixedExpenses, sales),
+      details: periodData?.fixedExpenseDetails ?? [],
+      detailsLimited: periodData?.fixedExpenseDetailsLimited ?? false,
     },
     purchases: {
       amount: purchases.toString(),

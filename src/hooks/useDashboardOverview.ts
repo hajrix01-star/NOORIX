@@ -39,7 +39,7 @@ const EMPTY_OVERVIEW: DashboardOverviewData = {
   },
   operationalOverview: {
     sales: 0,
-    fixedExpenses: { amount: 0, invoiceCount: 0, shareOfSalesPct: null },
+    fixedExpenses: { amount: 0, invoiceCount: 0, shareOfSalesPct: null, details: [], detailsLimited: false },
     purchases: { amount: 0, shareOfSalesPct: null, categories: [] },
   },
   presentation: {
@@ -93,6 +93,10 @@ function normalizeDashboardOverview(raw: DashboardOverviewData | null | undefine
         amount: raw.operationalOverview?.fixedExpenses?.amount ?? 0,
         invoiceCount: raw.operationalOverview?.fixedExpenses?.invoiceCount ?? 0,
         shareOfSalesPct: raw.operationalOverview?.fixedExpenses?.shareOfSalesPct ?? null,
+        details: Array.isArray(raw.operationalOverview?.fixedExpenses?.details)
+          ? raw.operationalOverview.fixedExpenses.details
+          : [],
+        detailsLimited: raw.operationalOverview?.fixedExpenses?.detailsLimited ?? false,
       },
       purchases: {
         amount: raw.operationalOverview?.purchases?.amount ?? 0,

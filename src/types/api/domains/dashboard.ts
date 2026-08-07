@@ -283,6 +283,18 @@ export type DashboardPeriodDataLike = {
     sharePct?: number | null;
   }>;
   purchaseCategoryTotal?: unknown;
+  fixedExpenseDetails?: Array<{
+    invoiceId?: string;
+    invoiceNumber?: string;
+    transactionDate?: string;
+    nameAr?: string | null;
+    nameEn?: string | null;
+    sourceAr?: string | null;
+    sourceEn?: string | null;
+    amount?: string | number | null;
+    sharePct?: number | null;
+  }>;
+  fixedExpenseDetailsLimited?: boolean;
 } | null;
 
 export type DashboardTimelineMetricRow = {
@@ -337,6 +349,8 @@ export type DashboardOperationalOverview = {
     amount: string | number;
     invoiceCount: number;
     shareOfSalesPct: number | null;
+    details: NonNullable<NonNullable<DashboardPeriodDataLike>['fixedExpenseDetails']>;
+    detailsLimited: boolean;
   };
   purchases: {
     amount: string | number;

@@ -12,13 +12,27 @@ describe('buildDashboardOperationalOverview', () => {
           { categoryId: 'food', nameAr: 'مواد غذائية', amount: '1800', sharePct: 60 },
           { categoryId: 'other', nameAr: 'أخرى', amount: '1200', sharePct: 40 },
         ],
+        fixedExpenseDetails: [
+          {
+            invoiceId: 'inv-1', invoiceNumber: 'FIX-1', transactionDate: '2026-08-01',
+            nameAr: 'إيجار', sourceAr: 'المالك', amount: '2000', sharePct: 100,
+          },
+        ],
       },
       [{ key: 'sales', value: 10000 }],
     );
 
     expect(result).toEqual({
       sales: '10000',
-      fixedExpenses: { amount: '2000', invoiceCount: 3, shareOfSalesPct: 20 },
+      fixedExpenses: {
+        amount: '2000', invoiceCount: 3, shareOfSalesPct: 20, detailsLimited: false,
+        details: [
+          {
+            invoiceId: 'inv-1', invoiceNumber: 'FIX-1', transactionDate: '2026-08-01',
+            nameAr: 'إيجار', sourceAr: 'المالك', amount: '2000', sharePct: 100,
+          },
+        ],
+      },
       purchases: {
         amount: '3000',
         shareOfSalesPct: 30,

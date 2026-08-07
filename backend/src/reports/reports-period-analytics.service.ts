@@ -11,6 +11,18 @@ type PurchaseCategoryBreakdownRow = {
   sharePct?: number | null;
 };
 
+type FixedExpenseDetailRow = {
+  invoiceId: string;
+  invoiceNumber: string;
+  transactionDate: string;
+  nameAr: string;
+  nameEn: string | null;
+  sourceAr: string | null;
+  sourceEn: string | null;
+  amount: string;
+  sharePct: number | null;
+};
+
 @Injectable()
 export class ReportsPeriodAnalyticsService {
   constructor(private readonly prisma: TenantPrismaService) {}
@@ -31,12 +43,28 @@ export class ReportsPeriodAnalyticsService {
       transactionDate: { gte: start, lte: end },
     };
 
-    const byKind = await this.prisma.invoice.groupBy({
-      by: ['kind'],
-      where: baseWhere,
-      _sum: { totalAmount: true },
-      _count: { _all: true },
-    });
+    const [byKind, fixedExpenseInvoices] = await Promise.all([
+      this.prisma.invoice.groupBy({
+        by: ['kind'],
+        where: baseWhere,
+        _sum: { totalAmount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.invoice.findMany({
+        where: { ...baseWhere, kind: 'fixed_expense' },
+        orderBy: [{ transactionDate: 'desc' }, { invoiceNumber: 'desc' }],
+        take: 100,
+        select: {
+          id: true,
+          invoiceNumber: true,
+          transactionDate: true,
+          totalAmount: true,
+          notes: true,
+          expenseLine: { select: { nameAr: true, nameEn: true } },
+          supplier: { select: { nameAr: true, nameEn: true } },
+        },
+      }),
+    ]);
 
     const totalsByKind: Record<string, { totalAmount: string; invoiceCount: number }> = {};
     for (const row of byKind) {
@@ -45,6 +73,23 @@ export class ReportsPeriodAnalyticsService {
         invoiceCount: row._count._all,
       };
     }
+
+    const fixedExpenseTotal = new Decimal(totalsByKind.fixed_expense?.totalAmount ?? 0);
+    const fixedExpenseDetails: FixedExpenseDetailRow[] = fixedExpenseInvoices.map((invoice) => {
+      const amount = new Decimal(invoice.totalAmount?.toString() ?? 0);
+      const fallbackName = invoice.notes?.trim() || invoice.invoiceNumber;
+      return {
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        transactionDate: toYmd(invoice.transactionDate),
+        nameAr: invoice.expenseLine?.nameAr || fallbackName,
+        nameEn: invoice.expenseLine?.nameEn || invoice.expenseLine?.nameAr || fallbackName,
+        sourceAr: invoice.supplier?.nameAr || invoice.supplier?.nameEn || null,
+        sourceEn: invoice.supplier?.nameEn || invoice.supplier?.nameAr || null,
+        amount: amount.toFixed(4),
+        sharePct: fixedExpenseTotal.gt(0) ? amount.div(fixedExpenseTotal).mul(100).toNumber() : null,
+      };
+    });
 
     const outflowKinds = ['purchase', 'expense', 'fixed_expense', 'hr_expense'] as const;
     const topGroups = await this.prisma.invoice.groupBy({
@@ -196,6 +241,8 @@ export class ReportsPeriodAnalyticsService {
       suppliersInPeriodCount: supplierIdsInPeriod.length,
       purchaseCategoryBreakdown,
       purchaseCategoryTotal,
+      fixedExpenseDetails,
+      fixedExpenseDetailsLimited: (totalsByKind.fixed_expense?.invoiceCount ?? 0) > fixedExpenseDetails.length,
     };
   }
 }
