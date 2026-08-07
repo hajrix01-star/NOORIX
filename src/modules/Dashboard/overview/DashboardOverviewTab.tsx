@@ -7,7 +7,9 @@ import { ErrorState } from '../../../components/states';
 import type { DashboardOverviewTabProps } from './types';
 import { useDashboardOverviewModel } from './hooks/useDashboardOverviewModel';
 import { DashboardOverviewKpiSkeleton } from './components/DashboardOverviewKpiSkeleton';
-import { DashboardOverviewContent } from './DashboardOverviewContent';
+import { DashboardVaultActivitySection } from './components/DashboardVaultActivitySection';
+import { DashboardOperationalOverviewSection } from './components/DashboardOperationalOverviewSection';
+import { DashboardOverviewKpis } from './components/DashboardOverviewKpis';
 export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }: DashboardOverviewTabProps) {
   const { t } = useTranslation();
   const m = useDashboardOverviewModel(companyId, year, selectedMonth, filter);
@@ -28,7 +30,26 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     );
   }
 
-  return <DashboardOverviewContent m={m} />;
+  return (
+    <div className="flex w-full min-w-0 flex-col gap-4">
+      <DashboardOverviewKpis
+        kpiCardsByKey={m.kpiCardsByKey}
+        filter={m.filter}
+        year={m.year}
+        salesShiftPeriodTotals={m.salesShiftPeriodTotals}
+        revenueDailyAvgCalendar={m.revenueDailyAvgCalendar}
+        revenueDailyAvgPrevMonthCalendar={m.revenueDailyAvgPrevMonthCalendar}
+        customerDailyAvgCalendar={m.customerDailyAvgCalendar}
+        customerDailyAvgPrevMonthCalendar={m.customerDailyAvgPrevMonthCalendar}
+        basketAvgCalendar={m.basketAvgCalendar}
+        basketAvgPrevMonthCalendar={m.basketAvgPrevMonthCalendar}
+        basketAvgDeltaPct={m.basketAvgDeltaPct}
+        kpiInsightFooters={m.kpiInsightFooters}
+      />
+      <DashboardVaultActivitySection activity={m.vaultActivity} lang={m.lang} t={m.t} />
+      <DashboardOperationalOverviewSection overview={m.operationalOverview} lang={m.lang} t={m.t} />
+    </div>
+  );
 }
 
 export type { DashboardOverviewTabProps } from './types';

@@ -1,36 +1,17 @@
-/**
- * محتوى نظرة عامة لوحة التحكم (مخططات + KPI + زمني) — يُستدعى النموذج مرة واحدة في الأب.
- */
 import React from 'react';
 import { DashboardOverviewTopCharts } from './components/DashboardOverviewTopCharts';
-import { DashboardOverviewKpis } from './components/DashboardOverviewKpis';
 import { DashboardOverviewWeeklySalesPanel } from './components/DashboardOverviewWeeklySalesPanel';
 import { DashboardOverviewYearlyDailyAvgPanel } from './components/DashboardOverviewYearlyDailyAvgPanel';
 import { DashboardOverviewTimelineSection } from './components/DashboardOverviewTimelineSection';
 import type { DashboardOverviewModel } from './hooks/useDashboardOverviewModel';
 
-export type DashboardOverviewContentProps = {
+type Props = {
   m: DashboardOverviewModel;
 };
 
-export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
+export function DashboardAnalyticsContent({ m }: Props) {
   return (
     <div className="flex w-full min-w-0 flex-col gap-4 lg:gap-5">
-      <DashboardOverviewKpis
-        kpiCardsByKey={m.kpiCardsByKey}
-        filter={m.filter}
-        year={m.year}
-        salesShiftPeriodTotals={m.salesShiftPeriodTotals}
-        revenueDailyAvgCalendar={m.revenueDailyAvgCalendar}
-        revenueDailyAvgPrevMonthCalendar={m.revenueDailyAvgPrevMonthCalendar}
-        customerDailyAvgCalendar={m.customerDailyAvgCalendar}
-        customerDailyAvgPrevMonthCalendar={m.customerDailyAvgPrevMonthCalendar}
-        basketAvgCalendar={m.basketAvgCalendar}
-        basketAvgPrevMonthCalendar={m.basketAvgPrevMonthCalendar}
-        basketAvgDeltaPct={m.basketAvgDeltaPct}
-        kpiInsightFooters={m.kpiInsightFooters}
-      />
-
       <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start lg:gap-5">
         <DashboardOverviewWeeklySalesPanel
           weeklyYearOptions={m.weeklyYearOptions}
@@ -77,9 +58,10 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         supplierTo={m.supplierTo}
         isPeriodLoading={m.isPeriodLoading}
         topSuppliersChartData={m.topSuppliersChartData}
-        purchaseCategoriesPieData={m.purchaseCategoriesPieData}
+        purchaseCategoriesPieData={[]}
         selectedMonth={m.selectedMonth}
-        periodPurchaseTotal={Number(m.periodData?.purchaseCategoryTotal || 0)}
+        periodPurchaseTotal={0}
+        showPurchaseCategories={false}
       />
     </div>
   );

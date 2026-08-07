@@ -31,6 +31,17 @@ const EMPTY_OVERVIEW: DashboardOverviewData = {
   },
   insights: null,
   periodData: null,
+  vaultActivity: {
+    totalInflow: 0,
+    totalOutflow: 0,
+    periodResult: 0,
+    rows: [],
+  },
+  operationalOverview: {
+    sales: 0,
+    fixedExpenses: { amount: 0, invoiceCount: 0, shareOfSalesPct: null },
+    purchases: { amount: 0, shareOfSalesPct: null, categories: [] },
+  },
   presentation: {
     kpiCards: [],
     timeline: {
@@ -70,6 +81,27 @@ function normalizeDashboardOverview(raw: DashboardOverviewData | null | undefine
     },
     insights: raw.insights ?? null,
     periodData: raw.periodData ?? null,
+    vaultActivity: {
+      totalInflow: raw.vaultActivity?.totalInflow ?? 0,
+      totalOutflow: raw.vaultActivity?.totalOutflow ?? 0,
+      periodResult: raw.vaultActivity?.periodResult ?? 0,
+      rows: Array.isArray(raw.vaultActivity?.rows) ? raw.vaultActivity.rows : [],
+    },
+    operationalOverview: {
+      sales: raw.operationalOverview?.sales ?? 0,
+      fixedExpenses: {
+        amount: raw.operationalOverview?.fixedExpenses?.amount ?? 0,
+        invoiceCount: raw.operationalOverview?.fixedExpenses?.invoiceCount ?? 0,
+        shareOfSalesPct: raw.operationalOverview?.fixedExpenses?.shareOfSalesPct ?? null,
+      },
+      purchases: {
+        amount: raw.operationalOverview?.purchases?.amount ?? 0,
+        shareOfSalesPct: raw.operationalOverview?.purchases?.shareOfSalesPct ?? null,
+        categories: Array.isArray(raw.operationalOverview?.purchases?.categories)
+          ? raw.operationalOverview.purchases.categories
+          : [],
+      },
+    },
     presentation: {
       kpiCards: Array.isArray(raw.presentation?.kpiCards) ? raw.presentation.kpiCards : [],
       timeline: {

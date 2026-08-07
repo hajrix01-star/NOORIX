@@ -30,6 +30,7 @@ type Props = {
   purchaseCategoriesPieData: CatRow[];
   selectedMonth: number | null;
   periodPurchaseTotal: number;
+  showPurchaseCategories?: boolean;
 };
 
 export function DashboardOverviewTopCharts({
@@ -41,12 +42,13 @@ export function DashboardOverviewTopCharts({
   purchaseCategoriesPieData,
   selectedMonth,
   periodPurchaseTotal,
+  showPurchaseCategories = true,
 }: Props) {
   const { t } = useTranslation();
   const operationalLabel = lang === 'ar' ? 'تحليل تشغيلي' : 'Operational analysis';
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
+    <div className={showPurchaseCategories ? 'grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]' : 'grid grid-cols-1 gap-5'}>
       <div className="noorix-surface-card p-4 lg:p-5">
         <div className="mb-0.5 flex flex-wrap items-center gap-2 max-lg:justify-center lg:justify-start">
           <span className="text-[14px] font-bold text-noorix-text">{t('periodAnalyticsTopSuppliers')}</span>
@@ -140,7 +142,7 @@ export function DashboardOverviewTopCharts({
         )}
       </div>
 
-      <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
+      {showPurchaseCategories ? <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
         <div className="mb-0.5 flex w-full flex-wrap items-center gap-2 max-lg:justify-center lg:justify-start">
           <span className="text-[14px] font-bold text-noorix-text">
             {selectedMonth != null ? t('dashboardPurchasesByCategoryTitleMonth') : t('dashboardPurchasesByCategoryTitlePeriod')}
@@ -186,7 +188,7 @@ export function DashboardOverviewTopCharts({
             t={t}
           />
         )}
-      </div>
+      </div> : null}
     </div>
   );
 }

@@ -312,10 +312,45 @@ export type DashboardOverviewPresentation = {
   basketAvgDeltaPct?: number | null;
 };
 
+export type DashboardVaultActivityRow = {
+  vaultId: string;
+  nameAr: string;
+  nameEn?: string | null;
+  type: string;
+  isArchived: boolean;
+  inflow: string | number;
+  outflow: string | number;
+  periodResult: string | number;
+  inflowSharePct: number | null;
+};
+
+export type DashboardVaultActivity = {
+  totalInflow: string | number;
+  totalOutflow: string | number;
+  periodResult: string | number;
+  rows: DashboardVaultActivityRow[];
+};
+
+export type DashboardOperationalOverview = {
+  sales: string | number;
+  fixedExpenses: {
+    amount: string | number;
+    invoiceCount: number;
+    shareOfSalesPct: number | null;
+  };
+  purchases: {
+    amount: string | number;
+    shareOfSalesPct: number | null;
+    categories: NonNullable<NonNullable<DashboardPeriodDataLike>['purchaseCategoryBreakdown']>;
+  };
+};
+
 export type DashboardOverviewData = {
   report: PlReportLike | null;
   salesPack: DashboardSalesPackData;
   insights: DashboardInsightsPayload | null;
   periodData: DashboardPeriodDataLike;
+  vaultActivity: DashboardVaultActivity;
+  operationalOverview: DashboardOperationalOverview;
   presentation?: DashboardOverviewPresentation;
 };

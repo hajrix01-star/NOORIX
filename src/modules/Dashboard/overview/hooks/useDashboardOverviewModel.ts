@@ -323,6 +323,8 @@ export function useDashboardOverviewModel(
     supplierTo,
     isPeriodLoading: isLoading,
     periodData,
+    vaultActivity: overviewData.vaultActivity,
+    operationalOverview: overviewData.operationalOverview,
     cards,
     kpiCardsByKey,
     performanceData,

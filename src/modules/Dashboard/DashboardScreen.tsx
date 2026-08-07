@@ -7,17 +7,17 @@ import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { DateFilterBar, FilterToolbar, ScreenTabs, ScreenShell, useDateFilter } from '../../ui';
 import DashboardOverviewTab from './overview/DashboardOverviewTab';
+import DashboardAnalyticsTab from './overview/DashboardAnalyticsTab';
 import DashboardCalendarTab from './components/DashboardCalendarTab';
 import DashboardSpecialDaysTab from './components/DashboardSpecialDaysTab';
-import DashboardAppSalesTab from './components/DashboardAppSalesTab';
 import { getSaudiNow } from '../../utils/saudiDate';
 import { buildDashboardPeriodFilter, deriveDashboardPeriodFromDateFilter } from './dashboardPeriodModel';
 
 const DASHBOARD_TABS = [
   { id: 'overview', labelKey: 'dashboardOverview', shortLabelKey: 'dashboardOverviewShort' },
+  { id: 'analytics', labelKey: 'dashboardAnalytics', shortLabelKey: 'dashboardAnalyticsShort' },
   { id: 'calendar', labelKey: 'dashboardCalendar' },
   { id: 'specialDays', labelKey: 'dashboardSpecialDays' },
-  { id: 'appSales', labelKey: 'dashboardAppSales', shortLabelKey: 'dashboardAppSalesShort' },
 ];
 const DASHBOARD_TAB_IDS = DASHBOARD_TABS.map((tab) => tab.id);
 
@@ -97,9 +97,9 @@ export default function DashboardScreen() {
         }
       >
         {activeTab === 'overview'    && <DashboardOverviewTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
+        {activeTab === 'analytics'   && <DashboardAnalyticsTab   companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
         {activeTab === 'calendar'    && <DashboardCalendarTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
         {activeTab === 'specialDays' && <DashboardSpecialDaysTab companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} />}
-        {activeTab === 'appSales'    && <DashboardAppSalesTab    companyId={activeCompanyId} year={year} />}
       </ScreenTabs>
     </ScreenShell>
   );
