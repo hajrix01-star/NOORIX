@@ -10,6 +10,14 @@ export type PurchaseDebtSupplierGroup = {
   cancelledCount: number;
 };
 
+export type PurchaseDebtSort =
+  | 'supplier_total_desc'
+  | 'supplier_total_asc'
+  | 'invoice_amount_desc'
+  | 'invoice_amount_asc'
+  | 'invoice_date_desc'
+  | 'invoice_date_asc';
+
 function displaySupplierName(record: PurchaseDebtRecord, lang: string): string {
   return lang === 'en'
     ? (record.supplier.nameEn || record.supplier.nameAr)
@@ -23,6 +31,7 @@ function displaySupplierName(record: PurchaseDebtRecord, lang: string): string {
 export function groupPurchaseDebtsBySupplier(
   records: readonly PurchaseDebtRecord[],
   lang: string,
+  sort: PurchaseDebtSort = 'supplier_total_desc',
 ): PurchaseDebtSupplierGroup[] {
   const groups = new Map<string, PurchaseDebtSupplierGroup & { amountInHalalas: number }>();
 
@@ -45,7 +54,24 @@ export function groupPurchaseDebtsBySupplier(
     groups.set(record.supplierId, current);
   }
 
-  return [...groups.values()]
-    .map(({ amountInHalalas, ...group }) => ({ ...group, totalAmount: amountInHalalas / 10_000 }))
-    .sort((a, b) => b.totalAmount - a.totalAmount || a.supplierName.localeCompare(b.supplierName, lang));
+  const sortInvoices = (a: PurchaseDebtRecord, b: PurchaseDebtRecord) => {
+    if (sort === 'invoice_amount_desc') return Number(b.totalAmount) - Number(a.totalAmount);
+    if (sort === 'invoice_amount_asc') return Number(a.totalAmount) - Number(b.totalAmount);
+    if (sort === 'invoice_date_desc') return String(b.invoiceDate).localeCompare(String(a.invoiceDate));
+    return String(a.invoiceDate).localeCompare(String(b.invoiceDate));
+  };
+
+  const normalized = [...groups.values()].map(({ amountInHalalas, ...group }) => ({
+    ...group,
+    totalAmount: amountInHalalas / 10_000,
+    records: [...group.records].sort(sortInvoices),
+  }));
+
+  return normalized.sort((a, b) => {
+    if (sort === 'supplier_total_desc') return b.totalAmount - a.totalAmount || a.supplierName.localeCompare(b.supplierName, lang);
+    if (sort === 'supplier_total_asc') return a.totalAmount - b.totalAmount || a.supplierName.localeCompare(b.supplierName, lang);
+    const firstA = a.records[0];
+    const firstB = b.records[0];
+    return sortInvoices(firstA, firstB) || a.supplierName.localeCompare(b.supplierName, lang);
+  });
 }

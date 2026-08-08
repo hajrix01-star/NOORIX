@@ -25,4 +25,16 @@ describe('groupPurchaseDebtsBySupplier', () => {
     expect(groups[1]).toMatchObject({ supplierId: 's1', totalAmount: 30.1235, pendingCount: 1, promotedCount: 1 });
     expect(groups[1].records.map((row) => row.id)).toEqual(['a1', 'a2']);
   });
+
+  it('orders supplier cards and their invoices by the selected business sort', () => {
+    const records = [
+      debt({ id: 'a1', totalAmount: '100', invoiceDate: '2026-07-05' }),
+      debt({ id: 'a2', totalAmount: '20', invoiceDate: '2026-07-01' }),
+      debt({ id: 'b1', supplierId: 's2', totalAmount: '50', invoiceDate: '2026-07-03', supplier: { id: 's2', nameAr: 'مورد ب', nameEn: 'Supplier B', isTaxRegistered: false } }),
+    ];
+
+    expect(groupPurchaseDebtsBySupplier(records, 'ar', 'supplier_total_asc').map((group) => group.supplierId)).toEqual(['s2', 's1']);
+    expect(groupPurchaseDebtsBySupplier(records, 'ar', 'invoice_amount_asc')[0].records.map((row) => row.id)).toEqual(['a2', 'a1']);
+    expect(groupPurchaseDebtsBySupplier(records, 'ar', 'invoice_date_desc')[0].records.map((row) => row.id)).toEqual(['a1', 'a2']);
+  });
 });

@@ -17,7 +17,7 @@ import { purchaseKeys } from '../../../../services/queryKeys';
 import type { PurchaseBatchSupplier } from '../purchaseBatchTypes';
 import PurchaseDebtFormModal, { type PurchaseDebtFormValue } from './PurchaseDebtFormModal';
 import PurchaseDebtBatchModal from './PurchaseDebtBatchModal';
-import { groupPurchaseDebtsBySupplier } from '../purchaseDebtSupplierGroups';
+import { groupPurchaseDebtsBySupplier, type PurchaseDebtSort } from '../purchaseDebtSupplierGroups';
 
 type Props = {
   companyId: string;
@@ -42,6 +42,8 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
   const [formOpen, setFormOpen] = useState(false);
   const [batchOpen, setBatchOpen] = useState(false);
   const [editing, setEditing] = useState<PurchaseDebtRecord | null>(null);
+  const [sort, setSort] = useState<PurchaseDebtSort>('supplier_total_desc');
+  const [expandedSupplierIds, setExpandedSupplierIds] = useState<Set<string>>(new Set());
   const debouncedSearch = useDebouncedValue(filters.q.trim(), 300);
 
   const query = useMemo<PurchaseDebtQuery>(() => ({
@@ -96,7 +98,8 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
     onSuccess: refresh,
   });
 
-  const money = (value: unknown) => `${Number(value || 0).toLocaleString(lang === 'en' ? 'en-SA' : 'ar-SA', { maximumFractionDigits: 2 })} ${ar ? 'ر.س' : 'SR'}`;
+  const number = (value: unknown, maximumFractionDigits = 0) => Number(value || 0).toLocaleString('en-SA', { maximumFractionDigits });
+  const money = (value: unknown) => `${number(value, 2)} ${ar ? 'ر.س' : 'SR'}`;
   const statusBadge = (status: string) => {
     if (status === 'promoted') return <Badge color="green" dot>{ar ? 'مرحّل' : 'Promoted'}</Badge>;
     if (status === 'cancelled') return <Badge color="gray" dot>{ar ? 'ملغي' : 'Cancelled'}</Badge>;
@@ -105,7 +108,7 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
   const pendingItems = items.filter((item) => item.status === 'pending');
   const allPendingSelected = pendingItems.length > 0 && pendingItems.every((item) => selected.has(item.id));
   const selectedRecords = items.filter((item) => selected.has(item.id) && item.status === 'pending');
-  const supplierGroups = useMemo(() => groupPurchaseDebtsBySupplier(items, lang), [items, lang]);
+  const supplierGroups = useMemo(() => groupPurchaseDebtsBySupplier(items, lang, sort), [items, lang, sort]);
   const totalPages = Math.max(1, Math.ceil((response?.total || 0) / (response?.pageSize || 25)));
 
   return (
@@ -120,7 +123,7 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
             variant="primary"
             disabled={selectedRecords.length === 0}
             onClick={() => onImport(selectedRecords)}
-          >{ar ? `إضافة للإدخال الجماعي (${selectedRecords.length})` : `Add to batch entry (${selectedRecords.length})`}</Button>
+          >{ar ? `إضافة للإدخال الجماعي (${number(selectedRecords.length)})` : `Add to batch entry (${number(selectedRecords.length)})`}</Button>
           <Button variant="success" onClick={() => setBatchOpen(true)}>+ {ar ? 'إدخال جماعي للمديونيات' : 'Batch debt entry'}</Button>
           <Button variant="success" onClick={() => { setEditing(null); setFormOpen(true); }}>+ {ar ? 'مديونية سابقة' : 'Previous debt'}</Button>
         </div>
@@ -128,19 +131,19 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card variant="stat" color="blue" label={ar ? 'إجمالي المديونيات' : 'Total debts'} value={money(summary?.totalAmount)}>
-          <p className="mt-1 text-[11px] text-noorix-muted">{summary?.totalCount || 0} {ar ? 'فاتورة' : 'invoices'}</p>
+          <p className="mt-1 text-[11px] text-noorix-muted nx-font-numbers">{number(summary?.totalCount)} {ar ? 'فاتورة' : 'invoices'}</p>
         </Card>
         <Card variant="stat" color="amber" label={ar ? 'غير مرحّل' : 'Pending'} value={money(summary?.pendingAmount)}>
-          <p className="mt-1 text-[11px] text-noorix-muted">{summary?.pendingCount || 0} {ar ? 'فاتورة' : 'invoices'}</p>
+          <p className="mt-1 text-[11px] text-noorix-muted nx-font-numbers">{number(summary?.pendingCount)} {ar ? 'فاتورة' : 'invoices'}</p>
         </Card>
         <Card variant="stat" color="green" label={ar ? 'تم ترحيله' : 'Promoted'} value={money(summary?.promotedAmount)}>
-          <p className="mt-1 text-[11px] text-noorix-muted">{summary?.promotedCount || 0} {ar ? 'فاتورة' : 'invoices'}</p>
+          <p className="mt-1 text-[11px] text-noorix-muted nx-font-numbers">{number(summary?.promotedCount)} {ar ? 'فاتورة' : 'invoices'}</p>
         </Card>
-        <Card variant="stat" color="violet" label={ar ? 'نسبة الترحيل بالقيمة' : 'Promotion rate by value'} value={`${summary?.promotionRate || 0}%`} />
+        <Card variant="stat" color="violet" label={ar ? 'نسبة الترحيل بالقيمة' : 'Promotion rate by value'} value={`${number(summary?.promotionRate, 1)}%`} />
       </div>
 
       <Card padding="sm">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-7">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-8">
           <Input
             type="search" placeholder={ar ? 'بحث برقم الفاتورة أو المورد...' : 'Search invoice or supplier...'}
             value={filters.q} onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setFilters((old) => ({ ...old, q: event.target.value })); setPage(1); }}
@@ -174,6 +177,19 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
               { value: 'promoted', label: ar ? 'تاريخ الترحيل' : 'Promoted date' },
             ]}
           />
+          <SearchableOptionsPicker
+            mode="single"
+            value={sort}
+            onChange={(value) => setSort(value as PurchaseDebtSort)}
+            options={[
+              { value: 'supplier_total_desc', label: ar ? 'إجمالي المورد: الأكبر' : 'Supplier total: highest' },
+              { value: 'supplier_total_asc', label: ar ? 'إجمالي المورد: الأصغر' : 'Supplier total: lowest' },
+              { value: 'invoice_amount_desc', label: ar ? 'قيمة الفاتورة: الأكبر' : 'Invoice amount: highest' },
+              { value: 'invoice_amount_asc', label: ar ? 'قيمة الفاتورة: الأصغر' : 'Invoice amount: lowest' },
+              { value: 'invoice_date_desc', label: ar ? 'التاريخ: الأحدث' : 'Date: newest' },
+              { value: 'invoice_date_asc', label: ar ? 'التاريخ: الأقدم' : 'Date: oldest' },
+            ]}
+          />
           <DateField lang={ar ? 'ar' : 'en'} value={filters.dateFrom} onValueChange={(value) => { setFilters((old) => ({ ...old, dateFrom: value })); setPage(1); }} />
           <DateField lang={ar ? 'ar' : 'en'} value={filters.dateTo} onValueChange={(value) => { setFilters((old) => ({ ...old, dateTo: value })); setPage(1); }} />
           <Input type="number" min="0" placeholder={ar ? 'أقل مبلغ' : 'Min amount'} value={filters.amountMin} onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setFilters((old) => ({ ...old, amountMin: event.target.value })); setPage(1); }} />
@@ -184,7 +200,7 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
 
       <section className="space-y-3" aria-label={ar ? 'مديونيات الموردين' : 'Supplier debts'}>
         <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[12px] text-noorix-muted">
-          <span>{ar ? `${supplierGroups.length} مورد في الصفحة المعروضة` : `${supplierGroups.length} suppliers on this page`}</span>
+          <span className="nx-font-numbers">{number(supplierGroups.length)} {ar ? 'مورد في الصفحة المعروضة' : 'suppliers on this page'}</span>
           {pendingItems.length > 0 ? (
             <Checkbox
               checked={allPendingSelected}
@@ -203,16 +219,17 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
         ) : supplierGroups.map((group) => {
           const groupPending = group.records.filter((record) => record.status === 'pending');
           const isGroupSelected = groupPending.length > 0 && groupPending.every((record) => selected.has(record.id));
+          const expanded = expandedSupplierIds.has(group.supplierId);
           return (
             <Card key={group.supplierId} padding="none" className="overflow-hidden border border-noorix-border">
               <header className="flex flex-wrap items-center justify-between gap-3 border-b border-noorix-border bg-noorix-surface px-4 py-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="truncate text-[15px] font-bold text-noorix-text">{group.supplierName}</h3>
-                    <Badge color="blue">{group.records.length} {ar ? 'فاتورة' : 'invoices'}</Badge>
-                    {group.pendingCount > 0 ? <Badge color="amber">{group.pendingCount} {ar ? 'غير مرحلة' : 'pending'}</Badge> : null}
-                    {group.promotedCount > 0 ? <Badge color="green">{group.promotedCount} {ar ? 'مرحلة' : 'promoted'}</Badge> : null}
-                    {group.cancelledCount > 0 ? <Badge color="gray">{group.cancelledCount} {ar ? 'ملغاة' : 'cancelled'}</Badge> : null}
+                    <Badge color="blue"><span className="nx-font-numbers">{number(group.records.length)}</span> {ar ? 'فاتورة' : 'invoices'}</Badge>
+                    {group.pendingCount > 0 ? <Badge color="amber"><span className="nx-font-numbers">{number(group.pendingCount)}</span> {ar ? 'غير مرحلة' : 'pending'}</Badge> : null}
+                    {group.promotedCount > 0 ? <Badge color="green"><span className="nx-font-numbers">{number(group.promotedCount)}</span> {ar ? 'مرحلة' : 'promoted'}</Badge> : null}
+                    {group.cancelledCount > 0 ? <Badge color="gray"><span className="nx-font-numbers">{number(group.cancelledCount)}</span> {ar ? 'ملغاة' : 'cancelled'}</Badge> : null}
                   </div>
                   <p className="mt-1 text-[11px] text-noorix-muted">{ar ? 'فواتير المورد ومراحلها ضمن نطاق الفلترة الحالي.' : 'Supplier invoices and their status within the current filters.'}</p>
                 </div>
@@ -234,10 +251,20 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
                       aria-label={ar ? `تحديد فواتير ${group.supplierName} غير المرحلة` : `Select ${group.supplierName} pending invoices`}
                     />
                   ) : null}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-expanded={expanded}
+                    onClick={() => setExpandedSupplierIds((current) => {
+                      const next = new Set(current);
+                      if (next.has(group.supplierId)) next.delete(group.supplierId); else next.add(group.supplierId);
+                      return next;
+                    })}
+                  >{expanded ? (ar ? 'طي' : 'Collapse') : (ar ? 'عرض الفواتير' : 'Show invoices')}</Button>
                 </div>
               </header>
 
-              <div className="divide-y divide-noorix-border">
+              {expanded ? <div className="divide-y divide-noorix-border">
                 {group.records.map((row) => (
                   <article key={row.id} className="grid grid-cols-1 items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1.25fr)_auto_auto] sm:gap-4">
                     <div className="min-w-0">
@@ -285,17 +312,17 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
                     </div>
                   </article>
                 ))}
-              </div>
+              </div> : null}
             </Card>
           );
         })}
       </section>
 
       <div className="flex items-center justify-between gap-3 text-[12px] text-noorix-muted">
-        <span>{ar ? `إجمالي النتائج: ${response?.total || 0}` : `Total results: ${response?.total || 0}`}</span>
+        <span className="nx-font-numbers">{ar ? `إجمالي النتائج: ${number(response?.total)}` : `Total results: ${number(response?.total)}`}</span>
         <div className="flex items-center gap-2">
           <Button size="sm" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>{ar ? 'السابق' : 'Previous'}</Button>
-          <span className="nx-font-numbers">{page} / {totalPages}</span>
+          <span className="nx-font-numbers">{number(page)} / {number(totalPages)}</span>
           <Button size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>{ar ? 'التالي' : 'Next'}</Button>
         </div>
       </div>
