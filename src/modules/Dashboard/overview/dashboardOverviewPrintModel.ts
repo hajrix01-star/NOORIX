@@ -77,13 +77,13 @@ export function buildDashboardOverviewPrintDocument(input: DashboardOverviewPrin
   const labels = isArabic
     ? {
         title: 'لوحة التحكم — النظرة العامة', period: 'الفترة', incoming: 'إجمالي الداخل', outgoing: 'إجمالي الخارج', result: 'نتيجة الفترة',
-        vaults: 'حركة الخزائن', vault: 'الخزينة', share: 'النسبة من الداخل', fixed: 'المصاريف الثابتة', purchases: 'المشتريات حسب الفئات',
-        category: 'الفئة', amount: 'المبلغ', fixedCount: 'فاتورة', extra: 'عناصر إضافية غير معروضة للحفاظ على صفحة واحدة', none: 'لا توجد بيانات خلال الفترة',
+        vaults: 'حركة الخزائن', vault: 'الخزينة', share: 'النسبة من الداخل', fixed: 'التكاليف التشغيلية الدورية', purchases: 'المشتريات حسب الفئات',
+        category: 'الفئة', amount: 'المبلغ', fixedCount: 'سجل', extra: 'عناصر إضافية غير معروضة للحفاظ على صفحة واحدة', none: 'لا توجد بيانات خلال الفترة',
       }
     : {
         title: 'Dashboard — Overview', period: 'Period', incoming: 'Total inflow', outgoing: 'Total outflow', result: 'Period result',
-        vaults: 'Vault activity', vault: 'Vault', share: 'Inflow share', fixed: 'Fixed expenses', purchases: 'Purchases by category',
-        category: 'Category', amount: 'Amount', fixedCount: 'invoices', extra: 'additional items omitted to keep one page', none: 'No data for this period',
+        vaults: 'Vault activity', vault: 'Vault', share: 'Inflow share', fixed: 'Recurring operating costs', purchases: 'Purchases by category',
+        category: 'Category', amount: 'Amount', fixedCount: 'records', extra: 'additional items omitted to keep one page', none: 'No data for this period',
       };
 
   const kpiKeys = ['sales', 'purchases', 'expenses', 'grossProfit', 'netProfit'];

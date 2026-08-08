@@ -56,6 +56,7 @@ export class ReportsPeriodAnalyticsService {
     const fixedExpenseSelect = {
       id: true,
       invoiceNumber: true,
+      kind: true,
       transactionDate: true,
       totalAmount: true,
       notes: true,
@@ -65,7 +66,7 @@ export class ReportsPeriodAnalyticsService {
         select: { serviceCategory: true },
       },
     } as const;
-    const [byKind, directFixedInvoices, recurringHrInvoices, recurringHrAggregate] = await Promise.all([
+    const [byKind, directFixedInvoices, recurringHrInvoices, recurringHrAggregate, salaryInvoices] = await Promise.all([
       this.prisma.invoice.groupBy({
         by: ['kind'],
         where: baseWhere,
@@ -89,6 +90,12 @@ export class ReportsPeriodAnalyticsService {
         _sum: { totalAmount: true },
         _count: { _all: true },
       }),
+      this.prisma.invoice.findMany({
+        where: { ...baseWhere, kind: 'salary' },
+        orderBy: [{ transactionDate: 'desc' }, { invoiceNumber: 'desc' }],
+        take: 100,
+        select: fixedExpenseSelect,
+      }),
     ]);
 
     const totalsByKind: Record<string, { totalAmount: string; invoiceCount: number }> = {};
@@ -101,22 +108,25 @@ export class ReportsPeriodAnalyticsService {
 
     const directFixedTotal = new Decimal(totalsByKind.fixed_expense?.totalAmount ?? 0);
     const recurringHrTotal = new Decimal(recurringHrAggregate._sum.totalAmount?.toString() ?? 0);
-    const fixedExpenseTotal = directFixedTotal.plus(recurringHrTotal);
-    const fixedExpenseInvoiceCount = (totalsByKind.fixed_expense?.invoiceCount ?? 0) + recurringHrAggregate._count._all;
-    const fixedExpenseDetails: FixedExpenseDetailRow[] = [...directFixedInvoices, ...recurringHrInvoices]
+    const salaryTotal = new Decimal(totalsByKind.salary?.totalAmount ?? 0);
+    const fixedExpenseTotal = directFixedTotal.plus(recurringHrTotal).plus(salaryTotal);
+    const fixedExpenseInvoiceCount =
+      (totalsByKind.fixed_expense?.invoiceCount ?? 0) + recurringHrAggregate._count._all + (totalsByKind.salary?.invoiceCount ?? 0);
+    const fixedExpenseDetails: FixedExpenseDetailRow[] = [...directFixedInvoices, ...recurringHrInvoices, ...salaryInvoices]
       .sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime() || b.invoiceNumber.localeCompare(a.invoiceNumber))
       .slice(0, 100)
       .map((invoice) => {
       const amount = new Decimal(invoice.totalAmount?.toString() ?? 0);
+      const isPayroll = invoice.kind === 'salary';
       const fallbackName = invoice.notes?.trim() || invoice.invoiceNumber;
       return {
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         transactionDate: toYmd(invoice.transactionDate),
-        nameAr: invoice.expenseLine?.nameAr || fallbackName,
-        nameEn: invoice.expenseLine?.nameEn || invoice.expenseLine?.nameAr || fallbackName,
-        sourceAr: invoice.supplier?.nameAr || invoice.supplier?.nameEn || null,
-        sourceEn: invoice.supplier?.nameEn || invoice.supplier?.nameAr || null,
+        nameAr: isPayroll ? 'الرواتب والأجور' : invoice.expenseLine?.nameAr || fallbackName,
+        nameEn: isPayroll ? 'Payroll and wages' : invoice.expenseLine?.nameEn || invoice.expenseLine?.nameAr || fallbackName,
+        sourceAr: isPayroll ? 'مسير الرواتب' : invoice.supplier?.nameAr || invoice.supplier?.nameEn || null,
+        sourceEn: isPayroll ? 'Payroll run' : invoice.supplier?.nameEn || invoice.supplier?.nameAr || null,
         amount: amount.toFixed(4),
         sharePct: fixedExpenseTotal.gt(0) ? amount.div(fixedExpenseTotal).mul(100).toNumber() : null,
       };
