@@ -32,7 +32,7 @@ export function validateResidencyServicePayload(category: string, dto: Residency
 }
 
 export function showsResidencyIssueDate(category: string): boolean {
-  return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(category);
+  return ['iqama_renewal', 'medical_insurance', 'health_certificate'].includes(category);
 }
 
 export function mapResidencyDateFields(dto: {

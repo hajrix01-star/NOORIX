@@ -2,7 +2,6 @@
  * أنواع خدمات الموظف — تبويبة الإقامات والخدمات
  */
 export const HR_SERVICE_CATEGORIES = [
-  'iqama_new',
   'iqama_renewal',
   'sponsorship_transfer',
   'exit_reentry_visa',
@@ -19,11 +18,9 @@ export const HR_SERVICE_QUICK_ADD = [
   'flight_ticket',
   'medical_insurance',
   'health_certificate',
-  'iqama_new',
 ];
 
 export const HR_SERVICE_CATEGORY_LABEL_KEYS: Record<string, string> = {
-  iqama_new: 'hrServiceIqamaNew',
   iqama_renewal: 'hrServiceIqamaRenewal',
   sponsorship_transfer: 'hrServiceSponsorshipTransfer',
   exit_reentry_visa: 'hrServiceExitReentry',
@@ -33,7 +30,6 @@ export const HR_SERVICE_CATEGORY_LABEL_KEYS: Record<string, string> = {
 };
 
 export const HR_SERVICE_DEFAULT_DIRECTORY_CODES: Readonly<Record<string, string>> = {
-  iqama_new: 'GOV-PASSPORTS',
   iqama_renewal: 'GOV-HRSD',
   sponsorship_transfer: 'GOV-HRSD',
   exit_reentry_visa: 'GOV-PASSPORTS',
@@ -41,7 +37,7 @@ export const HR_SERVICE_DEFAULT_DIRECTORY_CODES: Readonly<Record<string, string>
 };
 
 export function requiresIqamaNumber(category: string | null | undefined) {
-  return ['iqama_new', 'iqama_renewal', 'sponsorship_transfer'].includes(String(category || ''));
+  return ['iqama_renewal', 'sponsorship_transfer'].includes(String(category || ''));
 }
 
 export function showsReferenceLabel(category: string | null | undefined) {

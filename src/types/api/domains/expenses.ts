@@ -1,5 +1,64 @@
 export type ExpenseLineKind = 'fixed_expense' | 'expense';
 
+export type LoanPaymentRecord = {
+  id: string;
+  amount: number | string;
+  transactionDate: string;
+  notes?: string | null;
+  status: 'posted' | 'reversed' | string;
+  reversalOfId?: string | null;
+  reversedAt?: string | null;
+  createdAt?: string;
+  vault?: { nameAr?: string | null; nameEn?: string | null } | null;
+  reversal?: { id: string; transactionDate: string; amount: number | string } | null;
+};
+
+export type LoanRecord = {
+  id: string;
+  nameAr: string;
+  creditorName?: string | null;
+  openingAmount: number | string;
+  outstandingAmount: number | string;
+  openingDate: string;
+  dueDate?: string | null;
+  notes?: string | null;
+  historicalPaymentsCount?: number | null;
+  historicalPaidAmount?: number | string | null;
+  historicalPaidThroughDate?: string | null;
+  isActive?: boolean;
+  payments?: LoanPaymentRecord[];
+};
+
+export type LoanCreatePayload = {
+  companyId: string;
+  nameAr: string;
+  creditorName?: string;
+  amount: number;
+  openingDate: string;
+  dueDate?: string;
+  notes?: string;
+  historicalPaymentsCount?: number;
+  historicalPaidAmount?: number;
+  historicalPaidThroughDate?: string;
+  idempotencyKey: string;
+};
+
+export type LoanPaymentCreatePayload = {
+  companyId: string;
+  vaultId: string;
+  amount: number;
+  transactionDate: string;
+  notes?: string;
+  idempotencyKey: string;
+};
+
+export type LoanPaymentReversePayload = {
+  companyId: string;
+  transactionDate: string;
+  notes?: string;
+  idempotencyKey: string;
+};
+
 export type ExpenseCategoryRef = {
   id: string;
   nameAr?: string | null;

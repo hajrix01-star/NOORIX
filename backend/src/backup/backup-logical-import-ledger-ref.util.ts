@@ -6,6 +6,8 @@ export function mapImportedLedgerRef(
     dailySalesSummaryMap: Map<string, string>;
     transferMap?: Map<string, string>;
     transferByLedgerEntryId?: Map<string, string>;
+    loanMap?: Map<string, string>;
+    loanPaymentMap?: Map<string, string>;
     ledgerEntryId?: string;
   },
 ): string {
@@ -24,5 +26,7 @@ export function mapImportedLedgerRef(
       ?? maps.transferMap?.get(refId)
       ?? refId;
   }
+  if (type === 'loan_opening') return maps.loanMap?.get(refId) ?? refId;
+  if (type === 'loan_payment' || type === 'loan_payment_reversal') return maps.loanPaymentMap?.get(refId) ?? refId;
   return refId;
 }

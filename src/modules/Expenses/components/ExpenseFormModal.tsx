@@ -37,6 +37,7 @@ import {
 
 type ExpenseFormModalProps = {
   companyId: string;
+  lineKind?: 'expense' | 'fixed_expense';
   onClose: () => void;
   onSaved: () => void;
 };
@@ -54,7 +55,7 @@ function invoiceIdFromResult(result: InvoiceCreateResult): string | undefined {
   return result.data?.invoice?.id || result.data?.id || result.invoice?.id || result.id;
 }
 
-export default function ExpenseFormModal({ companyId, onClose, onSaved }: ExpenseFormModalProps) {
+export default function ExpenseFormModal({ companyId, lineKind, onClose, onSaved }: ExpenseFormModalProps) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const { companies } = useApp();
@@ -130,11 +131,11 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
 
   const expenseLinePickerOptions = useMemo(
     () =>
-      expenseLines.map((line) => ({
+      expenseLines.filter((line) => !lineKind || line.kind === lineKind).map((line) => ({
         value: line.id,
         label: `${expenseLineDisplayName(line, lang)} (${expenseLineKindLabel(line.kind, lang)})`,
       })),
-    [expenseLines, lang],
+    [expenseLines, lang, lineKind],
   );
 
   const vaultPickerOptions = useMemo(() => paymentVaultOptions(activeVaults, lang), [activeVaults, lang]);

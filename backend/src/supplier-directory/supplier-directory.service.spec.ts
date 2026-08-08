@@ -70,14 +70,12 @@ describe('SupplierDirectoryService safe supplier linking', () => {
   it('maps renewal to HRSD, never to Justice, while keeping passports services separate', () => {
     expect(HR_SERVICE_DIRECTORY_CODES.iqama_renewal).toBe('GOV-HRSD');
     expect(HR_SERVICE_DIRECTORY_CODES.sponsorship_transfer).toBe('GOV-HRSD');
-    expect(HR_SERVICE_DIRECTORY_CODES.iqama_new).toBe('GOV-PASSPORTS');
     expect(HR_SERVICE_DIRECTORY_CODES.exit_reentry_visa).toBe('GOV-PASSPORTS');
     expect(Object.values(HR_SERVICE_DIRECTORY_CODES)).not.toContain('GOV-MOJ');
   });
 
   it('gives every HR service a dedicated category and keeps variable suppliers out of defaults', () => {
     expect(HR_SERVICE_CATEGORY_CODES).toMatchObject({
-      iqama_new: 'E2-4',
       iqama_renewal: 'E2-4',
       sponsorship_transfer: 'E2-10',
       exit_reentry_visa: 'E2-4',
@@ -155,8 +153,8 @@ describe('SupplierDirectoryService safe supplier linking', () => {
 
     const count = await backfillService.backfillHrServiceSupplierLinksForCompany('company-1');
 
-    expect(count).toBe(5);
-    expect(updateMany).toHaveBeenCalledTimes(5);
+    expect(count).toBe(4);
+    expect(updateMany).toHaveBeenCalledTimes(4);
     expect(updateMany).toHaveBeenCalledWith({
       where: {
         companyId: 'company-1',

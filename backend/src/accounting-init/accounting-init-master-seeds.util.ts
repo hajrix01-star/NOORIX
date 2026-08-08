@@ -35,8 +35,10 @@ export const MASTER_ACCOUNTS: MasterAccountSeed[] = [
   // ب- الخصوم
   { code: 'AP-001', nameAr: 'الذمم الدائنة (موردون)', nameEn: 'Accounts Payable',            type: 'liability',icon: '📋', taxExempt: false },
   { code: 'TAX-001',nameAr: 'ضريبة القيمة المضافة',   nameEn: 'VAT',                         type: 'liability',icon: '📝', taxExempt: false },
+  { code: 'LOAN-001',nameAr: 'قروض والتزامات مالية', nameEn: 'Loans & Financial Obligations', type: 'liability',icon: '📄', taxExempt: true },
   // ج- حقوق الملكية
   { code: 'EQU-001',nameAr: 'رأس المال',              nameEn: 'Capital',                     type: 'equity',  icon: '💎', taxExempt: false },
+  { code: 'EQU-002',nameAr: 'تسوية أرصدة افتتاحية',   nameEn: 'Opening balance clearing',    type: 'equity',  icon: '⚖️', taxExempt: true },
   // د- الإيرادات
   { code: 'REV-001',nameAr: 'المبيعات',               nameEn: 'Sales',                       type: 'revenue', icon: '💰', taxExempt: false },
   // هـ- المصروفات / المشتريات

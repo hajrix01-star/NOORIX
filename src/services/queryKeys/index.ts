@@ -11,6 +11,7 @@ export { vaultKeys } from './vaults';
 export { supplierKeys } from './suppliers';
 export { employeeKeys } from './employees';
 export { expenseKeys } from './expenses';
+export { loanKeys } from './loans';
 export { vatKeys } from './vat';
 export { hrKeys } from './hr';
 export { purchaseKeys } from './purchases';

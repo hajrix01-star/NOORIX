@@ -29,6 +29,8 @@ type PeriodData = {
   totalsByKind?: Record<string, PeriodKindTotal>;
   purchaseCategoryBreakdown?: PurchaseCategoryRow[];
   purchaseCategoryTotal?: string | number | null;
+  fixedExpenseTotal?: string | number | null;
+  fixedExpenseInvoiceCount?: number | null;
   fixedExpenseDetails?: FixedExpenseDetailRow[];
   fixedExpenseDetailsLimited?: boolean;
 } | null;
@@ -50,14 +52,14 @@ export function buildDashboardOperationalOverview(
   const salesCard = kpiCards.find((row) => row.key === 'sales');
   const sales = new Decimal(salesCard?.value || 0);
   const fixedExpenseKind = periodData?.totalsByKind?.fixed_expense;
-  const fixedExpenses = new Decimal(fixedExpenseKind?.totalAmount || 0);
+  const fixedExpenses = new Decimal(periodData?.fixedExpenseTotal ?? fixedExpenseKind?.totalAmount ?? 0);
   const purchases = new Decimal(periodData?.purchaseCategoryTotal || 0);
 
   return {
     sales: sales.toString(),
     fixedExpenses: {
       amount: fixedExpenses.toString(),
-      invoiceCount: fixedExpenseKind?.invoiceCount ?? 0,
+      invoiceCount: periodData?.fixedExpenseInvoiceCount ?? fixedExpenseKind?.invoiceCount ?? 0,
       shareOfSalesPct: percentageOf(fixedExpenses, sales),
       details: periodData?.fixedExpenseDetails ?? [],
       detailsLimited: periodData?.fixedExpenseDetailsLimited ?? false,

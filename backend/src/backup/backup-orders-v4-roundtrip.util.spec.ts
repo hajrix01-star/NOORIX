@@ -52,7 +52,7 @@ function importTx() {
 function params(data: Record<string, unknown>) {
   let sequence = 0;
   return {
-    tenantId: 'tenant-1', newCompanyId: 'restored-company', data,
+    tenantId: 'tenant-1', newCompanyId: 'restored-company', data, counts: {},
     nameAr: 'Restored', resolvedNameEn: null, importingUserId: 'import-user',
     co: {}, strictAlloc: false, logger: new Logger('BackupOrdersV4Roundtrip'),
     nid: () => `new-${++sequence}`,
@@ -149,7 +149,7 @@ describe('Orders V4 logical backup round-trip', () => {
     const serialized = JSON.parse(stringifyLogicalSnapshotReplacingDecimals(snapshot)) as {
       meta: { version: number }; counts: Record<string, number>; data: Record<string, unknown>;
     };
-    expect(serialized.meta.version).toBe(9);
+    expect(serialized.meta.version).toBe(10);
     expect(serialized.counts).toEqual(expect.objectContaining({
       ordersV4Units: 2, ordersV4Items: 1, ordersV4ConversionEdges: 1,
       ordersV4Documents: 1, ordersV4InventoryLedger: 1, ordersV4CustodyLedger: 1,

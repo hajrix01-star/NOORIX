@@ -21,7 +21,7 @@ export async function runBackupLogicalImportInTransaction(
   tx: Prisma.TransactionClient,
   p: BackupLogicalImportTxParams,
 ): Promise<string[]> {
-  const { tenantId, newCompanyId, data, importingUserId, strictAlloc, logger, nid } = p;
+  const { tenantId, newCompanyId, data, counts, importingUserId, strictAlloc, logger, nid } = p;
   let allocationWarnings: string[] = [];
   const { accountMap, categoryMap, supplierMap, vaultMap, expenseLineMap, employeeMap } =
     await importBackupLogicalCoreEntities(tx, p);
@@ -48,6 +48,71 @@ export async function runBackupLogicalImportInTransaction(
             .filter((row) => row.ledgerEntryId)
             .map((row) => [String(row.ledgerEntryId), vaultTransferMap.get(String(row.id))!]),
         );
+        const loanRows = arr<Record<string, unknown>>(data.loans);
+        // A reversal references its original payment. Snapshots are not ordered,
+        // so import originals first to satisfy the FK without weakening integrity.
+        const loanPaymentRows = [...arr<Record<string, unknown>>(data.loanPayments)]
+          .sort((a, b) => Number(Boolean(a.reversalOfId)) - Number(Boolean(b.reversalOfId)));
+        if ((counts.loans != null && counts.loans !== loanRows.length)
+          || (counts.loanPayments != null && counts.loanPayments !== loanPaymentRows.length)) {
+          throw new BadRequestException('LOAN_RESTORE_COUNT_MISMATCH');
+        }
+        const loanMap = new Map(loanRows.map((row) => [String(row.id), nid()]));
+        const loanPaymentMap = new Map(loanPaymentRows.map((row) => [String(row.id), nid()]));
+        const snapshotLedgerById = new Map(
+          arr<Record<string, unknown>>(data.ledgerEntries).map((row) => [String(row.id), row]),
+        );
+        const snapshotAccountCodeById = new Map(
+          arr<Record<string, unknown>>(data.accounts).map((row) => [String(row.id), String(row.code)]),
+        );
+        const snapshotVaultAccountById = new Map(
+          arr<Record<string, unknown>>(data.vaults).map((row) => [String(row.id), String(row.accountId)]),
+        );
+        const snapshotLoanPaymentById = new Map(loanPaymentRows.map((row) => [String(row.id), row]));
+        for (const row of loanRows) {
+          const openingAmount = dec(row.openingAmount ?? row.originalAmount);
+          const outstandingAmount = dec(row.outstandingAmount);
+          const openingEntry = row.openingLedgerEntryId ? snapshotLedgerById.get(String(row.openingLedgerEntryId)) : null;
+          if (!openingEntry || String(openingEntry.status ?? 'active') !== 'active'
+            || String(openingEntry.referenceType) !== 'loan_opening'
+            || String(openingEntry.referenceId) !== String(row.id)
+            || !dec(openingEntry.amount).eq(openingAmount)
+            || snapshotAccountCodeById.get(String(openingEntry.debitAccountId)) !== 'EQU-002'
+            || snapshotAccountCodeById.get(String(openingEntry.creditAccountId)) !== 'LOAN-001') {
+            throw new BadRequestException(`LOAN_RESTORE_OPENING_INTEGRITY_FAILED:${String(row.id)}`);
+          }
+          let expectedOutstanding = openingAmount;
+          for (const payment of loanPaymentRows.filter((candidate) => String(candidate.loanId) === String(row.id))) {
+            const isReversal = Boolean(payment.reversalOfId);
+            const parent = isReversal ? snapshotLoanPaymentById.get(String(payment.reversalOfId)) : null;
+            if (isReversal && (!parent
+              || String(parent.loanId) !== String(row.id)
+              || String(parent.id) === String(payment.id)
+              || String(parent.reversalOfId ?? '') !== ''
+              || String(parent.status ?? 'posted') !== 'reversed'
+              || String(payment.status ?? 'posted') !== 'posted'
+              || !dec(parent.amount).eq(dec(payment.amount)))) {
+              throw new BadRequestException(`LOAN_PAYMENT_RESTORE_REVERSAL_INTEGRITY_FAILED:${String(payment.id)}`);
+            }
+            if (!isReversal && String(payment.status ?? 'posted') === 'reversed'
+              && !loanPaymentRows.some((candidate) => String(candidate.reversalOfId ?? '') === String(payment.id))) {
+              throw new BadRequestException(`LOAN_PAYMENT_RESTORE_REVERSAL_MISSING:${String(payment.id)}`);
+            }
+            const ledger = snapshotLedgerById.get(String(payment.ledgerEntryId));
+            const vaultAccountId = snapshotVaultAccountById.get(String(payment.vaultId));
+            const expectedType = isReversal ? 'loan_payment_reversal' : 'loan_payment';
+            const debitOk = isReversal
+              ? String(ledger?.debitAccountId) === vaultAccountId && snapshotAccountCodeById.get(String(ledger?.creditAccountId)) === 'LOAN-001'
+              : snapshotAccountCodeById.get(String(ledger?.debitAccountId)) === 'LOAN-001' && String(ledger?.creditAccountId) === vaultAccountId;
+            if (!ledger || String(ledger.status ?? 'active') !== 'active' || !vaultAccountId || String(ledger.referenceType) !== expectedType || String(ledger.referenceId) !== String(payment.id) || !dec(ledger.amount).eq(dec(payment.amount)) || !debitOk) {
+              throw new BadRequestException(`LOAN_PAYMENT_RESTORE_LEDGER_INTEGRITY_FAILED:${String(payment.id)}`);
+            }
+            if (!isReversal && String(payment.status ?? 'posted') === 'posted') expectedOutstanding = expectedOutstanding.minus(dec(payment.amount));
+          }
+          if (expectedOutstanding.lt(0) || !expectedOutstanding.eq(outstandingAmount)) {
+            throw new BadRequestException(`LOAN_RESTORE_OUTSTANDING_INTEGRITY_FAILED:${String(row.id)}`);
+          }
+        }
         const ledgerEntryMap = new Map<string, string>();
         for (const le of arr<Record<string, unknown>>(data.ledgerEntries)) {
           const da = accountMap.get(String(le.debitAccountId));
@@ -61,6 +126,8 @@ export async function runBackupLogicalImportInTransaction(
             dailySalesSummaryMap,
             transferMap: vaultTransferMap,
             transferByLedgerEntryId: vaultTransferByLedgerEntryId,
+            loanMap,
+            loanPaymentMap,
             ledgerEntryId: String(le.id),
           });
           const newLedgerEntryId = nid();
@@ -96,6 +163,67 @@ export async function runBackupLogicalImportInTransaction(
           ledgerEntryMap,
           transferMap: vaultTransferMap,
         });
+
+        for (const row of loanRows) {
+          const id = loanMap.get(String(row.id));
+          if (!id) throw new BadRequestException(`LOAN_RESTORE_ID_MISSING:${String(row.id)}`);
+          const openingLedgerEntryId = row.openingLedgerEntryId ? ledgerEntryMap.get(String(row.openingLedgerEntryId)) : null;
+          if (row.openingLedgerEntryId && !openingLedgerEntryId) throw new BadRequestException(`LOAN_RESTORE_OPENING_LEDGER_MISSING:${String(row.id)}`);
+          await tx.loan.create({
+            data: {
+              id,
+              tenantId,
+              companyId: newCompanyId,
+              nameAr: String(row.nameAr),
+              creditorName: (row.creditorName as string | null) ?? null,
+              openingAmount: dec(row.openingAmount ?? row.originalAmount),
+              outstandingAmount: dec(row.outstandingAmount),
+              historicalPaymentsCount: Number(row.historicalPaymentsCount ?? 0),
+              historicalPaidAmount: dec(row.historicalPaidAmount ?? 0),
+              historicalPaidThroughDate: row.historicalPaidThroughDate ? ddate(row.historicalPaidThroughDate) : null,
+              openingDate: ddate(row.openingDate),
+              dueDate: row.dueDate ? ddate(row.dueDate) : null,
+              notes: (row.notes as string | null) ?? null,
+              isActive: row.isActive !== false,
+              createdById: null,
+              openingLedgerEntryId: openingLedgerEntryId ?? null,
+              idempotencyKey: String(row.idempotencyKey ?? `backup-loan-${String(row.id)}`),
+              requestHash: String(row.requestHash ?? `backup:${String(row.id)}`),
+              createdAt: ddate(row.createdAt),
+              updatedAt: ddate(row.updatedAt),
+            },
+          });
+        }
+
+        for (const row of loanPaymentRows) {
+          const id = loanPaymentMap.get(String(row.id));
+          const loanId = loanMap.get(String(row.loanId));
+          const vaultId = vaultMap.get(String(row.vaultId));
+          const ledgerEntryId = ledgerEntryMap.get(String(row.ledgerEntryId));
+          if (!id || !loanId || !vaultId || !ledgerEntryId) throw new BadRequestException(`LOAN_PAYMENT_RESTORE_REFERENCE_MISSING:${String(row.id)}`);
+          const reversalOfId = row.reversalOfId ? loanPaymentMap.get(String(row.reversalOfId)) : null;
+          if (row.reversalOfId && !reversalOfId) throw new BadRequestException(`LOAN_PAYMENT_RESTORE_REVERSAL_MISSING:${String(row.id)}`);
+          await tx.loanPayment.create({
+            data: {
+              id,
+              tenantId,
+              companyId: newCompanyId,
+              loanId,
+              vaultId,
+              ledgerEntryId,
+              amount: dec(row.amount),
+              transactionDate: ddate(row.transactionDate),
+              notes: (row.notes as string | null) ?? null,
+              createdById: null,
+              idempotencyKey: String(row.idempotencyKey ?? `backup-loan-payment-${String(row.id)}`),
+              requestHash: String(row.requestHash ?? `backup:${String(row.id)}`),
+              status: String(row.status ?? 'posted'),
+              reversalOfId: reversalOfId ?? null,
+              reversedAt: row.reversedAt ? ddate(row.reversedAt) : null,
+              createdAt: ddate(row.createdAt),
+            },
+          });
+        }
 
         const payrollRunMap = new Map<string, string>();
         for (const pr of arr<Record<string, unknown>>(data.payrollRuns)) {

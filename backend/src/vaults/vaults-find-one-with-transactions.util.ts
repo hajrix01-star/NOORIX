@@ -128,6 +128,9 @@ export async function findOneWithTransactions(
   }
 
   const transferEntryIds = items.filter((e) => e.referenceType === 'transfer').map((e) => e.id);
+  const loanPaymentIds = items
+    .filter((e) => e.referenceType === 'loan_payment' || e.referenceType === 'loan_payment_reversal')
+    .map((e) => e.referenceId);
   const transferAccountIds = new Set<string>();
   for (const e of items) {
     if (e.referenceType !== 'transfer') continue;
@@ -135,7 +138,7 @@ export async function findOneWithTransactions(
     transferAccountIds.add(e.creditAccountId);
   }
 
-  const [transferAudits, transferVouchers, vaultsForTransfers] = await Promise.all([
+  const [transferAudits, transferVouchers, vaultsForTransfers, loanPayments] = await Promise.all([
     prisma.auditLog.findMany({
       where: {
         companyId,
@@ -161,6 +164,10 @@ export async function findOneWithTransactions(
       where: { companyId, accountId: { in: [...transferAccountIds] } },
       select: { id: true, accountId: true, nameAr: true, nameEn: true },
     }),
+    prisma.loanPayment.findMany({
+      where: { companyId, id: { in: loanPaymentIds } },
+      select: { id: true, notes: true, loan: { select: { nameAr: true } } },
+    }),
   ]);
 
   const vaultByAccountId = new Map(vaultsForTransfers.map((v) => [v.accountId, v]));
@@ -180,6 +187,14 @@ export async function findOneWithTransactions(
     if (!voucher.ledgerEntryId) continue;
     const entry = entryById.get(voucher.ledgerEntryId);
     if (entry) docNumMap.set(`${entry.referenceType}:${entry.referenceId}`, voucher.transferNumber);
+  }
+  const loanPaymentById = new Map(loanPayments.map((payment) => [payment.id, payment]));
+  for (const entry of items) {
+    if (entry.referenceType !== 'loan_payment' && entry.referenceType !== 'loan_payment_reversal') continue;
+    const payment = loanPaymentById.get(entry.referenceId);
+    if (!payment) continue;
+    const suffix = entry.referenceType === 'loan_payment_reversal' ? ' — إلغاء سداد' : ' — سداد';
+    docNumMap.set(`${entry.referenceType}:${entry.referenceId}`, `${payment.loan.nameAr}${suffix}`);
   }
 
   const enrichedItems = items.map((e) => {
@@ -220,6 +235,8 @@ export async function findOneWithTransactions(
         transferToVaultNameAr = toV.nameAr;
         transferToVaultNameEn = toV.nameEn ?? null;
       }
+    } else if (e.referenceType === 'loan_payment' || e.referenceType === 'loan_payment_reversal') {
+      operationNotes = loanPaymentById.get(e.referenceId)?.notes ?? null;
     }
 
     return {

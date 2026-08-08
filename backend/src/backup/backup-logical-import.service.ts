@@ -60,6 +60,7 @@ export class BackupLogicalImportService {
           tenantId,
           newCompanyId,
           data,
+          counts,
           nameAr,
           resolvedNameEn,
           importingUserId,

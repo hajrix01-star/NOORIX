@@ -8,7 +8,7 @@ import type { SmartTableColumn } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 import { monthlyAmountFromExpenseLine } from '../../Reports/costAccountingAppsFixedExpenseImport';
-import type { ExpenseLineKind, ExpenseLineRecord } from '../../../types/api';
+import type { ExpenseLineKind, ExpenseLineRecord, LoanRecord } from '../../../types/api';
 import {
   expenseCategoryDisplayName,
   expenseLineDisplayName,
@@ -19,6 +19,7 @@ import {
 type ExpenseLineListProps = {
   embedded?: boolean;
   expenseLines: ExpenseLineRecord[];
+  loans?: LoanRecord[];
   isLoading: boolean;
   isError: boolean;
   filterKind: ExpenseLineKind | '';
@@ -26,14 +27,23 @@ type ExpenseLineListProps = {
   onCreateLine: () => void;
   onRefresh: () => void;
   onLineClick: (line: ExpenseLineRecord) => void;
+  onLoanClick?: (loan: LoanRecord) => void;
+  onCreateLoan?: () => void;
 };
 
-type ExpenseLineTableRow = ExpenseLineRecord & {
+type ExpenseLineTableRow = {
+  id: string;
+  recordType: 'expense' | 'loan';
+  sourceExpense?: ExpenseLineRecord;
+  sourceLoan?: LoanRecord;
+  kind: string;
   displayName: string;
   categoryName: string;
   supplierName: string;
+  serviceNumber: string | null;
   monthlyAmount: number | null;
   annualAmount: number | null;
+  outstandingAmount: number | null;
 };
 
 const REFRESH_ICON = (
@@ -82,6 +92,7 @@ function ExpenseLineTextCell({ value, muted }: { value: string; muted?: boolean 
 export default function ExpenseLineList({
   embedded,
   expenseLines,
+  loans = [],
   isLoading,
   isError,
   filterKind,
@@ -89,6 +100,8 @@ export default function ExpenseLineList({
   onCreateLine,
   onRefresh,
   onLineClick,
+  onLoanClick,
+  onCreateLoan,
 }: ExpenseLineListProps) {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies = [] } = useApp();
@@ -110,21 +123,38 @@ export default function ExpenseLineList({
     [t],
   );
 
-  const tableData = useMemo<ExpenseLineTableRow[]>(
-    () =>
-      expenseLines.map((line) => {
+  const tableData = useMemo<ExpenseLineTableRow[]>(() => {
+    const expenseRows = expenseLines.map((line) => {
         const { monthly, annual } = monthlyAnnualForExpenseLineRow(line);
         return {
-          ...line,
+          id: line.id,
+          recordType: 'expense' as const,
+          sourceExpense: line,
+          kind: line.kind,
           displayName: expenseLineDisplayName(line, lang),
           categoryName: expenseCategoryDisplayName(line.category, lang),
           supplierName: expenseSupplierDisplayName(line.supplier, lang),
+          serviceNumber: line.serviceNumber || null,
           monthlyAmount: monthly,
           annualAmount: annual,
+          outstandingAmount: null,
         };
-      }),
-    [expenseLines, lang],
-  );
+      });
+    const loanRows = (filterKind ? [] : loans).map((loan) => ({
+      id: loan.id,
+      recordType: 'loan' as const,
+      sourceLoan: loan,
+      kind: 'loan',
+      displayName: loan.nameAr,
+      categoryName: 'التزامات مالية',
+      supplierName: loan.creditorName || '-',
+      serviceNumber: loan.dueDate ? String(loan.dueDate).slice(0, 10) : null,
+      monthlyAmount: null,
+      annualAmount: null,
+      outstandingAmount: Number(loan.outstandingAmount),
+    }));
+    return [...expenseRows, ...loanRows];
+  }, [expenseLines, loans, lang, filterKind]);
 
   const columns = useMemo<SmartTableColumn<ExpenseLineTableRow>[]>(() => [
     {
@@ -137,7 +167,7 @@ export default function ExpenseLineList({
           variant="raw"
           size="auto"
           className="nx-expense-line-name-cell nx-cell-bold nx-expense-line-cell !h-auto !min-h-0 w-full max-w-full cursor-pointer !p-0 text-start font-bold text-noorix-blue hover:underline"
-          onClick={() => onLineClick(row)}
+          onClick={() => row.recordType === 'loan' ? onLoanClick?.(row.sourceLoan!) : onLineClick(row.sourceExpense!)}
         >
           <span className="block min-w-0 truncate" title={row.displayName}>
             {row.displayName}
@@ -152,11 +182,11 @@ export default function ExpenseLineList({
       sortable: true,
       shrink: true,
       render: (value) => {
-        const { color } = Badge.fromStatus(value, kindBadgeMap);
+        const { color } = value === 'loan' ? { color: 'violet' } : Badge.fromStatus(value, kindBadgeMap);
         return (
           <div className="flex justify-center">
             <Badge color={color} size="sm" className="whitespace-nowrap">
-              {expenseLineKindLabel(String(value), lang)}
+              {value === 'loan' ? 'قرض' : expenseLineKindLabel(String(value), lang)}
             </Badge>
           </div>
         );
@@ -207,12 +237,20 @@ export default function ExpenseLineList({
       numeric: true,
       render: (_value, row) => <ExpenseLineMoneyCell amount={row.annualAmount} />,
     },
+    {
+      key: 'outstandingAmount',
+      size: 'money-md',
+      label: 'الرصيد المتبقي',
+      shrink: true,
+      numeric: true,
+      render: (_value, row) => <ExpenseLineMoneyCell amount={row.outstandingAmount} />,
+    },
   ], [onLineClick, kindBadgeMap, t, lang]);
 
   const exportData = useMemo(
     () =>
       tableData.map((row) => {
-        const kindLabel = expenseLineKindLabel(row.kind, lang);
+        const kindLabel = row.recordType === 'loan' ? 'قرض' : expenseLineKindLabel(row.kind, lang);
         const category = row.categoryName && row.categoryName !== '-' ? row.categoryName : '';
         return {
           [t('expenseLineNameCol')]: row.displayName,
@@ -222,6 +260,7 @@ export default function ExpenseLineList({
           [t('expenseLineServiceNumberCol')]: row.serviceNumber || '-',
           [t('expenseLineListMonthlyAmount')]: row.monthlyAmount != null ? fmt(row.monthlyAmount) : '-',
           [t('expenseLineListAnnualAmount')]: row.annualAmount != null ? fmt(row.annualAmount) : '-',
+          ['الرصيد المتبقي']: row.outstandingAmount != null ? fmt(row.outstandingAmount) : '-',
         };
       }),
     [tableData, t, lang],
@@ -261,9 +300,10 @@ export default function ExpenseLineList({
         className="mb-3 min-h-11 min-w-0 border-b border-noorix-border pb-3"
         filtersClassName="nx-toolbar min-w-0 max-w-full flex-1 overflow-x-auto pb-0.5"
         actions={(
-          <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={onCreateLine}>
-            {t('addExpenseLine')}
-          </Button>
+          <div className="flex items-center gap-2">
+            {onCreateLoan ? <Button variant="secondary" size="sm" className="shrink-0 whitespace-nowrap" onClick={onCreateLoan}>إضافة قرض</Button> : null}
+            <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={onCreateLine}>{t('addExpenseLine')}</Button>
+          </div>
         )}
       >
         <div className="w-full min-w-0 sm:w-[min(100%,11rem)] shrink-0">
@@ -299,7 +339,7 @@ export default function ExpenseLineList({
           keyExtractor={(row) => row.id}
           getRowClassName={getRowClassName}
           tableId="expense-lines"
-          tableMinWidth="62em"
+          tableMinWidth="70em"
           stickyActionColumn
         />
       </div>

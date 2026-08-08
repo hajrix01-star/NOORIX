@@ -14,11 +14,11 @@ type HrServiceRow = {
 };
 
 export function requiresExpiryDate(category: string | null | undefined) {
-  return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(String(category || ''));
+  return ['iqama_renewal', 'medical_insurance', 'health_certificate'].includes(String(category || ''));
 }
 
 export function showsIssueDate(category: string | null | undefined) {
-  return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(String(category || ''));
+  return ['iqama_renewal', 'medical_insurance', 'health_certificate'].includes(String(category || ''));
 }
 
 export function showsVisaDurationMonths(category: string | null | undefined) {

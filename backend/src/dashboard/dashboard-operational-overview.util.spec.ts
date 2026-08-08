@@ -56,4 +56,19 @@ describe('buildDashboardOperationalOverview', () => {
     expect(result.fixedExpenses.shareOfSalesPct).toBeNull();
     expect(result.purchases.shareOfSalesPct).toBeNull();
   });
+
+  it('includes recurring employee services in the fixed-expense presentation total', () => {
+    const result = buildDashboardOperationalOverview(
+      {
+        totalsByKind: { fixed_expense: { totalAmount: '200', invoiceCount: 1 } },
+        fixedExpenseTotal: '550',
+        fixedExpenseInvoiceCount: 3,
+      },
+      [{ key: 'sales', value: 1100 }],
+    );
+
+    expect(result.fixedExpenses.amount).toBe('550');
+    expect(result.fixedExpenses.invoiceCount).toBe(3);
+    expect(result.fixedExpenses.shareOfSalesPct).toBe(50);
+  });
 });

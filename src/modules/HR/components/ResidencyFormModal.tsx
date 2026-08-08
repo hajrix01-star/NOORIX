@@ -231,7 +231,7 @@ export function ResidencyFormModal({
     } else if (requiresExpiryDate(serviceCategory) && expiryDate) {
       body.expiryDate = `${expiryDate}T00:00:00.000Z`;
     }
-    if (['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(serviceCategory) && issueDate) {
+    if (['iqama_renewal', 'medical_insurance', 'health_certificate'].includes(serviceCategory) && issueDate) {
       body.issueDate = `${issueDate}T00:00:00.000Z`;
     }
     if (['flight_ticket', 'medical_insurance', 'health_certificate'].includes(serviceCategory) && referenceLabel.trim()) {

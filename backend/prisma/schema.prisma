@@ -142,6 +142,8 @@ model Company {
   vatPlanningQuarters      VatPlanningQuarter[]
   dashboardCalendarData    DashboardCalendarData[]
   purchaseDebtRecords      PurchaseDebtRecord[]
+  loans                    Loan[]
+  loanPayments             LoanPayment[]
 
   @@index([tenantId])
   @@index([tenantId, sortOrder])
@@ -892,6 +894,70 @@ model ExpenseLine {
   @@map("expense_lines")
 }
 
+/// التزام قرض قائم؛ منفصل عن فواتير المصاريف حتى لا يؤثر على الربح والخسارة.
+model Loan {
+  id                String   @id @default(cuid())
+  tenantId          String   @map("tenant_id")
+  companyId         String   @map("company_id")
+  nameAr            String   @map("name_ar")
+  creditorName      String?  @map("creditor_name")
+  openingAmount     Decimal  @map("opening_amount") @db.Decimal(18, 4)
+  outstandingAmount Decimal  @map("outstanding_amount") @db.Decimal(18, 4)
+  historicalPaymentsCount Int @default(0) @map("historical_payments_count")
+  historicalPaidAmount Decimal @default(0) @map("historical_paid_amount") @db.Decimal(18, 4)
+  historicalPaidThroughDate DateTime? @map("historical_paid_through_date")
+  openingDate       DateTime @map("opening_date")
+  dueDate           DateTime? @map("due_date")
+  notes             String?
+  isActive          Boolean  @default(true) @map("is_active")
+  createdById       String?  @map("created_by_id")
+  openingLedgerEntryId String? @unique @map("opening_ledger_entry_id")
+  idempotencyKey    String   @map("idempotency_key")
+  requestHash       String   @map("request_hash")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  company            Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  openingLedgerEntry LedgerEntry?  @relation("LoanOpeningLedgerEntry", fields: [openingLedgerEntryId], references: [id], onDelete: Restrict)
+  payments           LoanPayment[]
+
+  @@index([tenantId])
+  @@index([companyId, isActive])
+  @@unique([companyId, idempotencyKey])
+  @@map("loans")
+}
+
+model LoanPayment {
+  id                String   @id @default(cuid())
+  tenantId          String   @map("tenant_id")
+  companyId         String   @map("company_id")
+  loanId            String   @map("loan_id")
+  vaultId           String   @map("vault_id")
+  ledgerEntryId     String   @unique @map("ledger_entry_id")
+  amount            Decimal  @db.Decimal(18, 4)
+  transactionDate   DateTime @map("transaction_date")
+  notes             String?
+  createdById       String?  @map("created_by_id")
+  idempotencyKey    String   @map("idempotency_key")
+  requestHash       String   @map("request_hash")
+  status            String   @default("posted")
+  reversalOfId      String?  @unique @map("reversal_of_id")
+  reversedAt        DateTime? @map("reversed_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  company       Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  loan          Loan         @relation(fields: [loanId], references: [id], onDelete: Restrict)
+  vault         Vault        @relation(fields: [vaultId], references: [id], onDelete: Restrict)
+  ledgerEntry   LedgerEntry  @relation("LoanPaymentLedgerEntry", fields: [ledgerEntryId], references: [id], onDelete: Restrict)
+  reversalOf    LoanPayment? @relation("LoanPaymentReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversal      LoanPayment? @relation("LoanPaymentReversal")
+
+  @@index([tenantId])
+  @@index([companyId, loanId, transactionDate])
+  @@unique([companyId, idempotencyKey])
+  @@map("loan_payments")
+}
+
 model Account {
   id        String   @id @default(cuid())
   tenantId  String   @map("tenant_id") // RLS
@@ -942,6 +1008,7 @@ model Vault {
   company                 Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   account                 Account                  @relation(fields: [accountId], references: [id], onDelete: Restrict)
   ledgerEntries           LedgerEntry[]
+  loanPayments            LoanPayment[]
   invoices                Invoice[]
   salesChannels           DailySalesChannel[]
   payrollItemVaults       PayrollRunItemVault[]
@@ -1258,6 +1325,8 @@ model LedgerEntry {
   employee      Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   createdBy     User?     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   vaultTransfer VaultTransfer? @relation("VaultTransferLedgerEntry")
+  loanOpeningFor Loan? @relation("LoanOpeningLedgerEntry")
+  loanPayment    LoanPayment? @relation("LoanPaymentLedgerEntry")
 
   @@index([tenantId])
   @@index([companyId])

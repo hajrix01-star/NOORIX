@@ -6,17 +6,20 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { deactivateExpenseLine, getExpenseLines } from '../../services/api';
-import { expenseKeys } from '../../services/queryKeys';
+import { deactivateExpenseLine, getExpenseLines, getLoans } from '../../services/api';
+import { expenseKeys, loanKeys } from '../../services/queryKeys';
 import { Button, ScreenTabs, ScreenShell, cn, FilterToolbar } from '../../ui';
 import { DateFilterBar, useDateFilter } from '../../ui/date';
-import type { ExpenseLineKind, ExpenseLineRecord } from '../../types/api';
+import type { ExpenseLineKind, ExpenseLineRecord, LoanRecord } from '../../types/api';
 import ExpenseLineList from './components/ExpenseLineList';
 import ExpenseLineDetailModal from './components/ExpenseLineDetailModal';
 import ExpenseLineFormModal from './components/ExpenseLineFormModal';
 import ExpenseFormModal from './components/ExpenseFormModal';
 import ExpenseBatchTable from './components/ExpenseBatchTable';
 import PaymentHistoryTab from './components/PaymentHistoryTab';
+import LoanFormModal from './components/LoanFormModal';
+import LoanDetailModal from './components/LoanDetailModal';
+import LoanPaymentModal from './components/LoanPaymentModal';
 import { expenseLineDisplayName } from './expenseModels';
 
 type ExpenseTabId = 'lines' | 'entry' | 'batch' | 'payments';
@@ -44,6 +47,10 @@ export default function ExpensesScreen() {
   const [editingLine, setEditingLine] = useState<ExpenseLineRecord | null>(null);
   const [filterKind, setFilterKind] = useState<ExpenseLineKind | ''>('');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [entryKind, setEntryKind] = useState<'expense' | 'fixed_expense'>('expense');
+  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
+  const [showLoanForm, setShowLoanForm] = useState(false);
+  const [showLoanPayment, setShowLoanPayment] = useState(false);
 
   const { data: expenseLines = [], isLoading: linesLoading, isError: linesError } = useApiListQuery<ExpenseLineRecord>({
     queryKey: expenseKeys.linesWithKind(companyId, filterKind),
@@ -51,8 +58,16 @@ export default function ExpensesScreen() {
     fallbackMessage: t('loadingError'),
     enabled: !!companyId,
   });
+  const { data: loans = [], isLoading: loansLoading, isError: loansError } = useApiListQuery<LoanRecord>({
+    queryKey: loanKeys.list(companyId),
+    queryFn: () => getLoans(companyId),
+    fallbackMessage: t('loadingError'),
+    enabled: !!companyId,
+  });
 
   const refreshExpenseLines = () => queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
+  const refreshLoans = () => queryClient.invalidateQueries({ queryKey: loanKeys.root() });
+  const selectedLoan = loans.find((loan) => loan.id === selectedLoanId) || null;
 
   const handleDeleteLine = (line: ExpenseLineRecord) => {
     const lineName = expenseLineDisplayName(line, lang);
@@ -126,8 +141,9 @@ export default function ExpensesScreen() {
             <ExpenseLineList
               embedded
               expenseLines={expenseLines}
-              isLoading={linesLoading}
-              isError={linesError}
+              loans={loans}
+              isLoading={linesLoading || loansLoading}
+              isError={linesError || loansError}
               filterKind={filterKind}
               onFilterKindChange={setFilterKind}
               onCreateLine={() => {
@@ -136,6 +152,8 @@ export default function ExpensesScreen() {
               }}
               onRefresh={refreshExpenseLines}
               onLineClick={(line) => setSelectedLineId(line.id)}
+              onLoanClick={(loan) => setSelectedLoanId(loan.id)}
+              onCreateLoan={() => setShowLoanForm(true)}
             />
           )
         ) : null}
@@ -148,13 +166,17 @@ export default function ExpensesScreen() {
               <>
                 <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
                   <p className="m-0 min-w-0 flex-1 text-[13px] text-noorix-muted">{t('expensesDesc')}</p>
-                  <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={() => setShowExpenseForm(true)}>
-                    {t('expenseRecordNew')}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant={entryKind === 'fixed_expense' ? 'primary' : 'secondary'} size="sm" onClick={() => { setEntryKind('fixed_expense'); setShowExpenseForm(true); }}>مصروف دوري</Button>
+                    <Button variant={entryKind === 'expense' ? 'primary' : 'secondary'} size="sm" onClick={() => { setEntryKind('expense'); setShowExpenseForm(true); }}>مصروف عادي</Button>
+                    <Button variant="secondary" size="sm" onClick={() => setShowLoanPayment(true)} disabled={!loans.length} title={loans.length ? undefined : 'أضف قرضاً برصيد افتتاحي أولاً'}>سداد قرض</Button>
+                    <Button variant="secondary" size="sm" onClick={() => setShowLoanForm(true)}>إضافة قرض</Button>
+                  </div>
                 </div>
                 {showExpenseForm ? (
                   <ExpenseFormModal
                     companyId={companyId}
+                    lineKind={entryKind}
                     onClose={() => setShowExpenseForm(false)}
                     onSaved={() => {
                       setShowExpenseForm(false);
@@ -221,6 +243,44 @@ export default function ExpensesScreen() {
             setEditingLine(null);
           }}
           onSaved={handleFormSaved}
+        />
+      ) : null}
+
+      {showLoanForm ? (
+        <LoanFormModal
+          companyId={companyId}
+          onClose={() => setShowLoanForm(false)}
+          onSaved={() => {
+            setShowLoanForm(false);
+            refreshLoans();
+            showToast(t('savedSuccessfully'));
+          }}
+        />
+      ) : null}
+
+      {selectedLoan ? (
+        <LoanDetailModal
+          companyId={companyId}
+          loan={selectedLoan}
+          allLoans={loans}
+          onClose={() => setSelectedLoanId(null)}
+          onChanged={() => {
+            refreshLoans();
+            showToast(t('savedSuccessfully'));
+          }}
+        />
+      ) : null}
+
+      {showLoanPayment ? (
+        <LoanPaymentModal
+          companyId={companyId}
+          loans={loans}
+          onClose={() => setShowLoanPayment(false)}
+          onSaved={() => {
+            setShowLoanPayment(false);
+            refreshLoans();
+            showToast(t('savedSuccessfully'));
+          }}
         />
       ) : null}
     </ScreenShell>

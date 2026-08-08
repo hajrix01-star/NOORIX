@@ -22,7 +22,7 @@ export function buildInvoiceKindBadgeMap(t: Translate) {
   return {
     purchase: { color: 'blue', label: t('categoryTypes') },
     expense: { color: 'amber', label: t('categoryTypeExpense') },
-    fixed_expense: { color: 'gray', label: t('fixedExpenseType') || 'مصروف ثابت' },
+    fixed_expense: { color: 'gray', label: t('fixedExpenseType') || 'مصروف دوري' },
     hr_expense: { color: 'violet', label: t('invoiceKindHrExpense') || 'إقامة/HR' },
     salary: { color: 'green', label: t('totalSalary') || 'راتب' },
     advance: { color: 'amber', label: t('quickAdvance') || 'سلفية' },
@@ -33,7 +33,7 @@ export function buildInvoiceKindBadgeMap(t: Translate) {
 /** نوع سطر مصروف (ثابت / متغير) */
 export function buildExpenseLineKindBadgeMap(t: Translate) {
   return {
-    fixed_expense: { color: 'gray', label: t('fixedExpenseType') || 'ثابت' },
+    fixed_expense: { color: 'gray', label: t('fixedExpenseType') || 'مصروف دوري' },
     expense: { color: 'amber', label: t('categoryTypeExpense') || 'متغير' },
   };
 }

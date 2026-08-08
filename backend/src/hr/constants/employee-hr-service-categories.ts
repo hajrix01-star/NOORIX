@@ -1,5 +1,4 @@
 export const EMPLOYEE_HR_SERVICE_CATEGORIES = [
-  'iqama_new',
   'iqama_renewal',
   'sponsorship_transfer',
   'exit_reentry_visa',
@@ -13,10 +12,25 @@ export type EmployeeHrServiceCategory = (typeof EMPLOYEE_HR_SERVICE_CATEGORIES)[
 export const RESIDENCY_STATUSES = ['active', 'expired', 'renewed'] as const;
 
 const IQAMA_CATEGORIES = new Set<EmployeeHrServiceCategory>([
-  'iqama_new',
   'iqama_renewal',
   'sponsorship_transfer',
 ]);
+
+/**
+ * خدمات موظف دورية تظهر ضمن المصاريف الثابتة في التحليلات،
+ * مع بقائها في مصدرها الصحيح (ملف الموظف) وعدم إنشاء فاتورة ثانية.
+ */
+export const RECURRING_HR_SERVICE_CATEGORIES = [
+  'iqama_renewal',
+  'medical_insurance',
+  'health_certificate',
+] as const;
+
+export function isRecurringHrServiceCategory(category: string | null | undefined): boolean {
+  return RECURRING_HR_SERVICE_CATEGORIES.includes(
+    category as (typeof RECURRING_HR_SERVICE_CATEGORIES)[number],
+  );
+}
 
 export function requiresIqamaNumber(category: string): boolean {
   return IQAMA_CATEGORIES.has(category as EmployeeHrServiceCategory);
@@ -34,7 +48,7 @@ export function companySponsorNameFromRecord(company: {
 }
 
 export function requiresExpiryDate(category: string): boolean {
-  return ['iqama_new', 'iqama_renewal', 'medical_insurance', 'health_certificate'].includes(category);
+  return ['iqama_renewal', 'medical_insurance', 'health_certificate'].includes(category);
 }
 
 export function requiresReferenceLabel(_category: string): boolean {
@@ -53,7 +67,6 @@ export function formatVisaDurationReferenceAr(months: number): string {
 
 export function serviceCategoryLabelAr(category: string): string {
   const map: Record<string, string> = {
-    iqama_new: 'إقامة جديدة',
     iqama_renewal: 'تجديد إقامة',
     sponsorship_transfer: 'نقل كفالة',
     exit_reentry_visa: 'تأشيرة خروج وعودة',

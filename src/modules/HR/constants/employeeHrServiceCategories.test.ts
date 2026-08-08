@@ -66,8 +66,12 @@ describe('health certificate employee service contract', () => {
       { id: 'municipality', directoryEntryId: 'GOV-MOMAH' },
     ];
     expect(defaultHrServiceSupplierId('iqama_renewal', suppliers)).toBe('hrsd');
-    expect(defaultHrServiceSupplierId('iqama_new', suppliers)).toBe('passports');
     expect(defaultHrServiceSupplierId('health_certificate', suppliers)).toBe('municipality');
     expect(defaultHrServiceSupplierId('medical_insurance', suppliers)).toBe('');
+  });
+
+  it('does not expose a separate new-residency service', () => {
+    expect(HR_SERVICE_CATEGORIES).not.toContain('iqama_new');
+    expect(HR_SERVICE_QUICK_ADD).not.toContain('iqama_new');
   });
 });

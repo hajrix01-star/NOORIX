@@ -67,11 +67,11 @@ describe('ExpenseBatchTable all-or-nothing validation', () => {
     fireEvent.click(screen.getByRole('option', { name: 'بنك' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'اسم البند - 1' }));
-    fireEvent.click(screen.getByRole('option', { name: 'GOSI (ثابت)' }));
+    fireEvent.click(screen.getByRole('option', { name: 'GOSI (مصروف دوري)' }));
     fireEvent.change(screen.getByRole('spinbutton', { name: 'الإجمالي - 1' }), { target: { value: '510.11' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'اسم البند - 2' }));
-    fireEvent.click(screen.getByRole('option', { name: 'كهرباء (متغير)' }));
+    fireEvent.click(screen.getByRole('option', { name: 'كهرباء (مصروف عادي)' }));
     fireEvent.change(screen.getByRole('spinbutton', { name: 'الإجمالي - 2' }), { target: { value: '987.38' } });
 
     const saveButton = screen.getByRole('button', { name: 'حفظ' });

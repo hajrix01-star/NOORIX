@@ -93,6 +93,11 @@ export type {
   ExpenseLineUpdatePayload,
   ExpensePaymentCreatePayload,
   ExpenseSupplierRef,
+  LoanCreatePayload,
+  LoanPaymentCreatePayload,
+  LoanPaymentRecord,
+  LoanPaymentReversePayload,
+  LoanRecord,
 } from './domains/expenses';
 export type {
   ChatChartFinanceRatios,

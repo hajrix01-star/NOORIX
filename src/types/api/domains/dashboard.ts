@@ -283,6 +283,8 @@ export type DashboardPeriodDataLike = {
     sharePct?: number | null;
   }>;
   purchaseCategoryTotal?: unknown;
+  fixedExpenseTotal?: string | number | null;
+  fixedExpenseInvoiceCount?: number | null;
   fixedExpenseDetails?: Array<{
     invoiceId?: string;
     invoiceNumber?: string;

@@ -2,6 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { toYmd } from '../common/utils/to-ymd.util';
+import {
+  RECURRING_HR_SERVICE_CATEGORIES,
+} from '../hr/constants/employee-hr-service-categories';
 
 type PurchaseCategoryBreakdownRow = {
   categoryId: string | null;
@@ -43,7 +46,26 @@ export class ReportsPeriodAnalyticsService {
       transactionDate: { gte: start, lte: end },
     };
 
-    const [byKind, fixedExpenseInvoices] = await Promise.all([
+    const recurringHrWhere = {
+      ...baseWhere,
+      kind: 'hr_expense',
+      employeeResidency: {
+        is: { serviceCategory: { in: [...RECURRING_HR_SERVICE_CATEGORIES] } },
+      },
+    };
+    const fixedExpenseSelect = {
+      id: true,
+      invoiceNumber: true,
+      transactionDate: true,
+      totalAmount: true,
+      notes: true,
+      expenseLine: { select: { nameAr: true, nameEn: true } },
+      supplier: { select: { nameAr: true, nameEn: true } },
+      employeeResidency: {
+        select: { serviceCategory: true },
+      },
+    } as const;
+    const [byKind, directFixedInvoices, recurringHrInvoices, recurringHrAggregate] = await Promise.all([
       this.prisma.invoice.groupBy({
         by: ['kind'],
         where: baseWhere,
@@ -54,15 +76,18 @@ export class ReportsPeriodAnalyticsService {
         where: { ...baseWhere, kind: 'fixed_expense' },
         orderBy: [{ transactionDate: 'desc' }, { invoiceNumber: 'desc' }],
         take: 100,
-        select: {
-          id: true,
-          invoiceNumber: true,
-          transactionDate: true,
-          totalAmount: true,
-          notes: true,
-          expenseLine: { select: { nameAr: true, nameEn: true } },
-          supplier: { select: { nameAr: true, nameEn: true } },
-        },
+        select: fixedExpenseSelect,
+      }),
+      this.prisma.invoice.findMany({
+        where: recurringHrWhere,
+        orderBy: [{ transactionDate: 'desc' }, { invoiceNumber: 'desc' }],
+        take: 100,
+        select: fixedExpenseSelect,
+      }),
+      this.prisma.invoice.aggregate({
+        where: recurringHrWhere,
+        _sum: { totalAmount: true },
+        _count: { _all: true },
       }),
     ]);
 
@@ -74,8 +99,14 @@ export class ReportsPeriodAnalyticsService {
       };
     }
 
-    const fixedExpenseTotal = new Decimal(totalsByKind.fixed_expense?.totalAmount ?? 0);
-    const fixedExpenseDetails: FixedExpenseDetailRow[] = fixedExpenseInvoices.map((invoice) => {
+    const directFixedTotal = new Decimal(totalsByKind.fixed_expense?.totalAmount ?? 0);
+    const recurringHrTotal = new Decimal(recurringHrAggregate._sum.totalAmount?.toString() ?? 0);
+    const fixedExpenseTotal = directFixedTotal.plus(recurringHrTotal);
+    const fixedExpenseInvoiceCount = (totalsByKind.fixed_expense?.invoiceCount ?? 0) + recurringHrAggregate._count._all;
+    const fixedExpenseDetails: FixedExpenseDetailRow[] = [...directFixedInvoices, ...recurringHrInvoices]
+      .sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime() || b.invoiceNumber.localeCompare(a.invoiceNumber))
+      .slice(0, 100)
+      .map((invoice) => {
       const amount = new Decimal(invoice.totalAmount?.toString() ?? 0);
       const fallbackName = invoice.notes?.trim() || invoice.invoiceNumber;
       return {
@@ -241,8 +272,10 @@ export class ReportsPeriodAnalyticsService {
       suppliersInPeriodCount: supplierIdsInPeriod.length,
       purchaseCategoryBreakdown,
       purchaseCategoryTotal,
+      fixedExpenseTotal: fixedExpenseTotal.toFixed(4),
+      fixedExpenseInvoiceCount,
       fixedExpenseDetails,
-      fixedExpenseDetailsLimited: (totalsByKind.fixed_expense?.invoiceCount ?? 0) > fixedExpenseDetails.length,
+      fixedExpenseDetailsLimited: fixedExpenseInvoiceCount > fixedExpenseDetails.length,
     };
   }
 }

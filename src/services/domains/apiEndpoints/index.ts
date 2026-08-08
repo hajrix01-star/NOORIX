@@ -3,6 +3,7 @@ export * from './connection-bank';
 export * from './chat';
 export * from './companies-ledger-roles';
 export * from './accounts-categories-expense';
+export * from './loans';
 export * from './company-assets';
 export * from './sales-summaries';
 export * from './reports';

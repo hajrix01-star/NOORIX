@@ -171,6 +171,8 @@ export default function VaultTransactionsModal({
     salary: t('vaultLedgerTypeSalary'),
     advance: t('vaultLedgerTypeAdvance'),
     transfer: t('vaultLedgerTypeTransfer'),
+    loan_payment: 'سداد قرض',
+    loan_payment_reversal: 'إلغاء سداد قرض',
   }), [t]);
   const formatTransactionType = useCallback(
     (value: string | null | undefined) => vaultTransactionTypeLabel(value, transactionTypeLabels),

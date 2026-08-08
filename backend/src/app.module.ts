@@ -39,6 +39,7 @@ import { VatPlanningModule } from './vat-planning/vat-planning.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { OwnerModule } from './owner/owner.module';
 import { PurchaseDebtsModule } from './purchase-debts/purchase-debts.module';
+import { LoansModule } from './loans/loans.module';
 import { PermissionCacheModule } from './auth/permission-cache.service';
 import { TenantMiddleware }    from './common/tenant.middleware';
 import { JwtModule }           from '@nestjs/jwt';
@@ -94,6 +95,7 @@ import { getJwtSecret }        from './config/jwt.config';
     DashboardModule,
     OwnerModule,
     PurchaseDebtsModule,
+    LoansModule,
     JwtModule.register({ secret: getJwtSecret() }),
   ],
   controllers: [AppController],

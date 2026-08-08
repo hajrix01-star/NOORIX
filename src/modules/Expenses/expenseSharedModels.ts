@@ -97,8 +97,8 @@ export function expenseCategoryDisplayName(category: ExpenseCategoryRef | null |
 }
 
 export function expenseLineKindLabel(kind: ExpenseLineKind | string | null | undefined, lang: ExpenseLang): string {
-  if (kind === 'fixed_expense') return lang === 'en' ? 'Fixed' : 'ثابت';
-  return lang === 'en' ? 'Variable' : 'متغير';
+  if (kind === 'fixed_expense') return lang === 'en' ? 'Recurring expense' : 'مصروف دوري';
+  return lang === 'en' ? 'Ordinary expense' : 'مصروف عادي';
 }
 
 export function parseOptionalMoney(value: unknown): number | null {
