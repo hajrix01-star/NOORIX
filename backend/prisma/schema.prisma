@@ -945,6 +945,9 @@ model LoanPayment {
   status            String   @default("posted")
   reversalOfId      String?  @unique @map("reversal_of_id")
   reversedAt        DateTime? @map("reversed_at")
+  /// مصدر السداد عند إعادة تصنيف فاتورة قرض تاريخية. يبقى المصدر محفوظاً حتى بعد تعطيل الفاتورة.
+  sourceInvoiceId     String? @map("source_invoice_id")
+  sourceLedgerEntryId String? @unique @map("source_ledger_entry_id")
   createdAt         DateTime @default(now()) @map("created_at")
 
   company       Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -953,9 +956,12 @@ model LoanPayment {
   ledgerEntry   LedgerEntry  @relation("LoanPaymentLedgerEntry", fields: [ledgerEntryId], references: [id], onDelete: Restrict)
   reversalOf    LoanPayment? @relation("LoanPaymentReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
   reversal      LoanPayment? @relation("LoanPaymentReversal")
+  sourceInvoice Invoice? @relation("LoanPaymentSourceInvoice", fields: [sourceInvoiceId], references: [id], onDelete: Restrict)
+  sourceLedgerEntry LedgerEntry? @relation("LoanPaymentSourceLedgerEntry", fields: [sourceLedgerEntryId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
   @@index([companyId, loanId, transactionDate])
+  @@index([companyId, sourceInvoiceId])
   @@unique([companyId, idempotencyKey])
   @@map("loan_payments")
 }
@@ -971,6 +977,9 @@ model LoanLegacyInvoice {
   invoiceNumber       String   @map("invoice_number")
   transactionDate     DateTime @map("transaction_date")
   amount              Decimal  @db.Decimal(18, 4)
+  /// بعد تحويل الفاتورة إلى سداد قرض، تبقى الوصلة كسجل تدقيق ولا يعاد تحويلها.
+  convertedAt         DateTime? @map("converted_at")
+  convertedById       String?   @map("converted_by_id")
   createdAt           DateTime @default(now()) @map("created_at")
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -979,6 +988,7 @@ model LoanLegacyInvoice {
 
   @@index([tenantId])
   @@index([companyId, loanId, transactionDate])
+  @@index([companyId, loanId, convertedAt])
   @@map("loan_legacy_invoices")
 }
 
@@ -1164,6 +1174,7 @@ model Invoice {
   expenseLine           ExpenseLine?             @relation(fields: [expenseLineId], references: [id], onDelete: SetNull)
   dailySalesSummary     DailySalesSummary?       @relation(fields: [dailySalesSummaryId], references: [id], onDelete: SetNull)
   vaultAllocations      InvoiceVaultAllocation[]
+  loanPaymentSources    LoanPayment[]             @relation("LoanPaymentSourceInvoice")
   leaveSalarySettlement LeaveSalarySettlement?
   employeeResidency     EmployeeResidency?
   companyAssets         CompanyAsset[]
@@ -1352,6 +1363,7 @@ model LedgerEntry {
   vaultTransfer VaultTransfer? @relation("VaultTransferLedgerEntry")
   loanOpeningFor Loan? @relation("LoanOpeningLedgerEntry")
   loanPayment    LoanPayment? @relation("LoanPaymentLedgerEntry")
+  sourceLoanPaymentFor LoanPayment? @relation("LoanPaymentSourceLedgerEntry")
 
   @@index([tenantId])
   @@index([companyId])

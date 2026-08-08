@@ -21,11 +21,11 @@ function harness() {
       update: jest.fn().mockResolvedValue({}),
     },
     expenseLine: { findFirst: jest.fn().mockResolvedValue({ id: 'legacy-line', isActive: true }), update: jest.fn().mockResolvedValue({}) },
-    invoice: { findMany: jest.fn().mockResolvedValue([{ id: 'invoice-1', invoiceNumber: 'EXP-1', transactionDate: new Date('2026-07-25T00:00:00.000Z'), totalAmount: new Prisma.Decimal('15356') }]) },
-    loanLegacyInvoice: { findMany: jest.fn().mockResolvedValue([]), createMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    invoice: { findMany: jest.fn().mockResolvedValue([{ id: 'invoice-1', invoiceNumber: 'EXP-1', transactionDate: new Date('2026-07-25T00:00:00.000Z'), totalAmount: new Prisma.Decimal('15356') }]), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    loanLegacyInvoice: { findMany: jest.fn().mockResolvedValue([]), createMany: jest.fn().mockResolvedValue({ count: 1 }), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     account: { findFirst: jest.fn().mockImplementation(({ where }) => Promise.resolve(where.code === 'LOAN-001' ? { id: 'loan-account' } : { id: 'opening-account' })) },
-    vault: { findFirst: jest.fn().mockResolvedValue({ id: 'vault-1', accountId: 'vault-account' }) },
-    ledgerEntry: { create: jest.fn().mockImplementation(({ data }) => ({ id: 'ledger-1', ...data })) },
+    vault: { findFirst: jest.fn().mockResolvedValue({ id: 'vault-1', accountId: 'vault-account' }), findMany: jest.fn().mockResolvedValue([{ id: 'vault-1', accountId: 'vault-account' }]) },
+    ledgerEntry: { create: jest.fn().mockImplementation(({ data }) => ({ id: 'ledger-1', ...data })), findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]), update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     auditLog: { create: jest.fn().mockResolvedValue({ id: 'audit-1' }) },
   };
   const db = { withTenant: jest.fn().mockImplementation((callback) => callback(tx)) };
@@ -78,5 +78,21 @@ describe('LoansService', () => {
     expect(tx.loanLegacyInvoice.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({ invoiceId: 'invoice-1', loanId: 'loan-1', sourceExpenseLineId: 'legacy-line' })] }));
     expect(tx.expenseLine.update).toHaveBeenCalledWith({ where: { id: 'legacy-line' }, data: { isActive: false } });
     expect(tx.ledgerEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('reclassifies a linked historical invoice atomically without changing the loan outstanding balance', async () => {
+    const { service, tx } = harness();
+    const date = new Date('2026-07-22T00:00:00.000Z');
+    tx.loan.findFirst.mockResolvedValue({ id: 'loan-1', openingLedgerEntryId: 'opening-ledger', openingAmount: new Prisma.Decimal('416435.58'), outstandingAmount: new Prisma.Decimal('416435.58') });
+    tx.loanLegacyInvoice.findMany.mockResolvedValue([{ id: 'link-1', invoiceId: 'invoice-1', transactionDate: date, createdAt: date, convertedAt: null }]);
+    tx.invoice.findMany.mockResolvedValue([{ id: 'invoice-1', invoiceNumber: 'EXP-1', totalAmount: new Prisma.Decimal('15356'), transactionDate: date }]);
+    tx.ledgerEntry.findMany.mockResolvedValue([{ id: 'source-ledger', referenceId: 'invoice-1', amount: new Prisma.Decimal('15356'), transactionDate: date, vaultId: 'vault-1', creditAccountId: 'vault-account' }]);
+    tx.ledgerEntry.findFirst.mockResolvedValue({ id: 'opening-ledger', amount: new Prisma.Decimal('416435.58'), debitAccountId: 'opening-account', creditAccountId: 'loan-account', transactionDate: new Date('2026-07-26T00:00:00.000Z') });
+    const result = await inTenant(() => service.convertLegacyInvoicesToPayments('loan-1', 'company-1', 'user-1'));
+    expect(result).toMatchObject({ converted: 1, invoiceCount: 1, totalAmount: '15356.0000', outstandingAmount: '416435.5800' });
+    expect(tx.invoice.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'cancelled' } }));
+    expect(tx.ledgerEntry.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'cancelled' } }));
+    expect(tx.loanPayment.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ sourceInvoiceId: 'invoice-1', sourceLedgerEntryId: 'source-ledger', amount: expect.objectContaining({}) }) }));
+    expect(tx.loan.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ openingLedgerEntryId: 'ledger-1', openingAmount: expect.objectContaining({}) }) }));
   });
 });

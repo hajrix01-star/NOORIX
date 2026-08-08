@@ -7,9 +7,11 @@ import { nowSaudi } from '../common/utils/date-utils';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { CreateLoanDto, CreateLoanPaymentDto, MigrateLoanLegacyInvoicesDto, ReverseLoanPaymentDto } from './dto/loan.dto';
 import {
+  cancelLegacyLoanExpenseInvoices,
   postLoanOpeningLedger,
   postLoanPaymentLedger,
   postLoanPaymentReversalLedger,
+  replaceLoanOpeningLedger,
 } from '../financial-core/financial-loan-ledger.util';
 
 function dateOf(value: string) {
@@ -46,7 +48,7 @@ export class LoansService {
       where: { companyId, isActive: true },
       include: {
         payments: {
-          include: { vault: { select: { nameAr: true, nameEn: true } }, reversal: true, reversalOf: true },
+          include: { vault: { select: { nameAr: true, nameEn: true } }, sourceInvoice: { select: { invoiceNumber: true } }, reversal: true, reversalOf: true },
           orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }],
         },
         legacyInvoices: { orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }] },
@@ -78,6 +80,101 @@ export class LoansService {
       if (dto.archiveExpenseLine !== false && line.isActive) await tx.expenseLine.update({ where: { id: line.id }, data: { isActive: false } });
       await tx.auditLog.create({ data: { tenantId, companyId, userId, action: 'migrate', entity: 'loan_legacy_invoices', entityId: id, newValue: { sourceExpenseLineId: line.id, created: pending.length, alreadyLinked: known.size, archivedExpenseLine: dto.archiveExpenseLine !== false } } });
       return { created: pending.length, alreadyLinked: known.size, total: invoices.length, archivedExpenseLine: dto.archiveExpenseLine !== false };
+    });
+  }
+
+  /**
+   * يعيد تصنيف فواتير أقساط قرض قديمة دون حذفها:
+   * - الفاتورة وقيود المصروف تُعطّل وتبقى قابلة للتدقيق.
+   * - ينشأ بدل كل قيد صرف سداد قرض بنفس التاريخ والخزينة والمبلغ.
+   * - يُستبدل قيد الرصيد الافتتاحي بمبلغ أعلى بالمجموع نفسه، لذلك لا يتغير المتبقي.
+   */
+  async convertLegacyInvoicesToPayments(id: string, companyId: string, userId: string) {
+    return this.db.withTenant(async (tx) => {
+      const loan = await tx.loan.findFirst({ where: { id, companyId, isActive: true } });
+      if (!loan) throw new NotFoundException('القرض غير موجود');
+      if (!loan.openingLedgerEntryId) throw new BadRequestException('قيد الرصيد الافتتاحي للقرض غير موجود');
+
+      const legacyRows = await tx.loanLegacyInvoice.findMany({
+        where: { companyId, loanId: id, convertedAt: null },
+        orderBy: [{ transactionDate: 'asc' }, { createdAt: 'asc' }],
+      });
+      if (!legacyRows.length) return { converted: 0, totalAmount: '0.0000', outstandingAmount: loan.outstandingAmount.toFixed(4), alreadyConverted: true };
+
+      const invoiceIds = legacyRows.map((row) => row.invoiceId);
+      const invoices = await tx.invoice.findMany({
+        where: { id: { in: invoiceIds }, companyId, status: 'active', kind: { in: ['expense', 'fixed_expense'] } },
+        select: { id: true, invoiceNumber: true, totalAmount: true, transactionDate: true },
+      });
+      if (invoices.length !== invoiceIds.length) throw new BadRequestException('بعض فواتير القرض غير نشطة أو لا يمكن إعادة تصنيفها');
+
+      // قيد الصرف الأصلي هو المصدر الوحيد للخزينة والمبلغ: لا نعتمد على حالة الخزينة الحالية.
+      const sourceLedgers = await tx.ledgerEntry.findMany({
+        where: { companyId, referenceType: 'invoice', referenceId: { in: invoiceIds }, status: 'active' },
+        select: { id: true, referenceId: true, amount: true, transactionDate: true, vaultId: true, creditAccountId: true },
+        orderBy: [{ transactionDate: 'asc' }, { createdAt: 'asc' }],
+      });
+      if (sourceLedgers.length === 0 || sourceLedgers.some((entry) => !entry.vaultId)) {
+        throw new BadRequestException('لا يمكن تحويل فاتورة قرض بلا قيد خزينة مكتمل');
+      }
+      const summedByInvoice = new Map<string, Prisma.Decimal>();
+      for (const entry of sourceLedgers) summedByInvoice.set(entry.referenceId, (summedByInvoice.get(entry.referenceId) ?? new Prisma.Decimal(0)).plus(entry.amount));
+      if (invoices.some((invoice) => !(summedByInvoice.get(invoice.id) ?? new Prisma.Decimal(0)).eq(invoice.totalAmount))) {
+        throw new BadRequestException('مبلغ قيد خزينة إحدى الفواتير لا يطابق مبلغها؛ لم يتم إجراء أي تحويل');
+      }
+
+      const sourceVaultIds = [...new Set(sourceLedgers.map((entry) => entry.vaultId!))];
+      const vaults = await tx.vault.findMany({ where: { id: { in: sourceVaultIds }, companyId }, select: { id: true, accountId: true } });
+      if (vaults.length !== sourceVaultIds.length || vaults.some((vault) => !vault.accountId)) throw new BadRequestException('خزينة إحدى الفواتير القديمة غير مكتملة');
+      const openingLedger = await tx.ledgerEntry.findFirst({
+        where: { id: loan.openingLedgerEntryId, companyId, status: 'active', referenceType: 'loan_opening', referenceId: id },
+        select: { id: true, amount: true, debitAccountId: true, creditAccountId: true, transactionDate: true },
+      });
+      const [loanAccount, openingBalanceAccount] = await Promise.all([
+        tx.account.findFirst({ where: { companyId, code: 'LOAN-001', type: 'liability', isActive: true } }),
+        tx.account.findFirst({ where: { companyId, code: 'EQU-002', type: 'equity', isActive: true } }),
+      ]);
+      if (!openingLedger || !loanAccount || !openingBalanceAccount
+        || openingLedger.creditAccountId !== loanAccount.id || openingLedger.debitAccountId !== openingBalanceAccount.id
+        || !openingLedger.amount.eq(loan.openingAmount)) {
+        throw new BadRequestException('قيد الرصيد الافتتاحي للقرض غير متسق؛ لم يتم إجراء أي تحويل');
+      }
+
+      const total = sourceLedgers.reduce((sum, entry) => sum.plus(entry.amount), new Prisma.Decimal(0));
+      const newOpeningAmount = loan.openingAmount.plus(total);
+      const tenantId = TenantContext.getTenantId();
+      const entryDate = nowSaudi();
+
+      // نلغي الأثر القديم ثم نستبدله في نفس العملية؛ لا حذف ولا حركة خزينة إضافية.
+      const replacementOpening = await replaceLoanOpeningLedger(tx, openingLedger.id, {
+        tenantId, companyId, openingBalanceAccountId: openingBalanceAccount.id, loanAccountId: loanAccount.id,
+        amount: newOpeningAmount, transactionDate: openingLedger.transactionDate, entryDate, referenceId: id, createdById: userId,
+      });
+      await cancelLegacyLoanExpenseInvoices(tx, companyId, invoiceIds, sourceLedgers.map((entry) => entry.id));
+
+      for (const source of sourceLedgers) {
+        const paymentId = randomUUID();
+        const ledger = await postLoanPaymentLedger(tx, {
+          tenantId, companyId, loanAccountId: loanAccount.id, vaultAccountId: source.creditAccountId,
+          vaultId: source.vaultId!, amount: source.amount, transactionDate: source.transactionDate,
+          entryDate, referenceId: paymentId, createdById: userId,
+        });
+        const invoice = invoices.find((row) => row.id === source.referenceId)!;
+        await tx.loanPayment.create({ data: {
+          id: paymentId, tenantId, companyId, loanId: id, vaultId: source.vaultId!, ledgerEntryId: ledger.id,
+          amount: source.amount, transactionDate: source.transactionDate,
+          notes: `إعادة تصنيف الفاتورة ${invoice.invoiceNumber} إلى سداد قرض`, createdById: userId,
+          idempotencyKey: `loan-legacy-${id}-${source.id}`, requestHash: requestHash({ action: 'legacy-invoice-reclass', loanId: id, sourceLedgerEntryId: source.id }),
+          sourceInvoiceId: source.referenceId, sourceLedgerEntryId: source.id,
+        } });
+      }
+      await tx.loan.update({ where: { id }, data: { openingAmount: newOpeningAmount, openingLedgerEntryId: replacementOpening.id } });
+      await tx.loanLegacyInvoice.updateMany({ where: { id: { in: legacyRows.map((row) => row.id) }, convertedAt: null }, data: { convertedAt: entryDate, convertedById: userId } });
+      for (const invoice of invoices) {
+        await tx.auditLog.create({ data: { tenantId, companyId, userId, action: 'cancel', entity: 'invoice', entityId: invoice.id, newValue: { reason: 'reclassified_as_loan_payment', loanId: id, invoiceNumber: invoice.invoiceNumber } } });
+      }
+      await tx.auditLog.create({ data: { tenantId, companyId, userId, action: 'migrate', entity: 'loan_legacy_invoices', entityId: id, newValue: { action: 'reclassified_as_loan_payments', invoiceCount: invoices.length, paymentCount: sourceLedgers.length, totalAmount: total.toFixed(4), previousOpeningAmount: loan.openingAmount.toFixed(4), newOpeningAmount: newOpeningAmount.toFixed(4), outstandingAmount: loan.outstandingAmount.toFixed(4) } } });
+      return { converted: sourceLedgers.length, invoiceCount: invoices.length, totalAmount: total.toFixed(4), outstandingAmount: loan.outstandingAmount.toFixed(4), alreadyConverted: false };
     });
   }
 

@@ -28,3 +28,7 @@ export function migrateLoanLegacyInvoices(loanId: string, body: { companyId: str
   const { companyId: _companyId, ...dto } = body;
   return apiPost(`/api/v1/loans/${loanId}/legacy-expense-invoices`, dto);
 }
+
+export function convertLoanLegacyInvoices(loanId: string): Promise<ApiParsedResult<{ converted: number; invoiceCount: number; totalAmount: string; outstandingAmount: string; alreadyConverted: boolean }>> {
+  return apiPost(`/api/v1/loans/${loanId}/legacy-expense-invoices/convert`, {});
+}

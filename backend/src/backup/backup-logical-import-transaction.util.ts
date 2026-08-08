@@ -205,6 +205,9 @@ export async function runBackupLogicalImportInTransaction(
           if (!id || !loanId || !vaultId || !ledgerEntryId) throw new BadRequestException(`LOAN_PAYMENT_RESTORE_REFERENCE_MISSING:${String(row.id)}`);
           const reversalOfId = row.reversalOfId ? loanPaymentMap.get(String(row.reversalOfId)) : null;
           if (row.reversalOfId && !reversalOfId) throw new BadRequestException(`LOAN_PAYMENT_RESTORE_REVERSAL_MISSING:${String(row.id)}`);
+          const sourceInvoiceId = row.sourceInvoiceId ? invoiceMap.get(String(row.sourceInvoiceId)) : null;
+          const sourceLedgerEntryId = row.sourceLedgerEntryId ? ledgerEntryMap.get(String(row.sourceLedgerEntryId)) : null;
+          if ((row.sourceInvoiceId && !sourceInvoiceId) || (row.sourceLedgerEntryId && !sourceLedgerEntryId)) throw new BadRequestException(`LOAN_PAYMENT_RESTORE_SOURCE_REFERENCE_MISSING:${String(row.id)}`);
           await tx.loanPayment.create({
             data: {
               id,
@@ -222,6 +225,8 @@ export async function runBackupLogicalImportInTransaction(
               status: String(row.status ?? 'posted'),
               reversalOfId: reversalOfId ?? null,
               reversedAt: row.reversedAt ? ddate(row.reversedAt) : null,
+              sourceInvoiceId: sourceInvoiceId ?? null,
+              sourceLedgerEntryId: sourceLedgerEntryId ?? null,
               createdAt: ddate(row.createdAt),
             },
           });
@@ -237,6 +242,8 @@ export async function runBackupLogicalImportInTransaction(
               id: nid(), tenantId, companyId: newCompanyId, loanId, invoiceId,
               sourceExpenseLineId,
               invoiceNumber: String(row.invoiceNumber), transactionDate: ddate(row.transactionDate), amount: dec(row.amount),
+              convertedAt: row.convertedAt ? ddate(row.convertedAt) : null,
+              convertedById: null,
               createdAt: ddate(row.createdAt),
             },
           });

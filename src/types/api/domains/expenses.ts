@@ -10,6 +10,7 @@ export type LoanPaymentRecord = {
   reversedAt?: string | null;
   createdAt?: string;
   vault?: { nameAr?: string | null; nameEn?: string | null } | null;
+  sourceInvoice?: { invoiceNumber?: string | null } | null;
   reversal?: { id: string; transactionDate: string; amount: number | string } | null;
 };
 
@@ -19,6 +20,7 @@ export type LoanLegacyInvoiceRecord = {
   invoiceNumber: string;
   transactionDate: string;
   amount: number | string;
+  convertedAt?: string | null;
 };
 
 export type LoanRecord = {

@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { migrateLoanLegacyInvoices, reverseLoanPayment } from '../../../services/api';
+import { convertLoanLegacyInvoices, migrateLoanLegacyInvoices, reverseLoanPayment } from '../../../services/api';
 import { loanKeys } from '../../../services/queryKeys';
 import { getSaudiToday, formatSaudiDate } from '../../../utils/saudiDate';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
@@ -43,14 +43,31 @@ function LegacyInvoicesModal({ companyId, loan, expenseLines, onClose, onSaved }
   </AdaptiveSheet>;
 }
 
+function ConvertLegacyInvoicesModal({ loan, onClose, onSaved }: { loan: LoanRecord; onClose: () => void; onSaved: () => void }) {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState('');
+  const pending = (loan.legacyInvoices || []).filter((invoice) => !invoice.convertedAt);
+  const total = pending.reduce((sum, invoice) => sum + Number(invoice.amount), 0);
+  const mutation = useApiMutation({ mutationFn: () => convertLoanLegacyInvoices(loan.id), showErrorToast: false, onSuccess: () => { void queryClient.invalidateQueries({ queryKey: loanKeys.root() }); onSaved(); }, onError: (err: Error) => setError(err.message || 'تعذّر تحويل الفواتير إلى سدادات قرض') });
+  return <AdaptiveSheet open onClose={onClose} size="sm" side="start" title="تحويل الفواتير إلى سدادات" footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose }, { key: 'save', label: mutation.isPending ? 'جارٍ التحويل…' : 'تأكيد التحويل', role: 'save', onClick: () => mutation.mutate(), disabled: mutation.isPending || !pending.length }]} />}>
+    <div className="flex flex-col gap-3 text-[13px] leading-6 text-noorix-muted">
+      <div className="rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2">سيُعطّل أثر الفاتورة كمصروف مع الإبقاء عليها في السجل، ثم ينشأ سداد قرض بنفس التاريخ والخزينة والمبلغ. لا تتغير حركة الخزينة أو الرصيد الحالي للقرض.</div>
+      <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2"><strong className="text-noorix-text">{pending.length}</strong> فواتير · <strong className="nx-font-numbers text-noorix-text">{total.toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</strong></div>
+      {error ? <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-3 py-2 text-noorix-red">{error}</div> : null}
+    </div>
+  </AdaptiveSheet>;
+}
+
 export default function LoanDetailModal({ companyId, loan, allLoans, expenseLines, onClose, onChanged }: Props) {
   const [showPayment, setShowPayment] = useState(false);
   const [paymentToReverse, setPaymentToReverse] = useState<{ id: string; date: string } | null>(null);
   const [showLegacyMigration, setShowLegacyMigration] = useState(false);
+  const [showLegacyConversion, setShowLegacyConversion] = useState(false);
   const payments = useMemo(() => (loan.payments || []).filter((payment) => !payment.reversalOfId), [loan.payments]);
+  const pendingLegacyInvoices = (loan.legacyInvoices || []).filter((invoice) => !invoice.convertedAt);
   const changed = () => { setShowPayment(false); setPaymentToReverse(null); onChanged(); };
   return <>
-    <AdaptiveSheet open onClose={onClose} size="lg" side="start" title={loan.nameAr} footer={<DialogActions actions={[{ key: 'close', label: 'إغلاق', role: 'cancel', onClick: onClose }, { key: 'legacy', label: 'ترحيل فواتير قديمة', role: 'secondary', onClick: () => setShowLegacyMigration(true) }, { key: 'pay', label: 'سداد قرض', role: 'save', onClick: () => setShowPayment(true) }]} />}>
+    <AdaptiveSheet open onClose={onClose} size="lg" side="start" title={loan.nameAr} footer={<DialogActions actions={[{ key: 'close', label: 'إغلاق', role: 'cancel', onClick: onClose }, { key: 'legacy', label: 'ترحيل فواتير قديمة', role: 'secondary', onClick: () => setShowLegacyMigration(true) }, ...(pendingLegacyInvoices.length ? [{ key: 'convert', label: 'تحويل إلى سدادات', role: 'secondary' as const, onClick: () => setShowLegacyConversion(true) }] : []), { key: 'pay', label: 'سداد قرض', role: 'save', onClick: () => setShowPayment(true) }]} />}>
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-3 text-center"><div className="text-[11px] text-noorix-muted">الرصيد الافتتاحي</div><FmtNum n={Number(loan.openingAmount)} className="mt-1 block nx-font-numbers text-[18px] font-bold" /><span className="nx-sar text-[11px]">SR</span></div>
@@ -59,12 +76,13 @@ export default function LoanDetailModal({ companyId, loan, allLoans, expenseLine
         </div>
         {loan.creditorName || loan.notes ? <div className="rounded-lg border border-noorix-border px-3 py-2 text-[13px] text-noorix-muted">{loan.creditorName ? <div>الجهة: <strong className="text-noorix-text">{loan.creditorName}</strong></div> : null}{loan.notes ? <div className="mt-1">{loan.notes}</div> : null}</div> : null}
         {(loan.historicalPaymentsCount || Number(loan.historicalPaidAmount || 0) > 0) ? <div className="rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2 text-[12px] text-noorix-muted">دفعات سابقة قبل نوركس: <strong>{loan.historicalPaymentsCount || 0}</strong> دفعة، بإجمالي <strong className="nx-font-numbers">{Number(loan.historicalPaidAmount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</strong>{loan.historicalPaidThroughDate ? ` حتى ${formatSaudiDate(loan.historicalPaidThroughDate)}` : ''}. هذه معلومات توثيقية ولا تؤثر على الخزينة.</div> : null}
-        {loan.legacyInvoices?.length ? <div className="rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2 text-[12px] text-noorix-muted"><strong>فواتير مرحلة من البند القديم ({loan.legacyInvoices.length})</strong><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{loan.legacyInvoices.map((invoice) => <span key={invoice.id} className="nx-font-numbers">{invoice.invoiceNumber} · {formatSaudiDate(invoice.transactionDate)} · {Number(invoice.amount).toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</span>)}</div><div className="mt-1">مرتبطة للتوثيق فقط ولا تُخصم من الرصيد مرة ثانية.</div></div> : null}
-        <div className="overflow-x-auto rounded-lg border border-noorix-border"><table className="w-full min-w-[42rem] border-collapse text-[13px]"><thead className="bg-noorix-bg-muted"><tr><th className="p-2 text-right">التاريخ</th><th className="p-2 text-right">الخزينة</th><th className="p-2 text-right">المبلغ</th><th className="p-2 text-right">الحالة</th><th className="p-2 text-right">إجراء</th></tr></thead><tbody>{payments.length ? payments.map((payment) => <tr key={payment.id} className="border-t border-noorix-border"><td className="p-2 nx-font-numbers">{formatSaudiDate(payment.transactionDate)}</td><td className="p-2">{payment.vault?.nameAr || payment.vault?.nameEn || '-'}</td><td className="p-2 nx-font-numbers"><FmtNum n={Number(payment.amount)} /> <span className="nx-sar">SR</span></td><td className="p-2"><Badge color={payment.status === 'reversed' ? 'red' : 'green'} size="sm">{payment.status === 'reversed' ? 'ملغى' : 'مسدد'}</Badge></td><td className="p-2">{payment.status === 'posted' ? <Button size="sm" variant="danger" onClick={() => setPaymentToReverse({ id: payment.id, date: payment.transactionDate })}>إلغاء السداد</Button> : '-'}</td></tr>) : <tr><td className="p-5 text-center text-noorix-muted" colSpan={5}>لا توجد سدادات داخل نوركس حتى الآن.</td></tr>}</tbody></table></div>
+        {loan.legacyInvoices?.length ? <div className="rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2 text-[12px] text-noorix-muted"><strong>فواتير مرتبطة من البند القديم ({loan.legacyInvoices.length})</strong><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{loan.legacyInvoices.map((invoice) => <span key={invoice.id} className="nx-font-numbers">{invoice.invoiceNumber} · {formatSaudiDate(invoice.transactionDate)} · {Number(invoice.amount).toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</span>)}</div><div className="mt-1">{pendingLegacyInvoices.length ? 'يمكن تحويلها إلى سدادات قرض موثقة دون تغيير الرصيد الحالي.' : 'تم تحويلها إلى سدادات قرض؛ الفواتير الأصلية معطّلة ومحفوظة للتدقيق.'}</div></div> : null}
+        <div className="overflow-x-auto rounded-lg border border-noorix-border"><table className="w-full min-w-[42rem] border-collapse text-[13px]"><thead className="bg-noorix-bg-muted"><tr><th className="p-2 text-right">التاريخ</th><th className="p-2 text-right">الخزينة / المصدر</th><th className="p-2 text-right">المبلغ</th><th className="p-2 text-right">الحالة</th><th className="p-2 text-right">إجراء</th></tr></thead><tbody>{payments.length ? payments.map((payment) => <tr key={payment.id} className="border-t border-noorix-border"><td className="p-2 nx-font-numbers">{formatSaudiDate(payment.transactionDate)}</td><td className="p-2">{payment.vault?.nameAr || payment.vault?.nameEn || '-'}{payment.sourceInvoice?.invoiceNumber ? <div className="mt-0.5 text-[11px] text-noorix-muted nx-font-numbers">{payment.sourceInvoice.invoiceNumber}</div> : null}</td><td className="p-2 nx-font-numbers"><FmtNum n={Number(payment.amount)} /> <span className="nx-sar">SR</span></td><td className="p-2"><Badge color={payment.status === 'reversed' ? 'red' : 'green'} size="sm">{payment.status === 'reversed' ? 'ملغى' : payment.sourceInvoice ? 'سداد مرحّل' : 'مسدد'}</Badge></td><td className="p-2">{payment.status === 'posted' ? <Button size="sm" variant="danger" onClick={() => setPaymentToReverse({ id: payment.id, date: payment.transactionDate })}>إلغاء السداد</Button> : '-'}</td></tr>) : <tr><td className="p-5 text-center text-noorix-muted" colSpan={5}>لا توجد سدادات داخل نوركس حتى الآن.</td></tr>}</tbody></table></div>
       </div>
     </AdaptiveSheet>
     {showPayment ? <LoanPaymentModal companyId={companyId} loans={allLoans} loanId={loan.id} onClose={() => setShowPayment(false)} onSaved={changed} /> : null}
     {paymentToReverse ? <ReversePaymentModal companyId={companyId} loan={loan} paymentId={paymentToReverse.id} paymentDate={paymentToReverse.date} onClose={() => setPaymentToReverse(null)} onSaved={changed} /> : null}
     {showLegacyMigration ? <LegacyInvoicesModal companyId={companyId} loan={loan} expenseLines={expenseLines} onClose={() => setShowLegacyMigration(false)} onSaved={() => { setShowLegacyMigration(false); onChanged(); }} /> : null}
+    {showLegacyConversion ? <ConvertLegacyInvoicesModal loan={loan} onClose={() => setShowLegacyConversion(false)} onSaved={() => { setShowLegacyConversion(false); onChanged(); }} /> : null}
   </>;
 }

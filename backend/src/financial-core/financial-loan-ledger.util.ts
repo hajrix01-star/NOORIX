@@ -77,3 +77,33 @@ export function postLoanPaymentReversalLedger(
     },
   });
 }
+
+/**
+ * إعادة تصنيف أقساط مسجلة سابقاً كمصروف: تلغي الأثر المحاسبي القديم فقط
+ * (مع بقاء المستند في السجل) وتسمح لخدمة القروض بإنشاء البديل في المعاملة نفسها.
+ */
+export async function cancelLegacyLoanExpenseInvoices(
+  tx: TxClient,
+  companyId: string,
+  invoiceIds: string[],
+  ledgerEntryIds: string[],
+) {
+  await tx.invoice.updateMany({
+    where: { id: { in: invoiceIds }, companyId, status: 'active' },
+    data: { status: 'cancelled' },
+  });
+  await tx.ledgerEntry.updateMany({
+    where: { id: { in: ledgerEntryIds }, companyId, status: 'active' },
+    data: { status: 'cancelled' },
+  });
+}
+
+/** يستبدل قيد افتتاح القرض بسجل فعال واحد متوافق مع الرصيد بعد إعادة التصنيف. */
+export async function replaceLoanOpeningLedger(
+  tx: TxClient,
+  originalLedgerId: string,
+  data: LoanLedgerBase & { openingBalanceAccountId: string; loanAccountId: string },
+) {
+  await tx.ledgerEntry.update({ where: { id: originalLedgerId }, data: { status: 'cancelled' } });
+  return postLoanOpeningLedger(tx, data);
+}
