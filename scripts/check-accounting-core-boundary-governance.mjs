@@ -22,6 +22,7 @@ const allowedMutationFiles = new Map([
 
   ['backend/src/hr/hr-payroll-advance-settlement.util.ts', 'payroll advance settlement metadata and deduction source linking'],
   ['backend/src/company-assets/company-assets.service.ts', 'asset completion marks warranty follow-up metadata only'],
+  ['backend/src/expense-line/expense-line.service.ts', 'non-financial invoice-kind classification sync only; amount, tax, vault, allocation, and ledger remain untouched and the change is audited'],
 
   ['backend/src/backup/backup-logical-import-transaction.util.ts', 'protected logical backup restore/import exception'],
   ['backend/src/backup/backup-logical-import-invoices-assets.util.ts', 'protected logical backup restore invoice/assets exception'],

@@ -1892,6 +1892,7 @@ Closed on 2026-07-08 as a system-wide guardrail in the accounting-boundary gover
 - `backend/src/invoice/invoice-attachment-ops.util.ts`: attachment metadata only, not official amounts.
 - `backend/src/hr/hr-payroll-advance-settlement.util.ts`: payroll advance settlement metadata and deduction-source linkage.
 - `backend/src/company-assets/company-assets.service.ts`: warranty follow-up metadata only.
+- `backend/src/expense-line/expense-line.service.ts`: synchronizes only the display/reporting kind of active invoices when an expense line is reclassified; it does not change amount, tax, vault, allocation, or ledger data, and records an audit entry.
 - `backend/src/backup/backup-logical-import-transaction.util.ts`: logical backup restore/import exception.
 
 ### Closure Checks
