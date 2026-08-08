@@ -75,7 +75,7 @@ export default function LoanFormModal({ companyId, onClose, onSaved }: Props) {
         {error ? <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-3 py-2 text-[13px] text-noorix-red">{error}</div> : null}
         <Input label="اسم التمويل *" value={nameAr} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNameAr(event.target.value)} required />
         <Input label="الجهة الممولة" value={creditorName} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setCreditorName(event.target.value)} />
-        <Input label="الرصيد الافتتاحي المتبقي (شامل الربح) *" type="number" min="0.0001" step="0.01" value={amount} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(event.target.value)} className="ltr" required />
+        <Input label="الرصيد الافتتاحي المتبقي (شامل الربح) *" type="number" min="0.01" step="0.01" value={amount} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(event.target.value)} className="ltr" required />
         <TransactionDatePicker label="تاريخ بداية المتابعة في نوركس" value={openingDate} onValueChange={setOpeningDate} required />
         <TransactionDatePicker label="تاريخ آخر قسط متوقع" value={dueDate} onValueChange={setDueDate} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
