@@ -8,8 +8,8 @@ Status: governed; no new raw table is allowed without registry count and reason.
 
 | Metric | Count |
 |---|---:|
-| Manual `<table>` outside `src/ui` | 28 |
-| Files with manual tables outside `src/ui` | 16 |
+| Manual `<table>` outside `src/ui` | 29 |
+| Files with manual tables outside `src/ui` | 17 |
 | `SmartTable` JSX usages | 46 |
 | Files using `SmartTable` JSX | 36 |
 | `SimpleTable` JSX usages | 23 |
@@ -30,6 +30,7 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | `bank-protected` | 1 | 1 | protected bank workflow |
 | `matrix-table` | 1 | 1 | leave until `MatrixTable` phase |
 | `purchases-protected` | 1 | 1 | protected purchases workflow |
+| `print-export-html` | 1 | 1 | compact dashboard A4 print document |
 
 ## Next Target
 

@@ -2,6 +2,11 @@
   "version": 1,
   "description": "Phase 2 closure decisions for remaining manual <table> usages. Every entry in table-manual-exceptions.json must have a reason here.",
   "reasons": {
+    "src/modules/Dashboard/overview/dashboardOverviewPrintModel.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "dedicated A4 dashboard overview print HTML; its compact table is isolated inside PrintPreviewModal."
+    },
     "src/modules/HR/components/EmployeeDocModal/components/EmployeeDocEmployeeInfoTable.tsx": {
       "category": "document-print",
       "decision": "leave",
