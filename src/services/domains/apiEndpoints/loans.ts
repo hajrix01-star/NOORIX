@@ -8,13 +8,18 @@ export async function getLoans(companyId: string): Promise<ApiParsedResult<LoanR
 }
 
 export function createLoan(body: LoanCreatePayload): Promise<ApiParsedResult<LoanRecord>> {
-  return apiPost('/api/v1/loans', body);
+  // الشركة تؤخذ من x-company-id في الجلسة؛ لا تُرسل داخل DTO لأن الخادم
+  // يرفض الحقول الزائدة لحماية عزل الشركات.
+  const { companyId: _companyId, ...dto } = body;
+  return apiPost('/api/v1/loans', dto);
 }
 
 export function createLoanPayment(loanId: string, body: LoanPaymentCreatePayload): Promise<ApiParsedResult<LoanPaymentRecord>> {
-  return apiPost(`/api/v1/loans/${loanId}/payments`, body);
+  const { companyId: _companyId, ...dto } = body;
+  return apiPost(`/api/v1/loans/${loanId}/payments`, dto);
 }
 
 export function reverseLoanPayment(loanId: string, paymentId: string, body: LoanPaymentReversePayload): Promise<ApiParsedResult<LoanPaymentRecord>> {
-  return apiPost(`/api/v1/loans/${loanId}/payments/${paymentId}/reverse`, body);
+  const { companyId: _companyId, ...dto } = body;
+  return apiPost(`/api/v1/loans/${loanId}/payments/${paymentId}/reverse`, dto);
 }
