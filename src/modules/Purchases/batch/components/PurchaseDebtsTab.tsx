@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Card, Checkbox, DateField, Input, SearchableOptionsPicker, SimpleTable } from '../../../../ui';
+import { Badge, Button, Card, Checkbox, DateField, Input, SearchableOptionsPicker } from '../../../../ui';
 import { useApiMutation } from '../../../../hooks/useApiMutation';
 import { useApiQuery } from '../../../../hooks/useApiQuery';
 import { useDebouncedValue } from '../../../../ui';
@@ -17,6 +17,7 @@ import { purchaseKeys } from '../../../../services/queryKeys';
 import type { PurchaseBatchSupplier } from '../purchaseBatchTypes';
 import PurchaseDebtFormModal, { type PurchaseDebtFormValue } from './PurchaseDebtFormModal';
 import PurchaseDebtBatchModal from './PurchaseDebtBatchModal';
+import { groupPurchaseDebtsBySupplier } from '../purchaseDebtSupplierGroups';
 
 type Props = {
   companyId: string;
@@ -31,12 +32,6 @@ const initialFilters = {
   status: '', supplierId: '', q: '', dateMode: 'invoice' as DateMode,
   dateFrom: '', dateTo: '', amountMin: '', amountMax: '',
 };
-
-function nameOf(record: PurchaseDebtRecord, lang: string) {
-  return lang === 'en'
-    ? (record.supplier.nameEn || record.supplier.nameAr)
-    : (record.supplier.nameAr || record.supplier.nameEn || '');
-}
 
 export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport }: Props) {
   const ar = lang !== 'en';
@@ -59,7 +54,7 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
     ...(filters.dateMode === 'created' ? { createdFrom: filters.dateFrom, createdTo: filters.dateTo } : {}),
     ...(filters.dateMode === 'promoted' ? { promotedFrom: filters.dateFrom, promotedTo: filters.dateTo } : {}),
     page,
-    pageSize: 25,
+    pageSize: 100,
   }), [debouncedSearch, filters, page]);
 
   const debtsQuery = useApiQuery({
@@ -110,56 +105,8 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
   const pendingItems = items.filter((item) => item.status === 'pending');
   const allPendingSelected = pendingItems.length > 0 && pendingItems.every((item) => selected.has(item.id));
   const selectedRecords = items.filter((item) => selected.has(item.id) && item.status === 'pending');
+  const supplierGroups = useMemo(() => groupPurchaseDebtsBySupplier(items, lang), [items, lang]);
   const totalPages = Math.max(1, Math.ceil((response?.total || 0) / (response?.pageSize || 25)));
-
-  const columns = [
-    {
-      key: 'select', label: (
-        <Checkbox
-          checked={allPendingSelected}
-          onChange={() => setSelected(allPendingSelected ? new Set() : new Set(pendingItems.map((item) => item.id)))}
-          aria-label={ar ? 'تحديد الصفحة' : 'Select page'}
-        />
-      ), width: 44, render: (_: unknown, row: PurchaseDebtRecord) => row.status === 'pending' ? (
-        <Checkbox
-          checked={selected.has(row.id)}
-          onChange={() => setSelected((current) => {
-            const next = new Set(current);
-            if (next.has(row.id)) next.delete(row.id); else next.add(row.id);
-            return next;
-          })}
-          aria-label={ar ? 'تحديد السجل' : 'Select record'}
-        />
-      ) : null,
-    },
-    { key: 'supplier', label: ar ? 'المورد' : 'Supplier', minWidth: 170, render: (_: unknown, row: PurchaseDebtRecord) => <span className="font-semibold">{nameOf(row, lang)}</span> },
-    { key: 'supplierInvoiceNumber', label: ar ? 'رقم الفاتورة' : 'Invoice no.', minWidth: 120 },
-    { key: 'invoiceDate', label: ar ? 'تاريخ الفاتورة' : 'Invoice date', minWidth: 110, render: (value: unknown) => String(value || '').slice(0, 10) },
-    { key: 'totalAmount', label: ar ? 'الإجمالي' : 'Total', numeric: true, minWidth: 110, render: (value: unknown) => <strong>{money(value)}</strong> },
-    { key: 'isTaxable', label: 'VAT', width: 70, render: (value: unknown) => value ? <Badge color="amber">15%</Badge> : <span className="text-noorix-muted">—</span> },
-    { key: 'status', label: ar ? 'الحالة' : 'Status', minWidth: 100, render: (value: unknown) => statusBadge(String(value)) },
-    { key: 'promotedAt', label: ar ? 'تاريخ الترحيل' : 'Promoted at', minWidth: 115, render: (value: unknown) => value ? String(value).slice(0, 10) : '—' },
-    { key: 'promotionBatchId', label: ar ? 'مرجع الدفعة' : 'Batch ref.', minWidth: 135, render: (value: unknown) => value ? <span className="nx-font-numbers text-[11px]">{String(value)}</span> : '—' },
-    { key: 'actions', label: '', width: 150, render: (_: unknown, row: PurchaseDebtRecord) => row.status === 'pending' ? (
-      <div className="flex justify-center gap-1.5">
-        <Button size="sm" onClick={() => { setEditing(row); setFormOpen(true); }}>{ar ? 'تعديل' : 'Edit'}</Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          loading={cancelMutation.isPending && cancelMutation.variables === row.id}
-          onClick={() => {
-            if (window.confirm(ar ? 'إلغاء هذا السجل مع الاحتفاظ به في الأرشيف؟' : 'Cancel this record and keep it archived?')) cancelMutation.mutate(row.id);
-          }}
-        >{ar ? 'إلغاء' : 'Cancel'}</Button>
-      </div>
-    ) : row.status === 'cancelled' ? (
-      <Button
-        size="sm"
-        loading={restoreMutation.isPending && restoreMutation.variables === row.id}
-        onClick={() => restoreMutation.mutate(row.id)}
-      >{ar ? 'استعادة' : 'Restore'}</Button>
-    ) : null },
-  ];
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -235,14 +182,114 @@ export default function PurchaseDebtsTab({ companyId, lang, suppliers, onImport 
         </div>
       </Card>
 
-      <SimpleTable
-        columns={columns}
-        data={items}
-        tableMinWidth={1180}
-        maxHeight="520px"
-        stickyHeader
-        emptyMessage={debtsQuery.isLoading ? (ar ? 'جارٍ التحميل...' : 'Loading...') : (ar ? 'لا توجد مديونيات مطابقة.' : 'No matching debts.')}
-      />
+      <section className="space-y-3" aria-label={ar ? 'مديونيات الموردين' : 'Supplier debts'}>
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[12px] text-noorix-muted">
+          <span>{ar ? `${supplierGroups.length} مورد في الصفحة المعروضة` : `${supplierGroups.length} suppliers on this page`}</span>
+          {pendingItems.length > 0 ? (
+            <Checkbox
+              checked={allPendingSelected}
+              onChange={() => setSelected(allPendingSelected ? new Set() : new Set(pendingItems.map((item) => item.id)))}
+              label={ar ? 'تحديد كل غير المرحلة في الصفحة' : 'Select all pending on this page'}
+            />
+          ) : null}
+        </div>
+
+        {supplierGroups.length === 0 ? (
+          <Card padding="md">
+            <p className="text-center text-[13px] text-noorix-muted">
+              {debtsQuery.isLoading ? (ar ? 'جارٍ التحميل...' : 'Loading...') : (ar ? 'لا توجد مديونيات مطابقة.' : 'No matching debts.')}
+            </p>
+          </Card>
+        ) : supplierGroups.map((group) => {
+          const groupPending = group.records.filter((record) => record.status === 'pending');
+          const isGroupSelected = groupPending.length > 0 && groupPending.every((record) => selected.has(record.id));
+          return (
+            <Card key={group.supplierId} padding="none" className="overflow-hidden border border-noorix-border">
+              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-noorix-border bg-noorix-surface px-4 py-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="truncate text-[15px] font-bold text-noorix-text">{group.supplierName}</h3>
+                    <Badge color="blue">{group.records.length} {ar ? 'فاتورة' : 'invoices'}</Badge>
+                    {group.pendingCount > 0 ? <Badge color="amber">{group.pendingCount} {ar ? 'غير مرحلة' : 'pending'}</Badge> : null}
+                    {group.promotedCount > 0 ? <Badge color="green">{group.promotedCount} {ar ? 'مرحلة' : 'promoted'}</Badge> : null}
+                    {group.cancelledCount > 0 ? <Badge color="gray">{group.cancelledCount} {ar ? 'ملغاة' : 'cancelled'}</Badge> : null}
+                  </div>
+                  <p className="mt-1 text-[11px] text-noorix-muted">{ar ? 'فواتير المورد ومراحلها ضمن نطاق الفلترة الحالي.' : 'Supplier invoices and their status within the current filters.'}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-end">
+                    <p className="text-[11px] text-noorix-muted">{ar ? 'إجمالي المورد' : 'Supplier total'}</p>
+                    <strong className="nx-font-numbers text-[16px] text-noorix-text">{money(group.totalAmount)}</strong>
+                  </div>
+                  {groupPending.length > 0 ? (
+                    <Checkbox
+                      checked={isGroupSelected}
+                      onChange={() => setSelected((current) => {
+                        const next = new Set(current);
+                        for (const record of groupPending) {
+                          if (isGroupSelected) next.delete(record.id); else next.add(record.id);
+                        }
+                        return next;
+                      })}
+                      aria-label={ar ? `تحديد فواتير ${group.supplierName} غير المرحلة` : `Select ${group.supplierName} pending invoices`}
+                    />
+                  ) : null}
+                </div>
+              </header>
+
+              <div className="divide-y divide-noorix-border">
+                {group.records.map((row) => (
+                  <article key={row.id} className="grid grid-cols-1 items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1.25fr)_auto_auto] sm:gap-4">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <strong className="nx-font-numbers text-[13px] text-noorix-text">{row.supplierInvoiceNumber}</strong>
+                        <span className="nx-font-numbers text-[12px] text-noorix-muted">{String(row.invoiceDate || '').slice(0, 10)}</span>
+                        {row.isTaxable ? <Badge color="amber">VAT 15%</Badge> : null}
+                        {statusBadge(row.status)}
+                      </div>
+                      {row.notes ? <p className="mt-1 truncate text-[11px] text-noorix-muted">{row.notes}</p> : null}
+                      {row.status === 'promoted' && row.promotedInvoice ? (
+                        <p className="mt-1 text-[11px] text-noorix-muted">{ar ? `رُحلت إلى ${row.promotedInvoice.invoiceNumber}` : `Promoted to ${row.promotedInvoice.invoiceNumber}`}</p>
+                      ) : null}
+                    </div>
+                    <strong className="nx-font-numbers text-[15px] text-noorix-text sm:text-end">{money(row.totalAmount)}</strong>
+                    <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+                      {row.status === 'pending' ? (
+                        <>
+                          <Checkbox
+                            checked={selected.has(row.id)}
+                            onChange={() => setSelected((current) => {
+                              const next = new Set(current);
+                              if (next.has(row.id)) next.delete(row.id); else next.add(row.id);
+                              return next;
+                            })}
+                            aria-label={ar ? `تحديد ${row.supplierInvoiceNumber}` : `Select ${row.supplierInvoiceNumber}`}
+                          />
+                          <Button size="sm" onClick={() => { setEditing(row); setFormOpen(true); }}>{ar ? 'تعديل' : 'Edit'}</Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            loading={cancelMutation.isPending && cancelMutation.variables === row.id}
+                            onClick={() => {
+                              if (window.confirm(ar ? 'إلغاء هذا السجل مع الاحتفاظ به في الأرشيف؟' : 'Cancel this record and keep it archived?')) cancelMutation.mutate(row.id);
+                            }}
+                          >{ar ? 'إلغاء' : 'Cancel'}</Button>
+                        </>
+                      ) : row.status === 'cancelled' ? (
+                        <Button
+                          size="sm"
+                          loading={restoreMutation.isPending && restoreMutation.variables === row.id}
+                          onClick={() => restoreMutation.mutate(row.id)}
+                        >{ar ? 'استعادة' : 'Restore'}</Button>
+                      ) : null}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </Card>
+          );
+        })}
+      </section>
 
       <div className="flex items-center justify-between gap-3 text-[12px] text-noorix-muted">
         <span>{ar ? `إجمالي النتائج: ${response?.total || 0}` : `Total results: ${response?.total || 0}`}</span>
