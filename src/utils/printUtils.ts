@@ -46,6 +46,8 @@ ${pageCounterBlock}
 *, *::before, *::after { box-sizing: border-box; }
 body {
   font-family: 'Noto Sans Arabic', 'IBM Plex Sans', Arial, sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
   margin: 0;
   padding: ${landscape ? '16px' : '24px'};
   color: #1a1a1a;

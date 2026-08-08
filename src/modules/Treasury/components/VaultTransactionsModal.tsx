@@ -8,7 +8,6 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
-import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
 import { vaultKeys } from '../../../services/queryKeys';
 import { Button, AdaptiveSheet, FmtNum, SmartTable, usePrintPreview } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
@@ -20,6 +19,11 @@ import type {
   VaultWithTransactionsResult,
 } from '../../../types/api';
 import { normalizeVaultTransactions } from '../treasuryModels';
+import {
+  buildVaultTransactionsPrintBody,
+  VAULT_TRANSACTIONS_PRINT_CSS,
+  vaultTransactionTypeLabel,
+} from '../vaultTransactionsPrintModel';
 
 const PAGE_SIZE = 50;
 const EXPORT_PAGE_SIZE = 10000;
@@ -55,6 +59,42 @@ function unwrapTransactionsPage(payload: VaultWithTransactionsResult | VaultTran
   return payload;
 }
 
+async function loadAllVaultTransactions(
+  vaultId: string,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  fallbackMessage: string,
+): Promise<VaultTransactionsPage> {
+  const firstResponse = await getVaultTransactions(
+    vaultId,
+    companyId,
+    startDate,
+    endDate,
+    1,
+    EXPORT_PAGE_SIZE,
+  );
+  throwIfApiFailed(firstResponse, fallbackMessage);
+  const firstPage = unwrapTransactionsPage(firstResponse.data, 1);
+  const allItems = [...firstPage.items];
+  const pageCount = Math.ceil(firstPage.total / EXPORT_PAGE_SIZE);
+
+  for (let nextPage = 2; nextPage <= pageCount; nextPage += 1) {
+    const response = await getVaultTransactions(
+      vaultId,
+      companyId,
+      startDate,
+      endDate,
+      nextPage,
+      EXPORT_PAGE_SIZE,
+    );
+    throwIfApiFailed(response, fallbackMessage);
+    allItems.push(...unwrapTransactionsPage(response.data, nextPage).items);
+  }
+
+  return { ...firstPage, items: allItems };
+}
+
 export default function VaultTransactionsModal({
   vault,
   companyId,
@@ -65,6 +105,7 @@ export default function VaultTransactionsModal({
   const { companies = [] } = useApp();
   const { showToast } = useToast();
   const [page, setPage] = useState(1);
+  const [isPrintLoading, setIsPrintLoading] = useState(false);
 
   const startDate = dateFilter?.startDate || '';
   const endDate = dateFilter?.endDate || '';
@@ -110,6 +151,18 @@ export default function VaultTransactionsModal({
     },
     [t, lang],
   );
+  const transactionTypeLabels = useMemo(() => ({
+    sale: t('vaultLedgerTypeSale'),
+    invoice: t('vaultLedgerTypeInvoice'),
+    expense: t('vaultLedgerTypeExpense'),
+    salary: t('vaultLedgerTypeSalary'),
+    advance: t('vaultLedgerTypeAdvance'),
+    transfer: t('vaultLedgerTypeTransfer'),
+  }), [t]);
+  const formatTransactionType = useCallback(
+    (value: string | null | undefined) => vaultTransactionTypeLabel(value, transactionTypeLabels),
+    [transactionTypeLabels],
+  );
 
   const items = useMemo(
     () => normalizeVaultTransactions(data.items, vault.accountId, formatVaultTransactionNotes),
@@ -118,14 +171,18 @@ export default function VaultTransactionsModal({
 
   const handleExportExcel = useCallback(async () => {
     try {
-      const res = await getVaultTransactions(vault.id, companyId, startDate, endDate, 1, EXPORT_PAGE_SIZE);
-      throwIfApiFailed(res, t('loadDataFailed'));
-      const allPage = unwrapTransactionsPage(res.data, 1);
+      const allPage = await loadAllVaultTransactions(
+        vault.id,
+        companyId,
+        startDate,
+        endDate,
+        t('loadDataFailed'),
+      );
       const mapped = normalizeVaultTransactions(allPage.items, vault.accountId, formatVaultTransactionNotes);
       const rows = mapped.map((row) => ({
         [t('documentNumber')]: row.documentNumber || row.referenceId || '-',
         [t('date')]: formatSaudiDate(row.transactionDate),
-        [t('type')]: row.referenceType || '-',
+        [t('type')]: formatTransactionType(row.referenceType),
         [t('notes')]: row.notesDisplay || '-',
         [t('debit')]: row.debit != null ? Number(row.debit) : null,
         [t('credit')]: row.credit != null ? Number(row.credit) : null,
@@ -144,50 +201,53 @@ export default function VaultTransactionsModal({
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : t('loadDataFailed'), 'error');
     }
-  }, [vault.id, vault.accountId, vault.nameAr, companyId, startDate, endDate, periodLabel, t, formatVaultTransactionNotes, showToast]);
+  }, [vault.id, vault.accountId, vault.nameAr, companyId, startDate, endDate, periodLabel, t, formatVaultTransactionNotes, formatTransactionType, showToast]);
 
-  const handlePrintPdf = () => {
-    const vaultName = vaultDisplayName(vault, lang) || '';
-    openPrintDocumentPreview({
-      title: `${vaultName} - ${t('transactions')}`,
-      companyName: companyName || vaultName,
-      logoUrl: companyLogoUrl,
-      subtitle: `${vaultName} - ${t('transactions')}${periodLabel ? ` - ${periodLabel}` : ''}`,
-      body: buildPrintHtmlTable({
-        wrapperClassName: null,
-        emptyMessage: t('noDataInPeriod'),
-        emptyColSpan: 6,
-        headerRows: [{
-          cells: [
-            { value: t('documentNumber') },
-            { value: t('date') },
-            { value: t('type') },
-            { value: t('notes') },
-            { value: t('debit'), align: 'end' },
-            { value: t('credit'), align: 'end' },
-          ],
-        }],
-        bodyRows: items.map((row) => ({
-          cells: [
-            { value: row.documentNumber || row.referenceId || '-' },
-            { value: formatSaudiDate(row.transactionDate) },
-            { value: row.referenceType === 'transfer' ? t('vaultLedgerTypeTransfer') : (row.referenceType || '-') },
-            { value: row.notesDisplay || '-' },
-            { value: row.debit != null ? fmt(row.debit) : '-', align: 'end' },
-            { value: row.credit != null ? fmt(row.credit) : '-', align: 'end' },
-          ],
-        })),
-        footerRows: items.length
-          ? [{
-              cells: [
-                { value: t('total'), colSpan: 4 },
-                { value: fmt(data.periodTotalIn), align: 'end' },
-                { value: fmt(data.periodTotalOut), align: 'end' },
-              ],
-            }]
-          : [],
-      }),
-    });
+  const handlePrintPdf = async () => {
+    if (isPrintLoading) return;
+    setIsPrintLoading(true);
+    try {
+      const fullPeriod = await loadAllVaultTransactions(
+        vault.id,
+        companyId,
+        startDate,
+        endDate,
+        t('loadDataFailed'),
+      );
+      const printRows = normalizeVaultTransactions(fullPeriod.items, vault.accountId, formatVaultTransactionNotes);
+      const vaultName = vaultDisplayName(vault, lang) || '';
+      openPrintDocumentPreview({
+        title: `${vaultName} - ${t('transactions')}`,
+        companyName: companyName || vaultName,
+        logoUrl: companyLogoUrl,
+        subtitle: `${vaultName} - ${t('transactions')}${periodLabel ? ` - ${periodLabel}` : ''}`,
+        landscape: true,
+        pageMarginMm: 10,
+        htmlDir: lang === 'en' ? 'ltr' : 'rtl',
+        htmlLang: lang === 'en' ? 'en' : 'ar',
+        extraCss: VAULT_TRANSACTIONS_PRINT_CSS,
+        body: buildVaultTransactionsPrintBody({
+          rows: printRows,
+          totalIn: fullPeriod.periodTotalIn,
+          totalOut: fullPeriod.periodTotalOut,
+          periodBalance: fullPeriod.periodBalance,
+          totalTransactions: fullPeriod.total,
+          labels: {
+            documentNumber: t('documentNumber'), date: t('date'), type: t('type'), notes: t('notes'),
+            debit: t('debit'), credit: t('credit'), total: t('total'),
+            totalIn: t('vaultPrintTotalIn'), totalOut: t('vaultPrintTotalOut'),
+            periodNet: t('vaultPrintPeriodNet'), transactionCount: t('vaultPrintTransactionCount'),
+          },
+          typeLabels: transactionTypeLabels,
+          formatDate: formatSaudiDate,
+          formatAmount: (value) => fmt(value),
+        }),
+      });
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : t('loadDataFailed'), 'error');
+    } finally {
+      setIsPrintLoading(false);
+    }
   };
 
   const columns: SmartTableColumn<VaultTransactionViewRow>[] = [
@@ -198,7 +258,7 @@ export default function VaultTransactionsModal({
       label: t('type'),
       render: (value) => (
         <span className="text-[12px]">
-          {value === 'transfer' ? t('vaultLedgerTypeTransfer') : (String(value || '-') || '-')}
+          {formatTransactionType(String(value || ''))}
         </span>
       ),
     },
@@ -223,7 +283,7 @@ export default function VaultTransactionsModal({
       </div>
       {row.referenceType ? (
         <div className="text-[12px] text-noorix-muted mb-2">
-          {row.referenceType === 'transfer' ? t('vaultLedgerTypeTransfer') : row.referenceType}
+          {formatTransactionType(row.referenceType)}
         </div>
       ) : null}
       {row.notesDisplay ? (
@@ -243,7 +303,7 @@ export default function VaultTransactionsModal({
         </div>
       </div>
     </div>
-  ), [t]);
+  ), [t, formatTransactionType]);
 
   const footerCells = items.length > 0 ? (
     <>
@@ -268,7 +328,9 @@ export default function VaultTransactionsModal({
       {printPreviewModal}
       <div className="nx-toolbar mb-4">
         <Button size="sm" onClick={handleExportExcel} disabled={!data.total || !hasOfficialPeriod}>Excel</Button>
-        <Button size="sm" onClick={handlePrintPdf} disabled={!items.length}>{t('print')} / PDF</Button>
+        <Button size="sm" onClick={handlePrintPdf} disabled={!items.length || isPrintLoading}>
+          {isPrintLoading ? '…' : `${t('print')} / PDF`}
+        </Button>
       </div>
 
       {!hasOfficialPeriod ? (
