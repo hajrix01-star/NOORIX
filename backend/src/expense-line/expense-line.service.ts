@@ -199,13 +199,51 @@ export class ExpenseLineService {
     }
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
 
-    return this.prisma.expenseLine.update({
-      where: { id },
-      data,
-      include: {
-        category: { select: { id: true, nameAr: true, accountId: true } },
-        supplier: { select: { id: true, nameAr: true } },
-      },
+    const syncLinkedInvoices = dto.kind !== undefined && dto.kind !== existing.kind;
+    const updateLine = (db: Pick<TenantPrismaService, 'expenseLine'>) =>
+      db.expenseLine.update({
+        where: { id },
+        data,
+        include: {
+          category: { select: { id: true, nameAr: true, accountId: true } },
+          supplier: { select: { id: true, nameAr: true } },
+        },
+      });
+
+    if (!syncLinkedInvoices) return updateLine(this.prisma);
+
+    const nextInvoiceKind = dto.kind as 'fixed_expense' | 'expense';
+    const tenantId = TenantContext.getTenantId();
+    const userId = TenantContext.getUserId();
+
+    // A linked invoice is a classification snapshot. When the source line is
+    // intentionally reclassified, keep every linked expense invoice aligned in
+    // the same transaction. Monetary values, vault allocations, and ledger
+    // entries are deliberately untouched.
+    return this.prisma.withTenant(async (tx) => {
+      const updated = await updateLine(tx);
+      const invoices = await tx.invoice.updateMany({
+        where: {
+          companyId,
+          expenseLineId: id,
+          status: 'active',
+          kind: { in: ['expense', 'fixed_expense'], not: nextInvoiceKind },
+        },
+        data: { kind: nextInvoiceKind },
+      });
+      await tx.auditLog.create({
+        data: {
+          tenantId,
+          companyId,
+          userId: userId ?? undefined,
+          action: 'update',
+          entity: 'expense_line_invoice_kind_sync',
+          entityId: id,
+          oldValue: { kind: existing.kind },
+          newValue: { kind: nextInvoiceKind, syncedInvoiceCount: invoices.count },
+        },
+      });
+      return updated;
     });
   }
 

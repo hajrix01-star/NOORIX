@@ -1,4 +1,5 @@
 import { ExpenseLineService } from './expense-line.service';
+import { TenantContext } from '../common/tenant-context';
 
 describe('ExpenseLineService', () => {
   it('returns official period payment summary from backend aggregate', async () => {
@@ -46,5 +47,67 @@ describe('ExpenseLineService', () => {
       },
       _sum: { netAmount: true, taxAmount: true, totalAmount: true },
     });
+  });
+
+  it('atomically keeps active linked invoices aligned when an expense line is reclassified', async () => {
+    const tx = {
+      expenseLine: { update: jest.fn().mockResolvedValue({ id: 'line-1', kind: 'fixed_expense' }) },
+      invoice: { updateMany: jest.fn().mockResolvedValue({ count: 3 }) },
+      auditLog: { create: jest.fn().mockResolvedValue({ id: 'audit-1' }) },
+    };
+    const prisma = {
+      expenseLine: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'line-1', companyId: 'company-1', nameAr: 'GOSI', kind: 'expense', categoryId: 'cat-1', supplierId: 'supplier-1',
+        }),
+        update: jest.fn(),
+      },
+      withTenant: jest.fn((fn) => fn(tx)),
+    };
+    const tenantId = jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    const userId = jest.spyOn(TenantContext, 'getUserId').mockReturnValue('user-1');
+    const service = Object.create(ExpenseLineService.prototype);
+    service.prisma = prisma;
+
+    await service.update('line-1', 'company-1', { kind: 'fixed_expense' });
+
+    expect(prisma.withTenant).toHaveBeenCalledTimes(1);
+    expect(tx.invoice.updateMany).toHaveBeenCalledWith({
+      where: {
+        companyId: 'company-1',
+        expenseLineId: 'line-1',
+        status: 'active',
+        kind: { in: ['expense', 'fixed_expense'], not: 'fixed_expense' },
+      },
+      data: { kind: 'fixed_expense' },
+    });
+    expect(tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        tenantId: 'tenant-1', companyId: 'company-1', userId: 'user-1',
+        entity: 'expense_line_invoice_kind_sync',
+        newValue: { kind: 'fixed_expense', syncedInvoiceCount: 3 },
+      }),
+    }));
+    tenantId.mockRestore();
+    userId.mockRestore();
+  });
+
+  it('does not synchronize invoices when the source kind is unchanged', async () => {
+    const prisma = {
+      expenseLine: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'line-1', companyId: 'company-1', nameAr: 'GOSI', kind: 'fixed_expense', categoryId: 'cat-1', supplierId: 'supplier-1',
+        }),
+        update: jest.fn().mockResolvedValue({ id: 'line-1', kind: 'fixed_expense' }),
+      },
+      withTenant: jest.fn(),
+    };
+    const service = Object.create(ExpenseLineService.prototype);
+    service.prisma = prisma;
+
+    await service.update('line-1', 'company-1', { kind: 'fixed_expense' });
+
+    expect(prisma.withTenant).not.toHaveBeenCalled();
+    expect(prisma.expenseLine.update).toHaveBeenCalledTimes(1);
   });
 });
