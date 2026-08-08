@@ -61,6 +61,7 @@ export type {
   VaultTransactionViewRow,
   VaultTransferPayload,
   VaultTransferResult,
+  ReverseVaultTransferPayload,
   VaultType,
   VaultUpdatePayload,
   VaultWithTransactionsResult,

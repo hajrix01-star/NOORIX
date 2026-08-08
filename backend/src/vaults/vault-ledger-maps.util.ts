@@ -17,16 +17,32 @@ export function attachVaultLedgerBalances<T extends { accountId: string }>(
   vaults: T[],
   debitMap: Map<string, Decimal>,
   creditMap: Map<string, Decimal>,
-): Array<T & { totalIn: number; totalOut: number; balance: number }> {
+  transferDebitMap: Map<string, Decimal> = new Map(),
+  transferCreditMap: Map<string, Decimal> = new Map(),
+): Array<T & {
+  totalIn: number;
+  totalOut: number;
+  balance: number;
+  transferIn: number;
+  transferOut: number;
+  externalIn: number;
+  externalOut: number;
+}> {
   return vaults.map((v) => {
     const totalIn = debitMap.get(v.accountId) ?? new Decimal(0);
     const totalOut = creditMap.get(v.accountId) ?? new Decimal(0);
     const balance = totalIn.minus(totalOut);
+    const transferIn = transferDebitMap.get(v.accountId) ?? new Decimal(0);
+    const transferOut = transferCreditMap.get(v.accountId) ?? new Decimal(0);
     return {
       ...v,
       totalIn: totalIn.toNumber(),
       totalOut: totalOut.toNumber(),
       balance: balance.toNumber(),
+      transferIn: transferIn.toNumber(),
+      transferOut: transferOut.toNumber(),
+      externalIn: totalIn.minus(transferIn).toNumber(),
+      externalOut: totalOut.minus(transferOut).toNumber(),
     };
   });
 }

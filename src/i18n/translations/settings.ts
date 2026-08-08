@@ -194,6 +194,7 @@ export default {
   backupStat_accounts: { ar: 'حسابات', en: 'Accounts' },
   backupStat_invoices: { ar: 'فواتير', en: 'Invoices' },
   backupStat_ledgerEntries: { ar: 'قيود دفتر', en: 'Ledger entries' },
+  backupStat_vaultTransfers: { ar: 'سندات تحويل الخزائن', en: 'Vault transfer vouchers' },
   backupStat_auditLogs: { ar: 'سجل تدقيق (في النسخة فقط)', en: 'Audit logs (in snapshot)' },
   backupStat_dailySalesSummaries: { ar: 'ملخصات مبيعات يومية', en: 'Daily sales summaries' },
   backupStat_categories: { ar: 'تصنيفات', en: 'Categories' },

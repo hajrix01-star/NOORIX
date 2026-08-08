@@ -7,6 +7,7 @@ import {
 } from './backup-logical-import-helpers.util';
 import { createImportedCompany } from './backup-logical-import-company.util';
 import { BackupLogicalImportTxParams } from './backup-logical-import-transaction.types';
+import { inferBankReconciliationEnabled } from '../vaults/vault-bank-reconciliation.util';
 
 export type BackupLogicalImportCoreMaps = {
   accountMap: Map<string, string>;
@@ -138,6 +139,14 @@ export async function importBackupLogicalCoreEntities(
         isSalesChannel: Boolean(v.isSalesChannel),
         showAsPaymentMethod: (v as { showAsPaymentMethod?: boolean }).showAsPaymentMethod !== false,
         paymentMethod: (v.paymentMethod as string | null) ?? null,
+        bankReconciliationEnabled: typeof v.bankReconciliationEnabled === 'boolean'
+          ? v.bankReconciliationEnabled
+          : inferBankReconciliationEnabled({
+              type: v.type as string | null,
+              nameAr: v.nameAr as string | null,
+              nameEn: v.nameEn as string | null,
+              paymentMethod: v.paymentMethod as string | null,
+            }),
         notes: (v.notes as string | null) ?? null,
         sortOrder: typeof (v as { sortOrder?: unknown }).sortOrder === 'number'
           ? ((v as { sortOrder: number }).sortOrder)

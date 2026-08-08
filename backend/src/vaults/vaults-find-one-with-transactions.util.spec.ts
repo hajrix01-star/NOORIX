@@ -25,6 +25,7 @@ describe('vaults-find-one-with-transactions.util', () => {
       invoice: { findMany: jest.fn().mockResolvedValue([]) },
       dailySalesSummary: { findMany: jest.fn().mockResolvedValue([]) },
       auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+      vaultTransfer: { findMany: jest.fn().mockResolvedValue([]) },
     });
 
     const result = await findOneWithTransactions(

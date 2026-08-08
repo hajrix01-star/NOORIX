@@ -28,6 +28,15 @@ describe('treasuryModels', () => {
     expect(summary).toEqual({ totalBalance: 70.5, totalIn: 100.5, totalOut: 30 });
   });
 
+  it('uses external flow totals while keeping the ledger balance unchanged', () => {
+    const summary = buildTreasurySummary([
+      vault({ id: 'source', balance: -500, totalIn: 0, totalOut: 500, externalIn: 0, externalOut: 0, transferOut: 500 }),
+      vault({ id: 'target', accountId: 'a2', balance: 500, totalIn: 500, totalOut: 0, externalIn: 0, externalOut: 0, transferIn: 500 }),
+    ]);
+
+    expect(summary).toEqual({ totalBalance: 0, totalIn: 0, totalOut: 0 });
+  });
+
   it('splits and orders vaults by role without mutating the source list', () => {
     const source = [
       vault({ id: 'v2', accountId: 'a2', nameAr: 'ب', sortOrder: 2 }),

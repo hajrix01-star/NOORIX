@@ -114,6 +114,17 @@ export default {
   vaultPrintTransactionCount: { ar: 'عدد الحركات', en: 'Transactions' },
   /** عمود حركات الخزينة — يُذكر فيه وجهة التحويل */
   vaultTransactionTransferDestination: { ar: 'إلى الخزينة: {0}', en: 'To vault: {0}' },
+  vaultTransactionTransferSource: { ar: 'من الخزينة: {0}', en: 'From vault: {0}' },
+  vaultTransferReverseTitle: { ar: 'عكس تحويل خزينة', en: 'Reverse vault transfer' },
+  vaultTransferReverseHint: {
+    ar: 'سيُنشأ سند عكسي مستقل يعيد المبلغ إلى خزينة المصدر، دون حذف أو تعديل القيد الأصلي.',
+    en: 'A separate reversal voucher will return the amount to the source vault without deleting or editing the original entry.',
+  },
+  vaultTransferReverseReason: { ar: 'سبب العكس (اختياري)', en: 'Reversal reason (optional)' },
+  vaultTransferReverseSubmit: { ar: 'تأكيد العكس', en: 'Confirm reversal' },
+  vaultTransferReverseAction: { ar: 'عكس', en: 'Reverse' },
+  vaultTransferReverseSuccess: { ar: 'تم إنشاء سند العكس بنجاح.', en: 'Reversal voucher created successfully.' },
+  vaultTransferReversed: { ar: 'معكوس', en: 'Reversed' },
   selectDateRange: { ar: 'اختر فترة زمنية لعرض الحركات.', en: 'Select a date range to view transactions.' },
   vaultTransactionsPeriodTotalsNote: {
     ar: 'الإجماليات في أسفل الجدول تخص كامل الفترة المحددة ({0} حركة)، وليست الصفحة الحالية فقط.',

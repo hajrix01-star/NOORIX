@@ -19,11 +19,16 @@ export type VaultRecord = {
   isSalesChannel?: boolean;
   showAsPaymentMethod?: boolean;
   paymentMethod?: string | null;
+  bankReconciliationEnabled?: boolean;
   notes?: string | null;
   sortOrder?: number | null;
   totalIn?: number | string | null;
   totalOut?: number | string | null;
   balance?: number | string | null;
+  transferIn?: number | string | null;
+  transferOut?: number | string | null;
+  externalIn?: number | string | null;
+  externalOut?: number | string | null;
   account?: VaultAccountRef | null;
 };
 
@@ -49,12 +54,32 @@ export type VaultTransferPayload = {
   amount: string;
   transactionDate: string;
   notes?: string;
-  idempotencyKey?: string;
+  idempotencyKey: string;
 };
 
 export type VaultTransferResult = {
   ledgerEntry?: unknown;
+  transfer?: VaultTransferRecord;
   referenceId?: string;
+};
+
+export type VaultTransferRecord = {
+  id: string;
+  transferNumber: string;
+  fromVaultId: string;
+  toVaultId: string;
+  amount: number | string;
+  transactionDate: string;
+  notes?: string | null;
+  status: 'posted' | 'reversed';
+  reversalOfId?: string | null;
+};
+
+export type ReverseVaultTransferPayload = {
+  companyId: string;
+  transactionDate: string;
+  reason?: string;
+  idempotencyKey: string;
 };
 
 export type VaultTransactionRecord = {
@@ -74,6 +99,9 @@ export type VaultTransactionRecord = {
   transferToVaultNameAr?: string | null;
   transferFromVaultNameEn?: string | null;
   transferToVaultNameEn?: string | null;
+  transferDocumentId?: string | null;
+  transferStatus?: string | null;
+  transferReversalOfId?: string | null;
 };
 
 export type VaultTransactionViewRow = VaultTransactionRecord & {

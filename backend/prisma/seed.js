@@ -122,7 +122,10 @@ async function initializeAccounting(tenantId, companyId) {
     const accountId = codeToAccountId[v.accountCode];
     if (!accountId) continue;
     await prisma.vault.create({
-      data: { tenantId, companyId, accountId, nameAr: v.nameAr, nameEn: v.nameEn, type: v.type, isActive: true },
+      data: {
+        tenantId, companyId, accountId, nameAr: v.nameAr, nameEn: v.nameEn,
+        type: v.type, isActive: true, bankReconciliationEnabled: v.type === 'bank' || v.type === 'app',
+      },
     });
   }
   console.log('  ✅ خزينتان (كاش + بنك)');

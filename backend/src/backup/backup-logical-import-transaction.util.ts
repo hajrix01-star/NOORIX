@@ -12,6 +12,7 @@ import { importBackupLogicalOperationalRecords } from './backup-logical-import-o
 import { mapImportedLedgerRef } from './backup-logical-import-ledger-ref.util';
 import { BackupLogicalImportTxParams } from './backup-logical-import-transaction.types';
 import { importBackupLogicalPurchaseDebts } from './backup-logical-import-purchase-debts.util';
+import { importBackupLogicalVaultTransfers } from './backup-logical-import-vault-transfers.util';
 
 /**
  * جسم الاستيراد المنطقي داخل transaction — نفس التسلسل والخرائط.
@@ -38,6 +39,16 @@ export async function runBackupLogicalImportInTransaction(
   await importBackupLogicalPurchaseDebts(tx, p, { supplierMap, invoiceMap });
 
         // استثناء مقصود: استيراد لقطة منطقية — إعادة قيود من النسخة الاحتياطية (لا يمر بـ processOutflow/processInflow).
+        const vaultTransferRows = arr<Record<string, unknown>>(data.vaultTransfers);
+        const vaultTransferMap = new Map(
+          vaultTransferRows.map((row) => [String(row.id), nid()]),
+        );
+        const vaultTransferByLedgerEntryId = new Map(
+          vaultTransferRows
+            .filter((row) => row.ledgerEntryId)
+            .map((row) => [String(row.ledgerEntryId), vaultTransferMap.get(String(row.id))!]),
+        );
+        const ledgerEntryMap = new Map<string, string>();
         for (const le of arr<Record<string, unknown>>(data.ledgerEntries)) {
           const da = accountMap.get(String(le.debitAccountId));
           const ca = accountMap.get(String(le.creditAccountId));
@@ -45,10 +56,18 @@ export async function runBackupLogicalImportInTransaction(
           const vid = le.vaultId ? vaultMap.get(String(le.vaultId)) : undefined;
           const eid = le.employeeId ? employeeMap.get(String(le.employeeId)) : undefined;
           const refType = String(le.referenceType);
-          const refId = mapImportedLedgerRef(refType, String(le.referenceId), { invoiceMap, dailySalesSummaryMap });
+          const refId = mapImportedLedgerRef(refType, String(le.referenceId), {
+            invoiceMap,
+            dailySalesSummaryMap,
+            transferMap: vaultTransferMap,
+            transferByLedgerEntryId: vaultTransferByLedgerEntryId,
+            ledgerEntryId: String(le.id),
+          });
+          const newLedgerEntryId = nid();
+          ledgerEntryMap.set(String(le.id), newLedgerEntryId);
           await tx.ledgerEntry.create({
             data: {
-              id: nid(),
+              id: newLedgerEntryId,
               tenantId,
               companyId: newCompanyId,
               debitAccountId: da,
@@ -66,6 +85,17 @@ export async function runBackupLogicalImportInTransaction(
             },
           });
         }
+
+        await importBackupLogicalVaultTransfers(tx, {
+          tenantId,
+          newCompanyId,
+          data,
+          importingUserId,
+          nid,
+          vaultMap,
+          ledgerEntryMap,
+          transferMap: vaultTransferMap,
+        });
 
         const payrollRunMap = new Map<string, string>();
         for (const pr of arr<Record<string, unknown>>(data.payrollRuns)) {

@@ -135,23 +135,32 @@ export async function findOneWithTransactions(
     transferAccountIds.add(e.creditAccountId);
   }
 
-  const [transferAudits, vaultsForTransfers] = await Promise.all([
-    transferEntryIds.length > 0
-      ? prisma.auditLog.findMany({
-          where: {
-            companyId,
-            entity: 'transfer',
-            entityId: { in: transferEntryIds },
-          },
-          select: { entityId: true, newValue: true },
-        })
-      : Promise.resolve([]),
-    transferAccountIds.size > 0
-      ? prisma.vault.findMany({
-          where: { companyId, accountId: { in: [...transferAccountIds] } },
-          select: { id: true, accountId: true, nameAr: true, nameEn: true },
-        })
-      : Promise.resolve([]),
+  const [transferAudits, transferVouchers, vaultsForTransfers] = await Promise.all([
+    prisma.auditLog.findMany({
+      where: {
+        companyId,
+        entity: 'transfer',
+        entityId: { in: transferEntryIds },
+      },
+      select: { entityId: true, newValue: true },
+    }),
+    prisma.vaultTransfer.findMany({
+      where: { companyId, ledgerEntryId: { in: transferEntryIds } },
+      select: {
+        id: true,
+        ledgerEntryId: true,
+        transferNumber: true,
+        notes: true,
+        status: true,
+        reversalOfId: true,
+        fromVaultId: true,
+        toVaultId: true,
+      },
+    }),
+    prisma.vault.findMany({
+      where: { companyId, accountId: { in: [...transferAccountIds] } },
+      select: { id: true, accountId: true, nameAr: true, nameEn: true },
+    }),
   ]);
 
   const vaultByAccountId = new Map(vaultsForTransfers.map((v) => [v.accountId, v]));
@@ -160,6 +169,17 @@ export async function findOneWithTransactions(
     const nv = a.newValue as Record<string, unknown> | null;
     const raw = nv && typeof nv.notes === 'string' ? nv.notes.trim() : '';
     transferAuditNotesByLedgerId.set(a.entityId, raw || null);
+  }
+  const transferVoucherByLedgerId = new Map(
+    transferVouchers
+      .filter((voucher) => voucher.ledgerEntryId)
+      .map((voucher) => [voucher.ledgerEntryId as string, voucher]),
+  );
+  const entryById = new Map(items.map((item) => [item.id, item]));
+  for (const voucher of transferVouchers) {
+    if (!voucher.ledgerEntryId) continue;
+    const entry = entryById.get(voucher.ledgerEntryId);
+    if (entry) docNumMap.set(`${entry.referenceType}:${entry.referenceId}`, voucher.transferNumber);
   }
 
   const enrichedItems = items.map((e) => {
@@ -172,6 +192,9 @@ export async function findOneWithTransactions(
     let transferToVaultNameAr: string | null = null;
     let transferFromVaultNameEn: string | null = null;
     let transferToVaultNameEn: string | null = null;
+    let transferDocumentId: string | null = null;
+    let transferStatus: string | null = null;
+    let transferReversalOfId: string | null = null;
 
     if (e.referenceType === 'invoice' || e.referenceType === 'salary' || e.referenceType === 'advance') {
       const n = invoiceNoteMap.get(e.referenceId);
@@ -180,7 +203,11 @@ export async function findOneWithTransactions(
       const n = saleNoteMap.get(e.referenceId);
       operationNotes = typeof n === 'string' && n.trim() ? n.trim() : null;
     } else if (e.referenceType === 'transfer') {
-      operationNotes = transferAuditNotesByLedgerId.get(e.id) ?? null;
+      const voucher = transferVoucherByLedgerId.get(e.id);
+      operationNotes = voucher?.notes ?? transferAuditNotesByLedgerId.get(e.id) ?? null;
+      transferDocumentId = voucher?.id ?? null;
+      transferStatus = voucher?.status ?? null;
+      transferReversalOfId = voucher?.reversalOfId ?? null;
       const fromV = vaultByAccountId.get(e.creditAccountId);
       const toV = vaultByAccountId.get(e.debitAccountId);
       if (fromV) {
@@ -205,6 +232,9 @@ export async function findOneWithTransactions(
       transferToVaultNameAr,
       transferFromVaultNameEn,
       transferToVaultNameEn,
+      transferDocumentId,
+      transferStatus,
+      transferReversalOfId,
     };
   });
 

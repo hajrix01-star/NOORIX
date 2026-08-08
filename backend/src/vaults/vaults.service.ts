@@ -8,9 +8,10 @@ import { toYmd } from '../common/utils/to-ymd.util';
 import { CreateVaultDto } from './dto/create-vault.dto';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
 import type { TransferDto } from '../financial-core/dto/financial-operation.dto';
-import type { VaultTransferBody } from './dto/vault-transfer.dto';
+import type { ReverseVaultTransferBody, VaultTransferBody } from './dto/vault-transfer.dto';
 import { attachVaultLedgerBalances, debitCreditMapsFromGroupBy } from './vault-ledger-maps.util';
 import { findOneWithTransactions as queryVaultWithTransactions } from './vaults-find-one-with-transactions.util';
+import { inferBankReconciliationEnabled } from './vault-bank-reconciliation.util';
 
 @Injectable()
 export class VaultsService {
@@ -58,21 +59,35 @@ export class VaultsService {
     };
 
     // ── 3. استعلام واحد: مجموع الداخل (مدين) لجميع الحسابات
-    const debitRows = await this.prisma.ledgerEntry.groupBy({
-      by:     ['debitAccountId'],
-      where:  { ...ledgerWhere, debitAccountId: { in: accountIds } },
-      _sum:   { amount: true },
-    });
-
-    // ── 4. استعلام واحد: مجموع الخارج (دائن) لجميع الحسابات
-    const creditRows = await this.prisma.ledgerEntry.groupBy({
-      by:     ['creditAccountId'],
-      where:  { ...ledgerWhere, creditAccountId: { in: accountIds } },
-      _sum:   { amount: true },
-    });
+    const [debitRows, creditRows, transferDebitRows, transferCreditRows] = await Promise.all([
+      this.prisma.ledgerEntry.groupBy({
+        by: ['debitAccountId'],
+        where: { ...ledgerWhere, debitAccountId: { in: accountIds } },
+        _sum: { amount: true },
+      }),
+      this.prisma.ledgerEntry.groupBy({
+        by: ['creditAccountId'],
+        where: { ...ledgerWhere, creditAccountId: { in: accountIds } },
+        _sum: { amount: true },
+      }),
+      this.prisma.ledgerEntry.groupBy({
+        by: ['debitAccountId'],
+        where: { ...ledgerWhere, referenceType: 'transfer', debitAccountId: { in: accountIds } },
+        _sum: { amount: true },
+      }),
+      this.prisma.ledgerEntry.groupBy({
+        by: ['creditAccountId'],
+        where: { ...ledgerWhere, referenceType: 'transfer', creditAccountId: { in: accountIds } },
+        _sum: { amount: true },
+      }),
+    ]);
 
     const { debitMap, creditMap } = debitCreditMapsFromGroupBy(debitRows, creditRows);
-    return attachVaultLedgerBalances(vaults, debitMap, creditMap);
+    const { debitMap: transferDebitMap, creditMap: transferCreditMap } = debitCreditMapsFromGroupBy(
+      transferDebitRows,
+      transferCreditRows,
+    );
+    return attachVaultLedgerBalances(vaults, debitMap, creditMap, transferDebitMap, transferCreditMap);
   }
 
 
@@ -84,9 +99,23 @@ export class VaultsService {
       amount:          dto.amount,
       transactionDate: dto.transactionDate,
       notes:           dto.notes ?? undefined,
-      idempotencyKey:  dto.idempotencyKey ?? undefined,
+      idempotencyKey:  dto.idempotencyKey,
     };
     return this.financialCore.processTransfer(payload, userId);
+  }
+
+  async reverseTransfer(
+    transferId: string,
+    dto: ReverseVaultTransferBody,
+    userId?: string,
+  ) {
+    return this.financialCore.reverseTransfer({
+      companyId: dto.companyId,
+      transferId,
+      transactionDate: dto.transactionDate,
+      reason: dto.reason ?? undefined,
+      idempotencyKey: dto.idempotencyKey,
+    }, userId);
   }
 
   async findSalesChannels(companyId: string) {
@@ -139,7 +168,7 @@ export class VaultsService {
       transactionDate: { lte: end },
     };
 
-    const [debitRows, creditRows] = await Promise.all([
+    const [debitRows, creditRows, transferDebitRows, transferCreditRows] = await Promise.all([
       this.prisma.ledgerEntry.groupBy({
         by:    ['debitAccountId'],
         where: { ...ledgerWhere, debitAccountId: { in: accountIds } },
@@ -150,10 +179,24 @@ export class VaultsService {
         where: { ...ledgerWhere, creditAccountId: { in: accountIds } },
         _sum:  { amount: true },
       }),
+      this.prisma.ledgerEntry.groupBy({
+        by: ['debitAccountId'],
+        where: { ...ledgerWhere, referenceType: 'transfer', debitAccountId: { in: accountIds } },
+        _sum: { amount: true },
+      }),
+      this.prisma.ledgerEntry.groupBy({
+        by: ['creditAccountId'],
+        where: { ...ledgerWhere, referenceType: 'transfer', creditAccountId: { in: accountIds } },
+        _sum: { amount: true },
+      }),
     ]);
 
     const { debitMap, creditMap } = debitCreditMapsFromGroupBy(debitRows, creditRows);
-    return attachVaultLedgerBalances(vaults, debitMap, creditMap);
+    const { debitMap: transferDebitMap, creditMap: transferCreditMap } = debitCreditMapsFromGroupBy(
+      transferDebitRows,
+      transferCreditRows,
+    );
+    return attachVaultLedgerBalances(vaults, debitMap, creditMap, transferDebitMap, transferCreditMap);
   }
 
 
@@ -212,6 +255,12 @@ export class VaultsService {
           isSalesChannel: dto.isSalesChannel ?? false,
           showAsPaymentMethod: dto.showAsPaymentMethod ?? true,
           paymentMethod:  normalizedPaymentMethod,
+          bankReconciliationEnabled: inferBankReconciliationEnabled({
+            type: dto.type,
+            nameAr: dto.nameAr,
+            nameEn: dto.nameEn,
+            paymentMethod: normalizedPaymentMethod,
+          }),
           notes:          (dto.notes ?? '').trim() || null,
           sortOrder:      nextSortOrder,
         },
@@ -250,6 +299,13 @@ export class VaultsService {
     const tenantId = TenantContext.tryGetTenantId() ?? '';
     const vault    = await this.prisma.vault.findFirst({ where: { id, companyId } });
     if (!vault) throw new NotFoundException('الخزنة غير موجودة');
+    const isTypeChange = data.type !== undefined && data.type !== vault.type;
+    if (isTypeChange) {
+      // Accounting classification is immutable. A read-then-update movement
+      // check can race with the first posting on another backend instance and
+      // rewrite historical bank reconciliation. Create a new vault instead.
+      throw new BadRequestException('لا يمكن تغيير نوع الخزينة بعد إنشائها؛ أنشئ خزينة جديدة للحفاظ على التقارير التاريخية.');
+    }
     const nextShowAsPaymentMethod =
       data.showAsPaymentMethod !== undefined ? data.showAsPaymentMethod : vault.showAsPaymentMethod;
     const normalizedPaymentMethod =

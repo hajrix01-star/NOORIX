@@ -149,7 +149,7 @@ describe('Orders V4 logical backup round-trip', () => {
     const serialized = JSON.parse(stringifyLogicalSnapshotReplacingDecimals(snapshot)) as {
       meta: { version: number }; counts: Record<string, number>; data: Record<string, unknown>;
     };
-    expect(serialized.meta.version).toBe(8);
+    expect(serialized.meta.version).toBe(9);
     expect(serialized.counts).toEqual(expect.objectContaining({
       ordersV4Units: 2, ordersV4Items: 1, ordersV4ConversionEdges: 1,
       ordersV4Documents: 1, ordersV4InventoryLedger: 1, ordersV4CustodyLedger: 1,

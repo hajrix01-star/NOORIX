@@ -24,6 +24,7 @@ import {
   VAULT_TRANSACTIONS_PRINT_CSS,
   vaultTransactionTypeLabel,
 } from '../vaultTransactionsPrintModel';
+import VaultTransferReverseModal from './VaultTransferReverseModal';
 
 const PAGE_SIZE = 50;
 const EXPORT_PAGE_SIZE = 10000;
@@ -102,10 +103,12 @@ export default function VaultTransactionsModal({
   dateFilter,
 }: VaultTransactionsModalProps) {
   const { t, lang } = useTranslation();
-  const { companies = [] } = useApp();
+  const { companies = [], userPermissions = [] } = useApp();
   const { showToast } = useToast();
   const [page, setPage] = useState(1);
   const [isPrintLoading, setIsPrintLoading] = useState(false);
+  const [transferToReverse, setTransferToReverse] = useState<VaultTransactionViewRow | null>(null);
+  const canReverseTransfers = userPermissions.includes('VAULTS_WRITE');
 
   const startDate = dateFilter?.startDate || '';
   const endDate = dateFilter?.endDate || '';
@@ -140,16 +143,26 @@ export default function VaultTransactionsModal({
     (row: VaultTransactionRecord) => {
       const parts: string[] = [];
       if (row.operationNotes) parts.push(String(row.operationNotes));
-      if (row.referenceType === 'transfer' && row.transferToVaultId) {
+      if (row.referenceType === 'transfer') {
+        const isDestination = row.transferToVaultId === vault.id;
+        const counterpart = isDestination
+          ? { nameAr: row.transferFromVaultNameAr, nameEn: row.transferFromVaultNameEn }
+          : { nameAr: row.transferToVaultNameAr, nameEn: row.transferToVaultNameEn };
         const name = vaultDisplayName(
-          { nameAr: row.transferToVaultNameAr, nameEn: row.transferToVaultNameEn },
+          counterpart,
           lang,
         );
-        if (name) parts.push(t('vaultTransactionTransferDestination', { 0: name }));
+        if (name) {
+          parts.push(t(
+            isDestination ? 'vaultTransactionTransferSource' : 'vaultTransactionTransferDestination',
+            { 0: name },
+          ));
+        }
+        if (row.transferStatus === 'reversed') parts.push(t('vaultTransferReversed'));
       }
       return parts.length ? parts.join(' - ') : null;
     },
-    [t, lang],
+    [t, lang, vault.id],
   );
   const transactionTypeLabels = useMemo(() => ({
     sale: t('vaultLedgerTypeSale'),
@@ -273,6 +286,20 @@ export default function VaultTransactionsModal({
     },
     { key: 'debit', label: t('debit'), numeric: true, render: (value) => value != null ? <FmtNum n={Number(value)} className="text-noorix-green nx-font-numbers" /> : <span>-</span> },
     { key: 'credit', label: t('credit'), numeric: true, render: (value) => value != null ? <FmtNum n={Number(value)} className="text-noorix-red nx-font-numbers" /> : <span>-</span> },
+    {
+      key: 'transferDocumentId',
+      label: t('actions'),
+      align: 'center',
+      render: (_value, row) => (
+        canReverseTransfers &&
+        row.referenceType === 'transfer' &&
+        row.transferDocumentId &&
+        row.transferStatus === 'posted' &&
+        !row.transferReversalOfId
+          ? <Button size="sm" variant="danger" onClick={() => setTransferToReverse(row)}>{t('vaultTransferReverseAction')}</Button>
+          : <span>-</span>
+      ),
+    },
   ];
 
   const renderMobileCard = useCallback((row: VaultTransactionViewRow) => (
@@ -302,14 +329,20 @@ export default function VaultTransactionsModal({
           <div className="text-[14px] font-bold text-noorix-red nx-font-numbers">{row.credit != null ? fmt(row.credit) : '-'}</div>
         </div>
       </div>
+      {canReverseTransfers && row.referenceType === 'transfer' && row.transferDocumentId && row.transferStatus === 'posted' && !row.transferReversalOfId ? (
+        <Button size="sm" variant="danger" className="mt-2" onClick={() => setTransferToReverse(row)}>
+          {t('vaultTransferReverseAction')}
+        </Button>
+      ) : null}
     </div>
-  ), [t, formatTransactionType]);
+  ), [t, formatTransactionType, canReverseTransfers]);
 
   const footerCells = items.length > 0 ? (
     <>
       <td colSpan={5} className="font-bold p-2.5 bg-noorix-blue/6 border-t-2 border-noorix-border">{t('total')}</td>
       <td className="font-bold text-end p-2.5 text-noorix-green nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border"><FmtNum n={data.periodTotalIn} /></td>
       <td className="font-bold text-end p-2.5 text-noorix-red nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border"><FmtNum n={data.periodTotalOut} /></td>
+      <td className="bg-noorix-blue/6 border-t-2 border-noorix-border" />
     </>
   ) : null;
 
@@ -326,6 +359,15 @@ export default function VaultTransactionsModal({
       className="vault-transactions-drawer"
     >
       {printPreviewModal}
+      {transferToReverse?.transferDocumentId ? (
+        <VaultTransferReverseModal
+          companyId={companyId}
+          transferId={transferToReverse.transferDocumentId}
+          transferNumber={transferToReverse.documentNumber || transferToReverse.referenceId || transferToReverse.transferDocumentId}
+          originalDate={transferToReverse.transactionDate}
+          onClose={() => setTransferToReverse(null)}
+        />
+      ) : null}
       <div className="nx-toolbar mb-4">
         <Button size="sm" onClick={handleExportExcel} disabled={!data.total || !hasOfficialPeriod}>Excel</Button>
         <Button size="sm" onClick={handlePrintPdf} disabled={!items.length || isPrintLoading}>

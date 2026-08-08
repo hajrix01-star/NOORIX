@@ -76,6 +76,7 @@ model User {
   userCompanies         UserCompany[]
   ledgerEntries         LedgerEntry[]        @relation("CreatedBy")
   auditLogs             AuditLog[]
+  vaultTransfersCreated VaultTransfer[]      @relation("VaultTransferCreatedBy")
   salesSummaries        DailySalesSummary[]  @relation("SalesCreatedBy")
   backupJobsCreated     BackupJob[]          @relation("BackupCreatedBy")
   invoicesCreated       Invoice[]            @relation("InvoiceCreatedBy")
@@ -111,6 +112,7 @@ model Company {
   userCompanies            UserCompany[]
   suppliers                Supplier[]
   vaults                   Vault[]
+  vaultTransfers           VaultTransfer[]
   accounts                 Account[]
   invoices                 Invoice[]
   ledgerEntries            LedgerEntry[]
@@ -930,6 +932,7 @@ model Vault {
   /// ط¹ظ†ط¯ false طھظڈط®ظپظ‰ ظ…ظ† ظƒظ„ ظ‚ظˆط§ط¦ظ… ط§ظ„ط³ط¯ط§ط¯ ظپظٹ ط§ظ„ظˆط§ط¬ظ‡ط© ظˆط§ظ„ظ€ API (ظ…طµط§ط±ظٹظپطŒ HRطŒ ظپظˆط§طھظٹط± طµط±ظپطŒ â€¦)
   showAsPaymentMethod Boolean  @default(true) @map("show_as_payment_method")
   paymentMethod       String?  @map("payment_method")
+  bankReconciliationEnabled Boolean @default(false) @map("bank_reconciliation_enabled")
   notes               String?
   /// طھط±طھظٹط¨ ط§ظ„ط¹ط±ط¶ ظپظٹ ط§ظ„ط®ط²ط§ط¦ظ†طŒ ظ‚ظ†ظˆط§طھ ط§ظ„ظ…ط¨ظٹط¹ط§طھطŒ ظˆظ‚ظˆط§ط¦ظ… ط§ظ„ط³ط¯ط§ط¯ (ط§ظ„ط£طµط؛ط± ظٹط¸ظ‡ط± ط£ظˆظ„ط§ظ‹)
   sortOrder           Int      @default(0) @map("sort_order")
@@ -944,12 +947,54 @@ model Vault {
   payrollItemVaults       PayrollRunItemVault[]
   payrollRunVaults        PayrollRunVault[]
   invoiceVaultAllocations InvoiceVaultAllocation[]
+  transfersFrom           VaultTransfer[]           @relation("VaultTransferFromVault")
+  transfersTo             VaultTransfer[]           @relation("VaultTransferToVault")
 
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, isArchived])
   @@index([companyId, sortOrder])
   @@map("vaults")
+}
+
+/// Operational voucher for an internal transfer. LedgerEntry remains the sole accounting source of balances.
+model VaultTransfer {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  companyId       String    @map("company_id")
+  transferNumber  String    @map("transfer_number")
+  fromVaultId     String    @map("from_vault_id")
+  toVaultId       String    @map("to_vault_id")
+  amount          Decimal   @db.Decimal(18, 4)
+  transactionDate DateTime  @map("transaction_date")
+  entryDate       DateTime  @map("entry_date")
+  notes           String?
+  status          String    @default("posted") // posted | reversed
+  idempotencyKey  String    @map("idempotency_key")
+  requestHash     String    @map("request_hash")
+  ledgerEntryId   String?   @unique @map("ledger_entry_id")
+  reversalOfId    String?   @unique @map("reversal_of_id")
+  reversedAt      DateTime? @map("reversed_at")
+  createdById     String?   @map("created_by_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  fromVault   Vault          @relation("VaultTransferFromVault", fields: [fromVaultId], references: [id], onDelete: Restrict)
+  toVault     Vault          @relation("VaultTransferToVault", fields: [toVaultId], references: [id], onDelete: Restrict)
+  ledgerEntry LedgerEntry?   @relation("VaultTransferLedgerEntry", fields: [ledgerEntryId], references: [id], onDelete: Restrict)
+  createdBy   User?          @relation("VaultTransferCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  reversalOf  VaultTransfer? @relation("VaultTransferReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversal    VaultTransfer? @relation("VaultTransferReversal")
+
+  @@unique([companyId, transferNumber])
+  @@unique([companyId, idempotencyKey])
+  @@index([tenantId])
+  @@index([companyId, transactionDate])
+  @@index([companyId, status, transactionDate])
+  @@index([companyId, fromVaultId])
+  @@index([companyId, toVaultId])
+  @@map("vault_transfers")
 }
 
 /// طھظˆط²ظٹط¹ ط³ط¯ط§ط¯ ظپط§طھظˆط±ط© طµط±ظپ ظˆط§ط­ط¯ط© ط¹ظ„ظ‰ ط£ظƒط«ط± ظ…ظ† ط®ط²ظ†ط© (ظ‚ظٹط¯ ظ„ظƒظ„ ط¬ط²ط،)
@@ -1212,6 +1257,7 @@ model LedgerEntry {
   vault         Vault?    @relation(fields: [vaultId], references: [id], onDelete: SetNull)
   employee      Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   createdBy     User?     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  vaultTransfer VaultTransfer? @relation("VaultTransferLedgerEntry")
 
   @@index([tenantId])
   @@index([companyId])

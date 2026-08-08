@@ -14,7 +14,7 @@ import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { requireCompanyId } from '../common/utils/require-company-id';
 import { createVaultSchema, reorderVaultsSchema, updateVaultSchema } from './dto/create-vault.dto';
-import { vaultTransferSchema } from './dto/vault-transfer.dto';
+import { reverseVaultTransferSchema, vaultTransferSchema } from './dto/vault-transfer.dto';
 import { VaultsService } from './vaults.service';
 
 @Controller('vaults')
@@ -67,6 +67,28 @@ export class VaultsController {
     } catch (e) {
       if (e instanceof ZodError) {
         throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات التحويل غير صحيحة');
+      }
+      throw e;
+    }
+  }
+
+  @Post('transfers/:id/reverse')
+  @RequirePermission('VAULTS_WRITE')
+  async reverseTransfer(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CompanyId() companyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    try {
+      const dto = reverseVaultTransferSchema.parse({
+        ...(typeof body === 'object' && body !== null ? body : {}),
+        companyId: companyId || (body as { companyId?: string })?.companyId,
+      });
+      return this.vaultsService.reverseTransfer(id, dto, user.sub);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات عكس التحويل غير صحيحة');
       }
       throw e;
     }

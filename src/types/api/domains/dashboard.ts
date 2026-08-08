@@ -334,12 +334,15 @@ export type DashboardVaultActivityRow = {
   outflow: string | number;
   periodResult: string | number;
   inflowSharePct: number | null;
+  transferIn: string | number;
+  transferOut: string | number;
 };
 
 export type DashboardVaultActivity = {
   totalInflow: string | number;
   totalOutflow: string | number;
   periodResult: string | number;
+  transferVolume: string | number;
   rows: DashboardVaultActivityRow[];
 };
 

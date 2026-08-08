@@ -62,6 +62,7 @@ export class AccountingInitService {
           isActive: true,
           isSalesChannel: v.type === 'cash',
           paymentMethod: v.type === 'cash' ? 'cash' : 'bank',
+          bankReconciliationEnabled: v.type === 'bank',
         },
       });
     }

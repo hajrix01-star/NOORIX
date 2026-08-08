@@ -142,6 +142,30 @@ export class FinancialCoreSupportService {
     }
   }
 
+  /**
+   * Accounting reversals remain valid after an endpoint is archived or disabled.
+   * They require only that both historical vault identities still belong to the
+   * company; operational create rules intentionally do not apply.
+   */
+  async assertVaultTransferReversalEndpoints(
+    tx: TxClient,
+    companyId: string,
+    fromVaultId: string,
+    toVaultId: string,
+  ) {
+    const ids = [fromVaultId, toVaultId];
+    const vaults = await tx.vault.findMany({
+      where: { id: { in: ids }, companyId },
+      select: { id: true },
+    });
+    const found = new Set(vaults.map((vault) => vault.id));
+    for (const id of ids) {
+      if (!found.has(id)) {
+        throw new NotFoundException(`الخزينة ${id} غير موجودة أو لا تنتمي لهذه الشركة`);
+      }
+    }
+  }
+
   /** أي صرف (مشتريات، مصاريف، رواتب، سلف، …): خزنة غير مؤرشفة ومفعّل لها الظهور كسداد */
   async assertVaultUsableForPaymentOutflow(tx: TxClient, companyId: string, vaultId: string) {
     const v = await tx.vault.findFirst({

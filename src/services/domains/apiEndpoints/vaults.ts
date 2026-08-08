@@ -5,6 +5,7 @@ import type {
   VaultTransactionsPage,
   VaultTransferPayload,
   VaultTransferResult,
+  ReverseVaultTransferPayload,
   VaultUpdatePayload,
   VaultWithTransactionsResult,
 } from '../../../types/api';
@@ -66,4 +67,11 @@ export async function createVault(body: VaultCreatePayload): Promise<ApiParsedRe
 /** تحويل نقد بين خزينتين — قيد transfer (بدون فاتورة) */
 export async function createVaultTransfer(body: VaultTransferPayload): Promise<ApiParsedResult<VaultTransferResult>> {
   return apiPost('/api/v1/vaults/transfer', body);
+}
+
+export async function reverseVaultTransfer(
+  transferId: string,
+  body: ReverseVaultTransferPayload,
+): Promise<ApiParsedResult<VaultTransferResult>> {
+  return apiPost(`/api/v1/vaults/transfers/${transferId}/reverse`, body);
 }

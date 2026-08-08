@@ -74,8 +74,8 @@ export function buildTreasurySummary(vaults: VaultRecord[]): TreasurySummary {
   const active = activeVisibleVaults(vaults);
   return {
     totalBalance: sumAmounts(active, 'balance').toNumber(),
-    totalIn: sumAmounts(active, 'totalIn').toNumber(),
-    totalOut: sumAmounts(active, 'totalOut').toNumber(),
+    totalIn: active.reduce((sum, vault) => sum + Number(vault.externalIn ?? vault.totalIn ?? 0), 0),
+    totalOut: active.reduce((sum, vault) => sum + Number(vault.externalOut ?? vault.totalOut ?? 0), 0),
   };
 }
 

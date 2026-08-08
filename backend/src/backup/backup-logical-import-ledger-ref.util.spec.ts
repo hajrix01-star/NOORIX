@@ -23,4 +23,13 @@ describe('mapImportedLedgerRef', () => {
     expect(mapImportedLedgerRef('manual', 'manual-ref', maps)).toBe('manual-ref');
     expect(mapImportedLedgerRef('invoice', 'missing-invoice', maps)).toBe('missing-invoice');
   });
+
+  it('maps a legacy transfer by its ledger link when voucher id differs from referenceId', () => {
+    expect(mapImportedLedgerRef('transfer', 'TRF-LEGACY-001', {
+      ...maps,
+      ledgerEntryId: 'old-ledger',
+      transferMap: new Map([['legacy-old-ledger', 'new-voucher']]),
+      transferByLedgerEntryId: new Map([['old-ledger', 'new-voucher']]),
+    })).toBe('new-voucher');
+  });
 });

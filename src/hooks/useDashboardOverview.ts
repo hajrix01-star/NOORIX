@@ -35,6 +35,7 @@ const EMPTY_OVERVIEW: DashboardOverviewData = {
     totalInflow: 0,
     totalOutflow: 0,
     periodResult: 0,
+    transferVolume: 0,
     rows: [],
   },
   operationalOverview: {
@@ -85,6 +86,7 @@ function normalizeDashboardOverview(raw: DashboardOverviewData | null | undefine
       totalInflow: raw.vaultActivity?.totalInflow ?? 0,
       totalOutflow: raw.vaultActivity?.totalOutflow ?? 0,
       periodResult: raw.vaultActivity?.periodResult ?? 0,
+      transferVolume: raw.vaultActivity?.transferVolume ?? 0,
       rows: Array.isArray(raw.vaultActivity?.rows) ? raw.vaultActivity.rows : [],
     },
     operationalOverview: {

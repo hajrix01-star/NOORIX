@@ -22,29 +22,12 @@ export async function computeBankReconciliationStats(
   const end = new Date(`${toYmd(endDate)}T23:59:59.999Z`);
 
   const vaults = await prisma.vault.findMany({
-    where: { companyId, isActive: true, isArchived: false },
+    // Historical reconciliation must not change when a vault is later archived
+    // or disabled. Include every company vault and classify its enduring account.
+    where: { companyId },
   });
-  const bankVaultIds = new Set(
-    vaults
-      .filter((v) => {
-        const t = (v.type || '').toLowerCase();
-        const n = `${v.nameAr} ${v.nameEn || ''}`.toLowerCase();
-        const pm = (v.paymentMethod || '').toLowerCase();
-        return (
-          t === 'bank' ||
-          t === 'app' ||
-          n.includes('بنك') ||
-          n.includes('bank') ||
-          n.includes('مدى') ||
-          n.includes('mada') ||
-          n.includes('شبكة') ||
-          pm.includes('مدى') ||
-          pm.includes('mada') ||
-          pm.includes('بنك')
-        );
-      })
-      .map((v) => v.id),
-  );
+  const bankVaults = vaults.filter((vault) => vault.bankReconciliationEnabled);
+  const bankVaultIds = new Set(bankVaults.map((v) => v.id));
 
   const invoices = await prisma.invoice.findMany({
     where: {
@@ -64,20 +47,39 @@ export async function computeBankReconciliationStats(
     saleCount += 1;
   }
 
-  const bankIds = [...bankVaultIds];
   let cashDeposits = new Decimal(0);
-  if (bankIds.length > 0) {
-    const transfers = await prisma.ledgerEntry.findMany({
+  if (bankVaultIds.size > 0) {
+    // Reconciliation is an operational report layered over the immutable
+    // ledger. Read posted business vouchers, not raw reversal entries: a
+    // reversed original and its correction voucher must not be presented as a
+    // real bank deposit. The ledger remains untouched and drives balances.
+    const transfers = await prisma.vaultTransfer.findMany({
       where: {
         companyId,
-        status: 'active',
-        referenceType: 'transfer',
+        reversalOfId: null,
         transactionDate: { gte: start, lte: end },
-        vaultId: { in: bankIds },
       },
-      select: { amount: true },
+      select: {
+        amount: true,
+        fromVaultId: true,
+        toVaultId: true,
+        status: true,
+        reversal: { select: { transactionDate: true } },
+      },
     });
     for (const e of transfers) {
+      // Use the accounting date of the reversal voucher, never reversedAt
+      // (which is only the entry timestamp). This preserves historical as-of
+      // reports for backdated and future-dated corrections. A legacy reversed
+      // voucher without a linked reversal is excluded fail-closed.
+      if (e.status === 'reversed') {
+        if (!e.reversal || e.reversal.transactionDate <= end) continue;
+      } else if (e.status !== 'posted') {
+        continue;
+      }
+      // Only a posted non-bank -> bank voucher is an expected bank credit.
+      // bank/app -> bank/app merely relocates company funds.
+      if (!bankVaultIds.has(e.toVaultId) || bankVaultIds.has(e.fromVaultId)) continue;
       cashDeposits = cashDeposits.add(new Decimal(e.amount?.toString() ?? '0'));
     }
   }

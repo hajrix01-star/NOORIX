@@ -71,7 +71,15 @@ export interface TransferDto {
   transactionDate: string;
   notes?: string;
   /** مفتاح عدم التكرار — إن وُجد يُرجع النتيجة المخزنة بدل التنفيذ مرة ثانية */
-  idempotencyKey?: string;
+  idempotencyKey: string;
+}
+
+export interface ReverseTransferDto {
+  companyId: string;
+  transferId: string;
+  transactionDate: string;
+  reason?: string;
+  idempotencyKey: string;
 }
 
 export interface OutflowBatchIdempotencyDto {

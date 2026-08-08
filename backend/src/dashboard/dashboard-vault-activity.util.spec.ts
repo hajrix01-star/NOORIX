@@ -17,11 +17,34 @@ describe('buildDashboardVaultActivity', () => {
       totalInflow: '100',
       totalOutflow: '50',
       periodResult: '50',
+      transferVolume: '0',
       rows: [
         expect.objectContaining({ vaultId: 'cash', periodResult: '35', inflowSharePct: 75 }),
         expect.objectContaining({ vaultId: 'bank', periodResult: '15', inflowSharePct: 25 }),
       ],
     });
+  });
+
+  it('excludes internal transfers from company flow while preserving each vault movement', () => {
+    const result = buildDashboardVaultActivity([
+      {
+        id: 'source', nameAr: 'Source', nameEn: null, type: 'cash', sortOrder: 1,
+        isArchived: false, totalIn: 0, totalOut: 500,
+        externalIn: 0, externalOut: 0, transferIn: 0, transferOut: 500,
+      },
+      {
+        id: 'destination', nameAr: 'Destination', nameEn: null, type: 'bank', sortOrder: 2,
+        isArchived: false, totalIn: 500, totalOut: 0,
+        externalIn: 0, externalOut: 0, transferIn: 500, transferOut: 0,
+      },
+    ]);
+
+    expect(result.totalInflow).toBe('0');
+    expect(result.totalOutflow).toBe('0');
+    expect(result.periodResult).toBe('0');
+    expect(result.transferVolume).toBe('500');
+    expect(result.rows.find((row) => row.vaultId === 'source')?.periodResult).toBe('-500');
+    expect(result.rows.find((row) => row.vaultId === 'destination')?.periodResult).toBe('500');
   });
 
   it('returns a null share instead of an invalid percentage when there is no inflow', () => {

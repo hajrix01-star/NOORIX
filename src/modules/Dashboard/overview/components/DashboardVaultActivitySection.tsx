@@ -49,6 +49,8 @@ export function DashboardVaultActivitySection({ activity, lang, t }: Props) {
           outflow: activity.totalOutflow,
           periodResult: activity.periodResult,
           inflowSharePct: Number(activity.totalInflow || 0) === 0 ? null : 100,
+          transferIn: activity.transferVolume,
+          transferOut: activity.transferVolume,
           isTotal: true,
         },
       ];
@@ -84,6 +86,14 @@ export function DashboardVaultActivitySection({ activity, lang, t }: Props) {
       render: (value) => <Money value={String(value ?? 0)} />,
     },
     {
+      key: 'transferIn', label: t('dashboardTransferIn'), numeric: true, align: 'center', minWidth: 125,
+      render: (value) => <Money value={String(value ?? 0)} className="text-noorix-blue" />,
+    },
+    {
+      key: 'transferOut', label: t('dashboardTransferOut'), numeric: true, align: 'center', minWidth: 125,
+      render: (value) => <Money value={String(value ?? 0)} className="text-noorix-blue" />,
+    },
+    {
       key: 'periodResult', label: t('dashboardPeriodResult'), numeric: true, align: 'center', minWidth: 140,
       render: (value) => <ResultMoney value={String(value ?? 0)} />,
     },
@@ -96,10 +106,14 @@ export function DashboardVaultActivitySection({ activity, lang, t }: Props) {
           <h2 className="m-0 text-[16px] font-bold text-noorix-text">{t('dashboardVaultActivityTitle')}</h2>
           <p className="m-0 mt-1 text-[12px] text-noorix-muted">{t('dashboardVaultActivityDesc')}</p>
         </div>
-        <div className="grid w-full grid-cols-3 gap-2 sm:w-auto sm:min-w-[420px]">
+        <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-[560px] sm:grid-cols-4">
           <div className="rounded-lg bg-noorix-bg-muted px-2 py-2 text-center">
             <div className="text-[11px] text-noorix-muted">{t('dashboardInflow')}</div>
             <Money value={activity.totalInflow} className="mt-1 text-[14px] text-nx-sales" />
+          </div>
+          <div className="rounded-lg bg-noorix-bg-muted px-2 py-2 text-center">
+            <div className="text-[11px] text-noorix-muted">{t('dashboardTransferVolume')}</div>
+            <Money value={activity.transferVolume} className="mt-1 text-[14px] text-noorix-blue" />
           </div>
           <div className="rounded-lg bg-noorix-bg-muted px-2 py-2 text-center">
             <div className="text-[11px] text-noorix-muted">{t('dashboardOutflow')}</div>
@@ -115,7 +129,7 @@ export function DashboardVaultActivitySection({ activity, lang, t }: Props) {
       <SimpleTable<ActivityTableRow>
         columns={columns}
         data={tableRows}
-        tableMinWidth={720}
+        tableMinWidth={970}
         compact={false}
         emptyMessage={t('dashboardNoVaultActivity')}
         frameClassName="rounded-none border-x-0 border-t-0"

@@ -53,6 +53,10 @@ export class FinancialCoreService {
   processTransfer(...a: Parameters<FinancialTransferService['processTransfer']>) {
     return this.transfer.processTransfer(...a);
   }
+
+  reverseTransfer(...a: Parameters<FinancialTransferService['reverseTransfer']>) {
+    return this.transfer.reverseTransfer(...a);
+  }
   cancelOperation(...a: Parameters<FinancialCancelService['cancelOperation']>) {
     return this.cancel.cancelOperation(...a);
   }
