@@ -1,15 +1,15 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { convertLoanLegacyInvoices, migrateLoanLegacyInvoices, reverseLoanPayment } from '../../../services/api';
+import { convertLoanLegacyInvoices, reverseLoanPayment } from '../../../services/api';
 import { loanKeys } from '../../../services/queryKeys';
 import { getSaudiToday, formatSaudiDate } from '../../../utils/saudiDate';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
-import { AdaptiveSheet, Badge, Button, DialogActions, FmtNum, Input, SearchableOptionsPicker, TransactionDatePicker } from '../../../ui';
-import type { ExpenseLineRecord, LoanPaymentReversePayload, LoanRecord } from '../../../types/api';
+import { AdaptiveSheet, Badge, Button, DialogActions, FmtNum, Input, TransactionDatePicker } from '../../../ui';
+import type { LoanPaymentReversePayload, LoanRecord } from '../../../types/api';
 import LoanPaymentModal from './LoanPaymentModal';
 
-type Props = { companyId: string; loan: LoanRecord; allLoans: LoanRecord[]; expenseLines: ExpenseLineRecord[]; onClose: () => void; onChanged: () => void };
+type Props = { companyId: string; loan: LoanRecord; allLoans: LoanRecord[]; onClose: () => void; onChanged: () => void };
 function attemptKey(companyId: string) { const suffix = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2); return `loan-reverse-${companyId}-${suffix}`; }
 
 function ReversePaymentModal({ companyId, loan, paymentId, paymentDate, onClose, onSaved }: { companyId: string; loan: LoanRecord; paymentId: string; paymentDate: string; onClose: () => void; onSaved: () => void }) {
@@ -23,22 +23,6 @@ function ReversePaymentModal({ companyId, loan, paymentId, paymentDate, onClose,
       {error ? <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-3 py-2 text-[13px] text-noorix-red">{error}</div> : null}
       <TransactionDatePicker label="تاريخ الإلغاء" value={transactionDate} min={minimumDate} onValueChange={setTransactionDate} required />
       <Input label="سبب الإلغاء" value={notes} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNotes(event.target.value)} maxLength={2000} />
-    </form>
-  </AdaptiveSheet>;
-}
-
-function LegacyInvoicesModal({ companyId, loan, expenseLines, onClose, onSaved }: { companyId: string; loan: LoanRecord; expenseLines: ExpenseLineRecord[]; onClose: () => void; onSaved: () => void }) {
-  const queryClient = useQueryClient();
-  const [expenseLineId, setExpenseLineId] = useState('');
-  const [error, setError] = useState('');
-  const options = useMemo(() => expenseLines.filter((line) => line.isActive !== false).map((line) => ({ value: line.id, label: `${line.nameAr}${line.supplier?.nameAr ? ` — ${line.supplier.nameAr}` : ''}` })), [expenseLines]);
-  const mutation = useApiMutation({ mutationFn: () => migrateLoanLegacyInvoices(loan.id, { companyId, expenseLineId, archiveExpenseLine: true }), showErrorToast: false, onSuccess: () => { void queryClient.invalidateQueries({ queryKey: loanKeys.root() }); onSaved(); }, onError: (err: Error) => setError(err.message || 'تعذّر ترحيل الفواتير القديمة') });
-  const submit = (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); setError(''); if (!expenseLineId) { setError('اختر بند القرض القديم أولاً.'); return; } mutation.mutate(); };
-  return <AdaptiveSheet open onClose={onClose} size="sm" side="start" title="ترحيل فواتير قرض قديمة" footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose }, { key: 'save', label: mutation.isPending ? 'جارٍ الترحيل…' : 'ترحيل وحفظ', role: 'save', type: 'submit', form: 'loan-legacy-invoices-form', disabled: mutation.isPending }]} />}>
-    <form id="loan-legacy-invoices-form" onSubmit={submit} className="flex flex-col gap-3">
-      <p className="m-0 rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2 text-[12px] leading-6 text-noorix-muted">سيُربط سجل الفواتير القديمة بالقرض للتوثيق فقط، ثم يُعطّل البند القديم. لا تُنشأ حركة خزينة أو قيد جديد ولا يتغير الربح التاريخي.</p>
-      {error ? <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-3 py-2 text-[13px] text-noorix-red">{error}</div> : null}
-      <SearchableOptionsPicker label="بند القرض القديم" value={expenseLineId} onChange={setExpenseLineId} options={options} aria-label="بند القرض القديم" />
     </form>
   </AdaptiveSheet>;
 }
@@ -58,16 +42,15 @@ function ConvertLegacyInvoicesModal({ loan, onClose, onSaved }: { loan: LoanReco
   </AdaptiveSheet>;
 }
 
-export default function LoanDetailModal({ companyId, loan, allLoans, expenseLines, onClose, onChanged }: Props) {
+export default function LoanDetailModal({ companyId, loan, allLoans, onClose, onChanged }: Props) {
   const [showPayment, setShowPayment] = useState(false);
   const [paymentToReverse, setPaymentToReverse] = useState<{ id: string; date: string } | null>(null);
-  const [showLegacyMigration, setShowLegacyMigration] = useState(false);
   const [showLegacyConversion, setShowLegacyConversion] = useState(false);
   const payments = useMemo(() => (loan.payments || []).filter((payment) => !payment.reversalOfId), [loan.payments]);
   const pendingLegacyInvoices = (loan.legacyInvoices || []).filter((invoice) => !invoice.convertedAt);
   const changed = () => { setShowPayment(false); setPaymentToReverse(null); onChanged(); };
   return <>
-    <AdaptiveSheet open onClose={onClose} size="lg" side="start" title={loan.nameAr} footer={<DialogActions actions={[{ key: 'close', label: 'إغلاق', role: 'cancel', onClick: onClose }, { key: 'legacy', label: 'ترحيل فواتير قديمة', role: 'secondary', onClick: () => setShowLegacyMigration(true) }, ...(pendingLegacyInvoices.length ? [{ key: 'convert', label: 'تحويل إلى سدادات', role: 'secondary' as const, onClick: () => setShowLegacyConversion(true) }] : []), { key: 'pay', label: 'سداد قرض', role: 'save', onClick: () => setShowPayment(true) }]} />}>
+    <AdaptiveSheet open onClose={onClose} size="lg" side="start" title={loan.nameAr} footer={<DialogActions actions={[{ key: 'close', label: 'إغلاق', role: 'cancel', onClick: onClose }, ...(pendingLegacyInvoices.length ? [{ key: 'convert', label: 'تحويل إلى سدادات', role: 'secondary' as const, onClick: () => setShowLegacyConversion(true) }] : []), { key: 'pay', label: 'سداد قرض', role: 'save', onClick: () => setShowPayment(true) }]} />}>
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-3 text-center"><div className="text-[11px] text-noorix-muted">الرصيد الافتتاحي</div><FmtNum n={Number(loan.openingAmount)} className="mt-1 block nx-font-numbers text-[18px] font-bold" /><span className="nx-sar text-[11px]">SR</span></div>
@@ -82,7 +65,6 @@ export default function LoanDetailModal({ companyId, loan, allLoans, expenseLine
     </AdaptiveSheet>
     {showPayment ? <LoanPaymentModal companyId={companyId} loans={allLoans} loanId={loan.id} onClose={() => setShowPayment(false)} onSaved={changed} /> : null}
     {paymentToReverse ? <ReversePaymentModal companyId={companyId} loan={loan} paymentId={paymentToReverse.id} paymentDate={paymentToReverse.date} onClose={() => setPaymentToReverse(null)} onSaved={changed} /> : null}
-    {showLegacyMigration ? <LegacyInvoicesModal companyId={companyId} loan={loan} expenseLines={expenseLines} onClose={() => setShowLegacyMigration(false)} onSaved={() => { setShowLegacyMigration(false); onChanged(); }} /> : null}
     {showLegacyConversion ? <ConvertLegacyInvoicesModal loan={loan} onClose={() => setShowLegacyConversion(false)} onSaved={() => { setShowLegacyConversion(false); onChanged(); }} /> : null}
   </>;
 }

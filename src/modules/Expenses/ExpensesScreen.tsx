@@ -263,7 +263,6 @@ export default function ExpensesScreen() {
           companyId={companyId}
           loan={selectedLoan}
           allLoans={loans}
-          expenseLines={expenseLines}
           onClose={() => setSelectedLoanId(null)}
           onChanged={() => {
             refreshLoans();
