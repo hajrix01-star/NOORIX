@@ -12,7 +12,7 @@ import {
   throwIfApiFailed,
   uploadInvoiceAttachment,
 } from '../../../../services/api';
-import { supplierKeys } from '../../../../services/queryKeys';
+import { purchaseKeys, supplierKeys } from '../../../../services/queryKeys';
 import { filterValidRowsForBatchSave, isRowValidForBatchSave } from '../utils/purchasesBatchGuards';
 import { createEmptyPurchasesBatchRow } from '../constants';
 import {
@@ -193,6 +193,7 @@ export function usePurchasesBatchActions(options: {
         }
       }
       invalidateOnFinancialMutation(queryClient);
+      queryClient.invalidateQueries({ queryKey: purchaseKeys.debtsRoot() });
       setRows(createInitialRows());
       setBatchNotes('');
     },

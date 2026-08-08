@@ -131,24 +131,27 @@ export class PurchaseDebtsService {
     ]);
     const pendingCount = pendingAgg._count._all;
     const promotedCount = promotedAgg._count._all;
-    const activeCount = pendingCount + promotedCount;
+    const pendingAmount = Number(pendingAgg._sum.totalAmount || 0);
+    const promotedAmount = Number(promotedAgg._sum.totalAmount || 0);
+    const settledOrOutstandingAmount = pendingAmount + promotedAmount;
     return {
       items,
       total,
       page,
       pageSize,
       summary: {
-        totalCount: activeCount,
-        totalAmount: Number(pendingAgg._sum.totalAmount || 0) + Number(promotedAgg._sum.totalAmount || 0),
+        // The official debt balance contains only invoices that remain unpaid.
+        // Promoted records are historical because a purchase invoice now owns them.
+        totalCount: pendingCount,
+        totalAmount: pendingAmount,
         pendingCount,
-        pendingAmount: Number(pendingAgg._sum.totalAmount || 0),
+        pendingAmount,
         promotedCount,
-        promotedAmount: Number(promotedAgg._sum.totalAmount || 0),
+        promotedAmount,
         cancelledCount,
-        promotionRate: Number(pendingAgg._sum.totalAmount || 0) + Number(promotedAgg._sum.totalAmount || 0) > 0
+        promotionRate: settledOrOutstandingAmount > 0
           ? Math.round(
-              (Number(promotedAgg._sum.totalAmount || 0) /
-                (Number(pendingAgg._sum.totalAmount || 0) + Number(promotedAgg._sum.totalAmount || 0))) * 1000,
+              (promotedAmount / settledOrOutstandingAmount) * 1000,
             ) / 10
           : 0,
       },

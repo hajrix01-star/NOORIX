@@ -13,7 +13,7 @@ function debt(overrides: Partial<PurchaseDebtRecord>): PurchaseDebtRecord {
 }
 
 describe('groupPurchaseDebtsBySupplier', () => {
-  it('groups every displayed invoice under its supplier and preserves exact four-decimal totals', () => {
+  it('keeps settlement history visible but excludes it from the supplier debt balance', () => {
     const groups = groupPurchaseDebtsBySupplier([
       debt({ id: 'a1', totalAmount: '10.1234' }),
       debt({ id: 'a2', totalAmount: '20.0001', status: 'promoted' }),
@@ -21,9 +21,9 @@ describe('groupPurchaseDebtsBySupplier', () => {
     ], 'ar');
 
     expect(groups).toHaveLength(2);
-    expect(groups[0]).toMatchObject({ supplierId: 's2', totalAmount: 50, cancelledCount: 1 });
-    expect(groups[1]).toMatchObject({ supplierId: 's1', totalAmount: 30.1235, pendingCount: 1, promotedCount: 1 });
-    expect(groups[1].records.map((row) => row.id)).toEqual(['a1', 'a2']);
+    expect(groups[0]).toMatchObject({ supplierId: 's1', totalAmount: 10.1234, pendingCount: 1, promotedCount: 1 });
+    expect(groups[1]).toMatchObject({ supplierId: 's2', totalAmount: 0, cancelledCount: 1 });
+    expect(groups[0].records.map((row) => row.id)).toEqual(['a1', 'a2']);
   });
 
   it('orders supplier cards and their invoices by the selected business sort', () => {

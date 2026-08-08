@@ -4,6 +4,7 @@ export type PurchaseDebtSupplierGroup = {
   supplierId: string;
   supplierName: string;
   records: PurchaseDebtRecord[];
+  /** Current amount due. Promoted and cancelled rows remain visible as history only. */
   totalAmount: number;
   pendingCount: number;
   promotedCount: number;
@@ -33,7 +34,7 @@ export function groupPurchaseDebtsBySupplier(
   lang: string,
   sort: PurchaseDebtSort = 'supplier_total_desc',
 ): PurchaseDebtSupplierGroup[] {
-  const groups = new Map<string, PurchaseDebtSupplierGroup & { amountInHalalas: number }>();
+  const groups = new Map<string, PurchaseDebtSupplierGroup & { outstandingInHalalas: number }>();
 
   for (const record of records) {
     const current = groups.get(record.supplierId) ?? {
@@ -41,14 +42,16 @@ export function groupPurchaseDebtsBySupplier(
       supplierName: displaySupplierName(record, lang),
       records: [],
       totalAmount: 0,
-      amountInHalalas: 0,
+      outstandingInHalalas: 0,
       pendingCount: 0,
       promotedCount: 0,
       cancelledCount: 0,
     };
     current.records.push(record);
-    current.amountInHalalas += Math.round(Number(record.totalAmount || 0) * 10_000);
-    if (record.status === 'pending') current.pendingCount += 1;
+    if (record.status === 'pending') {
+      current.pendingCount += 1;
+      current.outstandingInHalalas += Math.round(Number(record.totalAmount || 0) * 10_000);
+    }
     else if (record.status === 'promoted') current.promotedCount += 1;
     else current.cancelledCount += 1;
     groups.set(record.supplierId, current);
@@ -61,9 +64,9 @@ export function groupPurchaseDebtsBySupplier(
     return String(a.invoiceDate).localeCompare(String(b.invoiceDate));
   };
 
-  const normalized = [...groups.values()].map(({ amountInHalalas, ...group }) => ({
+  const normalized = [...groups.values()].map(({ outstandingInHalalas, ...group }) => ({
     ...group,
-    totalAmount: amountInHalalas / 10_000,
+    totalAmount: outstandingInHalalas / 10_000,
     records: [...group.records].sort(sortInvoices),
   }));
 

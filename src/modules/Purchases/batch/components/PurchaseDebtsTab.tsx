@@ -29,7 +29,7 @@ type Props = {
 type DateMode = 'invoice' | 'created' | 'promoted';
 
 const initialFilters = {
-  status: '', supplierId: '', q: '', dateMode: 'invoice' as DateMode,
+  status: 'pending', supplierId: '', q: '', dateMode: 'invoice' as DateMode,
   dateFrom: '', dateTo: '', amountMin: '', amountMax: '',
 };
 

@@ -66,6 +66,34 @@ describe('PurchaseDebtsService concurrency guardrails', () => {
   });
 });
 
+describe('PurchaseDebtsService outstanding summary', () => {
+  it('excludes promoted history from the official debt total regardless of the list filter', async () => {
+    const prisma = {
+      purchaseDebtRecord: {
+        count: jest.fn()
+          .mockResolvedValueOnce(1)
+          .mockResolvedValueOnce(0),
+        aggregate: jest.fn()
+          .mockResolvedValueOnce({ _count: { _all: 1 }, _sum: { totalAmount: new Prisma.Decimal('100.25') } })
+          .mockResolvedValueOnce({ _count: { _all: 1 }, _sum: { totalAmount: new Prisma.Decimal('75.5') } }),
+      },
+    };
+    const service = new PurchaseDebtsService(prisma as unknown as TenantPrismaService);
+    Object.defineProperty(service, 'loadPage', { value: jest.fn().mockResolvedValue([]) });
+
+    const result = await service.list('company-1', { status: 'promoted', page: 1, pageSize: 25 });
+
+    expect(result.summary).toMatchObject({
+      totalCount: 1,
+      totalAmount: 100.25,
+      pendingCount: 1,
+      pendingAmount: 100.25,
+      promotedCount: 1,
+      promotedAmount: 75.5,
+    });
+  });
+});
+
 function runWithTenant<T>(work: () => Promise<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     TenantContext.run('tenant-1', 'user-1', () => work().then(resolve, reject));
