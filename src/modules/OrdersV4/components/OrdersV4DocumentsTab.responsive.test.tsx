@@ -341,7 +341,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     fireEvent.click(screen.getByText('REQ4-1'));
     fireEvent.click(screen.getByRole('button', { name: 'تعديل الطلب' }));
     expect(screen.getByRole('dialog', { name: 'تعديل الطلب' })).toBeTruthy();
-    expect(screen.getByText(/تختار النواة تلقائيًا المسار الآمن/)).toBeTruthy();
+    expect(screen.getByText(/سيفتح الطلب للتعديل دون تغيير المخزون أو العهدة/)).toBeTruthy();
     expect(screen.getByText(/خلال آخر 7 أيام، وكذلك ضمن آخر 5 طلبات/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'فتح للتعديل' })).toBeTruthy();
   });

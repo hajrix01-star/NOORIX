@@ -7,10 +7,11 @@ import { ordersV4EdgeDefinitions, ordersV4UnitDefinitions, resolveOrdersV4Contex
 import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 import {
-  ordersV4OperationKeyHash,
-  persistOrdersV4OperationReplay,
-  readOrdersV4OperationReplay,
-} from './orders-v4-operation-idempotency.util';
+  ordersV4DocumentEffectLockKey,
+  ordersV4OwnedEffectEntryFilter,
+  ordersV4PurchaseWindowLockKey,
+  resolveOrdersV4EffectHead,
+} from './orders-v4-document-effect.policy';
 import {
   isOrdersV4CashierEditEligible,
   isOrdersV4OwnerEditEligible,
@@ -33,10 +34,6 @@ function snapshotObject(value: Prisma.JsonValue): Prisma.InputJsonObject {
     : {};
 }
 
-function purchaseDocumentNumber(date: Date): string {
-  return `REQ4-${date.toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID().slice(0, 8).toUpperCase()}`;
-}
-
 @Injectable()
 export class OrdersV4DocumentReversalService {
   constructor(
@@ -55,30 +52,7 @@ export class OrdersV4DocumentReversalService {
 
   async reopenPurchase(companyId: string, id: string, idempotencyKey: string, access: OrdersV4ReopenAccess = 'owner') {
     if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
-    const normalizedKey = idempotencyKey.trim();
-    const reopenRequestHash = operationHash({ operation: 'reopen-purchase', documentId: id });
-    const reopenOperationKeyHash = ordersV4OperationKeyHash('reopen-purchase', normalizedKey);
-    const tenantId = TenantContext.getTenantId();
-    const userId = TenantContext.getUserId();
-
     return this.prisma.withTenant(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
-      const replay = await readOrdersV4OperationReplay(tx, tenantId, companyId, reopenOperationKeyHash);
-      if (replay) {
-        if (replay.requestHash !== reopenRequestHash) {
-          throw new BadRequestException('مفتاح منع تكرار إعادة الفتح مستخدم لطلب مختلف');
-        }
-        return replay.response;
-      }
-      const duplicate = await tx.ordersV4Document.findFirst({
-        where: { companyId, idempotencyKey: normalizedKey },
-        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
-      });
-      if (duplicate) {
-        if (duplicate.requestHash !== reopenRequestHash) throw new BadRequestException('مفتاح منع التكرار مستخدم لعملية مختلفة');
-        return duplicate;
-      }
-
       const purchase = await tx.ordersV4Document.findFirst({
         where: { id, companyId, documentType: 'purchase', reversalOfId: null },
         include: { lines: { orderBy: { lineNumber: 'asc' } } },
@@ -96,131 +70,34 @@ export class OrdersV4DocumentReversalService {
           throw new BadRequestException(`يمكن للكاشير تعديل أو استلام آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات فقط`);
         }
       }
-      const pendingPurchase = await tx.ordersV4Document.findFirst({
-        where: {
-          companyId,
-          documentType: 'purchase',
-          status: 'prepared',
-          reversalOfId: null,
-        },
-        select: { id: true },
-      });
-      if (pendingPurchase) {
-        const correctionDocument = await tx.ordersV4Document.findUniqueOrThrow({
-          where: { id: purchase.id },
-          include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
-        });
-        const result = { ...correctionDocument, editMode: 'correction' as const };
-        await persistOrdersV4OperationReplay(
-          tx, tenantId, companyId, reopenOperationKeyHash, reopenRequestHash, result,
-        );
-        return result;
-      }
-
-      const reversalKey = `reopen-reversal:${reopenRequestHash.slice(0, 48)}`;
-      const reversal = await this.toggleInTransaction(tx, companyId, id, reversalKey, false);
-      const replacement = await tx.ordersV4Document.create({
-        data: {
-          tenantId,
-          companyId,
-          documentNumber: purchaseDocumentNumber(purchase.documentDate),
-          documentType: 'purchase',
-          registrationEntryType: null,
-          status: 'prepared',
-          paymentMethod: purchase.paymentMethod,
-          documentDate: purchase.documentDate,
-          sectionId: purchase.sectionId,
-          locationId: purchase.locationId,
-          pettyCashAmount: purchase.pettyCashAmount,
-          subtotal: purchase.subtotal,
-          totalAmount: purchase.totalAmount,
-          operationalCost: purchase.operationalCost,
-          notes: purchase.notes,
-          idempotencyKey: normalizedKey,
-          requestHash: reopenRequestHash,
-          calculationVersion: purchase.calculationVersion,
-          calculationSnapshot: {
-            kernelVersion: 4,
-            owner: 'orders-v4-reopen-workflow',
-            operation: 'reopen-replacement',
-            reopenedFromDocumentId: purchase.id,
-            reversalDocumentId: reversal.id,
-            lineCount: purchase.lines.length,
-          },
-          createdByUserId: userId,
-          updatedByUserId: userId,
-        },
-      });
-
-      for (const line of purchase.lines) {
-        await tx.ordersV4DocumentLine.create({
-          data: {
-            tenantId,
-            companyId,
-            documentId: replacement.id,
-            itemId: line.itemId,
-            lineNumber: line.lineNumber,
-            itemNameSnapshot: line.itemNameSnapshot,
-            inputQuantity: line.inputQuantity,
-            inputUnitId: line.inputUnitId,
-            baseQuantity: line.baseQuantity,
-            baseUnitId: line.baseUnitId,
-            unitPrice: line.unitPrice,
-            priceUnitId: line.priceUnitId,
-            priceQuantity: line.priceQuantity,
-            lineTotal: line.lineTotal,
-            operationalCost: line.operationalCost,
-            conversionVersionId: line.conversionVersionId,
-            recipeVersionId: line.recipeVersionId,
-            cancellationReasons: line.cancellationReasons == null ? Prisma.JsonNull : line.cancellationReasons as Prisma.InputJsonValue,
-            cancellationNote: line.cancellationNote,
-            conversionSnapshot: line.conversionSnapshot as Prisma.InputJsonObject,
-            recipeSnapshot: line.recipeSnapshot == null ? Prisma.JsonNull : line.recipeSnapshot as Prisma.InputJsonValue,
-            costSnapshot: line.costSnapshot == null ? Prisma.JsonNull : line.costSnapshot as Prisma.InputJsonValue,
-            calculationSnapshot: {
-              ...snapshotObject(line.calculationSnapshot),
-              reopenedFromLineId: line.id,
-            },
-          },
-        });
-      }
-
-      await tx.ordersV4Document.update({
+      // Opening the editor is deliberately read-only. Inventory, custody and
+      // price differences are posted atomically only when the edited document
+      // is saved through receivePurchase(editMode=correction).
+      const editablePurchase = await tx.ordersV4Document.findUniqueOrThrow({
         where: { id: purchase.id },
-        data: {
-          calculationSnapshot: {
-            ...snapshotObject(purchase.calculationSnapshot),
-            reopenedByDocumentId: replacement.id,
-            reopenReversalDocumentId: reversal.id,
+        include: {
+          section: true,
+          location: true,
+          lines: {
+            include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true },
+            orderBy: { lineNumber: 'asc' },
           },
-          updatedByUserId: userId,
         },
       });
+      return { ...editablePurchase, editMode: 'correction' as const };
 
-      return tx.ordersV4Document.findUniqueOrThrow({
-        where: { id: replacement.id },
-        include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
-      });
     });
   }
 
   private toggle(companyId: string, id: string, idempotencyKey: string, undo: boolean) {
     if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     return this.prisma.withTenant(async (tx) => {
-      if (undo) {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
-      }
+      // Correction, cancellation and restoration share one outer lock. This
+      // prevents two transitions from reading the same received revision and
+      // both reversing its economic effect. The per-document lock comes next.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ordersV4PurchaseWindowLockKey(companyId)}))`;
       return this.toggleInTransaction(tx, companyId, id, idempotencyKey.trim(), undo);
     });
-  }
-
-  async reverseInTransaction(
-    tx: OrdersV4Transaction,
-    companyId: string,
-    id: string,
-    idempotencyKey: string,
-  ) {
-    return this.toggleInTransaction(tx, companyId, id, idempotencyKey, false);
   }
 
   private async toggleInTransaction(
@@ -233,7 +110,7 @@ export class OrdersV4DocumentReversalService {
     const tenantId = TenantContext.getTenantId();
     const operation = undo ? 'undo-reverse' : 'reverse';
     const reversalRequestHash = operationHash({ operation, documentId: id });
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:reverse:${companyId}:${id}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ordersV4DocumentEffectLockKey(companyId, id)}))`;
     const duplicate = await tx.ordersV4Document.findFirst({ where: { companyId, idempotencyKey } });
     if (duplicate) {
       if (duplicate.requestHash !== reversalRequestHash) throw new BadRequestException('مفتاح منع التكرار مستخدم لعملية مختلفة');
@@ -243,23 +120,28 @@ export class OrdersV4DocumentReversalService {
       where: { id, companyId, status: undo ? 'reversed' : 'received', reversalOfId: null }, include: { lines: true },
     });
     if (!original) throw new NotFoundException(undo ? 'المستند غير موجود أو لم يتم عكسه' : 'المستند غير موجود أو سبق عكسه');
-    if (undo && snapshotObject(original.calculationSnapshot).reopenedByDocumentId) {
-      throw new BadRequestException('لا يمكن إلغاء عكس طلب أعيد فتحه؛ عدّل الطلب البديل ثم استلمه');
+    const originalSnapshot = snapshotObject(original.calculationSnapshot);
+    if (undo && (originalSnapshot.reopenedByDocumentId || originalSnapshot.correctedByDocumentId)) {
+      throw new BadRequestException('لا يمكن استعادة نسخة قديمة بعد إنشاء طلب تصحيح بديل');
     }
     if (original.documentType === 'registration' && original.sectionId) {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:registration-cancellation:${companyId}:${original.documentDate.toISOString()}:${original.sectionId}:${original.locationId}`}))`;
     }
-    let chainHead = original;
-    const visited = new Set<string>([original.id]);
-    while (true) {
-      const next = await tx.ordersV4Document.findFirst({ where: { companyId, reversalOfId: chainHead.id }, include: { lines: true } });
-      if (!next) break;
-      if (visited.has(next.id)) throw new BadRequestException('تم اكتشاف دورة غير صالحة في سلسلة العكس');
-      visited.add(next.id);
-      chainHead = next;
-    }
+    const chainHead = await resolveOrdersV4EffectHead(
+      original,
+      (documentId) => tx.ordersV4Document.findFirst({
+        where: { companyId, reversalOfId: documentId },
+        include: { lines: true },
+      }),
+    );
+    const ownedEffectFilter = ordersV4OwnedEffectEntryFilter(chainHead);
     const originalLedger = await tx.ordersV4InventoryLedgerEntry.findMany({
-      where: { companyId, sourceId: chainHead.id }, orderBy: { sequence: 'desc' },
+      where: {
+        companyId,
+        sourceId: chainHead.id,
+        ...ownedEffectFilter,
+      },
+      orderBy: { sequence: 'desc' },
     });
     const ledgerItemIds = [...new Set(originalLedger.map((entry) => entry.itemId))];
     const historicalConversionIds = [...new Set(originalLedger.map((entry) => entry.conversionVersionId).filter(Boolean) as string[])];
@@ -273,7 +155,12 @@ export class OrdersV4DocumentReversalService {
     ]);
     const unitDefinitions = ordersV4UnitDefinitions(companyUnits);
     const originalCustody = await tx.ordersV4CustodyLedgerEntry.findMany({
-      where: { companyId, documentId: chainHead.id }, orderBy: { sequence: 'asc' },
+      where: {
+        companyId,
+        documentId: chainHead.id,
+        ...ownedEffectFilter,
+      },
+      orderBy: { sequence: 'asc' },
     });
     await this.posting.lockKeys(tx, companyId, originalLedger.map((entry) => ({ itemId: entry.itemId, locationId: entry.locationId })));
     const reversal = await tx.ordersV4Document.create({

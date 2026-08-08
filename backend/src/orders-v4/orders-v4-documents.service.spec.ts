@@ -130,7 +130,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       ordersV4Location: { findFirst: jest.fn().mockResolvedValue({ id: 'main' }) },
       ordersV4Section: { findFirst: jest.fn() },
       ordersV4Item: { findMany: jest.fn().mockResolvedValue([{
-        id: 'item-1', nameAr: 'سكر', itemType: 'purchased', trackInventory: true,
+        id: 'item-1', nameAr: 'سكر', itemType: 'purchased', isActive: true, trackInventory: true,
         inventoryUnitId: 'piece', kernelUnitId: 'piece', inventoryUnit: unit,
         units: [{ unitId: 'piece', isActive: true, isOrderEnabled: true, lastPrice: new Prisma.Decimal(12) }],
         conversionVersions: [], recipeVersions: [],
@@ -207,7 +207,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       },
       ordersV4Location: { findFirst: jest.fn().mockResolvedValue({ id: 'main' }) },
       ordersV4Item: { findMany: jest.fn().mockResolvedValue([{
-        id: 'item-1', nameAr: 'سكر', itemType: 'purchased', trackInventory: true,
+        id: 'item-1', nameAr: 'سكر', itemType: 'purchased', isActive: true, trackInventory: true,
         inventoryUnitId: 'piece', kernelUnitId: 'piece',
         units: [{ unitId: 'piece', isActive: true }], conversionVersions: [],
       }]) },
@@ -222,7 +222,13 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
     const posting = { lockKeys: jest.fn(), postReceipt: jest.fn().mockResolvedValue({}) };
     const funds = { postPurchase: jest.fn().mockResolvedValue({}) };
-    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never, {} as never);
+    const correction = {
+      loadEffectInTransaction: jest.fn().mockResolvedValue({ inventoryEntries: [], custodyEntries: [] }),
+      reverseInventoryInTransaction: jest.fn(),
+      reverseCustodyInTransaction: jest.fn(),
+      refreshHistoricalPricesInTransaction: jest.fn(),
+    };
+    const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, {} as never, correction as never);
 
     const result = await service.receivePurchase('company-1', 'document-1', {
       revision: 1, documentDate: '2026-08-03', paymentMethod: 'custody', locationId: 'main',
@@ -349,14 +355,52 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     const original = {
       id: 'received-1', status: 'received', revision: 2, documentType: 'purchase', reversalOfId: null,
       documentDate: new Date('2026-08-02T00:00:00.000Z'), paymentMethod: 'custody', calculationVersion: 1,
-      calculationSnapshot: { kernelVersion: 4 },
+      sectionId: null, locationId: 'old-main', pettyCashAmount: new Prisma.Decimal(0),
+      subtotal: new Prisma.Decimal(28), totalAmount: new Prisma.Decimal(28), operationalCost: new Prisma.Decimal(28),
+      calculationSnapshot: { kernelVersion: 4 }, section: null, location: { id: 'old-main' },
+      lines: [{
+        id: 'old-line-1', itemId: 'item-1', lineNumber: 1, itemNameSnapshot: 'سكر',
+        inputQuantity: new Prisma.Decimal(2), inputUnitId: 'piece',
+        baseQuantity: new Prisma.Decimal(2), baseUnitId: 'piece',
+        unitPrice: new Prisma.Decimal(10), priceUnitId: 'piece', priceQuantity: new Prisma.Decimal(2),
+        lineTotal: new Prisma.Decimal(20), operationalCost: new Prisma.Decimal(20),
+        conversionVersionId: null, recipeVersionId: null, cancellationReasons: null, cancellationNote: null,
+        conversionSnapshot: {}, recipeSnapshot: null, costSnapshot: null, calculationSnapshot: {},
+        item: { id: 'item-1' }, inputUnit: unit, baseUnit: unit, priceUnit: unit,
+      }, {
+        id: 'old-line-2', itemId: 'item-2', lineNumber: 2, itemNameSnapshot: 'صنف محذوف',
+        inputQuantity: new Prisma.Decimal(4), inputUnitId: 'piece',
+        baseQuantity: new Prisma.Decimal(4), baseUnitId: 'piece',
+        unitPrice: new Prisma.Decimal(2), priceUnitId: 'piece', priceQuantity: new Prisma.Decimal(4),
+        lineTotal: new Prisma.Decimal(8), operationalCost: new Prisma.Decimal(8),
+        conversionVersionId: null, recipeVersionId: null, cancellationReasons: null, cancellationNote: null,
+        conversionSnapshot: {}, recipeSnapshot: null, costSnapshot: null, calculationSnapshot: {},
+        item: { id: 'item-2' }, inputUnit: unit, baseUnit: unit, priceUnit: unit,
+      }],
     };
     const replacement = { id: 'corrected-1', status: 'prepared', revision: 1 };
     const corrected = { id: 'corrected-1', status: 'received', lines: [] };
+    const originalLedger = [
+      {
+        id: 'old-ledger-3', itemId: 'item-2', inventoryUnitId: 'piece', locationId: 'old-main',
+        quantityDelta: new Prisma.Decimal(4), valueDelta: new Prisma.Decimal(8), unitCost: new Prisma.Decimal(2),
+        conversionVersionId: null, recipeVersionId: null,
+      },
+      {
+        id: 'old-ledger-2', itemId: 'item-1', inventoryUnitId: 'piece', locationId: 'old-main',
+        quantityDelta: new Prisma.Decimal(0), valueDelta: new Prisma.Decimal(-2), unitCost: new Prisma.Decimal(10),
+        conversionVersionId: null, recipeVersionId: null,
+      },
+      {
+        id: 'old-ledger-1', itemId: 'item-1', inventoryUnitId: 'piece', locationId: 'old-main',
+        quantityDelta: new Prisma.Decimal(2), valueDelta: new Prisma.Decimal(20), unitCost: new Prisma.Decimal(10),
+        conversionVersionId: null, recipeVersionId: null,
+      },
+    ];
+    const originalCustody = [{ id: 'old-custody-1', amountDelta: new Prisma.Decimal(-28) }];
     const findFirst = jest.fn()
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(original)
-      .mockResolvedValueOnce({ id: 'pending-2' });
+      .mockResolvedValueOnce(original);
     const tx = {
       $executeRaw: jest.fn(),
       idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
@@ -368,33 +412,59 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
         findUniqueOrThrow: jest.fn().mockResolvedValue(corrected),
       },
       ordersV4Location: { findFirst: jest.fn().mockResolvedValue({ id: 'main' }) },
-      ordersV4Item: { findMany: jest.fn().mockResolvedValue([{
-        id: 'item-1', nameAr: 'سكر', itemType: 'purchased', trackInventory: true,
-        inventoryUnitId: 'piece', kernelUnitId: 'piece',
-        units: [{ unitId: 'piece', isActive: true }], sections: [], conversionVersions: [],
-      }]) },
+      ordersV4InventoryLedgerEntry: { findMany: jest.fn().mockResolvedValue(originalLedger) },
+      ordersV4CustodyLedgerEntry: { findMany: jest.fn().mockResolvedValue(originalCustody) },
+      ordersV4ConversionVersion: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Item: { findMany: jest.fn().mockResolvedValue([
+        {
+          id: 'item-1', nameAr: 'سكر', itemType: 'purchased', isActive: true, trackInventory: true,
+          inventoryUnitId: 'piece', kernelUnitId: 'piece',
+          units: [{ unitId: 'piece', isActive: true }], sections: [], conversionVersions: [],
+        },
+        {
+          id: 'item-2', nameAr: 'صنف محذوف', itemType: 'purchased', isActive: false, trackInventory: false,
+          inventoryUnitId: 'piece', kernelUnitId: 'piece',
+          units: [{ unitId: 'piece', isActive: true }], sections: [], conversionVersions: [],
+        },
+        {
+          id: 'item-3', nameAr: 'صنف مضاف', itemType: 'purchased', isActive: true, trackInventory: true,
+          inventoryUnitId: 'piece', kernelUnitId: 'piece',
+          units: [{ unitId: 'piece', isActive: true }], sections: [], conversionVersions: [],
+        },
+      ]) },
       ordersV4Unit: { findMany: jest.fn().mockResolvedValue([unit]) },
       ordersV4DocumentLine: {
         deleteMany: jest.fn(),
         create: jest.fn().mockResolvedValue({ id: 'corrected-line-1' }),
       },
-      ordersV4PriceHistory: { create: jest.fn() },
+      ordersV4PriceHistory: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
       ordersV4ItemUnit: { updateMany: jest.fn() },
     };
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
-    const posting = { lockKeys: jest.fn(), postReceipt: jest.fn().mockResolvedValue({}) };
-    const funds = { postPurchase: jest.fn().mockResolvedValue({}) };
+    const posting = { lockKeys: jest.fn(), postReversal: jest.fn().mockResolvedValue({}), postReceipt: jest.fn().mockResolvedValue({}) };
+    const funds = { postReversals: jest.fn().mockResolvedValue(undefined), postPurchase: jest.fn().mockResolvedValue(undefined) };
     const reversal = { reverseInTransaction: jest.fn().mockResolvedValue({ id: 'reversal-1' }) };
-    const correction = new OrdersV4PurchaseCorrectionService(reversal as never);
+    const correction = new OrdersV4PurchaseCorrectionService(posting as never, funds as never);
     const service = new OrdersV4DocumentsService(prisma as never, posting as never, funds as never, reversal as never, correction);
 
     const result = await service.receivePurchase('company-1', original.id, {
       editMode: 'correction', revision: 2, documentDate: '2026-08-02', paymentMethod: 'custody', locationId: 'main',
-      idempotencyKey: 'correct-1', lines: [{ itemId: 'item-1', quantity: '3', unitId: 'piece', unitPrice: '12', priceUnitId: 'piece' }],
+      idempotencyKey: 'correct-1', lines: [
+        { itemId: 'item-1', quantity: '3', unitId: 'piece', unitPrice: '12', priceUnitId: 'piece' },
+        { itemId: 'item-3', quantity: '5', unitId: 'piece', unitPrice: '3', priceUnitId: 'piece' },
+      ],
     }, 'cashier');
 
     expect(result).toBe(corrected);
-    expect(reversal.reverseInTransaction).toHaveBeenCalledWith(tx, 'company-1', original.id, expect.stringContaining('correction-reversal:'));
+    expect(reversal.reverseInTransaction).not.toHaveBeenCalled();
+    expect(tx.ordersV4InventoryLedgerEntry.findMany).toHaveBeenCalledWith({
+      where: { companyId: 'company-1', sourceId: original.id, entryType: { not: 'reversal' } },
+      orderBy: { sequence: 'desc' },
+    });
+    expect(tx.ordersV4CustodyLedgerEntry.findMany).toHaveBeenCalledWith({
+      where: { companyId: 'company-1', documentId: original.id, entryType: { not: 'reversal' } },
+      orderBy: { sequence: 'asc' },
+    });
     expect(tx.ordersV4Document.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: 'prepared', requestHash: expect.any(String) }),
     }));
@@ -402,9 +472,30 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       where: { id: original.id },
       data: expect.objectContaining({ calculationSnapshot: expect.objectContaining({ correctedByDocumentId: replacement.id }) }),
     }));
-    expect(posting.postReceipt).toHaveBeenCalledWith(tx, expect.objectContaining({
-      sourceId: replacement.id, quantity: new Prisma.Decimal(3), totalValue: new Prisma.Decimal(36),
+    expect(posting.postReversal).toHaveBeenCalledTimes(3);
+    expect(posting.postReversal).toHaveBeenCalledWith(tx, expect.objectContaining({
+      sourceId: replacement.id, original: originalLedger[1],
     }));
-    expect(funds.postPurchase).toHaveBeenCalledWith(tx, expect.objectContaining({ documentId: replacement.id }));
+    expect(posting.postReversal).toHaveBeenCalledWith(tx, expect.objectContaining({
+      sourceId: replacement.id, original: originalLedger[0],
+    }));
+    expect(posting.postReceipt).toHaveBeenCalledTimes(2);
+    expect(posting.postReceipt).toHaveBeenCalledWith(tx, expect.objectContaining({
+      sourceId: replacement.id, itemId: 'item-1', locationId: 'main', quantity: new Prisma.Decimal(3), totalValue: new Prisma.Decimal(36),
+    }));
+    expect(posting.postReceipt).toHaveBeenCalledWith(tx, expect.objectContaining({
+      sourceId: replacement.id, itemId: 'item-3', quantity: new Prisma.Decimal(5), totalValue: new Prisma.Decimal(15),
+    }));
+    expect(funds.postReversals).toHaveBeenCalledWith(tx, expect.objectContaining({
+      reversalDocumentId: replacement.id, originals: originalCustody,
+    }));
+    expect(funds.postPurchase).toHaveBeenCalledWith(tx, expect.objectContaining({
+      documentId: replacement.id, purchaseAmount: new Prisma.Decimal(51),
+    }));
+    expect(tx.ordersV4PriceHistory.findFirst).toHaveBeenCalledTimes(2);
+    expect(tx.ordersV4ItemUnit.updateMany).toHaveBeenCalledWith({
+      where: { companyId: 'company-1', itemId: 'item-2', unitId: 'piece' },
+      data: { lastPrice: null, lastPriceAt: null },
+    });
   });
 });

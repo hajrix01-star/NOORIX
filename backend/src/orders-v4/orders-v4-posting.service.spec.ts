@@ -56,6 +56,67 @@ describe('Orders V4 central posting services', () => {
     expect(String((result as { averageUnitCostAfter: Prisma.Decimal }).averageUnitCostAfter)).toBe('5.33333333');
   });
 
+  it('corrects a receipt that covered negative stock by reversing its full ledger footprint before reposting', async () => {
+    jest.spyOn(TenantContext, 'getUserId').mockReturnValue('user-1');
+    let current = {
+      inventoryUnitId: 'piece',
+      quantityAfter: new Prisma.Decimal(5),
+      valueAfter: new Prisma.Decimal(25),
+      averageUnitCostAfter: new Prisma.Decimal(5),
+    };
+    const created: Array<Record<string, unknown>> = [];
+    const tx = {
+      $executeRaw: jest.fn(),
+      ordersV4InventoryLedgerEntry: {
+        findFirst: jest.fn(async () => current),
+        create: jest.fn(async ({ data }: { data: Record<string, unknown> }) => {
+          created.push(data);
+          current = {
+            inventoryUnitId: String(data.inventoryUnitId),
+            quantityAfter: data.quantityAfter as Prisma.Decimal,
+            valueAfter: data.valueAfter as Prisma.Decimal,
+            averageUnitCostAfter: data.averageUnitCostAfter as Prisma.Decimal,
+          };
+          return data;
+        }),
+      },
+    };
+    const service = new OrdersV4LedgerPostingService();
+    const conversion = { factor: new Prisma.Decimal(1) };
+    await service.postReversal(tx as never, {
+      tenantId: 'tenant-1', companyId: 'company-1', sourceId: 'corrected-1', effectiveAt: new Date('2026-08-03'),
+      currentInventoryUnitId: 'piece', currentConversionVersionId: null, currentConversion: conversion as never,
+      original: {
+        id: 'original-receipt', itemId: 'item-1', inventoryUnitId: 'piece', locationId: 'main',
+        quantityDelta: new Prisma.Decimal(10), valueDelta: new Prisma.Decimal(50), unitCost: new Prisma.Decimal(5),
+        conversionVersionId: null, recipeVersionId: null,
+      },
+    });
+    await service.postReversal(tx as never, {
+      tenantId: 'tenant-1', companyId: 'company-1', sourceId: 'corrected-1', effectiveAt: new Date('2026-08-03'),
+      currentInventoryUnitId: 'piece', currentConversionVersionId: null, currentConversion: conversion as never,
+      original: {
+        id: 'original-negative-revaluation', itemId: 'item-1', inventoryUnitId: 'piece', locationId: 'main',
+        quantityDelta: new Prisma.Decimal(0), valueDelta: new Prisma.Decimal(-25), unitCost: new Prisma.Decimal(5),
+        conversionVersionId: null, recipeVersionId: null,
+      },
+    });
+    await service.postReceipt(tx as never, {
+      tenantId: 'tenant-1', companyId: 'company-1', itemId: 'item-1', locationId: 'main',
+      documentLineId: 'new-line', inventoryUnitId: 'piece', sourceId: 'corrected-1',
+      sourceKey: 'document:corrected-1:line:new-line:receipt', effectiveAt: new Date('2026-08-03'),
+      quantity: new Prisma.Decimal(10), totalValue: new Prisma.Decimal(60), conversionVersionId: null,
+      sourceSnapshot: { policy: 'atomic-reverse-and-repost-on-save' },
+    });
+
+    expect(created.map((entry) => entry.entryType)).toEqual([
+      'reversal', 'reversal', 'negative_stock_revaluation', 'receipt',
+    ]);
+    expect(current.quantityAfter.toString()).toBe('5');
+    expect(current.valueAfter.toString()).toBe('30');
+    expect(current.averageUnitCostAfter.toString()).toBe('6');
+  });
+
   it('records an independent cancellation as inventory consumption, not a receipt or reversal', async () => {
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('user-1');
     const tx = {

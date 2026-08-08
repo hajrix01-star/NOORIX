@@ -42,47 +42,20 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
     jest.useRealTimers();
   });
 
-  it('atomically reverses an eligible received purchase and creates an editable prepared replacement', async () => {
+  it('opens an eligible received purchase read-only without inventory, custody or document writes', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('cashier-1');
     const original = receivedPurchase();
-    const reversal = { id: 'reversal-1' };
-    const replacement = { id: 'replacement-1', status: 'prepared', lines: [] };
-    const inventoryEntry = {
-      id: 'ledger-1', itemId: 'item-1', inventoryUnitId: 'piece', locationId: 'location-1',
-      quantityDelta: new Prisma.Decimal(10), valueDelta: new Prisma.Decimal(25), unitCost: new Prisma.Decimal('2.5'),
-      conversionVersionId: null, recipeVersionId: null,
-    };
-    const custodyEntry = { id: 'custody-1', amountDelta: new Prisma.Decimal(-25) };
-    const documentFindFirst = jest.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
-      if (where.idempotencyKey) return null;
-      if (where.id === original.id && where.documentType === 'purchase') return original;
-      if (where.status === 'prepared') return null;
-      if (where.id === original.id) return original;
-      if (where.reversalOfId) return null;
-      return null;
-    });
-    const documentCreate = jest.fn().mockImplementation(({ data }: { data: { reversalOfId?: string | null } }) => (
-      data.reversalOfId ? reversal : replacement
-    ));
+    const editable = { ...original, section: null, location: { id: 'location-1' } };
     const tx = {
       $executeRaw: jest.fn(),
-      idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
       ordersV4Document: {
-        findFirst: documentFindFirst,
+        findFirst: jest.fn().mockResolvedValue(original),
         findMany: jest.fn().mockResolvedValue([{ id: original.id }]),
-        create: documentCreate,
+        create: jest.fn(),
         update: jest.fn(),
-        findUniqueOrThrow: jest.fn().mockResolvedValue(replacement),
+        findUniqueOrThrow: jest.fn().mockResolvedValue(editable),
       },
-      ordersV4DocumentLine: { create: jest.fn() },
-      ordersV4InventoryLedgerEntry: { findMany: jest.fn().mockResolvedValue([inventoryEntry]) },
-      ordersV4CustodyLedgerEntry: { findMany: jest.fn().mockResolvedValue([custodyEntry]) },
-      ordersV4Item: { findMany: jest.fn().mockResolvedValue([{ id: 'item-1', kernelUnitId: 'piece', conversionVersions: [] }]) },
-      ordersV4Unit: { findMany: jest.fn().mockResolvedValue([{ id: 'piece', code: 'piece', dimension: 'count', canonicalFactor: new Prisma.Decimal(1) }]) },
-      ordersV4ConversionVersion: { findMany: jest.fn().mockResolvedValue([]) },
-      ordersV4PriceHistory: { findFirst: jest.fn().mockResolvedValue(null) },
-      ordersV4ItemUnit: { updateMany: jest.fn() },
     };
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
     const posting = { lockKeys: jest.fn(), postReversal: jest.fn() };
@@ -91,38 +64,13 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
 
     const result = await service.reopenPurchase('company-1', original.id, 'reopen-key-1', 'cashier');
 
-    expect(result).toBe(replacement);
-    expect(documentCreate).toHaveBeenCalledTimes(2);
-    expect(documentCreate.mock.calls[0][0].data).toMatchObject({
-      status: 'reversed', reversalOfId: original.id,
-    });
-    expect(documentCreate.mock.calls[1][0].data).toMatchObject({
-      status: 'prepared', documentType: 'purchase', idempotencyKey: 'reopen-key-1',
-      calculationSnapshot: expect.objectContaining({
-        operation: 'reopen-replacement', reopenedFromDocumentId: original.id, reversalDocumentId: reversal.id,
-      }),
-    });
-    expect(tx.ordersV4DocumentLine.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        documentId: replacement.id,
-        itemId: 'item-1',
-        calculationSnapshot: expect.objectContaining({ reopenedFromLineId: 'line-1' }),
-      }),
-    }));
-    expect(tx.ordersV4Document.update).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: original.id }, data: expect.objectContaining({ status: 'reversed' }),
-    }));
-    expect(tx.ordersV4Document.update).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: original.id },
-      data: expect.objectContaining({ calculationSnapshot: expect.objectContaining({ reopenedByDocumentId: replacement.id }) }),
-    }));
-    expect(posting.lockKeys).toHaveBeenCalled();
-    expect(posting.postReversal).toHaveBeenCalledWith(tx, expect.objectContaining({
-      companyId: 'company-1', sourceId: reversal.id, original: inventoryEntry,
-    }));
-    expect(funds.postReversals).toHaveBeenCalledWith(tx, expect.objectContaining({
-      companyId: 'company-1', reversalDocumentId: reversal.id, originals: [custodyEntry],
-    }));
+    expect(result).toEqual(expect.objectContaining({ id: original.id, editMode: 'correction' }));
+    expect(tx.ordersV4Document.create).not.toHaveBeenCalled();
+    expect(tx.ordersV4Document.update).not.toHaveBeenCalled();
+    expect(tx.$executeRaw).not.toHaveBeenCalled();
+    expect(posting.lockKeys).not.toHaveBeenCalled();
+    expect(posting.postReversal).not.toHaveBeenCalled();
+    expect(funds.postReversals).not.toHaveBeenCalled();
   });
 
   it('rejects a cashier request outside the mixed latest-five purchase window', async () => {
@@ -132,9 +80,7 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
       $executeRaw: jest.fn(),
       idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
       ordersV4Document: {
-        findFirst: jest.fn()
-          .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce(receivedPurchase()),
+        findFirst: jest.fn().mockResolvedValue(receivedPurchase()),
         findMany: jest.fn().mockResolvedValue([
           { id: 'purchase-6' }, { id: 'purchase-5' }, { id: 'purchase-4' }, { id: 'purchase-3' }, { id: 'purchase-2' },
         ]),
@@ -154,9 +100,7 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
       $executeRaw: jest.fn(),
       idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
       ordersV4Document: {
-        findFirst: jest.fn()
-          .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce({ ...receivedPurchase(), id: 'older-purchase', documentDate: new Date('2026-07-27T00:00:00.000Z') }),
+        findFirst: jest.fn().mockResolvedValue({ ...receivedPurchase(), id: 'older-purchase', documentDate: new Date('2026-07-27T00:00:00.000Z') }),
         findMany: jest.fn().mockResolvedValue([
           { id: 'newer-1' }, { id: 'newer-2' }, { id: 'newer-3' }, { id: 'newer-4' }, { id: 'newer-5' },
         ]),
@@ -176,12 +120,8 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
     const correctionDocument = { ...oldRecentPurchase, editMode: 'correction' };
     const tx = {
       $executeRaw: jest.fn(),
-      idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
       ordersV4Document: {
-        findFirst: jest.fn()
-          .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce(oldRecentPurchase)
-          .mockResolvedValueOnce({ id: 'pending-purchase' }),
+        findFirst: jest.fn().mockResolvedValue(oldRecentPurchase),
         findMany: jest.fn().mockResolvedValue([{ id: oldRecentPurchase.id }, { id: 'newer-2' }]),
         findUniqueOrThrow: jest.fn().mockResolvedValue(correctionDocument),
       },
@@ -193,17 +133,101 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
       .resolves.toMatchObject({ id: 'purchase-1', editMode: 'correction' });
     expect(tx.ordersV4Document.findUniqueOrThrow).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'purchase-1' } }));
 
-    const storedReplay = tx.idempotencyKey.upsert.mock.calls[0][0].create.resultJson;
-    tx.idempotencyKey.findFirst.mockResolvedValue({ resultJson: storedReplay });
-    tx.ordersV4Document.findFirst.mockImplementation(() => { throw new Error('state must not be re-evaluated'); });
-    await expect(service.reopenPurchase('company-1', 'purchase-1', 'reopen-key-3'))
-      .resolves.toMatchObject({ id: 'purchase-1', editMode: 'correction' });
+    expect(tx.ordersV4Document.findFirst).toHaveBeenCalledTimes(1);
   });
 
-  it('serializes undo-reverse with the company purchase-window lock before the document lock', async () => {
+  it('cancels only the business document own effect and excludes inherited reversal entries', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    const original = receivedPurchase();
+    const reversalDocument = { id: 'reversal-1' };
+    const tx = {
+      $executeRaw: jest.fn(),
+      ordersV4Document: {
+        findFirst: jest.fn(async ({ where }: { where: Record<string, unknown> }) => {
+          if (where.idempotencyKey) return null;
+          if (where.id === original.id) return original;
+          return null;
+        }),
+        create: jest.fn().mockResolvedValue(reversalDocument),
+        update: jest.fn(),
+      },
+      ordersV4InventoryLedgerEntry: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4CustodyLedgerEntry: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Item: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Unit: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4ConversionVersion: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4PriceHistory: { findFirst: jest.fn().mockResolvedValue(null) },
+      ordersV4ItemUnit: { updateMany: jest.fn() },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const service = new OrdersV4DocumentReversalService(prisma as never, { lockKeys: jest.fn() } as never, { postReversals: jest.fn() } as never);
+
+    await expect(service.reverse('company-1', original.id, 'reverse-key')).resolves.toBe(reversalDocument);
+    expect(tx.ordersV4InventoryLedgerEntry.findMany).toHaveBeenCalledWith({
+      where: { companyId: 'company-1', sourceId: original.id, entryType: { not: 'reversal' } },
+      orderBy: { sequence: 'desc' },
+    });
+    expect(tx.ordersV4CustodyLedgerEntry.findMany).toHaveBeenCalledWith({
+      where: { companyId: 'company-1', documentId: original.id, entryType: { not: 'reversal' } },
+      orderBy: { sequence: 'asc' },
+    });
+  });
+
+  it('undoes a cancellation from the reversal-chain head including its reversal entries', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    const original = { ...receivedPurchase(), status: 'reversed' };
+    const reversalHead = {
+      ...original,
+      id: 'reversal-1',
+      reversalOfId: original.id,
+      pettyCashAmount: original.pettyCashAmount.negated(),
+      subtotal: original.subtotal.negated(),
+      totalAmount: original.totalAmount.negated(),
+      operationalCost: original.operationalCost.negated(),
+      lines: [],
+    };
+    const undoDocument = { id: 'undo-1' };
+    const tx = {
+      $executeRaw: jest.fn(),
+      ordersV4Document: {
+        findFirst: jest.fn(async ({ where }: { where: Record<string, unknown> }) => {
+          if (where.idempotencyKey) return null;
+          if (where.id === original.id) return original;
+          if (where.reversalOfId === original.id) return reversalHead;
+          return null;
+        }),
+        create: jest.fn().mockResolvedValue(undoDocument),
+        update: jest.fn(),
+      },
+      ordersV4InventoryLedgerEntry: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4CustodyLedgerEntry: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Item: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4Unit: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4ConversionVersion: { findMany: jest.fn().mockResolvedValue([]) },
+      ordersV4PriceHistory: { findFirst: jest.fn().mockResolvedValue(null) },
+      ordersV4ItemUnit: { updateMany: jest.fn() },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const service = new OrdersV4DocumentReversalService(prisma as never, { lockKeys: jest.fn() } as never, { postReversals: jest.fn() } as never);
+
+    await expect(service.undoReverse('company-1', original.id, 'undo-chain-key')).resolves.toBe(undoDocument);
+    expect(tx.ordersV4InventoryLedgerEntry.findMany).toHaveBeenCalledWith({
+      where: { companyId: 'company-1', sourceId: reversalHead.id },
+      orderBy: { sequence: 'desc' },
+    });
+    expect(tx.ordersV4CustodyLedgerEntry.findMany).toHaveBeenCalledWith({
+      where: { companyId: 'company-1', documentId: reversalHead.id },
+      orderBy: { sequence: 'asc' },
+    });
+  });
+
+  it.each([
+    ['reverse', false],
+    ['undo-reverse', true],
+  ] as const)('serializes %s with the company purchase-window lock before the document lock', async (operation, undo) => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     const requestHash = createHash('sha256')
-      .update(JSON.stringify({ operation: 'undo-reverse', documentId: 'purchase-1' }))
+      .update(JSON.stringify({ operation, documentId: 'purchase-1' }))
       .digest('hex');
     const tx = {
       $executeRaw: jest.fn(),
@@ -212,7 +236,10 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
     const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
     const service = new OrdersV4DocumentReversalService(prisma as never, {} as never, {} as never);
 
-    await expect(service.undoReverse('company-1', 'purchase-1', 'undo-key')).resolves.toMatchObject({ id: 'undo-result' });
+    const result = undo
+      ? service.undoReverse('company-1', 'purchase-1', 'undo-key')
+      : service.reverse('company-1', 'purchase-1', 'reverse-key');
+    await expect(result).resolves.toMatchObject({ id: 'undo-result' });
     expect(tx.$executeRaw).toHaveBeenCalledTimes(2);
     expect(tx.$executeRaw.mock.calls[0][1]).toBe('orders-v4:receive:company-1');
     expect(tx.$executeRaw.mock.calls[1][1]).toBe('orders-v4:reverse:company-1:purchase-1');

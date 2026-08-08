@@ -2,7 +2,14 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import type { OrdersV4ReceiveInput } from './orders-v4.contracts';
-import { OrdersV4DocumentReversalService } from './orders-v4-document-reversal.service';
+import {
+  ordersV4EdgeDefinitions,
+  ordersV4UnitDefinitions,
+  resolveOrdersV4ContextConversion,
+} from './orders-v4-conversion.context';
+import { ordersV4OwnedEffectEntryFilter, resolveOrdersV4EffectHead } from './orders-v4-document-effect.policy';
+import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
+import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 import {
   isOrdersV4CashierEditEligible,
   isOrdersV4OwnerEditEligible,
@@ -21,6 +28,16 @@ type CorrectionDocument = Prisma.OrdersV4DocumentGetPayload<{
     lines: { include: { item: true; inputUnit: true; baseUnit: true; priceUnit: true } };
   };
 }>;
+type CorrectionItem = Prisma.OrdersV4ItemGetPayload<{
+  include: {
+    units: true;
+    sections: true;
+    conversionVersions: { include: { edges: true } };
+  };
+}>;
+type CorrectionUnit = Prisma.OrdersV4UnitGetPayload<Record<string, never>>;
+type CorrectionInventoryEntry = Prisma.OrdersV4InventoryLedgerEntryGetPayload<Record<string, never>>;
+type CorrectionCustodyEntry = Prisma.OrdersV4CustodyLedgerEntryGetPayload<Record<string, never>>;
 
 export type OrdersV4CorrectionPreparation = {
   duplicate: CorrectionDocument | null;
@@ -29,11 +46,15 @@ export type OrdersV4CorrectionPreparation = {
   correctionSnapshot: Prisma.InputJsonObject;
   inheritedPaymentMethod: 'custody' | 'cash' | 'transfer' | null;
   inheritedPettyCashAmount: Prisma.Decimal | null;
+  original: CorrectionDocument | null;
 };
 
 @Injectable()
 export class OrdersV4PurchaseCorrectionService {
-  constructor(private readonly reversal: OrdersV4DocumentReversalService) {}
+  constructor(
+    private readonly posting: OrdersV4LedgerPostingService,
+    private readonly fundsPosting: OrdersV4FundsPostingService,
+  ) {}
 
   async prepareInTransaction(
     tx: OrdersV4Transaction,
@@ -61,11 +82,20 @@ export class OrdersV4PurchaseCorrectionService {
         correctionSnapshot: {},
         inheritedPaymentMethod: null,
         inheritedPettyCashAmount: null,
+        original: null,
       };
     }
 
     const original = await tx.ordersV4Document.findFirst({
       where: { id: context.documentId, companyId: context.companyId, documentType: 'purchase', status: 'received', reversalOfId: null },
+      include: {
+        section: true,
+        location: true,
+        lines: {
+          include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true },
+          orderBy: { lineNumber: 'asc' },
+        },
+      },
     });
     if (!original) throw new BadRequestException('الطلب المستلم غير موجود أو سبق تعديله');
     if (original.revision !== input.revision) throw new BadRequestException('تم تعديل الطلب؛ أعد تحميله قبل الحفظ');
@@ -80,23 +110,6 @@ export class OrdersV4PurchaseCorrectionService {
         throw new BadRequestException(`يمكن للكاشير تعديل أو استلام آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات فقط`);
       }
     }
-    const pendingPurchase = await tx.ordersV4Document.findFirst({
-      where: {
-        companyId: context.companyId,
-        documentType: 'purchase',
-        status: 'prepared',
-        reversalOfId: null,
-      },
-      select: { id: true },
-    });
-    if (!pendingPurchase) throw new BadRequestException('لم يعد هناك طلب بانتظار الاستلام؛ أغلق النافذة وافتح الطلب للتعديل من جديد');
-
-    const reversal = await this.reversal.reverseInTransaction(
-      tx,
-      context.companyId,
-      original.id,
-      `correction-reversal:${context.correctionRequestHash.slice(0, 48)}`,
-    );
     const inheritedPaymentMethod = original.paymentMethod === 'custody' || original.paymentMethod === 'cash' || original.paymentMethod === 'transfer'
       ? original.paymentMethod
       : null;
@@ -123,9 +136,9 @@ export class OrdersV4PurchaseCorrectionService {
         calculationSnapshot: {
           kernelVersion: 4,
           owner: 'orders-v4-smart-edit-workflow',
-          operation: 'direct-correction',
+          operation: 'atomic-correction-draft',
           correctedFromDocumentId: original.id,
-          reversalDocumentId: reversal.id,
+          correctedFromRevision: original.revision,
         },
         createdByUserId: context.userId,
         updatedByUserId: context.userId,
@@ -134,10 +147,12 @@ export class OrdersV4PurchaseCorrectionService {
     await tx.ordersV4Document.update({
       where: { id: original.id },
       data: {
+        status: 'reversed',
         calculationSnapshot: {
           ...((original.calculationSnapshot as Prisma.InputJsonObject | null) ?? {}),
           correctedByDocumentId: replacement.id,
-          correctionReversalDocumentId: reversal.id,
+          correctedAt: new Date().toISOString(),
+          correctionPolicy: 'atomic-reverse-and-repost-on-save',
         },
         updatedByUserId: context.userId,
       },
@@ -147,12 +162,133 @@ export class OrdersV4PurchaseCorrectionService {
       targetId: replacement.id,
       receivedFromRevision: original.revision,
       correctionSnapshot: {
-        operation: 'direct-correction',
+        operation: 'atomic-correction',
         correctedFromDocumentId: original.id,
-        reversalDocumentId: reversal.id,
+        correctedFromRevision: original.revision,
       },
       inheritedPaymentMethod,
       inheritedPettyCashAmount: original.pettyCashAmount,
+      original,
     };
+  }
+
+  async loadEffectInTransaction(
+    tx: OrdersV4Transaction,
+    companyId: string,
+    original: CorrectionDocument | null,
+  ): Promise<{ inventoryEntries: CorrectionInventoryEntry[]; custodyEntries: CorrectionCustodyEntry[] }> {
+    if (!original) return { inventoryEntries: [], custodyEntries: [] };
+    const head = await resolveOrdersV4EffectHead(
+      original,
+      (documentId) => tx.ordersV4Document.findFirst({
+        where: { companyId, reversalOfId: documentId },
+        include: {
+          section: true,
+          location: true,
+          lines: {
+            include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true },
+            orderBy: { lineNumber: 'asc' },
+          },
+        },
+      }),
+    );
+    const owned = ordersV4OwnedEffectEntryFilter(head);
+    const inventoryEntries = await tx.ordersV4InventoryLedgerEntry.findMany({
+      where: { companyId, sourceId: head.id, ...owned },
+      orderBy: { sequence: 'desc' },
+    });
+    const custodyEntries = await tx.ordersV4CustodyLedgerEntry.findMany({
+      where: { companyId, documentId: head.id, ...owned },
+      orderBy: { sequence: 'asc' },
+    });
+    return { inventoryEntries, custodyEntries };
+  }
+
+  async reverseInventoryInTransaction(
+    tx: OrdersV4Transaction,
+    context: {
+      tenantId: string;
+      companyId: string;
+      targetId: string;
+      effectiveAt: Date;
+      entries: CorrectionInventoryEntry[];
+      items: CorrectionItem[];
+      units: CorrectionUnit[];
+    },
+  ) {
+    if (context.entries.length === 0) return;
+    const conversionIds = [...new Set(context.entries
+      .map((entry) => entry.conversionVersionId)
+      .filter(Boolean) as string[])];
+    const historical = await tx.ordersV4ConversionVersion.findMany({
+      where: { companyId: context.companyId, id: { in: conversionIds } },
+      include: { edges: true },
+    });
+    const itemById = new Map(context.items.map((item) => [item.id, item]));
+    const unitDefinitions = ordersV4UnitDefinitions(context.units);
+    for (const entry of context.entries) {
+      const item = itemById.get(entry.itemId);
+      if (!item) throw new BadRequestException('تعذر العثور على صنف قيد المخزون السابق');
+      const currentDefinition = item.conversionVersions[0];
+      const historicalDefinition = historical.find((version) => version.id === entry.conversionVersionId);
+      const currentConversion = resolveOrdersV4ContextConversion({
+        fromUnitId: entry.inventoryUnitId,
+        toUnitId: item.kernelUnitId,
+        units: unitDefinitions,
+        edges: ordersV4EdgeDefinitions(historicalDefinition?.edges ?? currentDefinition?.edges),
+      });
+      await this.posting.postReversal(tx, {
+        tenantId: context.tenantId,
+        companyId: context.companyId,
+        sourceId: context.targetId,
+        effectiveAt: context.effectiveAt,
+        currentInventoryUnitId: item.kernelUnitId,
+        currentConversionVersionId: historicalDefinition?.id ?? currentDefinition?.id ?? null,
+        currentConversion,
+        original: entry,
+      });
+    }
+  }
+
+  async reverseCustodyInTransaction(
+    tx: OrdersV4Transaction,
+    context: {
+      tenantId: string;
+      companyId: string;
+      targetId: string;
+      effectiveAt: Date;
+      entries: CorrectionCustodyEntry[];
+    },
+  ) {
+    if (context.entries.length === 0) return;
+    await this.fundsPosting.postReversals(tx, {
+      tenantId: context.tenantId,
+      companyId: context.companyId,
+      reversalDocumentId: context.targetId,
+      effectiveAt: context.effectiveAt,
+      originals: context.entries,
+    });
+  }
+
+  async refreshHistoricalPricesInTransaction(
+    tx: OrdersV4Transaction,
+    companyId: string,
+    original: CorrectionDocument | null,
+  ) {
+    if (!original) return;
+    const keys = [...new Map(original.lines.map((line) => [
+      `${line.itemId}:${line.priceUnitId}`,
+      { itemId: line.itemId, unitId: line.priceUnitId },
+    ])).values()];
+    for (const key of keys) {
+      const latest = await tx.ordersV4PriceHistory.findFirst({
+        where: { companyId, itemId: key.itemId, unitId: key.unitId, document: { status: 'received' } },
+        orderBy: [{ effectiveAt: 'desc' }, { createdAt: 'desc' }],
+      });
+      await tx.ordersV4ItemUnit.updateMany({
+        where: { companyId, itemId: key.itemId, unitId: key.unitId },
+        data: { lastPrice: latest?.unitPrice ?? null, lastPriceAt: latest?.effectiveAt ?? null },
+      });
+    }
   }
 }

@@ -31,7 +31,8 @@ import {
   readOrdersV4OperationReplay,
 } from './orders-v4-operation-idempotency.util';
 import { OrdersV4DocumentReversalService } from './orders-v4-document-reversal.service';
-import { OrdersV4PurchaseCorrectionService } from './orders-v4-purchase-correction.service';
+import { ordersV4PurchaseWindowLockKey } from './orders-v4-document-effect.policy';
+import { OrdersV4PurchaseCorrectionService, type OrdersV4CorrectionPreparation } from './orders-v4-purchase-correction.service';
 import {
   ordersV4ConversionSnapshot,
   ordersV4DocumentNumber,
@@ -204,7 +205,7 @@ export class OrdersV4DocumentsService {
 
     return this.prisma.withTenant(async (tx) => {
       if (input.documentType === 'purchase') {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ordersV4PurchaseWindowLockKey(companyId)}))`;
       }
       const duplicate = await tx.ordersV4Document.findFirst({
         where: { companyId, idempotencyKey: input.idempotencyKey.trim() },
@@ -618,7 +619,7 @@ export class OrdersV4DocumentsService {
     const receiveOperationKeyHash = ordersV4OperationKeyHash('receive-purchase', input.idempotencyKey);
 
     return this.prisma.withTenant(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:receive:${companyId}`}))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ordersV4PurchaseWindowLockKey(companyId)}))`;
       const replay = await readOrdersV4OperationReplay(tx, tenantId, companyId, receiveOperationKeyHash);
       if (replay) {
         if (replay.requestHash !== receiveRequestHash) {
@@ -634,6 +635,7 @@ export class OrdersV4DocumentsService {
       let correctionSnapshot: Prisma.InputJsonObject = {};
       let inheritedPaymentMethod: 'custody' | 'cash' | 'transfer' | null = null;
       let inheritedPettyCashAmount: Prisma.Decimal | null = null;
+      let correctionOriginal: OrdersV4CorrectionPreparation['original'] = null;
 
       if (correctionMode) {
         const correction = await this.purchaseCorrection.prepareInTransaction(tx, input, {
@@ -651,6 +653,7 @@ export class OrdersV4DocumentsService {
         correctionSnapshot = correction.correctionSnapshot;
         inheritedPaymentMethod = correction.inheritedPaymentMethod;
         inheritedPettyCashAmount = correction.inheritedPettyCashAmount;
+        correctionOriginal = correction.original;
       } else {
         const purchase = await tx.ordersV4Document.findFirst({
           where: { id, companyId, documentType: 'purchase', reversalOfId: null },
@@ -683,20 +686,23 @@ export class OrdersV4DocumentsService {
         if (purchase.revision !== input.revision) throw new BadRequestException('تم تعديل الطلب؛ أعد تحميله قبل الاستلام');
         receivedFromRevision = purchase.revision;
       }
-
+      const correctionEffect = await this.purchaseCorrection.loadEffectInTransaction(tx, companyId, correctionOriginal);
+      const correctionInventoryEntries = correctionEffect.inventoryEntries;
+      const correctionCustodyEntries = correctionEffect.custodyEntries;
       const location = await tx.ordersV4Location.findFirst({ where: { id: input.locationId, companyId, isActive: true } });
       if (!location) throw new BadRequestException('موقع المخزون غير موجود');
-      const itemIds = [...new Set(input.lines.map((line) => line.itemId))];
+      const requestedItemIds = [...new Set(input.lines.map((line) => line.itemId))];
+      const itemIds = [...new Set([...requestedItemIds, ...correctionInventoryEntries.map((entry) => entry.itemId)])];
       const items = await tx.ordersV4Item.findMany({
-        where: { companyId, id: { in: itemIds }, itemType: 'purchased', isActive: true },
-        include: {
-          units: true,
-          sections: true,
-          conversionVersions: { where: { status: 'published' }, include: { edges: true }, orderBy: { version: 'desc' }, take: 1 },
-        },
+        where: { companyId, id: { in: itemIds }, itemType: 'purchased' },
+        include: { units: true, sections: true, conversionVersions: {
+          where: { status: 'published' }, include: { edges: true }, orderBy: { version: 'desc' }, take: 1,
+        } },
       });
-      if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف الاستلام غير صالح');
-      const units = await tx.ordersV4Unit.findMany({ where: { companyId, isActive: true } });
+      if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف الاستلام أو نسخته السابقة غير صالح');
+      const activeRequestedIds = new Set(items.filter((item) => item.isActive).map((item) => item.id));
+      if (requestedItemIds.some((itemId) => !activeRequestedIds.has(itemId))) throw new BadRequestException('أحد أصناف الاستلام غير موجود أو غير فعال');
+      const units = await tx.ordersV4Unit.findMany({ where: correctionMode ? { companyId } : { companyId, isActive: true } });
       const unitDefinitions = ordersV4UnitDefinitions(units);
       const itemById = new Map(items.map((item) => [item.id, item]));
       const prepared = input.lines.map((line, index) => {
@@ -763,7 +769,11 @@ export class OrdersV4DocumentsService {
         if (subtotal.gt(available)) throw new BadRequestException(`رصيد نقد المحل غير كافٍ. المتاح ${available.toFixed(2)}`);
       }
 
-      await this.posting.lockKeys(tx, companyId, prepared.filter((row) => row.item.trackInventory).map((row) => ({ itemId: row.item.id, locationId: location.id })));
+      const inventoryLocks = prepared.filter((row) => row.item.trackInventory)
+        .map((row) => ({ itemId: row.item.id, locationId: location.id }));
+      inventoryLocks.push(...correctionInventoryEntries
+        .map((entry) => ({ itemId: entry.itemId, locationId: entry.locationId })));
+      await this.posting.lockKeys(tx, companyId, inventoryLocks);
       await tx.ordersV4DocumentLine.deleteMany({ where: { documentId: targetId } });
       const calculationSnapshot: Prisma.InputJsonObject = {
         kernelVersion: 4,
@@ -795,6 +805,10 @@ export class OrdersV4DocumentsService {
           updatedByUserId: userId,
           calculationSnapshot,
         },
+      });
+
+      await this.purchaseCorrection.reverseInventoryInTransaction(tx, {
+        tenantId, companyId, targetId, effectiveAt: receivedDate, entries: correctionInventoryEntries, items, units,
       });
 
       for (const row of prepared) {
@@ -837,17 +851,30 @@ export class OrdersV4DocumentsService {
             sourceId: targetId, sourceKey: `document:${targetId}:line:${line.id}:receipt`, effectiveAt: receivedDate,
             quantity: row.calculation.baseQuantity, totalValue: row.calculation.lineTotal,
             conversionVersionId: row.definition?.id || null,
-            sourceSnapshot: { kernelVersion: 4, lineNumber: row.index + 1, receivedByUserId: userId },
+            sourceSnapshot: {
+              kernelVersion: 4,
+              lineNumber: row.index + 1,
+              receivedByUserId: userId,
+              ...(correctionOriginal ? {
+                policy: 'atomic-reverse-and-repost-on-save',
+                correctedFromDocumentId: correctionOriginal.id,
+              } : {}),
+            },
           });
         }
       }
 
+      await this.purchaseCorrection.reverseCustodyInTransaction(tx, {
+        tenantId, companyId, targetId, effectiveAt: receivedDate, entries: correctionCustodyEntries,
+      });
       if (paymentMethod === 'custody') {
         await this.fundsPosting.postPurchase(tx, {
           tenantId, companyId, documentId: targetId, effectiveAt: receivedDate,
           purchaseAmount: subtotal, fundingAmount: pettyCashAmount,
         });
       }
+
+      await this.purchaseCorrection.refreshHistoricalPricesInTransaction(tx, companyId, correctionOriginal);
 
       const result = await tx.ordersV4Document.findUniqueOrThrow({
         where: { id: targetId },
