@@ -221,7 +221,7 @@ export default function VaultTransactionsModal({
         companyName: companyName || vaultName,
         logoUrl: companyLogoUrl,
         subtitle: `${vaultName} - ${t('transactions')}${periodLabel ? ` - ${periodLabel}` : ''}`,
-        landscape: true,
+        landscape: false,
         pageMarginMm: 10,
         htmlDir: lang === 'en' ? 'ltr' : 'rtl',
         htmlLang: lang === 'en' ? 'en' : 'ar',

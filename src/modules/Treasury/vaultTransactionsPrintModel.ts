@@ -104,7 +104,7 @@ export const VAULT_TRANSACTIONS_PRINT_CSS = `
 .vault-print-summary__card.is-in strong { color: #087a55; }
 .vault-print-summary__card.is-out strong { color: #b42318; }
 .vault-print-table-wrap { width: 100%; overflow: visible; }
-.vault-print-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 10.5px; line-height: 1.35; }
+.vault-print-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 9.5px; line-height: 1.35; }
 .vault-print-table thead { display: table-header-group; }
 .vault-print-table tfoot { display: table-row-group; }
 .vault-print-table tr { break-inside: avoid; page-break-inside: avoid; }
@@ -118,12 +118,12 @@ export const VAULT_TRANSACTIONS_PRINT_CSS = `
 }
 .vault-print-table td { border: 1px solid #d5dde5; padding: 5px 7px; vertical-align: middle; }
 .vault-print-table tbody tr:nth-child(even) td { background: #f8fafc; }
-.vault-print-table th:nth-child(1), .vault-print-table td:nth-child(1) { width: 21%; }
+.vault-print-table th:nth-child(1), .vault-print-table td:nth-child(1) { width: 22%; }
 .vault-print-table th:nth-child(2), .vault-print-table td:nth-child(2) { width: 12%; }
-.vault-print-table th:nth-child(3), .vault-print-table td:nth-child(3) { width: 14%; }
-.vault-print-table th:nth-child(4), .vault-print-table td:nth-child(4) { width: 29%; }
+.vault-print-table th:nth-child(3), .vault-print-table td:nth-child(3) { width: 13%; }
+.vault-print-table th:nth-child(4), .vault-print-table td:nth-child(4) { width: 27%; }
 .vault-print-table th:nth-child(5), .vault-print-table td:nth-child(5),
-.vault-print-table th:nth-child(6), .vault-print-table td:nth-child(6) { width: 12%; }
+.vault-print-table th:nth-child(6), .vault-print-table td:nth-child(6) { width: 13%; }
 .vault-print-reference, .vault-print-date, .vault-print-amount {
   direction: ltr;
   unicode-bidi: embed;
