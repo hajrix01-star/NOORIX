@@ -6,6 +6,7 @@ type PeriodKindTotal = {
 };
 
 type PurchaseCategoryRow = {
+  id?: string | null;
   categoryId?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
@@ -13,14 +14,11 @@ type PurchaseCategoryRow = {
   sharePct?: number | null;
 };
 
-type FixedExpenseDetailRow = {
-  invoiceId?: string;
-  invoiceNumber?: string;
-  transactionDate?: string;
+type CostCategoryRow = {
+  id?: string | null;
+  categoryId?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
-  sourceAr?: string | null;
-  sourceEn?: string | null;
   amount?: string | number | null;
   sharePct?: number | null;
 };
@@ -31,8 +29,9 @@ type PeriodData = {
   purchaseCategoryTotal?: string | number | null;
   fixedExpenseTotal?: string | number | null;
   fixedExpenseInvoiceCount?: number | null;
-  fixedExpenseDetails?: FixedExpenseDetailRow[];
-  fixedExpenseDetailsLimited?: boolean;
+  recurringCostCategoryBreakdown?: CostCategoryRow[];
+  otherExpenseCategoryBreakdown?: CostCategoryRow[];
+  otherExpenseTotal?: string | number | null;
 } | null;
 
 type KpiCard = {
@@ -52,22 +51,32 @@ export function buildDashboardOperationalOverview(
   const salesCard = kpiCards.find((row) => row.key === 'sales');
   const sales = new Decimal(salesCard?.value || 0);
   const fixedExpenseKind = periodData?.totalsByKind?.fixed_expense;
-  const fixedExpenses = new Decimal(periodData?.fixedExpenseTotal ?? fixedExpenseKind?.totalAmount ?? 0);
+  const recurringCosts = new Decimal(periodData?.fixedExpenseTotal ?? fixedExpenseKind?.totalAmount ?? 0);
   const purchases = new Decimal(periodData?.purchaseCategoryTotal || 0);
+  const otherExpenses = new Decimal(periodData?.otherExpenseTotal ?? 0);
+  const operatingCosts = purchases.plus(recurringCosts).plus(otherExpenses);
 
   return {
     sales: sales.toString(),
-    fixedExpenses: {
-      amount: fixedExpenses.toString(),
-      invoiceCount: periodData?.fixedExpenseInvoiceCount ?? fixedExpenseKind?.invoiceCount ?? 0,
-      shareOfSalesPct: percentageOf(fixedExpenses, sales),
-      details: periodData?.fixedExpenseDetails ?? [],
-      detailsLimited: periodData?.fixedExpenseDetailsLimited ?? false,
+    recurringCosts: {
+      amount: recurringCosts.toString(),
+      recordCount: periodData?.fixedExpenseInvoiceCount ?? fixedExpenseKind?.invoiceCount ?? 0,
+      shareOfSalesPct: percentageOf(recurringCosts, sales),
+      categories: periodData?.recurringCostCategoryBreakdown ?? [],
+    },
+    otherExpenses: {
+      amount: otherExpenses.toString(),
+      shareOfSalesPct: percentageOf(otherExpenses, sales),
+      categories: periodData?.otherExpenseCategoryBreakdown ?? [],
     },
     purchases: {
       amount: purchases.toString(),
       shareOfSalesPct: percentageOf(purchases, sales),
       categories: periodData?.purchaseCategoryBreakdown ?? [],
+    },
+    operatingCosts: {
+      amount: operatingCosts.toString(),
+      shareOfSalesPct: percentageOf(operatingCosts, sales),
     },
   };
 }

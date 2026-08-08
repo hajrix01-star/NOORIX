@@ -22,7 +22,8 @@ type DashboardOverviewPrintInput = {
 
 const MAX_VAULT_ROWS = 8;
 const MAX_PURCHASE_CATEGORY_ROWS = 6;
-const MAX_FIXED_EXPENSE_ROWS = 5;
+const MAX_RECURRING_COST_ROWS = 5;
+const MAX_OTHER_EXPENSE_ROWS = 5;
 
 function esc(value: unknown): string {
   return String(value ?? '')
@@ -77,12 +78,12 @@ export function buildDashboardOverviewPrintDocument(input: DashboardOverviewPrin
   const labels = isArabic
     ? {
         title: 'لوحة التحكم — النظرة العامة', period: 'الفترة', incoming: 'إجمالي الداخل', outgoing: 'إجمالي الخارج', result: 'نتيجة الفترة',
-        vaults: 'حركة الخزائن', vault: 'الخزينة', share: 'النسبة من الداخل', fixed: 'التكاليف التشغيلية الدورية', purchases: 'المشتريات حسب الفئات',
+        vaults: 'حركة الخزائن', vault: 'الخزينة', share: 'النسبة من الداخل', fixed: 'التكاليف التشغيلية الدورية', purchases: 'المشتريات حسب الفئات', other: 'المصاريف الأخرى حسب الفئات', operating: 'إجمالي التكاليف التشغيلية',
         category: 'الفئة', amount: 'المبلغ', fixedCount: 'سجل', extra: 'عناصر إضافية غير معروضة للحفاظ على صفحة واحدة', none: 'لا توجد بيانات خلال الفترة',
       }
     : {
         title: 'Dashboard — Overview', period: 'Period', incoming: 'Total inflow', outgoing: 'Total outflow', result: 'Period result',
-        vaults: 'Vault activity', vault: 'Vault', share: 'Inflow share', fixed: 'Recurring operating costs', purchases: 'Purchases by category',
+        vaults: 'Vault activity', vault: 'Vault', share: 'Inflow share', fixed: 'Recurring operating costs', purchases: 'Purchases by category', other: 'Other expenses by category', operating: 'Total operating costs',
         category: 'Category', amount: 'Amount', fixedCount: 'records', extra: 'additional items omitted to keep one page', none: 'No data for this period',
       };
 
@@ -108,14 +109,20 @@ export function buildDashboardOverviewPrintDocument(input: DashboardOverviewPrin
     amountCell(row.amount, input.lang),
     `<span dir="ltr">${esc(pct(row.sharePct, input.lang))}</span>`,
   ]);
-  const fixedRows = (input.operationalOverview.fixedExpenses.details ?? []).slice(0, MAX_FIXED_EXPENSE_ROWS).map((row) => [
-    esc((isArabic ? row.nameAr || row.nameEn : row.nameEn || row.nameAr) || row.invoiceNumber || labels.fixed),
+  const recurringRows = (input.operationalOverview.recurringCosts.categories ?? []).slice(0, MAX_RECURRING_COST_ROWS).map((row) => [
+    esc((isArabic ? row.nameAr || row.nameEn : row.nameEn || row.nameAr) || labels.fixed),
+    amountCell(row.amount, input.lang),
+    `<span dir="ltr">${esc(pct(row.sharePct, input.lang))}</span>`,
+  ]);
+  const otherRows = (input.operationalOverview.otherExpenses.categories ?? []).slice(0, MAX_OTHER_EXPENSE_ROWS).map((row) => [
+    esc((isArabic ? row.nameAr || row.nameEn : row.nameEn || row.nameAr) || labels.category),
     amountCell(row.amount, input.lang),
     `<span dir="ltr">${esc(pct(row.sharePct, input.lang))}</span>`,
   ]);
   const hiddenVaults = Math.max(0, (input.vaultActivity.rows?.length ?? 0) - MAX_VAULT_ROWS);
   const hiddenCategories = Math.max(0, (input.operationalOverview.purchases.categories?.length ?? 0) - MAX_PURCHASE_CATEGORY_ROWS);
-  const hiddenFixed = Math.max(0, (input.operationalOverview.fixedExpenses.details?.length ?? 0) - MAX_FIXED_EXPENSE_ROWS);
+  const hiddenRecurring = Math.max(0, (input.operationalOverview.recurringCosts.categories?.length ?? 0) - MAX_RECURRING_COST_ROWS);
+  const hiddenOther = Math.max(0, (input.operationalOverview.otherExpenses.categories?.length ?? 0) - MAX_OTHER_EXPENSE_ROWS);
 
   const body = `<main class="dashboard-overview-print">
     <div class="dash-print-title"><strong>${esc(labels.title)}</strong><span>${esc(labels.period)}: ${esc(periodTitle(input))}</span></div>
@@ -125,6 +132,7 @@ export function buildDashboardOverviewPrintDocument(input: DashboardOverviewPrin
       <article><span>${esc(labels.outgoing)}</span>${amountCell(input.vaultActivity.totalOutflow, input.lang)}</article>
       <article><span>${esc(labels.result)}</span>${amountCell(input.vaultActivity.periodResult, input.lang)}</article>
     </section>
+    <section class="dash-print-operating"><span>${esc(labels.operating)}</span>${amountCell(input.operationalOverview.operatingCosts.amount, input.lang)}</section>
     <section class="dash-print-section">
       <h2>${esc(labels.vaults)}</h2>
       ${compactTable([labels.vault, labels.incoming, labels.outgoing, labels.result, labels.share], vaultRows, labels.none)}
@@ -132,16 +140,22 @@ export function buildDashboardOverviewPrintDocument(input: DashboardOverviewPrin
     </section>
     <section class="dash-print-columns">
       <article class="dash-print-section">
-        <h2>${esc(labels.fixed)} <small>(${input.operationalOverview.fixedExpenses.invoiceCount} ${esc(labels.fixedCount)})</small></h2>
-        <div class="dash-print-section-total">${amountCell(input.operationalOverview.fixedExpenses.amount, input.lang)} <span dir="ltr">${esc(pct(input.operationalOverview.fixedExpenses.shareOfSalesPct, input.lang))}</span></div>
-        ${compactTable([labels.fixed, labels.amount, labels.share], fixedRows, labels.none)}
-        ${hiddenFixed ? `<p class="dash-print-note">+${hiddenFixed} ${esc(labels.extra)}</p>` : ''}
+        <h2>${esc(labels.fixed)} <small>(${input.operationalOverview.recurringCosts.recordCount} ${esc(labels.fixedCount)})</small></h2>
+        <div class="dash-print-section-total">${amountCell(input.operationalOverview.recurringCosts.amount, input.lang)} <span dir="ltr">${esc(pct(input.operationalOverview.recurringCosts.shareOfSalesPct, input.lang))}</span></div>
+        ${compactTable([labels.category, labels.amount, labels.share], recurringRows, labels.none)}
+        ${hiddenRecurring ? `<p class="dash-print-note">+${hiddenRecurring} ${esc(labels.extra)}</p>` : ''}
       </article>
       <article class="dash-print-section">
         <h2>${esc(labels.purchases)}</h2>
         <div class="dash-print-section-total">${amountCell(input.operationalOverview.purchases.amount, input.lang)} <span dir="ltr">${esc(pct(input.operationalOverview.purchases.shareOfSalesPct, input.lang))}</span></div>
         ${compactTable([labels.category, labels.amount, labels.share], purchaseRows, labels.none)}
         ${hiddenCategories ? `<p class="dash-print-note">+${hiddenCategories} ${esc(labels.extra)}</p>` : ''}
+      </article>
+      <article class="dash-print-section">
+        <h2>${esc(labels.other)}</h2>
+        <div class="dash-print-section-total">${amountCell(input.operationalOverview.otherExpenses.amount, input.lang)} <span dir="ltr">${esc(pct(input.operationalOverview.otherExpenses.shareOfSalesPct, input.lang))}</span></div>
+        ${compactTable([labels.category, labels.amount, labels.share], otherRows, labels.none)}
+        ${hiddenOther ? `<p class="dash-print-note">+${hiddenOther} ${esc(labels.extra)}</p>` : ''}
       </article>
     </section>
   </main>`;
@@ -173,7 +187,8 @@ export function buildDashboardOverviewPrintDocument(input: DashboardOverviewPrin
       .dash-print-kpi small { display:block; margin-top:2px; color:#475569; font-size:8px; }
       .dash-print-flow { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:4px; margin-bottom:6px; }
       .dash-print-flow .dash-print-amount { display:block; margin-top:3px; font-size:10px; }
-      .dash-print-columns { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:6px; align-items:start; }
+      .dash-print-operating { display:flex; justify-content:space-between; align-items:center; border:1px solid #bbd7c6; border-radius:5px; padding:5px 7px; margin-bottom:6px; color:#14532d; font-size:9px; font-weight:700; }
+      .dash-print-columns { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:5px; align-items:start; }
       .dash-print-section { border:1px solid #cbd5e1; border-radius:5px; padding:5px; margin-bottom:6px; break-inside:avoid; overflow:hidden; }
       .dash-print-section h2 { margin:0 0 4px; font-size:10px; color:#0f172a; }
       .dash-print-section h2 small { color:#64748b; font-size:8px; font-weight:400; }

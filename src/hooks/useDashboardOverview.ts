@@ -40,8 +40,10 @@ const EMPTY_OVERVIEW: DashboardOverviewData = {
   },
   operationalOverview: {
     sales: 0,
-    fixedExpenses: { amount: 0, invoiceCount: 0, shareOfSalesPct: null, details: [], detailsLimited: false },
+    recurringCosts: { amount: 0, recordCount: 0, shareOfSalesPct: null, categories: [] },
+    otherExpenses: { amount: 0, shareOfSalesPct: null, categories: [] },
     purchases: { amount: 0, shareOfSalesPct: null, categories: [] },
+    operatingCosts: { amount: 0, shareOfSalesPct: null },
   },
   presentation: {
     kpiCards: [],
@@ -91,14 +93,20 @@ function normalizeDashboardOverview(raw: DashboardOverviewData | null | undefine
     },
     operationalOverview: {
       sales: raw.operationalOverview?.sales ?? 0,
-      fixedExpenses: {
-        amount: raw.operationalOverview?.fixedExpenses?.amount ?? 0,
-        invoiceCount: raw.operationalOverview?.fixedExpenses?.invoiceCount ?? 0,
-        shareOfSalesPct: raw.operationalOverview?.fixedExpenses?.shareOfSalesPct ?? null,
-        details: Array.isArray(raw.operationalOverview?.fixedExpenses?.details)
-          ? raw.operationalOverview.fixedExpenses.details
+      recurringCosts: {
+        amount: raw.operationalOverview?.recurringCosts?.amount ?? 0,
+        recordCount: raw.operationalOverview?.recurringCosts?.recordCount ?? 0,
+        shareOfSalesPct: raw.operationalOverview?.recurringCosts?.shareOfSalesPct ?? null,
+        categories: Array.isArray(raw.operationalOverview?.recurringCosts?.categories)
+          ? raw.operationalOverview.recurringCosts.categories
           : [],
-        detailsLimited: raw.operationalOverview?.fixedExpenses?.detailsLimited ?? false,
+      },
+      otherExpenses: {
+        amount: raw.operationalOverview?.otherExpenses?.amount ?? 0,
+        shareOfSalesPct: raw.operationalOverview?.otherExpenses?.shareOfSalesPct ?? null,
+        categories: Array.isArray(raw.operationalOverview?.otherExpenses?.categories)
+          ? raw.operationalOverview.otherExpenses.categories
+          : [],
       },
       purchases: {
         amount: raw.operationalOverview?.purchases?.amount ?? 0,
@@ -106,6 +114,10 @@ function normalizeDashboardOverview(raw: DashboardOverviewData | null | undefine
         categories: Array.isArray(raw.operationalOverview?.purchases?.categories)
           ? raw.operationalOverview.purchases.categories
           : [],
+      },
+      operatingCosts: {
+        amount: raw.operationalOverview?.operatingCosts?.amount ?? 0,
+        shareOfSalesPct: raw.operationalOverview?.operatingCosts?.shareOfSalesPct ?? null,
       },
     },
     presentation: {

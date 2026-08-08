@@ -7,23 +7,12 @@ import {
 } from '../hr/constants/employee-hr-service-categories';
 
 type PurchaseCategoryBreakdownRow = {
+  id?: string | null;
   categoryId: string | null;
   nameAr: string;
   nameEn: string | null;
   amount: string;
   sharePct?: number | null;
-};
-
-type FixedExpenseDetailRow = {
-  invoiceId: string;
-  invoiceNumber: string;
-  transactionDate: string;
-  nameAr: string;
-  nameEn: string | null;
-  sourceAr: string | null;
-  sourceEn: string | null;
-  amount: string;
-  sharePct: number | null;
 };
 
 @Injectable()
@@ -53,48 +42,39 @@ export class ReportsPeriodAnalyticsService {
         is: { serviceCategory: { in: [...RECURRING_HR_SERVICE_CATEGORIES] } },
       },
     };
-    const fixedExpenseSelect = {
-      id: true,
-      invoiceNumber: true,
-      kind: true,
-      transactionDate: true,
-      totalAmount: true,
-      notes: true,
-      expenseLine: { select: { nameAr: true, nameEn: true } },
-      supplier: { select: { nameAr: true, nameEn: true } },
-      employeeResidency: {
-        select: { serviceCategory: true },
-      },
-    } as const;
-    const [byKind, directFixedInvoices, recurringHrInvoices, recurringHrAggregate, salaryInvoices] = await Promise.all([
+    const [byKind, recurringHrAggregate, directRecurringGroups, otherExpenseGroups] = await Promise.all([
       this.prisma.invoice.groupBy({
         by: ['kind'],
         where: baseWhere,
         _sum: { totalAmount: true },
         _count: { _all: true },
       }),
-      this.prisma.invoice.findMany({
-        where: { ...baseWhere, kind: 'fixed_expense' },
-        orderBy: [{ transactionDate: 'desc' }, { invoiceNumber: 'desc' }],
-        take: 100,
-        select: fixedExpenseSelect,
-      }),
-      this.prisma.invoice.findMany({
-        where: recurringHrWhere,
-        orderBy: [{ transactionDate: 'desc' }, { invoiceNumber: 'desc' }],
-        take: 100,
-        select: fixedExpenseSelect,
-      }),
       this.prisma.invoice.aggregate({
         where: recurringHrWhere,
         _sum: { totalAmount: true },
         _count: { _all: true },
       }),
-      this.prisma.invoice.findMany({
-        where: { ...baseWhere, kind: 'salary' },
-        orderBy: [{ transactionDate: 'desc' }, { invoiceNumber: 'desc' }],
-        take: 100,
-        select: fixedExpenseSelect,
+      this.prisma.invoice.groupBy({
+        by: ['expenseLineId'],
+        where: { ...baseWhere, kind: 'fixed_expense' },
+        _sum: { totalAmount: true },
+      }),
+      this.prisma.invoice.groupBy({
+        by: ['categoryId'],
+        where: {
+          ...baseWhere,
+          OR: [
+            { kind: 'expense' },
+            { kind: 'hr_expense', employeeResidency: { is: null } },
+            {
+              kind: 'hr_expense',
+              employeeResidency: {
+                is: { serviceCategory: { notIn: [...RECURRING_HR_SERVICE_CATEGORIES] } },
+              },
+            },
+          ],
+        },
+        _sum: { totalAmount: true },
       }),
     ]);
 
@@ -112,25 +92,86 @@ export class ReportsPeriodAnalyticsService {
     const fixedExpenseTotal = directFixedTotal.plus(recurringHrTotal).plus(salaryTotal);
     const fixedExpenseInvoiceCount =
       (totalsByKind.fixed_expense?.invoiceCount ?? 0) + recurringHrAggregate._count._all + (totalsByKind.salary?.invoiceCount ?? 0);
-    const fixedExpenseDetails: FixedExpenseDetailRow[] = [...directFixedInvoices, ...recurringHrInvoices, ...salaryInvoices]
-      .sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime() || b.invoiceNumber.localeCompare(a.invoiceNumber))
-      .slice(0, 100)
-      .map((invoice) => {
-      const amount = new Decimal(invoice.totalAmount?.toString() ?? 0);
-      const isPayroll = invoice.kind === 'salary';
-      const fallbackName = invoice.notes?.trim() || invoice.invoiceNumber;
+    const directRecurringLineIds = directRecurringGroups
+      .map((group) => group.expenseLineId)
+      .filter((id): id is string => id != null);
+    const otherExpenseCategoryIds = otherExpenseGroups
+      .map((group) => group.categoryId)
+      .filter((id): id is string => id != null);
+    const [directRecurringLines, otherExpenseCategories] = await Promise.all([
+      directRecurringLineIds.length
+        ? this.prisma.expenseLine.findMany({
+          where: { id: { in: directRecurringLineIds }, companyId },
+          select: { id: true, nameAr: true, nameEn: true },
+        })
+        : [],
+      otherExpenseCategoryIds.length
+        ? this.prisma.category.findMany({
+          where: { id: { in: otherExpenseCategoryIds }, companyId },
+          select: { id: true, nameAr: true, nameEn: true },
+        })
+        : [],
+    ]);
+    const recurringLineById = new Map(directRecurringLines.map((line) => [line.id, line]));
+    const otherExpenseCategoryById = new Map(otherExpenseCategories.map((category) => [category.id, category]));
+
+    let recurringCostCategoryBreakdown: PurchaseCategoryBreakdownRow[] = directRecurringGroups.map((group) => {
+      const amount = new Decimal(group._sum.totalAmount?.toString() ?? 0);
+      const line = group.expenseLineId ? recurringLineById.get(group.expenseLineId) : null;
       return {
-        invoiceId: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        transactionDate: toYmd(invoice.transactionDate),
-        nameAr: isPayroll ? 'الرواتب والأجور' : invoice.expenseLine?.nameAr || fallbackName,
-        nameEn: isPayroll ? 'Payroll and wages' : invoice.expenseLine?.nameEn || invoice.expenseLine?.nameAr || fallbackName,
-        sourceAr: isPayroll ? 'مسير الرواتب' : invoice.supplier?.nameAr || invoice.supplier?.nameEn || null,
-        sourceEn: isPayroll ? 'Payroll run' : invoice.supplier?.nameEn || invoice.supplier?.nameAr || null,
+        id: group.expenseLineId,
+        categoryId: null,
+        nameAr: line?.nameAr ?? 'غير مصنف',
+        nameEn: line?.nameEn ?? 'Uncategorized',
         amount: amount.toFixed(4),
-        sharePct: fixedExpenseTotal.gt(0) ? amount.div(fixedExpenseTotal).mul(100).toNumber() : null,
       };
     });
+    if (recurringHrTotal.gt(0)) {
+      recurringCostCategoryBreakdown.push({
+        id: 'recurring-hr-services', categoryId: null,
+        nameAr: 'خدمات الموظفين الدورية', nameEn: 'Recurring employee services',
+        amount: recurringHrTotal.toFixed(4),
+      });
+    }
+    if (salaryTotal.gt(0)) {
+      recurringCostCategoryBreakdown.push({
+        id: 'payroll', categoryId: null,
+        nameAr: 'الرواتب والأجور', nameEn: 'Payroll and wages',
+        amount: salaryTotal.toFixed(4),
+      });
+    }
+    recurringCostCategoryBreakdown = recurringCostCategoryBreakdown
+      .filter((row) => new Decimal(row.amount).gt(0))
+      .sort((a, b) => new Decimal(b.amount).cmp(a.amount))
+      .map((row) => ({
+        ...row,
+        sharePct: fixedExpenseTotal.gt(0) ? new Decimal(row.amount).div(fixedExpenseTotal).mul(100).toNumber() : null,
+      }));
+
+    let otherExpenseCategoryBreakdown: PurchaseCategoryBreakdownRow[] = otherExpenseGroups.map((group) => {
+      const amount = new Decimal(group._sum.totalAmount?.toString() ?? 0);
+      const category = group.categoryId ? otherExpenseCategoryById.get(group.categoryId) : null;
+      return {
+        id: group.categoryId,
+        categoryId: group.categoryId,
+        nameAr: category?.nameAr ?? 'غير مصنف',
+        nameEn: category?.nameEn ?? 'Uncategorized',
+        amount: amount.toFixed(4),
+      };
+    });
+    otherExpenseCategoryBreakdown = otherExpenseCategoryBreakdown
+      .filter((row) => new Decimal(row.amount).gt(0))
+      .sort((a, b) => new Decimal(b.amount).cmp(a.amount));
+    const otherExpenseTotalDecimal = otherExpenseCategoryBreakdown.reduce(
+      (sum, row) => sum.plus(new Decimal(row.amount)),
+      new Decimal(0),
+    );
+    otherExpenseCategoryBreakdown = otherExpenseCategoryBreakdown.map((row) => ({
+      ...row,
+      sharePct: otherExpenseTotalDecimal.gt(0)
+        ? new Decimal(row.amount).div(otherExpenseTotalDecimal).mul(100).toNumber()
+        : null,
+    }));
 
     const outflowKinds = ['purchase', 'expense', 'fixed_expense', 'hr_expense'] as const;
     const topGroups = await this.prisma.invoice.groupBy({
@@ -284,8 +325,9 @@ export class ReportsPeriodAnalyticsService {
       purchaseCategoryTotal,
       fixedExpenseTotal: fixedExpenseTotal.toFixed(4),
       fixedExpenseInvoiceCount,
-      fixedExpenseDetails,
-      fixedExpenseDetailsLimited: fixedExpenseInvoiceCount > fixedExpenseDetails.length,
+      recurringCostCategoryBreakdown,
+      otherExpenseCategoryBreakdown,
+      otherExpenseTotal: otherExpenseTotalDecimal.toFixed(4),
     };
   }
 }

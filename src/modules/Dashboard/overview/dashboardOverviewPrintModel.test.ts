@@ -26,14 +26,19 @@ describe('buildDashboardOverviewPrintDocument', () => {
       },
       operationalOverview: {
         sales: 1000,
-        fixedExpenses: {
-          amount: 50, invoiceCount: 6, shareOfSalesPct: 5, detailsLimited: false,
-          details: Array.from({ length: 6 }, (_, index) => ({ nameAr: `ثابت ${index}`, amount: 10, sharePct: 1 })),
+        recurringCosts: {
+          amount: 50, recordCount: 6, shareOfSalesPct: 5,
+          categories: Array.from({ length: 6 }, (_, index) => ({ id: `recurring-${index}`, nameAr: `دوري ${index}`, amount: 10, sharePct: 1 })),
+        },
+        otherExpenses: {
+          amount: 30, shareOfSalesPct: 3,
+          categories: Array.from({ length: 6 }, (_, index) => ({ id: `other-${index}`, nameAr: `أخرى ${index}`, amount: 5, sharePct: 1 })),
         },
         purchases: {
           amount: 100, shareOfSalesPct: 10,
           categories: Array.from({ length: 7 }, (_, index) => ({ nameAr: `فئة ${index}`, amount: 10, sharePct: 1 })),
         },
+        operatingCosts: { amount: 180, shareOfSalesPct: 18 },
       },
     });
 

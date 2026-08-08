@@ -257,7 +257,7 @@ export function buildKpiCards(params: {
     ? (() => {
         const sales = sumDailyMetric(dailyRows, 'totalAmount');
         const purchases = periodKindTotal(periodData, ['purchase']);
-        const expenses = periodKindTotal(periodData, ['expense', 'fixed_expense', 'hr_expense']);
+        const expenses = periodKindTotal(periodData, ['expense', 'fixed_expense', 'hr_expense', 'salary']);
         const grossProfit = sales - purchases;
         const netProfit = grossProfit - expenses;
         const outflow = purchases + expenses;

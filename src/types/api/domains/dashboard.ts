@@ -276,6 +276,7 @@ export type DashboardPeriodDataLike = {
     sharePct?: number | null;
   }>;
   purchaseCategoryBreakdown?: Array<{
+    id?: string | null;
     categoryId?: string | null;
     nameAr?: string | null;
     nameEn?: string | null;
@@ -285,18 +286,23 @@ export type DashboardPeriodDataLike = {
   purchaseCategoryTotal?: unknown;
   fixedExpenseTotal?: string | number | null;
   fixedExpenseInvoiceCount?: number | null;
-  fixedExpenseDetails?: Array<{
-    invoiceId?: string;
-    invoiceNumber?: string;
-    transactionDate?: string;
+  recurringCostCategoryBreakdown?: Array<{
+    id?: string | null;
+    categoryId?: string | null;
     nameAr?: string | null;
     nameEn?: string | null;
-    sourceAr?: string | null;
-    sourceEn?: string | null;
     amount?: string | number | null;
     sharePct?: number | null;
   }>;
-  fixedExpenseDetailsLimited?: boolean;
+  otherExpenseCategoryBreakdown?: Array<{
+    id?: string | null;
+    categoryId?: string | null;
+    nameAr?: string | null;
+    nameEn?: string | null;
+    amount?: string | number | null;
+    sharePct?: number | null;
+  }>;
+  otherExpenseTotal?: string | number | null;
 } | null;
 
 export type DashboardTimelineMetricRow = {
@@ -350,17 +356,25 @@ export type DashboardVaultActivity = {
 
 export type DashboardOperationalOverview = {
   sales: string | number;
-  fixedExpenses: {
+  recurringCosts: {
     amount: string | number;
-    invoiceCount: number;
+    recordCount: number;
     shareOfSalesPct: number | null;
-    details: NonNullable<NonNullable<DashboardPeriodDataLike>['fixedExpenseDetails']>;
-    detailsLimited: boolean;
+    categories: NonNullable<NonNullable<DashboardPeriodDataLike>['recurringCostCategoryBreakdown']>;
+  };
+  otherExpenses: {
+    amount: string | number;
+    shareOfSalesPct: number | null;
+    categories: NonNullable<NonNullable<DashboardPeriodDataLike>['otherExpenseCategoryBreakdown']>;
   };
   purchases: {
     amount: string | number;
     shareOfSalesPct: number | null;
     categories: NonNullable<NonNullable<DashboardPeriodDataLike>['purchaseCategoryBreakdown']>;
+  };
+  operatingCosts: {
+    amount: string | number;
+    shareOfSalesPct: number | null;
   };
 };
 
