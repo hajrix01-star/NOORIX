@@ -47,6 +47,11 @@
       "decision": "leave",
       "reason": "tax registry wide table; protected tax scope."
     },
+    "src/modules/Expenses/components/LoanDetailModal.tsx": {
+      "category": "financial-report",
+      "decision": "leave",
+      "reason": "loan repayment history is a compact financial audit table with immutable reversal actions."
+    },
     "src/modules/Invoices/components/DayCloseReportBody.tsx": {
       "category": "print-financial",
       "decision": "leave",

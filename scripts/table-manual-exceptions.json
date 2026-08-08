@@ -11,6 +11,7 @@
     "src/modules/HR/tabs/hrPrintDocumentsTabPrintHtml.ts": 5,
     "src/modules/HR/utils/payrollRunSignatureSlipsPrint.ts": 1,
     "src/modules/HajriTax/HajriTaxRegistryList.tsx": 1,
+    "src/modules/Expenses/components/LoanDetailModal.tsx": 1,
     "src/modules/Invoices/components/DayCloseReportBody.tsx": 6,
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": 1,
     "src/modules/Purchases/components/BatchEditPanel.tsx": 1,
