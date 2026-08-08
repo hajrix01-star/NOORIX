@@ -107,7 +107,7 @@ function mkExtendedFromDashboardForChat(dash: DashboardInsightsPayload): Extende
         labels: {
           expenseBreakdownScope: 'accounting_ledger_pl_month',
           expenseSpikeScope: 'accounting_ledger_pl_expense_totals',
-          fixedExpenseScope: 'accounting_ledger_pl_kind_fixed_expense',
+          fixedExpenseScope: 'invoice_period_recurring_expenses_including_recurring_hr',
         },
       },
       expenseInsights: [],

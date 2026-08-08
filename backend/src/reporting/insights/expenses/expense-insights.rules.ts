@@ -176,14 +176,13 @@ export function ruleUnusualExpenseSpike(
 export function ruleFixedExpensePressure(
   profitLoss: GeneralProfitLossModel | null | undefined,
   selectedMonth: number | null,
+  recurringExpenseAmount?: number | null,
 ): InsightItem | null {
   if (selectedMonth == null || selectedMonth < 1 || selectedMonth > 12) return null;
   const mi = selectedMonth - 1;
 
   const fixedRow = expenseRows(profitLoss).find((r) => r.key === 'kind:fixed_expense');
-  if (!fixedRow) return null;
-
-  const fixedExpenses = monthAmount(fixedRow, mi);
+  const fixedExpenses = recurringExpenseAmount ?? monthAmount(fixedRow, mi);
   if (fixedExpenses == null || !Number.isFinite(fixedExpenses) || fixedExpenses < 0) return null;
 
   const salesG = salesGroup(profitLoss);
@@ -200,10 +199,10 @@ export function ruleFixedExpensePressure(
     severity,
     category: 'expense',
     metricBasis: 'accounting_pl',
-    titleAr: 'ضغط من المصاريف الثابتة مقارنة بالمبيعات',
-    titleEn: 'Fixed expense pressure vs sales',
-    detailAr: `المصاريف الثابتة تمثل ${ratioPct}% من مبيعات الشهر.`,
-    detailEn: `Fixed expenses represent ${ratioPct}% of the month's sales.`,
+    titleAr: 'ضغط من المصاريف الدورية مقارنة بالمبيعات',
+    titleEn: 'Recurring expense pressure vs sales',
+    detailAr: `المصاريف الدورية تمثل ${ratioPct}% من مبيعات الشهر.`,
+    detailEn: `Recurring expenses represent ${ratioPct}% of the month's sales.`,
     values: {
       fixedToSales,
       fixedExpenses,

@@ -125,4 +125,32 @@ describe('ExpenseInsightsService', () => {
     const out = await svc.buildExpenseInsights('c1', dateRange, 6);
     expect(out.warnings).toEqual([]);
   });
+
+  it('uses the consolidated recurring-expense total for a selected calendar month', async () => {
+    const salesMonths = Array(12).fill('0');
+    salesMonths[2] = '100';
+    const pl: GeneralProfitLossModel = {
+      amountBasis: 'gross_including_vat',
+      months: [],
+      groups: [
+        { key: 'sales', labelAr: 'sales', labelEn: 'sales', months: salesMonths, total: '0', percentOfSalesMonths: Array(12).fill('0'), percentOfSalesYear: '0', items: [] },
+        { key: 'expenses', labelAr: 'expenses', labelEn: 'expenses', months: Array(12).fill('0'), total: '0', percentOfSalesMonths: Array(12).fill('0'), percentOfSalesYear: '0', items: [] },
+      ],
+      summaryRows: [],
+      cards: { sales: '0', purchases: '0', expenses: '0', grossProfit: '0', netProfit: '0' },
+    };
+    const facade = {
+      getDashboardSummary: jest.fn().mockResolvedValue({
+        profitLoss: pl,
+        salesPack: {},
+        periodAnalytics: { fixedExpenseTotal: '30' },
+      }),
+    };
+
+    const out = await new ExpenseInsightsService(facade).buildExpenseInsights('c1', dateRange, 3);
+
+    expect(out.warnings.find((warning) => warning.id === 'fixed_expense_pressure_warning')?.values)
+      .toMatchObject({ fixedExpenses: 30, fixedToSales: 0.3 });
+    expect(out.context.labels.fixedExpenseScope).toBe('invoice_period_recurring_expenses_including_recurring_hr');
+  });
 });

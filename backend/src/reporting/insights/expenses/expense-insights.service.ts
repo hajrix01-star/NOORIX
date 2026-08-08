@@ -30,12 +30,15 @@ export class ExpenseInsightsService {
     const summary =
       preloadedSummary ?? (await this.reportingFacade.getDashboardSummary(companyId, dateRange));
     const { profitLoss } = summary;
+    const recurringExpenseAmount = selectedMonth != null && isSelectedCalendarMonth(dateRange, selectedMonth)
+      ? Number(summary.periodAnalytics.fixedExpenseTotal ?? 0)
+      : null;
 
     const warnings = [
       ruleTopExpenseCategoryShare(profitLoss, selectedMonth),
       ruleMissingExpenseCategory(profitLoss, selectedMonth),
       ruleUnusualExpenseSpike(profitLoss, selectedMonth),
-      ruleFixedExpensePressure(profitLoss, selectedMonth),
+      ruleFixedExpensePressure(profitLoss, selectedMonth, recurringExpenseAmount),
     ].filter((w): w is NonNullable<typeof w> => w != null);
 
     const expenseCategoryBreakdown = buildExpenseCategoryBreakdownForMonth(profitLoss, selectedMonth, 5);
@@ -50,7 +53,7 @@ export class ExpenseInsightsService {
         labels: {
           expenseBreakdownScope: 'accounting_ledger_pl_month',
           expenseSpikeScope: 'accounting_ledger_pl_expense_totals',
-          fixedExpenseScope: 'accounting_ledger_pl_kind_fixed_expense',
+          fixedExpenseScope: 'invoice_period_recurring_expenses_including_recurring_hr',
         },
       },
       expenseInsights: [],
@@ -58,4 +61,16 @@ export class ExpenseInsightsService {
       ...(expenseCategoryBreakdown?.length ? { expenseCategoryBreakdown } : {}),
     };
   }
+}
+
+/**
+ * The dashboard's period analytics is authoritative for the recurring-expense
+ * presentation: invoice kind=fixed_expense plus recurring HR services.  It may
+ * only replace the P&L kind row when it represents the selected calendar month.
+ */
+function isSelectedCalendarMonth(dateRange: DashboardSummaryDateRange, selectedMonth: number): boolean {
+  const month = String(selectedMonth).padStart(2, '0');
+  const start = `${dateRange.year}-${month}-01`;
+  const end = new Date(Date.UTC(dateRange.year, selectedMonth, 0)).toISOString().slice(0, 10);
+  return dateRange.periodStart === start && dateRange.periodEnd === end;
 }

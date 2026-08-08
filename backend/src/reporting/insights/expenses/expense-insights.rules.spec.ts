@@ -205,6 +205,17 @@ describe('expense-insights.rules', () => {
       expect(ruleFixedExpensePressure(pl, 6)).toBeNull();
     });
 
+    it('uses the recurring-period total so recurring HR services are included', () => {
+      const sales = Array(12).fill('0');
+      sales[4] = '100';
+      const pl = plExpense(Array(12).fill('0'), sales, []);
+
+      const warning = ruleFixedExpensePressure(pl, 5, 30);
+
+      expect(warning).not.toBeNull();
+      expect(warning!.values).toMatchObject({ fixedExpenses: 30, fixedToSales: 0.3 });
+    });
+
     it('does not fire when sales near zero', () => {
       const items = [
         {
