@@ -103,8 +103,17 @@ export const VAULT_TRANSACTIONS_PRINT_CSS = `
 .vault-print-summary__card strong { display: block; color: #0f172a; font-size: 14px; line-height: 1.25; }
 .vault-print-summary__card.is-in strong { color: #087a55; }
 .vault-print-summary__card.is-out strong { color: #b42318; }
-.vault-print-table-wrap { width: 100%; overflow: visible; }
-.vault-print-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 9.5px; line-height: 1.35; }
+.vault-print-table-wrap { width: 100%; max-width: 100%; min-width: 0; overflow: visible; }
+.vault-print-table {
+  width: calc(100% - 8mm);
+  max-width: calc(100% - 8mm);
+  min-width: 0;
+  margin-inline: auto;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
 .vault-print-table thead { display: table-header-group; }
 .vault-print-table tfoot { display: table-row-group; }
 .vault-print-table tr { break-inside: avoid; page-break-inside: avoid; }
@@ -116,20 +125,22 @@ export const VAULT_TRANSACTIONS_PRINT_CSS = `
   text-align: center;
   font-weight: 800;
 }
-.vault-print-table td { border: 1px solid #d5dde5; padding: 5px 7px; vertical-align: middle; }
+.vault-print-table td { border: 1px solid #d5dde5; padding: 5px 6px; vertical-align: middle; }
+.vault-print-table th, .vault-print-table td { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .vault-print-table tbody tr:nth-child(even) td { background: #f8fafc; }
-.vault-print-table th:nth-child(1), .vault-print-table td:nth-child(1) { width: 22%; }
-.vault-print-table th:nth-child(2), .vault-print-table td:nth-child(2) { width: 12%; }
-.vault-print-table th:nth-child(3), .vault-print-table td:nth-child(3) { width: 13%; }
-.vault-print-table th:nth-child(4), .vault-print-table td:nth-child(4) { width: 27%; }
-.vault-print-table th:nth-child(5), .vault-print-table td:nth-child(5),
-.vault-print-table th:nth-child(6), .vault-print-table td:nth-child(6) { width: 13%; }
+.vault-print-table thead th:nth-child(1) { width: 22%; }
+.vault-print-table thead th:nth-child(2) { width: 12%; }
+.vault-print-table thead th:nth-child(3) { width: 13%; }
+.vault-print-table thead th:nth-child(4) { width: 27%; }
+.vault-print-table thead th:nth-child(5),
+.vault-print-table thead th:nth-child(6) { width: 13%; }
 .vault-print-reference, .vault-print-date, .vault-print-amount {
   direction: ltr;
   unicode-bidi: embed;
-  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+.vault-print-reference { white-space: normal; word-break: break-word; }
+.vault-print-date, .vault-print-amount { white-space: nowrap; }
 .vault-print-reference, .vault-print-date, .vault-print-type { text-align: center; }
 .vault-print-notes { overflow-wrap: anywhere; }
 .vault-print-amount.is-in { color: #087a55; font-weight: 700; }

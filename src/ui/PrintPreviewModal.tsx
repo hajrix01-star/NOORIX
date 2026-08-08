@@ -1,6 +1,7 @@
-import React, { useRef, type ReactNode } from 'react';
+import React, { useMemo, useRef, type ReactNode } from 'react';
 import DialogActions from './DialogActions';
 import Modal from './Modal';
+import { removeEmbeddedPrintToolbar } from './printPreviewHtml';
 
 type PrintPreviewModalProps = {
   open: boolean;
@@ -24,6 +25,7 @@ export default function PrintPreviewModal({
   footerExtra,
 }: PrintPreviewModalProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const previewHtml = useMemo(() => removeEmbeddedPrintToolbar(html), [html]);
 
   function printFrame() {
     const frameWindow = frameRef.current?.contentWindow;
@@ -68,7 +70,7 @@ export default function PrintPreviewModal({
       <iframe
         ref={frameRef}
         title={iframeTitle || title}
-        srcDoc={html}
+        srcDoc={previewHtml}
         className="h-[72vh] w-full rounded-lg border border-noorix-border bg-white"
       />
     </Modal>
