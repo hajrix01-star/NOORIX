@@ -10,6 +10,7 @@ describe('logical backup purchase debt round-trip', () => {
     const p: BackupLogicalImportTxParams = {
       tenantId: 'tenant-new', newCompanyId: 'company-new', importingUserId: 'import-user',
       nameAr: 'Restored', resolvedNameEn: null, co: {}, strictAlloc: false,
+      counts: {},
       logger: new Logger('PurchaseDebtBackup'),
       nid: () => 'debt-new',
       data: {
