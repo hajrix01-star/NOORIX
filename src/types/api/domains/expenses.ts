@@ -13,6 +13,14 @@ export type LoanPaymentRecord = {
   reversal?: { id: string; transactionDate: string; amount: number | string } | null;
 };
 
+export type LoanLegacyInvoiceRecord = {
+  id: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  transactionDate: string;
+  amount: number | string;
+};
+
 export type LoanRecord = {
   id: string;
   nameAr: string;
@@ -27,6 +35,7 @@ export type LoanRecord = {
   historicalPaidThroughDate?: string | null;
   isActive?: boolean;
   payments?: LoanPaymentRecord[];
+  legacyInvoices?: LoanLegacyInvoiceRecord[];
 };
 
 export type LoanCreatePayload = {

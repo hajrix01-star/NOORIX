@@ -144,6 +144,7 @@ model Company {
   purchaseDebtRecords      PurchaseDebtRecord[]
   loans                    Loan[]
   loanPayments             LoanPayment[]
+  loanLegacyInvoices       LoanLegacyInvoice[]
 
   @@index([tenantId])
   @@index([tenantId, sortOrder])
@@ -920,6 +921,7 @@ model Loan {
   company            Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   openingLedgerEntry LedgerEntry?  @relation("LoanOpeningLedgerEntry", fields: [openingLedgerEntryId], references: [id], onDelete: Restrict)
   payments           LoanPayment[]
+  legacyInvoices     LoanLegacyInvoice[]
 
   @@index([tenantId])
   @@index([companyId, isActive])
@@ -956,6 +958,28 @@ model LoanPayment {
   @@index([companyId, loanId, transactionDate])
   @@unique([companyId, idempotencyKey])
   @@map("loan_payments")
+}
+
+/// روابط توثيقية فقط لفواتير قرض سابقة. لا تُنشئ قيداً ولا تعدّل فاتورة أو خزينة.
+model LoanLegacyInvoice {
+  id                  String   @id @default(cuid())
+  tenantId            String   @map("tenant_id")
+  companyId           String   @map("company_id")
+  loanId              String   @map("loan_id")
+  invoiceId           String   @unique @map("invoice_id")
+  sourceExpenseLineId String   @map("source_expense_line_id")
+  invoiceNumber       String   @map("invoice_number")
+  transactionDate     DateTime @map("transaction_date")
+  amount              Decimal  @db.Decimal(18, 4)
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  loan    Loan    @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@index([companyId, loanId, transactionDate])
+  @@map("loan_legacy_invoices")
 }
 
 model Account {
@@ -1144,6 +1168,7 @@ model Invoice {
   employeeResidency     EmployeeResidency?
   companyAssets         CompanyAsset[]
   purchaseDebtSource    PurchaseDebtRecord?      @relation("PurchaseDebtConvertedInvoice")
+  loanLegacyInvoice     LoanLegacyInvoice?
 
   @@unique([companyId, invoiceNumber])
   @@index([tenantId])

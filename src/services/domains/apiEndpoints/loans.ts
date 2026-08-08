@@ -23,3 +23,8 @@ export function reverseLoanPayment(loanId: string, paymentId: string, body: Loan
   const { companyId: _companyId, ...dto } = body;
   return apiPost(`/api/v1/loans/${loanId}/payments/${paymentId}/reverse`, dto);
 }
+
+export function migrateLoanLegacyInvoices(loanId: string, body: { companyId: string; expenseLineId: string; archiveExpenseLine?: boolean }): Promise<ApiParsedResult<{ created: number; alreadyLinked: number; total: number; archivedExpenseLine: boolean }>> {
+  const { companyId: _companyId, ...dto } = body;
+  return apiPost(`/api/v1/loans/${loanId}/legacy-expense-invoices`, dto);
+}

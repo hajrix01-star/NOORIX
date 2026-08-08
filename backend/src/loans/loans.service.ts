@@ -5,7 +5,7 @@ import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
 import { TenantContext } from '../common/tenant-context';
 import { nowSaudi } from '../common/utils/date-utils';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { CreateLoanDto, CreateLoanPaymentDto, ReverseLoanPaymentDto } from './dto/loan.dto';
+import { CreateLoanDto, CreateLoanPaymentDto, MigrateLoanLegacyInvoicesDto, ReverseLoanPaymentDto } from './dto/loan.dto';
 import {
   postLoanOpeningLedger,
   postLoanPaymentLedger,
@@ -49,8 +49,35 @@ export class LoansService {
           include: { vault: { select: { nameAr: true, nameEn: true } }, reversal: true, reversalOf: true },
           orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }],
         },
+        legacyInvoices: { orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }] },
       },
       orderBy: { openingDate: 'asc' },
+    });
+  }
+
+  async migrateLegacyInvoices(id: string, companyId: string, dto: MigrateLoanLegacyInvoicesDto, userId: string) {
+    return this.db.withTenant(async (tx) => {
+      const [loan, line] = await Promise.all([
+        tx.loan.findFirst({ where: { id, companyId, isActive: true } }),
+        tx.expenseLine.findFirst({ where: { id: dto.expenseLineId, companyId } }),
+      ]);
+      if (!loan) throw new NotFoundException('القرض غير موجود');
+      if (!line) throw new NotFoundException('بند المصروف القديم غير موجود');
+      const invoices = await tx.invoice.findMany({
+        where: { companyId, expenseLineId: line.id, status: 'active', kind: { in: ['expense', 'fixed_expense'] } },
+        select: { id: true, invoiceNumber: true, transactionDate: true, totalAmount: true },
+        orderBy: [{ transactionDate: 'asc' }, { createdAt: 'asc' }],
+      });
+      if (!invoices.length) throw new BadRequestException('لا توجد فواتير نشطة قابلة للترحيل لهذا البند');
+      const existing = await tx.loanLegacyInvoice.findMany({ where: { invoiceId: { in: invoices.map((invoice) => invoice.id) } }, select: { invoiceId: true, loanId: true } });
+      if (existing.some((row) => row.loanId !== id)) throw new ConflictException('بعض الفواتير مرتبطة بقرض آخر ولا يمكن نقلها');
+      const known = new Set(existing.map((row) => row.invoiceId));
+      const pending = invoices.filter((invoice) => !known.has(invoice.id));
+      const tenantId = TenantContext.getTenantId();
+      if (pending.length) await tx.loanLegacyInvoice.createMany({ data: pending.map((invoice) => ({ tenantId, companyId, loanId: id, invoiceId: invoice.id, sourceExpenseLineId: line.id, invoiceNumber: invoice.invoiceNumber, transactionDate: invoice.transactionDate, amount: invoice.totalAmount })) });
+      if (dto.archiveExpenseLine !== false && line.isActive) await tx.expenseLine.update({ where: { id: line.id }, data: { isActive: false } });
+      await tx.auditLog.create({ data: { tenantId, companyId, userId, action: 'migrate', entity: 'loan_legacy_invoices', entityId: id, newValue: { sourceExpenseLineId: line.id, created: pending.length, alreadyLinked: known.size, archivedExpenseLine: dto.archiveExpenseLine !== false } } });
+      return { created: pending.length, alreadyLinked: known.size, total: invoices.length, archivedExpenseLine: dto.archiveExpenseLine !== false };
     });
   }
 

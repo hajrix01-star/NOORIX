@@ -53,8 +53,10 @@ export async function runBackupLogicalImportInTransaction(
         // so import originals first to satisfy the FK without weakening integrity.
         const loanPaymentRows = [...arr<Record<string, unknown>>(data.loanPayments)]
           .sort((a, b) => Number(Boolean(a.reversalOfId)) - Number(Boolean(b.reversalOfId)));
+        const loanLegacyInvoiceRows = arr<Record<string, unknown>>(data.loanLegacyInvoices);
         if ((counts.loans != null && counts.loans !== loanRows.length)
-          || (counts.loanPayments != null && counts.loanPayments !== loanPaymentRows.length)) {
+          || (counts.loanPayments != null && counts.loanPayments !== loanPaymentRows.length)
+          || (counts.loanLegacyInvoices != null && counts.loanLegacyInvoices !== loanLegacyInvoiceRows.length)) {
           throw new BadRequestException('LOAN_RESTORE_COUNT_MISMATCH');
         }
         const loanMap = new Map(loanRows.map((row) => [String(row.id), nid()]));
@@ -220,6 +222,21 @@ export async function runBackupLogicalImportInTransaction(
               status: String(row.status ?? 'posted'),
               reversalOfId: reversalOfId ?? null,
               reversedAt: row.reversedAt ? ddate(row.reversedAt) : null,
+              createdAt: ddate(row.createdAt),
+            },
+          });
+        }
+
+        for (const row of loanLegacyInvoiceRows) {
+          const loanId = loanMap.get(String(row.loanId));
+          const invoiceId = invoiceMap.get(String(row.invoiceId));
+          const sourceExpenseLineId = expenseLineMap.get(String(row.sourceExpenseLineId));
+          if (!loanId || !invoiceId || !sourceExpenseLineId) throw new BadRequestException(`LOAN_LEGACY_INVOICE_RESTORE_REFERENCE_MISSING:${String(row.id)}`);
+          await tx.loanLegacyInvoice.create({
+            data: {
+              id: nid(), tenantId, companyId: newCompanyId, loanId, invoiceId,
+              sourceExpenseLineId,
+              invoiceNumber: String(row.invoiceNumber), transactionDate: ddate(row.transactionDate), amount: dec(row.amount),
               createdAt: ddate(row.createdAt),
             },
           });

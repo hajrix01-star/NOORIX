@@ -27,3 +27,8 @@ export class ReverseLoanPaymentDto {
   @IsOptional() @IsString() @MaxLength(2000) notes?: string;
   @IsString() @IsNotEmpty() @MaxLength(200) idempotencyKey!: string;
 }
+
+export class MigrateLoanLegacyInvoicesDto {
+  @IsString() @IsNotEmpty() expenseLineId!: string;
+  @IsOptional() archiveExpenseLine?: boolean;
+}
