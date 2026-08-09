@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LoanRecord } from '../../types/api';
 import {
   getLoanExpectedEndDate,
+  getLoanPaymentInstallmentNumber,
   getLoanReferenceInstallmentAmount,
   getLoanRemainingInstallments,
   getLoanScheduleStartDate,
@@ -37,5 +38,12 @@ describe('loanSchedule', () => {
   it('derives first installment and expected final installment dates for a monthly schedule', () => {
     expect(getLoanScheduleStartDate(loan)).toBe('2024-11-25');
     expect(getLoanExpectedEndDate(loan)).toBe('2028-10-25');
+  });
+
+  it('maps repayment dates to the matching installment number even when the day differs', () => {
+    expect(getLoanPaymentInstallmentNumber(loan, '2026-04-25')).toBe(18);
+    expect(getLoanPaymentInstallmentNumber(loan, '2026-05-25')).toBe(19);
+    expect(getLoanPaymentInstallmentNumber(loan, '2026-06-22')).toBe(20);
+    expect(getLoanPaymentInstallmentNumber(loan, '2026-07-22')).toBe(21);
   });
 });
