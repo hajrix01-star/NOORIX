@@ -124,6 +124,10 @@ export class HRService {
     return this.payroll.createDeduction(...args);
   }
 
+  issueIndividualSalaryPayment(...args: Parameters<HrPayrollService['issueIndividualSalaryPayment']>) {
+    return this.payroll.issueIndividualSalaryPayment(...args);
+  }
+
   deleteDeduction(...args: Parameters<HrPayrollService['deleteDeduction']>) {
     return this.payroll.deleteDeduction(...args);
   }

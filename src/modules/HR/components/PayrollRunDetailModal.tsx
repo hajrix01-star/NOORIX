@@ -39,6 +39,7 @@ type PayrollRunDetail = Record<string, unknown> & {
   status?: string | null;
   payrollMonth?: string | null;
   totalAmount?: number | string | null;
+  payableAmount?: number | string | null;
   issuedSalaryInvoiceNumber?: string | number | null;
   notes?: string | null;
   items?: PayrollRunLine[];
@@ -137,7 +138,6 @@ export function PayrollRunDetailModal({
   const items = run.items || [];
   const st = String(run.status || '').toLowerCase();
   const isDraft = st === 'draft';
-  const canPay = st === 'completed' && !run.issuedSalaryInvoiceNumber;
   const statusInfo =
     st === 'completed' && run.issuedSalaryInvoiceNumber
       ? { labelKey: 'payrollPaid', badgeColor: 'green' }
@@ -146,6 +146,9 @@ export function PayrollRunDetailModal({
         : (STATUS_MAP as Record<string, (typeof STATUS_MAP)['draft']>)[st] || STATUS_MAP.draft;
   const payrollTotals = computePayrollRunTotals(items);
   const totalNet = Number(run.totalAmount ?? payrollTotals.netSalary);
+  const payableNet = Number(run.payableAmount ?? totalNet);
+  const individuallyPaid = Math.max(0, totalNet - payableNet);
+  const canPay = st === 'completed' && !run.issuedSalaryInvoiceNumber && payableNet > 0.004;
 
   const handlePrint = () => {
     const monthLabel = formatSaudiDate(run.payrollMonth);
@@ -317,6 +320,12 @@ export function PayrollRunDetailModal({
           {formatSaudiDate(run.payrollMonth)} — {items.length} {t('employeesList')}
         </p>
         <Badge color={statusInfo.badgeColor}>{t(statusInfo.labelKey)}</Badge>
+        {individuallyPaid > 0 ? (
+          <p className="m-0 mt-2 text-[12px] text-noorix-muted">
+            صُرف مسبقاً: <span className="font-bold nx-font-numbers text-noorix-green">{hrFmt(individuallyPaid)} SR</span>
+            {' — '}المتبقي للصرف: <span className="font-bold nx-font-numbers text-noorix-green">{hrFmt(payableNet)} SR</span>
+          </p>
+        ) : null}
         {run.issuedSalaryInvoiceNumber ? (
           <p className="m-0 mt-2 text-[12px] text-noorix-muted nx-font-numbers" dir="ltr">
             {t('payrollIssuedInvoiceNumber')}:{' '}

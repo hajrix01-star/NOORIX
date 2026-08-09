@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun } from '../../../services/api';
+import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, issueIndividualSalaryPayment, deletePayrollRun } from '../../../services/api';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useVaults } from '../../../hooks/useVaults';
 import { formatSaudiDate, getSaudiToday } from '../../../utils/saudiDate';
@@ -28,6 +28,7 @@ import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
 import { PayrollPayModal } from './PayrollPayModal';
 import { PayrollRunCompactRow, PayrollRunMobileCard } from './PayrollRunResponsiveRows';
+import { IndividualSalaryPaymentModal } from './IndividualSalaryPaymentModal';
 import {
   buildPayrollRunExportRows,
   buildPayrollRunPrintTable,
@@ -64,6 +65,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const [detailRunId, setDetailRunId] = useState<string | null>(null);
   const [payModalRun, setPayModalRun] = useState<PayrollPayModalRun | null>(null);
   const [payTransactionDate, setPayTransactionDate] = useState(() => getSaudiToday());
+  const [showIndividualSalaryPayment, setShowIndividualSalaryPayment] = useState(false);
   const { showToast } = useToast();
   const { paymentVaults = [] } = useVaults({ companyId });
   const queryClient = useQueryClient();
@@ -95,6 +97,16 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
     onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
       setPayModalRun(null);
+    },
+  });
+
+  const individualSalaryMutation = useApiMutation<unknown, Record<string, unknown>>({
+    mutationFn: issueIndividualSalaryPayment,
+    successToast: () => 'تم صرف الراتب وإصدار فاتورة الراتب.',
+    errorToast: (error) => error.message || t('saveFailed'),
+    onSuccess: () => {
+      invalidateOnFinancialMutation(queryClient);
+      setShowIndividualSalaryPayment(false);
     },
   });
 
@@ -238,11 +250,13 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
           leading={yearLeading}
           desktopActions={(
             <>
+              <Button size="sm" variant="success" className="hidden lg:inline-flex" onClick={() => setShowIndividualSalaryPayment(true)}>صرف راتب فردي</Button>
               <Button size="sm" className="hidden lg:inline-flex" onClick={handleExportExcel}>{t('exportExcel')}</Button>
               <Button size="sm" className="hidden lg:inline-flex" onClick={handlePrint}>{t('printPayroll')}</Button>
             </>
           )}
           menuItems={[
+            { key: 'individual-salary', label: 'صرف راتب فردي', onClick: () => setShowIndividualSalaryPayment(true) },
             { key: 'export', label: t('exportExcel'), onClick: handleExportExcel },
             { key: 'print', label: t('printPayroll'), onClick: handlePrint },
           ]}
@@ -299,6 +313,16 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
         />
       )}
 
+      {showIndividualSalaryPayment && (
+        <IndividualSalaryPaymentModal
+          companyId={companyId}
+          lang={lang}
+          pending={individualSalaryMutation.isPending}
+          onClose={() => { if (!individualSalaryMutation.isPending) setShowIndividualSalaryPayment(false); }}
+          onSubmit={(payload) => individualSalaryMutation.mutate(payload)}
+        />
+      )}
+
       {editingRunId && (
         <PayrollRunFormModal
           companyId={companyId}
@@ -334,7 +358,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
               runNumber: String(run.runNumber ?? ''),
               month: run.payrollMonth ? formatSaudiDate(run.payrollMonth) : null,
               monthRaw: run.payrollMonth ?? null,
-              netTotal: Number(run.totalAmount ?? 0),
+              netTotal: Number(run.payableAmount ?? run.totalAmount ?? 0),
             });
           }}
           onDelete={canDeletePayroll ? (run) => {

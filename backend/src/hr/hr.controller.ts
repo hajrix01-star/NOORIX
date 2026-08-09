@@ -37,6 +37,7 @@ import { CreateResidencyWithInvoiceDto } from './dto/create-residency-with-invoi
 import { UpdateResidencyDto } from './dto/update-residency.dto';
 import { IssueResidencyInvoiceDto } from './dto/issue-residency-invoice.dto';
 import { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
+import { IssueIndividualSalaryPaymentDto } from './dto/issue-individual-salary-payment.dto';
 import { CalculateEosDto } from './dto/calculate-eos.dto';
 import {
   HrCompensationSnapshotsQueryDto,
@@ -140,6 +141,15 @@ export class HRController {
     @CurrentUser() user: JwtUser,
   ) {
     return this.hrService.issuePayrollPayment(dto, user.sub);
+  }
+
+  @Post('payroll-runs/issue-individual-payment')
+  @RequirePermission('HR_WRITE')
+  issueIndividualSalaryPayment(
+    @Body() dto: IssueIndividualSalaryPaymentDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.hrService.issueIndividualSalaryPayment(dto, user.sub);
   }
 
   // ══════════════════════════════════════════════════════════

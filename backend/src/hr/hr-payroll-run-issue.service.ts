@@ -9,6 +9,7 @@ import type { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
 import { assertPayrollRunVaultSplitsMatchTotal } from './hr-payroll-assertions.util';
 import { applyPayrollAdvanceSettlements } from './hr-payroll-advance-settlement.util';
 import { toYmd } from '../common/utils/to-ymd.util';
+import { individualSalaryBatchId } from './hr-payroll-individual-payment.service';
 
 type PayrollRunForIssue = NonNullable<
   Awaited<ReturnType<TenantPrismaService['payrollRun']['findFirst']>>
@@ -67,8 +68,26 @@ export class HrPayrollRunIssueService {
       };
     }
 
-    const totalStr = String(run.totalAmount);
-    const totalDec = new Prisma.Decimal(run.totalAmount);
+    const individualPayments = await this.prisma.invoice.aggregate({
+      where: {
+        companyId: run.companyId,
+        kind: 'salary',
+        status: 'active',
+        employeeId: { in: run.items.map((item) => item.employeeId) },
+        OR: run.items.map((item) => ({ batchId: individualSalaryBatchId(item.employeeId, run.payrollMonth) })),
+      },
+      _sum: { totalAmount: true },
+    });
+    const individualPaid = new Prisma.Decimal(individualPayments._sum.totalAmount ?? 0);
+    const totalDec = new Prisma.Decimal(run.totalAmount).minus(individualPaid);
+    if (totalDec.lt(0)) {
+      throw new BadRequestException('دفعات الرواتب الفردية تتجاوز صافي المسير. صحح الدفعات قبل إصدار المسير.');
+    }
+    if (totalDec.isZero()) {
+      await this.completePayrollAdvanceSettlementsIfNeeded(run as PayrollRunForIssue, txDate, tenantId);
+      return { payrollRunId: run.id, invoicesCreated: 0, invoices: [], fullyPaidIndividually: true };
+    }
+    const totalStr = totalDec.toFixed(4);
 
     const defaultVault = await this.prisma.vault.findFirst({
       where: {

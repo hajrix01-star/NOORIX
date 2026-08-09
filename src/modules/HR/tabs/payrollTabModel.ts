@@ -8,6 +8,7 @@ export type PayrollRunSource = {
   runNumber?: string | null;
   payrollMonth?: string | null;
   totalAmount?: number | string | null;
+  payableAmount?: number | string | null;
   status?: string | null;
   issuedSalaryInvoiceNumber?: string | null;
   items?: Array<Record<string, unknown>>;
@@ -67,7 +68,7 @@ export function toPayrollRunRow(run: PayrollRunSource): PayrollRunRow {
     month: run.payrollMonth ? formatSaudiDate(run.payrollMonth) : null,
     monthRaw: run.payrollMonth ?? null,
     grossTotal,
-    netTotal: Number(run.totalAmount ?? 0),
+    netTotal: Number(run.payableAmount ?? run.totalAmount ?? 0),
     status: String(run.status ?? ''),
     issuedInvoiceNumber: run.issuedSalaryInvoiceNumber ?? null,
     itemsCount: run.items?.length ?? 0,

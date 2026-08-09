@@ -89,6 +89,9 @@ export async function deletePayrollRun(id: string, companyId: string): Promise<A
 export async function issuePayrollPayment(body: unknown): Promise<ApiParsedResult<HrMutationResult>> {
   return apiPost('/api/v1/hr/payroll-runs/issue-payment', body);
 }
+export async function issueIndividualSalaryPayment(body: unknown): Promise<ApiParsedResult<HrMutationResult>> {
+  return apiPost('/api/v1/hr/payroll-runs/issue-individual-payment', body);
+}
 
 export async function getHrAdvances(companyId: string, year?: string | number): Promise<ApiParsedResult<HrApiRecordList>> {
   return apiGet('/api/v1/hr/advances', companyYearQuery(companyId, year));

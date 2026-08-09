@@ -15,6 +15,7 @@ import { HrPayrollService } from './hr-payroll.service';
 import { HrPayrollRunReaderService } from './hr-payroll-run-reader.service';
 import { HrPayrollRunLifecycleService } from './hr-payroll-run-lifecycle.service';
 import { HrPayrollRunIssueService } from './hr-payroll-run-issue.service';
+import { HrPayrollIndividualPaymentService } from './hr-payroll-individual-payment.service';
 import { HrPayrollAncillaryService } from './hr-payroll-ancillary.service';
 import { HrPayrollManualEntryService } from './hr-payroll-manual-entry.service';
 import { HrLeaveService } from './hr-leave.service';
@@ -48,6 +49,7 @@ const uploadDir = ensureUploadsSubdir('hr-documents');
     HrPayrollRunReaderService,
     HrPayrollRunLifecycleService,
     HrPayrollRunIssueService,
+    HrPayrollIndividualPaymentService,
     HrPayrollManualEntryService,
     HrPayrollAncillaryService,
     HrPayrollService,

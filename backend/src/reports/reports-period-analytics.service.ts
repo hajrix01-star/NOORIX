@@ -5,6 +5,7 @@ import { toYmd } from '../common/utils/to-ymd.util';
 import {
   RECURRING_HR_SERVICE_CATEGORIES,
 } from '../hr/constants/employee-hr-service-categories';
+import { INDIVIDUAL_SALARY_BATCH_PREFIX } from '../hr/hr-payroll-individual-payment.service';
 
 type PurchaseCategoryBreakdownRow = {
   id?: string | null;
@@ -42,7 +43,7 @@ export class ReportsPeriodAnalyticsService {
         is: { serviceCategory: { in: [...RECURRING_HR_SERVICE_CATEGORIES] } },
       },
     };
-    const [byKind, recurringHrAggregate, directRecurringGroups, otherExpenseGroups, payrollItemsAggregate, payrollRunsCount] = await Promise.all([
+    const [byKind, recurringHrAggregate, directRecurringGroups, otherExpenseGroups, payrollItemsAggregate, payrollRunsCount, individualSalaryInvoices] = await Promise.all([
       this.prisma.invoice.groupBy({
         by: ['kind'],
         where: baseWhere,
@@ -95,6 +96,10 @@ export class ReportsPeriodAnalyticsService {
           payrollMonth: { gte: start, lte: end },
         },
       }),
+      this.prisma.invoice.findMany({
+        where: { ...baseWhere, kind: 'salary', batchId: { startsWith: INDIVIDUAL_SALARY_BATCH_PREFIX } },
+        select: { totalAmount: true, invoiceDate: true },
+      }),
     ]);
 
     const totalsByKind: Record<string, { totalAmount: string; invoiceCount: number }> = {};
@@ -107,12 +112,32 @@ export class ReportsPeriodAnalyticsService {
 
     const directFixedTotal = new Decimal(totalsByKind.fixed_expense?.totalAmount ?? 0);
     const recurringHrTotal = new Decimal(recurringHrAggregate._sum.totalAmount?.toString() ?? 0);
+    const completedMonths = [...new Set(individualSalaryInvoices
+      .map((invoice) => invoice.invoiceDate ? toYmd(invoice.invoiceDate) : null)
+      .filter((month): month is string => !!month))];
+    const completedSalaryRuns = completedMonths.length
+      ? await this.prisma.payrollRun.findMany({
+        where: { companyId, status: 'completed', payrollMonth: { in: completedMonths.map((month) => new Date(`${month}T00:00:00.000Z`)) } },
+        select: { payrollMonth: true },
+      })
+      : [];
+    const completedMonthSet = new Set(completedSalaryRuns.map((run) => toYmd(run.payrollMonth)));
+    const individualSalaryTotal = individualSalaryInvoices.reduce(
+      (sum, invoice) => (!invoice.invoiceDate || completedMonthSet.has(toYmd(invoice.invoiceDate))
+        ? sum
+        : sum.plus(invoice.totalAmount)),
+      new Decimal(0),
+    );
+    const individualSalaryCount = individualSalaryInvoices.filter(
+      (invoice) => !!invoice.invoiceDate && !completedMonthSet.has(toYmd(invoice.invoiceDate)),
+    ).length;
     const salaryTotal = new Decimal(payrollItemsAggregate._sum.grossSalary?.toString() ?? 0)
       .plus(payrollItemsAggregate._sum.allowancesAdd?.toString() ?? 0)
-      .minus(payrollItemsAggregate._sum.deductions?.toString() ?? 0);
+      .minus(payrollItemsAggregate._sum.deductions?.toString() ?? 0)
+      .plus(individualSalaryTotal);
     const fixedExpenseTotal = directFixedTotal.plus(recurringHrTotal).plus(salaryTotal);
     const fixedExpenseInvoiceCount =
-      (totalsByKind.fixed_expense?.invoiceCount ?? 0) + recurringHrAggregate._count._all + payrollRunsCount;
+      (totalsByKind.fixed_expense?.invoiceCount ?? 0) + recurringHrAggregate._count._all + payrollRunsCount + individualSalaryCount;
     const directRecurringLineIds = directRecurringGroups
       .map((group) => group.expenseLineId)
       .filter((id): id is string => id != null);

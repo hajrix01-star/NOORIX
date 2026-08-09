@@ -8,6 +8,7 @@ import { HrPayrollAncillaryService } from './hr-payroll-ancillary.service';
 import { HrPayrollRunReaderService } from './hr-payroll-run-reader.service';
 import { HrPayrollRunLifecycleService } from './hr-payroll-run-lifecycle.service';
 import { HrPayrollRunIssueService } from './hr-payroll-run-issue.service';
+import { HrPayrollIndividualPaymentService } from './hr-payroll-individual-payment.service';
 
 @Injectable()
 export class HrPayrollService {
@@ -15,6 +16,7 @@ export class HrPayrollService {
     private readonly reader: HrPayrollRunReaderService,
     private readonly runLifecycle: HrPayrollRunLifecycleService,
     private readonly runIssue: HrPayrollRunIssueService,
+    private readonly individualPayment: HrPayrollIndividualPaymentService,
     private readonly ancillary: HrPayrollAncillaryService,
   ) {}
 
@@ -92,6 +94,10 @@ export class HrPayrollService {
 
   createDeduction(...args: Parameters<HrPayrollAncillaryService['createDeduction']>) {
     return this.ancillary.createDeduction(...args);
+  }
+
+  issueIndividualSalaryPayment(...args: Parameters<HrPayrollIndividualPaymentService['issue']>) {
+    return this.individualPayment.issue(...args);
   }
 
   deleteDeduction(...args: Parameters<HrPayrollAncillaryService['deleteDeduction']>) {

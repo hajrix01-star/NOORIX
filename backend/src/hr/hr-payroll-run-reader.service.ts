@@ -5,6 +5,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { nowSaudi } from '../common/utils/date-utils';
+import { individualSalaryBatchId } from './hr-payroll-individual-payment.service';
 
 @Injectable()
 export class HrPayrollRunReaderService {
@@ -52,9 +53,30 @@ export class HrPayrollRunReaderService {
         invoiceNoByRunId.set(inv.batchId, inv.invoiceNumber);
       }
     }
+    const directPayments = await this.prisma.invoice.findMany({
+      where: {
+        companyId,
+        kind: 'salary',
+        status: 'active',
+        OR: runs.flatMap((run) => run.items.map((item) => ({ batchId: individualSalaryBatchId(item.employeeId, run.payrollMonth) }))),
+      },
+      select: { batchId: true, totalAmount: true },
+    });
+    const directPaidByBatch = new Map<string, Prisma.Decimal>();
+    for (const payment of directPayments) {
+      if (!payment.batchId) continue;
+      directPaidByBatch.set(payment.batchId, (directPaidByBatch.get(payment.batchId) ?? new Prisma.Decimal(0)).plus(payment.totalAmount));
+    }
     return runs.map((r) => ({
       ...r,
       issuedSalaryInvoiceNumber: invoiceNoByRunId.get(r.id) ?? null,
+      payableAmount: Prisma.Decimal.max(
+        new Prisma.Decimal(0),
+        new Prisma.Decimal(r.totalAmount).minus(r.items.reduce(
+          (sum, item) => sum.plus(directPaidByBatch.get(individualSalaryBatchId(item.employeeId, r.payrollMonth)) ?? 0),
+          new Prisma.Decimal(0),
+        )),
+      ),
     }));
   }
 
@@ -126,9 +148,22 @@ export class HrPayrollRunReaderService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const directPayments = await this.prisma.invoice.aggregate({
+      where: {
+        companyId,
+        kind: 'salary',
+        status: 'active',
+        OR: run.items.map((item) => ({ batchId: individualSalaryBatchId(item.employeeId, run.payrollMonth) })),
+      },
+      _sum: { totalAmount: true },
+    });
     return {
       ...run,
       issuedSalaryInvoiceNumber: salaryInvoice?.invoiceNumber ?? null,
+      payableAmount: Prisma.Decimal.max(
+        new Prisma.Decimal(0),
+        new Prisma.Decimal(run.totalAmount).minus(directPayments._sum.totalAmount ?? 0),
+      ),
     };
   }
 }
