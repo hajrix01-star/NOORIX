@@ -149,6 +149,8 @@ export type OrdersV4Document = {
   calculationSnapshot?: Record<string, unknown> | null;
   canReceive?: boolean;
   canReopen?: boolean;
+  /** A received purchase explicitly delegated by the owner for cashier correction. */
+  ownerReopenedForCashier?: boolean;
   editMode?: 'standard' | 'correction';
   createdByUser?: OrdersV4UserIdentity | null;
   section?: OrdersV4Section | null;

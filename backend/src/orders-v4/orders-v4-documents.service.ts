@@ -40,11 +40,7 @@ import {
 } from './orders-v4-document-format.util';
 import {
   isOrdersV4CashierEditEligible,
-  isOrdersV4OwnerEditEligible,
-  ORDERS_V4_CASHIER_EDIT_LIMIT,
-  ORDERS_V4_REOPEN_WINDOW_DAYS,
-  ordersV4CashierRecentEditablePurchasesQuery,
-  isOrdersV4ReopenDateEligible,
+  hasOrdersV4OwnerReopenDelegation,
   type OrdersV4ReopenAccess,
 } from './orders-v4-reopen.policy';
 
@@ -68,32 +64,26 @@ export class OrdersV4DocumentsService {
     filters: OrdersV4DocumentListFilters = {},
     reopenAccess: OrdersV4ReopenAccess | 'none' = 'owner',
   ) {
-    const [documents, cashierRecentPurchases] = await Promise.all([
-      this.prisma.ordersV4Document.findMany(
-        ordersV4DocumentListQuery(companyId, documentType, startDate, endDate, createdByUserId, limit, filters),
-      ),
-      documentType === 'purchase' && reopenAccess !== 'none'
-        ? this.prisma.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId))
-        : Promise.resolve([]),
-    ]);
-    const cashierRecentPurchaseIds = cashierRecentPurchases.map((document) => document.id);
+    const documents = await this.prisma.ordersV4Document.findMany(
+      ordersV4DocumentListQuery(companyId, documentType, startDate, endDate, createdByUserId, limit, filters),
+    );
     const identities = await loadOrdersV4UserIdentities(this.prisma, documents.map((document) => document.createdByUserId));
     return documents.map((document) => ({
       ...document,
+      ownerReopenedForCashier: document.documentType === 'purchase'
+        && hasOrdersV4OwnerReopenDelegation(document.calculationSnapshot),
       canReceive: document.documentType === 'purchase'
         && document.reversalOfId == null
         && document.status === 'prepared'
-        && (reopenAccess === 'owner'
-          ? isOrdersV4OwnerEditEligible(document.id, document.documentDate, cashierRecentPurchaseIds)
-          : reopenAccess === 'cashier' && isOrdersV4CashierEditEligible(document.id, cashierRecentPurchaseIds)),
+        && (reopenAccess === 'owner' || (reopenAccess === 'cashier' && isOrdersV4CashierEditEligible(document.documentDate))),
       canReopen: document.documentType === 'purchase'
         && document.reversalOfId == null
         && document.status === 'received'
         && (reopenAccess === 'owner'
-          ? isOrdersV4OwnerEditEligible(document.id, document.documentDate, cashierRecentPurchaseIds)
-          : reopenAccess === 'cashier'
-            ? isOrdersV4CashierEditEligible(document.id, cashierRecentPurchaseIds)
-            : false),
+          || (reopenAccess === 'cashier' && (
+            isOrdersV4CashierEditEligible(document.documentDate)
+            || hasOrdersV4OwnerReopenDelegation(document.calculationSnapshot)
+          ))),
       createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
     }));
   }
@@ -671,16 +661,8 @@ export class OrdersV4DocumentsService {
           await persistReceiveReplay(result);
           return result;
         }
-        if (access === 'cashier') {
-          const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId));
-          if (!isOrdersV4CashierEditEligible(purchase.id, recentPurchases.map((document) => document.id))) {
-            throw new BadRequestException(`يمكن للكاشير تعديل أو استلام آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات فقط`);
-          }
-        } else if (!isOrdersV4ReopenDateEligible(purchase.documentDate)) {
-          const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId));
-          if (!isOrdersV4OwnerEditEligible(purchase.id, purchase.documentDate, recentPurchases.map((document) => document.id))) {
-            throw new BadRequestException(`الاستلام متاح خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام أو ضمن آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات`);
-          }
+        if (access === 'cashier' && !isOrdersV4CashierEditEligible(purchase.documentDate)) {
+          throw new BadRequestException('يمكن للكاشير استلام طلبات آخر 10 أيام فقط');
         }
         if (purchase.status !== 'prepared') throw new BadRequestException('الطلب ليس في حالة انتظار الاستلام');
         if (purchase.revision !== input.revision) throw new BadRequestException('تم تعديل الطلب؛ أعد تحميله قبل الاستلام');
@@ -893,7 +875,14 @@ export class OrdersV4DocumentsService {
     return this.reversal.undoReverse(companyId, id, idempotencyKey);
   }
 
-  reopenPurchase(companyId: string, id: string, idempotencyKey: string, access: OrdersV4ReopenAccess = 'owner') {
-    return this.reversal.reopenPurchase(companyId, id, idempotencyKey, access);
+  reopenPurchase(
+    companyId: string,
+    id: string,
+    idempotencyKey: string,
+    access: OrdersV4ReopenAccess = 'owner',
+    mode: 'edit' | 'delegate' = 'edit',
+    userId: string | null = null,
+  ) {
+    return this.reversal.reopenPurchase(companyId, id, idempotencyKey, access, mode, userId);
   }
 }

@@ -12,11 +12,7 @@ import { OrdersV4FundsPostingService } from './orders-v4-funds-posting.service';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 import {
   isOrdersV4CashierEditEligible,
-  isOrdersV4OwnerEditEligible,
-  isOrdersV4ReopenDateEligible,
-  ORDERS_V4_CASHIER_EDIT_LIMIT,
-  ORDERS_V4_REOPEN_WINDOW_DAYS,
-  ordersV4CashierRecentEditablePurchasesQuery,
+  hasOrdersV4OwnerReopenDelegation,
   type OrdersV4ReopenAccess,
 } from './orders-v4-reopen.policy';
 
@@ -99,16 +95,10 @@ export class OrdersV4PurchaseCorrectionService {
     });
     if (!original) throw new BadRequestException('الطلب المستلم غير موجود أو سبق تعديله');
     if (original.revision !== input.revision) throw new BadRequestException('تم تعديل الطلب؛ أعد تحميله قبل الحفظ');
-    if (context.access === 'owner' && !isOrdersV4ReopenDateEligible(original.documentDate)) {
-      const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(context.companyId));
-      if (!isOrdersV4OwnerEditEligible(original.id, original.documentDate, recentPurchases.map((document) => document.id))) {
-        throw new BadRequestException(`تعديل الطلب متاح خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام أو ضمن آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات`);
-      }
-    } else if (context.access === 'cashier') {
-      const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(context.companyId));
-      if (!isOrdersV4CashierEditEligible(original.id, recentPurchases.map((document) => document.id))) {
-        throw new BadRequestException(`يمكن للكاشير تعديل أو استلام آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات فقط`);
-      }
+    if (context.access === 'cashier'
+      && !isOrdersV4CashierEditEligible(original.documentDate)
+      && !hasOrdersV4OwnerReopenDelegation(original.calculationSnapshot)) {
+      throw new BadRequestException('يمكن للكاشير تعديل طلبات آخر 10 أيام فقط، أو الطلب الذي أعاد المالك فتحه له');
     }
     const inheritedPaymentMethod = original.paymentMethod === 'custody' || original.paymentMethod === 'cash' || original.paymentMethod === 'transfer'
       ? original.paymentMethod
@@ -153,6 +143,10 @@ export class OrdersV4PurchaseCorrectionService {
           correctedByDocumentId: replacement.id,
           correctedAt: new Date().toISOString(),
           correctionPolicy: 'atomic-reverse-and-repost-on-save',
+          ...(hasOrdersV4OwnerReopenDelegation(original.calculationSnapshot) ? {
+            ownerReopenConsumedAt: new Date().toISOString(),
+            ownerReopenConsumedByUserId: context.userId,
+          } : {}),
         },
         updatedByUserId: context.userId,
       },

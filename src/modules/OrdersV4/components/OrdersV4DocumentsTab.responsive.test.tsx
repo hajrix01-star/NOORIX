@@ -321,7 +321,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(screen.getByRole('button', { name: 'إلغاء الطلب' })).toBeTruthy();
   });
 
-  it('shows the owner-only reopen warning for a received purchase', () => {
+  it.skip('shows the owner-only warning for the retired 7-day/latest-five rule', () => {
     ordersV4DocumentsMock.documents = [{
       id: 'document-1', documentNumber: 'REQ4-1', documentType: 'purchase', documentDate: '2026-08-03',
       paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'received', canReopen: true, lines: [],
@@ -346,7 +346,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(screen.getByRole('button', { name: 'فتح للتعديل' })).toBeTruthy();
   });
 
-  it('explains the cashier permission across the mixed latest-five purchase window', () => {
+  it.skip('explains the retired cashier latest-five purchase window', () => {
     ordersV4DocumentsMock.documents = [{
       id: 'document-1', documentNumber: 'REQ4-1', documentType: 'purchase', documentDate: '2026-08-03',
       paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'received', canReopen: true, lines: [],
@@ -364,6 +364,32 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     fireEvent.click(screen.getByText('REQ4-1'));
     fireEvent.click(screen.getByRole('button', { name: 'تعديل الطلب' }));
     expect(screen.getByText(/آخر 5 طلبات شراء، سواء كانت بانتظار الاستلام أو مستلمة/)).toBeTruthy();
+  });
+
+  it('lets the owner delegate one received purchase to the cashier as awaiting receipt', async () => {
+    const document = {
+      id: 'old-document', documentNumber: 'REQ4-OLD', documentType: 'purchase', documentDate: '2020-01-01',
+      paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'received', canReopen: true, lines: [],
+    };
+    ordersV4DocumentsMock.documents = [document];
+    reopenDocumentMock.mockResolvedValue({ data: { ...document, ownerReopenedForCashier: true, editMode: 'correction' } });
+    render(<OrdersV4DocumentsTab
+      companyId="company-1"
+      documentType="purchase"
+      startDate="2026-08-01"
+      endDate="2026-08-31"
+      bootstrap={bootstrap}
+      canReopen
+      ownerReopenForStaff
+    />);
+
+    fireEvent.click(screen.getByText('REQ4-OLD'));
+    fireEvent.click(screen.getByRole('button', { name: 'إعادة فتح للموظف' }));
+    fireEvent.click(screen.getByRole('button', { name: 'تحويل إلى انتظار الاستلام' }));
+
+    await waitFor(() => expect(reopenDocumentMock).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'old-document', reopenMode: 'delegate',
+    })));
   });
 
   it('opens the same edit sheet when the server selects direct correction mode', async () => {

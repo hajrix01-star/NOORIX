@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { TenantContext } from '../common/tenant-context';
 import { OrdersV4DocumentsService } from './orders-v4-documents.service';
 import { OrdersV4PurchaseCorrectionService } from './orders-v4-purchase-correction.service';
-import { ordersV4ReopenDateRange } from './orders-v4-reopen.policy';
+import { ordersV4CashierEditDateRange } from './orders-v4-reopen.policy';
 
 describe('OrdersV4DocumentsService purchase workflow', () => {
   afterEach(() => {
@@ -14,7 +14,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
   it('applies section, category, item, payment, status and search filters before the result limit', async () => {
     const findMany = jest.fn().mockResolvedValue([{
       id: 'document-1', documentType: 'purchase', reversalOfId: null, status: 'received',
-      documentDate: ordersV4ReopenDateRange().lte, createdByUserId: null,
+      documentDate: ordersV4CashierEditDateRange().lte, createdByUserId: null,
     }]);
     const prisma = { ordersV4Document: { findMany, findFirst: jest.fn().mockResolvedValue(null) } };
     const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
@@ -46,72 +46,55 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     expect(result[0]).toMatchObject({ id: 'document-1', canReopen: true });
   });
 
-  it('allows smart editing during the last seven days even while another purchase is pending', async () => {
-    const range = ordersV4ReopenDateRange('2026-08-03');
+  it('allows cashier editing and receipt only within the last ten days', async () => {
+    const range = ordersV4CashierEditDateRange('2026-08-03');
     const oldDate = new Date(range.gte);
     oldDate.setUTCDate(oldDate.getUTCDate() - 1);
     const documents = [
-      { id: 'within-week', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: range.gte, createdByUserId: null },
+      { id: 'within-window', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: range.gte, createdByUserId: null },
       { id: 'older', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: oldDate, createdByUserId: null },
       { id: 'old-prepared', documentType: 'purchase', reversalOfId: null, status: 'prepared', documentDate: oldDate, createdByUserId: null },
     ];
-    const recentWithoutOlder = [{ id: 'within-week' }, { id: 'newer-2' }, { id: 'newer-3' }, { id: 'newer-4' }, { id: 'newer-5' }];
-    const prisma = { ordersV4Document: { findMany: jest.fn()
-      .mockResolvedValueOnce(documents)
-      .mockResolvedValueOnce(recentWithoutOlder)
-      .mockResolvedValueOnce(documents)
-      .mockResolvedValueOnce(recentWithoutOlder), findFirst: jest.fn().mockResolvedValue(null) } };
+    const prisma = { ordersV4Document: { findMany: jest.fn().mockResolvedValue(documents), findFirst: jest.fn().mockResolvedValue(null) } };
     const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
 
     jest.useFakeTimers().setSystemTime(new Date('2026-08-03T12:00:00.000Z'));
-    const result = await service.list('company-1', 'purchase');
+    const result = await service.list('company-1', 'purchase', undefined, undefined, undefined, 250, {}, 'cashier');
 
     expect(result.map((row) => [row.id, row.canReopen])).toEqual([
-      ['within-week', true],
+      ['within-window', true],
       ['older', false],
       ['old-prepared', false],
     ]);
     expect(result.find((row) => row.id === 'old-prepared')?.canReceive).toBe(false);
 
     prisma.ordersV4Document.findFirst.mockResolvedValue({ id: 'pending-purchase' });
-    const withPending = await service.list('company-1', 'purchase');
+    const withPending = await service.list('company-1', 'purchase', undefined, undefined, undefined, 250, {}, 'cashier');
     expect(withPending.map((row) => [row.id, row.canReopen])).toEqual([
-      ['within-week', true],
+      ['within-window', true],
       ['older', false],
       ['old-prepared', false],
     ]);
   });
 
-  it('uses one mixed latest-five window for cashier receipt and reopening', async () => {
-    const documents = Array.from({ length: 6 }, (_, index) => ({
-      id: `purchase-${index + 1}`,
-      documentType: 'purchase',
-      reversalOfId: null,
-      status: index % 2 === 0 ? 'prepared' : 'received',
-      documentDate: new Date('2026-08-03T00:00:00.000Z'),
-      createdByUserId: null,
-    }));
-    const findMany = jest.fn()
-      .mockResolvedValueOnce(documents)
-      .mockResolvedValueOnce(documents.slice(0, 5).map(({ id }) => ({ id })));
+  it('allows only delegated historical purchases to reopen for cashier', async () => {
+    const documents = [
+      { id: 'fresh-prepared', documentType: 'purchase', reversalOfId: null, status: 'prepared', documentDate: new Date('2026-08-03T00:00:00.000Z'), createdByUserId: null },
+      { id: 'delegated-old', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: new Date('2026-07-01T00:00:00.000Z'), createdByUserId: null, calculationSnapshot: { ownerReopenDelegatedAt: '2026-08-03T10:00:00.000Z' } },
+      { id: 'old', documentType: 'purchase', reversalOfId: null, status: 'received', documentDate: new Date('2026-07-01T00:00:00.000Z'), createdByUserId: null, calculationSnapshot: {} },
+    ];
+    const findMany = jest.fn().mockResolvedValue(documents);
     const prisma = { ordersV4Document: { findMany, findFirst: jest.fn().mockResolvedValue(null) } };
     const service = new OrdersV4DocumentsService(prisma as never, {} as never, {} as never, {} as never, {} as never);
 
     const result = await service.list('company-1', 'purchase', undefined, undefined, undefined, 250, {}, 'cashier');
 
-    expect(result.map((row) => [row.id, row.canReceive, row.canReopen])).toEqual([
-      ['purchase-1', true, false],
-      ['purchase-2', false, true],
-      ['purchase-3', true, false],
-      ['purchase-4', false, true],
-      ['purchase-5', true, false],
-      ['purchase-6', false, false],
+    expect(result.map((row) => [row.id, row.canReceive, row.canReopen, row.ownerReopenedForCashier])).toEqual([
+      ['fresh-prepared', true, false, false],
+      ['delegated-old', false, true, true],
+      ['old', false, false, false],
     ]);
-    expect(findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      take: 5,
-      where: expect.objectContaining({ status: { in: ['prepared', 'received'] } }),
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    }));
+    expect(findMany).toHaveBeenCalledTimes(1);
   });
 
   it('creates a prepared purchase with kernel-calculated quantities and totals', async () => {
@@ -198,7 +181,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
       $executeRaw: jest.fn(),
       idempotencyKey: { findFirst: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
       ordersV4Document: {
-        findFirst: jest.fn().mockResolvedValue({ id: 'document-1', status: 'prepared', revision: 1, calculationSnapshot: {} }),
+        findFirst: jest.fn().mockResolvedValue({ id: 'document-1', status: 'prepared', revision: 1, documentDate: new Date('2026-08-03T00:00:00.000Z'), calculationSnapshot: {} }),
         findMany: jest.fn().mockResolvedValue([
           { id: 'newer-1' }, { id: 'newer-2' }, { id: 'newer-3' }, { id: 'newer-4' }, { id: 'document-1' },
         ]),
@@ -255,7 +238,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     }, 'cashier')).rejects.toThrow('مفتاح منع تكرار الاستلام مستخدم لطلب أو محتوى مختلف');
   });
 
-  it('rejects an owner receipt outside both the seven-day and latest-five windows', async () => {
+  it.skip('rejects owner receipt outside the retired seven-day and latest-five windows', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('owner-1');
     const tx = {
@@ -280,7 +263,7 @@ describe('OrdersV4DocumentsService purchase workflow', () => {
     }, 'owner')).rejects.toThrow('الاستلام متاح خلال آخر 7 أيام أو ضمن آخر 5 طلبات');
   });
 
-  it('rejects the sixth active purchase before any inventory or funds posting', async () => {
+  it.skip('rejects the sixth active purchase under the retired latest-five window', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('cashier-1');
     const tx = {

@@ -67,13 +67,13 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
     expect(result).toEqual(expect.objectContaining({ id: original.id, editMode: 'correction' }));
     expect(tx.ordersV4Document.create).not.toHaveBeenCalled();
     expect(tx.ordersV4Document.update).not.toHaveBeenCalled();
-    expect(tx.$executeRaw).not.toHaveBeenCalled();
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(2);
     expect(posting.lockKeys).not.toHaveBeenCalled();
     expect(posting.postReversal).not.toHaveBeenCalled();
     expect(funds.postReversals).not.toHaveBeenCalled();
   });
 
-  it('rejects a cashier request outside the mixed latest-five purchase window', async () => {
+  it.skip('rejects a cashier request outside the retired latest-five purchase window', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('cashier-1');
     const tx = {
@@ -93,7 +93,7 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
       .rejects.toThrow('يمكن للكاشير تعديل أو استلام آخر 5 طلبات فقط');
   });
 
-  it('rejects reopening a received purchase older than the seven-day owner window', async () => {
+  it.skip('rejects reopening a received purchase older than the retired seven-day owner window', async () => {
     jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
     jest.spyOn(TenantContext, 'getUserId').mockReturnValue('owner-1');
     const tx = {
@@ -134,6 +134,91 @@ describe('OrdersV4DocumentReversalService reopen workflow', () => {
     expect(tx.ordersV4Document.findUniqueOrThrow).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'purchase-1' } }));
 
     expect(tx.ordersV4Document.findFirst).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows the owner to open any received purchase regardless of age', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    const oldPurchase = { ...receivedPurchase(), documentDate: new Date('2020-01-01T00:00:00.000Z') };
+    const editable = { ...oldPurchase, section: null, location: { id: 'location-1' } };
+    const tx = {
+      $executeRaw: jest.fn(),
+      ordersV4Document: {
+        findFirst: jest.fn().mockResolvedValue(oldPurchase),
+        findUniqueOrThrow: jest.fn().mockResolvedValue(editable),
+      },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const service = new OrdersV4DocumentReversalService(prisma as never, {} as never, {} as never);
+
+    await expect(service.reopenPurchase('company-1', oldPurchase.id, 'owner-any-date', 'owner'))
+      .resolves.toMatchObject({ id: oldPurchase.id, editMode: 'correction' });
+  });
+
+  it('lets the owner delegate one historical purchase to the cashier with an auditable workflow marker', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    const oldPurchase = { ...receivedPurchase(), documentDate: new Date('2020-01-01T00:00:00.000Z') };
+    const tx = {
+      $executeRaw: jest.fn(),
+      ordersV4Document: {
+        findFirst: jest.fn().mockResolvedValue(oldPurchase),
+        update: jest.fn().mockImplementation(async ({ data }: { data: { calculationSnapshot: unknown } }) => ({
+          ...oldPurchase,
+          calculationSnapshot: data.calculationSnapshot,
+        })),
+      },
+      auditLog: { create: jest.fn() },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const service = new OrdersV4DocumentReversalService(prisma as never, {} as never, {} as never);
+
+    const result = await service.reopenPurchase('company-1', oldPurchase.id, 'delegate-old', 'owner', 'delegate', 'owner-1');
+
+    expect(result).toMatchObject({ id: oldPurchase.id, ownerReopenedForCashier: true, editMode: 'correction' });
+    expect(tx.ordersV4Document.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        calculationSnapshot: expect.objectContaining({
+          ownerReopenDelegationIdempotencyKey: 'delegate-old',
+          ownerReopenDelegatedByUserId: 'owner-1',
+        }),
+      }),
+    }));
+    expect(tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ entity: 'orders_v4_purchase_owner_reopen', entityId: oldPurchase.id }),
+    }));
+  });
+
+  it('allows a cashier to correct only the historical purchase delegated by the owner', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    const delegated = {
+      ...receivedPurchase(),
+      documentDate: new Date('2020-01-01T00:00:00.000Z'),
+      calculationSnapshot: { ownerReopenDelegatedAt: '2026-08-03T12:00:00.000Z' },
+    };
+    const tx = {
+      $executeRaw: jest.fn(),
+      ordersV4Document: {
+        findFirst: jest.fn().mockResolvedValue(delegated),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({ ...delegated, section: null, location: { id: 'location-1' } }),
+      },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const service = new OrdersV4DocumentReversalService(prisma as never, {} as never, {} as never);
+
+    await expect(service.reopenPurchase('company-1', delegated.id, 'cashier-delegated', 'cashier'))
+      .resolves.toMatchObject({ id: delegated.id, editMode: 'correction' });
+  });
+
+  it('does not open another historical purchase for the cashier', async () => {
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('tenant-1');
+    const tx = {
+      $executeRaw: jest.fn(),
+      ordersV4Document: { findFirst: jest.fn().mockResolvedValue({ ...receivedPurchase(), documentDate: new Date('2020-01-01T00:00:00.000Z') }) },
+    };
+    const prisma = { withTenant: jest.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)) };
+    const service = new OrdersV4DocumentReversalService(prisma as never, {} as never, {} as never);
+
+    await expect(service.reopenPurchase('company-1', 'purchase-1', 'cashier-old', 'cashier'))
+      .rejects.toThrow('يمكن للكاشير تعديل طلبات آخر 10 أيام فقط، أو الطلب الذي أعاد المالك فتحه له');
   });
 
   it('cancels only the business document own effect and excludes inherited reversal entries', async () => {

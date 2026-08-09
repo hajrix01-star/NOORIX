@@ -173,6 +173,8 @@ export class OrdersV4StocktakeDto {
 
 export class OrdersV4IdempotencyDto {
   @IsString() @MaxLength(200) idempotencyKey!: string;
+  /** Owner-only: delegates this one received purchase to the cashier for correction. */
+  @IsOptional() @IsIn(['edit', 'delegate']) reopenMode?: 'edit' | 'delegate';
 }
 
 /**

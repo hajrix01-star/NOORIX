@@ -14,11 +14,7 @@ import {
 } from './orders-v4-document-effect.policy';
 import {
   isOrdersV4CashierEditEligible,
-  isOrdersV4OwnerEditEligible,
-  isOrdersV4ReopenDateEligible,
-  ORDERS_V4_CASHIER_EDIT_LIMIT,
-  ORDERS_V4_REOPEN_WINDOW_DAYS,
-  ordersV4CashierRecentEditablePurchasesQuery,
+  hasOrdersV4OwnerReopenDelegation,
   type OrdersV4ReopenAccess,
 } from './orders-v4-reopen.policy';
 
@@ -50,25 +46,66 @@ export class OrdersV4DocumentReversalService {
     return this.toggle(companyId, id, idempotencyKey, true);
   }
 
-  async reopenPurchase(companyId: string, id: string, idempotencyKey: string, access: OrdersV4ReopenAccess = 'owner') {
+  async reopenPurchase(
+    companyId: string,
+    id: string,
+    idempotencyKey: string,
+    access: OrdersV4ReopenAccess = 'owner',
+    mode: 'edit' | 'delegate' = 'edit',
+    userId: string | null = null,
+  ) {
     if (!idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
     return this.prisma.withTenant(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ordersV4PurchaseWindowLockKey(companyId)}))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ordersV4DocumentEffectLockKey(companyId, id)}))`;
       const purchase = await tx.ordersV4Document.findFirst({
         where: { id, companyId, documentType: 'purchase', reversalOfId: null },
         include: { lines: { orderBy: { lineNumber: 'asc' } } },
       });
       if (!purchase) throw new NotFoundException('طلب الشراء غير موجود');
       if (purchase.status !== 'received') throw new BadRequestException('يمكن إعادة فتح الطلب المستلم فقط');
-      if (access === 'owner' && !isOrdersV4ReopenDateEligible(purchase.documentDate)) {
-        const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId));
-        if (!isOrdersV4OwnerEditEligible(purchase.id, purchase.documentDate, recentPurchases.map((document) => document.id))) {
-          throw new BadRequestException(`إعادة الفتح متاحة خلال آخر ${ORDERS_V4_REOPEN_WINDOW_DAYS} أيام أو ضمن آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات`);
+      if (mode === 'delegate') {
+        if (access !== 'owner') throw new BadRequestException('تفويض إعادة الفتح متاح للمالك فقط');
+        const snapshot = (purchase.calculationSnapshot as Prisma.InputJsonObject | null) ?? {};
+        if (snapshot.ownerReopenDelegationIdempotencyKey === idempotencyKey.trim()) {
+          return { ...purchase, ownerReopenedForCashier: true, editMode: 'correction' as const };
         }
-      } else if (access === 'cashier') {
-        const recentPurchases = await tx.ordersV4Document.findMany(ordersV4CashierRecentEditablePurchasesQuery(companyId));
-        if (!isOrdersV4CashierEditEligible(purchase.id, recentPurchases.map((document) => document.id))) {
-          throw new BadRequestException(`يمكن للكاشير تعديل أو استلام آخر ${ORDERS_V4_CASHIER_EDIT_LIMIT} طلبات فقط`);
-        }
+        const delegatedAt = new Date().toISOString();
+        const delegated = await tx.ordersV4Document.update({
+          where: { id: purchase.id },
+          data: {
+            calculationSnapshot: {
+              ...snapshot,
+              ownerReopenDelegatedAt: delegatedAt,
+              ownerReopenDelegatedByUserId: userId,
+              ownerReopenDelegationIdempotencyKey: idempotencyKey.trim(),
+              ownerReopenPolicy: 'owner-approved-cashier-correction',
+            },
+            updatedByUserId: userId,
+          },
+          include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
+        });
+        await tx.auditLog.create({
+          data: {
+            tenantId: TenantContext.getTenantId(),
+            companyId,
+            userId,
+            action: 'update',
+            entity: 'orders_v4_purchase_owner_reopen',
+            entityId: purchase.id,
+            oldValue: { status: 'received', ownerReopenedForCashier: hasOrdersV4OwnerReopenDelegation(purchase.calculationSnapshot) },
+            newValue: { workflowStatus: 'awaiting_receipt', delegatedAt, delegatedByUserId: userId },
+          },
+        });
+        // The effective receipt remains received until the cashier saves the atomic
+        // correction. The client displays this as awaiting receipt, so reports and
+        // stock never lose the original effect while the delegated task is open.
+        return { ...delegated, ownerReopenedForCashier: true, editMode: 'correction' as const };
+      }
+      if (access === 'cashier'
+        && !isOrdersV4CashierEditEligible(purchase.documentDate)
+        && !hasOrdersV4OwnerReopenDelegation(purchase.calculationSnapshot)) {
+        throw new BadRequestException('يمكن للكاشير تعديل طلبات آخر 10 أيام فقط، أو الطلب الذي أعاد المالك فتحه له');
       }
       // Opening the editor is deliberately read-only. Inventory, custody and
       // price differences are posted atomically only when the edited document

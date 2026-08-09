@@ -94,7 +94,7 @@ describe('Orders V4 purchase edit permission consistency', () => {
       writeOnlyUser,
     )).not.toThrow();
 
-    expect(documents.reopenPurchase).toHaveBeenCalledWith('company-1', 'purchase-1', 'reopen-1', 'cashier');
+    expect(documents.reopenPurchase).toHaveBeenCalledWith('company-1', 'purchase-1', 'reopen-1', 'cashier', 'edit', 'writer-1');
     expect(documents.receivePurchase).toHaveBeenCalledWith('company-1', 'purchase-1', expect.objectContaining({ editMode: 'correction' }), 'cashier');
   });
 });

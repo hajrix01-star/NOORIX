@@ -71,8 +71,8 @@ export function undoReverseOrdersV4Document(companyId: string, id: string, idemp
   return apiPost(`${BASE}/documents/${encodeURIComponent(id)}/undo-reverse?companyId=${encodeURIComponent(companyId)}`, { idempotencyKey });
 }
 
-export function reopenOrdersV4Document(companyId: string, id: string, idempotencyKey: string): Promise<ApiParsedResult<OrdersV4Document>> {
-  return apiPost(`${BASE}/documents/${encodeURIComponent(id)}/reopen?companyId=${encodeURIComponent(companyId)}`, { idempotencyKey });
+export function reopenOrdersV4Document(companyId: string, id: string, idempotencyKey: string, reopenMode: 'edit' | 'delegate' = 'edit'): Promise<ApiParsedResult<OrdersV4Document>> {
+  return apiPost(`${BASE}/documents/${encodeURIComponent(id)}/reopen?companyId=${encodeURIComponent(companyId)}`, { idempotencyKey, reopenMode });
 }
 
 export function getOrdersV4Summary(companyId: string, startDate: string, endDate: string): Promise<ApiParsedResult<OrdersV4Summary>> {

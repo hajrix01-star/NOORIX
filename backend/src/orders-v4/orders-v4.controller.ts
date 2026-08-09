@@ -287,6 +287,8 @@ export class OrdersV4Controller {
       id,
       body.idempotencyKey,
       isOwner ? 'owner' : 'cashier',
+      isOwner && body.reopenMode === 'delegate' ? 'delegate' : 'edit',
+      user.sub,
     );
   }
 

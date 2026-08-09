@@ -144,6 +144,7 @@ export function OrdersV4DocumentsTab({
   canReverse = false,
   canUndoReverse = false,
   canReopen = false,
+  ownerReopenForStaff = false,
   reopenAsCashier = false,
   canReceive = false,
   showOverviewCards = true,
@@ -161,6 +162,7 @@ export function OrdersV4DocumentsTab({
   canReverse?: boolean;
   canUndoReverse?: boolean;
   canReopen?: boolean;
+  ownerReopenForStaff?: boolean;
   reopenAsCashier?: boolean;
   canReceive?: boolean;
   showOverviewCards?: boolean;
@@ -177,6 +179,7 @@ export function OrdersV4DocumentsTab({
   const [reverseTarget, setReverseTarget] = useState<OrdersV4Document | null>(null);
   const [undoReverseTarget, setUndoReverseTarget] = useState<OrdersV4Document | null>(null);
   const [reopenTarget, setReopenTarget] = useState<OrdersV4Document | null>(null);
+  const [delegateTarget, setDelegateTarget] = useState<OrdersV4Document | null>(null);
   const [sectionFilter, setSectionFilter] = useState('');
   const isPurchase = documentType === 'purchase';
   const documentsQuery = useOrdersV4Documents(companyId, documentType, startDate, endDate, true, resultLimit, {
@@ -282,7 +285,9 @@ export function OrdersV4DocumentsTab({
     {
       key: 'status',
       label: t('ordersV4Status'),
-      render: (value, row) => isPurchase && value === 'prepared' && canReceive && row.canReceive === true
+      render: (value, row) => isPurchase && canReceive && row.ownerReopenedForCashier === true
+        ? <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving({ ...row, editMode: 'correction' }); }}>بانتظار الاستلام</Button>
+        : isPurchase && value === 'prepared' && canReceive && row.canReceive === true
         ? <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>{t('ordersV4StatusAwaitingReceipt')}</Button>
         : <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? ['direct-correction', 'delta-correction', 'atomic-correction'].includes(String(row.calculationSnapshot?.operation)) ? t('ordersV4StatusCorrectedReceived') : t('ordersV4StatusReceived') : value === 'prepared' ? t('ordersV4StatusAwaitingReceipt') : row.calculationSnapshot?.correctedByDocumentId ? t('ordersV4StatusCorrected') : row.calculationSnapshot?.reopenedByDocumentId ? t('ordersV4StatusReopened') : t('ordersV4StatusReversed')}</span>,
     },
@@ -328,6 +333,7 @@ export function OrdersV4DocumentsTab({
         canReopen={canReopen}
         canReverse={canReverse}
         canUndoReverse={canUndoReverse}
+        canDelegateReopen={ownerReopenForStaff}
         onClose={() => setViewing(null)}
         onPrint={printDocument}
         onExport={exportDocument}
@@ -335,6 +341,10 @@ export function OrdersV4DocumentsTab({
         onReopen={(document) => {
           setViewing(null);
           setReopenTarget(document);
+        }}
+        onDelegate={(document) => {
+          setViewing(null);
+          setDelegateTarget(document);
         }}
         onReverse={(document) => {
           setViewing(null);
@@ -363,9 +373,21 @@ export function OrdersV4DocumentsTab({
         onClose={() => setReopenTarget(null)}
         onConfirm={async () => {
           if (!reopenTarget) return;
-          const response = await reopenMutation.mutateAsync({ id: reopenTarget.id, idempotencyKey: crypto.randomUUID() });
+          const response = await reopenMutation.mutateAsync({ id: reopenTarget.id, idempotencyKey: crypto.randomUUID(), reopenMode: 'edit' });
           setReopenTarget(null);
           if (response.data) setReceiving(response.data);
+        }}
+      />
+      <OrdersV4ReopenConfirmModal
+        document={delegateTarget}
+        cashierMode={false}
+        delegateMode
+        busy={reopenMutation.isPending}
+        onClose={() => setDelegateTarget(null)}
+        onConfirm={async () => {
+          if (!delegateTarget) return;
+          await reopenMutation.mutateAsync({ id: delegateTarget.id, idempotencyKey: crypto.randomUUID(), reopenMode: 'delegate' });
+          setDelegateTarget(null);
         }}
       />
       <OrdersV4ReversalConfirmModal
@@ -724,12 +746,14 @@ function OrdersV4ReversalConfirmModal({
 function OrdersV4ReopenConfirmModal({
   document,
   cashierMode,
+  delegateMode = false,
   busy,
   onClose,
   onConfirm,
 }: {
   document: OrdersV4Document | null;
   cashierMode: boolean;
+  delegateMode?: boolean;
   busy: boolean;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
@@ -738,15 +762,17 @@ function OrdersV4ReopenConfirmModal({
     open={!!document}
     onClose={onClose}
     size="sm"
-    title="تعديل الطلب"
+    title={delegateMode ? 'إعادة فتح للموظف' : 'تعديل الطلب'}
     footer={<DialogActions actions={[
       { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose },
-      { key: 'confirm', label: 'فتح للتعديل', role: 'edit', onClick: onConfirm, loading: busy },
+      { key: 'confirm', label: delegateMode ? 'تحويل إلى انتظار الاستلام' : 'فتح للتعديل', role: 'edit', onClick: onConfirm, loading: busy },
     ]} />}
   >
     {document && <div className="flex flex-col gap-3">
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[13px] leading-7 text-blue-950">
-        سيفتح الطلب للتعديل دون تغيير المخزون أو العهدة. عند الحفظ فقط تحسب النواة فرق الأصناف والكميات والأسعار وتطبقه دفعة واحدة بصورة ذرية؛ إما ينجح كاملًا أو لا يتغير شيء. {cashierMode ? 'هذه الصلاحية متاحة للكاشير ضمن آخر 5 طلبات شراء، سواء كانت بانتظار الاستلام أو مستلمة، دون موافقة المالك.' : 'صلاحية المالك متاحة خلال آخر 7 أيام، وكذلك ضمن آخر 5 طلبات حتى لا تكون صلاحية المالك أقل من الكاشير.'}
+        {delegateMode
+          ? 'سيظهر الطلب للكاشير بحالة انتظار الاستلام كتفويض صريح منك، حتى لو كان أقدم من 10 أيام. يبقى أثر المخزون والعهدة الحالي محفوظًا إلى أن يحفظ الكاشير التعديل؛ عندها فقط تطبق النواة فرق الأصناف والكميات والأسعار دفعة واحدة بصورة ذرية.'
+          : `سيفتح الطلب للتعديل دون تغيير المخزون أو العهدة. عند الحفظ فقط تحسب النواة فرق الأصناف والكميات والأسعار وتطبقه دفعة واحدة بصورة ذرية؛ إما ينجح كاملًا أو لا يتغير شيء. ${cashierMode ? 'هذه الصلاحية متاحة للكاشير خلال آخر 10 أيام، أو بطلب مفوض صراحة من المالك.' : 'صلاحية المالك متاحة لأي طلب دون حد زمني.'}`}
       </div>
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-noorix-bg-muted p-3 text-[12px]">
         <span>الطلب: <b>{document.documentNumber}</b></span>
@@ -756,9 +782,10 @@ function OrdersV4ReopenConfirmModal({
   </Modal>;
 }
 
-function OrdersV4DocumentDetails({ document, canReopen, canReverse, canUndoReverse, onClose, onPrint, onExport, onWhatsApp, onReopen, onReverse, onUndoReverse }: {
+function OrdersV4DocumentDetails({ document, canReopen, canDelegateReopen, canReverse, canUndoReverse, onClose, onPrint, onExport, onWhatsApp, onReopen, onDelegate, onReverse, onUndoReverse }: {
   document: OrdersV4Document | null;
   canReopen: boolean;
+  canDelegateReopen: boolean;
   canReverse: boolean;
   canUndoReverse: boolean;
   onClose: () => void;
@@ -766,6 +793,7 @@ function OrdersV4DocumentDetails({ document, canReopen, canReverse, canUndoRever
   onExport: (document: OrdersV4Document) => void;
   onWhatsApp: (document: OrdersV4Document) => void;
   onReopen: (document: OrdersV4Document) => void;
+  onDelegate: (document: OrdersV4Document) => void;
   onReverse: (document: OrdersV4Document) => void;
   onUndoReverse: (document: OrdersV4Document) => void;
 }) {
@@ -803,6 +831,9 @@ function OrdersV4DocumentDetails({ document, canReopen, canReverse, canUndoRever
       { key: 'whatsapp', label: t('ordersV4Whatsapp'), role: 'save', onClick: () => onWhatsApp(document) },
       ...(canReopen && document.documentType === 'purchase' && document.canReopen
         ? [{ key: 'reopen', label: 'تعديل الطلب', role: 'edit' as const, onClick: () => onReopen(document) }]
+        : []),
+      ...(canDelegateReopen && document.documentType === 'purchase' && document.status === 'received'
+        ? [{ key: 'delegate', label: 'إعادة فتح للموظف', role: 'edit' as const, onClick: () => onDelegate(document) }]
         : []),
       ...(canReverse && document.status === 'received'
         ? [{ key: 'reverse', label: document.documentType === 'registration' ? 'إلغاء التسجيل' : 'إلغاء الطلب', role: 'danger' as const, onClick: () => onReverse(document) }]
