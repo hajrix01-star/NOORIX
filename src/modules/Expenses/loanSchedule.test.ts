@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LoanRecord } from '../../types/api';
 import {
   getLoanExpectedEndDate,
+  getLoanHistoricalPaidThroughDate,
   getLoanPaymentInstallmentNumber,
   getLoanReferenceInstallmentAmount,
   getLoanRemainingInstallments,
@@ -45,5 +46,16 @@ describe('loanSchedule', () => {
     expect(getLoanPaymentInstallmentNumber(loan, '2026-05-25')).toBe(19);
     expect(getLoanPaymentInstallmentNumber(loan, '2026-06-22')).toBe(20);
     expect(getLoanPaymentInstallmentNumber(loan, '2026-07-22')).toBe(21);
+  });
+
+  it('uses the documented last-paid date from notes when the structured field is missing', () => {
+    const legacyLoan: LoanRecord = {
+      ...loan,
+      historicalPaidThroughDate: null,
+      notes: 'تمويل POS Finance — الرصيد الموحد شامل الربح. 48 قسطًا، آخر قسط مسدد 2026-07-25.',
+    };
+    expect(getLoanHistoricalPaidThroughDate(legacyLoan)).toBe('2026-07-25');
+    expect(getLoanScheduleStartDate(legacyLoan)).toBe('2024-11-25');
+    expect(getLoanPaymentInstallmentNumber(legacyLoan, '2026-07-22')).toBe(21);
   });
 });
