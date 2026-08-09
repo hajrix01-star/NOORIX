@@ -5,9 +5,28 @@ function asPositiveNumber(value: number | string | null | undefined) {
   return Number.isFinite(number) && number > 0 ? number : null;
 }
 
+function normalizeScheduleText(value: string | null | undefined) {
+  return String(value || '')
+    .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
+}
+
 function parseIsoDate(value: string | null | undefined) {
-  if (!value || !/^\d{4}-\d{2}-\d{2}/.test(value)) return null;
-  return value.slice(0, 10);
+  const normalized = normalizeScheduleText(value).trim();
+  const match = normalized.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  const parsed = new Date(`${iso}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== iso) return null;
+  return iso;
+}
+
+function findDateInText(value: string) {
+  const normalized = normalizeScheduleText(value);
+  const match = normalized.match(/\b(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\b/);
+  return match ? parseIsoDate(`${match[1]}-${match[2]}-${match[3]}`) : null;
 }
 
 function addMonths(value: string, months: number) {
@@ -44,7 +63,7 @@ export function getLoanRemainingInstallments(loan: LoanRecord) {
 }
 
 export function getLoanTotalInstallments(loan: LoanRecord) {
-  const notes = loan.notes || '';
+  const notes = normalizeScheduleText(loan.notes);
   const match = notes.match(/(\d{1,4})\s*(?:قسط(?:ًا|ا)?|أقساط|installments?)/i);
   return match ? Number(match[1]) : null;
 }
@@ -53,12 +72,19 @@ export function getLoanHistoricalPaidThroughDate(loan: LoanRecord) {
   const stored = parseIsoDate(loan.historicalPaidThroughDate);
   if (stored) return stored;
 
-  const notes = loan.notes || '';
-  const contextual = notes.match(/(?:آخر\s+قسط\s+مسدد|مسدد\s+حتى|paid\s+through)[^0-9]*(\d{4}-\d{2}-\d{2})/i);
-  if (contextual) return contextual[1];
+  const notes = normalizeScheduleText(loan.notes);
+  const contextual = notes.match(/(?:آخر\s+قسط\s+مسدد|مسدد\s+حتى|paid\s+through)[^0-9]*(\d{4}[-/.]\d{1,2}[-/.]\d{1,2})/i);
+  if (contextual) return parseIsoDate(contextual[1]);
 
-  const anyIsoDate = notes.match(/\b(\d{4}-\d{2}-\d{2})\b/);
-  return anyIsoDate ? anyIsoDate[1] : null;
+  const noteDate = findDateInText(notes);
+  if (noteDate) return noteDate;
+
+  const migratedDates = (loan.payments || [])
+    .filter((payment) => !payment.reversalOfId && payment.sourceInvoice)
+    .map((payment) => parseIsoDate(payment.transactionDate))
+    .filter((date): date is string => date !== null)
+    .sort();
+  return migratedDates.at(-1) || null;
 }
 
 export function getLoanScheduleStartDate(loan: LoanRecord) {
@@ -90,4 +116,20 @@ export function getLoanExpectedEndDate(loan: LoanRecord) {
   const totalInstallments = getLoanTotalInstallments(loan);
   if (startDate && totalInstallments && totalInstallments > 0) return addMonths(startDate, totalInstallments - 1);
   return null;
+}
+
+export function getLoanNextPaymentDate(loan: LoanRecord) {
+  const startDate = getLoanScheduleStartDate(loan);
+  if (!startDate) return null;
+
+  const historicalCount = Math.max(0, Number(loan.historicalPaymentsCount || 0));
+  const postedInstallments = (loan.payments || [])
+    .filter((payment) => !payment.reversalOfId && payment.status === 'posted')
+    .map((payment) => getLoanPaymentInstallmentNumber(loan, payment.transactionDate))
+    .filter((number): number is number => number !== null);
+  const lastSettledInstallment = Math.max(historicalCount, 0, ...postedInstallments);
+  const nextInstallment = lastSettledInstallment + 1;
+  const totalInstallments = getLoanTotalInstallments(loan);
+  if (totalInstallments && nextInstallment > totalInstallments) return null;
+  return addMonths(startDate, nextInstallment - 1);
 }

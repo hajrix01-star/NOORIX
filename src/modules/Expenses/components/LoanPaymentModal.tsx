@@ -8,7 +8,7 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { AdaptiveSheet, DialogActions, Input, SearchableOptionsPicker, TransactionDatePicker } from '../../../ui';
 import type { LoanPaymentCreatePayload, LoanRecord } from '../../../types/api';
-import { getLoanReferenceInstallmentAmount } from '../loanSchedule';
+import { getLoanNextPaymentDate, getLoanReferenceInstallmentAmount } from '../loanSchedule';
 
 type Props = { companyId: string; loans: LoanRecord[]; loanId?: string; onClose: () => void; onSaved: () => void };
 function attemptKey(companyId: string) { const suffix = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2); return `loan-pay-${companyId}-${suffix}`; }
@@ -33,6 +33,7 @@ export default function LoanPaymentModal({ companyId, loans, loanId: initialLoan
     if (!selectedLoan) return;
     const referenceAmount = getLoanReferenceInstallmentAmount(selectedLoan);
     setAmount(referenceAmount ? referenceAmount.toFixed(2) : '');
+    setTransactionDate(getLoanNextPaymentDate(selectedLoan) || getSaudiToday());
   }, [selectedLoan?.id]);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {

@@ -9,6 +9,7 @@ import { AdaptiveSheet, Badge, Button, DialogActions, FmtNum, Input, Transaction
 import type { LoanPaymentReversePayload, LoanRecord } from '../../../types/api';
 import {
   getLoanExpectedEndDate,
+  getLoanHistoricalPaidThroughDate,
   getLoanPaymentInstallmentNumber,
   getLoanReferenceInstallmentAmount,
   getLoanRemainingInstallments,
@@ -110,6 +111,7 @@ export default function LoanDetailModal({ companyId, loan, allLoans, onClose, on
   const totalInstallments = getLoanTotalInstallments(loan);
   const scheduleStartDate = getLoanScheduleStartDate(loan);
   const expectedEndDate = getLoanExpectedEndDate(loan);
+  const historicalPaidThroughDate = getLoanHistoricalPaidThroughDate(loan);
   const changed = () => { setShowPayment(false); setPaymentToReverse(null); onChanged(); };
 
   return <>
@@ -132,12 +134,12 @@ export default function LoanDetailModal({ companyId, loan, allLoans, onClose, on
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div className="rounded-lg border border-noorix-border px-3 py-2 text-center"><div className="text-[11px] text-noorix-muted">تاريخ بداية القرض / أول قسط</div><div className="mt-1 font-bold nx-font-numbers text-[14px]">{scheduleStartDate ? formatSaudiDate(scheduleStartDate) : '-'}</div></div>
           <div className="rounded-lg border border-noorix-border px-3 py-2 text-center"><div className="text-[11px] text-noorix-muted">تاريخ انتهاء القرض المتوقع</div><div className="mt-1 font-bold nx-font-numbers text-[14px]">{expectedEndDate ? formatSaudiDate(expectedEndDate) : '-'}</div></div>
-          <div className="rounded-lg border border-noorix-border px-3 py-2 text-center"><div className="text-[11px] text-noorix-muted">آخر قسط موثق قبل نوركس</div><div className="mt-1 font-bold nx-font-numbers text-[14px]">{loan.historicalPaidThroughDate ? formatSaudiDate(loan.historicalPaidThroughDate) : '-'}</div></div>
+          <div className="rounded-lg border border-noorix-border px-3 py-2 text-center"><div className="text-[11px] text-noorix-muted">آخر قسط موثق قبل نوركس</div><div className="mt-1 font-bold nx-font-numbers text-[14px]">{historicalPaidThroughDate ? formatSaudiDate(historicalPaidThroughDate) : '-'}</div></div>
         </div>
 
         {loan.creditorName || loan.notes || installmentAmount ? <div className="rounded-lg border border-noorix-border px-3 py-2 text-[13px] text-noorix-muted">{loan.creditorName ? <div>الجهة: <strong className="text-noorix-text">{loan.creditorName}</strong></div> : null}{installmentAmount ? <div className="mt-1">قيمة القسط المرجعية: <strong className="nx-font-numbers text-noorix-text">{installmentAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SR</strong>{remainingInstallments !== null ? <> · المتبقي تقريبيًا: <strong className="nx-font-numbers text-noorix-text">{remainingInstallments}</strong> قسط</> : null}</div> : null}{loan.notes ? <div className="mt-1">{loan.notes}</div> : null}</div> : null}
 
-        {(loan.historicalPaymentsCount || Number(loan.historicalPaidAmount || 0) > 0) ? <div className="rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2 text-[12px] text-noorix-muted">دفعات سابقة قبل نوركس: <strong>{loan.historicalPaymentsCount || 0}</strong> دفعة، بإجمالي <strong className="nx-font-numbers">{Number(loan.historicalPaidAmount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</strong>{loan.historicalPaidThroughDate ? ` حتى ${formatSaudiDate(loan.historicalPaidThroughDate)}` : ''}. هذه معلومات توثيقية ولا تؤثر على الخزينة.</div> : null}
+        {(loan.historicalPaymentsCount || Number(loan.historicalPaidAmount || 0) > 0) ? <div className="rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2 text-[12px] text-noorix-muted">دفعات سابقة قبل نوركس: <strong>{loan.historicalPaymentsCount || 0}</strong> دفعة، بإجمالي <strong className="nx-font-numbers">{Number(loan.historicalPaidAmount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</strong>{historicalPaidThroughDate ? ` حتى ${formatSaudiDate(historicalPaidThroughDate)}` : ''}. هذه معلومات توثيقية ولا تؤثر على الخزينة.</div> : null}
 
         <div className="overflow-x-auto rounded-lg border border-noorix-border">
           <table className="w-full min-w-[48rem] border-collapse text-[13px]">

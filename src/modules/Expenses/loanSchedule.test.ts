@@ -3,6 +3,7 @@ import type { LoanRecord } from '../../types/api';
 import {
   getLoanExpectedEndDate,
   getLoanHistoricalPaidThroughDate,
+  getLoanNextPaymentDate,
   getLoanPaymentInstallmentNumber,
   getLoanReferenceInstallmentAmount,
   getLoanRemainingInstallments,
@@ -57,5 +58,43 @@ describe('loanSchedule', () => {
     expect(getLoanHistoricalPaidThroughDate(legacyLoan)).toBe('2026-07-25');
     expect(getLoanScheduleStartDate(legacyLoan)).toBe('2024-11-25');
     expect(getLoanPaymentInstallmentNumber(legacyLoan, '2026-07-22')).toBe(21);
+  });
+
+  it('normalizes invisible RTL marks and Arabic digits in the documented schedule anchor', () => {
+    const rtlLoan: LoanRecord = {
+      ...loan,
+      historicalPaidThroughDate: null,
+      notes: 'تمويل POS Finance — ٤٨ قسطًا، آخر قسط مسدد \u200f٢٠٢٦-٠٧-٢٥\u200e.',
+    };
+    expect(getLoanHistoricalPaidThroughDate(rtlLoan)).toBe('2026-07-25');
+    expect(getLoanPaymentInstallmentNumber(rtlLoan, '2026-07-22')).toBe(21);
+  });
+
+  it('uses the latest migrated repayment as a safe fallback anchor', () => {
+    const migratedLoan: LoanRecord = {
+      ...loan,
+      historicalPaidThroughDate: null,
+      notes: 'تمويل POS Finance — الرصيد الموحد شامل الربح. 48 قسطًا.',
+      payments: [
+        { id: 'payment-20', amount: 15423.54, transactionDate: '2026-06-22', status: 'posted', sourceInvoice: { invoiceNumber: 'EXP-20' } },
+        { id: 'payment-21', amount: 15423.54, transactionDate: '2026-07-22', status: 'posted', sourceInvoice: { invoiceNumber: 'EXP-21' } },
+      ],
+    };
+    expect(getLoanHistoricalPaidThroughDate(migratedLoan)).toBe('2026-07-22');
+    expect(getLoanPaymentInstallmentNumber(migratedLoan, '2026-07-22')).toBe(21);
+  });
+
+  it('prefills the next contractual repayment date after the documented installment', () => {
+    expect(getLoanNextPaymentDate(loan)).toBe('2026-08-25');
+  });
+
+  it('advances the suggested date after a new Noorix repayment is posted', () => {
+    const loanAfterAugustPayment: LoanRecord = {
+      ...loan,
+      payments: [
+        { id: 'payment-22', amount: 15423.54, transactionDate: '2026-08-26', status: 'posted' },
+      ],
+    };
+    expect(getLoanNextPaymentDate(loanAfterAugustPayment)).toBe('2026-09-25');
   });
 });
