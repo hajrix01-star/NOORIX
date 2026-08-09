@@ -47,7 +47,7 @@ export default function LoanPaymentModal({ companyId, loans, loanId: initialLoan
       <SearchableOptionsPicker label="القرض" value={loanId} onChange={setLoanId} options={loanOptions} aria-label="القرض" />
       {selectedLoan ? <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2 text-center text-[13px]">الرصيد المتبقي: <strong className="nx-font-numbers">{Number(selectedLoan.outstandingAmount).toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</strong>{installmentAmount ? <> · قيمة القسط المرجعية: <strong className="nx-font-numbers">{installmentAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SR</strong></> : null}</div> : null}
       <SearchableOptionsPicker label="السداد من خزينة" value={vaultId} onChange={setVaultId} options={vaultOptions} aria-label="الخزينة" />
-      <Input label="مبلغ السداد" type="number" min="0.0001" step="0.01" value={amount} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(event.target.value)} className="ltr" required />
+      <Input label="مبلغ السداد" type="number" min="0.01" step="0.01" value={amount} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(event.target.value)} className="ltr" required />
       <TransactionDatePicker label="تاريخ السداد" value={transactionDate} onValueChange={setTransactionDate} required />
       <Input label="ملاحظات" value={notes} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNotes(event.target.value)} maxLength={2000} />
     </form>
