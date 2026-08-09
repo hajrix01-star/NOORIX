@@ -49,8 +49,20 @@ export function getLoanTotalInstallments(loan: LoanRecord) {
   return match ? Number(match[1]) : null;
 }
 
+export function getLoanHistoricalPaidThroughDate(loan: LoanRecord) {
+  const stored = parseIsoDate(loan.historicalPaidThroughDate);
+  if (stored) return stored;
+
+  const notes = loan.notes || '';
+  const contextual = notes.match(/(?:آخر\s+قسط\s+مسدد|مسدد\s+حتى|paid\s+through)[^0-9]*(\d{4}-\d{2}-\d{2})/i);
+  if (contextual) return contextual[1];
+
+  const anyIsoDate = notes.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  return anyIsoDate ? anyIsoDate[1] : null;
+}
+
 export function getLoanScheduleStartDate(loan: LoanRecord) {
-  const throughDate = parseIsoDate(loan.historicalPaidThroughDate);
+  const throughDate = getLoanHistoricalPaidThroughDate(loan);
   const historicalCount = Number(loan.historicalPaymentsCount || 0);
   if (throughDate && historicalCount > 0) return addMonths(throughDate, -(historicalCount - 1));
   return null;
