@@ -6,11 +6,14 @@ import { getHrAdvanceBalanceParts } from './hr-advance-balance.util';
 type ApplyAdvanceSettlementDb = {
   invoice: Pick<TenantPrismaService['invoice'], 'findMany' | 'update'>;
   employeeDeduction: Pick<TenantPrismaService['employeeDeduction'], 'create'>;
+  account: Pick<TenantPrismaService['account'], 'findFirst'>;
+  ledgerEntry: Pick<TenantPrismaService['ledgerEntry'], 'create'>;
 };
 
 type ReverseAdvanceSettlementDb = {
   invoice: Pick<TenantPrismaService['invoice'], 'findFirst' | 'update'>;
   employeeDeduction: Pick<TenantPrismaService['employeeDeduction'], 'findMany' | 'deleteMany'>;
+  ledgerEntry: Pick<TenantPrismaService['ledgerEntry'], 'updateMany'>;
 };
 
 export function parseAdvanceDeferMonth(notes?: string | null): string {
@@ -39,6 +42,20 @@ export async function applyPayrollAdvanceSettlements(
   tenantId: string,
 ): Promise<void> {
   const runMonth = `${run.payrollMonth.getFullYear()}-${String(run.payrollMonth.getMonth() + 1).padStart(2, '0')}`;
+  let settlementAccounts: { salaryExpenseId: string; advanceAssetId: string } | null = null;
+
+  const resolveSettlementAccounts = async () => {
+    if (settlementAccounts) return settlementAccounts;
+    const [salaryExpense, advanceAsset] = await Promise.all([
+      db.account.findFirst({ where: { companyId: run.companyId, code: 'EXP-004', type: 'expense', isActive: true }, select: { id: true } }),
+      db.account.findFirst({ where: { companyId: run.companyId, code: 'ADV-001', type: 'asset', isActive: true }, select: { id: true } }),
+    ]);
+    if (!salaryExpense || !advanceAsset) {
+      throw new BadRequestException('حساب الرواتب أو حساب سلف الموظفين غير مهيأ لهذه الشركة.');
+    }
+    settlementAccounts = { salaryExpenseId: salaryExpense.id, advanceAssetId: advanceAsset.id };
+    return settlementAccounts;
+  };
 
   for (const item of run.items) {
     let remainingToDeduct = Number(item.advancesDeduct ?? 0);
@@ -126,7 +143,7 @@ export async function applyPayrollAdvanceSettlements(
         },
       });
 
-      await db.employeeDeduction.create({
+      const deduction = await db.employeeDeduction.create({
         data: {
           tenantId,
           companyId: run.companyId,
@@ -136,6 +153,26 @@ export async function applyPayrollAdvanceSettlements(
           transactionDate: new Date(`${txDate}T00:00:00.000Z`),
           notes: `خصم سلفة تلقائي من مسير ${run.runNumber} - سلفة ${adv.invoiceNumber}`,
           referenceId: adv.id,
+        },
+      });
+
+      // السلفة صُرفت سابقاً كأصل؛ هذه التسوية فقط تنقل الجزء المخصوم إلى تكلفة الرواتب
+      // من دون حركة نقدية ثانية.
+      const accounts = await resolveSettlementAccounts();
+      const settlementDate = new Date(`${txDate}T00:00:00.000Z`);
+      await db.ledgerEntry.create({
+        data: {
+          tenantId,
+          companyId: run.companyId,
+          debitAccountId: accounts.salaryExpenseId,
+          creditAccountId: accounts.advanceAssetId,
+          amount: new Prisma.Decimal(allocate),
+          transactionDate: settlementDate,
+          entryDate: settlementDate,
+          referenceType: 'advance_settlement',
+          referenceId: deduction.id,
+          employeeId: item.employeeId,
+          status: 'active',
         },
       });
 
@@ -164,6 +201,18 @@ export async function reversePayrollAdvanceSettlementsForDelete(
       notes: { contains: `مسير ${runNumber}` },
     },
   });
+
+  if (deductions.length) {
+    await db.ledgerEntry.updateMany({
+      where: {
+        companyId,
+        referenceType: 'advance_settlement',
+        referenceId: { in: deductions.map((deduction) => deduction.id) },
+        status: 'active',
+      },
+      data: { status: 'cancelled' },
+    });
+  }
 
   const esc = runNumber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const advLineRe = new RegExp(`^\\[ADV_PAYROLL\\] run=${esc},`);

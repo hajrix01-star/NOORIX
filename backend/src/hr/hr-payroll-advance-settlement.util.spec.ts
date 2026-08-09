@@ -16,6 +16,10 @@ describe('payroll advance settlement selections', () => {
     const findMany = jest.fn().mockResolvedValue([selectedAdvance]);
     const update = jest.fn().mockResolvedValue(selectedAdvance);
     const createDeduction = jest.fn().mockResolvedValue({ id: 'deduction-1' });
+    const accountFindFirst = jest.fn()
+      .mockResolvedValueOnce({ id: 'salary-expense' })
+      .mockResolvedValueOnce({ id: 'advance-asset' });
+    const createLedgerEntry = jest.fn().mockResolvedValue({ id: 'ledger-1' });
     const db = {
       invoice: {
         findMany,
@@ -24,6 +28,8 @@ describe('payroll advance settlement selections', () => {
       employeeDeduction: {
         create: createDeduction,
       },
+      account: { findFirst: accountFindFirst },
+      ledgerEntry: { create: createLedgerEntry },
     };
 
     await applyPayrollAdvanceSettlements(
@@ -62,6 +68,16 @@ describe('payroll advance settlement selections', () => {
       expect.objectContaining({
         where: { id: 'adv-2' },
         data: expect.objectContaining({ settledAmount: new Prisma.Decimal(125) }),
+      }),
+    );
+    expect(createLedgerEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          debitAccountId: 'salary-expense',
+          creditAccountId: 'advance-asset',
+          referenceType: 'advance_settlement',
+          referenceId: 'deduction-1',
+        }),
       }),
     );
   });

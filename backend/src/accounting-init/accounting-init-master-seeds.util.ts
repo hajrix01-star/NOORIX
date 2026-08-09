@@ -32,6 +32,7 @@ export const MASTER_ACCOUNTS: MasterAccountSeed[] = [
   { code: 'V-001',  nameAr: 'نقد',                    nameEn: 'CASH',                        type: 'asset',   icon: '💵', taxExempt: false },
   { code: 'V-002',  nameAr: 'بنك',                    nameEn: 'BANK',                        type: 'asset',   icon: '💳', taxExempt: false },
   { code: 'AR-001', nameAr: 'الذمم المدينة (عملاء)',  nameEn: 'Accounts Receivable',         type: 'asset',   icon: '🧾', taxExempt: false },
+  { code: 'ADV-001',nameAr: 'سلف الموظفين',           nameEn: 'Employee Advances',          type: 'asset',   icon: '👥', taxExempt: true  },
   // ب- الخصوم
   { code: 'AP-001', nameAr: 'الذمم الدائنة (موردون)', nameEn: 'Accounts Payable',            type: 'liability',icon: '📋', taxExempt: false },
   { code: 'TAX-001',nameAr: 'ضريبة القيمة المضافة',   nameEn: 'VAT',                         type: 'liability',icon: '📝', taxExempt: false },

@@ -46,6 +46,13 @@ export class FinancialCancelService {
         if (inv.status === 'cancelled') {
           throw new BadRequestException('الفاتورة ملغاة مسبقاً');
         }
+        // A settled advance has already moved to payroll cost through a
+        // settlement entry. Cancelling only the advance would unbalance ADV-001.
+        if (dto.referenceType === 'advance' && new Prisma.Decimal(inv.settledAmount ?? 0).gt(0)) {
+          throw new BadRequestException(
+            'لا يمكن إلغاء سلفة خُصم منها جزء في مسير الرواتب. ألغِ أو أعد فتح المسير المرتبط أولاً.',
+          );
+        }
         oldSnapshot = this.support.invoiceSnapshot(inv);
         await tx.invoice.update({
           where: { id: dto.referenceId },

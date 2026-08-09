@@ -14,12 +14,8 @@ import {
   assertPayrollItemsNetConsistent,
   assertPayrollRunVaultSplitsMatchTotal,
 } from './hr-payroll-assertions.util';
-import {
-  applyPayrollAdvanceSettlements,
-  reversePayrollAdvanceSettlementsForDelete,
-} from './hr-payroll-advance-settlement.util';
+import { reversePayrollAdvanceSettlementsForDelete } from './hr-payroll-advance-settlement.util';
 import { HrPayrollRunReaderService } from './hr-payroll-run-reader.service';
-import { saudiDateYmd } from './utils/hr-saudi-dates.util';
 import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 import { assertPayrollItemsGrossMatchesCentralSnapshots } from './hr-payroll-gross-source.util';
 import { buildPayrollRunItemsData, buildPayrollRunVaultSplitIds } from './hr-payroll-run-lifecycle-model';
@@ -148,42 +144,12 @@ export class HrPayrollRunLifecycleService {
     });
     if (!existing) throw new NotFoundException(`مسيرة الرواتب ${id} غير موجودة.`);
 
-    const shouldApplyAdvances =
-      dto.status === 'completed' &&
-      existing.status === 'draft' &&
-      !existing.advanceSettlementsAppliedAt;
-
-    let updated: Awaited<ReturnType<typeof this.prisma.payrollRun.update>>;
-
-    if (shouldApplyAdvances) {
-      const tenantId = TenantContext.getTenantId();
-      const txDate = saudiDateYmd();
-      updated = await this.prisma.withTenant(async (tx) => {
-        await applyPayrollAdvanceSettlements(
-          tx,
-          {
-            companyId: existing.companyId,
-            runNumber: existing.runNumber,
-            payrollMonth: existing.payrollMonth,
-            items: existing.items,
-          },
-          txDate,
-          tenantId,
-        );
-        return tx.payrollRun.update({
-          where: { id },
-          data: {
-            status: 'completed',
-            advanceSettlementsAppliedAt: new Date(),
-          },
-        });
-      });
-    } else {
-      updated = await this.prisma.payrollRun.update({
-        where: { id },
-        data: { status: dto.status },
-      });
-    }
+    // اعتماد المسير يثبّت بياناته فقط. تسوية السلف تُنفّذ مع صرف المسير داخل
+    // المعاملة نفسها، حتى يطابق تاريخ تكلفة الراتب وتاريخ الصرف ولا تُخصم سلفة بلا دفع.
+    const updated = await this.prisma.payrollRun.update({
+      where: { id },
+      data: { status: dto.status },
+    });
 
     await this.audit.log({
       companyId,

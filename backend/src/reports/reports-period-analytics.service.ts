@@ -42,7 +42,7 @@ export class ReportsPeriodAnalyticsService {
         is: { serviceCategory: { in: [...RECURRING_HR_SERVICE_CATEGORIES] } },
       },
     };
-    const [byKind, recurringHrAggregate, directRecurringGroups, otherExpenseGroups] = await Promise.all([
+    const [byKind, recurringHrAggregate, directRecurringGroups, otherExpenseGroups, payrollItemsAggregate, payrollRunsCount] = await Promise.all([
       this.prisma.invoice.groupBy({
         by: ['kind'],
         where: baseWhere,
@@ -76,6 +76,25 @@ export class ReportsPeriodAnalyticsService {
         },
         _sum: { totalAmount: true },
       }),
+      // مصدر تكلفة الرواتب هو المسير: السلفة تخفّض النقد المدفوع فقط ولا تخفّض
+      // أجور الفترة. نقرأ التكلفة قبل السلف من سطور المسير المركزية.
+      this.prisma.payrollRunItem.aggregate({
+        where: {
+          payrollRun: {
+            companyId,
+            status: 'completed',
+            payrollMonth: { gte: start, lte: end },
+          },
+        },
+        _sum: { grossSalary: true, allowancesAdd: true, deductions: true },
+      }),
+      this.prisma.payrollRun.count({
+        where: {
+          companyId,
+          status: 'completed',
+          payrollMonth: { gte: start, lte: end },
+        },
+      }),
     ]);
 
     const totalsByKind: Record<string, { totalAmount: string; invoiceCount: number }> = {};
@@ -88,10 +107,12 @@ export class ReportsPeriodAnalyticsService {
 
     const directFixedTotal = new Decimal(totalsByKind.fixed_expense?.totalAmount ?? 0);
     const recurringHrTotal = new Decimal(recurringHrAggregate._sum.totalAmount?.toString() ?? 0);
-    const salaryTotal = new Decimal(totalsByKind.salary?.totalAmount ?? 0);
+    const salaryTotal = new Decimal(payrollItemsAggregate._sum.grossSalary?.toString() ?? 0)
+      .plus(payrollItemsAggregate._sum.allowancesAdd?.toString() ?? 0)
+      .minus(payrollItemsAggregate._sum.deductions?.toString() ?? 0);
     const fixedExpenseTotal = directFixedTotal.plus(recurringHrTotal).plus(salaryTotal);
     const fixedExpenseInvoiceCount =
-      (totalsByKind.fixed_expense?.invoiceCount ?? 0) + recurringHrAggregate._count._all + (totalsByKind.salary?.invoiceCount ?? 0);
+      (totalsByKind.fixed_expense?.invoiceCount ?? 0) + recurringHrAggregate._count._all + payrollRunsCount;
     const directRecurringLineIds = directRecurringGroups
       .map((group) => group.expenseLineId)
       .filter((id): id is string => id != null);

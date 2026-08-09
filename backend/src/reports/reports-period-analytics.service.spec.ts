@@ -19,6 +19,12 @@ describe('ReportsPeriodAnalyticsService', () => {
     };
     const prisma = {
       invoice,
+      payrollRunItem: {
+        aggregate: jest.fn().mockResolvedValue({
+          _sum: { grossSalary: '1200', allowancesAdd: '0', deductions: '0' },
+        }),
+      },
+      payrollRun: { count: jest.fn().mockResolvedValue(1) },
       expenseLine: {
         findMany: jest.fn().mockResolvedValue([{ id: 'rent-line', nameAr: 'إيجار', nameEn: 'Rent' }]),
       },
@@ -30,11 +36,11 @@ describe('ReportsPeriodAnalyticsService', () => {
 
     const result = await service.getPeriodAnalytics('company-1', '2026-08-01', '2026-08-31');
 
-    expect(result.fixedExpenseTotal).toBe('1200.0000');
+    expect(result.fixedExpenseTotal).toBe('1400.0000');
     expect(result.fixedExpenseInvoiceCount).toBe(2);
     expect(result.recurringCostCategoryBreakdown).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'rent-line', nameAr: 'إيجار', amount: '200.0000' }),
-      expect.objectContaining({ id: 'payroll', nameAr: 'الرواتب والأجور', amount: '1000.0000' }),
+      expect.objectContaining({ id: 'payroll', nameAr: 'الرواتب والأجور', amount: '1200.0000' }),
     ]));
     expect(result.otherExpenseTotal).toBe('300.0000');
     expect(result.otherExpenseCategoryBreakdown).toEqual([

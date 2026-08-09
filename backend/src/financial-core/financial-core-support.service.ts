@@ -221,10 +221,11 @@ export class FinancialCoreSupportService {
    *   PUR-001 → مواد غذائية           (purchase)
    *   EXP-002 → رسوم حكومية وإقامات  (hr_expense)
    *   EXP-003 → إيجار ومرافق         (fixed_expense)
-   *   EXP-004 → رواتب وأجور          (salary + advance)
+   *   EXP-004 → رواتب وأجور          (salary)
+   *   ADV-001 → سلف الموظفين          (advance)
    *   EXP-005 → صيانة وتشغيل         (expense — مصروفات عامة / fallback)
    *
-   * السلفيات تُعامَل كجزء من الراتب (أساس نقدي) — تظهر في P&L فور الصرف.
+   * السلفة أصل على الموظف حتى تُقفل من مسير راتبه؛ لا تدخل P&L وقت الصرف.
    * لإضافة نوع جديد: أضف الكود هنا وتأكد من وجوده في accounting-init.service.ts.
    */
   static readonly KIND_TO_ACCOUNT_CODE: Record<string, string> = {
@@ -233,7 +234,7 @@ export class FinancialCoreSupportService {
     hr_expense:    'EXP-002',   // رسوم حكومية وإقامات
     fixed_expense: 'EXP-003',   // إيجار ومرافق
     salary:        'EXP-004',   // رواتب وأجور
-    advance:       'EXP-004',   // سلفة = جزء من الراتب (أساس نقدي) → تظهر في P&L فوراً
+    advance:       'ADV-001',   // سلفة موظف = أصل يُسوّى مع الراتب
   };
 
   /**
@@ -257,8 +258,8 @@ export class FinancialCoreSupportService {
     });
     if (specific) return specific.id;
 
-    // محاولة 2: fallback حسب نوع العملية (كل العمليات بما فيها السلفيات → expense)
-    const fallbackType = 'expense';
+    // السلفة لا يجوز أن تسقط إلى مصروف عند غياب الحساب المخصص.
+    const fallbackType = kind === 'advance' ? 'asset' : 'expense';
     const fallback = await tx.account.findFirst({
       where:   { companyId, type: fallbackType, isActive: true },
       select:  { id: true },

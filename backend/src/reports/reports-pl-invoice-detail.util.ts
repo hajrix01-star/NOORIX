@@ -163,6 +163,9 @@ export async function loadPlDetailFromLedger(
     const displayNet = ledgerAmt;
     const displayTax = plDec(0);
     const kind = inv?.kind || e.referenceType || '—';
+    const isAdvanceSettlement = e.referenceType === 'advance_settlement';
+    const kindLabelAr = isAdvanceSettlement ? 'تسوية سلفة مع راتب' : (KIND_LABELS[kind]?.ar || kind);
+    const kindLabelEn = isAdvanceSettlement ? 'Payroll advance settlement' : (KIND_LABELS[kind]?.en || kind);
     const resolvedItemMeta = inv && categories
       ? resolvePlItemMeta(inv as unknown as ReportInvoice, groupKey, categories)
       : null;
@@ -175,8 +178,8 @@ export async function loadPlDetailFromLedger(
       supplierInvoiceNumber: inv?.supplierInvoiceNumber || null,
       transactionDate: e.transactionDate.toISOString(),
       kind,
-      kindLabelAr: KIND_LABELS[kind]?.ar || kind,
-      kindLabelEn: KIND_LABELS[kind]?.en || kind,
+      kindLabelAr,
+      kindLabelEn,
       categoryId: null,
       itemKey,
       itemLabelAr: '',
