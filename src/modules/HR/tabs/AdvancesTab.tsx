@@ -16,7 +16,6 @@ import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { AdvanceEditModal } from '../components/AdvanceEditModal';
-import { AdvanceSettlementModal } from '../components/AdvanceSettlementModal';
 import { AdvanceDetailsModal } from '../components/AdvanceDetailsModal';
 import { HrQuickEntrySheet } from '../components/HrQuickEntrySheet';
 import { useAdvanceTableModel } from '../components/useAdvanceTableModel';
@@ -62,7 +61,6 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const queryClient = useQueryClient();
   const [showAdvance, setShowAdvance] = useState(false);
   const [editingAdvance, setEditingAdvance] = useState<AdvanceEditableRow | null>(null);
-  const [settlingAdvance, setSettlingAdvance] = useState<AdvanceEditableRow | null>(null);
   const [selectedAdvanceGroup, setSelectedAdvanceGroup] = useState<AdvanceGroupRow | null>(null);
   const [deductionEmployeeId, setDeductionEmployeeId] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -190,10 +188,6 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
 
   const openEditAdvance = useCallback((row: AdvanceRow) => {
     if (isEditableAdvance(row)) setEditingAdvance(row);
-  }, []);
-
-  const openSettleAdvance = useCallback((row: AdvanceRow) => {
-    if (isEditableAdvance(row)) setSettlingAdvance(row);
   }, []);
 
   const openDeductionEntry = useCallback((group: AdvanceGroupRow) => {
@@ -381,7 +375,6 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
         settlementMap={settlementMap}
         onAddDeduction={openDeductionEntry}
         onEditAdvance={openEditAdvance}
-        onSettleAdvance={openSettleAdvance}
         onDeleteAdvance={handleDeleteAdvance}
         onDeleteDeduction={handleDeleteDeduction}
       />
@@ -419,20 +412,6 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
             invalidateOnFinancialMutation(queryClient);
             showToast(t('advanceUpdated'), 'success');
             setEditingAdvance(null);
-          }}
-          onError={(msg: string) => showToast(msg, 'error')}
-        />
-      )}
-      {settlingAdvance && (
-        <AdvanceSettlementModal
-          advance={settlingAdvance}
-          companyId={companyId}
-          onClose={() => setSettlingAdvance(null)}
-          onSaved={() => {
-            invalidateOnFinancialMutation(queryClient);
-            queryClient.invalidateQueries({ queryKey: hrKeys.deductionsByCompany(companyId) });
-            showToast(t('advanceSettledSuccess'), 'success');
-            setSettlingAdvance(null);
           }}
           onError={(msg: string) => showToast(msg, 'error')}
         />

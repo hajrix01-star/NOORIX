@@ -9,7 +9,10 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-const DEDUCTION_TYPES = ['advance', 'penalty', 'other'] as const;
+// Advance deductions are generated atomically by payroll issuance, together
+// with the advance balance and its ledger settlement.  They are deliberately
+// absent from the manual HR endpoint.
+const DEDUCTION_TYPES = ['penalty', 'other'] as const;
 
 export class CreateDeductionDto {
   @IsString()

@@ -34,16 +34,6 @@ export class UpdateInvoiceDto extends UpdateInvoiceBaseDto {
   kind?: (typeof INVOICE_UPDATE_KINDS)[number];
 
   @IsOptional()
-  @IsDateString()
-  settledAt?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  settledAmount?: number;
-
-  @IsOptional()
   @IsIn(['active', 'cancelled'])
   status?: string;
 

@@ -80,6 +80,11 @@ export class HrPayrollManualEntryService {
   }
 
   async createDeduction(dto: CreateDeductionDto, userId?: string) {
+    if ((dto as { deductionType: string }).deductionType === 'advance') {
+      throw new BadRequestException(
+        'خصم السلفة يُنشأ تلقائياً عند إصدار مسير الرواتب، ولا يُسجل كخصم يدوي.',
+      );
+    }
     const tenantId = TenantContext.getTenantId();
     const deduction = await this.prisma.employeeDeduction.create({
       data: {

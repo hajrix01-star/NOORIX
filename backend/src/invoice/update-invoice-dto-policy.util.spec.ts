@@ -35,4 +35,13 @@ describe('UpdateInvoiceDto policy', () => {
       ),
     ).resolves.toMatchObject({ totalAmount: 100, isTaxable: true });
   });
+
+  it('rejects manual settlement fields so employee advances are settled only by payroll', async () => {
+    await expect(
+      pipe.transform(
+        { settledAmount: 100, settledAt: '2026-08-09' },
+        { type: 'body', metatype: UpdateInvoiceDto },
+      ),
+    ).rejects.toThrow();
+  });
 });

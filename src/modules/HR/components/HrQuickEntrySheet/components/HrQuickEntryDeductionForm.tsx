@@ -50,7 +50,6 @@ export function HrQuickEntryDeductionForm(props: {
         <Input id="dd-type" type="select" value={ddType} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDdType(e.target.value)}>
           <option value="penalty">{isAr ? 'جزاء' : 'Penalty'}</option>
           <option value="other">{isAr ? 'أخرى' : 'Other'}</option>
-          <option value="advance">{isAr ? 'مرتبط بسلفة' : 'Advance-related'}</option>
         </Input>
       </HrQuickEntryRow>
       <HrQuickEntryRow id="dd-amt" label={isAr ? 'مبلغ الخصم' : 'Deduction amount'}>

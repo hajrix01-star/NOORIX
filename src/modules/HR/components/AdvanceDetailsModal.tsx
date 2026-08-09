@@ -13,7 +13,6 @@ type AdvanceDetailsModalProps = {
   settlementMap: BadgeStatusMap;
   onAddDeduction: (group: AdvanceGroupRow) => void;
   onEditAdvance: (row: AdvanceRow) => void;
-  onSettleAdvance: (row: AdvanceRow) => void;
   onDeleteAdvance: (row: AdvanceRow) => void;
   onDeleteDeduction: (row: AdvanceRow) => void;
 };
@@ -36,10 +35,6 @@ type AdvanceLedgerRow = {
 
 function amountValue(row: AdvanceRow) {
   return Number(row.totalAmountNum ?? row.totalAmount ?? 0);
-}
-
-function canSettle(row: AdvanceRow) {
-  return !isDeductionRow(row) && row.settlementStatus !== 'settled' && row.settlementStatus !== 'cancelled';
 }
 
 function textValue(value: unknown, fallback = '-') {
@@ -128,7 +123,6 @@ export function AdvanceDetailsModal({
   settlementMap,
   onAddDeduction,
   onEditAdvance,
-  onSettleAdvance,
   onDeleteAdvance,
   onDeleteDeduction,
 }: AdvanceDetailsModalProps) {
@@ -229,9 +223,6 @@ export function AdvanceDetailsModal({
         ) : (
           <div className="flex flex-wrap items-center justify-center gap-1">
             <Button size="sm" className="h-7 px-2" variant="ghost" onClick={() => onEditAdvance(row.original)}>{t('edit')}</Button>
-            {canSettle(row.original) ? (
-              <Button size="sm" className="h-7 px-2" variant="success" onClick={() => onSettleAdvance(row.original)}>{t('settleAdvance')}</Button>
-            ) : null}
             <Button size="sm" className="h-7 px-2" variant="danger" onClick={() => onDeleteAdvance(row.original)}>{t('delete')}</Button>
           </div>
         )
@@ -255,6 +246,9 @@ export function AdvanceDetailsModal({
     >
       {group ? (
         <div className="grid gap-4">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-[13px] font-semibold text-blue-900">
+            {t('advanceSettlementThroughPayroll')}
+          </div>
           <div className="flex justify-end">
             <Button size="sm" variant="success" onClick={() => onAddDeduction(group)}>
               {t('recordPayrollCut')}

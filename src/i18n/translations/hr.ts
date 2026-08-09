@@ -546,6 +546,7 @@ export default {
   payrollEmployeeSignature: { ar: 'توقيع الموظف (استلام)', en: 'Employee signature (receipt)' },
   payrollAdvanceDates: { ar: 'تواريخ السلف', en: 'Advance dates' },
   payrollAutoAdvanceDeduct: { ar: 'خصم السلف الآلي', en: 'Automatic advance deduction' },
+  advanceSettlementThroughPayroll: { ar: 'تُسوّى السلف عند إصدار مسير الرواتب فقط. يمكنك تأجيلها أو اختيار مقدار الخصم من داخل المسير.', en: 'Advances are settled only when issuing payroll. Defer them or choose the deduction amount inside the payroll run.' },
   payrollDeferAdvanceDeduct: { ar: 'تأجيل خصم السلف لهذا الشهر', en: 'Defer advance deduction this month' },
   payrollAdvanceDeferred: { ar: 'مؤجلة', en: 'Deferred' },
   payrollAdvanceDue: { ar: 'خصم هذا الشهر', en: 'Due this month' },

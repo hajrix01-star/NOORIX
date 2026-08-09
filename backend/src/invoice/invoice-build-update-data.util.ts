@@ -10,8 +10,6 @@ export function buildInvoiceUncheckedUpdateFromDto(dto: UpdateInvoiceDto): Prism
   if (dto.kind !== undefined) updateData.kind = dto.kind;
   if (dto.totalAmount !== undefined) updateData.totalAmount = new Prisma.Decimal(dto.totalAmount);
   if (dto.transactionDate !== undefined) updateData.transactionDate = parseInvoiceDate(dto.transactionDate);
-  if (dto.settledAt !== undefined) updateData.settledAt = dto.settledAt ? parseInvoiceDate(dto.settledAt, 'settledAt') : null;
-  if (dto.settledAmount !== undefined) updateData.settledAmount = new Prisma.Decimal(dto.settledAmount);
   if (dto.vaultSplits !== undefined && dto.vaultSplits.length > 0) {
     updateData.vaultId = dto.vaultSplits.length === 1 ? dto.vaultSplits[0].vaultId : null;
   } else if (dto.vaultId !== undefined) {

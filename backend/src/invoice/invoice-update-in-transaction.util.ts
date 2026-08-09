@@ -33,6 +33,18 @@ export async function updateInvoiceInTransaction(
   return prisma.$transaction(async (tx) => {
     const oldInvoice = await tx.invoice.findFirstOrThrow({ where: { id, companyId } });
 
+    // An employee advance is an asset until a payroll run settles it.  Generic
+    // invoice editing must never move its settlement balance: that would make
+    // the advance screen disagree with the payroll ledger and historic runs.
+    const hasManualSettlementField =
+      Object.prototype.hasOwnProperty.call(dto, 'settledAmount') ||
+      Object.prototype.hasOwnProperty.call(dto, 'settledAt');
+    if (oldInvoice.kind === 'advance' && hasManualSettlementField) {
+      throw new BadRequestException(
+        'تسوية سلفة الموظف تتم من المسير فقط. لا يمكن تعديل مبلغ أو تاريخ التسوية من الفاتورة.',
+      );
+    }
+
     const updateData = buildInvoiceUncheckedUpdateFromDto(dto);
     const shouldRecomputeTax = shouldRecomputeInvoiceOutflowTax(dto);
     if (shouldRecomputeTax && oldInvoice.kind !== 'sale') {
