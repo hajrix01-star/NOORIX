@@ -7,6 +7,7 @@
 set -euo pipefail
 
 LEGACY_RETIREMENT_MIGRATION="20260803180000_retire_legacy_orders"
+ADVANCE_RECLASSIFICATION_MIGRATION="20260809010000_reclassify_employee_advances_as_assets"
 LEGACY_TABLES=(
   order_categories order_sections order_catalog_units order_conversion_templates
   order_products orders order_items staff_orders staff_order_items
@@ -50,6 +51,33 @@ if [[ "$failed_retirement" != "0" ]]; then
   fi
   echo "==> [prisma] verified transactional rollback; marking the known retirement attempt rolled back"
   npx prisma migrate resolve --rolled-back "$LEGACY_RETIREMENT_MIGRATION"
+fi
+
+# This migration was introduced with an invalid PostgreSQL UPDATE ... FROM
+# reference and PostgreSQL rolled the transaction back. We only resolve that
+# known failed attempt after proving that it left no account or ledger effects.
+# Any non-zero artifact count is treated as possible drift and fails closed.
+failed_advance_reclassification="$(psql --dbname="$DATABASE_URL" -Atqc "
+  SELECT count(*)
+  FROM \"_prisma_migrations\"
+  WHERE migration_name = '${ADVANCE_RECLASSIFICATION_MIGRATION}'
+    AND finished_at IS NULL
+    AND rolled_back_at IS NULL
+")"
+
+if [[ "$failed_advance_reclassification" != "0" ]]; then
+  advance_artifacts="$(psql --dbname="$DATABASE_URL" -Atqc "
+    SELECT
+      (SELECT count(*) FROM \"accounts\" WHERE code = 'ADV-001')
+      +
+      (SELECT count(*) FROM \"ledger_entries\" WHERE reference_type = 'advance_settlement')
+  ")"
+  if [[ "$advance_artifacts" != "0" ]]; then
+    echo "ERROR: failed employee-advance reclassification left accounting artifacts; manual recovery is required" >&2
+    exit 1
+  fi
+  echo "==> [prisma] verified rollback of the known employee-advance migration; marking attempt rolled back"
+  npx prisma migrate resolve --rolled-back "$ADVANCE_RECLASSIFICATION_MIGRATION"
 fi
 
 echo "==> [prisma] migrate deploy (strict)"

@@ -24,12 +24,12 @@ ON CONFLICT ("company_id", "code") DO NOTHING;
 -- إعادة تصنيف أصل السلفة فقط. الفواتير والرصيد النقدي لا يتغيران.
 UPDATE "ledger_entries" le
 SET "debit_account_id" = advance_account."id"
-FROM "accounts" advance_account
-JOIN "invoices" inv
-  ON inv."id" = le."reference_id"
- AND inv."company_id" = le."company_id"
+FROM "accounts" advance_account,
+     "invoices" inv
 WHERE le."reference_type" = 'advance'
   AND le."status" = 'active'
+  AND inv."id" = le."reference_id"
+  AND inv."company_id" = le."company_id"
   AND inv."kind" = 'advance'
   AND inv."status" = 'active'
   AND advance_account."company_id" = le."company_id"
