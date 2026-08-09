@@ -37,6 +37,7 @@ type PayrollRunDetail = Record<string, unknown> & {
   id: string;
   runNumber?: string | null;
   status?: string | null;
+  kind?: string | null;
   payrollMonth?: string | null;
   totalAmount?: number | string | null;
   payableAmount?: number | string | null;
@@ -320,6 +321,7 @@ export function PayrollRunDetailModal({
           {formatSaudiDate(run.payrollMonth)} — {items.length} {t('employeesList')}
         </p>
         <Badge color={statusInfo.badgeColor}>{t(statusInfo.labelKey)}</Badge>
+        {run.kind === 'supplementary' ? <Badge color="purple">مسير إضافي</Badge> : null}
         {individuallyPaid > 0 ? (
           <p className="m-0 mt-2 text-[12px] text-noorix-muted">
             صُرف مسبقاً: <span className="font-bold nx-font-numbers text-noorix-green">{hrFmt(individuallyPaid)} SR</span>

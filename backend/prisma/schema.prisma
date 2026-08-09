@@ -523,6 +523,7 @@ model PayrollRun {
   payrollMonth                DateTime  @map("payroll_month") // ط£ظˆظ„ ظٹظˆظ… ظ…ظ† ط§ظ„ط´ظ‡ط±
   totalAmount                 Decimal   @map("total_amount") @db.Decimal(18, 4)
   employeeCount               Int       @map("employee_count")
+  kind                        String    @default("regular") // regular | supplementary
   status                      String    @default("draft") // draft | completed
   notes                       String?
   /// ط¹ظ†ط¯ ط§ظ„ط§ط¹طھظ…ط§ط¯: طھط³ظˆظٹط© ط®طµظ… ط§ظ„ط³ظ„ظپ ط¹ظ„ظ‰ ظپظˆط§طھظٹط± ط§ظ„ط³ظ„ظپ (ظٹظڈظ…ظ†ط¹ ط§ظ„طھظƒط±ط§ط± ط¹ظ†ط¯ طµط±ظپ ط§ظ„ظ…ط³ظٹط±ط© ظ„ط§ط­ظ‚ط§ظ‹)

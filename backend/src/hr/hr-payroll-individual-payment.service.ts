@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AccountingCoreService } from '../accounting-core/accounting-core.service';
-import { AuditLogService } from '../audit/audit-log.service';
 import { TenantContext } from '../common/tenant-context';
 import { toYmd } from '../common/utils/to-ymd.util';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -26,73 +25,77 @@ export class HrPayrollIndividualPaymentService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly accountingCore: AccountingCoreService,
-    private readonly audit: AuditLogService,
   ) {}
 
   async issue(dto: IssueIndividualSalaryPaymentDto, userId?: string) {
     const tenantId = TenantContext.getTenantId();
     const payrollMonth = payrollMonthStart(dto.payrollMonth);
-    const employee = await this.prisma.employee.findFirst({
-      where: { id: dto.employeeId, companyId: dto.companyId, status: { not: 'terminated' } },
-      select: { id: true, name: true, basicSalary: true, housingAllowance: true, transportAllowance: true, otherAllowance: true },
-    });
-    if (!employee) throw new NotFoundException('الموظف غير موجود أو غير نشط.');
-    await assertVaultsUsableForPayment(this.prisma, dto.companyId, [dto.vaultId]);
+    const token = String(dto.idempotencyKey || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
+    const monthCode = toYmd(payrollMonth).replace(/-/g, '').slice(0, 6);
 
-    const existingRun = await this.prisma.payrollRun.findFirst({
-      where: { companyId: dto.companyId, payrollMonth },
-      include: { items: { where: { employeeId: dto.employeeId }, select: { netSalary: true } } },
-    });
-    if (existingRun?.status === 'completed') {
-      const issuedPayrollInvoice = await this.prisma.invoice.findFirst({
-        where: {
-          companyId: dto.companyId,
-          batchId: existingRun.id,
-          kind: 'salary',
-          status: 'active',
-        },
-        select: { id: true },
+    return this.prisma.withTenant(async (tx) => {
+      const employee = await tx.employee.findFirst({
+        where: { id: dto.employeeId, companyId: dto.companyId, status: { not: 'terminated' } },
+        select: { id: true, name: true },
       });
-      if (issuedPayrollInvoice) {
-        throw new BadRequestException('صُرف هذا المسير كاملاً بالفعل. افتح تصحيحاً بإذن المالك عند الحاجة.');
+      if (!employee) throw new NotFoundException('الموظف غير موجود أو غير نشط.');
+      await assertVaultsUsableForPayment(tx, dto.companyId, [dto.vaultId]);
+
+      const count = await tx.payrollRun.count({
+        where: { companyId: dto.companyId, runNumber: { startsWith: `SUP-${monthCode}-` } },
+      });
+      const runNumber = token ? `SUP-${monthCode}-${token}` : `SUP-${monthCode}-${String(count + 1).padStart(3, '0')}`;
+      const existing = await tx.payrollRun.findFirst({
+        where: { companyId: dto.companyId, runNumber },
+        include: { items: true },
+      });
+      if (existing) {
+        const invoice = await tx.invoice.findFirst({
+          where: { companyId: dto.companyId, batchId: existing.id, kind: 'salary', status: 'active' },
+        });
+        if (invoice) return { payrollRun: existing, invoice, payrollMonth: toYmd(payrollMonth), idempotentReplay: true };
+        throw new BadRequestException('تعذر إكمال المسير الإضافي السابق؛ راجع السجل قبل إعادة المحاولة.');
       }
-    }
 
-    const batchId = individualSalaryBatchId(dto.employeeId, payrollMonth);
-    const paid = await this.prisma.invoice.aggregate({
-      where: { companyId: dto.companyId, kind: 'salary', status: 'active', batchId },
-      _sum: { totalAmount: true },
+      const amount = new Prisma.Decimal(dto.amount);
+      const note = dto.notes?.trim() || `مسير إضافي — ${employee.name} — ${toYmd(payrollMonth)}`;
+      const payrollRun = await tx.payrollRun.create({
+        data: {
+          tenantId,
+          companyId: dto.companyId,
+          runNumber,
+          payrollMonth,
+          totalAmount: amount,
+          employeeCount: 1,
+          kind: 'supplementary',
+          status: 'completed',
+          notes: note,
+          items: { create: { employeeId: dto.employeeId, grossSalary: amount, netSalary: amount, notes: note } },
+          runVaultSplits: { create: { vaultId: dto.vaultId, amount } },
+        },
+        include: { items: true },
+      });
+      const [result] = await this.accountingCore.postPayrollPaymentBatchInTransaction(tx, [{
+        companyId: dto.companyId,
+        employeeId: dto.employeeId,
+        invoiceNumber: `SAL-${runNumber}`,
+        kind: 'salary',
+        totalAmount: amount.toFixed(4),
+        netAmount: amount.toFixed(4),
+        taxAmount: '0',
+        transactionDate: toYmd(dto.transactionDate),
+        invoiceDate: toYmd(payrollMonth),
+        batchId: payrollRun.id,
+        vaultId: dto.vaultId,
+        notes: note,
+      }], userId, tenantId);
+      await tx.auditLog.create({
+        data: {
+          tenantId, companyId: dto.companyId, userId, action: 'create', entity: 'supplementary_payroll_run', entityId: payrollRun.id,
+          newValue: { employeeId: dto.employeeId, payrollMonth: toYmd(payrollMonth), amount: amount.toFixed(4), invoiceNumber: result.invoice.invoiceNumber },
+        },
+      });
+      return { payrollRun, invoice: result.invoice, payrollMonth: toYmd(payrollMonth) };
     });
-    const ceiling = existingRun?.items[0]?.netSalary
-      ?? new Prisma.Decimal(employee.basicSalary).plus(employee.housingAllowance).plus(employee.transportAllowance).plus(employee.otherAllowance);
-    const nextTotal = new Prisma.Decimal(paid._sum.totalAmount ?? 0).plus(dto.amount);
-    if (nextTotal.gt(ceiling)) {
-      throw new BadRequestException(`دفعات الراتب لهذا الشهر تتجاوز المتبقي للموظف (${ceiling.toFixed(2)} ر.س).`);
-    }
-
-    const result = await this.accountingCore.postHrServiceExpense({
-      companyId: dto.companyId,
-      employeeId: dto.employeeId,
-      kind: 'salary',
-      totalAmount: String(dto.amount),
-      netAmount: String(dto.amount),
-      taxAmount: '0',
-      transactionDate: toYmd(dto.transactionDate),
-      invoiceDate: toYmd(payrollMonth),
-      vaultId: dto.vaultId,
-      batchId,
-      idempotencyKey: dto.idempotencyKey,
-      notes: dto.notes?.trim() || `دفعة راتب فردية — ${employee.name} — ${toYmd(payrollMonth)}`,
-    }, userId);
-
-    await this.audit.log({
-      companyId: dto.companyId,
-      userId,
-      action: 'create',
-      entity: 'individual_salary_payment',
-      entityId: result.invoice.id,
-      newValue: { employeeId: dto.employeeId, payrollMonth: toYmd(payrollMonth), amount: dto.amount, invoiceNumber: result.invoice.invoiceNumber },
-    });
-    return { invoice: result.invoice, payrollMonth: toYmd(payrollMonth) };
   }
 }

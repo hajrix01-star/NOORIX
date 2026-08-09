@@ -102,7 +102,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
 
   const individualSalaryMutation = useApiMutation<unknown, Record<string, unknown>>({
     mutationFn: issueIndividualSalaryPayment,
-    successToast: () => 'تم صرف الراتب وإصدار فاتورة الراتب.',
+    successToast: () => 'تم إنشاء المسير الإضافي وإصدار فاتورة الراتب.',
     errorToast: (error) => error.message || t('saveFailed'),
     onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
@@ -165,14 +165,19 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const columns = useMemo<SmartTableColumn<PayrollRunRow>[]>(() => [
     { key: 'runNumber', label: t('payrollRunNumber'), sortable: true, width: 150, minWidth: 140,
       render: (_value: unknown, row: PayrollRunRow) => (
-        <Button
-          variant="raw"
-          size="auto"
-          className="nx-cell-num nx-cell-accent text-[13px] whitespace-nowrap hover:underline"
-          onClick={() => setDetailRunId(row.id)}
-        >
-          {row.runNumber || '—'}
-        </Button>
+        <div className="flex items-center justify-center gap-1.5">
+          <Button
+            variant="raw"
+            size="auto"
+            className="nx-cell-num nx-cell-accent text-[13px] whitespace-nowrap hover:underline"
+            onClick={() => setDetailRunId(row.id)}
+          >
+            {row.runNumber || '—'}
+          </Button>
+          {row.kind === 'supplementary' ? (
+            <span className="rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">إضافي</span>
+          ) : null}
+        </div>
       ) },
     { key: 'month', label: t('payrollMonth'), sortable: true, width: 130, minWidth: 120,
       render: (_value: unknown, row: PayrollRunRow) => <span className="text-[13px]">{row.month || '—'}</span> },
@@ -250,13 +255,13 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
           leading={yearLeading}
           desktopActions={(
             <>
-              <Button size="sm" variant="success" className="hidden lg:inline-flex" onClick={() => setShowIndividualSalaryPayment(true)}>صرف راتب فردي</Button>
+              <Button size="sm" variant="success" className="hidden lg:inline-flex" onClick={() => setShowIndividualSalaryPayment(true)}>مسير إضافي</Button>
               <Button size="sm" className="hidden lg:inline-flex" onClick={handleExportExcel}>{t('exportExcel')}</Button>
               <Button size="sm" className="hidden lg:inline-flex" onClick={handlePrint}>{t('printPayroll')}</Button>
             </>
           )}
           menuItems={[
-            { key: 'individual-salary', label: 'صرف راتب فردي', onClick: () => setShowIndividualSalaryPayment(true) },
+            { key: 'individual-salary', label: 'مسير إضافي', onClick: () => setShowIndividualSalaryPayment(true) },
             { key: 'export', label: t('exportExcel'), onClick: handleExportExcel },
             { key: 'print', label: t('printPayroll'), onClick: handlePrint },
           ]}

@@ -68,7 +68,7 @@ export class HrPayrollRunLifecycleService {
     await assertPayrollAdvanceSelections(this.prisma, dto.companyId, payrollMonth, dto.items);
 
     const existing = await this.prisma.payrollRun.findFirst({
-      where: { companyId: dto.companyId, payrollMonth, status: { not: 'cancelled' } },
+      where: { companyId: dto.companyId, payrollMonth, kind: 'regular', status: { not: 'cancelled' } },
     });
     if (existing) {
       throw new BadRequestException(
@@ -94,6 +94,7 @@ export class HrPayrollRunLifecycleService {
         payrollMonth,
         totalAmount: new Prisma.Decimal(totalAmount),
         employeeCount: dto.items.length,
+        kind: 'regular',
         status: 'draft',
         notes: dto.notes,
         items: {

@@ -45,12 +45,12 @@ export function IndividualSalaryPaymentModal({ companyId, lang, pending, onClose
     <AdaptiveSheet
       open
       onClose={onClose}
-      title="صرف راتب فردي"
+      title="مسير إضافي"
       size="md"
       side="start"
       footer={<DialogActions actions={[
         { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose, disabled: pending },
-        { key: 'save', label: 'صرف وإنشاء فاتورة راتب', role: 'save', type: 'submit', form: formId, disabled: !valid || pending, loading: pending },
+        { key: 'save', label: 'إنشاء المسير وصرف الراتب', role: 'save', type: 'submit', form: formId, disabled: !valid || pending, loading: pending },
       ]} />}
     >
       <form id={formId} className="flex flex-col gap-3" onSubmit={(event) => {
@@ -59,7 +59,7 @@ export function IndividualSalaryPaymentModal({ companyId, lang, pending, onClose
         onSubmit({ companyId, employeeId, payrollMonth: `${payrollMonth}-01`, amount: Number(amount), vaultId, transactionDate, notes: notes.trim() || undefined, idempotencyKey });
       }}>
         <p className="m-0 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[12px] leading-6 text-blue-900">
-          تسجل الدفعة كراتب للموظف ولشهر محدد، وتُخصم تلقائياً من المتبقي عند إصدار المسير.
+          ينشئ مسيراً إضافياً مستقلاً لنفس الشهر وفاتورة راتب خاصة به؛ لا يعدّل المسير الأساسي ولا يكرر مبلغه.
         </p>
         <Input type="select" label="الموظف" value={employeeId} required onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setEmployeeId(event.target.value)}>
           <option value="">اختر الموظف</option>

@@ -10,6 +10,7 @@ export type PayrollRunSource = {
   totalAmount?: number | string | null;
   payableAmount?: number | string | null;
   status?: string | null;
+  kind?: string | null;
   issuedSalaryInvoiceNumber?: string | null;
   items?: Array<Record<string, unknown>>;
 };
@@ -22,6 +23,7 @@ export type PayrollRunRow = {
   grossTotal: number;
   netTotal: number;
   status: string;
+  kind: string;
   issuedInvoiceNumber: string | null;
   itemsCount: number;
 };
@@ -70,6 +72,7 @@ export function toPayrollRunRow(run: PayrollRunSource): PayrollRunRow {
     grossTotal,
     netTotal: Number(run.payableAmount ?? run.totalAmount ?? 0),
     status: String(run.status ?? ''),
+    kind: String(run.kind ?? 'regular'),
     issuedInvoiceNumber: run.issuedSalaryInvoiceNumber ?? null,
     itemsCount: run.items?.length ?? 0,
   };
