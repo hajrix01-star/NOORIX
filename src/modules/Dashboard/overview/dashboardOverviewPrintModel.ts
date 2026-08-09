@@ -56,10 +56,10 @@ function metric(input: DashboardOverviewPrintInput, key: string): number {
 
 function kpiLabel(key: string, isArabic: boolean): string {
   const ar: Record<string, string> = {
-    sales: 'المبيعات', purchases: 'المشتريات', expenses: 'المصاريف', grossProfit: 'إجمالي الربح', netProfit: 'صافي الربح',
+    sales: 'المبيعات', purchases: 'المشتريات', expenses: 'التكاليف والمصاريف', grossProfit: 'المتبقي بعد المشتريات', netProfit: 'النتيجة التشغيلية',
   };
   const en: Record<string, string> = {
-    sales: 'Sales', purchases: 'Purchases', expenses: 'Expenses', grossProfit: 'Gross profit', netProfit: 'Net profit',
+    sales: 'Sales', purchases: 'Purchases', expenses: 'Recurring and other expenses', grossProfit: 'After purchases', netProfit: 'Operating result',
   };
   return (isArabic ? ar : en)[key] ?? key;
 }
@@ -77,12 +77,12 @@ export function buildDashboardOverviewPrintDocument(input: DashboardOverviewPrin
   const isArabic = input.lang !== 'en';
   const labels = isArabic
     ? {
-        title: 'لوحة التحكم — النظرة العامة', period: 'الفترة', incoming: 'إجمالي الداخل', outgoing: 'إجمالي الخارج', result: 'نتيجة الفترة',
+        title: 'لوحة التحكم — النظرة العامة', period: 'الفترة', incoming: 'إجمالي الداخل', outgoing: 'صرف الخزائن', result: 'نتيجة الفترة', cashDifference: 'فرق النقد والتكلفة',
         vaults: 'حركة الخزائن', vault: 'الخزينة', share: 'النسبة من الداخل', fixed: 'التكاليف التشغيلية الدورية', purchases: 'المشتريات حسب الفئات', other: 'المصاريف الأخرى حسب الفئات', operating: 'إجمالي التكاليف التشغيلية',
         category: 'الفئة', amount: 'المبلغ', fixedCount: 'سجل', extra: 'عناصر إضافية غير معروضة للحفاظ على صفحة واحدة', none: 'لا توجد بيانات خلال الفترة',
       }
     : {
-        title: 'Dashboard — Overview', period: 'Period', incoming: 'Total inflow', outgoing: 'Total outflow', result: 'Period result',
+        title: 'Dashboard — Overview', period: 'Period', incoming: 'Total inflow', outgoing: 'Vault cash paid', result: 'Period result', cashDifference: 'Cash/cost difference',
         vaults: 'Vault activity', vault: 'Vault', share: 'Inflow share', fixed: 'Recurring operating costs', purchases: 'Purchases by category', other: 'Other expenses by category', operating: 'Total operating costs',
         category: 'Category', amount: 'Amount', fixedCount: 'records', extra: 'additional items omitted to keep one page', none: 'No data for this period',
       };
@@ -130,6 +130,7 @@ export function buildDashboardOverviewPrintDocument(input: DashboardOverviewPrin
     <section class="dash-print-flow">
       <article><span>${esc(labels.incoming)}</span>${amountCell(input.vaultActivity.totalInflow, input.lang)}</article>
       <article><span>${esc(labels.outgoing)}</span>${amountCell(input.vaultActivity.totalOutflow, input.lang)}</article>
+      <article><span>${esc(labels.cashDifference)}</span>${amountCell(Number(input.vaultActivity.totalOutflow || 0) - Number(input.operationalOverview.operatingCosts.amount || 0), input.lang)}</article>
       <article><span>${esc(labels.result)}</span>${amountCell(input.vaultActivity.periodResult, input.lang)}</article>
     </section>
     <section class="dash-print-operating"><span>${esc(labels.operating)}</span>${amountCell(input.operationalOverview.operatingCosts.amount, input.lang)}</section>

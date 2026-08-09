@@ -6,6 +6,7 @@ import type { DashboardVaultActivity, DashboardVaultActivityRow } from '../../..
 
 type Props = {
   activity: DashboardVaultActivity;
+  operatingCost: string | number;
   lang: string;
   t: (key: string) => string;
 };
@@ -31,8 +32,9 @@ function ResultMoney({ value }: { value: string | number }) {
   );
 }
 
-export function DashboardVaultActivitySection({ activity, lang, t }: Props) {
+export function DashboardVaultActivitySection({ activity, operatingCost, lang, t }: Props) {
   const rows = activity.rows ?? [];
+  const cashCostDifference = Number(activity.totalOutflow || 0) - Number(operatingCost || 0);
   const displayName = (row: DashboardVaultActivityRow) =>
     (lang === 'ar' ? row.nameAr : row.nameEn || row.nameAr) || t('notSpecified');
   const tableRows: ActivityTableRow[] = rows.length === 0
@@ -112,12 +114,12 @@ export function DashboardVaultActivitySection({ activity, lang, t }: Props) {
             <Money value={activity.totalInflow} className="mt-1 text-[14px] text-nx-sales" />
           </div>
           <div className="rounded-lg bg-noorix-bg-muted px-2 py-2 text-center">
-            <div className="text-[11px] text-noorix-muted">{t('dashboardTransferVolume')}</div>
-            <Money value={activity.transferVolume} className="mt-1 text-[14px] text-noorix-blue" />
-          </div>
-          <div className="rounded-lg bg-noorix-bg-muted px-2 py-2 text-center">
-            <div className="text-[11px] text-noorix-muted">{t('dashboardOutflow')}</div>
+            <div className="text-[11px] text-noorix-muted">{t('dashboardCashOut')}</div>
             <Money value={activity.totalOutflow} className="mt-1 text-[14px] text-noorix-text" />
+          </div>
+          <div className="rounded-lg bg-noorix-bg-muted px-2 py-2 text-center" title={t('dashboardCashCostDifferenceHint')}>
+            <div className="text-[11px] text-noorix-muted">{t('dashboardCashCostDifference')}</div>
+            <Money value={cashCostDifference} className="mt-1 text-[14px] text-noorix-blue" />
           </div>
           <div className="rounded-lg bg-noorix-bg-muted px-2 py-2 text-center">
             <div className="text-[11px] text-noorix-muted">{t('dashboardPeriodResult')}</div>
@@ -137,7 +139,7 @@ export function DashboardVaultActivitySection({ activity, lang, t }: Props) {
       />
 
       <p className="m-0 border-t border-noorix-border px-4 py-3 text-center text-[11px] text-noorix-muted sm:px-5">
-        {t('dashboardVaultActivityNote')}
+        {t('dashboardVaultActivityNote')} {t('dashboardCashCostDifferenceHint')}
       </p>
     </section>
   );

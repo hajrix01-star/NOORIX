@@ -71,9 +71,13 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
         basketAvgCalendar={m.basketAvgCalendar}
         basketAvgPrevMonthCalendar={m.basketAvgPrevMonthCalendar}
         basketAvgDeltaPct={m.basketAvgDeltaPct}
-        kpiInsightFooters={m.kpiInsightFooters}
       />
-      <DashboardVaultActivitySection activity={m.vaultActivity} lang={m.lang} t={m.t} />
+      <DashboardVaultActivitySection
+        activity={m.vaultActivity}
+        operatingCost={m.operationalOverview.operatingCosts.amount}
+        lang={m.lang}
+        t={m.t}
+      />
       <DashboardOperationalOverviewSection overview={m.operationalOverview} lang={m.lang} t={m.t} />
     </div>
   );

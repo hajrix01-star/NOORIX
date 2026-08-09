@@ -18,6 +18,7 @@ import {
 } from './dashboard-overview-model.util';
 import { buildDashboardVaultActivity } from './dashboard-vault-activity.util';
 import { buildDashboardOperationalOverview } from './dashboard-operational-overview.util';
+import { buildDashboardExecutiveKpis } from './dashboard-executive-kpis.util';
 
 @Injectable()
 export class DashboardService {
@@ -170,13 +171,16 @@ export class DashboardService {
       ),
     };
 
+    const operationalOverview = buildDashboardOperationalOverview(periodData, presentation.kpiCards);
+    presentation.kpiCards = buildDashboardExecutiveKpis(presentation.kpiCards, operationalOverview);
+
     return {
       report,
       salesPack,
       insights,
       periodData,
       vaultActivity: buildDashboardVaultActivity(vaultPeriodRows),
-      operationalOverview: buildDashboardOperationalOverview(periodData, presentation.kpiCards),
+      operationalOverview,
       presentation,
     };
   }

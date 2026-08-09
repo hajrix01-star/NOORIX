@@ -9,10 +9,7 @@ import type {
   DashboardSalesShiftTotals,
 } from '../../../../types/api/domains/dashboard';
 import type { DashboardOverviewFilter } from '../types';
-import type {
-  KpiFooterRow,
-  KpiInsightFooterMap,
-} from '../utils/dashboardOverviewKpiInsightFooters';
+import type { KpiFooterRow } from '../utils/dashboardOverviewKpiInsightFooters';
 import { kpiFooterRowColorClass } from '../utils/dashboardOverviewKpiInsightFooters';
 import {
   formatSalesShiftSharePercent,
@@ -33,7 +30,6 @@ type Props = {
   basketAvgCalendar: number | null;
   basketAvgPrevMonthCalendar: number | null;
   basketAvgDeltaPct: number | null;
-  kpiInsightFooters: KpiInsightFooterMap;
 };
 
 type ExecutiveRow = {
@@ -201,7 +197,6 @@ export function DashboardOverviewKpis({
   basketAvgCalendar,
   basketAvgPrevMonthCalendar,
   basketAvgDeltaPct,
-  kpiInsightFooters,
 }: Props) {
   const { t } = useTranslation();
   const periodLabel = filter?.label || String(year);
@@ -216,10 +211,17 @@ export function DashboardOverviewKpis({
   };
   const grossProfit = kpiCardsByKey.get('grossProfit');
   const netProfit = kpiCardsByKey.get('netProfit');
-  const purchasesRatio = kpiInsightFooters.purchases?.rows[0] ?? null;
-  const expensesRatio = kpiInsightFooters.expenses?.rows[0] ?? null;
-  const grossProfitRatio = kpiInsightFooters.grossProfit?.rows[0] ?? null;
-  const netProfitRatio = kpiInsightFooters.netProfit?.rows[0] ?? null;
+  const directRatio = (metric: DashboardKpiCardMetric | undefined): KpiFooterRow | null => (
+    metric?.pct == null ? null : {
+      label: t('dashboardKpiFooterRatioToSales'),
+      value: `${metric.pct.toFixed(1)}%`,
+      color: 'muted',
+    }
+  );
+  const purchasesRatio = directRatio(purchases);
+  const expensesRatio = directRatio(expenses);
+  const grossProfitRatio = directRatio(grossProfit);
+  const netProfitRatio = directRatio(netProfit);
 
   return (
     <div className="nx-kpi-container">
@@ -251,8 +253,8 @@ export function DashboardOverviewKpis({
 
         <MetricCard color={metricColor('expenses')} className="flex min-h-[300px] flex-col">
           <MetricCard.Header
-            label={`${t('purchasesGroup')} + ${t('expensesGroup')}`}
-            subLabel={t('reportAmountBasisGrossShort')}
+            label={t('dashboardOperatingCostKpiTitle')}
+            subLabel={t('dashboardOperatingCostKpiDesc')}
           />
           <MetricCard.Value
             value={amountText(outflow.value)}
@@ -273,7 +275,7 @@ export function DashboardOverviewKpis({
               },
               {
                 key: 'expenses',
-                label: t('expensesGroup'),
+                label: t('dashboardRecurringAndOtherExpenses'),
                 metric: expenses,
                 ratio: expensesRatio,
               },
@@ -284,8 +286,8 @@ export function DashboardOverviewKpis({
 
         <MetricCard color={metricColor('netProfit')} className="flex min-h-[300px] flex-col">
           <MetricCard.Header
-            label={t('annualNetProfit')}
-            subLabel={`${t('annualGrossProfit')} / ${t('annualNetProfit')}`}
+            label={t('dashboardOperatingResultTitle')}
+            subLabel={t('dashboardOperatingResultDesc')}
           />
           <MetricCard.Value
             value={amountText(netProfit?.value ?? 0)}
@@ -300,13 +302,13 @@ export function DashboardOverviewKpis({
             rows={[
               {
                 key: 'grossProfit',
-                label: t('annualGrossProfit'),
+                label: t('dashboardGrossAfterPurchases'),
                 metric: grossProfit,
                 ratio: grossProfitRatio,
               },
               {
                 key: 'netProfit',
-                label: t('annualNetProfit'),
+                label: t('dashboardOperatingResultTitle'),
                 metric: netProfit,
                 ratio: netProfitRatio,
               },
