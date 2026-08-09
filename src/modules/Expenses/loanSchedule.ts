@@ -17,9 +17,17 @@ function parseIsoDate(value: string | null | undefined) {
   const match = normalized.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
   if (!match) return null;
   const [, year, month, day] = match;
+  const numericYear = Number(year);
+  const numericMonth = Number(month);
+  const numericDay = Number(day);
+  const parsed = new Date(Date.UTC(numericYear, numericMonth - 1, numericDay));
+  if (
+    Number.isNaN(parsed.getTime())
+    || parsed.getUTCFullYear() !== numericYear
+    || parsed.getUTCMonth() !== numericMonth - 1
+    || parsed.getUTCDate() !== numericDay
+  ) return null;
   const iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  const parsed = new Date(`${iso}T00:00:00.000Z`);
-  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== iso) return null;
   return iso;
 }
 
