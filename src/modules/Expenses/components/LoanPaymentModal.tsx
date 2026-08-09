@@ -42,8 +42,7 @@ export default function LoanPaymentModal({ companyId, loans, loanId: initialLoan
     mutation.mutate({ id: loanId, body: { companyId, vaultId, amount: value, transactionDate, notes: notes.trim() || undefined, idempotencyKey: keyRef.current } });
   };
   return <AdaptiveSheet open onClose={onClose} size="sm" side="start" title="سداد قرض" footer={<DialogActions actions={[{ key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose }, { key: 'save', label: mutation.isPending ? 'جارٍ الحفظ…' : 'تأكيد السداد', role: 'save', type: 'submit', form: 'loan-payment-form', disabled: mutation.isPending }]} />}>
-    <form id="loan-payment-form" onSubmit={submit} className="flex flex-col gap-3">
-      <p className="m-0 rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2 text-[12px] leading-6 text-noorix-muted">السداد يدوي بالكامل. يعبئ نوركس قيمة القسط المرجعية فقط لتسريع الإدخال، ولن ينشئ أي سداد أو يخصم أي مبلغ بدون تأكيدك.</p>
+    <form id="loan-payment-form" onSubmit={submit} className="flex flex-col gap-3 pb-24 touch-pan-y">
       {error ? <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-3 py-2 text-[13px] text-noorix-red">{error}</div> : null}
       <SearchableOptionsPicker label="القرض" value={loanId} onChange={setLoanId} options={loanOptions} aria-label="القرض" />
       {selectedLoan ? <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2 text-center text-[13px]">الرصيد المتبقي: <strong className="nx-font-numbers">{Number(selectedLoan.outstandingAmount).toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</strong>{installmentAmount ? <> · قيمة القسط المرجعية: <strong className="nx-font-numbers">{installmentAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SR</strong></> : null}</div> : null}
