@@ -44,7 +44,18 @@ export class HrPayrollIndividualPaymentService {
       include: { items: { where: { employeeId: dto.employeeId }, select: { netSalary: true } } },
     });
     if (existingRun?.status === 'completed') {
-      throw new BadRequestException('هذا المسير معتمد؛ استخدم صرف المسير أو افتح تصحيحاً بإذن المالك.');
+      const issuedPayrollInvoice = await this.prisma.invoice.findFirst({
+        where: {
+          companyId: dto.companyId,
+          batchId: existingRun.id,
+          kind: 'salary',
+          status: 'active',
+        },
+        select: { id: true },
+      });
+      if (issuedPayrollInvoice) {
+        throw new BadRequestException('صُرف هذا المسير كاملاً بالفعل. افتح تصحيحاً بإذن المالك عند الحاجة.');
+      }
     }
 
     const batchId = individualSalaryBatchId(dto.employeeId, payrollMonth);
