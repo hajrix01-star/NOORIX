@@ -56,6 +56,20 @@ export function getLoanScheduleStartDate(loan: LoanRecord) {
   return null;
 }
 
+export function getLoanPaymentInstallmentNumber(loan: LoanRecord, paymentDate: string | null | undefined) {
+  const start = getLoanScheduleStartDate(loan);
+  const payment = parseIsoDate(paymentDate);
+  if (!start || !payment) return null;
+  const [startYear, startMonth] = start.split('-').map(Number);
+  const [paymentYear, paymentMonth] = payment.split('-').map(Number);
+  const monthOffset = (paymentYear - startYear) * 12 + (paymentMonth - startMonth);
+  if (monthOffset < 0) return null;
+  const installmentNumber = monthOffset + 1;
+  const total = getLoanTotalInstallments(loan);
+  if (total && installmentNumber > total) return null;
+  return installmentNumber;
+}
+
 export function getLoanExpectedEndDate(loan: LoanRecord) {
   const dueDate = parseIsoDate(loan.dueDate);
   if (dueDate) return dueDate;
