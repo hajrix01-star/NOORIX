@@ -7,6 +7,13 @@ import { getSaudiToday, formatSaudiDate } from '../../../utils/saudiDate';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { AdaptiveSheet, Badge, Button, DialogActions, FmtNum, Input, TransactionDatePicker } from '../../../ui';
 import type { LoanPaymentReversePayload, LoanRecord } from '../../../types/api';
+import {
+  getLoanExpectedEndDate,
+  getLoanReferenceInstallmentAmount,
+  getLoanRemainingInstallments,
+  getLoanScheduleStartDate,
+  getLoanTotalInstallments,
+} from '../loanSchedule';
 import LoanPaymentModal from './LoanPaymentModal';
 
 type Props = { companyId: string; loan: LoanRecord; allLoans: LoanRecord[]; onClose: () => void; onChanged: () => void };
@@ -48,16 +55,27 @@ export default function LoanDetailModal({ companyId, loan, allLoans, onClose, on
   const [showLegacyConversion, setShowLegacyConversion] = useState(false);
   const payments = useMemo(() => (loan.payments || []).filter((payment) => !payment.reversalOfId), [loan.payments]);
   const pendingLegacyInvoices = (loan.legacyInvoices || []).filter((invoice) => !invoice.convertedAt);
+  const installmentAmount = getLoanReferenceInstallmentAmount(loan);
+  const remainingInstallments = getLoanRemainingInstallments(loan);
+  const totalInstallments = getLoanTotalInstallments(loan);
+  const scheduleStartDate = getLoanScheduleStartDate(loan);
+  const expectedEndDate = getLoanExpectedEndDate(loan);
   const changed = () => { setShowPayment(false); setPaymentToReverse(null); onChanged(); };
   return <>
     <AdaptiveSheet open onClose={onClose} size="lg" side="start" title={loan.nameAr} footer={<DialogActions actions={[{ key: 'close', label: 'إغلاق', role: 'cancel', onClick: onClose }, ...(pendingLegacyInvoices.length ? [{ key: 'convert', label: 'تحويل إلى سدادات', role: 'secondary' as const, onClick: () => setShowLegacyConversion(true) }] : []), { key: 'pay', label: 'سداد قرض', role: 'save', onClick: () => setShowPayment(true) }]} />}>
       <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
           <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-3 text-center"><div className="text-[11px] text-noorix-muted">الرصيد الافتتاحي</div><FmtNum n={Number(loan.openingAmount)} className="mt-1 block nx-font-numbers text-[18px] font-bold" /><span className="nx-sar text-[11px]">SR</span></div>
           <div className="rounded-lg border border-noorix-green/30 bg-noorix-green/5 px-3 py-3 text-center"><div className="text-[11px] text-noorix-muted">المتبقي الآن</div><FmtNum n={Number(loan.outstandingAmount)} className="mt-1 block nx-font-numbers text-[18px] font-bold text-noorix-green" /><span className="nx-sar text-[11px]">SR</span></div>
-          <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-3 text-center"><div className="text-[11px] text-noorix-muted">آخر تاريخ متوقع</div><div className="mt-1 font-bold nx-font-numbers text-[14px]">{loan.dueDate ? formatSaudiDate(loan.dueDate) : '-'}</div></div>
+          <div className="rounded-lg border border-noorix-blue/30 bg-noorix-blue/5 px-3 py-3 text-center"><div className="text-[11px] text-noorix-muted">قيمة القسط</div><div className="mt-1 nx-font-numbers text-[18px] font-bold">{installmentAmount ? installmentAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</div>{installmentAmount ? <span className="nx-sar text-[11px]">SR</span> : null}</div>
+          <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-3 text-center"><div className="text-[11px] text-noorix-muted">الأقساط المتبقية</div><div className="mt-1 nx-font-numbers text-[18px] font-bold">{remainingInstallments ?? '-'}</div>{totalInstallments ? <div className="mt-1 text-[10px] text-noorix-muted">من أصل {totalInstallments} قسط</div> : null}</div>
         </div>
-        {loan.creditorName || loan.notes ? <div className="rounded-lg border border-noorix-border px-3 py-2 text-[13px] text-noorix-muted">{loan.creditorName ? <div>الجهة: <strong className="text-noorix-text">{loan.creditorName}</strong></div> : null}{loan.notes ? <div className="mt-1">{loan.notes}</div> : null}</div> : null}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="rounded-lg border border-noorix-border px-3 py-2 text-center"><div className="text-[11px] text-noorix-muted">تاريخ بداية القرض / أول قسط</div><div className="mt-1 font-bold nx-font-numbers text-[14px]">{scheduleStartDate ? formatSaudiDate(scheduleStartDate) : '-'}</div></div>
+          <div className="rounded-lg border border-noorix-border px-3 py-2 text-center"><div className="text-[11px] text-noorix-muted">تاريخ انتهاء القرض المتوقع</div><div className="mt-1 font-bold nx-font-numbers text-[14px]">{expectedEndDate ? formatSaudiDate(expectedEndDate) : '-'}</div></div>
+          <div className="rounded-lg border border-noorix-border px-3 py-2 text-center"><div className="text-[11px] text-noorix-muted">آخر قسط موثق قبل نوركس</div><div className="mt-1 font-bold nx-font-numbers text-[14px]">{loan.historicalPaidThroughDate ? formatSaudiDate(loan.historicalPaidThroughDate) : '-'}</div></div>
+        </div>
+        {loan.creditorName || loan.notes || installmentAmount ? <div className="rounded-lg border border-noorix-border px-3 py-2 text-[13px] text-noorix-muted">{loan.creditorName ? <div>الجهة: <strong className="text-noorix-text">{loan.creditorName}</strong></div> : null}{installmentAmount ? <div className="mt-1">قيمة القسط المرجعية: <strong className="nx-font-numbers text-noorix-text">{installmentAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SR</strong>{remainingInstallments !== null ? <> · المتبقي تقريبيًا: <strong className="nx-font-numbers text-noorix-text">{remainingInstallments}</strong> قسط</> : null}</div> : null}{loan.notes ? <div className="mt-1">{loan.notes}</div> : null}</div> : null}
         {(loan.historicalPaymentsCount || Number(loan.historicalPaidAmount || 0) > 0) ? <div className="rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2 text-[12px] text-noorix-muted">دفعات سابقة قبل نوركس: <strong>{loan.historicalPaymentsCount || 0}</strong> دفعة، بإجمالي <strong className="nx-font-numbers">{Number(loan.historicalPaidAmount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</strong>{loan.historicalPaidThroughDate ? ` حتى ${formatSaudiDate(loan.historicalPaidThroughDate)}` : ''}. هذه معلومات توثيقية ولا تؤثر على الخزينة.</div> : null}
         {loan.legacyInvoices?.length ? <div className="rounded-lg border border-noorix-blue/25 bg-noorix-blue/5 px-3 py-2 text-[12px] text-noorix-muted"><strong>فواتير مرتبطة من البند القديم ({loan.legacyInvoices.length})</strong><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{loan.legacyInvoices.map((invoice) => <span key={invoice.id} className="nx-font-numbers">{invoice.invoiceNumber} · {formatSaudiDate(invoice.transactionDate)} · {Number(invoice.amount).toLocaleString('en-US', { maximumFractionDigits: 2 })} SR</span>)}</div><div className="mt-1">{pendingLegacyInvoices.length ? 'يمكن تحويلها إلى سدادات قرض موثقة دون تغيير الرصيد الحالي.' : 'تم تحويلها إلى سدادات قرض؛ الفواتير الأصلية معطّلة ومحفوظة للتدقيق.'}</div></div> : null}
         <div className="overflow-x-auto rounded-lg border border-noorix-border"><table className="w-full min-w-[42rem] border-collapse text-[13px]"><thead className="bg-noorix-bg-muted"><tr><th className="p-2 text-right">التاريخ</th><th className="p-2 text-right">الخزينة / المصدر</th><th className="p-2 text-right">المبلغ</th><th className="p-2 text-right">الحالة</th><th className="p-2 text-right">إجراء</th></tr></thead><tbody>{payments.length ? payments.map((payment) => <tr key={payment.id} className="border-t border-noorix-border"><td className="p-2 nx-font-numbers">{formatSaudiDate(payment.transactionDate)}</td><td className="p-2">{payment.vault?.nameAr || payment.vault?.nameEn || '-'}{payment.sourceInvoice?.invoiceNumber ? <div className="mt-0.5 text-[11px] text-noorix-muted nx-font-numbers">{payment.sourceInvoice.invoiceNumber}</div> : null}</td><td className="p-2 nx-font-numbers"><FmtNum n={Number(payment.amount)} /> <span className="nx-sar">SR</span></td><td className="p-2"><Badge color={payment.status === 'reversed' ? 'red' : 'green'} size="sm">{payment.status === 'reversed' ? 'ملغى' : payment.sourceInvoice ? 'سداد مرحّل' : 'مسدد'}</Badge></td><td className="p-2">{payment.status === 'posted' ? <Button size="sm" variant="danger" onClick={() => setPaymentToReverse({ id: payment.id, date: payment.transactionDate })}>إلغاء السداد</Button> : '-'}</td></tr>) : <tr><td className="p-5 text-center text-noorix-muted" colSpan={5}>لا توجد سدادات داخل نوركس حتى الآن.</td></tr>}</tbody></table></div>
