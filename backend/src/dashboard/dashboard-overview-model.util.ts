@@ -69,6 +69,16 @@ export type DashboardKpiCardMetric = {
   pct: number | null;
   tone: 'positive' | 'negative' | 'neutral' | 'cost';
 };
+export type DashboardOperatingLedgerTotals = {
+  sales: string | number;
+  purchases: string | number;
+  recurringExpenses: string | number;
+  otherExpenses: string | number;
+  payroll: string | number;
+  operatingCosts: string | number;
+  operatingResult: string | number;
+  taxCollected?: string | number;
+};
 
 export type DashboardPeriodData = {
   totalsByKind?: Record<string, { totalAmount?: string | number | null }>;
@@ -245,6 +255,28 @@ function kpiTone(key: string, pct: number | null): DashboardKpiCardMetric['tone'
   return 'neutral';
 }
 
+/**
+ * Builds the overview operating cards from the classified accounting ledger.
+ * The sales card keeps its existing VAT-inclusive contract; the underlying
+ * projection still exposes collected tax separately for reconciliation.
+ */
+export function buildLedgerKpiCards(ledger: DashboardOperatingLedgerTotals): DashboardKpiCardMetric[] {
+  const sales = Number(ledger.sales || 0) + Number(ledger.taxCollected || 0);
+  const purchases = Number(ledger.purchases || 0);
+  const expenses = Number(ledger.recurringExpenses || 0)
+    + Number(ledger.otherExpenses || 0)
+    + Number(ledger.payroll || 0);
+  const outflow = Number(ledger.operatingCosts || 0);
+  const grossProfit = sales - purchases;
+  const netProfit = sales - outflow;
+  const values = { sales, purchases, expenses, outflow, grossProfit, netProfit };
+
+  return (['sales', 'purchases', 'expenses', 'outflow', 'grossProfit', 'netProfit'] as const).map((key) => {
+    const value = values[key];
+    const pct = pctOfSales(key, value, sales);
+    return { key, value, pct, tone: kpiTone(key, pct) };
+  });
+}
 export function buildKpiCards(params: {
   report: DashboardProfitLossReport | null;
   periodData: DashboardPeriodData;

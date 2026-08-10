@@ -79,4 +79,22 @@ describe('buildDashboardOperationalOverview', () => {
     expect(result.operatingCosts.amount).toBe('1050');
     expect(result.operatingCosts.shareOfSalesPct).toBeCloseTo(95.45, 2);
   });
-});
+
+  it('uses classified ledger totals and includes payroll in recurring operating costs', () => {
+    const result = buildDashboardOperationalOverview(
+      { purchaseCategoryTotal: '1', fixedExpenseTotal: '1', otherExpenseTotal: '1' },
+      [{ key: 'sales', value: 1 }],
+      {
+        sales: '1000', taxCollected: '150', purchases: '300', recurringExpenses: '100', otherExpenses: '50', payroll: '150',
+        operatingCosts: '600', operatingResult: '400',
+        reportingClassCounts: { operating_recurring_expense: 2, operating_payroll: 3 },
+      },
+    );
+
+    expect(result.sales).toBe('1150');
+    expect(result.purchases.amount).toBe('300');
+    expect(result.recurringCosts.amount).toBe('250');
+    expect(result.recurringCosts.recordCount).toBe(5);
+    expect(result.otherExpenses.amount).toBe('50');
+    expect(result.operatingCosts.amount).toBe('600');
+  });});

@@ -64,12 +64,17 @@ export class DashboardLedgerProjectionService {
       .plus(ledger.payroll);
     const currentOperatingCosts = new Decimal(currentProfitLoss.purchases).plus(currentProfitLoss.expenses);
     const ledgerOperatingCosts = new Decimal(ledger.operatingCosts);
+    // General P&L and the dashboard display invoice totals gross (including VAT).
+    // The ledger keeps collected VAT in its own class, so reconcile the same gross
+    // basis here while still keeping VAT out of operating costs.
+    const ledgerGrossSales = new Decimal(ledger.sales).plus(ledger.taxCollected);
+    const ledgerGrossOperatingResult = ledgerGrossSales.minus(ledgerOperatingCosts);
     const dimensions = [
-      ['sales', currentProfitLoss.sales, ledger.sales],
+      ['sales', currentProfitLoss.sales, ledgerGrossSales.toFixed(4)],
       ['purchases', currentProfitLoss.purchases, ledger.purchases],
       ['expenses', currentProfitLoss.expenses, ledgerExpenses.toFixed(4)],
       ['operatingCosts', currentOperatingCosts.toFixed(4), ledgerOperatingCosts.toFixed(4)],
-      ['operatingResult', new Decimal(currentProfitLoss.sales).minus(currentOperatingCosts).toFixed(4), ledger.operatingResult],
+      ['operatingResult', new Decimal(currentProfitLoss.sales).minus(currentOperatingCosts).toFixed(4), ledgerGrossOperatingResult.toFixed(4)],
     ].map(([key, currentValue, ledgerValue]) => {
       const delta = new Decimal(String(ledgerValue)).minus(String(currentValue));
       return {

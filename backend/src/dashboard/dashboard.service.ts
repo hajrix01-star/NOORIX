@@ -13,12 +13,15 @@ import {
   buildDashboardTimelineDailyRows,
   buildDashboardTimelineMonthlyRows,
   buildKpiCards,
+  buildLedgerKpiCards,
   percentChangeNullable,
   type DashboardProfitLossReport,
 } from './dashboard-overview-model.util';
 import { buildDashboardVaultActivity } from './dashboard-vault-activity.util';
 import { buildDashboardOperationalOverview } from './dashboard-operational-overview.util';
 import { buildDashboardExecutiveKpis } from './dashboard-executive-kpis.util';
+import { DashboardLedgerProjectionService } from './dashboard-ledger-projection.service';
+import { selectDashboardLedgerSource } from './dashboard-ledger-cutover.util';
 
 @Injectable()
 export class DashboardService {
@@ -28,6 +31,7 @@ export class DashboardService {
     private readonly salesService: SalesService,
     private readonly dashboardInsightsService: DashboardInsightsService,
     private readonly vaultsService: VaultsService,
+    private readonly dashboardLedgerProjectionService: DashboardLedgerProjectionService,
   ) {}
 
   async getOverview(query: DashboardOverviewQueryDto, user: JwtUser) {
@@ -124,7 +128,7 @@ export class DashboardService {
         )
       : Promise.resolve(EMPTY_SALES_PACK);
 
-    const [report, salesPack, weeklyPack, previousMonthPack, insights, periodData, vaultPeriodRows] = await Promise.all([
+    const [report, salesPack, weeklyPack, previousMonthPack, insights, periodData, vaultPeriodRows, ledgerReconciliation] = await Promise.all([
       this.reportsService.getGeneralProfitLoss(companyId, year),
       salesPackPromise,
       weeklyPackPromise,
@@ -147,18 +151,26 @@ export class DashboardService {
       ),
       this.reportsService.getPeriodAnalytics(companyId, periodStart, periodEnd),
       this.vaultsService.findAll(companyId, true, periodStart, periodEnd),
+      this.dashboardLedgerProjectionService.getPeriodReconciliation(companyId, periodStart, periodEnd),
     ]);
 
     const reportLike = report as DashboardProfitLossReport | null;
     const salesMetrics = salesPack.metrics;
+    const legacyKpiCards = buildKpiCards({
+      report: reportLike,
+      periodData,
+      dailyRows: salesMetrics?.dailyDaily ?? [],
+      selectedMonth: selectedMonth ?? null,
+      isCustomRange: selectedMonth == null && (periodStart !== yearStart || periodEnd !== yearEnd),
+    });
+    // Cut over only after the owner-facing reconciliation proves that every
+    // operating dimension matches and no ledger row is unclassified.
+    const ledgerSelection = selectDashboardLedgerSource(ledgerReconciliation);
+    const ledgerIsReady = ledgerSelection.source === 'classified_ledger_v1';
+    const ledgerProjection = ledgerReconciliation.ledger;
+    const operatingLedgerProjection = ledgerSelection.ledger;
     const presentation = {
-      kpiCards: buildKpiCards({
-        report: reportLike,
-        periodData,
-        dailyRows: salesMetrics?.dailyDaily ?? [],
-        selectedMonth: selectedMonth ?? null,
-        isCustomRange: selectedMonth == null && (periodStart !== yearStart || periodEnd !== yearEnd),
-      }),
+      kpiCards: operatingLedgerProjection ? buildLedgerKpiCards(operatingLedgerProjection) : legacyKpiCards,
       timeline: {
         monthly: buildDashboardTimelineMonthlyRows(reportLike, salesMetrics?.yearDaily ?? []),
         daily: buildDashboardTimelineDailyRows(salesMetrics?.dailyDaily ?? [], ds, de),
@@ -171,7 +183,11 @@ export class DashboardService {
       ),
     };
 
-    const operationalOverview = buildDashboardOperationalOverview(periodData, presentation.kpiCards);
+    const operationalOverview = buildDashboardOperationalOverview(
+      periodData,
+      presentation.kpiCards,
+      operatingLedgerProjection,
+    );
     presentation.kpiCards = buildDashboardExecutiveKpis(presentation.kpiCards, operationalOverview);
 
     return {
@@ -180,6 +196,12 @@ export class DashboardService {
       insights,
       periodData,
       vaultActivity: buildDashboardVaultActivity(vaultPeriodRows),
+      ledgerReporting: {
+        source: ledgerSelection.source,
+        readyForCutover: ledgerIsReady,
+        coverage: ledgerProjection.coverage,
+        dimensions: ledgerReconciliation.dimensions,
+      },
       operationalOverview,
       presentation,
     };

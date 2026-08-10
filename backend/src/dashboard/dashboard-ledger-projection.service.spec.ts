@@ -6,7 +6,7 @@ describe('DashboardLedgerProjectionService reconciliation', () => {
       { withTenant: jest.fn() } as never,
       {
         getGeneralProfitLossPeriodTotals: jest.fn().mockResolvedValue({
-          sales: '1000', purchases: '300', expenses: '300',
+          sales: '1015', purchases: '300', expenses: '300',
         }),
       } as never,
     );
@@ -21,6 +21,8 @@ describe('DashboardLedgerProjectionService reconciliation', () => {
     await expect(service.getPeriodReconciliation('company-1', '2026-07-01', '2026-07-31')).resolves.toMatchObject({
       readyForCutover: true,
       dimensions: expect.arrayContaining([
+        expect.objectContaining({ key: 'sales', currentValue: '1015.0000', ledgerValue: '1015.0000', matches: true }),
+        expect.objectContaining({ key: 'operatingResult', currentValue: '415.0000', ledgerValue: '415.0000', matches: true }),
         expect.objectContaining({ key: 'operatingCosts', delta: '0.0000', matches: true }),
       ]),
     });
