@@ -8,9 +8,11 @@ import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator'
 import { DashboardCalendarService } from './dashboard-calendar.service';
 import { DashboardService } from './dashboard.service';
 import { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.dto';
+import { DashboardLedgerReconciliationQueryDto } from './dto/dashboard-ledger-reconciliation-query.dto';
 import { ApplySpecialOccasionsDto } from './dto/apply-special-occasions.dto';
 import { ApplySchoolHolidaysDto } from './dto/apply-school-holidays.dto';
 import { SkipCompanyCheck } from '../auth/decorators/skip-company-check.decorator';
+import { DashboardLedgerProjectionService } from './dashboard-ledger-projection.service';
 
 /**
  * GET  /api/v1/dashboard/overview
@@ -25,6 +27,7 @@ export class DashboardController {
   constructor(
     private readonly dashboardService: DashboardService,
     private readonly dashboardCalendarService: DashboardCalendarService,
+    private readonly dashboardLedgerProjectionService: DashboardLedgerProjectionService,
   ) {}
 
   @Get('overview')
@@ -34,6 +37,16 @@ export class DashboardController {
     @CurrentUser() user: JwtUser,
   ) {
     return this.dashboardService.getOverview(query, user);
+  }
+
+  @Get('ledger-reconciliation')
+  @RequirePermission('VIEW_OWNER')
+  async getLedgerReconciliation(@Query() query: DashboardLedgerReconciliationQueryDto) {
+    return this.dashboardLedgerProjectionService.getPeriodReconciliation(
+      query.companyId,
+      query.startDate,
+      query.endDate,
+    );
   }
 
   // ── Calendar Data ─────────────────────────────────────
