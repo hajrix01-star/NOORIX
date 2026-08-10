@@ -14,16 +14,18 @@ import {
   computeSupplierInvoiceDedupKeyForOutflowDto,
 } from '../invoice/invoice-supplier-invoice-dedup.util';
 
-type OperationalCategoryPosting = {
+export type OperationalCategoryPosting = {
   accountId: string | null;
   reportingClass: LedgerReportingClass;
   categoryId: string;
   supplierId?: string;
 };
 
-async function resolveOperationalCategoryPosting(
+export type OperationalCategoryInput = Pick<OutflowDto, 'companyId' | 'kind' | 'categoryId' | 'supplierId' | 'expenseLineId'>;
+
+export async function resolveOperationalCategoryPosting(
   tx: TxClient,
-  dto: OutflowDto,
+  dto: OperationalCategoryInput,
 ): Promise<OperationalCategoryPosting | null> {
   if (!['purchase', 'expense', 'fixed_expense', 'hr_expense'].includes(dto.kind)) {
     return null;

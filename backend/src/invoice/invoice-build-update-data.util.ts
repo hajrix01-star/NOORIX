@@ -6,6 +6,7 @@ import { parseInvoiceDate } from './invoice-date.util';
 export function buildInvoiceUncheckedUpdateFromDto(dto: UpdateInvoiceDto): Prisma.InvoiceUncheckedUpdateInput {
   const updateData: Prisma.InvoiceUncheckedUpdateInput = {};
   if (dto.supplierId !== undefined) updateData.supplierId = dto.supplierId;
+  if (dto.categoryId !== undefined) updateData.categoryId = dto.categoryId;
   if (dto.supplierInvoiceNumber !== undefined) updateData.supplierInvoiceNumber = dto.supplierInvoiceNumber;
   if (dto.kind !== undefined) updateData.kind = dto.kind;
   if (dto.totalAmount !== undefined) updateData.totalAmount = new Prisma.Decimal(dto.totalAmount);

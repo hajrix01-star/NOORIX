@@ -4,6 +4,7 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
 import { AuditLogService } from '../audit/audit-log.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { resolveOperationalCategoryPosting } from '../financial-core/financial-outflow-persist.util';
 import { nowSaudi } from '../common/utils/date-utils';
 import type { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { buildInvoiceUncheckedUpdateFromDto } from './invoice-build-update-data.util';
@@ -69,6 +70,18 @@ export async function updateInvoiceInTransaction(
 
     const newInvoice = await tx.invoice.update({ where: { id }, data: updateData });
 
+    const kindChanged = dto.kind !== undefined && dto.kind !== oldInvoice.kind;
+    const categoryChanged = dto.categoryId !== undefined && dto.categoryId !== oldInvoice.categoryId;
+    const categoryPosting = (kindChanged || categoryChanged)
+      ? await resolveOperationalCategoryPosting(tx, {
+          companyId,
+          kind: newInvoice.kind,
+          categoryId: newInvoice.categoryId ?? undefined,
+          supplierId: newInvoice.supplierId ?? undefined,
+          expenseLineId: newInvoice.expenseLineId ?? undefined,
+        })
+      : null;
+
     if (dto.transactionDate !== undefined) {
       const newDate = parseInvoiceDate(dto.transactionDate);
       const period = await tx.fiscalPeriod.findFirst({
@@ -106,14 +119,16 @@ export async function updateInvoiceInTransaction(
           ? { vaultId: dto.vaultId }
           : null;
 
-    const kindChanged = dto.kind !== undefined && dto.kind !== oldInvoice.kind;
-
     const monetaryChanged =
       !oldInvoice.totalAmount.equals(newInvoice.totalAmount) ||
       !oldInvoice.netAmount.equals(newInvoice.netAmount) ||
       !oldInvoice.taxAmount.equals(newInvoice.taxAmount);
 
-    const ledgerSyncOpts = { preserveDebitAccount: !kindChanged } as const;
+    const ledgerSyncOpts = {
+      preserveDebitAccount: !(kindChanged || categoryChanged),
+      ...(categoryPosting?.accountId ? { debitAccountId: categoryPosting.accountId } : {}),
+      ...(categoryPosting ? { reportingClass: categoryPosting.reportingClass } : {}),
+    } as const;
 
     if (vaultRebuildPayload) {
       await financialCore.rebuildOutflowInvoiceLedgerAfterVaultChange(
@@ -124,7 +139,7 @@ export async function updateInvoiceInTransaction(
         userId ?? undefined,
         ledgerSyncOpts,
       );
-    } else if (monetaryChanged || kindChanged) {
+    } else if (monetaryChanged || kindChanged || categoryChanged) {
       await financialCore.rebuildOutflowInvoiceLedgerToMatchInvoice(
         tx,
         companyId,

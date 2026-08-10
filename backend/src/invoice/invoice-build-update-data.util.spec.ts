@@ -14,4 +14,11 @@ describe('buildInvoiceUncheckedUpdateFromDto', () => {
     expect(update.netAmount).toBeUndefined();
     expect(update.taxAmount).toBeUndefined();
   });
+  it('persists a selected invoice category as the accounting classification decision', () => {
+    const update = buildInvoiceUncheckedUpdateFromDto({
+      categoryId: 'category-maintenance',
+    } as UpdateInvoiceDto);
+
+    expect(update.categoryId).toBe('category-maintenance');
+  });
 });

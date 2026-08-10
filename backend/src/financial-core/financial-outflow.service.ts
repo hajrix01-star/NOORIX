@@ -18,6 +18,12 @@ import {
 import { persistOutflowInvoiceWithLedger } from './financial-outflow-persist.util';
 import { reportingClassForOutflowKind, type LedgerReportingClass } from './financial-reporting-classification.util';
 import { toYmd } from '../common/utils/to-ymd.util';
+
+type LedgerRebuildOptions = {
+  preserveDebitAccount?: boolean;
+  debitAccountId?: string;
+  reportingClass?: LedgerReportingClass;
+};
 import type { OutflowDto } from './dto/financial-operation.dto';
 import type { TxClient } from './financial-core-helpers.util';
 import { assertOutflowBatchNoDuplicateSupplierInvoiceKeys } from '../invoice/invoice-supplier-invoice-dedup.util';
@@ -181,7 +187,7 @@ export class FinancialOutflowService {
       vaultSplits?: Array<{ vaultId: string; amount: number }> | null;
     },
     callerUserId?: string,
-    ledgerOpts?: { preserveDebitAccount?: boolean },
+    ledgerOpts?: LedgerRebuildOptions,
   ): Promise<void> {
     const userId = this.support.resolveUserId(callerUserId);
 
@@ -250,10 +256,11 @@ export class FinancialOutflowService {
     });
     const entryDate = first?.entryDate ?? inv.entryDate;
     const debitAccountId =
-      ledgerOpts?.preserveDebitAccount === false
+      ledgerOpts?.debitAccountId ??
+      (ledgerOpts?.preserveDebitAccount === false
         ? await this.support.getDefaultExpenseAccount(tx, companyId, inv.kind)
         : first?.debitAccountId ??
-          (await this.support.getDefaultExpenseAccount(tx, companyId, inv.kind));
+          (await this.support.getDefaultExpenseAccount(tx, companyId, inv.kind)));
 
     const referenceType =
       inv.kind === 'salary' ? 'salary' : inv.kind === 'advance' ? 'advance' : 'invoice';
@@ -267,7 +274,10 @@ export class FinancialOutflowService {
       debitAccountId,
       entryDate,
       referenceType,
-      (first?.reportingClass as LedgerReportingClass | undefined) ?? reportingClassForOutflowKind(inv.kind),
+      ledgerOpts?.reportingClass ??
+        (ledgerOpts?.preserveDebitAccount === false
+          ? reportingClassForOutflowKind(inv.kind)
+          : (first?.reportingClass as LedgerReportingClass | undefined) ?? reportingClassForOutflowKind(inv.kind)),
       userId,
       (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );
@@ -282,7 +292,7 @@ export class FinancialOutflowService {
     companyId: string,
     invoiceId: string,
     callerUserId?: string,
-    ledgerOpts?: { preserveDebitAccount?: boolean },
+    ledgerOpts?: LedgerRebuildOptions,
   ): Promise<void> {
     const userId = this.support.resolveUserId(callerUserId);
 
@@ -357,10 +367,11 @@ export class FinancialOutflowService {
     });
     const entryDate = first?.entryDate ?? inv.entryDate;
     const debitAccountId =
-      ledgerOpts?.preserveDebitAccount === false
+      ledgerOpts?.debitAccountId ??
+      (ledgerOpts?.preserveDebitAccount === false
         ? await this.support.getDefaultExpenseAccount(tx, companyId, inv.kind)
         : first?.debitAccountId ??
-          (await this.support.getDefaultExpenseAccount(tx, companyId, inv.kind));
+          (await this.support.getDefaultExpenseAccount(tx, companyId, inv.kind)));
 
     const referenceType =
       inv.kind === 'salary' ? 'salary' : inv.kind === 'advance' ? 'advance' : 'invoice';
@@ -374,7 +385,10 @@ export class FinancialOutflowService {
       debitAccountId,
       entryDate,
       referenceType,
-      (first?.reportingClass as LedgerReportingClass | undefined) ?? reportingClassForOutflowKind(inv.kind),
+      ledgerOpts?.reportingClass ??
+        (ledgerOpts?.preserveDebitAccount === false
+          ? reportingClassForOutflowKind(inv.kind)
+          : (first?.reportingClass as LedgerReportingClass | undefined) ?? reportingClassForOutflowKind(inv.kind)),
       userId,
       (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );
