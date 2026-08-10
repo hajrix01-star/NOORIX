@@ -30,6 +30,13 @@ type CategoriesManagerProps = {
   companyId?: string | null;
   openCreateSignal?: number;
 };
+const REPORTING_CLASS_META: Record<string, { ar: string; en: string; color: 'blue' | 'green' | 'amber' | 'gray' }> = {
+  operating_revenue: { ar: 'إيرادات تشغيلية', en: 'Operating revenue', color: 'green' },
+  operating_purchase: { ar: 'مشتريات تشغيلية', en: 'Operating purchases', color: 'blue' },
+  operating_recurring_expense: { ar: 'مصاريف دورية', en: 'Recurring expenses', color: 'amber' },
+  operating_other_expense: { ar: 'مصاريف أخرى', en: 'Other expenses', color: 'gray' },
+  operating_payroll: { ar: 'رواتب وأجور', en: 'Payroll', color: 'amber' },
+};
 
 export const CategoriesManager = memo(function CategoriesManager({
   companyId,
@@ -277,6 +284,20 @@ export const CategoriesManager = memo(function CategoriesManager({
         },
       },
       {
+        key: 'reportingClass',
+        label: lang === 'en' ? 'Report classification' : 'تصنيف التقرير',
+        kind: 'status' as const,
+        minWidth: '17ch',
+        render: (v: unknown) => {
+          const reporting = REPORTING_CLASS_META[String(v ?? '')];
+          return (
+            <Badge color={reporting?.color ?? 'gray'} size="sm">
+              {reporting ? (lang === 'en' ? reporting.en : reporting.ar) : '—'}
+            </Badge>
+          );
+        },
+      },
+      {
         key: 'parent',
         label: t('parentCategory'),
         kind: 'text' as const,
@@ -315,7 +336,7 @@ export const CategoriesManager = memo(function CategoriesManager({
         ),
       },
     ],
-    [codeColumnLabel, t, typeLabels],
+    [codeColumnLabel, lang, t, typeLabels],
   );
 
   if (!companyId) return null;
@@ -344,7 +365,7 @@ export const CategoriesManager = memo(function CategoriesManager({
         showRowNumbers
         isLoading={isLoading}
         emptyMessage={t('noCategories')}
-        tableMinWidth={920}
+        tableMinWidth={1080}
       />
     </div>
   );
