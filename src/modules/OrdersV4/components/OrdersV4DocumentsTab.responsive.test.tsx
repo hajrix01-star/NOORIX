@@ -241,7 +241,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(dialog.className).not.toContain('max-h-[min(92vh,860px)]');
   });
 
-  it('uses the status cell itself as the purchase receipt action without an extra actions column', () => {
+  it('opens the receipt editor directly from the status cell', () => {
     ordersV4DocumentsMock.documents = [{
       id: 'prepared-1', documentNumber: 'REQ4-PREPARED', documentType: 'purchase', documentDate: '2026-08-03',
       paymentMethod: 'custody', subtotal: '12', totalAmount: '12', operationalCost: '12', status: 'prepared', canReceive: true, lines: [],
@@ -257,8 +257,8 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     />);
 
     expect(screen.getAllByRole('columnheader').every((header) => header.textContent?.trim())).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'استلام' }));
-    expect(screen.getByRole('dialog', { name: 'استلام REQ4-PREPARED' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '\u0627\u0633\u062a\u0644\u0627\u0645 \u0648\u062a\u0639\u062f\u064a\u0644' }));
+    expect(screen.getByRole('dialog', { name: '\u0627\u0633\u062a\u0644\u0627\u0645 \u0648\u062a\u0639\u062f\u064a\u0644 REQ4-PREPARED' })).toBeTruthy();
   });
 
   it('does not offer receipt for a prepared purchase outside the server-authorized latest-five window', () => {
@@ -276,7 +276,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
       canReceive
     />);
 
-    expect(screen.queryByRole('button', { name: 'استلام' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '\u0627\u0633\u062a\u0644\u0627\u0645 \u0648\u062a\u0639\u062f\u064a\u0644' })).toBeNull();
   });
 
   it('keeps reversal controls inside document details and marks reversed rows with a full red strike', () => {
@@ -294,7 +294,9 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
       canUndoReverse
     />);
 
-    expect(screen.queryByRole('button', { name: 'استعادة الطلب' })).toBeNull();
+    expect(screen.queryByText('REQ4-REVERSED')).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: '\u0625\u0638\u0647\u0627\u0631 \u0627\u0644\u0645\u0644\u063a\u0627\u0629' }));
+    expect(screen.queryByRole('button', { name: '\u0627\u0633\u062a\u0639\u0627\u062f\u0629 \u0627\u0644\u0637\u0644\u0628' })).toBeNull();
     const row = screen.getByText('REQ4-REVERSED').closest('tr');
     expect(row?.className).toContain('orders-v4-document-row--reversed');
     fireEvent.click(screen.getByText('REQ4-REVERSED'));
@@ -385,7 +387,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
 
     fireEvent.click(screen.getByText('REQ4-OLD'));
     fireEvent.click(screen.getByRole('button', { name: 'إعادة فتح للموظف' }));
-    fireEvent.click(screen.getByRole('button', { name: 'تحويل إلى انتظار الاستلام' }));
+    fireEvent.click(screen.getByRole('button', { name: '\u062a\u062d\u0648\u064a\u0644 \u0625\u0644\u0649 \u0637\u0644\u0628 \u062c\u0627\u0631\u064a' }));
 
     await waitFor(() => expect(reopenDocumentMock).toHaveBeenCalledWith(expect.objectContaining({
       id: 'old-document', reopenMode: 'delegate',

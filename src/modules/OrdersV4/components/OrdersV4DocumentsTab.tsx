@@ -183,6 +183,7 @@ export function OrdersV4DocumentsTab({
   const [reopenTarget, setReopenTarget] = useState<OrdersV4Document | null>(null);
   const [delegateTarget, setDelegateTarget] = useState<OrdersV4Document | null>(null);
   const [sectionFilter, setSectionFilter] = useState('');
+  const [showCancelled, setShowCancelled] = useState(false);
   const isPurchase = documentType === 'purchase';
   const documentsQuery = useOrdersV4Documents(companyId, documentType, startDate, endDate, true, resultLimit, {
     sectionId: !isPurchase && sectionFilter ? sectionFilter : undefined,
@@ -198,12 +199,18 @@ export function OrdersV4DocumentsTab({
   const sections = useMemo(() => (bootstrap?.sections ?? []).filter((section) => availableItems.some((item) => item.sections.some((entry) => entry.section.id === section.id))), [availableItems, bootstrap?.sections]);
   useEffect(() => {
     setSectionFilter('');
+    setShowCancelled(false);
   }, [companyId, documentType]);
   const periodCustodyBalanceByDocumentId = useMemo(
     () => buildOrdersV4PeriodCustodyBalances(documents),
     [documents],
   );
-  const filteredDocuments = documents;
+  const filteredDocuments = useMemo(
+    () => !isPurchase || showCancelled
+      ? documents
+      : documents.filter((document) => document.status !== 'cancelled' && document.status !== 'reversed'),
+    [documents, isPurchase, showCancelled],
+  );
   const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
     title: isPurchase ? 'طباعة الطلب' : 'طباعة التسجيل الداخلي',
     closeLabel: 'إغلاق',
@@ -286,10 +293,10 @@ export function OrdersV4DocumentsTab({
       key: 'status',
       label: t('ordersV4Status'),
       render: (value, row) => isPurchase && canReceive && row.ownerReopenedForCashier === true
-        ? <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving({ ...row, editMode: 'correction' }); }}>بانتظار الاستلام</Button>
+        ? <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving({ ...row, editMode: 'correction' }); }}>{t('ordersV4ReceiveAndEdit')}</Button>
         : isPurchase && value === 'prepared' && canReceive && row.canReceive === true
-        ? <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>{t('ordersV4StatusAwaitingReceipt')}</Button>
-        : <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? ['direct-correction', 'delta-correction', 'atomic-correction'].includes(String(row.calculationSnapshot?.operation)) ? t('ordersV4StatusCorrectedReceived') : t('ordersV4StatusReceived') : value === 'prepared' ? t('ordersV4StatusAwaitingReceipt') : row.calculationSnapshot?.correctedByDocumentId ? t('ordersV4StatusCorrected') : row.calculationSnapshot?.reopenedByDocumentId ? t('ordersV4StatusReopened') : t('ordersV4StatusReversed')}</span>,
+        ? <Button size="sm" variant="primary" onClick={(event) => { event.stopPropagation(); setReceiving(row); }}>{t('ordersV4ReceiveAndEdit')}</Button>
+        : <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${value === 'received' ? 'bg-emerald-50 text-emerald-700' : value === 'prepared' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{value === 'received' ? t('ordersV4StatusReceived') : value === 'prepared' ? t('ordersV4StatusAwaitingReceipt') : t('ordersV4StatusReversed')}</span>,
     },
   ], [canReceive, isPurchase, lang, periodCustodyBalanceByDocumentId, t]);
 
@@ -318,11 +325,17 @@ export function OrdersV4DocumentsTab({
       {!isPurchase && <div className="w-full rounded-xl border border-noorix-border bg-noorix-bg-muted/35 p-3 sm:max-w-md">
         <OrdersV4Field label={t('ordersV4Section')}><OrdersV4Select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)}><option value="">{t('ordersV4AllSections')}</option>{sections.map((section) => <option key={section.id} value={section.id}>{ordersV4LocalizedName(section, lang)}</option>)}</OrdersV4Select></OrdersV4Field>
       </div>}
+      {isPurchase && (
+        <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2 text-[13px] font-semibold">
+          <input type="checkbox" checked={showCancelled} onChange={(event) => setShowCancelled(event.target.checked)} />
+          {t('ordersV4ShowCancelled')}
+        </label>
+      )}
       <OrdersV4Panel
         title={isPurchase ? 'طلبات الشراء — V4' : t('ordersV4InternalTitle')}
       >
         <OrdersV4QueryState loading={documentsQuery.isLoading} error={documentsQuery.error as Error | null} />
-        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage={t('ordersV4NoDocuments')} tableMinWidth={isPurchase ? 1160 : 900} getRowClassName={(row) => row.status === 'reversed' ? 'orders-v4-document-row--reversed' : undefined} onRowClick={setViewing} />}
+        {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage={t('ordersV4NoDocuments')} tableMinWidth={isPurchase ? 1160 : 900} getRowClassName={(row) => row.status === 'reversed' || row.status === 'cancelled' ? 'orders-v4-document-row--reversed' : undefined} onRowClick={setViewing} />}
         {!documentsQuery.isLoading && documents.length >= resultLimit && resultLimit < 2000 && <div className="mt-3 flex justify-center"><Button size="sm" variant="ghost" onClick={() => setResultLimit((current) => Math.min(2000, current + 250))}>{t('ordersV4LoadMore')}</Button></div>}
       </OrdersV4Panel>
       {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} allowFlexibleDocumentDates={allowFlexibleDocumentDates} />}
@@ -599,7 +612,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       onClose={onClose}
       size="2xl"
       side="start"
-      title={initialDocument ? `${initialDocument.editMode === 'correction' ? 'تعديل' : 'استلام'} ${initialDocument.documentNumber}` : isPurchase ? '\u0637\u0644\u0628\u0020\u0634\u0631\u0627\u0621\u0020\u062c\u062f\u064a\u062f\u0020\u2014\u0020\u0637\u0644\u0628\u0627\u062a\u0020V4' : isCancellation ? t('ordersV4CancellationTitle') : t('ordersV4NewInternalRegistrationTitle')}
+      title={initialDocument ? `${initialDocument.editMode === 'correction' ? '\u062a\u0639\u062f\u064a\u0644' : '\u0627\u0633\u062a\u0644\u0627\u0645 \u0648\u062a\u0639\u062f\u064a\u0644'} ${initialDocument.documentNumber}` : isPurchase ? '\u0637\u0644\u0628\u0020\u0634\u0631\u0627\u0621\u0020\u062c\u062f\u064a\u062f\u0020\u2014\u0020\u0637\u0644\u0628\u0627\u062a\u0020V4' : isCancellation ? t('ordersV4CancellationTitle') : t('ordersV4NewInternalRegistrationTitle')}
       footer={<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {isPurchase && <div data-testid="orders-v4-live-purchase-total" aria-live="polite" className="flex min-h-11 items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 sm:min-w-64">
           <div>
@@ -614,7 +627,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
             {displayedPurchaseTotal == null ? '—' : `${v4Number(displayedPurchaseTotal)} ر.س`}
           </strong>
         </div>}
-        <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument?.editMode === 'correction' ? 'حفظ التعديل' : initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? t('save') : isCancellation ? t('ordersV4CancellationSaveRecord') : t('ordersV4SaveInternalRegistration'), onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: !date || (isPurchase && (lines.length === 0 || previewState !== 'ready')) }]} />
+        <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument?.editMode === 'correction' ? 'حفظ التعديل' : initialDocument ? '\u062d\u0641\u0638 \u0648\u0627\u0633\u062a\u0644\u0627\u0645' : isPurchase ? t('save') : isCancellation ? t('ordersV4CancellationSaveRecord') : t('ordersV4SaveInternalRegistration'), onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: !date || (isPurchase && (lines.length === 0 || previewState !== 'ready')) }]} />
       </div>}
     >
       <div className="flex flex-col gap-4">
@@ -769,13 +782,13 @@ function OrdersV4ReopenConfirmModal({
     title={delegateMode ? 'إعادة فتح للموظف' : 'تعديل الطلب'}
     footer={<DialogActions actions={[
       { key: 'cancel', label: 'إلغاء', role: 'cancel', onClick: onClose },
-      { key: 'confirm', label: delegateMode ? 'تحويل إلى انتظار الاستلام' : 'فتح للتعديل', role: 'edit', onClick: onConfirm, loading: busy },
+      { key: 'confirm', label: delegateMode ? '\u062a\u062d\u0648\u064a\u0644 \u0625\u0644\u0649 \u0637\u0644\u0628 \u062c\u0627\u0631\u064a' : '\u0641\u062a\u062d \u0644\u0644\u062a\u0639\u062f\u064a\u0644', role: 'edit', onClick: onConfirm, loading: busy },
     ]} />}
   >
     {document && <div className="flex flex-col gap-3">
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[13px] leading-7 text-blue-950">
         {delegateMode
-          ? 'سيظهر الطلب للكاشير بحالة انتظار الاستلام كتفويض صريح منك، حتى لو كان أقدم من 10 أيام. يبقى أثر المخزون والعهدة الحالي محفوظًا إلى أن يحفظ الكاشير التعديل؛ عندها فقط تطبق النواة فرق الأصناف والكميات والأسعار دفعة واحدة بصورة ذرية.'
+          ? 'سيظهر الطلب للكاشير كطلب جاري كتفويض صريح منك، حتى لو كان أقدم من 10 أيام. يبقى أثر المخزون والعهدة الحالي محفوظًا إلى أن يحفظ الكاشير التعديل؛ عندها فقط تطبق النواة فرق الأصناف والكميات والأسعار دفعة واحدة بصورة ذرية.'
           : `سيفتح الطلب للتعديل دون تغيير المخزون أو العهدة. عند الحفظ فقط تحسب النواة فرق الأصناف والكميات والأسعار وتطبقه دفعة واحدة بصورة ذرية؛ إما ينجح كاملًا أو لا يتغير شيء. ${cashierMode ? 'هذه الصلاحية متاحة للكاشير خلال آخر 10 أيام، أو بطلب مفوض صراحة من المالك.' : 'صلاحية المالك متاحة لأي طلب دون حد زمني.'}`}
       </div>
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-noorix-bg-muted p-3 text-[12px]">
@@ -817,12 +830,10 @@ function OrdersV4DocumentDetails({ document, canReopen, canDelegateReopen, canRe
     { key: document?.documentType === 'registration' ? 'operationalCost' : 'lineTotal', label: document?.documentType === 'registration' ? t('ordersV4Cost') : t('ordersV4Total'), numeric: true, render: (value) => `${v4Number(value)} ${lang === 'en' ? 'SR' : 'ر.س'}` },
   ];
   const statusLabel = document?.status === 'received'
-    ? ['direct-correction', 'delta-correction', 'atomic-correction'].includes(String(document.calculationSnapshot?.operation)) ? t('ordersV4StatusCorrectedReceived') : t('ordersV4StatusReceived')
+    ? t('ordersV4StatusReceived')
     : document?.status === 'prepared'
       ? t('ordersV4StatusAwaitingReceipt')
-      : document?.status === 'reversed'
-        ? document.calculationSnapshot?.correctedByDocumentId ? t('ordersV4StatusCorrected') : document.calculationSnapshot?.reopenedByDocumentId ? t('ordersV4StatusReopened') : t('ordersV4StatusReversed')
-        : t('ordersV4StatusCancelled');
+      : t('ordersV4StatusReversed');
   return <AdaptiveSheet
     open={!!document}
     onClose={onClose}
