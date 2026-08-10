@@ -7,7 +7,6 @@ import {
   type ReportInvoice,
   type ReportRowKey,
 } from './reports-general-profit-loss-model.util';
-import { categoryIsDescendantOf } from './reports-category-descendants.util';
 
 export function resolvePlCategoryMeta(cat: CategoryNode, categories: Map<string, CategoryNode>): ItemMeta {
   const parent = cat.parentId ? categories.get(cat.parentId) : null;
@@ -44,15 +43,15 @@ export function resolvePlItemMeta(
     };
   }
 
+  // The invoice category is the accounting decision captured for this document.
+  // Supplier categories are only entry defaults, so they must never override it
+  // in historical reporting.
+  const invoiceCategory = invoice.categoryId ? categories.get(invoice.categoryId) : null;
+  if (invoiceCategory) {
+    return resolvePlCategoryMeta(invoiceCategory, categories);
+  }
+
   if (invoice.expenseLine) {
-    const lineCatId = invoice.expenseLine.categoryId;
-    const supId = invoice.supplier?.supplierCategoryId ?? null;
-    if (groupKey === 'expenses' && supId && lineCatId && supId !== lineCatId) {
-      const supCat = categories.get(supId);
-      if (supCat && categoryIsDescendantOf(supId, lineCatId, categories)) {
-        return resolvePlCategoryMeta(supCat, categories);
-      }
-    }
     const category = categories.get(invoice.expenseLine.categoryId);
     const parent = category?.parentId ? categories.get(category.parentId) : null;
     return {
@@ -68,32 +67,10 @@ export function resolvePlItemMeta(
   }
 
   if ((groupKey === 'purchases' || groupKey === 'expenses') && invoice.supplier?.supplierCategoryId != null) {
-    const invId = invoice.categoryId ?? null;
-    const supId = invoice.supplier.supplierCategoryId;
-    const supCat = categories.get(supId);
+    const supCat = categories.get(invoice.supplier.supplierCategoryId);
     if (supCat) {
-      if (invId && supId !== invId && categoryIsDescendantOf(supId, invId, categories)) {
-        return resolvePlCategoryMeta(supCat, categories);
-      }
-      if (!invId) {
-        return resolvePlCategoryMeta(supCat, categories);
-      }
+      return resolvePlCategoryMeta(supCat, categories);
     }
-  }
-
-  const categoryId = invoice.categoryId || null;
-  const category = categoryId ? categories.get(categoryId) : null;
-  const parent = category?.parentId ? categories.get(category.parentId) : null;
-
-  if (category) {
-    return {
-      key: `category:${category.id}`,
-      labelAr: parent ? `${parent.nameAr} / ${category.nameAr}` : category.nameAr,
-      labelEn: parent
-        ? `${parent.nameEn || parent.nameAr} / ${category.nameEn || category.nameAr}`
-        : (category.nameEn || category.nameAr),
-      sortOrder: (parent?.sortOrder ?? 0) * 1000 + category.sortOrder,
-    };
   }
 
   const kindLabel = KIND_LABELS[invoice.kind] || { ar: invoice.kind, en: invoice.kind };
