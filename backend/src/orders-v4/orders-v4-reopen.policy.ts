@@ -3,6 +3,8 @@ import { ordersV4DateOnly, ordersV4RecentDateWindow, ordersV4SaudiToday } from '
 
 /** Daily safety window for routine cashier work. Owner-approved documents are an explicit exception. */
 export const ORDERS_V4_CASHIER_EDIT_WINDOW_DAYS = 10;
+export const ORDERS_V4_CASHIER_CREATE_FUTURE_DAYS = 1;
+export type OrdersV4DocumentDateAccess = 'owner' | 'staff';
 export type OrdersV4ReopenAccess = 'owner' | 'cashier';
 
 /**
@@ -21,6 +23,23 @@ export function ordersV4CashierEditDateRange(todayYmd = ordersV4SaudiToday()): {
 
 export function isOrdersV4CashierEditEligible(documentDate: Date, todayYmd = ordersV4SaudiToday()): boolean {
   const range = ordersV4CashierEditDateRange(todayYmd);
+  return documentDate >= range.gte && documentDate <= range.lte;
+}
+
+/**
+ * Staff may prepare a document for today, a recent correction day, or tomorrow.
+ * Tomorrow is intentionally allowed for the next operational shift, while receipt
+ * itself remains limited to today and the preceding nine days.
+ */
+export function ordersV4StaffDocumentDateRange(todayYmd = ordersV4SaudiToday()): { gte: Date; lte: Date } {
+  const recent = ordersV4CashierEditDateRange(todayYmd);
+  const tomorrow = new Date(recent.lte);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + ORDERS_V4_CASHIER_CREATE_FUTURE_DAYS);
+  return { gte: recent.gte, lte: tomorrow };
+}
+
+export function isOrdersV4StaffDocumentDateEligible(documentDate: Date, todayYmd = ordersV4SaudiToday()): boolean {
+  const range = ordersV4StaffDocumentDateRange(todayYmd);
   return documentDate >= range.gte && documentDate <= range.lte;
 }
 

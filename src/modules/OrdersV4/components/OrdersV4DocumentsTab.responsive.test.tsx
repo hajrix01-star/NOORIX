@@ -180,7 +180,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
     expect(screen.queryByLabelText('موقع المخزون')).toBeNull();
   });
 
-  it('suggests the calendar day after the latest document while keeping the date control editable', () => {
+  it('requires an explicit document date while keeping the date control editable', () => {
     ordersV4DocumentsMock.documents = [{
       id: 'registration-10', documentNumber: 'REG4-10', documentType: 'registration',
       documentDate: '2026-08-10T00:00:00.000Z', subtotal: '0', totalAmount: '0',
@@ -198,7 +198,7 @@ describe('OrdersV4DocumentsTab mobile document workflow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /تسجيل جديد/ }));
     const dateButton = screen.getByRole('button', { name: 'التاريخ' });
-    expect(dateButton.getAttribute('title')).toBe('2026-08-11');
+    expect(dateButton.getAttribute('title')).toBe('');
     expect(dateButton.getAttribute('aria-haspopup')).toBe('dialog');
     expect(dateButton.hasAttribute('disabled')).toBe(false);
   });

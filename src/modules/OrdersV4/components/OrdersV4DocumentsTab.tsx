@@ -14,7 +14,7 @@ import { buildOrdersV4WhatsAppText } from './ordersV4WhatsApp.utils';
 import { ordersV4CancellationReasonLabel } from './ordersV4CancellationReasons';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { ordersV4LocalizedName } from '../ordersV4Localization';
-import { suggestOrdersV4DocumentDate } from './ordersV4DocumentDate.utils';
+import { ordersV4StaffDocumentDateRange } from './ordersV4DocumentDate.utils';
 
 type DraftLine = OrdersV4DocumentDraftLine;
 
@@ -147,6 +147,7 @@ export function OrdersV4DocumentsTab({
   ownerReopenForStaff = false,
   reopenAsCashier = false,
   canReceive = false,
+  allowFlexibleDocumentDates = false,
   showOverviewCards = true,
   historyWindowDays,
   companyName = '',
@@ -165,6 +166,7 @@ export function OrdersV4DocumentsTab({
   ownerReopenForStaff?: boolean;
   reopenAsCashier?: boolean;
   canReceive?: boolean;
+  allowFlexibleDocumentDates?: boolean;
   showOverviewCards?: boolean;
   historyWindowDays?: number;
   companyName?: string;
@@ -185,7 +187,6 @@ export function OrdersV4DocumentsTab({
   const documentsQuery = useOrdersV4Documents(companyId, documentType, startDate, endDate, true, resultLimit, {
     sectionId: !isPurchase && sectionFilter ? sectionFilter : undefined,
   });
-  const latestDocumentQuery = useOrdersV4Documents(companyId, documentType, '2000-01-01', '2100-12-31', canCreate, 1);
   const summaryQuery = useOrdersV4Summary(companyId, startDate, endDate, canReport);
   const reverseMutation = useReverseOrdersV4Document(companyId);
   const undoReverseMutation = useUndoReverseOrdersV4Document(companyId);
@@ -203,7 +204,6 @@ export function OrdersV4DocumentsTab({
     [documents],
   );
   const filteredDocuments = documents;
-  const suggestedDocumentDate = suggestOrdersV4DocumentDate(latestDocumentQuery.data?.[0]?.documentDate, getSaudiToday());
   const { openPrintDocumentPreview, printPreviewModal } = usePrintPreview({
     title: isPurchase ? 'طباعة الطلب' : 'طباعة التسجيل الداخلي',
     closeLabel: 'إغلاق',
@@ -325,9 +325,9 @@ export function OrdersV4DocumentsTab({
         {!documentsQuery.isLoading && <SimpleTable columns={columns} data={filteredDocuments} emptyMessage={t('ordersV4NoDocuments')} tableMinWidth={isPurchase ? 1160 : 900} getRowClassName={(row) => row.status === 'reversed' ? 'orders-v4-document-row--reversed' : undefined} onRowClick={setViewing} />}
         {!documentsQuery.isLoading && documents.length >= resultLimit && resultLimit < 2000 && <div className="mt-3 flex justify-center"><Button size="sm" variant="ghost" onClick={() => setResultLimit((current) => Math.min(2000, current + 250))}>{t('ordersV4LoadMore')}</Button></div>}
       </OrdersV4Panel>
-      {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} suggestedDate={suggestedDocumentDate} />}
-      {canCreate && !isPurchase && <OrdersV4DocumentModal open={cancellationOpen} onClose={() => setCancellationOpen(false)} companyId={companyId} documentType="registration" registrationEntryType="cancellation" bootstrap={bootstrap} suggestedDate={suggestedDocumentDate} />}
-      {canReceive && receiving && <OrdersV4DocumentModal open={!!receiving} onClose={() => setReceiving(null)} companyId={companyId} documentType="purchase" bootstrap={bootstrap} initialDocument={receiving} />}
+      {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} allowFlexibleDocumentDates={allowFlexibleDocumentDates} />}
+      {canCreate && !isPurchase && <OrdersV4DocumentModal open={cancellationOpen} onClose={() => setCancellationOpen(false)} companyId={companyId} documentType="registration" registrationEntryType="cancellation" bootstrap={bootstrap} allowFlexibleDocumentDates={allowFlexibleDocumentDates} />}
+      {canReceive && receiving && <OrdersV4DocumentModal open={!!receiving} onClose={() => setReceiving(null)} companyId={companyId} documentType="purchase" bootstrap={bootstrap} initialDocument={receiving} allowFlexibleDocumentDates={allowFlexibleDocumentDates} />}
       <OrdersV4DocumentDetails
         document={viewing}
         canReopen={canReopen}
@@ -405,8 +405,8 @@ export function OrdersV4DocumentsTab({
   );
 }
 
-function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registrationEntryType = 'issue', bootstrap, initialDocument, suggestedDate = getSaudiToday() }: {
-  open: boolean; onClose: () => void; companyId: string; documentType: 'purchase' | 'registration'; registrationEntryType?: 'issue' | 'cancellation'; bootstrap?: OrdersV4Bootstrap; initialDocument?: OrdersV4Document | null; suggestedDate?: string;
+function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registrationEntryType = 'issue', bootstrap, initialDocument, allowFlexibleDocumentDates = false }: {
+  open: boolean; onClose: () => void; companyId: string; documentType: 'purchase' | 'registration'; registrationEntryType?: 'issue' | 'cancellation'; bootstrap?: OrdersV4Bootstrap; initialDocument?: OrdersV4Document | null; allowFlexibleDocumentDates?: boolean;
 }) {
   const { t, lang } = useTranslation();
   const createMutation = useCreateOrdersV4Document(companyId);
@@ -414,7 +414,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
   const previewMutation = usePreviewOrdersV4Document(companyId);
   const previewDocument = previewMutation.mutateAsync;
   const mutation = initialDocument ? receiveMutation : createMutation;
-  const [date, setDate] = useState(getSaudiToday());
+  const [date, setDate] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'custody' | 'cash' | 'transfer'>('custody');
   const [sectionId, setSectionId] = useState('');
   const [locationId, setLocationId] = useState('');
@@ -426,10 +426,15 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
   const [purchasePreview, setPurchasePreview] = useState<OrdersV4DocumentPreview | null>(null);
   const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const previewRequestId = useRef(0);
-  const dateTouchedRef = useRef(false);
   const wasOpenRef = useRef(false);
   const isPurchase = documentType === 'purchase';
   const isCancellation = !isPurchase && registrationEntryType === 'cancellation';
+  const todayYmd = getSaudiToday();
+  const dateBounds = useMemo(() => {
+    if (allowFlexibleDocumentDates) return {};
+    const range = ordersV4StaffDocumentDateRange(todayYmd);
+    return { min: range.min, max: initialDocument ? todayYmd : range.max };
+  }, [allowFlexibleDocumentDates, initialDocument, todayYmd]);
   const items = (bootstrap?.items ?? []).filter((item) => item.isActive
     && (isPurchase ? item.itemType !== 'sale' : item.itemType !== 'purchased')
     && (!isPurchase || !!initialDocument || item.units.some((row) => row.isActive && row.isOrderEnabled && row.lastPrice != null)));
@@ -476,8 +481,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       })));
       return;
     }
-    if (justOpened) dateTouchedRef.current = false;
-    if (!dateTouchedRef.current) setDate(suggestedDate);
+    if (justOpened) setDate('');
     if (!justOpened) return;
     setPaymentMethod('custody');
     setSectionId('');
@@ -486,7 +490,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
     setNotes('');
     setLines([]);
     setSelectedItem(null);
-  }, [defaultLocationId, initialDocument, open, suggestedDate]);
+  }, [defaultLocationId, initialDocument, open]);
 
   useEffect(() => {
     const requestId = ++previewRequestId.current;
@@ -559,7 +563,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
 
   async function submit() {
     const resolvedLocation = locationId || bootstrap?.locations.find((row) => row.isActive)?.id || '';
-    if (!resolvedLocation || lines.length === 0 || lines.some((line) => !line.itemId || !line.unitId || Number(line.quantity) <= 0)) return;
+    if (!date || !resolvedLocation || lines.length === 0 || lines.some((line) => !line.itemId || !line.unitId || Number(line.quantity) <= 0)) return;
     if (isCancellation && lines.some((line) => !line.cancellationReasons?.length || (line.cancellationReasons.includes('other') && !line.cancellationNote?.trim()))) return;
     const payload: OrdersV4DocumentPayload = {
       documentType,
@@ -595,7 +599,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       onClose={onClose}
       size="2xl"
       side="start"
-      title={initialDocument ? `${initialDocument.editMode === 'correction' ? 'تعديل' : 'استلام'} ${initialDocument.documentNumber}` : isPurchase ? 'طلب شراء جديد — طلبات V4' : isCancellation ? t('ordersV4CancellationTitle') : t('ordersV4NewInternalRegistrationTitle')}
+      title={initialDocument ? `${initialDocument.editMode === 'correction' ? 'تعديل' : 'استلام'} ${initialDocument.documentNumber}` : isPurchase ? '\u0637\u0644\u0628\u0020\u0634\u0631\u0627\u0621\u0020\u062c\u062f\u064a\u062f\u0020\u2014\u0020\u0637\u0644\u0628\u0627\u062a\u0020V4' : isCancellation ? t('ordersV4CancellationTitle') : t('ordersV4NewInternalRegistrationTitle')}
       footer={<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {isPurchase && <div data-testid="orders-v4-live-purchase-total" aria-live="polite" className="flex min-h-11 items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 sm:min-w-64">
           <div>
@@ -610,13 +614,13 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
             {displayedPurchaseTotal == null ? '—' : `${v4Number(displayedPurchaseTotal)} ر.س`}
           </strong>
         </div>}
-        <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument?.editMode === 'correction' ? 'حفظ التعديل' : initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? 'حفظ طلب الغد' : isCancellation ? t('ordersV4CancellationSaveRecord') : t('ordersV4SaveInternalRegistration'), onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: isPurchase && (lines.length === 0 || previewState !== 'ready') }]} />
+        <DialogActions className="w-full sm:w-auto" actions={[{ key: 'cancel', label: t('cancel'), onClick: onClose, role: 'cancel' }, { key: 'save', label: initialDocument?.editMode === 'correction' ? 'حفظ التعديل' : initialDocument ? 'تأكيد الاستلام والترحيل' : isPurchase ? t('save') : isCancellation ? t('ordersV4CancellationSaveRecord') : t('ordersV4SaveInternalRegistration'), onClick: submit, role: isCancellation ? 'danger' : 'save', loading: mutation.isPending, disabled: !date || (isPurchase && (lines.length === 0 || previewState !== 'ready')) }]} />
       </div>}
     >
       <div className="flex flex-col gap-4">
         {isCancellation && <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-[12px] font-semibold leading-6 text-red-900">{t('ordersV4CancellationIndependentHint')}</div>}
         <div className={`grid gap-3 sm:grid-cols-2 ${isPurchase ? 'lg:grid-cols-3' : ''}`}>
-          <OrdersV4Field label={t('ordersV4Date')}><TransactionDatePicker value={date} onValueChange={(value) => { dateTouchedRef.current = true; setDate(value); }} /></OrdersV4Field>
+          <OrdersV4Field label={t('ordersV4Date')}><TransactionDatePicker required value={date} min={dateBounds.min} max={dateBounds.max} initialViewDate={todayYmd} onValueChange={setDate} /></OrdersV4Field>
           {isPurchase && (
             <OrdersV4Field label="طريقة الدفع">
               <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="طريقة الدفع">

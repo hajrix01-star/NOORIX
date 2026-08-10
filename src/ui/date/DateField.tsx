@@ -37,6 +37,7 @@ export type DateFieldProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>,
   min?: string;
   max?: string;
   lang?: NoorixDateLanguage | string;
+  initialViewDate?: string;
   placeholder?: string;
 };
 
@@ -100,6 +101,7 @@ export default function DateField({
   min,
   max,
   name,
+  initialViewDate,
   lang = 'ar',
   placeholder = 'YYYY-MM-DD',
   title,
@@ -109,7 +111,7 @@ export default function DateField({
   const generatedId = useId();
   const id = externalId ?? generatedId;
   const parsedValue = parseYmd(value);
-  const fallback = parsedValue || parseYmd(min || '') || todayParts();
+  const fallback = parsedValue || parseYmd(initialViewDate || '') || parseYmd(min || '') || todayParts();
   const [view, setView] = useState(() => clampView(fallback.year, fallback.month, min, max));
   const calendarYear = view.year;
   const calendarMonth = view.month;

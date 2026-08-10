@@ -40,8 +40,10 @@ import {
 } from './orders-v4-document-format.util';
 import {
   isOrdersV4CashierEditEligible,
+  isOrdersV4StaffDocumentDateEligible,
   hasOrdersV4OwnerReopenDelegation,
   type OrdersV4ReopenAccess,
+  type OrdersV4DocumentDateAccess,
 } from './orders-v4-reopen.policy';
 
 @Injectable()
@@ -166,7 +168,7 @@ export class OrdersV4DocumentsService {
     };
   }
 
-  async create(companyId: string, input: OrdersV4DocumentInput) {
+  async create(companyId: string, input: OrdersV4DocumentInput, dateAccess: OrdersV4DocumentDateAccess = 'staff') {
     const tenantId = TenantContext.getTenantId();
     const userId = TenantContext.getUserId();
     if (!['purchase', 'registration'].includes(input.documentType)) throw new BadRequestException('نوع مستند V4 غير صالح');
@@ -182,6 +184,9 @@ export class OrdersV4DocumentsService {
     }
     if (input.documentType === 'registration' && input.paymentMethod) throw new BadRequestException('التسجيل الداخلي لا يقبل طريقة دفع');
     const documentDate = ordersV4DateOnly(input.documentDate, 'تاريخ المستند');
+    if (dateAccess === 'staff' && !isOrdersV4StaffDocumentDateEligible(documentDate)) {
+      throw new BadRequestException('\u064a\u0645\u0643\u0646\u0020\u0644\u0644\u0645\u0648\u0638\u0641\u0020\u0627\u062e\u062a\u064a\u0627\u0631\u0020\u0627\u0644\u064a\u0648\u0645\u0020\u0623\u0648\u0020\u0622\u062e\u0631\u0020\u0039\u0020\u0623\u064a\u0627\u0645\u0020\u0623\u0648\u0020\u0627\u0644\u063a\u062f\u0020\u0641\u0642\u0637');
+    }
     const inputRequestHash = ordersV4DocumentRequestHash(input);
     let pettyCashAmount: Prisma.Decimal | null = null;
     if (input.documentType === 'purchase' && input.paymentMethod === 'custody' && input.pettyCashAmount != null && input.pettyCashAmount !== '') {
@@ -665,6 +670,9 @@ export class OrdersV4DocumentsService {
           throw new BadRequestException('يمكن للكاشير استلام طلبات آخر 10 أيام فقط');
         }
         if (purchase.status !== 'prepared') throw new BadRequestException('الطلب ليس في حالة انتظار الاستلام');
+        if (access === 'cashier' && !isOrdersV4CashierEditEligible(receivedDate)) {
+          throw new BadRequestException('\u064a\u0645\u0643\u0646\u0020\u0644\u0644\u0643\u0627\u0634\u064a\u0631\u0020\u062a\u0633\u062c\u064a\u0644\u0020\u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645\u0020\u0628\u062a\u0627\u0631\u064a\u062e\u0020\u0627\u0644\u064a\u0648\u0645\u0020\u0623\u0648\u0020\u0622\u062e\u0631\u0020\u0039\u0020\u0623\u064a\u0627\u0645\u0020\u0641\u0642\u0637');
+        }
         if (purchase.revision !== input.revision) throw new BadRequestException('تم تعديل الطلب؛ أعد تحميله قبل الاستلام');
         receivedFromRevision = purchase.revision;
       }

@@ -212,7 +212,11 @@ export class OrdersV4Controller {
     if (!userCan(user, PERMISSIONS.ORDERS_V4_WRITE) && !userCan(user, submitPermission(body.documentType))) {
       throw new ForbiddenException('لا تملك صلاحية إنشاء هذا النوع من مستندات V4');
     }
-    return this.documents.create(requireCompanyId(companyId), body);
+    return this.documents.create(
+      requireCompanyId(companyId),
+      body,
+      String(user.role || '').toLowerCase() === 'owner' ? 'owner' : 'staff',
+    );
   }
 
   @Post('documents/preview')
