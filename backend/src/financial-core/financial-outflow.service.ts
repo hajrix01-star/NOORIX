@@ -246,7 +246,7 @@ export class FinancialOutflowService {
         status: 'active',
       },
       orderBy: { createdAt: 'asc' },
-      select: { entryDate: true, debitAccountId: true },
+      select: { entryDate: true, debitAccountId: true, reportingClass: true },
     });
     const entryDate = first?.entryDate ?? inv.entryDate;
     const debitAccountId =
@@ -267,7 +267,7 @@ export class FinancialOutflowService {
       debitAccountId,
       entryDate,
       referenceType,
-      reportingClassForOutflowKind(inv.kind),
+      (first?.reportingClass as LedgerReportingClass | undefined) ?? reportingClassForOutflowKind(inv.kind),
       userId,
       (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );
@@ -353,7 +353,7 @@ export class FinancialOutflowService {
         status: 'active',
       },
       orderBy: { createdAt: 'asc' },
-      select: { entryDate: true, debitAccountId: true },
+      select: { entryDate: true, debitAccountId: true, reportingClass: true },
     });
     const entryDate = first?.entryDate ?? inv.entryDate;
     const debitAccountId =
@@ -374,7 +374,7 @@ export class FinancialOutflowService {
       debitAccountId,
       entryDate,
       referenceType,
-      reportingClassForOutflowKind(inv.kind),
+      (first?.reportingClass as LedgerReportingClass | undefined) ?? reportingClassForOutflowKind(inv.kind),
       userId,
       (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );

@@ -775,6 +775,8 @@ model Category {
   tenantId  String   @map("tenant_id") // RLS
   companyId String   @map("company_id")
   accountId String?  @map("account_id") // ط±ط¨ط· ط¨ط¬ط¯ظˆظ„ ط§ظ„ط­ط³ط§ط¨ط§طھ â€” ظ„ظ„ظپط¦ط§طھ ط§ظ„ظ…ظڈط¸ظ‡ط±ط© ظپظٹ P&L
+  /// Reporting classification for new operational postings. Ledger entries keep their own snapshot.
+  reportingClass String @default("operating_other_expense") @map("reporting_class")
   code      String?  @map("code") // ظƒظˆط¯ طھط­ظ„ظٹظ„ظٹ: ط£ط¨ ظ…ط«ظ„ PUR-001طŒ ظپط±ط¹ ظ…ط«ظ„ P1-1 ط£ظˆ E3-2
   nameAr    String   @map("name_ar")
   nameEn    String?  @map("name_en")
@@ -798,6 +800,7 @@ model Category {
   @@index([companyId])
   @@index([companyId, parentId])
   @@index([accountId])
+  @@index([companyId, reportingClass])
   @@map("categories")
 }
 

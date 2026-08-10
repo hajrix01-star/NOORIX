@@ -6,6 +6,7 @@ import { RolesGuard }         from '../auth/guards/roles.guard';
 import { RequirePermission }  from '../auth/decorators/require-permission.decorator';
 import { requireCompanyId }   from '../common/utils/require-company-id';
 import { CategoriesService }  from './categories.service';
+import type { CategoryReportingClass } from './category-reporting-classification.util';
 
 @Controller('categories')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -29,8 +30,9 @@ export class CategoriesController {
     icon?:         string;
     sortOrder?:    number;
     createAccount?: boolean;
+    reportingClass?: string;
   }) {
-    return this.categoriesService.create(body);
+    return this.categoriesService.create({ ...body, reportingClass: body.reportingClass as CategoryReportingClass | undefined });
   }
 
   @Patch(':id')
@@ -47,6 +49,7 @@ export class CategoriesController {
       icon?:      string | null;
       sortOrder?: number;
       isActive?:  boolean;
+      reportingClass?: string;
     },
   ) {
     return this.categoriesService.update(id, requireCompanyId(companyId), {
@@ -57,6 +60,7 @@ export class CategoriesController {
       icon:      body.icon,
       sortOrder: body.sortOrder,
       isActive:  body.isActive,
+      reportingClass: body.reportingClass as CategoryReportingClass | undefined,
     });
   }
 

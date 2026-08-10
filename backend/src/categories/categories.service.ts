@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }  from '../common/tenant-context';
+import { defaultCategoryReportingClass, isCategoryReportingClass, isReportingClassCompatibleWithCategoryType, type CategoryReportingClass } from './category-reporting-classification.util';
 
 /**
  * يستخلص بادئة الكود التحليلي من كود الحساب.
@@ -73,6 +74,7 @@ export class CategoriesService {
     sortOrder?:     number;
     code?:          string;          // كود يدوي اختياري
     createAccount?: boolean;         // إنشاء Account مطابق + ربط Category به
+    reportingClass?: CategoryReportingClass;
   }) {
     const tenantId = TenantContext.getTenantId();
     if (!dto.nameAr?.trim()) throw new BadRequestException('اسم التصنيف بالعربية مطلوب');
@@ -95,7 +97,11 @@ export class CategoriesService {
     });
     if (duplicate) throw new BadRequestException('يوجد تصنيف بنفس الاسم على هذا المستوى');
 
-    const type = dto.type || 'purchase';
+    let type = dto.type || 'purchase';
+    if (dto.reportingClass !== undefined && !isCategoryReportingClass(dto.reportingClass)) {
+      throw new BadRequestException('تصنيف التقرير غير صالح');
+    }
+    let reportingClass = dto.reportingClass ?? defaultCategoryReportingClass(type);
     let accountId: string | null = null;
     let categoryCode: string | null = dto.code?.trim() || null;
 
@@ -106,6 +112,8 @@ export class CategoriesService {
         where: { id: dto.parentId, companyId: dto.companyId },
       });
       accountId = parent?.accountId ?? null;
+      type = parent?.type ?? type;
+      reportingClass = (parent?.reportingClass as CategoryReportingClass | undefined) ?? reportingClass;
       // توليد كود تحليلي تلقائي إن لم يُمرَّر يدوياً
       if (!categoryCode) {
         categoryCode = await this.generateChildCode(dto.companyId, dto.parentId);
@@ -140,12 +148,17 @@ export class CategoriesService {
       if (!categoryCode) categoryCode = accountCode;
     }
 
+    if (!isReportingClassCompatibleWithCategoryType(type, reportingClass)) {
+      throw new BadRequestException('تصنيف التقرير لا يتوافق مع نوع الفئة.');
+    }
+
     return this.prisma.category.create({
       data: {
         tenantId,
         companyId: dto.companyId,
         accountId,
         code:      categoryCode || null,
+        reportingClass,
         nameAr:    dto.nameAr.trim(),
         nameEn:    dto.nameEn?.trim() || null,
         parentId:  dto.parentId || null,
@@ -165,6 +178,7 @@ export class CategoriesService {
     icon?: string | null;
     sortOrder?: number;
     isActive?: boolean;
+    reportingClass?: CategoryReportingClass;
   }) {
     const cat = await this.prisma.category.findFirst({ where: { id, companyId } });
     if (!cat) throw new NotFoundException('التصنيف غير موجود');
@@ -184,7 +198,15 @@ export class CategoriesService {
       if (duplicate) throw new BadRequestException('يوجد تصنيف بنفس الاسم على هذا المستوى');
     }
 
+    if (dto.reportingClass !== undefined && !isCategoryReportingClass(dto.reportingClass)) {
+      throw new BadRequestException('تصنيف التقرير غير صالح');
+    }
+
+    const targetType = dto.type ?? cat.type;
+    const requestedReportingClass = dto.reportingClass ?? (dto.type !== undefined ? defaultCategoryReportingClass(targetType) : undefined);
     let newAccountId: string | null | undefined = undefined; // undefined = لا تغيير
+    let newType: string | undefined = dto.type;
+    let newReportingClass: CategoryReportingClass | undefined = requestedReportingClass;
     if (dto.parentId !== undefined) {
       if (dto.parentId) {
         if (dto.parentId === id) throw new BadRequestException('لا يمكن جعل التصنيف والداً لنفسه');
@@ -195,10 +217,18 @@ export class CategoriesService {
         if (parent.parentId) throw new BadRequestException('لا يمكن إضافة فئة فرعية تحت فئة فرعية (مستويان فقط)');
         // الفئة الفرعية ترث accountId من الأب الجديد
         newAccountId = parent.accountId;
+        newType = parent.type;
+        newReportingClass = parent.reportingClass as CategoryReportingClass;
       } else {
         // تحويل إلى فئة رئيسية → لا حساب موروث (يبقى null حتى يُربط يدوياً)
         newAccountId = null;
       }
+    }
+
+    const finalType = newType ?? cat.type;
+    const finalReportingClass = newReportingClass ?? (cat.reportingClass as CategoryReportingClass);
+    if (!isReportingClassCompatibleWithCategoryType(finalType, finalReportingClass)) {
+      throw new BadRequestException('تصنيف التقرير لا يتوافق مع نوع الفئة.');
     }
 
     return this.prisma.category.update({
@@ -206,9 +236,10 @@ export class CategoriesService {
       data: {
         ...(dto.nameAr     !== undefined ? { nameAr:    dto.nameAr.trim() }          : {}),
         ...(dto.nameEn     !== undefined ? { nameEn:    dto.nameEn?.trim() || null }  : {}),
-        ...(dto.type       !== undefined ? { type:      dto.type }                    : {}),
+        ...(newType        !== undefined ? { type:      newType }                     : {}),
         ...(dto.parentId   !== undefined ? { parentId:  dto.parentId || null }        : {}),
         ...(newAccountId   !== undefined ? { accountId: newAccountId }                : {}),
+        ...(newReportingClass !== undefined ? { reportingClass: newReportingClass } : {}),
         ...(dto.icon       !== undefined ? { icon:      dto.icon }                    : {}),
         ...(dto.sortOrder  !== undefined ? { sortOrder: dto.sortOrder }               : {}),
         ...(dto.isActive   !== undefined ? { isActive:  dto.isActive }                : {}),

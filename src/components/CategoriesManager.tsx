@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CategoriesManager — مكون مشترك لإدارة التصنيفات (فئات الحسابات)
  * يُستخدم في: Suppliers/CategoriesTab (الموردين والتصنيفات)
  */
@@ -44,6 +44,7 @@ export const CategoriesManager = memo(function CategoriesManager({
     nameAr: '',
     nameEn: '',
     type: 'purchase',
+    reportingClass: 'operating_purchase',
     icon: '',
     parentId: '',
   });
@@ -74,11 +75,24 @@ export const CategoriesManager = memo(function CategoriesManager({
       ...p,
       parentId: parentId || '',
       type: (parent?.type as CategoryKind) || p.type,
+      reportingClass: parent?.reportingClass || p.reportingClass,
     }));
   };
 
   const handleFieldChange = <K extends keyof CategoryFormState>(key: K, value: CategoryFormState[K]) => {
-    setForm((previous) => ({ ...previous, [key]: value }));
+    setForm((previous) => {
+      if (key !== 'type') return { ...previous, [key]: value };
+      const type = value as CategoryKind;
+      return {
+        ...previous,
+        type,
+        reportingClass: type === 'purchase'
+          ? 'operating_purchase'
+          : type === 'sale'
+            ? 'operating_revenue'
+            : 'operating_other_expense',
+      };
+    });
   };
 
   const rows = useMemo((): CategoryRow[] => {
@@ -107,7 +121,7 @@ export const CategoriesManager = memo(function CategoriesManager({
   );
 
   const resetFormState = useCallback(() => {
-    setForm({ nameAr: '', nameEn: '', type: 'purchase', icon: '', parentId: '' });
+    setForm({ nameAr: '', nameEn: '', type: 'purchase', reportingClass: 'operating_purchase', icon: '', parentId: '' });
     setEditing(null);
   }, []);
 
@@ -127,6 +141,7 @@ export const CategoriesManager = memo(function CategoriesManager({
       nameAr: cat.nameAr || '',
       nameEn: cat.nameEn || '',
       type: (cat.type as CategoryKind) || 'purchase',
+      reportingClass: cat.reportingClass || 'operating_other_expense',
       icon: cat.icon || '',
       parentId: cat.parentId || '',
     });
@@ -157,6 +172,7 @@ export const CategoriesManager = memo(function CategoriesManager({
             type: form.type,
             parentId: form.parentId || null,
             icon: form.icon || null,
+            reportingClass: form.reportingClass,
           },
         },
         {
@@ -177,6 +193,7 @@ export const CategoriesManager = memo(function CategoriesManager({
           type: form.type,
           icon: form.icon || undefined,
           parentId: form.parentId || undefined,
+          reportingClass: form.reportingClass,
           createAccount: true,
         },
         {

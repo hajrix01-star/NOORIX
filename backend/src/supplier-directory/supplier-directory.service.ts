@@ -276,6 +276,7 @@ export class SupplierDirectoryService implements OnModuleInit {
         accountId: parent.accountId,
         parentId: parent.id,
         code: categoryCode,
+        reportingClass: parent.reportingClass,
         nameAr: fallback.nameAr,
         nameEn: fallback.nameEn,
         type: parent.type,

@@ -1,6 +1,7 @@
 /**
  * إنشاء فاتورة صرف + قيود + تخصيصات + AuditLog — مسار مشترك بين processOutflow و processOutflowBatch
  */
+import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { validateJournalBalance, type JsonObject } from './financial-core-helpers.util';
 import { FinancialCoreSupportService } from './financial-core-support.service';
@@ -13,6 +14,65 @@ import {
   computeSupplierInvoiceDedupKeyForOutflowDto,
 } from '../invoice/invoice-supplier-invoice-dedup.util';
 
+type OperationalCategoryPosting = {
+  accountId: string | null;
+  reportingClass: LedgerReportingClass;
+  categoryId: string;
+  supplierId?: string;
+};
+
+async function resolveOperationalCategoryPosting(
+  tx: TxClient,
+  dto: OutflowDto,
+): Promise<OperationalCategoryPosting | null> {
+  if (!['purchase', 'expense', 'fixed_expense', 'hr_expense'].includes(dto.kind)) {
+    return null;
+  }
+
+  let categoryId = dto.categoryId;
+  let supplierId = dto.supplierId;
+  if (dto.expenseLineId) {
+    const line = await tx.expenseLine.findFirst({
+      where: { id: dto.expenseLineId, companyId: dto.companyId, isActive: true },
+      select: { categoryId: true, supplierId: true, kind: true },
+    });
+    if (!line) {
+      throw new BadRequestException('بند المصروف المختار غير موجود أو غير نشط لهذه الشركة.');
+    }
+    if (dto.kind !== line.kind) {
+      throw new BadRequestException('نوع الفاتورة لا يطابق بند المصروف المختار.');
+    }
+    if (dto.categoryId && dto.categoryId !== line.categoryId) {
+      throw new BadRequestException('الفئة لا تطابق بند المصروف المختار.');
+    }
+    if (dto.supplierId && dto.supplierId !== line.supplierId) {
+      throw new BadRequestException('المورد لا يطابق بند المصروف المختار.');
+    }
+    categoryId = line.categoryId;
+    supplierId = line.supplierId;
+  }
+
+  if (!categoryId) return null;
+  const category = await tx.category.findFirst({
+    where: { id: categoryId, companyId: dto.companyId, isActive: true },
+    select: { accountId: true, reportingClass: true, type: true },
+  });
+  if (!category) {
+    throw new BadRequestException('الفئة المختارة غير موجودة أو غير نشطة لهذه الشركة.');
+  }
+  if (dto.kind === 'purchase' && category.type !== 'purchase') {
+    throw new BadRequestException('فئة الفاتورة لا تطابق نوع المشتريات.');
+  }
+  if (dto.kind !== 'purchase' && category.type !== 'expense') {
+    throw new BadRequestException('فئة المصروف لا تطابق نوع فاتورة الصرف.');
+  }
+  return {
+    accountId: category.accountId,
+    reportingClass: category.reportingClass as LedgerReportingClass,
+    categoryId,
+    ...(supplierId ? { supplierId } : {}),
+  };
+}
 export async function persistOutflowInvoiceWithLedger(
   tx: TxClient,
   support: FinancialCoreSupportService,
@@ -33,34 +93,41 @@ export async function persistOutflowInvoiceWithLedger(
   const { tenantId, userId, dto, entryDate, txDate, invoiceNumber, reportingClassOverride } = p;
   await fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
 
-  const supplierInvoiceDedupKey = computeSupplierInvoiceDedupKeyForOutflowDto(dto);
+  const categoryPosting = await resolveOperationalCategoryPosting(tx, dto);
+  const effectiveDto: OutflowDto = {
+    ...dto,
+    ...(categoryPosting ? { categoryId: categoryPosting.categoryId } : {}),
+    ...(categoryPosting?.supplierId ? { supplierId: categoryPosting.supplierId } : {}),
+  };
+  const supplierInvoiceDedupKey = computeSupplierInvoiceDedupKeyForOutflowDto(effectiveDto);
   await assertNoActiveDuplicateSupplierInvoiceDedupKey(tx, {
-    companyId: dto.companyId,
-    supplierId: dto.supplierId,
+    companyId: effectiveDto.companyId,
+    supplierId: effectiveDto.supplierId,
     dedupKey: supplierInvoiceDedupKey,
   });
 
-  const splits = await support.resolveOutflowVaultSplits(tx, dto.companyId, dto);
+  const splits = await support.resolveOutflowVaultSplits(tx, effectiveDto.companyId, effectiveDto);
   const debitAccountId =
-    dto.debitAccountId ?? (await support.getDefaultExpenseAccount(tx, dto.companyId, dto.kind));
+    categoryPosting?.accountId ?? effectiveDto.debitAccountId ?? (await support.getDefaultExpenseAccount(tx, effectiveDto.companyId, effectiveDto.kind));
   const invoiceVaultId = splits.length === 1 ? splits[0].vaultId : null;
 
   const referenceType =
-    dto.kind === 'salary' ? 'salary' : dto.kind === 'advance' ? 'advance' : 'invoice';
-  const reportingClass = reportingClassOverride ?? reportingClassForOutflowKind(dto.kind);
+    effectiveDto.kind === 'salary' ? 'salary' : effectiveDto.kind === 'advance' ? 'advance' : 'invoice';
+  const reportingClass =
+    reportingClassOverride ?? categoryPosting?.reportingClass ?? reportingClassForOutflowKind(effectiveDto.kind);
 
   const invoice = await tx.invoice.create({
     data: {
       tenantId,
       companyId:       dto.companyId,
-      supplierId:      dto.supplierId ?? null,
+      supplierId:      effectiveDto.supplierId ?? null,
       employeeId:      dto.employeeId ?? null,
       expenseLineId:   dto.expenseLineId ?? null,
-      categoryId:      dto.categoryId ?? null,
+      categoryId:      effectiveDto.categoryId ?? null,
       invoiceNumber:         invoiceNumber,
       supplierInvoiceNumber: dto.supplierInvoiceNumber ?? null,
       supplierInvoiceDedupKey,
-      kind:                  dto.kind,
+      kind:                  effectiveDto.kind,
       totalAmount:           new Prisma.Decimal(dto.totalAmount),
       netAmount:             new Prisma.Decimal(dto.netAmount),
       taxAmount:             new Prisma.Decimal(dto.taxAmount),

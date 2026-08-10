@@ -20,6 +20,7 @@ export type CategoryNode = {
   nameAr?: string | null;
   nameEn?: string | null;
   type?: string;
+  reportingClass?: string;
   icon?: string | null;
   parentId?: string | null;
   code?: string | null;
@@ -37,6 +38,7 @@ export type CategoryFormState = {
   nameAr: string;
   nameEn: string;
   type: CategoryKind;
+  reportingClass: string;
   icon: string;
   parentId: string;
 };
@@ -126,6 +128,20 @@ export function CategoriesManagerForm({
             <option value="purchase">{t('categoryTypes')}</option>
             <option value="expense">{t('categoryTypeExpense')}</option>
             <option value="sale">{t('categoryTypeSale')}</option>
+          </Input>
+          <Input
+            type="select"
+            label={lang === 'en' ? 'Report classification' : 'تصنيف التقرير'}
+            value={form.reportingClass}
+            onChange={(event: ChangeEvent<HTMLSelectElement>) => onFieldChange('reportingClass', event.target.value)}
+          >
+            {form.type === 'purchase' && <option value="operating_purchase">{lang === 'en' ? 'Purchases' : 'مشتريات'}</option>}
+            {form.type === 'sale' && <option value="operating_revenue">{lang === 'en' ? 'Revenue' : 'إيرادات'}</option>}
+            {form.type === 'expense' && <>
+              <option value="operating_recurring_expense">{lang === 'en' ? 'Recurring expenses' : 'مصاريف دورية'}</option>
+              <option value="operating_other_expense">{lang === 'en' ? 'Other expenses' : 'مصاريف أخرى'}</option>
+              <option value="operating_payroll">{lang === 'en' ? 'Payroll' : 'رواتب وأجور'}</option>
+            </>}
           </Input>
           <Input
             type="text"

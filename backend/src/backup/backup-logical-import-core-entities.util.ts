@@ -8,7 +8,7 @@ import {
 import { createImportedCompany } from './backup-logical-import-company.util';
 import { BackupLogicalImportTxParams } from './backup-logical-import-transaction.types';
 import { inferBankReconciliationEnabled } from '../vaults/vault-bank-reconciliation.util';
-
+import { defaultCategoryReportingClass, isCategoryReportingClass, type CategoryReportingClass } from '../categories/category-reporting-classification.util';
 export type BackupLogicalImportCoreMaps = {
   accountMap: Map<string, string>;
   categoryMap: Map<string, string>;
@@ -48,6 +48,7 @@ export async function importBackupLogicalCoreEntities(
   }
 
   const categoryMap = new Map<string, string>();
+  const categoryReportingClassMap = new Map<string, CategoryReportingClass>();
   let catRemaining = arr<Record<string, unknown>>(data.categories);
   while (catRemaining.length) {
     const batch = catRemaining.filter((c) => {
@@ -62,12 +63,19 @@ export async function importBackupLogicalCoreEntities(
       categoryMap.set(String(c.id), id);
       const accId = c.accountId ? accountMap.get(String(c.accountId)) : undefined;
       const parentId = c.parentId ? categoryMap.get(String(c.parentId)) : undefined;
+      const parentReportingClass = c.parentId ? categoryReportingClassMap.get(String(c.parentId)) : undefined;
+      const reportingClass = isCategoryReportingClass(c.reportingClass)
+        ? c.reportingClass
+        : parentReportingClass ?? defaultCategoryReportingClass(String(c.type ?? 'purchase'));
+      categoryReportingClassMap.set(String(c.id), reportingClass);
       await tx.category.create({
         data: {
           id,
           tenantId,
           companyId: newCompanyId,
           accountId: accId ?? null,
+          code: (c.code as string | null) ?? null,
+          reportingClass,
           nameAr: String(c.nameAr),
           nameEn: (c.nameEn as string | null) ?? null,
           parentId: parentId ?? null,

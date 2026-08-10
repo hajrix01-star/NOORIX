@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { DEFAULT_BANK_TREE_CATEGORY_SEEDS } from '../bank-statements/default-bank-tree-categories.seed';
 import { isShamiTaxWorkspace } from '../supplier-directory/supplier-directory-search.util';
+import { reportingClassForCategorySeed } from '../categories/category-reporting-classification.util';
 import {
   MASTER_ACCOUNTS,
   MASTER_VAULTS,
@@ -91,7 +92,8 @@ export class AccountingInitService {
           tenantId,
           companyId,
           accountId: accountId ?? null,
-          code:      cat.accountCode,   // الفئة الرئيسية تحمل كود الحساب كمرجع
+          code:      cat.accountCode,
+          reportingClass: reportingClassForCategorySeed(cat.accountCode, cat.type),
           nameAr: cat.nameAr,
           nameEn: acc?.nameEn ?? null,
           type: cat.type,
@@ -116,7 +118,8 @@ export class AccountingInitService {
           companyId,
           parentId,
           accountId: parentAccountId,
-          code:      sub.code,          // الكود التحليلي مثل P1-1 أو E3-2
+          code:      sub.code,
+          reportingClass: reportingClassForCategorySeed(sub.code, parentCat.type),
           nameAr: sub.nameAr,
           nameEn: sub.nameAr,
           type: parentCat.type,
@@ -236,6 +239,7 @@ export class AccountingInitService {
           companyId,
           accountId: accountId ?? null,
           code:      cat.accountCode,
+          reportingClass: reportingClassForCategorySeed(cat.accountCode, cat.type),
           nameAr:    cat.nameAr,
           nameEn:    acc?.nameEn ?? null,
           type:      cat.type,
@@ -259,6 +263,7 @@ export class AccountingInitService {
           parentId,
           accountId: codeToAccountId[sub.parentAccountCode] ?? null,
           code:      sub.code,
+          reportingClass: reportingClassForCategorySeed(sub.code, parentCat.type),
           nameAr:    sub.nameAr,
           nameEn:    sub.nameAr,
           type:      parentCat.type,
@@ -297,7 +302,7 @@ export class AccountingInitService {
         if (!exists.nameEn || exists.nameEn === exists.nameAr) {
           await this.prisma.category.update({
             where: { id: exists.id },
-            data: { nameEn: sub.nameEn },
+            data: { nameEn: sub.nameEn, reportingClass: reportingClassForCategorySeed(sub.code, exists.type) },
           });
           updated++;
         } else {
@@ -318,6 +323,7 @@ export class AccountingInitService {
           parentId:  parent.id,
           accountId: parent.accountId,
           code:      sub.code,
+          reportingClass: reportingClassForCategorySeed(sub.code, parent.type),
           nameAr:    sub.nameAr,
           nameEn:    sub.nameEn,
           type:      parent.type,
