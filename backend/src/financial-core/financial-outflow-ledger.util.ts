@@ -5,6 +5,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { validateJournalBalance } from './financial-core-helpers.util';
 import type { TxClient } from './financial-core-helpers.util';
+import type { LedgerReportingClass } from './financial-reporting-classification.util';
 
 export type OutflowLedgerInvoiceSlice = {
   tenantId: string;
@@ -53,6 +54,7 @@ export async function replaceOutflowInvoiceLedgerAndAllocations(
   debitAccountId: string,
   entryDate: Date,
   referenceType: string,
+  reportingClass: LedgerReportingClass,
   userId: string,
   getVaultAccount: (t: TxClient, cid: string, vaultId: string) => Promise<string>,
 ): Promise<void> {
@@ -83,6 +85,7 @@ export async function replaceOutflowInvoiceLedgerAndAllocations(
         entryDate,
         referenceType,
         referenceId: invoiceId,
+        reportingClass,
         vaultId: split.vaultId,
         employeeId: inv.employeeId ?? null,
         createdById: userId,

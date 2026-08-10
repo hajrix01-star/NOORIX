@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { getHrAdvanceBalanceParts } from './hr-advance-balance.util';
+import { reportingClassForReferenceType } from '../financial-core/financial-reporting-classification.util';
 
 type ApplyAdvanceSettlementDb = {
   invoice: Pick<TenantPrismaService['invoice'], 'findMany' | 'update'>;
@@ -171,6 +172,7 @@ export async function applyPayrollAdvanceSettlements(
           entryDate: settlementDate,
           referenceType: 'advance_settlement',
           referenceId: deduction.id,
+          reportingClass: reportingClassForReferenceType('advance_settlement'),
           employeeId: item.employeeId,
           status: 'active',
         },

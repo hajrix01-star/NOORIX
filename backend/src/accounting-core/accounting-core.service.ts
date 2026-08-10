@@ -3,7 +3,7 @@ import { FinancialCoreService } from '../financial-core/financial-core.service';
 
 type FinancialCoreAccountingDelegate = Pick<
   FinancialCoreService,
-  'processOutflow' | 'processOutflowBatchInTransaction' | 'cancelOperation'
+  'processOutflow' | 'processOutflowWithReportingClass' | 'processOutflowBatchInTransaction' | 'cancelOperation'
 >;
 
 type OutflowArgs = Parameters<FinancialCoreService['processOutflow']>;
@@ -17,8 +17,14 @@ export class AccountingCoreService {
     private readonly financialCore: FinancialCoreAccountingDelegate,
   ) {}
 
-  postHrServiceExpense(...args: OutflowArgs) {
-    return this.financialCore.processOutflow(...args);
+  postHrServiceExpense(
+    dto: OutflowArgs[0],
+    callerUserId?: OutflowArgs[1],
+    reportingClass?: Parameters<FinancialCoreService['processOutflowWithReportingClass']>[1],
+  ) {
+    return reportingClass
+      ? this.financialCore.processOutflowWithReportingClass(dto, reportingClass, callerUserId)
+      : this.financialCore.processOutflow(dto, callerUserId);
   }
 
   postLeaveSalarySettlement(...args: OutflowArgs) {

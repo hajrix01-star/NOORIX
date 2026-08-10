@@ -18,6 +18,11 @@ export class FinancialCoreService {
   processOutflow(...a: Parameters<FinancialOutflowService['processOutflow']>) {
     return this.outflow.processOutflow(...a);
   }
+  processOutflowWithReportingClass(
+    ...a: Parameters<FinancialOutflowService['processOutflowWithReportingClass']>
+  ) {
+    return this.outflow.processOutflowWithReportingClass(...a);
+  }
   processOutflowBatch(...a: Parameters<FinancialOutflowService['processOutflowBatch']>) {
     return this.outflow.processOutflowBatch(...a);
   }

@@ -2,6 +2,7 @@
  * قيود دفتر المبيعات اليومية (قنوات) — مستخرج من FinancialInflowService.
  */
 import { validateJournalBalance } from './financial-core-helpers.util';
+import { reportingClassForReferenceType } from './financial-reporting-classification.util';
 import type { ChannelNetTaxRow, InflowChannelInput } from './financial-inflow-channels.util';
 import type { TxClient } from './financial-core-helpers.util';
 import type { LedgerEntry } from '@prisma/client';
@@ -64,6 +65,7 @@ export async function createInflowSaleLedgerEntries(params: {
         entryDate,
         referenceType:   'sale',
         referenceId,
+        reportingClass:  reportingClassForReferenceType('sale'),
         vaultId:         ch.vaultId,
         createdById:     userId,
         status:          'active',
@@ -83,6 +85,7 @@ export async function createInflowSaleLedgerEntries(params: {
           entryDate,
           referenceType:   'sale',
           referenceId,
+          reportingClass:  reportingClassForReferenceType('sale', { isVat: true }),
           vaultId:         ch.vaultId,
           createdById:     userId,
           status:          'active',

@@ -10,6 +10,7 @@ import { buildHrServiceInvoiceNotes } from './constants/employee-hr-service-cate
 import { employeeDisplayNameForNotes } from './utils/employee-display-name.util';
 import { SupplierDirectoryService } from '../supplier-directory/supplier-directory.service';
 import { hrServiceRequiresSupplier } from '../supplier-directory/supplier-directory-hr.util';
+import { reportingClassForHrServiceCategory } from '../financial-core/financial-reporting-classification.util';
 
 type ResidencyForInvoice = {
   id: string;
@@ -101,6 +102,7 @@ export async function issueResidencyServiceInvoiceCore(
       idempotencyKey: `hr-service:${residency.id}`,
     },
     userId,
+    reportingClassForHrServiceCategory(residency.serviceCategory),
   );
 
   await deps.prisma.employeeResidency.update({

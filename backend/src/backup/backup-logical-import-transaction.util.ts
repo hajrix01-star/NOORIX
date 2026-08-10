@@ -13,6 +13,7 @@ import { mapImportedLedgerRef } from './backup-logical-import-ledger-ref.util';
 import { BackupLogicalImportTxParams } from './backup-logical-import-transaction.types';
 import { importBackupLogicalPurchaseDebts } from './backup-logical-import-purchase-debts.util';
 import { importBackupLogicalVaultTransfers } from './backup-logical-import-vault-transfers.util';
+import { reportingClassForHistoricalLedgerEntry } from '../financial-core/financial-reporting-classification.util';
 
 /**
  * جسم الاستيراد المنطقي داخل transaction — نفس التسلسل والخرائط.
@@ -37,6 +38,18 @@ export async function runBackupLogicalImportInTransaction(
     dailySalesSummaryMap,
   });
   await importBackupLogicalPurchaseDebts(tx, p, { supplierMap, invoiceMap });
+
+  const legacyInvoiceKindById = new Map(
+    arr<Record<string, unknown>>(data.invoices).map((row) => [String(row.id), String(row.kind ?? '')]),
+  );
+  const legacyAccountCodeById = new Map(
+    arr<Record<string, unknown>>(data.accounts).map((row) => [String(row.id), String(row.code ?? '')]),
+  );
+  const legacyHrServiceCategoryByInvoiceId = new Map(
+    arr<Record<string, unknown>>(data.employeeResidencies)
+      .filter((row) => row.invoiceId)
+      .map((row) => [String(row.invoiceId), String(row.serviceCategory ?? '')]),
+  );
 
         // استثناء مقصود: استيراد لقطة منطقية — إعادة قيود من النسخة الاحتياطية (لا يمر بـ processOutflow/processInflow).
         const vaultTransferRows = arr<Record<string, unknown>>(data.vaultTransfers);
@@ -146,6 +159,13 @@ export async function runBackupLogicalImportInTransaction(
               entryDate: ddate(le.entryDate),
               referenceType: refType,
               referenceId: refId,
+              reportingClass: typeof le.reportingClass === 'string'
+                ? le.reportingClass
+                : reportingClassForHistoricalLedgerEntry(refType, {
+                    invoiceKind: legacyInvoiceKindById.get(String(le.referenceId)),
+                    creditAccountCode: legacyAccountCodeById.get(String(le.creditAccountId)),
+                    hrServiceCategory: legacyHrServiceCategoryByInvoiceId.get(String(le.referenceId)),
+                  }),
               vaultId: vid ?? null,
               employeeId: eid ?? null,
               createdById: importingUserId,

@@ -3,7 +3,7 @@ import type { FinancialCoreService } from '../financial-core/financial-core.serv
 
 type FinancialCoreAccountingDelegate = Pick<
   FinancialCoreService,
-  'processOutflow' | 'processOutflowBatchInTransaction' | 'cancelOperation'
+  'processOutflow' | 'processOutflowWithReportingClass' | 'processOutflowBatchInTransaction' | 'cancelOperation'
 >;
 type OutflowInput = Parameters<FinancialCoreService['processOutflow']>[0];
 type OutflowBatchDto = Parameters<FinancialCoreService['processOutflowBatchInTransaction']>[0];
@@ -14,6 +14,7 @@ describe('AccountingCoreService', () => {
   it('delegates HR accounting operations through the financial core', async () => {
     const financialCore: FinancialCoreAccountingDelegate = {
       processOutflow: jest.fn().mockResolvedValue({ invoice: { id: 'inv-1' } }),
+      processOutflowWithReportingClass: jest.fn().mockResolvedValue({ invoice: { id: 'inv-hr' } }),
       processOutflowBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-2' } }]),
       cancelOperation: jest.fn().mockResolvedValue({ cancelled: true }),
     };
@@ -22,6 +23,11 @@ describe('AccountingCoreService', () => {
     await expect(service.postHrServiceExpense({ companyId: 'co-1' } as OutflowInput, 'u-1')).resolves.toEqual({
       invoice: { id: 'inv-1' },
     });
+    await expect(service.postHrServiceExpense(
+      { companyId: 'co-1' } as OutflowInput,
+      'u-1',
+      'operating_recurring_expense',
+    )).resolves.toEqual({ invoice: { id: 'inv-hr' } });
     await expect(service.postLeaveSalarySettlement({ companyId: 'co-1' } as OutflowInput, 'u-1')).resolves.toEqual({
       invoice: { id: 'inv-1' },
     });
@@ -35,6 +41,9 @@ describe('AccountingCoreService', () => {
     });
 
     expect(financialCore.processOutflow).toHaveBeenCalledTimes(2);
+    expect(financialCore.processOutflowWithReportingClass).toHaveBeenCalledWith(
+      { companyId: 'co-1' }, 'operating_recurring_expense', 'u-1',
+    );
     expect(financialCore.processOutflowBatchInTransaction).toHaveBeenCalledTimes(1);
     expect(financialCore.cancelOperation).toHaveBeenCalledTimes(1);
   });

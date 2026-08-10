@@ -11,6 +11,7 @@ import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
 import { nowSaudi } from '../common/utils/date-utils';
 import { assertOperationNotesLength, validateJournalBalance } from './financial-core-helpers.util';
 import { FinancialCoreSupportService } from './financial-core-support.service';
+import { reportingClassForReferenceType } from './financial-reporting-classification.util';
 import type { ReverseTransferDto, TransferDto } from './dto/financial-operation.dto';
 
 type PreparedTransfer = {
@@ -219,6 +220,7 @@ export class FinancialTransferService {
           entryDate,
           referenceType: 'transfer',
           referenceId: transfer.id,
+          reportingClass: reportingClassForReferenceType('transfer'),
           vaultId: prepared.toVaultId,
           createdById: userId,
           status: 'active',
@@ -322,6 +324,7 @@ export class FinancialTransferService {
           entryDate,
           referenceType: 'transfer',
           referenceId: reversal.id,
+          reportingClass: reportingClassForReferenceType('transfer'),
           vaultId: original.fromVaultId,
           createdById: userId,
           status: 'active',

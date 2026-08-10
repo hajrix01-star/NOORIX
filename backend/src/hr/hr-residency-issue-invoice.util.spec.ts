@@ -77,6 +77,7 @@ describe('issueResidencyServiceInvoiceCore', () => {
         taxAmount: '0',
       }),
       'user-1',
+      'operating_recurring_expense',
     );
     expect(accountingCore.postHrServiceExpense.mock.calls[0][0])
       .not.toHaveProperty('supplierInvoiceNumber');
@@ -155,6 +156,7 @@ describe('issueResidencyServiceInvoiceCore', () => {
         categoryId: 'e4-1-category',
       }),
       'user-1',
+      'operating_other_expense',
     );
   });
 
@@ -208,6 +210,7 @@ describe('issueResidencyServiceInvoiceCore', () => {
         categoryId: 'e4-2-category',
       }),
       'user-1',
+      'operating_recurring_expense',
     );
   });
 });

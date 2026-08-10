@@ -1349,6 +1349,8 @@ model LedgerEntry {
   entryDate       DateTime @map("entry_date")
   referenceType   String   @map("reference_type") // invoice | sale | transfer | expense | salary | advance
   referenceId     String   @map("reference_id")
+  /// Reporting classification for the current posted ledger state; outflow correction is audited separately.
+  reportingClass  String   @default("unclassified") @map("reporting_class")
   vaultId         String?  @map("vault_id")
   employeeId      String?  @map("employee_id") // ظ…ط±طھط¨ط· ط¨ط§ظ„ظ…ظˆط¸ظپ (ط±ط§طھط¨/ط³ظ„ظپظٹط©)
   createdById     String?  @map("created_by_id") // âœ… ط¨طµظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ…
@@ -1370,6 +1372,7 @@ model LedgerEntry {
   @@index([companyId])
   @@index([companyId, transactionDate])
   @@index([companyId, status, transactionDate])
+  @@index([companyId, status, transactionDate, reportingClass])
   @@index([companyId, entryDate])
   @@index([referenceType, referenceId])
   @@index([vaultId])

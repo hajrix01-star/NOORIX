@@ -16,6 +16,7 @@ import {
   scaleVaultAllocationsToTotal,
 } from './financial-outflow-ledger.util';
 import { persistOutflowInvoiceWithLedger } from './financial-outflow-persist.util';
+import { reportingClassForOutflowKind, type LedgerReportingClass } from './financial-reporting-classification.util';
 import { toYmd } from '../common/utils/to-ymd.util';
 import type { OutflowDto } from './dto/financial-operation.dto';
 import type { TxClient } from './financial-core-helpers.util';
@@ -30,7 +31,20 @@ export class FinancialOutflowService {
     private readonly support: FinancialCoreSupportService,
   ) {}
 
-  async processOutflow(dto: OutflowDto, callerUserId?: string) {
+  /** Internal-only posting path for a centrally owned reporting classification. */
+  async processOutflowWithReportingClass(
+    dto: OutflowDto,
+    reportingClass: LedgerReportingClass,
+    callerUserId?: string,
+  ) {
+    return this.processOutflow(dto, callerUserId, reportingClass);
+  }
+
+  async processOutflow(
+    dto: OutflowDto,
+    callerUserId?: string,
+    reportingClassOverride?: LedgerReportingClass,
+  ) {
     const tenantId = this.support.resolveTenantId();
     if (dto.idempotencyKey) {
       const vaultSplitsSig =
@@ -54,18 +68,23 @@ export class FinancialOutflowService {
         expenseMonthsCovered:      dto.expenseMonthsCovered,
         warrantyFollowUp:          dto.warrantyFollowUp === true,
         idempotencyKey:            dto.idempotencyKey,
+        reportingClassOverride,
       });
       return this.idempotency.withIdempotency(
         tenantId,
         dto.companyId,
         keyHash,
-        () => this.support.withRetry(() => this._processOutflowInner(dto, callerUserId)),
+        () => this.support.withRetry(() => this._processOutflowInner(dto, callerUserId, reportingClassOverride)),
       ) as Promise<Awaited<ReturnType<typeof this._processOutflowInner>>>;
     }
-    return this.support.withRetry(async () => this._processOutflowInner(dto, callerUserId));
+    return this.support.withRetry(async () => this._processOutflowInner(dto, callerUserId, reportingClassOverride));
   }
 
-  private async _processOutflowInner(dto: OutflowDto, callerUserId?: string) {
+  private async _processOutflowInner(
+    dto: OutflowDto,
+    callerUserId?: string,
+    reportingClassOverride?: LedgerReportingClass,
+  ) {
     assertOperationNotesLength(dto.notes);
     const userId   = this.support.resolveUserId(callerUserId);
     const tenantId = this.support.resolveTenantId();
@@ -77,7 +96,7 @@ export class FinancialOutflowService {
         tx,
         this.support,
         this.fiscalPeriod,
-        { tenantId, userId, dto, entryDate, txDate, invoiceNumber },
+        { tenantId, userId, dto, entryDate, txDate, invoiceNumber, reportingClassOverride },
       );
       return { invoice, ledgerEntry: ledgerEntries[0]!, ledgerEntries };
     });
@@ -248,6 +267,7 @@ export class FinancialOutflowService {
       debitAccountId,
       entryDate,
       referenceType,
+      reportingClassForOutflowKind(inv.kind),
       userId,
       (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );
@@ -354,6 +374,7 @@ export class FinancialOutflowService {
       debitAccountId,
       entryDate,
       referenceType,
+      reportingClassForOutflowKind(inv.kind),
       userId,
       (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );

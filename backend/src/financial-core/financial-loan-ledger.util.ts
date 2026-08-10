@@ -5,6 +5,7 @@
  */
 import { Prisma } from '@prisma/client';
 import type { TxClient } from './financial-core-helpers.util';
+import { reportingClassForReferenceType } from './financial-reporting-classification.util';
 
 type LoanLedgerBase = {
   tenantId: string;
@@ -31,6 +32,7 @@ export function postLoanOpeningLedger(
       entryDate: data.entryDate,
       referenceType: 'loan_opening',
       referenceId: data.referenceId,
+      reportingClass: reportingClassForReferenceType('loan_opening'),
       createdById: data.createdById,
     },
   });
@@ -51,6 +53,7 @@ export function postLoanPaymentLedger(
       entryDate: data.entryDate,
       referenceType: 'loan_payment',
       referenceId: data.referenceId,
+      reportingClass: reportingClassForReferenceType('loan_payment'),
       vaultId: data.vaultId,
       createdById: data.createdById,
     },
@@ -72,6 +75,7 @@ export function postLoanPaymentReversalLedger(
       entryDate: data.entryDate,
       referenceType: 'loan_payment_reversal',
       referenceId: data.referenceId,
+      reportingClass: reportingClassForReferenceType('loan_payment_reversal'),
       vaultId: data.vaultId,
       createdById: data.createdById,
     },

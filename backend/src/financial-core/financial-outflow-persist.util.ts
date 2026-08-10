@@ -7,6 +7,7 @@ import { FinancialCoreSupportService } from './financial-core-support.service';
 import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
 import type { OutflowDto } from './dto/financial-operation.dto';
 import type { TxClient } from './financial-core-helpers.util';
+import { reportingClassForOutflowKind, type LedgerReportingClass } from './financial-reporting-classification.util';
 import {
   assertNoActiveDuplicateSupplierInvoiceDedupKey,
   computeSupplierInvoiceDedupKeyForOutflowDto,
@@ -23,12 +24,13 @@ export async function persistOutflowInvoiceWithLedger(
     entryDate: Date;
     txDate: Date;
     invoiceNumber: string;
+    reportingClassOverride?: LedgerReportingClass;
   },
 ): Promise<{
   invoice: Awaited<ReturnType<typeof tx.invoice.create>>;
   ledgerEntries: Awaited<ReturnType<typeof tx.ledgerEntry.create>>[];
 }> {
-  const { tenantId, userId, dto, entryDate, txDate, invoiceNumber } = p;
+  const { tenantId, userId, dto, entryDate, txDate, invoiceNumber, reportingClassOverride } = p;
   await fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
 
   const supplierInvoiceDedupKey = computeSupplierInvoiceDedupKeyForOutflowDto(dto);
@@ -45,6 +47,7 @@ export async function persistOutflowInvoiceWithLedger(
 
   const referenceType =
     dto.kind === 'salary' ? 'salary' : dto.kind === 'advance' ? 'advance' : 'invoice';
+  const reportingClass = reportingClassOverride ?? reportingClassForOutflowKind(dto.kind);
 
   const invoice = await tx.invoice.create({
     data: {
@@ -98,6 +101,7 @@ export async function persistOutflowInvoiceWithLedger(
         entryDate,
         referenceType,
         referenceId:     invoice.id,
+        reportingClass,
         vaultId:         split.vaultId,
         employeeId:      dto.employeeId ?? null,
         createdById:     userId,
