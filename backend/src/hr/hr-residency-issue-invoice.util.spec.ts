@@ -117,7 +117,7 @@ describe('issueResidencyServiceInvoiceCore', () => {
     const supplierDirectory = Object.assign(Object.create(SupplierDirectoryService.prototype), {
       ensureForHrService: jest.fn().mockResolvedValue({
         supplier: null,
-        category: { id: 'e4-1-category', code: 'E4-1' },
+        category: { id: 'e9-1-category', code: 'E9-1' },
       }),
     }) as SupplierDirectoryService;
 
@@ -153,7 +153,7 @@ describe('issueResidencyServiceInvoiceCore', () => {
     expect(accountingCore.postHrServiceExpense).toHaveBeenCalledWith(
       expect.objectContaining({
         supplierId: 'airline-supplier',
-        categoryId: 'e4-1-category',
+        categoryId: 'e9-1-category',
       }),
       'user-1',
       'operating_other_expense',
@@ -184,7 +184,7 @@ describe('issueResidencyServiceInvoiceCore', () => {
     const supplierDirectory = Object.assign(Object.create(SupplierDirectoryService.prototype), {
       ensureForHrService: jest.fn().mockResolvedValue({
         supplier: null,
-        category: { id: 'e4-2-category', code: 'E4-2' },
+        category: { id: 'e9-2-category', code: 'E9-2' },
       }),
     }) as SupplierDirectoryService;
 
@@ -207,7 +207,7 @@ describe('issueResidencyServiceInvoiceCore', () => {
     expect(accountingCore.postHrServiceExpense).toHaveBeenCalledWith(
       expect.objectContaining({
         supplierId: undefined,
-        categoryId: 'e4-2-category',
+        categoryId: 'e9-2-category',
       }),
       'user-1',
       'operating_recurring_expense',

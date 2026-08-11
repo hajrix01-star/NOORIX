@@ -26,7 +26,7 @@ const rows: SupplierDirectorySeed[] = [
     nameEn: 'General Organization for Social Insurance (GOSI)',
     aliases: ['GOSI', 'التأمينات', 'التأمينات الاجتماعية'],
     entityType: 'government',
-    defaultCategoryCode: 'E2-8',
+    defaultCategoryCode: 'E9-3',
     isTaxRegistered: false,
     supplierInvoiceNumberRequired: false,
     sortOrder: 10,

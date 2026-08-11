@@ -49,6 +49,7 @@ export const MASTER_ACCOUNTS: MasterAccountSeed[] = [
   { code: 'PUR-003',nameAr: 'تعبئة وتغليف',            nameEn: 'Packaging',                   type: 'expense', icon: '📦', taxExempt: false },
   { code: 'PUR-004',nameAr: 'مستلزمات تشغيل مطبخ',    nameEn: 'Kitchen Operations',          type: 'expense', icon: '🔥', taxExempt: false },
   { code: 'EXP-004',nameAr: 'رواتب وأجور',            nameEn: 'Salaries & Wages',            type: 'expense', icon: '💸', taxExempt: true  },
+  { code: 'EXP-009',nameAr: 'خدمات ومزايا الموظفين', nameEn: 'Employee Services & Benefits', type: 'expense', icon: '👥', taxExempt: true  },
   { code: 'EXP-002',nameAr: 'رسوم حكومية وإقامات',   nameEn: 'Gov Fees & Iqama',            type: 'expense', icon: '🏛️', taxExempt: true  },
   { code: 'EXP-003',nameAr: 'إيجار ومرافق (كهرباء/ماء)', nameEn: 'Rent & Utilities',       type: 'expense', icon: '🏠', taxExempt: false },
   { code: 'EXP-005',nameAr: 'صيانة وتشغيل',          nameEn: 'Maintenance & Operations',    type: 'expense', icon: '🛠️', taxExempt: false },
@@ -69,6 +70,7 @@ export const MASTER_CATEGORIES: MasterCategorySeed[] = [
   { accountCode: 'PUR-003', nameAr: 'تعبئة وتغليف', type: 'purchase' },
   { accountCode: 'PUR-004', nameAr: 'مستلزمات تشغيل مطبخ', type: 'purchase' },
   { accountCode: 'EXP-004', nameAr: 'رواتب وأجور', type: 'expense' },
+  { accountCode: 'EXP-009', nameAr: 'خدمات ومزايا الموظفين', type: 'expense' },
   { accountCode: 'EXP-002', nameAr: 'رسوم حكومية وإقامات', type: 'expense' },
   { accountCode: 'EXP-003', nameAr: 'إيجار ومرافق (كهرباء/ماء)', type: 'expense' },
   { accountCode: 'EXP-005', nameAr: 'صيانة وتشغيل', type: 'expense' },
@@ -125,13 +127,13 @@ export const MASTER_SUBCATEGORIES: SubCategorySeed[] = [
   { parentAccountCode: 'EXP-002', code: 'E2-5', nameAr: 'زيارات',            nameEn: 'Visit Visas',               sortOrder: 4 },
   { parentAccountCode: 'EXP-002', code: 'E2-6', nameAr: 'غرامات',            nameEn: 'Fines & Penalties',         sortOrder: 5 },
   { parentAccountCode: 'EXP-002', code: 'E2-7', nameAr: 'ضرائب ورسوم أخرى', nameEn: 'Other Taxes & Fees',        sortOrder: 6 },
-  { parentAccountCode: 'EXP-002', code: 'E2-8', nameAr: 'GOSI',              nameEn: 'GOSI',                      sortOrder: 7 },
   // E2-9 محجوز للتصنيفات التاريخية المختلفة بين الشركات، ولا يُزرع مستقبلاً.
   { parentAccountCode: 'EXP-002', code: 'E2-10', nameAr: 'رسوم منصات حكومية', nameEn: 'Government Platform Fees', sortOrder: 9 },
   { parentAccountCode: 'EXP-002', code: 'E2-11', nameAr: 'شهادات صحية وتصاريح موظفين', nameEn: 'Health Certificates & Employee Permits', sortOrder: 10 },
-  // تحت EXP-004 — رواتب وأجور (خدمات ومزايا الموظفين)
-  { parentAccountCode: 'EXP-004', code: 'E4-1', nameAr: 'تذاكر سفر الموظفين', nameEn: 'Employee Travel Tickets', sortOrder: 0 },
-  { parentAccountCode: 'EXP-004', code: 'E4-2', nameAr: 'التأمين الطبي للموظفين', nameEn: 'Employee Medical Insurance', sortOrder: 1 },
+  // تحت EXP-009 — خدمات ومزايا الموظفين (ليست رواتب مسير)
+  { parentAccountCode: 'EXP-009', code: 'E9-1', nameAr: 'تذاكر سفر الموظفين', nameEn: 'Employee Travel Tickets', sortOrder: 0 },
+  { parentAccountCode: 'EXP-009', code: 'E9-2', nameAr: 'التأمين الطبي للموظفين', nameEn: 'Employee Medical Insurance', sortOrder: 1 },
+  { parentAccountCode: 'EXP-009', code: 'E9-3', nameAr: 'التأمينات الاجتماعية (GOSI)', nameEn: 'GOSI Employer Contributions', sortOrder: 2 },
   // تحت EXP-007 — مصروفات مالية  (بادئة E7)
   { parentAccountCode: 'EXP-007', code: 'E7-1', nameAr: 'رسوم تحويل',        nameEn: 'Transfer Fees',             sortOrder: 0 },
   { parentAccountCode: 'EXP-007', code: 'E7-2', nameAr: 'رسوم سحب',          nameEn: 'Withdrawal Fees',           sortOrder: 1 },
