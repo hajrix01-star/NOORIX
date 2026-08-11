@@ -17,6 +17,7 @@ describe('HrPayrollReconciliationService', () => {
         employeeId: null, employee: null,
       }]) },
       payrollAdvanceSettlement: { findMany: jest.fn().mockResolvedValue([]) },
+      historicalPartTimePayrollLink: { findMany: jest.fn().mockResolvedValue([]) },
       employeeDeduction: { findMany: jest.fn().mockResolvedValue([
         { id: 'deduction-repair', employeeId: 'emp-1', notes: '[PAYROLL_COST_GAP_REPAIR_V2] run=PR-2607-001, payrollItem=item-1, nonCash=true' },
         { id: 'deduction-legacy', employeeId: 'emp-1', notes: 'خصم سلفة قديم من مسير PR-2607-001' },
@@ -60,6 +61,7 @@ describe('HrPayrollReconciliationService', () => {
       }]) },
       invoice: { findMany: jest.fn().mockResolvedValue([]) },
       payrollAdvanceSettlement: { findMany: jest.fn().mockResolvedValue([]) },
+      historicalPartTimePayrollLink: { findMany: jest.fn().mockResolvedValue([]) },
       ledgerEntry: { findMany: jest.fn().mockResolvedValue([
         { id: 'accrual', referenceType: 'payroll_accrual', referenceId: 'run-apr', amount: new Prisma.Decimal(41300), transactionDate: new Date('2026-04-30T00:00:00.000Z'), status: 'active', employeeId: null, employee: null },
         { id: 'unlinked', referenceType: 'historical_manual_salary', referenceId: 'legacy-1', amount: new Prisma.Decimal(1700), transactionDate: new Date('2026-04-30T00:00:00.000Z'), status: 'active', employeeId: 'emp-1', employee: { name: 'Employee' } },
@@ -94,6 +96,7 @@ describe('HrPayrollReconciliationService', () => {
         transactionDate: new Date('2027-01-03T00:00:00.000Z'), totalAmount: new Prisma.Decimal(1000), employeeId: null, employee: null,
       }]) },
       payrollAdvanceSettlement: { findMany: jest.fn().mockResolvedValue([]) },
+      historicalPartTimePayrollLink: { findMany: jest.fn().mockResolvedValue([]) },
       ledgerEntry: { findMany: jest.fn().mockResolvedValue([{
         id: 'ledger-dec', referenceType: 'payroll_accrual', referenceId: 'run-dec', amount: new Prisma.Decimal(1000),
         transactionDate: new Date('2026-12-31T00:00:00.000Z'), status: 'active', employeeId: null, employee: null,
@@ -121,6 +124,7 @@ describe('HrPayrollReconciliationService', () => {
         employeeId: 'emp-1', employee: { name: 'Employee' },
       }]) },
       payrollAdvanceSettlement: { findMany: jest.fn().mockResolvedValue([]) },
+      historicalPartTimePayrollLink: { findMany: jest.fn().mockResolvedValue([]) },
       ledgerEntry: { findMany: jest.fn().mockResolvedValue([
         { id: 'salary-ledger', referenceType: 'salary', referenceId: 'standalone-salary', amount: new Prisma.Decimal(48090.83), transactionDate: new Date('2026-05-31T00:00:00.000Z'), status: 'active', employeeId: 'emp-1', employee: { name: 'Employee' } },
       ]) },

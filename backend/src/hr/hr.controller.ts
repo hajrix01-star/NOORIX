@@ -44,6 +44,7 @@ import {
   PayrollLegacyCorrectionConfirmDto,
   PayrollLegacyCorrectionPreviewDto,
 } from './dto/payroll-legacy-correction.dto';
+import { CreateHistoricalPartTimePayrollLinkDto } from './dto/historical-part-time-payroll.dto';
 import {
   HrCompensationSnapshotsQueryDto,
   HrDeleteLeaveQueryDto,
@@ -160,6 +161,16 @@ export class HRController {
       query.year ?? new Date().getFullYear(),
       query.includeRows ?? false,
     );
+  }
+
+  @Post('payroll/reconciliation/historical-part-time-links')
+  @Roles('owner')
+  createHistoricalPartTimePayrollLink(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: JwtUser,
+    @Body() dto: CreateHistoricalPartTimePayrollLinkDto,
+  ) {
+    return this.hrService.createHistoricalPartTimePayrollLink(companyId, user.sub, dto);
   }
 
   @Post('payroll/reconciliation/legacy-correction/preview')

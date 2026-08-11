@@ -13,11 +13,13 @@ import { computeEos } from '@noorix/finance-core';
 import { CalculateEosDto } from './dto/calculate-eos.dto';
 import { HrPayrollReconciliationService } from './hr-payroll-reconciliation.service';
 import { HrPayrollLegacyCorrectionService } from './hr-payroll-legacy-correction.service';
+import { HrHistoricalPartTimePayrollService } from './hr-historical-part-time-payroll.service';
 import type {
   PayrollLegacyPartialCorrectionConfirmDto,
   PayrollLegacyCorrectionConfirmDto,
   PayrollLegacyCorrectionPreviewDto,
 } from './dto/payroll-legacy-correction.dto';
+import type { CreateHistoricalPartTimePayrollLinkDto } from './dto/historical-part-time-payroll.dto';
 
 @Injectable()
 export class HRService {
@@ -29,6 +31,7 @@ export class HRService {
     private readonly compensationSnapshot: HrCompensationSnapshotService,
     private readonly payrollReconciliation: HrPayrollReconciliationService,
     private readonly payrollLegacyCorrection: HrPayrollLegacyCorrectionService,
+    private readonly historicalPartTimePayroll: HrHistoricalPartTimePayrollService,
     private readonly prisma: TenantPrismaService,
   ) {}
 
@@ -135,6 +138,10 @@ export class HRService {
 
   getPayrollReconciliation(companyId: string, year: number, includeRows = false) {
     return this.payrollReconciliation.getYear(companyId, year, includeRows);
+  }
+
+  createHistoricalPartTimePayrollLink(companyId: string, userId: string, dto: CreateHistoricalPartTimePayrollLinkDto) {
+    return this.historicalPartTimePayroll.create(companyId, userId, dto);
   }
 
   previewPayrollLegacyCorrection(companyId: string, dto: PayrollLegacyCorrectionPreviewDto) {
