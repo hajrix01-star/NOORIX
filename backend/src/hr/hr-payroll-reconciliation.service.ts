@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 
 type ReconciliationRow = {
-  source: 'structured' | 'documented_historical_repair' | 'legacy_ledger' | 'salary_invoice' | 'payroll_run';
+  source: 'structured' | 'documented_historical_repair' | 'legacy_ledger' | 'salary_invoice' | 'historical_standalone_salary' | 'payroll_run';
   id: string;
   date: string;
   employeeId: string | null;
@@ -47,7 +47,15 @@ export class HrPayrollReconciliationService {
     const yearRunIds = runs.map((run) => run.id);
     const [salaryInvoices, settlements, salaryLedger] = await Promise.all([
       this.prisma.invoice.findMany({
-        where: { companyId, kind: 'salary', status: 'active', batchId: { in: yearRunIds } },
+        where: {
+          companyId,
+          kind: 'salary',
+          status: 'active',
+          OR: [
+            { batchId: { in: yearRunIds } },
+            { transactionDate: { gte: from, lt: to } },
+          ],
+        },
         select: { id: true, batchId: true, invoiceNumber: true, invoiceDate: true, transactionDate: true, totalAmount: true, employeeId: true, employee: { select: { name: true } } },
       }),
       this.prisma.payrollAdvanceSettlement.findMany({
@@ -112,6 +120,9 @@ export class HrPayrollReconciliationService {
       const monthRuns = runs.filter((run) => key(run.payrollMonth) === month);
       const runIds = new Set(monthRuns.map((run) => run.id));
       const monthInvoices = salaryInvoices.filter((invoice) => invoice.batchId && runIds.has(invoice.batchId));
+      const monthStandaloneSalaryInvoices = salaryInvoices.filter((invoice) =>
+        key(invoice.transactionDate) === month && (!invoice.batchId || !runById.has(invoice.batchId)),
+      );
       const monthSettlements = settlements.filter((row) => key(row.payrollRun?.payrollMonth ?? row.settlementDate) === month);
       const monthLedger = salaryLedger.filter((row) => key(row.transactionDate) === month);
       const monthLegacy = legacyLedger.filter((row) => key(row.transactionDate) === month);
@@ -127,10 +138,15 @@ export class HrPayrollReconciliationService {
         .filter((row) => row.status === 'active')
         .reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0));
       const salaryInvoicesTotal = monthInvoices.reduce((sum, row) => sum.plus(row.totalAmount), new Prisma.Decimal(0));
+      const standaloneSalaryPaymentsTotal = monthStandaloneSalaryInvoices.reduce(
+        (sum, row) => sum.plus(row.totalAmount),
+        new Prisma.Decimal(0),
+      );
       const legacyAdvanceSettlementLedgerTotal = monthLegacy.reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0));
       const documentedHistoricalRepairTotal = monthDocumentedRepairs.reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0));
       const ledgerPayrollCostTotal = monthLedger.reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0));
-      const difference = ledgerPayrollCostTotal.minus(payrollRunsTotal);
+      const payrollExpectedCostTotal = payrollRunsTotal.plus(standaloneSalaryPaymentsTotal);
+      const difference = ledgerPayrollCostTotal.minus(payrollExpectedCostTotal);
       const structuredExpected = monthRuns.reduce(
         (sum, run) => sum.plus(run.items.reduce((s, item) => s.plus(item.advancesDeduct ?? 0), new Prisma.Decimal(0))),
         new Prisma.Decimal(0),
@@ -187,11 +203,20 @@ export class HrPayrollReconciliationService {
           ledgerEntryId: null, amount: money(row.totalAmount), status: 'active', confidence: row.batchId && runIds.has(row.batchId) ? 'high' : 'medium',
           reason: 'Salary cash-payment invoice; diagnostic only',
         });
+        for (const row of monthStandaloneSalaryInvoices) rows.push({
+          source: 'historical_standalone_salary', id: row.id, date: ymd(row.transactionDate), employeeId: row.employeeId,
+          employeeName: row.employee?.name ?? null, runId: null, runNumber: null,
+          payrollItemId: null, advanceInvoiceId: null, advanceInvoiceNumber: null, deductionId: null,
+          ledgerEntryId: null, amount: money(row.totalAmount), status: 'active', confidence: 'medium',
+          reason: 'Historical standalone salary payment included in expected payroll cost',
+        });
       }
 
       return {
         month,
         payrollRunsTotal: money(payrollRunsTotal),
+        standaloneSalaryPaymentsTotal: money(standaloneSalaryPaymentsTotal),
+        payrollExpectedCostTotal: money(payrollExpectedCostTotal),
         salaryInvoicesTotal: money(salaryInvoicesTotal),
         structuredAdvanceSettlementsTotal: money(structuredAdvanceSettlementsTotal),
         legacyAdvanceSettlementLedgerTotal: money(legacyAdvanceSettlementLedgerTotal),
