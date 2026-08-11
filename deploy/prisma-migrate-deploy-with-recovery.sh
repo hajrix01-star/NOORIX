@@ -81,17 +81,18 @@ if [[ "$failed_advance_reclassification" != "0" ]]; then
   npx prisma migrate resolve --rolled-back "$ADVANCE_RECLASSIFICATION_MIGRATION"
 fi
 
-# The first payroll cost-gap attempt used ON COMMIT DROP temporary tables
-# without an explicit transaction. PostgreSQL therefore dropped the first
-# table before the following statement. Recover only that exact known failure,
-# and only when no migration-specific audit artifact exists.
+# The first payroll cost-gap attempt started with a UTF-8 BOM. Prisma sent that
+# marker to PostgreSQL, which rejected the file before executing its first SQL
+# statement. Recover only that exact parse failure, and only when no
+# migration-specific audit artifact exists.
 failed_payroll_cost_gap="$(psql --dbname="$DATABASE_URL" -Atqc "
   SELECT count(*)
   FROM \"_prisma_migrations\"
   WHERE migration_name = '${PAYROLL_COST_GAP_MIGRATION}'
     AND finished_at IS NULL
     AND rolled_back_at IS NULL
-    AND POSITION('_payroll_cost_gap_paid_runs' IN COALESCE(logs, '')) > 0
+    AND POSITION('syntax error at or near' IN COALESCE(logs, '')) > 0
+    AND POSITION('The first reconciliation required' IN COALESCE(logs, '')) > 0
 ")"
 
 if [[ "$failed_payroll_cost_gap" != "0" ]]; then
@@ -105,7 +106,7 @@ if [[ "$failed_payroll_cost_gap" != "0" ]]; then
     echo "ERROR: failed payroll cost-gap migration left accounting artifacts; manual recovery is required" >&2
     exit 1
   fi
-  echo "==> [prisma] verified the known temp-table failure; marking payroll cost-gap attempt rolled back"
+  echo "==> [prisma] verified the known BOM parse failure; marking payroll cost-gap attempt rolled back"
   npx prisma migrate resolve --rolled-back "$PAYROLL_COST_GAP_MIGRATION"
 fi
 echo "==> [prisma] migrate deploy (strict)"
