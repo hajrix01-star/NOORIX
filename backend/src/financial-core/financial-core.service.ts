@@ -7,6 +7,7 @@ import { FinancialInflowService } from './financial-inflow.service';
 import { FinancialTransferService } from './financial-transfer.service';
 import { FinancialCancelService } from './financial-cancel.service';
 import {
+  cancelProvenPayrollLegacyLedgerRowsInTransaction as cancelProvenPayrollLegacyLedgerRows,
   cancelPayrollAccrualLedgerInTransaction as cancelPayrollAccrualLedger,
   postPayrollAccrualLedgerInTransaction as postPayrollAccrualLedger,
 } from './financial-payroll-ledger.util';
@@ -49,6 +50,11 @@ export class FinancialCoreService {
     ...a: Parameters<typeof cancelPayrollAccrualLedger>
   ) {
     return cancelPayrollAccrualLedger(...a);
+  }
+  cancelProvenPayrollLegacyLedgerRowsInTransaction(
+    ...a: Parameters<typeof cancelProvenPayrollLegacyLedgerRows>
+  ) {
+    return cancelProvenPayrollLegacyLedgerRows(...a);
   }
   rebuildOutflowInvoiceLedgerAfterVaultChange(
     ...a: Parameters<FinancialOutflowService['rebuildOutflowInvoiceLedgerAfterVaultChange']>

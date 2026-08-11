@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import {
+  cancelProvenPayrollLegacyLedgerRowsInTransaction,
   cancelPayrollAccrualLedgerInTransaction,
   postPayrollAccrualLedgerInTransaction,
 } from './financial-payroll-ledger.util';
@@ -49,6 +50,31 @@ describe('financial payroll ledger writer', () => {
         referenceType: 'payroll_accrual',
         referenceId: 'run-1',
         status: 'active',
+      },
+      data: { status: 'cancelled' },
+    });
+  });
+
+  it('cancels only proven non-cash legacy payroll rows inside the accounting writer', async () => {
+    const tx = {
+      ledgerEntry: { updateMany: jest.fn().mockResolvedValue({ count: 27 }) },
+    } as unknown as Prisma.TransactionClient;
+
+    await cancelProvenPayrollLegacyLedgerRowsInTransaction(
+      tx,
+      'company-1',
+      ['legacy-1', 'legacy-2'],
+    );
+
+    expect(tx.ledgerEntry.updateMany).toHaveBeenCalledWith({
+      where: {
+        companyId: 'company-1',
+        id: { in: ['legacy-1', 'legacy-2'] },
+        status: 'active',
+        referenceType: 'advance_settlement',
+        vaultId: null,
+        debitAccount: { code: 'EXP-004' },
+        creditAccount: { code: 'ADV-001' },
       },
       data: { status: 'cancelled' },
     });

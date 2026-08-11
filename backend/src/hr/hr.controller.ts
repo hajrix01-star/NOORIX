@@ -40,6 +40,10 @@ import { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
 import { IssueIndividualSalaryPaymentDto } from './dto/issue-individual-salary-payment.dto';
 import { CalculateEosDto } from './dto/calculate-eos.dto';
 import {
+  PayrollLegacyCorrectionConfirmDto,
+  PayrollLegacyCorrectionPreviewDto,
+} from './dto/payroll-legacy-correction.dto';
+import {
   HrCompensationSnapshotsQueryDto,
   HrDeleteLeaveQueryDto,
   HrDeleteResidencyQueryDto,
@@ -155,6 +159,25 @@ export class HRController {
       query.year ?? new Date().getFullYear(),
       query.includeRows ?? false,
     );
+  }
+
+  @Post('payroll/reconciliation/legacy-correction/preview')
+  @Roles('owner')
+  previewPayrollLegacyCorrection(
+    @CompanyId() companyId: string,
+    @Body() dto: PayrollLegacyCorrectionPreviewDto,
+  ) {
+    return this.hrService.previewPayrollLegacyCorrection(companyId, dto);
+  }
+
+  @Post('payroll/reconciliation/legacy-correction/confirm')
+  @Roles('owner')
+  confirmPayrollLegacyCorrection(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: JwtUser,
+    @Body() dto: PayrollLegacyCorrectionConfirmDto,
+  ) {
+    return this.hrService.confirmPayrollLegacyCorrection(companyId, user.sub, dto);
   }
 
   @Post('payroll-runs/issue-individual-payment')

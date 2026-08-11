@@ -59,3 +59,28 @@ export function cancelPayrollAccrualLedgerInTransaction(
     data: { status: 'cancelled' },
   });
 }
+
+/**
+ * Governed writer for a previously proven set of non-cash legacy payroll
+ * advance duplicates. Eligibility is established by the HR reconciliation
+ * service; this accounting boundary still constrains the mutation to the
+ * expected ledger shape and company.
+ */
+export function cancelProvenPayrollLegacyLedgerRowsInTransaction(
+  tx: Prisma.TransactionClient,
+  companyId: string,
+  ledgerEntryIds: string[],
+) {
+  return tx.ledgerEntry.updateMany({
+    where: {
+      companyId,
+      id: { in: ledgerEntryIds },
+      status: 'active',
+      referenceType: 'advance_settlement',
+      vaultId: null,
+      debitAccount: { code: 'EXP-004' },
+      creditAccount: { code: 'ADV-001' },
+    },
+    data: { status: 'cancelled' },
+  });
+}

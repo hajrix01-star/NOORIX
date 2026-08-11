@@ -12,6 +12,11 @@ import { getHrAdvanceTotals } from './hr-advance-balance.util';
 import { computeEos } from '@noorix/finance-core';
 import { CalculateEosDto } from './dto/calculate-eos.dto';
 import { HrPayrollReconciliationService } from './hr-payroll-reconciliation.service';
+import { HrPayrollLegacyCorrectionService } from './hr-payroll-legacy-correction.service';
+import type {
+  PayrollLegacyCorrectionConfirmDto,
+  PayrollLegacyCorrectionPreviewDto,
+} from './dto/payroll-legacy-correction.dto';
 
 @Injectable()
 export class HRService {
@@ -22,6 +27,7 @@ export class HRService {
     private readonly document: HrDocumentService,
     private readonly compensationSnapshot: HrCompensationSnapshotService,
     private readonly payrollReconciliation: HrPayrollReconciliationService,
+    private readonly payrollLegacyCorrection: HrPayrollLegacyCorrectionService,
     private readonly prisma: TenantPrismaService,
   ) {}
 
@@ -128,6 +134,14 @@ export class HRService {
 
   getPayrollReconciliation(companyId: string, year: number, includeRows = false) {
     return this.payrollReconciliation.getYear(companyId, year, includeRows);
+  }
+
+  previewPayrollLegacyCorrection(companyId: string, dto: PayrollLegacyCorrectionPreviewDto) {
+    return this.payrollLegacyCorrection.preview(companyId, dto);
+  }
+
+  confirmPayrollLegacyCorrection(companyId: string, userId: string, dto: PayrollLegacyCorrectionConfirmDto) {
+    return this.payrollLegacyCorrection.confirm(companyId, userId, dto);
   }
 
   issueIndividualSalaryPayment(...args: Parameters<HrPayrollService['issueIndividualSalaryPayment']>) {
