@@ -528,6 +528,8 @@ model PayrollRun {
   notes                       String?
   /// ط¹ظ†ط¯ ط§ظ„ط§ط¹طھظ…ط§ط¯: طھط³ظˆظٹط© ط®طµظ… ط§ظ„ط³ظ„ظپ ط¹ظ„ظ‰ ظپظˆط§طھظٹط± ط§ظ„ط³ظ„ظپ (ظٹظڈظ…ظ†ط¹ ط§ظ„طھظƒط±ط§ط± ط¹ظ†ط¯ طµط±ظپ ط§ظ„ظ…ط³ظٹط±ط© ظ„ط§ط­ظ‚ط§ظ‹)
   advanceSettlementsAppliedAt DateTime? @map("advance_settlements_applied_at")
+  /// Set only when the monthly payroll expense accrual has been posted to the ledger.
+  payrollAccruedAt             DateTime? @map("payroll_accrued_at")
   createdAt                   DateTime  @default(now()) @map("created_at")
   updatedAt                   DateTime  @updatedAt @map("updated_at")
 

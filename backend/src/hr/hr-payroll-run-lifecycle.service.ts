@@ -20,6 +20,8 @@ import { HrCompensationSnapshotService } from './hr-compensation-snapshot.servic
 import { assertPayrollItemsGrossMatchesCentralSnapshots } from './hr-payroll-gross-source.util';
 import { buildPayrollRunItemsData, buildPayrollRunVaultSplitIds } from './hr-payroll-run-lifecycle-model';
 import { assertPayrollAdvanceSelections } from './hr-payroll-advance-selection.util';
+import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
+import { postPayrollAccrualInTransaction } from './hr-payroll-accrual.util';
 
 @Injectable()
 export class HrPayrollRunLifecycleService {
@@ -29,6 +31,7 @@ export class HrPayrollRunLifecycleService {
     private readonly financialCore: FinancialCoreService,
     private readonly reader: HrPayrollRunReaderService,
     private readonly compensationSnapshot: HrCompensationSnapshotService,
+    private readonly fiscalPeriod: FiscalPeriodService,
   ) {}
 
   private async assertPayrollGrossUsesCentralSnapshots(
@@ -144,25 +147,65 @@ export class HrPayrollRunLifecycleService {
       include: { items: { include: { employee: true } } },
     });
     if (!existing) throw new NotFoundException(`مسيرة الرواتب ${id} غير موجودة.`);
+    if (dto.status === existing.status) return existing;
+    if (existing.status === 'completed') {
+      throw new BadRequestException('لا يمكن إعادة مسيرة معتمدة إلى مسودة. استخدم الإلغاء المحاسبي عند الحاجة.');
+    }
+    if (dto.status !== 'completed') {
+      throw new BadRequestException('الانتقال المسموح هو اعتماد المسيرة المكتملة فقط.');
+    }
 
-    // اعتماد المسير يثبّت بياناته فقط. تسوية السلف تُنفّذ مع صرف المسير داخل
-    // المعاملة نفسها، حتى يطابق تاريخ تكلفة الراتب وتاريخ الصرف ولا تُخصم سلفة بلا دفع.
-    const updated = await this.prisma.payrollRun.update({
-      where: { id },
-      data: { status: dto.status },
+    const tenantId = TenantContext.getTenantId();
+    return this.prisma.withTenant(async (tx) => {
+      const accruedAt = new Date();
+      const claimed = await tx.payrollRun.updateMany({
+        where: { id, companyId, status: 'draft', payrollAccruedAt: null },
+        data: {
+          status: 'completed',
+          payrollAccruedAt: accruedAt,
+          advanceSettlementsAppliedAt: accruedAt,
+        },
+      });
+      if (claimed.count !== 1) {
+        const replay = await tx.payrollRun.findFirst({
+          where: { id, companyId },
+          include: { items: { include: { employee: true } } },
+        });
+        if (replay?.status === 'completed' && replay.payrollAccruedAt) return replay;
+        throw new BadRequestException('تعذر اعتماد المسيرة بسبب تعديل متزامن. حدّث الصفحة وحاول مجددًا.');
+      }
+
+      const accrual = await postPayrollAccrualInTransaction(
+        tx,
+        this.fiscalPeriod,
+        existing,
+        tenantId,
+        userId,
+      );
+      await tx.auditLog.create({
+        data: {
+          tenantId,
+          companyId,
+          userId,
+          action: 'post',
+          entity: 'payroll_accrual',
+          entityId: id,
+          oldValue: { status: existing.status },
+          newValue: {
+            status: 'completed',
+            runNumber: existing.runNumber,
+            expense: accrual.expense.toFixed(4),
+            payable: accrual.payable.toFixed(4),
+            advances: accrual.advances.toFixed(4),
+          },
+        },
+      });
+
+      return tx.payrollRun.findFirstOrThrow({
+        where: { id, companyId },
+        include: { items: { include: { employee: true } } },
+      });
     });
-
-    await this.audit.log({
-      companyId,
-      userId,
-      action: 'update',
-      entity: 'payroll_run',
-      entityId: id,
-      oldValue: { status: existing.status },
-      newValue: { status: dto.status },
-    });
-
-    return updated;
   }
 
   async updatePayrollRun(
@@ -325,6 +368,15 @@ export class HrPayrollRunLifecycleService {
 
     await this.prisma.withTenant(async (tx) => {
       await reversePayrollAdvanceSettlementsForDelete(tx, companyId, existing.runNumber);
+      await tx.ledgerEntry.updateMany({
+        where: {
+          companyId,
+          referenceType: 'payroll_accrual',
+          referenceId: id,
+          status: 'active',
+        },
+        data: { status: 'cancelled' },
+      });
       await tx.payrollRun.delete({ where: { id } });
     });
 

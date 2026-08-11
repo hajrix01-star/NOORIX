@@ -3,11 +3,11 @@ import { FinancialCoreService } from '../financial-core/financial-core.service';
 
 type FinancialCoreAccountingDelegate = Pick<
   FinancialCoreService,
-  'processOutflow' | 'processOutflowWithReportingClass' | 'processOutflowBatchInTransaction' | 'cancelOperation'
+  'processOutflow' | 'processOutflowWithReportingClass' | 'processPayrollPaymentBatchInTransaction' | 'cancelOperation'
 >;
 
 type OutflowArgs = Parameters<FinancialCoreService['processOutflow']>;
-type OutflowBatchInTxArgs = Parameters<FinancialCoreService['processOutflowBatchInTransaction']>;
+type PayrollPaymentBatchInTxArgs = Parameters<FinancialCoreService['processPayrollPaymentBatchInTransaction']>;
 type CancelArgs = Parameters<FinancialCoreService['cancelOperation']>;
 
 @Injectable()
@@ -31,8 +31,8 @@ export class AccountingCoreService {
     return this.financialCore.processOutflow(...args);
   }
 
-  postPayrollPaymentBatchInTransaction(...args: OutflowBatchInTxArgs) {
-    return this.financialCore.processOutflowBatchInTransaction(...args);
+  postPayrollPaymentBatchInTransaction(...args: PayrollPaymentBatchInTxArgs) {
+    return this.financialCore.processPayrollPaymentBatchInTransaction(...args);
   }
 
   reverseFinancialOperation(...args: CancelArgs) {

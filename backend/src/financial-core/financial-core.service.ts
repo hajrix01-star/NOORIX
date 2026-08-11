@@ -31,6 +31,11 @@ export class FinancialCoreService {
   ) {
     return this.outflow.processOutflowBatchInTransaction(...a);
   }
+  processPayrollPaymentBatchInTransaction(
+    ...a: Parameters<FinancialOutflowService['processPayrollPaymentBatchInTransaction']>
+  ) {
+    return this.outflow.processPayrollPaymentBatchInTransaction(...a);
+  }
   rebuildOutflowInvoiceLedgerAfterVaultChange(
     ...a: Parameters<FinancialOutflowService['rebuildOutflowInvoiceLedgerAfterVaultChange']>
   ) {

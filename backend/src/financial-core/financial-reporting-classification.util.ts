@@ -10,6 +10,7 @@ export const LEDGER_REPORTING_CLASSES = [
   'operating_other_expense',
   'operating_payroll',
   'non_operating_advance',
+  'non_operating_payroll_payment',
   'non_operating_loan',
   'internal_transfer',
   'tax_collected',
@@ -24,6 +25,7 @@ export function reportingClassForOutflowKind(kind: string): LedgerReportingClass
     case 'fixed_expense': return 'operating_recurring_expense';
     case 'salary': return 'operating_payroll';
     case 'advance': return 'non_operating_advance';
+    case 'payroll_payment': return 'non_operating_payroll_payment';
     case 'expense':
     case 'hr_expense': return 'operating_other_expense';
     default: return 'unclassified';
@@ -68,6 +70,8 @@ export function reportingClassForReferenceType(
     case 'sale': return 'operating_revenue';
     case 'salary':
     case 'advance_settlement': return 'operating_payroll';
+    case 'payroll_accrual': return 'operating_payroll';
+    case 'payroll_payment': return 'non_operating_payroll_payment';
     case 'advance': return 'non_operating_advance';
     case 'loan_opening':
     case 'loan_payment':

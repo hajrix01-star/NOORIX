@@ -21,6 +21,7 @@ describe('HrPayrollIndividualPaymentService', () => {
           id: 'vault-1', nameAr: 'Main vault', isActive: true, isArchived: false, showAsPaymentMethod: true,
         }]),
       },
+      account: { findFirst: jest.fn().mockResolvedValue({ id: 'payroll-payable' }) },
       payrollRun: {
         count: jest.fn().mockResolvedValue(0),
         findFirst: jest.fn().mockResolvedValue(existingRun),
@@ -47,6 +48,7 @@ describe('HrPayrollIndividualPaymentService', () => {
       expect.any(Object),
       [expect.objectContaining({
         kind: 'salary', employeeId: 'employee-1', totalAmount: '1700.0000', invoiceNumber: expect.stringMatching(/^SAL-SUP-/),
+        debitAccountId: 'payroll-payable',
       })],
       'user-1',
       'tenant-1',

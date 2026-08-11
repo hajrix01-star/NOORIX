@@ -3,7 +3,7 @@ import Decimal from 'decimal.js';
 export type DashboardLedgerReportingClass =
   | 'operating_revenue' | 'operating_purchase' | 'operating_recurring_expense'
   | 'operating_other_expense' | 'operating_payroll' | 'non_operating_advance'
-  | 'non_operating_loan' | 'internal_transfer' | 'tax_collected' | 'unclassified';
+  | 'non_operating_payroll_payment' | 'non_operating_loan' | 'internal_transfer' | 'tax_collected' | 'unclassified';
 
 export type DashboardLedgerProjectionRow = {
   amount: string | number;
@@ -108,7 +108,7 @@ export type DashboardLedgerProjection = {
 const PERSISTED_CLASSES = new Set<DashboardLedgerReportingClass>([
   'operating_revenue', 'operating_purchase', 'operating_recurring_expense',
   'operating_other_expense', 'operating_payroll', 'non_operating_advance',
-  'non_operating_loan', 'internal_transfer', 'tax_collected',
+  'non_operating_payroll_payment', 'non_operating_loan', 'internal_transfer', 'tax_collected',
 ]);
 
 const OPERATIONAL_CATEGORY_BUCKETS = new Set<OperatingCategoryBucket>([
@@ -126,6 +126,7 @@ function bucketForReportingClass(value: DashboardLedgerReportingClass): Projecti
     case 'operating_payroll': return 'payroll';
     case 'non_operating_advance':
     case 'non_operating_loan':
+    case 'non_operating_payroll_payment':
     case 'internal_transfer': return 'excludedNonOperating';
     case 'tax_collected': return 'taxCollected';
     case 'unclassified': return 'unclassified';
@@ -137,8 +138,10 @@ export function fallbackReportingClassForLedgerRow(row: DashboardLedgerProjectio
   switch (row.referenceType) {
     case 'sale': return 'operating_revenue';
     case 'salary':
+    case 'payroll_accrual':
     case 'advance_settlement': return 'operating_payroll';
     case 'advance': return 'non_operating_advance';
+    case 'payroll_payment': return 'non_operating_payroll_payment';
     case 'loan_opening':
     case 'loan_payment':
     case 'loan_payment_reversal': return 'non_operating_loan';
@@ -249,7 +252,7 @@ export function buildDashboardLedgerProjection(rows: readonly DashboardLedgerPro
   const reportingClassCounts: Record<DashboardLedgerProjectionClass, number> = {
     operating_revenue: 0, operating_purchase: 0, operating_recurring_expense: 0,
     operating_other_expense: 0, operating_payroll: 0, non_operating_advance: 0,
-    non_operating_loan: 0, internal_transfer: 0, tax_collected: 0, unclassified: 0,
+    non_operating_payroll_payment: 0, non_operating_loan: 0, internal_transfer: 0, tax_collected: 0, unclassified: 0,
     fallback_derived: 0,
   };
   const reportingClassRecordSets = new Map<DashboardLedgerReportingClass, Set<string>>();
@@ -338,7 +341,7 @@ export function buildDashboardLedgerProjection(rows: readonly DashboardLedgerPro
   const classifiedAmount = persistedClassifiedAmount.plus(fallbackClassifiedAmount);
   const classifiedPct = totalAmount.isZero() ? null : classifiedAmount.div(totalAmount).mul(100).toDecimalPlaces(2).toNumber();
   const reportingClassRecordCounts = Object.fromEntries(
-    (['operating_revenue', 'operating_purchase', 'operating_recurring_expense', 'operating_other_expense', 'operating_payroll', 'non_operating_advance', 'non_operating_loan', 'internal_transfer', 'tax_collected', 'unclassified'] as DashboardLedgerReportingClass[])
+    (['operating_revenue', 'operating_purchase', 'operating_recurring_expense', 'operating_other_expense', 'operating_payroll', 'non_operating_advance', 'non_operating_payroll_payment', 'non_operating_loan', 'internal_transfer', 'tax_collected', 'unclassified'] as DashboardLedgerReportingClass[])
       .map((key) => [key, reportingClassRecordSets.get(key)?.size ?? 0]),
   ) as Record<DashboardLedgerReportingClass, number>;
 

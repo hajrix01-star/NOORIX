@@ -3,11 +3,11 @@ import type { FinancialCoreService } from '../financial-core/financial-core.serv
 
 type FinancialCoreAccountingDelegate = Pick<
   FinancialCoreService,
-  'processOutflow' | 'processOutflowWithReportingClass' | 'processOutflowBatchInTransaction' | 'cancelOperation'
+  'processOutflow' | 'processOutflowWithReportingClass' | 'processPayrollPaymentBatchInTransaction' | 'cancelOperation'
 >;
 type OutflowInput = Parameters<FinancialCoreService['processOutflow']>[0];
-type OutflowBatchDto = Parameters<FinancialCoreService['processOutflowBatchInTransaction']>[0];
-type OutflowBatchInput = Parameters<FinancialCoreService['processOutflowBatchInTransaction']>[1];
+type OutflowBatchDto = Parameters<FinancialCoreService['processPayrollPaymentBatchInTransaction']>[0];
+type OutflowBatchInput = Parameters<FinancialCoreService['processPayrollPaymentBatchInTransaction']>[1];
 type CancelInput = Parameters<FinancialCoreService['cancelOperation']>[0];
 
 describe('AccountingCoreService', () => {
@@ -15,7 +15,7 @@ describe('AccountingCoreService', () => {
     const financialCore: FinancialCoreAccountingDelegate = {
       processOutflow: jest.fn().mockResolvedValue({ invoice: { id: 'inv-1' } }),
       processOutflowWithReportingClass: jest.fn().mockResolvedValue({ invoice: { id: 'inv-hr' } }),
-      processOutflowBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-2' } }]),
+      processPayrollPaymentBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-2' } }]),
       cancelOperation: jest.fn().mockResolvedValue({ cancelled: true }),
     };
     const service = new AccountingCoreService(financialCore);
@@ -44,7 +44,7 @@ describe('AccountingCoreService', () => {
     expect(financialCore.processOutflowWithReportingClass).toHaveBeenCalledWith(
       { companyId: 'co-1' }, 'operating_recurring_expense', 'u-1',
     );
-    expect(financialCore.processOutflowBatchInTransaction).toHaveBeenCalledTimes(1);
+    expect(financialCore.processPayrollPaymentBatchInTransaction).toHaveBeenCalledTimes(1);
     expect(financialCore.cancelOperation).toHaveBeenCalledTimes(1);
   });
 });

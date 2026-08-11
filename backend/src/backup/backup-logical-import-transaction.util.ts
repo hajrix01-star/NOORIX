@@ -304,6 +304,9 @@ export async function runBackupLogicalImportInTransaction(
               totalAmount: dec(pr.totalAmount),
               employeeCount: Number(pr.employeeCount ?? 0),
               status: String(pr.status ?? 'draft'),
+              kind: String(pr.kind ?? 'regular'),
+              advanceSettlementsAppliedAt: pr.advanceSettlementsAppliedAt ? ddate(pr.advanceSettlementsAppliedAt) : null,
+              payrollAccruedAt: pr.payrollAccruedAt ? ddate(pr.payrollAccruedAt) : null,
               notes: (pr.notes as string | null) ?? null,
               createdAt: ddate(pr.createdAt),
               updatedAt: ddate(pr.updatedAt),
@@ -328,6 +331,7 @@ export async function runBackupLogicalImportInTransaction(
               deductions: dec(it.deductions ?? 0),
               advancesDeduct: dec(it.advancesDeduct ?? 0),
               netSalary: dec(it.netSalary),
+              advanceSelections: (it.advanceSelections as Prisma.InputJsonValue | null) ?? undefined,
               notes: (it.notes as string | null) ?? null,
             },
           });

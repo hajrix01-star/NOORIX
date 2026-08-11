@@ -153,12 +153,29 @@ export class FinancialOutflowService {
     const userId = this.support.resolveUserId(callerUserId);
     return this.persistOutflowBatchInTransaction(tx, dtos, userId, tenantId);
   }
+  async processPayrollPaymentBatchInTransaction(
+    tx: TxClient,
+    dtos: OutflowDto[],
+    callerUserId?: string,
+    tenantId = this.support.resolveTenantId(),
+  ) {
+    assertOutflowBatchNoDuplicateSupplierInvoiceKeys(dtos);
+    const userId = this.support.resolveUserId(callerUserId);
+    return this.persistOutflowBatchInTransaction(
+      tx,
+      dtos,
+      userId,
+      tenantId,
+      'non_operating_payroll_payment',
+    );
+  }
 
   private async persistOutflowBatchInTransaction(
     tx: TxClient,
     dtos: OutflowDto[],
     userId: string,
     tenantId: string,
+    reportingClassOverride?: LedgerReportingClass,
   ) {
     const results = [];
     for (const dto of dtos) {
@@ -169,7 +186,7 @@ export class FinancialOutflowService {
         tx,
         this.support,
         this.fiscalPeriod,
-        { tenantId, userId, dto, entryDate, txDate, invoiceNumber: serial },
+        { tenantId, userId, dto, entryDate, txDate, invoiceNumber: serial, reportingClassOverride },
       );
       results.push({ invoice, ledgerEntry: null });
     }

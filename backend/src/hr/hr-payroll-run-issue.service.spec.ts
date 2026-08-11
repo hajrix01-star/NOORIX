@@ -3,6 +3,7 @@ import { AccountingCoreService } from '../accounting-core/accounting-core.servic
 import { AuditLogService } from '../audit/audit-log.service';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { HrPayrollRunIssueService } from './hr-payroll-run-issue.service';
+import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
 
 jest.mock('../common/tenant-context', () => ({
   TenantContext: { getTenantId: jest.fn(() => 'tenant-1') },
@@ -13,6 +14,10 @@ jest.mock('../vaults/assert-vaults-for-payment.util', () => ({
 }));
 
 describe('HrPayrollRunIssueService', () => {
+  const fiscal = Object.assign(Object.create(FiscalPeriodService.prototype), {
+    assertPeriodOpenForDate: jest.fn().mockResolvedValue(undefined),
+  });
+
   const baseRun = {
     id: 'run-1',
     companyId: 'co-1',
@@ -29,7 +34,7 @@ describe('HrPayrollRunIssueService', () => {
   it('issues payroll payment inside one transaction', async () => {
     const tx = {
       payrollRun: {
-        findFirst: jest.fn().mockResolvedValue({ advanceSettlementsAppliedAt: new Date('2026-06-30T00:00:00.000Z') }),
+        findFirst: jest.fn().mockResolvedValue({ advanceSettlementsAppliedAt: new Date('2026-06-30T00:00:00.000Z'), payrollAccruedAt: new Date('2026-06-30T00:00:00.000Z') }),
       },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
@@ -37,7 +42,8 @@ describe('HrPayrollRunIssueService', () => {
       payrollRun: { findFirst: jest.fn().mockResolvedValue(baseRun) },
       invoice: { findFirst: jest.fn().mockResolvedValue(null), aggregate: jest.fn().mockResolvedValue({ _sum: { totalAmount: new Prisma.Decimal(0) } }) },
       vault: { findFirst: jest.fn().mockResolvedValue({ id: 'vault-1' }) },
-      $transaction: jest.fn((fn) => fn(tx)),
+      account: { findFirst: jest.fn().mockResolvedValue({ id: 'payroll-payable' }) },
+      withTenant: jest.fn((fn) => fn(tx)),
     });
     const accountingCore: AccountingCoreService = Object.assign(Object.create(AccountingCoreService.prototype), {
       postPayrollPaymentBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-1' } }]),
@@ -45,14 +51,14 @@ describe('HrPayrollRunIssueService', () => {
     const audit: AuditLogService = Object.assign(Object.create(AuditLogService.prototype), {
       log: jest.fn().mockResolvedValue(undefined),
     });
-    const service = new HrPayrollRunIssueService(prisma, audit, accountingCore);
+    const service = new HrPayrollRunIssueService(prisma, audit, accountingCore, fiscal);
 
     const result = await service.issuePayrollPayment({
       payrollRunId: 'run-1',
       transactionDate: '2026-06-30',
     });
 
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.withTenant).toHaveBeenCalledTimes(1);
     expect(accountingCore.postPayrollPaymentBatchInTransaction).toHaveBeenCalledWith(
       tx,
       expect.any(Array),
@@ -76,7 +82,7 @@ describe('HrPayrollRunIssueService', () => {
   it('forwards an arbitrary number of exact vault allocations to the accounting core', async () => {
     const tx = {
       payrollRun: {
-        findFirst: jest.fn().mockResolvedValue({ advanceSettlementsAppliedAt: new Date('2026-06-30T00:00:00.000Z') }),
+        findFirst: jest.fn().mockResolvedValue({ advanceSettlementsAppliedAt: new Date('2026-06-30T00:00:00.000Z'), payrollAccruedAt: new Date('2026-06-30T00:00:00.000Z') }),
       },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
@@ -84,7 +90,8 @@ describe('HrPayrollRunIssueService', () => {
       payrollRun: { findFirst: jest.fn().mockResolvedValue(baseRun) },
       invoice: { findFirst: jest.fn().mockResolvedValue(null), aggregate: jest.fn().mockResolvedValue({ _sum: { totalAmount: new Prisma.Decimal(0) } }) },
       vault: { findFirst: jest.fn().mockResolvedValue({ id: 'vault-default' }) },
-      $transaction: jest.fn((fn) => fn(tx)),
+      account: { findFirst: jest.fn().mockResolvedValue({ id: 'payroll-payable' }) },
+      withTenant: jest.fn((fn) => fn(tx)),
     });
     const accountingCore: AccountingCoreService = Object.assign(Object.create(AccountingCoreService.prototype), {
       postPayrollPaymentBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-1' } }]),
@@ -92,7 +99,7 @@ describe('HrPayrollRunIssueService', () => {
     const audit: AuditLogService = Object.assign(Object.create(AuditLogService.prototype), {
       log: jest.fn().mockResolvedValue(undefined),
     });
-    const service = new HrPayrollRunIssueService(prisma, audit, accountingCore);
+    const service = new HrPayrollRunIssueService(prisma, audit, accountingCore, fiscal);
 
     await service.issuePayrollPayment({
       payrollRunId: 'run-1',
@@ -126,7 +133,7 @@ describe('HrPayrollRunIssueService', () => {
     };
     const tx = {
       payrollRun: {
-        findFirst: jest.fn().mockResolvedValue({ advanceSettlementsAppliedAt: new Date('2026-06-30T00:00:00.000Z') }),
+        findFirst: jest.fn().mockResolvedValue({ advanceSettlementsAppliedAt: new Date('2026-06-30T00:00:00.000Z'), payrollAccruedAt: new Date('2026-06-30T00:00:00.000Z') }),
       },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
@@ -137,7 +144,8 @@ describe('HrPayrollRunIssueService', () => {
         aggregate: jest.fn().mockResolvedValue({ _sum: { totalAmount: new Prisma.Decimal(250) } }),
       },
       vault: { findFirst: jest.fn().mockResolvedValue({ id: 'vault-default' }) },
-      $transaction: jest.fn((fn) => fn(tx)),
+      account: { findFirst: jest.fn().mockResolvedValue({ id: 'payroll-payable' }) },
+      withTenant: jest.fn((fn) => fn(tx)),
     });
     const accountingCore: AccountingCoreService = Object.assign(Object.create(AccountingCoreService.prototype), {
       postPayrollPaymentBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-remaining' } }]),
@@ -146,6 +154,7 @@ describe('HrPayrollRunIssueService', () => {
       prisma,
       Object.assign(Object.create(AuditLogService.prototype), { log: jest.fn() }),
       accountingCore,
+      fiscal,
     );
 
     await service.issuePayrollPayment({
@@ -176,7 +185,7 @@ describe('HrPayrollRunIssueService', () => {
       postPayrollPaymentBatchInTransaction: jest.fn(),
     });
     const audit: AuditLogService = Object.assign(Object.create(AuditLogService.prototype), { log: jest.fn() });
-    const service = new HrPayrollRunIssueService(prisma, audit, accountingCore);
+    const service = new HrPayrollRunIssueService(prisma, audit, accountingCore, fiscal);
 
     const result = await service.issuePayrollPayment({
       payrollRunId: 'run-1',

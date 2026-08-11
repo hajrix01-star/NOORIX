@@ -41,7 +41,9 @@ export async function applyPayrollAdvanceSettlements(
   },
   txDate: string,
   tenantId: string,
-): Promise<void> {
+  options: { postExpenseLedger?: boolean } = {},
+): Promise<Prisma.Decimal> {
+  let allocatedTotal = new Prisma.Decimal(0);
   const runMonth = `${run.payrollMonth.getFullYear()}-${String(run.payrollMonth.getMonth() + 1).padStart(2, '0')}`;
   let settlementAccounts: { salaryExpenseId: string; advanceAssetId: string } | null = null;
 
@@ -159,32 +161,35 @@ export async function applyPayrollAdvanceSettlements(
 
       // السلفة صُرفت سابقاً كأصل؛ هذه التسوية فقط تنقل الجزء المخصوم إلى تكلفة الرواتب
       // من دون حركة نقدية ثانية.
-      const accounts = await resolveSettlementAccounts();
-      const settlementDate = new Date(`${txDate}T00:00:00.000Z`);
-      await db.ledgerEntry.create({
-        data: {
-          tenantId,
-          companyId: run.companyId,
-          debitAccountId: accounts.salaryExpenseId,
-          creditAccountId: accounts.advanceAssetId,
-          amount: new Prisma.Decimal(allocate),
-          transactionDate: settlementDate,
-          entryDate: settlementDate,
-          referenceType: 'advance_settlement',
-          referenceId: deduction.id,
-          reportingClass: reportingClassForReferenceType('advance_settlement'),
-          employeeId: item.employeeId,
-          status: 'active',
-        },
-      });
-
+      if (options.postExpenseLedger !== false) {
+        const accounts = await resolveSettlementAccounts();
+        const settlementDate = new Date(`${txDate}T00:00:00.000Z`);
+        await db.ledgerEntry.create({
+          data: {
+            tenantId,
+            companyId: run.companyId,
+            debitAccountId: accounts.salaryExpenseId,
+            creditAccountId: accounts.advanceAssetId,
+            amount: new Prisma.Decimal(allocate),
+            transactionDate: settlementDate,
+            entryDate: settlementDate,
+            referenceType: 'advance_settlement',
+            referenceId: deduction.id,
+            reportingClass: reportingClassForReferenceType('advance_settlement'),
+            employeeId: item.employeeId,
+            status: 'active',
+          },
+        });
+      }
       remainingToDeduct -= allocate;
+      allocatedTotal = allocatedTotal.plus(allocate);
     }
 
     if (explicitSelections && remainingToDeduct > 0.01) {
       throw new BadRequestException('تعذر تطبيق كامل خصم السلف المحدد. حدّث المسير وحاول مجددًا.');
     }
   }
+  return allocatedTotal;
 }
 
 /**

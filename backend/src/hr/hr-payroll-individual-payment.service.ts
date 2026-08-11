@@ -57,6 +57,14 @@ export class HrPayrollIndividualPaymentService {
         throw new BadRequestException('تعذر إكمال المسير الإضافي السابق؛ راجع السجل قبل إعادة المحاولة.');
       }
 
+      const payrollPayable = await tx.account.findFirst({
+        where: { companyId: dto.companyId, code: 'PAY-001', type: 'liability', isActive: true },
+        select: { id: true },
+      });
+      if (!payrollPayable) {
+        throw new BadRequestException('Payroll payable account is not configured for this company.');
+      }
+
       const amount = new Prisma.Decimal(dto.amount);
       const note = dto.notes?.trim() || `مسير إضافي — ${employee.name} — ${toYmd(payrollMonth)}`;
       const payrollRun = await tx.payrollRun.create({
@@ -80,6 +88,7 @@ export class HrPayrollIndividualPaymentService {
         employeeId: dto.employeeId,
         invoiceNumber: `SAL-${runNumber}`,
         kind: 'salary',
+        debitAccountId: payrollPayable.id,
         totalAmount: amount.toFixed(4),
         netAmount: amount.toFixed(4),
         taxAmount: '0',

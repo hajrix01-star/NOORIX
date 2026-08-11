@@ -13,6 +13,7 @@ const MASTER_ACCOUNTS = [
   { code: 'AR-001',  nameAr: 'الذمم المدينة (عملاء)',         nameEn: 'Accounts Receivable',      type: 'asset',    icon: '🧾', taxExempt: false },
   { code: 'AP-001',  nameAr: 'الذمم الدائنة (موردون)',        nameEn: 'Accounts Payable',         type: 'liability',icon: '📋', taxExempt: false },
   { code: 'TAX-001', nameAr: 'ضريبة القيمة المضافة',          nameEn: 'VAT',                      type: 'liability',icon: '📝', taxExempt: false },
+  { code: 'PAY-001', nameAr: '\u0631\u0648\u0627\u062A\u0628 \u0645\u0633\u062A\u062D\u0642\u0629', nameEn: 'Payroll Payable', type: 'liability',icon: '\u{1F4BC}', taxExempt: true },
   { code: 'EQU-001', nameAr: 'رأس المال',                    nameEn: 'Capital',                  type: 'equity',   icon: '💎', taxExempt: false },
   { code: 'REV-001', nameAr: 'المبيعات',                     nameEn: 'Sales',                    type: 'revenue',  icon: '💰', taxExempt: false },
   { code: 'PUR-001', nameAr: 'مواد غذائية',                  nameEn: 'Food & Materials',         type: 'expense',  icon: '🥩', taxExempt: false },

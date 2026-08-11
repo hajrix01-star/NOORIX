@@ -6,6 +6,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AuditModule } from '../audit/audit.module';
 import { FinancialCoreModule } from '../financial-core/financial-core.module';
 import { AccountingCoreModule } from '../accounting-core/accounting-core.module';
+import { FiscalPeriodModule } from '../fiscal-period/fiscal-period.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { SupplierDirectoryModule } from '../supplier-directory/supplier-directory.module';
 import { HRController } from './hr.controller';
@@ -41,6 +42,7 @@ const uploadDir = ensureUploadsSubdir('hr-documents');
     AuditModule,
     FinancialCoreModule,
     AccountingCoreModule,
+    FiscalPeriodModule,
     EmployeesModule,
     SupplierDirectoryModule,
   ],

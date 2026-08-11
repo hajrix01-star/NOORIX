@@ -21,6 +21,8 @@ describe('financial reporting classification', () => {
   it.each([
     ['sale', 'operating_revenue'],
     ['advance_settlement', 'operating_payroll'],
+    ['payroll_accrual', 'operating_payroll'],
+    ['payroll_payment', 'non_operating_payroll_payment'],
     ['loan_payment', 'non_operating_loan'],
     ['transfer', 'internal_transfer'],
     ['unknown', 'unclassified'],

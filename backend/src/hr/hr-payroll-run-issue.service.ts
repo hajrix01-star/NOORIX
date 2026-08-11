@@ -10,6 +10,8 @@ import { assertPayrollRunVaultSplitsMatchTotal } from './hr-payroll-assertions.u
 import { applyPayrollAdvanceSettlements } from './hr-payroll-advance-settlement.util';
 import { toYmd } from '../common/utils/to-ymd.util';
 import { individualSalaryBatchId } from './hr-payroll-individual-payment.service';
+import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
+import { postPayrollAccrualInTransaction } from './hr-payroll-accrual.util';
 
 type PayrollRunForIssue = NonNullable<
   Awaited<ReturnType<TenantPrismaService['payrollRun']['findFirst']>>
@@ -18,6 +20,8 @@ type PayrollRunForIssue = NonNullable<
   items: Array<{
     employeeId: string;
     advancesDeduct: Prisma.Decimal | null;
+    netSalary: Prisma.Decimal;
+    advanceSelections?: Prisma.JsonValue | null;
     employee: { name: string | null } | null;
   }>;
 };
@@ -28,6 +32,7 @@ export class HrPayrollRunIssueService {
     private readonly prisma: TenantPrismaService,
     private readonly audit: AuditLogService,
     private readonly accountingCore: AccountingCoreService,
+    private readonly fiscalPeriod: FiscalPeriodService,
   ) {}
 
   async issuePayrollPayment(dto: IssuePayrollPaymentDto, userId?: string) {
@@ -99,6 +104,14 @@ export class HrPayrollRunIssueService {
       select: { id: true },
       orderBy: { createdAt: 'asc' },
     });
+    const payrollPayable = await this.prisma.account.findFirst({
+      where: { companyId: run.companyId, code: 'PAY-001', type: 'liability', isActive: true },
+      select: { id: true },
+    });
+    if (!payrollPayable) {
+      throw new BadRequestException('Payroll payable account is not configured for this company.');
+    }
+
     if (!defaultVault) {
       throw new BadRequestException(
         'لا توجد خزنة نشطة. يرجى تحديد توزيع الخزائن للمسيرة أو إنشاء خزنة.',
@@ -144,16 +157,17 @@ export class HrPayrollRunIssueService {
         netAmount: totalStr,
         taxAmount: '0',
         transactionDate: txDate,
+        debitAccountId: payrollPayable.id,
         batchId: run.id,
         vaultSplits: vaultSplitsOut,
         notes: `مسيرة رواتب ${run.runNumber} (${run.employeeCount} موظف)`,
       },
     ];
 
-    const results = await this.prisma.$transaction(async (tx) => {
+    const results = await this.prisma.withTenant(async (tx) => {
       const lockedRun = await tx.payrollRun.findFirst({
         where: { id: run.id },
-        select: { advanceSettlementsAppliedAt: true },
+        select: { advanceSettlementsAppliedAt: true, payrollAccruedAt: true },
       });
       if (!lockedRun) throw new NotFoundException('مسيرة الرواتب غير موجودة.');
 
@@ -164,7 +178,20 @@ export class HrPayrollRunIssueService {
         tenantId,
       );
 
-      if (!lockedRun.advanceSettlementsAppliedAt) {
+      if (!lockedRun.payrollAccruedAt) {
+        await postPayrollAccrualInTransaction(
+          tx,
+          this.fiscalPeriod,
+          run as PayrollRunForIssue,
+          tenantId,
+          userId,
+        );
+        const postedAt = new Date();
+        await tx.payrollRun.update({
+          where: { id: run.id },
+          data: { payrollAccruedAt: postedAt, advanceSettlementsAppliedAt: postedAt },
+        });
+      } else if (!lockedRun.advanceSettlementsAppliedAt) {
         await applyPayrollAdvanceSettlements(
           tx,
           {
@@ -215,7 +242,7 @@ export class HrPayrollRunIssueService {
   ): Promise<void> {
     if (run.advanceSettlementsAppliedAt) return;
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.withTenant(async (tx) => {
       const lockedRun = await tx.payrollRun.findFirst({
         where: { id: run.id },
         select: { advanceSettlementsAppliedAt: true },

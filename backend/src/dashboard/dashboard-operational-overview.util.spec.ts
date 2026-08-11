@@ -12,7 +12,8 @@ const ledger = (overrides: Record<string, unknown> = {}) => ({
   reportingClassRecordCounts: {
     operating_revenue: 1, operating_purchase: 1, operating_recurring_expense: 2,
     operating_other_expense: 1, operating_payroll: 3, non_operating_advance: 0,
-    non_operating_loan: 0, internal_transfer: 0, tax_collected: 1, unclassified: 0,
+    non_operating_loan: 0, non_operating_payroll_payment: 0,
+    internal_transfer: 0, tax_collected: 1, unclassified: 0,
   },
   ...overrides,
 });
