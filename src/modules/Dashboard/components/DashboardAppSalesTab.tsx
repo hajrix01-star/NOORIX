@@ -1,66 +1,37 @@
 /**
  * DashboardAppSalesTab — متابعة نسبة التطبيقات من المبيعات شهرياً + أداء كل قناة
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useDashboardSalesPack } from '../../../hooks/useDashboardSalesPack';
 import { fmt } from '../../../utils/format';
-import { FilterToolbar, SearchableOptionsPicker, SmartTable, FmtNum, type SmartTableFooterSegment } from '../../../ui';
+import { SmartTable, FmtNum, type SmartTableFooterSegment } from '../../../ui';
 import { LoadingState, EmptyState } from '../../../components/states';
 import {
   buildAppSalesTableFooter,
   buildDashboardAppSalesDisplayModelFromBackend,
-  buildDashboardAppSalesYearSpanOptions,
-  parseDashboardAppSalesYearSpan,
-  type DashboardAppSalesYearSpan,
 } from '../utils/dashboardAppSalesData';
 import { DashboardAppSalesChart } from './DashboardAppSalesChart';
-import type { DashboardSalesPackMetrics } from '../../../types/api/domains/dashboard';
+import type { DashboardAppSalesMetricModel } from '../../../types/api/domains/dashboard';
 
 type Props = {
-  companyId: string | null | undefined;
   year: number;
+  data: DashboardAppSalesMetricModel | null | undefined;
+  isLoading: boolean;
 };
 
-const EMPTY_METRICS: DashboardSalesPackMetrics = {
-  yearDaily: [],
-  yearChannels: [],
-  dailyDaily: [],
-  dailyChannels: [],
-  monthDaily: [],
-};
-
-export default function DashboardAppSalesTab({ companyId, year }: Props) {
+export default function DashboardAppSalesTab({ year, data, isLoading }: Props) {
   const { t, lang } = useTranslation();
-  const [yearsSpan, setYearsSpan] = useState<DashboardAppSalesYearSpan>(1);
-
-  const yearEnd = year;
-  const yearStart = yearEnd - yearsSpan + 1;
-
-  const { metrics, isLoading } = useDashboardSalesPack({
-    companyId: companyId || '',
-    yearStart: `${yearStart}-01-01`,
-    yearEnd: `${yearEnd}-12-31`,
-    dailyStart: null,
-    dailyEnd: null,
-    monthStart: null,
-    monthEnd: null,
-    enabled: !!companyId,
-  });
-  const salesMetrics = metrics ?? EMPTY_METRICS;
+  const yearsSpan = 1;
 
   const model = useMemo(
-    () => buildDashboardAppSalesDisplayModelFromBackend(salesMetrics.appSales, lang, yearsSpan),
-    [salesMetrics.appSales, lang, yearsSpan],
+    () => buildDashboardAppSalesDisplayModelFromBackend(data, lang, yearsSpan),
+    [data, lang],
   );
 
-  const periodLabel = useMemo(() => {
-    if (yearsSpan === 1) return String(yearEnd);
-    return `${yearStart} — ${yearEnd}`;
-  }, [yearStart, yearEnd, yearsSpan]);
+  const periodLabel = String(year);
 
   const tableFooter = useMemo(() => buildAppSalesTableFooter(model), [model]);
-  const yearsSpanOptions = useMemo(() => buildDashboardAppSalesYearSpanOptions(t), [t]);
+
 
   const footerRow = useMemo((): SmartTableFooterSegment[] | null => {
     if (!model.channels.length) return null;
@@ -131,13 +102,6 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
     ];
   }, [model.monthSeries, model.channels, t]);
 
-  if (!companyId) {
-    return (
-      <div className="noorix-surface-card p-6 text-center text-noorix-muted">
-        {t('pleaseSelectCompany')}
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -169,18 +133,7 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
             (<FmtNum n={model.periodApp} /> / <FmtNum n={model.periodTotal} /> <span className="nx-sar">SR</span>)
           </span>
         </div>
-        <FilterToolbar variant="bare" className="flex items-center gap-2">
-          <span className="text-[12px] text-noorix-muted">{t('dashboardAppSalesYearsSpan')}</span>
-          <div className="w-[150px]">
-            <SearchableOptionsPicker
-              size="sm"
-              value={String(yearsSpan)}
-              onChange={(value) => setYearsSpan(parseDashboardAppSalesYearSpan(value))}
-              options={yearsSpanOptions}
-              aria-label={t('dashboardAppSalesYearsSpan')}
-            />
-          </div>
-        </FilterToolbar>
+
       </div>
 
       <div className="noorix-surface-card p-3 sm:p-4 lg:p-5">

@@ -9,8 +9,7 @@ import { getSaudiNow, getSaudiYearMonth } from '../../../../utils/saudiDate';
 import { lastDayOfMonth, prevCalendarMonth, ymd } from '../utils/dashboardOverviewDateUtils';
 import {
   buildChannelBreakdownRowsFromBackend,
-  buildPurchaseCategoriesRowsFromBackend,
-  buildTopSuppliersChartRowsFromBackend,
+  buildTopSuppliersChartRowsFromLedger,
   buildYearMonthlyDailyAvgRowsFromBackend,
   revenueMtdEndDay as getRevenueMtdEndDay,
   performanceTotalForSalesKey,
@@ -153,7 +152,7 @@ export function useDashboardOverviewModel(
   const dailySummaries = pickMetricSummaries(salesMetrics?.dailyDaily, overviewData.salesPack.dailySummaries);
   const yearSummaries = pickMetricSummaries(salesMetrics?.yearDaily, overviewData.salesPack.yearSummaries);
   const monthSalesForDailyAvg = pickMetricSummaries(salesMetrics?.monthDaily, overviewData.salesPack.monthSummaries);
-  const periodData = overviewData.periodData;
+
   const kpiInsightFooters = useMemo(
     () =>
       buildKpiInsightFooterMap(
@@ -197,13 +196,13 @@ export function useDashboardOverviewModel(
 
     return buildYearMonthlyDailyAvgRowsFromBackend({
       year,
-      rows: salesMetrics?.yearMonthlyDailyAverages,
+      rows: overviewData.presentation?.yearMonthlyDailyAverages,
       monthNames,
       capMonth,
       currentYear: saudiYM.year,
       currentMonth: saudiYM.month,
     });
-  }, [year, salesMetrics?.yearMonthlyDailyAverages, lang, saudiYM.year, saudiYM.month]);
+  }, [year, overviewData.presentation?.yearMonthlyDailyAverages, lang, saudiYM.year, saudiYM.month]);
 
   const monthName = isCustomRange
     ? filter?.label ?? null
@@ -247,10 +246,10 @@ export function useDashboardOverviewModel(
   const channelData = useMemo(
     () =>
       buildChannelBreakdownRowsFromBackend({
-        rows: salesMetrics?.channelBreakdown,
+        rows: overviewData.presentation?.channelBreakdown,
         lang,
       }),
-    [salesMetrics?.channelBreakdown, lang],
+    [overviewData.presentation?.channelBreakdown, lang],
   );
 
   const salesSeries = t('annualSales');
@@ -264,13 +263,8 @@ export function useDashboardOverviewModel(
   );
 
   const topSuppliersChartData = useMemo(
-    () => buildTopSuppliersChartRowsFromBackend(periodData, lang, PIE_COLORS),
-    [periodData, lang],
-  );
-
-  const purchaseCategoriesPieData = useMemo(
-    () => buildPurchaseCategoriesRowsFromBackend(periodData, lang, PIE_COLORS),
-    [periodData, lang],
+    () => buildTopSuppliersChartRowsFromLedger(overviewData.presentation?.topSuppliers, lang, PIE_COLORS),
+    [overviewData.presentation?.topSuppliers, lang],
   );
 
   const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(() => new Set());
@@ -321,7 +315,6 @@ export function useDashboardOverviewModel(
     supplierFrom,
     supplierTo,
     isPeriodLoading: isLoading,
-    periodData,
     vaultActivity: overviewData.vaultActivity,
     operationalOverview: overviewData.operationalOverview,
     ledgerReporting: overviewData.ledgerReporting,
@@ -331,7 +324,7 @@ export function useDashboardOverviewModel(
     channelData,
     perfTotal,
     topSuppliersChartData,
-    purchaseCategoriesPieData,
+    ledgerAppSales: overviewData.presentation?.appSales,
     revenueMtdEndDay,
     revenueDailyAvgCalendar: selectedMonth != null ? monthAverageForDailyAvg?.revenueAvgDaily ?? null : null,
     revenueDailyAvgPrevMonthCalendar: selectedMonth != null ? prevMonthAverageForDailyAvg?.revenueAvgDaily ?? null : null,

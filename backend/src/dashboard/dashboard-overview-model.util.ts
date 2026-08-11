@@ -1,5 +1,6 @@
 import { clampSalesSummaryDateQuery } from '../common/utils/sales-summary-date-range';
 import { toYmd } from '../common/utils/to-ymd.util';
+import type { DashboardDailyMetricRow as SalesDashboardDailyMetricRow } from '../sales/sales-dashboard-metrics.types';
 
 export const EMPTY_SALES_PACK = {
   yearSummaries: [],
@@ -347,6 +348,20 @@ export function buildKpiCards(params: {
     const pct = pctOfSales(key, value, values.sales);
     return { key, value, pct, tone: kpiTone(key, pct) };
   });
+}
+
+/** Converts classified ledger daily rows into a sales-shaped metric with no monetary fallback. */
+export function buildDashboardLedgerDailyMetricRows(
+  rows: readonly DashboardLedgerTimelineAmountRow[],
+): SalesDashboardDailyMetricRow[] {
+  return rows
+    .filter((row) => Number(row.sales || 0) > 0)
+    .map((row) => ({
+      transactionDate: row.periodKey,
+      shift: 'ledger',
+      totalAmount: String(row.sales || 0),
+      customerCount: 0,
+    }));
 }
 
 export function buildDashboardLedgerTimelineMonthlyRows(

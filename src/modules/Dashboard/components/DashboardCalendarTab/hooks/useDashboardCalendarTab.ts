@@ -3,9 +3,10 @@ import { useTranslation } from '../../../../../i18n/useTranslation';
 import { useApp } from '../../../../../context/AppContext';
 import { useToast } from '../../../../../context/ToastContext';
 import { useDashboardSalesPack } from '../../../../../hooks/useDashboardSalesPack';
+import { useDashboardOverview } from '../../../../../hooks/useDashboardOverview';
 import { useDashboardCalendarData } from '../../../../../hooks/useDashboardCalendarData';
 import { usePrintPreview } from '../../../../../ui';
-import { getSaudiNow, toYmd } from '../../../../../utils/saudiDate';
+import { getSaudiNow } from '../../../../../utils/saudiDate';
 import type {
   DashboardCalendarDay,
   DashboardCalendarTargets,
@@ -27,6 +28,7 @@ import {
 } from '../print/dashboardCalendarPrintModel';
 import { DEFAULT_COLORS, MONTH_LABELS_EN } from '../constants';
 import type { DashboardCalendarTabProps } from '../types';
+import { buildDashboardCalendarLedgerMetrics } from '../utils/dashboardCalendarLedgerMetrics';
 
 function normalizeTargets(targets: DashboardCalendarTargets): DashboardCalendarTargets {
   return {
@@ -42,13 +44,17 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
   const now = getSaudiNow();
   const month = selectedMonth || now.month;
   const lastDay = lastDayOfMonth(year, month);
+  const calendarDayCap = year < now.year || (year === now.year && month < now.month)
+    ? lastDay
+    : year === now.year && month === now.month
+      ? Math.min(now.day, lastDay)
+      : 0;
 
   const startDate = calendarYmd(year, month, 1);
   const endDate = calendarYmd(year, month, lastDay);
 
   const {
     dailySummaries: summaries,
-    metrics: salesMetrics,
     isLoading: salesLoading,
   } = useDashboardSalesPack({
     companyId: companyId ?? '',
@@ -58,6 +64,21 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     dailyEnd: endDate,
     monthStart: startDate,
     monthEnd: endDate,
+    enabled: !!companyId,
+  });
+
+  const { data: ledgerOverview, isLoading: ledgerLoading } = useDashboardOverview({
+    companyId: companyId ?? '',
+    year,
+    yearStart: startDate,
+    yearEnd: endDate,
+    periodStart: startDate,
+    periodEnd: endDate,
+    dailyStart: startDate,
+    dailyEnd: endDate,
+    monthStart: startDate,
+    monthEnd: endDate,
+    selectedMonth: month,
     enabled: !!companyId,
   });
 
@@ -74,7 +95,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     resetMonthTargets,
   } = useDashboardCalendarData({ companyId, year, month, enabled: !!companyId });
 
-  const isLoading = salesLoading || calendarLoading;
+  const isLoading = salesLoading || ledgerLoading || calendarLoading;
 
   const [editingTarget, setEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState('');
@@ -90,17 +111,20 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
 
   const targets = useMemo(() => normalizeTargets(storedTargets), [storedTargets]);
 
-  const dailySales = useMemo(() => {
-    const map = new Map<string, number>();
-    (salesMetrics?.dailyTotals ?? []).forEach((row) => {
-      const date = toYmd(row.transactionDate);
-      map.set(date, toDashboardNumber(row.totalAmount));
-    });
-    return map;
-  }, [salesMetrics?.dailyTotals]);
-
-  const salesDailyAvgCalendarPeriod = salesMetrics?.monthAverage?.revenueAvgDaily ?? null;
-  const weekdaySalesAverages = salesMetrics?.weekdayAverages ?? [];
+  const {
+    dailySales,
+    salesDailyAvgCalendarPeriod,
+    weekdaySalesAverages,
+  } = useMemo(
+    () => buildDashboardCalendarLedgerMetrics({
+      rows: ledgerOverview.presentation?.timeline?.daily ?? [],
+      year,
+      month,
+      lastDay,
+      calendarDayCap,
+    }),
+    [calendarDayCap, ledgerOverview.presentation?.timeline?.daily, lastDay, month, year],
+  );
 
   const daysInMonth = useMemo<DashboardCalendarDay[]>(() => {
     const days: DashboardCalendarDay[] = [];
@@ -360,6 +384,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     selectedDatesSorted,
     dayNotes,
     specialDaysList,
+    ledgerReporting: ledgerOverview.ledgerReporting,
     year,
   };
 }

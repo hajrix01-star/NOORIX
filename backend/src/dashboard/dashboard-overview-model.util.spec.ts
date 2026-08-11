@@ -1,4 +1,4 @@
-import { buildDashboardLedgerSalesAverage, buildKpiCards, buildLedgerKpiCards } from './dashboard-overview-model.util';
+import { buildDashboardLedgerDailyMetricRows, buildDashboardLedgerSalesAverage, buildKpiCards, buildLedgerKpiCards } from './dashboard-overview-model.util';
 
 describe('buildKpiCards', () => {
   it('includes salaries in custom-range operating expenses and outflow', () => {
@@ -61,5 +61,17 @@ describe('buildDashboardLedgerSalesAverage', () => {
       { sales: '0', taxCollected: '0' },
       { customerCount: 4, calendarDays: 2 },
     )?.total).toBe(0);
+  });
+});
+
+
+describe('buildDashboardLedgerDailyMetricRows', () => {
+  it('keeps monetary daily analytics on ledger gross sales and does not inject sales-summary amounts', () => {
+    expect(buildDashboardLedgerDailyMetricRows([
+      { periodKey: '2026-07-01', sales: '115.0000', purchases: '0.0000', expenses: '0.0000' },
+      { periodKey: '2026-07-02', sales: '0.0000', purchases: '90.0000', expenses: '0.0000' },
+    ])).toEqual([
+      { transactionDate: '2026-07-01', shift: 'ledger', totalAmount: '115.0000', customerCount: 0 },
+    ]);
   });
 });

@@ -45,16 +45,15 @@ export function buildChannelBreakdownRowsFromBackend(params: {
   }));
 }
 
-export function buildTopSuppliersChartRowsFromBackend(
-  periodData: {
-    topSuppliers?: Array<{
-      nameAr?: string | null;
-      nameEn?: string | null;
-      totalAmount?: string | number | null;
-      invoiceCount?: number | null;
-      sharePct?: number | null;
-    }>;
-  } | null | undefined,
+/** Amounts are projected from LedgerEntry; supplier fields are display metadata only. */
+export function buildTopSuppliersChartRowsFromLedger(
+  rows: readonly {
+    nameAr?: string | null;
+    nameEn?: string | null;
+    amount?: string | number | null;
+    invoiceCount?: number | null;
+    sharePct?: number | null;
+  }[] | null | undefined,
   lang: string,
   pieColors: readonly string[],
 ): Array<{
@@ -64,9 +63,9 @@ export function buildTopSuppliersChartRowsFromBackend(
   pct: string;
   fill: string;
 }> {
-  return (periodData?.topSuppliers ?? []).slice(0, 8).map((row, index) => ({
+  return (rows ?? []).slice(0, 8).map((row, index) => ({
     name: (lang === 'ar' ? row.nameAr || row.nameEn : row.nameEn || row.nameAr) || '-',
-    value: Number(row.totalAmount || 0),
+    value: Number(row.amount || 0),
     count: row.invoiceCount || 0,
     pct: row.sharePct != null ? row.sharePct.toFixed(1) : '0',
     fill: pieColors[index % pieColors.length],

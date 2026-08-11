@@ -133,6 +133,10 @@ function normalizeDashboardOverview(raw: DashboardOverviewData | null | undefine
         daily: Array.isArray(raw.presentation?.timeline?.daily) ? raw.presentation.timeline.daily : [],
       },
       weeklyComparison: Array.isArray(raw.presentation?.weeklyComparison) ? raw.presentation.weeklyComparison : [],
+      yearMonthlyDailyAverages: Array.isArray(raw.presentation?.yearMonthlyDailyAverages) ? raw.presentation.yearMonthlyDailyAverages : [],
+      channelBreakdown: Array.isArray(raw.presentation?.channelBreakdown) ? raw.presentation.channelBreakdown : [],
+      topSuppliers: Array.isArray(raw.presentation?.topSuppliers) ? raw.presentation.topSuppliers : [],
+      appSales: raw.presentation?.appSales,
       previousMonthAverage: raw.presentation?.previousMonthAverage ?? null,
       salesAverage: {
         current: raw.presentation?.salesAverage?.current ?? null,

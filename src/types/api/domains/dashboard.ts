@@ -328,6 +328,18 @@ export type DashboardOverviewPresentation = {
     daily?: DashboardTimelineMetricRow[];
   };
   weeklyComparison?: DashboardSalesMetricWeeklyComparisonRow[];
+  /** Financial values are aggregated from active LedgerEntry rows. */
+  yearMonthlyDailyAverages?: DashboardSalesMetricMonthlyAverageRow[];
+  channelBreakdown?: DashboardChannelBreakdownMetricRow[];
+  topSuppliers?: Array<{
+    supplierId: string;
+    nameAr: string;
+    nameEn?: string | null;
+    amount: string | number;
+    invoiceCount: number;
+    sharePct: number | null;
+  }>;
+  appSales?: DashboardAppSalesMetricModel;
   previousMonthAverage?: DashboardSalesMetricAverage | null;
   salesAverage?: {
     current?: DashboardSalesMetricAverage | null;

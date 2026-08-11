@@ -19,7 +19,7 @@ export default function DashboardAnalyticsTab({ companyId, year, selectedMonth, 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4 lg:gap-5">
       <DashboardAnalyticsContent m={m} />
-      <DashboardAppSalesTab companyId={companyId} year={year} />
+      <DashboardAppSalesTab data={m.ledgerAppSales} year={year} isLoading={m.isLoading} />
     </div>
   );
 }

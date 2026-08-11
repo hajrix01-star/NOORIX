@@ -13,6 +13,7 @@ import {
   buildDashboardLedgerTimelineDailyRows,
   buildDashboardLedgerTimelineMonthlyRows,
   buildDashboardLedgerSalesAverage,
+  buildDashboardLedgerDailyMetricRows,
   buildLedgerKpiCards,
   percentChangeNullable,
 } from './dashboard-overview-model.util';
@@ -20,6 +21,7 @@ import { buildDashboardVaultActivity } from './dashboard-vault-activity.util';
 import { buildDashboardOperationalOverview } from './dashboard-operational-overview.util';
 import { buildDashboardExecutiveKpis } from './dashboard-executive-kpis.util';
 import { DashboardLedgerProjectionService } from './dashboard-ledger-projection.service';
+import { appSalesModel, channelBreakdown, monthlyDailyAverages, weeklyComparisonRows } from '../sales/sales-dashboard-metrics.util';
 
 @Injectable()
 export class DashboardService {
@@ -95,22 +97,13 @@ export class DashboardService {
           includeCancelledSales,
         )
       : Promise.resolve(EMPTY_SALES_PACK);
-    const weeklyPackPromise = hasSalesRead && ws && we
-      ? this.salesService.findDashboardPack(
-          companyId,
-          {
-            yearStart: wys,
-            yearEnd: wye,
-            dailyStart: ws,
-            dailyEnd: we,
-            monthStart: null,
-            monthEnd: null,
-            baselineStart: wbs,
-            baselineEnd: wbe,
-          },
-          includeCancelledSales,
-        )
-      : Promise.resolve(EMPTY_SALES_PACK);
+    const weeklyLedgerPromise = ws && we
+      ? this.dashboardLedgerProjectionService.getPeriodProjection(companyId, ws, we)
+      : Promise.resolve(null);
+    const weeklyBaselineLedgerPromise = wbs && wbe
+      ? this.dashboardLedgerProjectionService.getPeriodProjection(companyId, wbs, wbe)
+      : Promise.resolve(null);
+    const yearLedgerPromise = this.dashboardLedgerProjectionService.getPeriodProjection(companyId, ys, ye);
     const previousMonthPackPromise = hasSalesRead && pms && pme
       ? this.salesService.findDashboardPack(
           companyId,
@@ -130,10 +123,9 @@ export class DashboardService {
       ? this.dashboardLedgerProjectionService.getPeriodProjection(companyId, pms, pme)
       : Promise.resolve(null);
 
-    const [report, salesPack, weeklyPack, previousMonthPack, insights, periodData, vaultPeriodRows, ledgerReconciliation, previousMonthLedger] = await Promise.all([
+    const [report, salesPack, previousMonthPack, insights, periodData, vaultPeriodRows, ledgerReconciliation, previousMonthLedger, yearLedger, weeklyLedger, weeklyBaselineLedger] = await Promise.all([
       this.reportsService.getGeneralProfitLoss(companyId, year),
       salesPackPromise,
-      weeklyPackPromise,
       previousMonthPackPromise,
       this.dashboardInsightsService.buildDashboardInsights(
         companyId,
@@ -155,6 +147,9 @@ export class DashboardService {
       this.vaultsService.findAll(companyId, true, periodStart, periodEnd),
       this.dashboardLedgerProjectionService.getPeriodReconciliation(companyId, periodStart, periodEnd),
       previousMonthLedgerPromise,
+      yearLedgerPromise,
+      weeklyLedgerPromise,
+      weeklyBaselineLedgerPromise,
     ]);
 
     const salesMetrics = salesPack.metrics;
@@ -173,7 +168,24 @@ export class DashboardService {
         monthly: buildDashboardLedgerTimelineMonthlyRows(ledgerProjection.timeline.monthly, year, salesMetrics?.yearDaily ?? []),
         daily: buildDashboardLedgerTimelineDailyRows(ledgerProjection.timeline.daily, salesMetrics?.dailyDaily ?? [], ds, de),
       },
-      weeklyComparison: weeklyPack.metrics?.dailyWeeklyComparison ?? [],
+      weeklyComparison: weeklyLedger && weeklyBaselineLedger
+        ? weeklyComparisonRows(
+            buildDashboardLedgerDailyMetricRows(weeklyLedger.timeline.daily),
+            buildDashboardLedgerDailyMetricRows(weeklyBaselineLedger.timeline.daily),
+          )
+        : [],
+      yearMonthlyDailyAverages: monthlyDailyAverages(buildDashboardLedgerDailyMetricRows(yearLedger.timeline.daily)),
+      channelBreakdown: channelBreakdown(ledgerProjection.salesChannels.map((row) => ({
+        ...row,
+        type: row.type ?? '',
+      }))),
+      topSuppliers: ledgerProjection.topSuppliers,
+      appSales: appSalesModel(
+        ys,
+        ye,
+        buildDashboardLedgerDailyMetricRows(yearLedger.timeline.daily),
+        yearLedger.salesChannels.map((row) => ({ ...row, type: row.type ?? '' })),
+      ),
       previousMonthAverage: previousSalesAverage,
       salesAverage: { current: currentSalesAverage, previous: previousSalesAverage },
       basketAvgDeltaPct: percentChangeNullable(

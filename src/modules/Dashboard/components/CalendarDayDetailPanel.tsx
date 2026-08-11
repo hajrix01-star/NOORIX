@@ -65,7 +65,8 @@ export default function CalendarDayDetailPanel({
         label: t('salesChannels'),
         render: (_value, row) => {
           const channelText = (row.channels ?? [])
-            .map((channel) => `${vaultDisplayName(channel.vault, lang)}: ${fmt(channel.amount || 0)}`)
+            .map((channel) => vaultDisplayName(channel.vault, lang))
+            .filter(Boolean)
             .join(' | ');
           return (
             <span className="nx-cell-ellipsis" title={channelText || ''}>
@@ -79,16 +80,6 @@ export default function CalendarDayDetailPanel({
         label: t('customers'),
         numeric: true,
         render: (value) => <span className="nx-cell-num">{typeof value === 'number' ? value : 0}</span>,
-      },
-      {
-        key: 'totalAmount',
-        label: t('total'),
-        numeric: true,
-        render: (value) => (
-          <span className="nx-cell-num font-semibold text-noorix-green">
-            <FmtNum n={Number(value || 0)} />
-          </span>
-        ),
       },
     ],
     [lang, t],

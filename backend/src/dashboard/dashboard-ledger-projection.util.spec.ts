@@ -69,4 +69,32 @@ describe('dashboard ledger parallel projection', () => {
       { periodKey: '2026-07-03', sales: '115.0000', purchases: '0.0000', expenses: '200.0000' },
     ]);
   });
+
+  it('derives application and supplier amounts only from ledger amounts, including collected VAT', () => {
+    const result = buildDashboardLedgerProjection([
+      row({
+        amount: '100', reportingClass: 'operating_revenue', transactionDate: '2026-07-02',
+        vaultId: 'app-vault', vaultNameAr: '?????', vaultNameEn: 'App', vaultType: 'app', referenceId: 'sale-1',
+      }),
+      row({
+        amount: '15', reportingClass: 'tax_collected', transactionDate: '2026-07-02',
+        vaultId: 'app-vault', vaultNameAr: '?????', vaultNameEn: 'App', vaultType: 'app', referenceId: 'sale-1',
+      }),
+      row({
+        amount: '80', reportingClass: 'operating_purchase', transactionDate: '2026-07-03',
+        supplierId: 'supplier-1', supplierNameAr: '????', supplierNameEn: 'Supplier', referenceId: 'invoice-1',
+      }),
+      row({
+        amount: '20', reportingClass: 'non_operating_advance', transactionDate: '2026-07-03',
+        supplierId: 'supplier-1', supplierNameAr: '????', supplierNameEn: 'Supplier', referenceId: 'advance-1',
+      }),
+    ]);
+
+    expect(result.salesChannels).toEqual([
+      expect.objectContaining({ periodKey: '2026-07', vaultId: 'app-vault', amount: '115.0000' }),
+    ]);
+    expect(result.topSuppliers).toEqual([
+      expect.objectContaining({ supplierId: 'supplier-1', amount: '80.0000', invoiceCount: 1, sharePct: 100 }),
+    ]);
+  });
 });

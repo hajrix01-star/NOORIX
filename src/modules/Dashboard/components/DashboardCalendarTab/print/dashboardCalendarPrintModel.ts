@@ -5,7 +5,6 @@ import type {
 import { fmt } from '../../../../../utils/format';
 import { buildPrintHtmlTable, buildPrintTableHtml } from '../../../../../utils/printTableHtml';
 import { vaultDisplayName } from '../../../../../utils/vaultDisplay';
-import { toDashboardNumber } from '../../../utils/dashboardNumberModel';
 import { DOW_LABELS, DOW_LABELS_AR } from '../constants';
 import { calendarSalesHeatBgForPrint } from '../utils/calendarAchievementUtils';
 
@@ -15,10 +14,6 @@ type PrintCalendarCell = {
   html: string;
   style: string;
 };
-
-function totalSummaryAmount(summary: DashboardSalesSummary): number {
-  return toDashboardNumber(summary.totalAmount);
-}
 
 export function buildDashboardCalendarDayDetailsPrintBody({
   dayTarget,
@@ -38,10 +33,10 @@ export function buildDashboardCalendarDayDetailsPrintBody({
   const printRows = daySummaries.map((summary) => ({
     summaryNumber: summary.summaryNumber || '-',
     channels: (summary.channels ?? [])
-      .map((channel) => `${vaultDisplayName(channel.vault, lang)}: ${fmt(channel.amount || 0)}`)
+      .map((channel) => vaultDisplayName(channel.vault, lang))
+      .filter(Boolean)
       .join(' | ') || '-',
     customers: summary.customerCount ?? 0,
-    total: fmt(totalSummaryAmount(summary)),
   }));
 
   const targetInfo = `<div style="background:#eff6ff;padding:12px;border-radius:8px;margin:12px 0;font-size:13px">
@@ -54,12 +49,11 @@ export function buildDashboardCalendarDayDetailsPrintBody({
       { key: 'summaryNumber', header: t('summaryNumber') },
       { key: 'channels', header: t('salesChannels') },
       { key: 'customers', header: t('customers'), align: 'end' },
-      { key: 'total', header: t('total'), align: 'end' },
     ],
     rows: printRows,
     emptyMessage: t('noDataInPeriod'),
     footerRows: [[
-      { value: t('total'), colSpan: 3 },
+      { value: t('total'), colSpan: 2 },
       { value: `${fmt(totalAmount)} SR`, align: 'end' },
     ]],
   });

@@ -14,6 +14,13 @@ type LedgerProjectionDbRow = {
   reporting_category_id: string | null;
   reporting_category_name_ar: string | null;
   reporting_category_name_en: string | null;
+  vault_id: string | null;
+  vault_name_ar: string | null;
+  vault_name_en: string | null;
+  vault_type: string | null;
+  supplier_id: string | null;
+  supplier_name_ar: string | null;
+  supplier_name_en: string | null;
   debit_type: string;
   debit_code: string;
   credit_type: string;
@@ -34,10 +41,15 @@ export class DashboardLedgerProjectionService {
     const rows = await this.prisma.withTenant((tx) => tx.$queryRaw<LedgerProjectionDbRow[]>`
       SELECT le.amount::text AS amount, le.reporting_class, le.reference_type, le.reference_id, le.transaction_date,
         le.reporting_category_id, le.reporting_category_name_ar, le.reporting_category_name_en,
+        le.vault_id, v.name_ar AS vault_name_ar, v.name_en AS vault_name_en, v.type AS vault_type,
+        i.supplier_id, s.name_ar AS supplier_name_ar, s.name_en AS supplier_name_en,
         da.type AS debit_type, da.code AS debit_code, ca.type AS credit_type, ca.code AS credit_code
       FROM ledger_entries le
       JOIN accounts da ON da.id = le.debit_account_id
       JOIN accounts ca ON ca.id = le.credit_account_id
+      LEFT JOIN vaults v ON v.id = le.vault_id
+      LEFT JOIN invoices i ON le.reference_type = 'invoice' AND i.id = le.reference_id AND i.company_id = le.company_id
+      LEFT JOIN suppliers s ON s.id = i.supplier_id AND s.company_id = le.company_id
       WHERE le.company_id = ${companyId}
         AND le.status = 'active'
         AND le.transaction_date BETWEEN ${startDate} AND ${endDate}
@@ -48,6 +60,8 @@ export class DashboardLedgerProjectionService {
       referenceId: row.reference_id, transactionDate: row.transaction_date,
       reportingCategoryId: row.reporting_category_id, reportingCategoryNameAr: row.reporting_category_name_ar,
       reportingCategoryNameEn: row.reporting_category_name_en,
+      vaultId: row.vault_id, vaultNameAr: row.vault_name_ar, vaultNameEn: row.vault_name_en, vaultType: row.vault_type,
+      supplierId: row.supplier_id, supplierNameAr: row.supplier_name_ar, supplierNameEn: row.supplier_name_en,
       debitType: row.debit_type, debitCode: row.debit_code, creditType: row.credit_type, creditCode: row.credit_code,
     })));
   }

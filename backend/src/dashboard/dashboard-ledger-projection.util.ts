@@ -14,6 +14,13 @@ export type DashboardLedgerProjectionRow = {
   reportingCategoryId?: string | null;
   reportingCategoryNameAr?: string | null;
   reportingCategoryNameEn?: string | null;
+  vaultId?: string | null;
+  vaultNameAr?: string | null;
+  vaultNameEn?: string | null;
+  vaultType?: string | null;
+  supplierId?: string | null;
+  supplierNameAr?: string | null;
+  supplierNameEn?: string | null;
   debitType: string;
   debitCode: string;
   creditType: string;
@@ -40,6 +47,26 @@ export type DashboardLedgerTimelineRow = {
   expenses: string;
 };
 
+/** Monetary amounts are always from LedgerEntry; vault metadata is display-only. */
+export type DashboardLedgerSalesChannelRow = {
+  periodKey: string;
+  vaultId: string;
+  nameAr: string;
+  nameEn: string | null;
+  type: string | null;
+  amount: string;
+};
+
+/** Monetary amounts are always from LedgerEntry; supplier metadata is display-only. */
+export type DashboardLedgerTopSupplierRow = {
+  supplierId: string;
+  nameAr: string;
+  nameEn: string | null;
+  amount: string;
+  invoiceCount: number;
+  sharePct: number | null;
+};
+
 export type DashboardLedgerProjection = {
   source: 'classified_ledger_v2';
   sales: string;
@@ -62,6 +89,8 @@ export type DashboardLedgerProjection = {
     daily: DashboardLedgerTimelineRow[];
     monthly: DashboardLedgerTimelineRow[];
   };
+  salesChannels: DashboardLedgerSalesChannelRow[];
+  topSuppliers: DashboardLedgerTopSupplierRow[];
   coverage: {
     persistedClassifiedAmount: string;
     fallbackClassifiedAmount: string;
@@ -179,6 +208,31 @@ function finalizeTimeline(rows: Map<string, { sales: Decimal; purchases: Decimal
     }));
 }
 
+function finalizeSalesChannels(
+  rows: Map<string, { periodKey: string; vaultId: string; nameAr: string; nameEn: string | null; type: string | null; amount: Decimal }>,
+): DashboardLedgerSalesChannelRow[] {
+  return [...rows.values()]
+    .sort((a, b) => a.periodKey.localeCompare(b.periodKey) || b.amount.comparedTo(a.amount) || a.nameAr.localeCompare(b.nameAr, 'ar'))
+    .map((row) => ({ ...row, amount: fixed(row.amount) }));
+}
+
+function finalizeTopSuppliers(
+  rows: Map<string, { supplierId: string; nameAr: string; nameEn: string | null; amount: Decimal; invoiceRefs: Set<string> }>,
+): DashboardLedgerTopSupplierRow[] {
+  const total = [...rows.values()].reduce((sum, row) => sum.plus(row.amount), new Decimal(0));
+  return [...rows.values()]
+    .sort((a, b) => b.amount.comparedTo(a.amount) || a.nameAr.localeCompare(b.nameAr, 'ar'))
+    .slice(0, 5)
+    .map((row) => ({
+      supplierId: row.supplierId,
+      nameAr: row.nameAr,
+      nameEn: row.nameEn,
+      amount: fixed(row.amount),
+      invoiceCount: row.invoiceRefs.size,
+      sharePct: total.isZero() ? null : row.amount.div(total).mul(100).toDecimalPlaces(2).toNumber(),
+    }));
+}
+
 export function buildDashboardLedgerProjection(rows: readonly DashboardLedgerProjectionRow[]): DashboardLedgerProjection {
   const zero = () => new Decimal(0);
   const totals: Record<ProjectionBucket, Decimal> = {
@@ -190,6 +244,8 @@ export function buildDashboardLedgerProjection(rows: readonly DashboardLedgerPro
   };
   const daily = new Map<string, { sales: Decimal; purchases: Decimal; expenses: Decimal }>();
   const monthly = new Map<string, { sales: Decimal; purchases: Decimal; expenses: Decimal }>();
+  const salesChannels = new Map<string, { periodKey: string; vaultId: string; nameAr: string; nameEn: string | null; type: string | null; amount: Decimal }>();
+  const topSuppliers = new Map<string, { supplierId: string; nameAr: string; nameEn: string | null; amount: Decimal; invoiceRefs: Set<string> }>();
   const reportingClassCounts: Record<DashboardLedgerProjectionClass, number> = {
     operating_revenue: 0, operating_purchase: 0, operating_recurring_expense: 0,
     operating_other_expense: 0, operating_payroll: 0, non_operating_advance: 0,
@@ -249,6 +305,30 @@ export function buildDashboardLedgerProjection(rows: readonly DashboardLedgerPro
     if (date) {
       addTimeline(daily, date, bucket, amount);
       addTimeline(monthly, date.slice(0, 7), bucket, amount);
+      if ((bucket === 'sales' || bucket === 'taxCollected') && row.vaultId) {
+        const periodKey = date.slice(0, 7);
+        const key = `${periodKey}:${row.vaultId}`;
+        const current = salesChannels.get(key);
+        salesChannels.set(key, {
+          periodKey,
+          vaultId: row.vaultId,
+          nameAr: row.vaultNameAr || row.vaultNameEn || row.vaultId,
+          nameEn: row.vaultNameEn ?? null,
+          type: row.vaultType ?? null,
+          amount: (current?.amount ?? zero()).plus(amount),
+        });
+      }
+    }
+
+    if ((bucket === 'purchases' || bucket === 'recurringExpenses' || bucket === 'otherExpenses') && row.supplierId) {
+      const current = topSuppliers.get(row.supplierId);
+      topSuppliers.set(row.supplierId, {
+        supplierId: row.supplierId,
+        nameAr: row.supplierNameAr || row.supplierNameEn || row.supplierId,
+        nameEn: row.supplierNameEn ?? null,
+        amount: (current?.amount ?? zero()).plus(amount),
+        invoiceRefs: new Set([...(current?.invoiceRefs ?? []), row.referenceId ?? String(index)]),
+      });
     }
   });
 
@@ -275,6 +355,8 @@ export function buildDashboardLedgerProjection(rows: readonly DashboardLedgerPro
       payroll: finalizeCategories(categoryTotals.payroll),
     },
     timeline: { daily: finalizeTimeline(daily), monthly: finalizeTimeline(monthly) },
+    salesChannels: finalizeSalesChannels(salesChannels),
+    topSuppliers: finalizeTopSuppliers(topSuppliers),
     coverage: {
       persistedClassifiedAmount: fixed(persistedClassifiedAmount), fallbackClassifiedAmount: fixed(fallbackClassifiedAmount), totalAmount: fixed(totalAmount), classifiedPct,
       rowCount: rows.length, persistedClassifiedRowCount, fallbackClassifiedRowCount, unclassifiedRowCount: reportingClassCounts.unclassified,
