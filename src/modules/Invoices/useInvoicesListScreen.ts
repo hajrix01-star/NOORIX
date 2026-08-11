@@ -321,6 +321,7 @@ export function useInvoicesListScreen() {
     setViewingInvoice,
     queryClient,
     suppliers,
+    flatCategories,
     supplierCategories,
     paymentVaults,
     dayCloseDefaultYmd,

@@ -40,6 +40,7 @@ export default function InvoicesListScreen() {
         <InvoiceEditModal
           invoice={s.editingInvoice}
           suppliers={s.suppliers}
+          categories={s.flatCategories}
           companyId={s.companyId}
           vaultsList={s.paymentVaults}
           onSaved={s.onInvoiceEditSaved}

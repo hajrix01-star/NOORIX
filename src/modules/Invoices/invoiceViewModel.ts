@@ -21,6 +21,7 @@ export type InvoiceViewVaultAllocation = {
 
 export type InvoiceViewSource = {
   id: string;
+  categoryId?: string | null;
   invoiceNumber?: string | number | null;
   supplierInvoiceNumber?: string | number | null;
   transactionDate?: string | Date | null;

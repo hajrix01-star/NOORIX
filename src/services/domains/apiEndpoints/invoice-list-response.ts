@@ -34,6 +34,7 @@ export type InvoiceListOutflowSummary = {
 
 export type InvoiceListItem = {
   id?: string | null;
+  categoryId?: string | null;
   invoiceNumber?: string | number | null;
   supplierInvoiceNumber?: string | number | null;
   transactionDate?: string | Date | null;

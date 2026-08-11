@@ -126,9 +126,10 @@ describe('invoicesListScreenModel', () => {
   });
 
   it('converts table rows to view sources only when the invoice id exists', () => {
-    expect(toInvoiceListViewSource({ id: 'invoice-1', invoiceNumber: 'INV-1' })).toMatchObject({
+    expect(toInvoiceListViewSource({ id: 'invoice-1', invoiceNumber: 'INV-1', categoryId: 'category-maintenance' })).toMatchObject({
       id: 'invoice-1',
       invoiceNumber: 'INV-1',
+      categoryId: 'category-maintenance',
     });
     expect(toInvoiceListViewSource({ invoiceNumber: 'INV-2' })).toBeNull();
     expect(toInvoiceListViewSource(null)).toBeNull();

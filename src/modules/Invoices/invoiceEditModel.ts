@@ -4,6 +4,7 @@ import { toInvoiceFiniteNumber } from './invoiceNumberModel';
 
 export type InvoiceEditForm = {
   supplierId: string;
+  categoryId: string;
   supplierInvoiceNumber: string;
   kind: string;
   totalAmount: string;
@@ -25,6 +26,7 @@ export type InvoiceEditVaultAllocationSource = {
 export type InvoiceEditSource = {
   id?: string | null;
   supplierId?: string | null;
+  categoryId?: string | null;
   supplierInvoiceNumber?: string | number | null;
   invoiceNumber?: string | number | null;
   kind?: string | null;
@@ -44,6 +46,7 @@ export type InvoiceEditUpdateBody = {
   transactionDate?: string;
   notes?: string;
   supplierId?: string;
+  categoryId?: string;
   supplierInvoiceNumber?: string;
   isTaxable?: boolean;
   kind?: string;
@@ -52,6 +55,7 @@ export type InvoiceEditUpdateBody = {
 
 export const EMPTY_INVOICE_EDIT_FORM: InvoiceEditForm = {
   supplierId: '',
+  categoryId: '',
   supplierInvoiceNumber: '',
   kind: 'purchase',
   totalAmount: '',
@@ -93,6 +97,7 @@ export function buildInvoiceEditInitialForm(invoice: InvoiceEditSource | null | 
 
   return {
     supplierId: invoice.supplierId || '',
+    categoryId: invoice.categoryId || '',
     supplierInvoiceNumber: String(invoice.supplierInvoiceNumber || invoice.invoiceNumber || ''),
     kind: invoice.kind || 'purchase',
     totalAmount: total > 0 ? String(total) : '',
@@ -140,6 +145,7 @@ function assignInvoiceEditFormField(
     case 'isTaxable':
       return { ...form, isTaxable: value !== false };
     case 'supplierId':
+    case 'categoryId':
     case 'supplierInvoiceNumber':
     case 'kind':
     case 'totalAmount':
@@ -193,6 +199,7 @@ export function buildInvoiceEditUpdateBody(input: {
 
   if (input.hasSupplier) {
     body.supplierId = input.form.supplierId || undefined;
+    if (input.form.categoryId) body.categoryId = input.form.categoryId;
     if (input.form.supplierInvoiceNumber?.trim()) {
       body.supplierInvoiceNumber = input.form.supplierInvoiceNumber.trim();
     }

@@ -21,6 +21,7 @@ describe('invoiceEditModel', () => {
       buildInvoiceEditInitialForm(
         {
           supplierId: 'supplier-1',
+          categoryId: 'category-maintenance',
           supplierInvoiceNumber: '',
           invoiceNumber: 'INV-1',
           kind: 'expense',
@@ -34,6 +35,7 @@ describe('invoiceEditModel', () => {
       ),
     ).toMatchObject({
       supplierId: 'supplier-1',
+      categoryId: 'category-maintenance',
       supplierInvoiceNumber: 'INV-1',
       kind: 'expense',
       totalAmount: '115',
@@ -64,6 +66,7 @@ describe('invoiceEditModel', () => {
     const form = {
       ...EMPTY_INVOICE_EDIT_FORM,
       supplierInvoiceNumber: '  INV-2 ',
+      categoryId: 'category-maintenance',
       kind: 'purchase',
       totalAmount: '200',
       transactionDate: '2026-02-01',
@@ -95,6 +98,7 @@ describe('invoiceEditModel', () => {
     ).toMatchObject({
       totalAmount: 200,
       supplierInvoiceNumber: 'INV-2',
+      categoryId: 'category-maintenance',
       isTaxable: true,
       kind: 'purchase',
       notes: 'note',

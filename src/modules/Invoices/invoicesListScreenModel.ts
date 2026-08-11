@@ -150,6 +150,7 @@ export function toInvoiceListViewSource(row: InvoiceListRawInvoice | InvoiceTabl
   if (!row?.id) return null;
   return {
     id: row.id,
+    categoryId: readStringField(row, 'categoryId') ?? null,
     invoiceNumber: row.invoiceNumber,
     supplierInvoiceNumber: row.supplierInvoiceNumber,
     transactionDate: row.transactionDate,

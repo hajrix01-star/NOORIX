@@ -36,9 +36,17 @@ import {
   type InvoiceAttachmentMeta,
 } from '../invoiceAttachmentModel';
 
+type InvoiceCategoryOption = {
+  id?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+  type?: string | null;
+  isActive?: boolean | null;
+};
 type InvoiceEditModalProps = {
   invoice: InvoiceEditSource | null;
   suppliers?: SupplierOptionRow[] | null;
+  categories?: InvoiceCategoryOption[] | null;
   companyId: string;
   vaultsList?: InvoiceVaultFilterEntity[];
   onSaved?: () => void;
@@ -48,6 +56,7 @@ type InvoiceEditModalProps = {
 export function InvoiceEditModal({
   invoice,
   suppliers,
+  categories = [],
   companyId,
   vaultsList = [],
   onSaved,
@@ -80,6 +89,18 @@ export function InvoiceEditModal({
     [t],
   );
 
+  const supportsCategory = ['purchase', 'expense', 'fixed_expense', 'hr_expense'].includes(form.kind);
+  const categoryOptions = useMemo(() => {
+    const requiredType = form.kind === 'purchase' ? 'purchase' : 'expense';
+    return categories
+      .filter((category) => category.id && category.isActive !== false && category.type === requiredType)
+      .map((category) => ({
+        value: String(category.id),
+        label: lang === 'en'
+          ? String(category.nameEn || category.nameAr || category.id)
+          : String(category.nameAr || category.nameEn || category.id),
+      }));
+  }, [categories, form.kind, lang]);
   const vaultPickerOptions = useMemo(
     () =>
       vaultsList.map((vault) => ({
@@ -278,6 +299,16 @@ export function InvoiceEditModal({
                 onChange={(v) => updateField('kind', v)}
                 options={purchaseKindOptions}
                 aria-label={t('kind')}
+              />
+            )}
+
+            {supportsCategory && (
+              <SearchableOptionsPicker
+                label={lang === 'en' ? 'Accounting category' : 'الفئة المحاسبية'}
+                value={form.categoryId}
+                onChange={(value) => updateField('categoryId', value)}
+                options={categoryOptions}
+                aria-label={lang === 'en' ? 'Accounting category' : 'الفئة المحاسبية'}
               />
             )}
           </>
