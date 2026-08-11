@@ -71,6 +71,44 @@ describe('HrPayrollReconciliationService', () => {
 
     const result = await new HrPayrollReconciliationService(prisma).getYear('company-1', 2026);
     expect(result.months.find((month) => month.month === '2026-12')?.salaryInvoicesTotal).toBe(1000);
-    expect((prisma.invoice.findMany as jest.Mock).mock.calls[0][0].where.batchId).toEqual({ in: ['run-dec'] });
+    expect((prisma.invoice.findMany as jest.Mock).mock.calls[0][0].where.OR).toEqual(expect.arrayContaining([
+      { batchId: { in: ['run-dec'] } },
+      expect.objectContaining({ transactionDate: expect.any(Object) }),
+    ]));
+  });
+
+  it('includes a historical standalone salary payment in expected payroll cost without changing the ledger', async () => {
+    const prisma = {
+      account: { findFirst: jest.fn().mockResolvedValue({ id: 'salary-expense' }) },
+      payrollRun: { findMany: jest.fn().mockResolvedValue([{
+        id: 'run-may', runNumber: 'PR-2605-001', payrollMonth: new Date('2026-05-01T00:00:00.000Z'),
+        totalAmount: new Prisma.Decimal(46825.83), status: 'completed', items: [],
+      }]) },
+      invoice: { findMany: jest.fn().mockResolvedValue([{
+        id: 'standalone-salary', batchId: null, invoiceNumber: 'SAL-LEGACY-1', invoiceDate: new Date('2026-05-01T00:00:00.000Z'),
+        transactionDate: new Date('2026-05-31T00:00:00.000Z'), totalAmount: new Prisma.Decimal(1265),
+        employeeId: 'emp-1', employee: { name: 'Employee' },
+      }]) },
+      payrollAdvanceSettlement: { findMany: jest.fn().mockResolvedValue([]) },
+      ledgerEntry: { findMany: jest.fn().mockResolvedValue([
+        { id: 'salary-ledger', referenceType: 'salary', referenceId: 'standalone-salary', amount: new Prisma.Decimal(48090.83), transactionDate: new Date('2026-05-31T00:00:00.000Z'), status: 'active', employeeId: 'emp-1', employee: { name: 'Employee' } },
+      ]) },
+    } as unknown as TenantPrismaService;
+
+    const result = await new HrPayrollReconciliationService(prisma).getYear('company-1', 2026, true);
+    const may = result.months.find((month) => month.month === '2026-05')!;
+
+    expect(may).toMatchObject({
+      payrollRunsTotal: 46825.83,
+      standaloneSalaryPaymentsTotal: 1265,
+      payrollExpectedCostTotal: 48090.83,
+      ledgerPayrollCostTotal: 48090.83,
+      difference: 0,
+      reviewStatus: 'matched',
+    });
+    expect(may.rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ source: 'historical_standalone_salary', amount: 1265, confidence: 'medium' }),
+    ]));
+    expect(prisma.ledgerEntry.updateMany).toBeUndefined();
   });
 });
