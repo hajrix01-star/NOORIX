@@ -139,6 +139,9 @@ jobs:
           echo "==> prisma migrate deploy"
           bash "$WORKSPACE/deploy/prisma-migrate-deploy-with-recovery.sh"
 
+          echo "==> verify payroll cost is reconciled to the accounting ledger"
+          bash "$WORKSPACE/deploy/verify-payroll-ledger-reconciliation.sh"
+
           echo "==> verify inventory schema contract"
           npm run verify:inventory-schema
 
