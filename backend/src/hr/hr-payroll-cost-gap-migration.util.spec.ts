@@ -42,3 +42,29 @@ describe('historical payroll cost-gap reconciliation migration', () => {
     );
   });
 });
+
+describe('remaining historical payroll cost-gap repair migration', () => {
+  const sql = readFileSync(
+    join(
+      __dirname,
+      '../../prisma/migrations/20260811200000_repair_remaining_historical_payroll_cost_gaps/migration.sql',
+    ),
+    'utf8',
+  );
+
+  it('repairs only a provable unposted advance settlement inside one transaction', () => {
+    expect(sql).toMatch(/BEGIN;[\s\S]*CREATE TEMP TABLE "_remaining_payroll_cost_gaps"/);
+    expect(sql).toContain('e."expected_settlement" - p."posted_settlement" AS "missing_settlement"');
+    expect(sql).toContain('WHERE e."expected_settlement" - p."posted_settlement" > 0.01');
+    expect(sql).toContain("md5('payroll-cost-gap-repair-v2:' || gap.\"payroll_item_id\")");
+    expect(sql).toContain("'operating_payroll'");
+    expect(sql).toContain('REMAINING_PAYROLL_COST_GAP_REPAIR_INCOMPLETE');
+    expect(sql.trimEnd()).toMatch(/COMMIT;$/);
+  });
+
+  it('does not alter invoices or vault movements', () => {
+    expect(sql).not.toContain('UPDATE "invoices"');
+    expect(sql).not.toContain('UPDATE "vaults"');
+    expect(sql).not.toContain('INSERT INTO "vault_transactions"');
+  });
+});
