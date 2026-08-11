@@ -20,8 +20,10 @@ fi
 #
 # Actual cost is restricted to ledger rows that can be traced to the same run:
 # salary invoices, the new payroll accrual, and advance-settlement deductions.
-# The query reports every discrepancy, by company and run, without changing
-# invoices, employee advances, vaults, or ledger rows.
+# The query blocks only a missing cost, by company and run, without changing
+# invoices, employee advances, vaults, or ledger rows.  A historical excess
+# can be a legitimate separately-recorded individual salary, so it must be
+# reviewed rather than silently deleted or used to stop a safe repair.
 read -r -d '' PAYROLL_SQL <<'SQL' || true
 WITH paid_runs AS (
   SELECT
@@ -88,7 +90,7 @@ SELECT
 FROM paid_runs paid
 JOIN companies c ON c.id = paid.company_id
 LEFT JOIN actuals ON actuals.payroll_run_id = paid.payroll_run_id
-WHERE ABS(paid.expected_cost - COALESCE(actuals.actual_cost, 0)) > 0.01
+WHERE paid.expected_cost - COALESCE(actuals.actual_cost, 0) > 0.01
 ORDER BY c.name_ar, paid.payroll_month, paid.run_number;
 SQL
 
