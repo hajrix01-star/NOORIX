@@ -39,7 +39,9 @@ const sourceLabels: Record<string, string> = {
   documented_historical_repair: 'تسوية تاريخية موثقة',
   structured_advance_settlement: 'تسوية مرتبطة جديدة',
   legacy_advance_settlement: 'تسوية قديمة غير مرتبطة',
+  legacy_ledger: 'تسوية قديمة غير مرتبطة',
   salary_invoice: 'فاتورة راتب',
+  historical_standalone_salary: 'راتب إضافي تاريخي',
   payroll_run: 'مسير راتب',
 };
 
@@ -158,8 +160,9 @@ function MonthReview({
       </summary>
 
       <div className="border-t border-noorix-border bg-noorix-surface-muted/40 p-3 sm:p-4">
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-7">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-8">
           <Metric label="إجمالي المسيرات" value={item.payrollRunsTotal} />
+          <Metric label="رواتب إضافية تاريخية" value={item.standaloneSalaryPaymentsTotal} />
           <Metric label="فواتير الرواتب" value={item.salaryInvoicesTotal} />
           <Metric label="تسويات مرتبطة جديدة" value={item.structuredAdvanceSettlementsTotal} />
           <Metric label="تسويات تاريخية موثقة" value={item.documentedHistoricalRepairTotal} />
