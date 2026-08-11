@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 
 type ReconciliationRow = {
-  source: 'structured' | 'documented_historical_repair' | 'legacy_ledger' | 'salary_invoice' | 'historical_standalone_salary' | 'payroll_run';
+  source: 'structured' | 'documented_historical_repair' | 'legacy_ledger' | 'salary_invoice' | 'historical_standalone_salary' | 'unexplained_payroll_ledger' | 'payroll_run';
   id: string;
   date: string;
   employeeId: string | null;
@@ -127,6 +127,15 @@ export class HrPayrollReconciliationService {
       const monthLedger = salaryLedger.filter((row) => key(row.transactionDate) === month);
       const monthLegacy = legacyLedger.filter((row) => key(row.transactionDate) === month);
       const monthDocumentedRepairs = documentedHistoricalRepairLedger.filter((row) => key(row.transactionDate) === month);
+      const expectedSalaryInvoiceIds = new Set([
+        ...monthInvoices,
+        ...monthStandaloneSalaryInvoices,
+      ].map((invoice) => invoice.id));
+      const monthUnexplainedPayrollLedger = monthLedger.filter((row) =>
+        row.referenceType !== 'advance_settlement'
+        && !(row.referenceType === 'payroll_accrual' && runIds.has(row.referenceId))
+        && !(row.referenceType === 'salary' && expectedSalaryInvoiceIds.has(row.referenceId)),
+      );
 
       // Expected payroll cost follows the exact current accrual formula: net payable
       // plus advance deductions. This avoids comparing payroll cost with cash payments.
@@ -144,6 +153,10 @@ export class HrPayrollReconciliationService {
       );
       const legacyAdvanceSettlementLedgerTotal = monthLegacy.reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0));
       const documentedHistoricalRepairTotal = monthDocumentedRepairs.reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0));
+      const unexplainedPayrollLedgerTotal = monthUnexplainedPayrollLedger.reduce(
+        (sum, row) => sum.plus(row.amount),
+        new Prisma.Decimal(0),
+      );
       const ledgerPayrollCostTotal = monthLedger.reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0));
       const payrollExpectedCostTotal = payrollRunsTotal.plus(standaloneSalaryPaymentsTotal);
       const difference = ledgerPayrollCostTotal.minus(payrollExpectedCostTotal);
@@ -210,12 +223,20 @@ export class HrPayrollReconciliationService {
           ledgerEntryId: null, amount: money(row.totalAmount), status: 'active', confidence: 'medium',
           reason: 'Historical standalone salary payment included in expected payroll cost',
         });
+        for (const row of monthUnexplainedPayrollLedger) rows.push({
+          source: 'unexplained_payroll_ledger', id: row.id, date: ymd(row.transactionDate), employeeId: row.employeeId,
+          employeeName: row.employee?.name ?? null, runId: null, runNumber: null,
+          payrollItemId: null, advanceInvoiceId: null, advanceInvoiceNumber: null, deductionId: null,
+          ledgerEntryId: row.id, amount: money(row.amount), status: row.status, confidence: 'low',
+          reason: `Unlinked payroll-cost ledger entry (reference: ${row.referenceType || 'none'})`,
+        });
       }
 
       return {
         month,
         payrollRunsTotal: money(payrollRunsTotal),
         standaloneSalaryPaymentsTotal: money(standaloneSalaryPaymentsTotal),
+        unexplainedPayrollLedgerTotal: money(unexplainedPayrollLedgerTotal),
         payrollExpectedCostTotal: money(payrollExpectedCostTotal),
         salaryInvoicesTotal: money(salaryInvoicesTotal),
         structuredAdvanceSettlementsTotal: money(structuredAdvanceSettlementsTotal),

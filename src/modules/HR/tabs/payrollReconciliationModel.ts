@@ -18,6 +18,7 @@ export type PayrollReconciliationMonth = {
   month: string;
   payrollRunsTotal: number;
   standaloneSalaryPaymentsTotal: number;
+  unexplainedPayrollLedgerTotal: number;
   payrollExpectedCostTotal: number;
   salaryInvoicesTotal: number;
   structuredAdvanceSettlementsTotal: number;
@@ -92,6 +93,7 @@ function normalizeMonth(value: unknown): PayrollReconciliationMonth | null {
   );
   const salaryInvoicesTotal = asNumber(row.salaryInvoicesTotal ?? row.invoiceTotal);
   const standaloneSalaryPaymentsTotal = asNumber(row.standaloneSalaryPaymentsTotal);
+  const unexplainedPayrollLedgerTotal = asNumber(row.unexplainedPayrollLedgerTotal);
   const ledgerPayrollCostTotal = asNumber(row.ledgerPayrollCostTotal ?? row.ledgerCostTotal);
   const payrollRunsTotal = asNumber(row.payrollRunsTotal ?? row.runTotal);
   const payrollExpectedCostTotal = asNumber(row.payrollExpectedCostTotal ?? (payrollRunsTotal + standaloneSalaryPaymentsTotal));
@@ -105,6 +107,7 @@ function normalizeMonth(value: unknown): PayrollReconciliationMonth | null {
     month,
     payrollRunsTotal,
     standaloneSalaryPaymentsTotal,
+    unexplainedPayrollLedgerTotal,
     payrollExpectedCostTotal,
     salaryInvoicesTotal,
     structuredAdvanceSettlementsTotal,
