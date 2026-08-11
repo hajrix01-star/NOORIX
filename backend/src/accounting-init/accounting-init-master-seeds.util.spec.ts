@@ -8,15 +8,15 @@ import {
 } from '../supplier-directory/supplier-directory.seed';
 
 describe('accounting initialization master seeds', () => {
-  it('seeds the approved government categories without taking over E2-9', () => {
+  it('seeds government categories and keeps employee services outside payroll', () => {
     const byCode = new Map(MASTER_SUBCATEGORIES.map((entry) => [entry.code, entry]));
-    expect(byCode.get('E2-8')?.nameAr).toBe('GOSI');
+    expect(byCode.get('E9-3')?.nameAr).toBe('التأمينات الاجتماعية (GOSI)');
     expect(byCode.get('E2-10')?.nameAr).toBe('رسوم منصات حكومية');
     expect(byCode.get('E2-11')?.nameAr).toBe('شهادات صحية وتصاريح موظفين');
-    expect(byCode.get('E4-1')?.nameAr).toBe('تذاكر سفر الموظفين');
-    expect(byCode.get('E4-1')?.parentAccountCode).toBe('EXP-004');
-    expect(byCode.get('E4-2')?.nameAr).toBe('التأمين الطبي للموظفين');
-    expect(byCode.get('E4-2')?.parentAccountCode).toBe('EXP-004');
+    expect(byCode.get('E9-1')?.nameAr).toBe('تذاكر سفر الموظفين');
+    expect(byCode.get('E9-1')?.parentAccountCode).toBe('EXP-009');
+    expect(byCode.get('E9-2')?.nameAr).toBe('التأمين الطبي للموظفين');
+    expect(byCode.get('E9-2')?.parentAccountCode).toBe('EXP-009');
     expect(byCode.has('E2-9')).toBe(false);
   });
 

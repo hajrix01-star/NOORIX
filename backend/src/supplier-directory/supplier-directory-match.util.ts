@@ -35,8 +35,8 @@ export const CANONICAL_CATEGORY_FALLBACKS: Record<string, {
   nameEn: string;
   sortOrder: number;
 }> = {
-  'E2-8': {
-    parentCode: 'EXP-002',
+  'E9-3': {
+    parentCode: 'EXP-009',
     nameAr: 'GOSI',
     nameEn: 'GOSI',
     sortOrder: 7,
@@ -53,14 +53,14 @@ export const CANONICAL_CATEGORY_FALLBACKS: Record<string, {
     nameEn: 'Health Certificates & Employee Permits',
     sortOrder: 10,
   },
-  'E4-1': {
-    parentCode: 'EXP-004',
+  'E9-1': {
+    parentCode: 'EXP-009',
     nameAr: 'ØªØ°Ø§ÙƒØ± Ø³ÙØ± Ø§Ù„Ù…ÙˆØ¸ÙÙŠÙ†',
     nameEn: 'Employee Travel Tickets',
     sortOrder: 0,
   },
-  'E4-2': {
-    parentCode: 'EXP-004',
+  'E9-2': {
+    parentCode: 'EXP-009',
     nameAr: 'Ø§Ù„ØªØ£Ù…ÙŠÙ† Ø§Ù„Ø·Ø¨ÙŠ Ù„Ù„Ù…ÙˆØ¸ÙÙŠÙ†',
     nameEn: 'Employee Medical Insurance',
     sortOrder: 1,

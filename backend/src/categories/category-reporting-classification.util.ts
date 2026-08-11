@@ -13,8 +13,8 @@ export type CategoryReportingClass = (typeof CATEGORY_REPORTING_CLASSES)[number]
 const RECURRING_CATEGORY_CODES = new Set([
   'EXP-003',
   'E3-1', 'E3-2', 'E3-3', 'E3-4', 'E3-5',
-  'E2-1', 'E2-2', 'E2-3', 'E2-4', 'E2-7', 'E2-8', 'E2-10', 'E2-11',
-  'E4-2',
+  'E2-1', 'E2-2', 'E2-3', 'E2-4', 'E2-7', 'E2-10', 'E2-11',
+  'E9-2', 'E9-3',
 ]);
 
 export function isCategoryReportingClass(value: unknown): value is CategoryReportingClass {
