@@ -50,8 +50,15 @@ export class HrHistoricalPartTimePayrollService {
             select: { notes: true, employeeId: true, batchId: true, kind: true },
           })
         : null;
-      if (sourceInvoice?.batchId || sourceInvoice?.kind === 'advance') {
-        throw new BadRequestException('هذا القيد مرتبط بمسير أو سلفة؛ لا يمكن تصنيفه كدوام جزئي.');
+      if (sourceInvoice?.kind === 'advance') {
+        throw new BadRequestException('هذا القيد مرتبط بسلفة؛ لا يمكن تصنيفه كدوام جزئي.');
+      }
+      // Legacy part-time invoices were sometimes grouped with a payroll batch
+      // while retaining kind=expense. A batch label alone is not evidence of a
+      // standard salary payment: only a true salary invoice is already covered
+      // by the payroll run and must remain blocked here.
+      if (sourceInvoice?.batchId && sourceInvoice.kind === 'salary') {
+        throw new BadRequestException('هذا القيد راتب صادر من مسير؛ لا يمكن تصنيفه كدوام جزئي.');
       }
 
       let employeeId = ledger.employeeId ?? sourceInvoice?.employeeId ?? null;
