@@ -74,6 +74,12 @@ export async function getPayrollReconciliation(companyId: string, year?: string 
     includeRows: '1',
   });
 }
+export async function createHistoricalPartTimePayrollLink(
+  _companyId: string,
+  body: { ledgerEntryId: string; targetMonth: string; confirmation: 'LINK_HISTORICAL_PART_TIME_PAYROLL' },
+): Promise<ApiParsedResult<Record<string, unknown>>> {
+  return apiPost('/api/v1/hr/payroll/reconciliation/historical-part-time-links', body);
+}
 type PayrollLegacyCorrectionPreviewInput = {
   targetMonth: string;
   sourceRunNumber: string;

@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 
 type ReconciliationRow = {
-  source: 'structured' | 'documented_historical_repair' | 'legacy_ledger' | 'salary_invoice' | 'historical_standalone_salary' | 'unexplained_payroll_ledger' | 'payroll_run';
+  source: 'structured' | 'documented_historical_repair' | 'legacy_ledger' | 'salary_invoice' | 'historical_standalone_salary' | 'historical_part_time_payroll' | 'unexplained_payroll_ledger' | 'payroll_run';
   id: string;
   date: string;
   employeeId: string | null;
@@ -45,7 +45,7 @@ export class HrPayrollReconciliationService {
       orderBy: { payrollMonth: 'asc' },
     });
     const yearRunIds = runs.map((run) => run.id);
-    const [salaryInvoices, settlements, salaryLedger] = await Promise.all([
+    const [salaryInvoices, settlements, salaryLedger, historicalPartTimeLinks] = await Promise.all([
       this.prisma.invoice.findMany({
         where: {
           companyId,
@@ -74,6 +74,13 @@ export class HrPayrollReconciliationService {
           transactionDate: { gte: from, lt: to },
         },
         include: { employee: { select: { name: true } } },
+      }),
+      this.prisma.historicalPartTimePayrollLink.findMany({
+        where: { companyId, status: 'active', payrollMonth: { gte: from, lt: to } },
+        include: {
+          employee: { select: { name: true } },
+          ledgerEntry: { select: { id: true, amount: true, status: true, transactionDate: true, employeeId: true } },
+        },
       }),
     ]);
 
@@ -127,12 +134,17 @@ export class HrPayrollReconciliationService {
       const monthLedger = salaryLedger.filter((row) => key(row.transactionDate) === month);
       const monthLegacy = legacyLedger.filter((row) => key(row.transactionDate) === month);
       const monthDocumentedRepairs = documentedHistoricalRepairLedger.filter((row) => key(row.transactionDate) === month);
+      const monthPartTimeLinks = historicalPartTimeLinks.filter((row) =>
+        key(row.payrollMonth) === month && row.ledgerEntry.status === 'active',
+      );
+      const partTimeLedgerIds = new Set(monthPartTimeLinks.map((row) => row.ledgerEntryId));
       const expectedSalaryInvoiceIds = new Set([
         ...monthInvoices,
         ...monthStandaloneSalaryInvoices,
       ].map((invoice) => invoice.id));
       const monthUnexplainedPayrollLedger = monthLedger.filter((row) =>
         row.referenceType !== 'advance_settlement'
+        && !partTimeLedgerIds.has(row.id)
         && !(row.referenceType === 'payroll_accrual' && runIds.has(row.referenceId))
         && !(row.referenceType === 'salary' && expectedSalaryInvoiceIds.has(row.referenceId)),
       );
@@ -157,8 +169,13 @@ export class HrPayrollReconciliationService {
         (sum, row) => sum.plus(row.amount),
         new Prisma.Decimal(0),
       );
+      const historicalPartTimePayrollTotal = monthPartTimeLinks.reduce(
+        (sum, row) => sum.plus(row.ledgerEntry.amount), new Prisma.Decimal(0),
+      );
       const ledgerPayrollCostTotal = monthLedger.reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0));
-      const payrollExpectedCostTotal = payrollRunsTotal.plus(standaloneSalaryPaymentsTotal);
+      const payrollExpectedCostTotal = payrollRunsTotal
+        .plus(standaloneSalaryPaymentsTotal)
+        .plus(historicalPartTimePayrollTotal);
       const difference = ledgerPayrollCostTotal.minus(payrollExpectedCostTotal);
       const structuredExpected = monthRuns.reduce(
         (sum, run) => sum.plus(run.items.reduce((s, item) => s.plus(item.advancesDeduct ?? 0), new Prisma.Decimal(0))),
@@ -223,6 +240,14 @@ export class HrPayrollReconciliationService {
           ledgerEntryId: null, amount: money(row.totalAmount), status: 'active', confidence: 'medium',
           reason: 'Historical standalone salary payment included in expected payroll cost',
         });
+        for (const row of monthPartTimeLinks) rows.push({
+          source: 'historical_part_time_payroll', id: row.id, date: ymd(row.ledgerEntry.transactionDate),
+          employeeId: row.employeeId, employeeName: row.employee?.name ?? 'بدون اسم موظف',
+          runId: null, runNumber: 'دوام جزئي تاريخي', payrollItemId: null,
+          advanceInvoiceId: null, advanceInvoiceNumber: null, deductionId: null,
+          ledgerEntryId: row.ledgerEntryId, amount: money(row.ledgerEntry.amount), status: row.status,
+          confidence: 'high', reason: `Historical part-time payroll link (${row.employeeMatchSource})`,
+        });
         for (const row of monthUnexplainedPayrollLedger) rows.push({
           source: 'unexplained_payroll_ledger', id: row.id, date: ymd(row.transactionDate), employeeId: row.employeeId,
           employeeName: row.employee?.name ?? null, runId: null, runNumber: null,
@@ -236,6 +261,7 @@ export class HrPayrollReconciliationService {
         month,
         payrollRunsTotal: money(payrollRunsTotal),
         standaloneSalaryPaymentsTotal: money(standaloneSalaryPaymentsTotal),
+        historicalPartTimePayrollTotal: money(historicalPartTimePayrollTotal),
         unexplainedPayrollLedgerTotal: money(unexplainedPayrollLedgerTotal),
         payrollExpectedCostTotal: money(payrollExpectedCostTotal),
         salaryInvoicesTotal: money(salaryInvoicesTotal),

@@ -2,6 +2,7 @@ import React from 'react';
 import { useApiQuery } from '../../../hooks/useApiQuery';
 import {
   confirmProvenPayrollLegacySubset,
+  createHistoricalPartTimePayrollLink,
   getPayrollReconciliation,
   previewProvenPayrollLegacySubset,
 } from '../../../services/api';
@@ -46,6 +47,9 @@ const sourceLabels: Record<string, string> = {
   historical_standalone_salary: 'راتب إضافي تاريخي',
   payroll_run: 'مسير راتب',
 };
+
+// Historical links only explain a pre-existing ledger cost; they do not post money.
+sourceLabels.historical_part_time_payroll = 'راتب دوام جزئي تاريخي';
 
 function formatMonth(month: string): string {
   const match = /^(\d{4})-(\d{2})/.exec(month);
@@ -95,6 +99,7 @@ function MonthReview({
 }) {
   const hasDifference = Math.abs(item.difference) >= 0.005;
   const [pendingRun, setPendingRun] = React.useState<string | null>(null);
+  const [pendingPartTimeLedgerId, setPendingPartTimeLedgerId] = React.useState<string | null>(null);
   const [correctionError, setCorrectionError] = React.useState<string | null>(null);
   const provenGroups = React.useMemo(() => {
     const groups = new Map<string, string[]>();
@@ -143,6 +148,26 @@ function MonthReview({
     }
   };
 
+  const linkHistoricalPartTime = async (ledgerEntryId: string) => {
+    setCorrectionError(null);
+    setPendingPartTimeLedgerId(ledgerEntryId);
+    try {
+      const accepted = window.confirm('سيُربط هذا القيد الموجود فقط كراتب دوام جزئي تاريخي. لن يتغير أي قيد أو فاتورة أو خزينة أو سلفة. الاسم يُؤخذ من القيد أو الوصف عند التطابق المؤكد فقط؛ وإلا يُحفظ بدون اسم موظف. هل تعتمد الربط؟');
+      if (!accepted) return;
+      const result = await createHistoricalPartTimePayrollLink(companyId, {
+        ledgerEntryId,
+        targetMonth: item.month,
+        confirmation: 'LINK_HISTORICAL_PART_TIME_PAYROLL',
+      });
+      if (!result.success) throw new Error(result.error || 'تعذر حفظ ربط الدوام الجزئي التاريخي.');
+      onCorrected();
+    } catch (error) {
+      setCorrectionError(error instanceof Error ? error.message : 'تعذر حفظ الربط الآمن.');
+    } finally {
+      setPendingPartTimeLedgerId(null);
+    }
+  };
+
   return (
     <details className="group overflow-hidden rounded-2xl border border-noorix-border bg-white shadow-sm">
       <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-3 marker:hidden">
@@ -173,6 +198,12 @@ function MonthReview({
           <Metric label="تكلفة الرواتب في السجل" value={item.ledgerPayrollCostTotal} />
           <Metric label="الفرق" value={item.difference} tone={hasDifference ? 'danger' : 'success'} />
         </div>
+
+        {item.historicalPartTimePayrollTotal ? (
+          <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] font-bold text-emerald-800">
+            دوام جزئي تاريخي موثّق: <FmtNum n={item.historicalPartTimePayrollTotal} />
+          </div>
+        ) : null}
 
         {provenGroups.length ? (
           <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-900">
@@ -211,6 +242,17 @@ function MonthReview({
                   {row.reason ? <div className="mt-1 text-[11px] text-noorix-muted">{row.reason}</div> : null}
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:justify-end">
+                  {row.source === 'unexplained_payroll_ledger' && row.ledgerEntryId ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      loading={pendingPartTimeLedgerId === row.ledgerEntryId}
+                      disabled={pendingPartTimeLedgerId !== null}
+                      onClick={() => linkHistoricalPartTime(row.ledgerEntryId!)}
+                    >
+                      ربط كدوام جزئي
+                    </Button>
+                  ) : null}
                   {row.source ? <span className="text-[10px] font-semibold text-noorix-muted">{sourceLabels[row.source] || row.source}</span> : null}
                   <span className="text-[10px] text-noorix-muted">{confidenceLabels[row.confidence]}</span>
                   <FmtNum n={row.amount} className="font-black" />

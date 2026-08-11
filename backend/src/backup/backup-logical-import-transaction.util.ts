@@ -540,6 +540,35 @@ export async function runBackupLogicalImportInTransaction(
           });
         }
 
+        const historicalPartTimeRows = arr<Record<string, unknown>>(data.historicalPartTimePayrollLinks ?? []);
+        if (counts.historicalPartTimePayrollLinks != null && counts.historicalPartTimePayrollLinks !== historicalPartTimeRows.length) {
+          throw new BadRequestException('HISTORICAL_PART_TIME_PAYROLL_LINK_RESTORE_COUNT_MISMATCH');
+        }
+        for (const row of historicalPartTimeRows) {
+          const ledgerEntryId = ledgerEntryMap.get(String(row.ledgerEntryId));
+          if (!ledgerEntryId) {
+            throw new BadRequestException(`HISTORICAL_PART_TIME_PAYROLL_LINK_RESTORE_LEDGER_MISSING:${String(row.id)}`);
+          }
+          await tx.historicalPartTimePayrollLink.create({
+            data: {
+              id: nid(),
+              tenantId,
+              companyId: newCompanyId,
+              ledgerEntryId,
+              employeeId: row.employeeId ? employeeMap.get(String(row.employeeId)) ?? null : null,
+              payrollMonth: ddate(row.payrollMonth),
+              employeeMatchSource: String(row.employeeMatchSource ?? 'none'),
+              descriptionSnapshot: (row.descriptionSnapshot as string | null) ?? null,
+              status: String(row.status ?? 'active'),
+              createdById: null,
+              reversedAt: row.reversedAt ? ddate(row.reversedAt) : null,
+              reversedById: null,
+              createdAt: ddate(row.createdAt),
+              updatedAt: ddate(row.updatedAt),
+            },
+          });
+        }
+
         await tx.userCompany.create({
           data: {
             id: nid(),
