@@ -3,11 +3,20 @@ import { FinancialCoreService } from '../financial-core/financial-core.service';
 
 type FinancialCoreAccountingDelegate = Pick<
   FinancialCoreService,
-  'processOutflow' | 'processOutflowWithReportingClass' | 'processPayrollPaymentBatchInTransaction' | 'cancelOperation'
+  | 'processOutflow'
+  | 'processOutflowWithReportingClass'
+  | 'processOutflowBatchInTransaction'
+  | 'processPayrollPaymentBatchInTransaction'
+  | 'postPayrollAccrualLedgerInTransaction'
+  | 'cancelPayrollAccrualLedgerInTransaction'
+  | 'cancelOperation'
 >;
 
 type OutflowArgs = Parameters<FinancialCoreService['processOutflow']>;
+type OutflowBatchInTxArgs = Parameters<FinancialCoreService['processOutflowBatchInTransaction']>;
 type PayrollPaymentBatchInTxArgs = Parameters<FinancialCoreService['processPayrollPaymentBatchInTransaction']>;
+type PayrollAccrualLedgerArgs = Parameters<FinancialCoreService['postPayrollAccrualLedgerInTransaction']>;
+type CancelPayrollAccrualLedgerArgs = Parameters<FinancialCoreService['cancelPayrollAccrualLedgerInTransaction']>;
 type CancelArgs = Parameters<FinancialCoreService['cancelOperation']>;
 
 @Injectable()
@@ -31,8 +40,20 @@ export class AccountingCoreService {
     return this.financialCore.processOutflow(...args);
   }
 
+  postOutflowBatchInTransaction(...args: OutflowBatchInTxArgs) {
+    return this.financialCore.processOutflowBatchInTransaction(...args);
+  }
+
   postPayrollPaymentBatchInTransaction(...args: PayrollPaymentBatchInTxArgs) {
     return this.financialCore.processPayrollPaymentBatchInTransaction(...args);
+  }
+
+  postPayrollAccrualLedgerInTransaction(...args: PayrollAccrualLedgerArgs) {
+    return this.financialCore.postPayrollAccrualLedgerInTransaction(...args);
+  }
+
+  cancelPayrollAccrualLedgerInTransaction(...args: CancelPayrollAccrualLedgerArgs) {
+    return this.financialCore.cancelPayrollAccrualLedgerInTransaction(...args);
   }
 
   reverseFinancialOperation(...args: CancelArgs) {

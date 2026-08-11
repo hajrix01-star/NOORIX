@@ -6,6 +6,10 @@ import { FinancialOutflowService } from './financial-outflow.service';
 import { FinancialInflowService } from './financial-inflow.service';
 import { FinancialTransferService } from './financial-transfer.service';
 import { FinancialCancelService } from './financial-cancel.service';
+import {
+  cancelPayrollAccrualLedgerInTransaction as cancelPayrollAccrualLedger,
+  postPayrollAccrualLedgerInTransaction as postPayrollAccrualLedger,
+} from './financial-payroll-ledger.util';
 @Injectable()
 export class FinancialCoreService {
   constructor(
@@ -35,6 +39,16 @@ export class FinancialCoreService {
     ...a: Parameters<FinancialOutflowService['processPayrollPaymentBatchInTransaction']>
   ) {
     return this.outflow.processPayrollPaymentBatchInTransaction(...a);
+  }
+  postPayrollAccrualLedgerInTransaction(
+    ...a: Parameters<typeof postPayrollAccrualLedger>
+  ) {
+    return postPayrollAccrualLedger(...a);
+  }
+  cancelPayrollAccrualLedgerInTransaction(
+    ...a: Parameters<typeof cancelPayrollAccrualLedger>
+  ) {
+    return cancelPayrollAccrualLedger(...a);
   }
   rebuildOutflowInvoiceLedgerAfterVaultChange(
     ...a: Parameters<FinancialOutflowService['rebuildOutflowInvoiceLedgerAfterVaultChange']>

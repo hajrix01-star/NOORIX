@@ -5,7 +5,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { TenantContext } from '../common/tenant-context';
 import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
 import type { CreatePayrollRunDto, PayrollRunItemDto } from './dto/create-payroll-run.dto';
@@ -28,7 +28,7 @@ export class HrPayrollRunLifecycleService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly audit: AuditLogService,
-    private readonly financialCore: FinancialCoreService,
+    private readonly accountingCore: AccountingCoreService,
     private readonly reader: HrPayrollRunReaderService,
     private readonly compensationSnapshot: HrCompensationSnapshotService,
     private readonly fiscalPeriod: FiscalPeriodService,
@@ -178,6 +178,7 @@ export class HrPayrollRunLifecycleService {
       const accrual = await postPayrollAccrualInTransaction(
         tx,
         this.fiscalPeriod,
+        this.accountingCore,
         existing,
         tenantId,
         userId,
@@ -354,7 +355,7 @@ export class HrPayrollRunLifecycleService {
     let cancelledSalaryCount = 0;
     for (const inv of salaryInvoices) {
       if (inv.status === 'cancelled') continue;
-      await this.financialCore.cancelOperation(
+      await this.accountingCore.reverseFinancialOperation(
         {
           companyId,
           referenceType: 'salary',
@@ -368,15 +369,7 @@ export class HrPayrollRunLifecycleService {
 
     await this.prisma.withTenant(async (tx) => {
       await reversePayrollAdvanceSettlementsForDelete(tx, companyId, existing.runNumber);
-      await tx.ledgerEntry.updateMany({
-        where: {
-          companyId,
-          referenceType: 'payroll_accrual',
-          referenceId: id,
-          status: 'active',
-        },
-        data: { status: 'cancelled' },
-      });
+      await this.accountingCore.cancelPayrollAccrualLedgerInTransaction(tx, companyId, id);
       await tx.payrollRun.delete({ where: { id } });
     });
 

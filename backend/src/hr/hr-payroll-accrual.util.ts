@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import type { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
-import { reportingClassForReferenceType } from '../financial-core/financial-reporting-classification.util';
 import { applyPayrollAdvanceSettlements } from './hr-payroll-advance-settlement.util';
 import { toYmd } from '../common/utils/to-ymd.util';
 
@@ -37,6 +37,7 @@ export function payrollAccrualDate(payrollMonth: Date): Date {
 export async function postPayrollAccrualInTransaction(
   tx: PayrollAccrualTx,
   fiscalPeriod: FiscalPeriodService,
+  accountingCore: AccountingCoreService,
   run: PayrollRunForAccrual,
   tenantId: string,
   userId?: string,
@@ -89,51 +90,32 @@ export async function postPayrollAccrualInTransaction(
     { postExpenseLedger: false },
   );
   if (settledAdvances.minus(advances).abs().gt(0.02)) {
-    throw new BadRequestException('The settled employee advances do not match the payroll deduction total. Refresh the run and try again.');
+    throw new BadRequestException(
+      'The settled employee advances do not match the payroll deduction total. Refresh the run and try again.',
+    );
   }
 
-  for (const item of run.items) {
+  const lines = run.items.flatMap((item) => {
     const netSalary = new Prisma.Decimal(item.netSalary);
     const advanceDeduct = new Prisma.Decimal(item.advancesDeduct ?? 0);
-    if (netSalary.gt(0)) {
-      await tx.ledgerEntry.create({
-        data: {
-          tenantId,
-          companyId: run.companyId,
-          debitAccountId: salaryExpense.id,
-          creditAccountId: payrollPayable.id,
-          amount: netSalary,
-          transactionDate,
-          entryDate: new Date(),
-          referenceType: 'payroll_accrual',
-          referenceId: run.id,
-          reportingClass: reportingClassForReferenceType('payroll_accrual'),
-          employeeId: item.employeeId,
-          createdById: userId,
-          status: 'active',
-        },
-      });
-    }
-    if (advanceDeduct.gt(0) && advanceAsset) {
-      await tx.ledgerEntry.create({
-        data: {
-          tenantId,
-          companyId: run.companyId,
-          debitAccountId: salaryExpense.id,
-          creditAccountId: advanceAsset.id,
-          amount: advanceDeduct,
-          transactionDate,
-          entryDate: new Date(),
-          referenceType: 'payroll_accrual',
-          referenceId: run.id,
-          reportingClass: reportingClassForReferenceType('payroll_accrual'),
-          employeeId: item.employeeId,
-          createdById: userId,
-          status: 'active',
-        },
-      });
-    }
-  }
+    return [
+      ...(netSalary.gt(0)
+        ? [{ employeeId: item.employeeId, creditAccountId: payrollPayable.id, amount: netSalary }]
+        : []),
+      ...(advanceDeduct.gt(0) && advanceAsset
+        ? [{ employeeId: item.employeeId, creditAccountId: advanceAsset.id, amount: advanceDeduct }]
+        : []),
+    ];
+  });
+  await accountingCore.postPayrollAccrualLedgerInTransaction(tx, {
+    tenantId,
+    companyId: run.companyId,
+    payrollRunId: run.id,
+    salaryExpenseAccountId: salaryExpense.id,
+    transactionDate,
+    createdById: userId,
+    lines,
+  });
 
   return { expense, payable, advances, idempotentReplay: false };
 }

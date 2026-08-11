@@ -14,6 +14,7 @@ const allowedMutationFiles = new Map([
   ['backend/src/financial-core/financial-outflow-persist.util.ts', 'official outflow invoice/ledger/allocation writer'],
   ['backend/src/financial-core/financial-outflow-ledger.util.ts', 'official outflow ledger/allocation rebuild writer'],
   ['backend/src/financial-core/financial-loan-ledger.util.ts', 'official loan opening, payment, and reversal ledger writer'],
+  ['backend/src/financial-core/financial-payroll-ledger.util.ts', 'official monthly payroll accrual and cancellation ledger writer'],
   ['backend/src/financial-core/financial-transfer.service.ts', 'official vault transfer ledger writer'],
   ['backend/src/financial-core/financial-cancel.service.ts', 'official cancellation writer for invoices/sales/ledgers'],
 

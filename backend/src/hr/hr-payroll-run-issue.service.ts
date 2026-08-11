@@ -182,6 +182,7 @@ export class HrPayrollRunIssueService {
         await postPayrollAccrualInTransaction(
           tx,
           this.fiscalPeriod,
+          this.accountingCore,
           run as PayrollRunForIssue,
           tenantId,
           userId,

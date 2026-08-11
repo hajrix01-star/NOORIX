@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
+import type { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
-import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { applyPayrollAdvanceSettlements } from './hr-payroll-advance-settlement.util';
 import {
   payrollAccrualDate,
@@ -38,10 +38,7 @@ describe('payroll accrual', () => {
   it('posts full payroll cost once and splits the credits between payable and advances', async () => {
     (applyPayrollAdvanceSettlements as jest.Mock).mockResolvedValue(new Prisma.Decimal(200));
     const tx = {
-      ledgerEntry: {
-        findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({}),
-      },
+      ledgerEntry: { findFirst: jest.fn().mockResolvedValue(null) },
       account: {
         findFirst: jest.fn()
           .mockResolvedValueOnce({ id: 'salary-expense' })
@@ -52,8 +49,18 @@ describe('payroll accrual', () => {
     const fiscal = Object.assign(Object.create(FiscalPeriodService.prototype), {
       assertPeriodOpenForDate: jest.fn().mockResolvedValue(undefined),
     }) as FiscalPeriodService;
+    const accountingCore = {
+      postPayrollAccrualLedgerInTransaction: jest.fn().mockResolvedValue(undefined),
+    } as unknown as AccountingCoreService;
 
-    const result = await postPayrollAccrualInTransaction(tx, fiscal, run, 'tenant-1', 'user-1');
+    const result = await postPayrollAccrualInTransaction(
+      tx,
+      fiscal,
+      accountingCore,
+      run,
+      'tenant-1',
+      'user-1',
+    );
 
     expect(result.expense.toFixed(2)).toBe('1000.00');
     expect(applyPayrollAdvanceSettlements).toHaveBeenCalledWith(
@@ -63,40 +70,53 @@ describe('payroll accrual', () => {
       'tenant-1',
       { postExpenseLedger: false },
     );
-    expect(tx.ledgerEntry.create).toHaveBeenCalledTimes(2);
-    expect(tx.ledgerEntry.create).toHaveBeenNthCalledWith(1, {
-      data: expect.objectContaining({
-        debitAccountId: 'salary-expense',
-        creditAccountId: 'payroll-payable',
-        amount: new Prisma.Decimal(800),
-        referenceType: 'payroll_accrual',
-        reportingClass: 'operating_payroll',
+    expect(accountingCore.postPayrollAccrualLedgerInTransaction).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        companyId: 'company-1',
+        payrollRunId: 'run-1',
+        salaryExpenseAccountId: 'salary-expense',
+        transactionDate: new Date('2026-07-31T00:00:00.000Z'),
+        createdById: 'user-1',
+        lines: [
+          {
+            employeeId: 'employee-1',
+            creditAccountId: 'payroll-payable',
+            amount: new Prisma.Decimal(800),
+          },
+          {
+            employeeId: 'employee-1',
+            creditAccountId: 'advance-asset',
+            amount: new Prisma.Decimal(200),
+          },
+        ],
       }),
-    });
-    expect(tx.ledgerEntry.create).toHaveBeenNthCalledWith(2, {
-      data: expect.objectContaining({
-        debitAccountId: 'salary-expense',
-        creditAccountId: 'advance-asset',
-        amount: new Prisma.Decimal(200),
-        referenceType: 'payroll_accrual',
-        reportingClass: 'operating_payroll',
-      }),
-    });
+    );
   });
 
   it('is idempotent when an active payroll accrual already exists', async () => {
     const tx = {
-      ledgerEntry: { findFirst: jest.fn().mockResolvedValue({ id: 'entry-1' }), create: jest.fn() },
+      ledgerEntry: { findFirst: jest.fn().mockResolvedValue({ id: 'entry-1' }) },
       account: { findFirst: jest.fn() },
     } as unknown as PayrollAccrualTx;
     const fiscal = Object.assign(Object.create(FiscalPeriodService.prototype), {
       assertPeriodOpenForDate: jest.fn(),
     }) as FiscalPeriodService;
+    const accountingCore = {
+      postPayrollAccrualLedgerInTransaction: jest.fn(),
+    } as unknown as AccountingCoreService;
 
-    const result = await postPayrollAccrualInTransaction(tx, fiscal, run, 'tenant-1');
+    const result = await postPayrollAccrualInTransaction(
+      tx,
+      fiscal,
+      accountingCore,
+      run,
+      'tenant-1',
+    );
 
     expect(result.idempotentReplay).toBe(true);
-    expect(tx.ledgerEntry.create).not.toHaveBeenCalled();
+    expect(accountingCore.postPayrollAccrualLedgerInTransaction).not.toHaveBeenCalled();
     expect(fiscal.assertPeriodOpenForDate).not.toHaveBeenCalled();
   });
 });
