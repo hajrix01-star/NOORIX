@@ -138,7 +138,7 @@ export class HrPayrollLegacyCorrectionService {
   }
 
   private async lock(tx: Prisma.TransactionClient, companyId: string, targetMonth: string) {
-    await tx.$queryRaw`
+    await tx.$executeRaw`
       SELECT pg_advisory_xact_lock(hashtext(${`payroll-legacy-correction:${companyId}:${targetMonth}`}))
     `;
   }

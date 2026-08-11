@@ -57,7 +57,7 @@ function setup(options: {
   const payrollUpdate = jest.fn();
   const vaultUpdate = jest.fn();
   const tx = {
-    $queryRaw: jest.fn().mockResolvedValue([{ pg_advisory_xact_lock: null }]),
+    $executeRaw: jest.fn().mockResolvedValue(1),
     payrollRun: {
       findFirst: jest.fn().mockResolvedValue(sourceRun),
       findMany: jest.fn().mockResolvedValue([sourceRun]),
@@ -133,6 +133,7 @@ describe('HrPayrollLegacyCorrectionService', () => {
     const preview = await ctx.service.preview('shami', base);
     expect(preview).toMatchObject({ selectedLegacyTotal: 13100, differenceAfter: 0, candidateCount: 27 });
     expect(ctx.prisma.withTenant).toHaveBeenCalledTimes(1);
+    expect(ctx.tx.$executeRaw).toHaveBeenCalledTimes(1);
     expect(ctx.accountingCancel).not.toHaveBeenCalled();
 
     const result = await ctx.service.confirm('shami', 'owner-1', {
