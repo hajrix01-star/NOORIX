@@ -11,6 +11,7 @@ describe('reports P&L invoice detail helpers', () => {
           transactionDate: new Date(Date.UTC(2026, 6, 31)),
           referenceType: 'invoice',
           referenceId: 'invoice-1',
+          employee: null,
         }]),
       },
       invoice: {
@@ -48,6 +49,40 @@ describe('reports P&L invoice detail helpers', () => {
       totalAmount: '400',
       netAmount: '400',
       taxAmount: '0',
+    }));
+  });
+
+  it('shows a payroll advance settlement as a readable non-cash payroll document', async () => {
+    const prisma = {
+      ledgerEntry: {
+        findMany: jest.fn().mockResolvedValue([{
+          id: 'settlement-1',
+          amount: new Decimal(15400),
+          transactionDate: new Date(Date.UTC(2026, 6, 31)),
+          referenceType: 'advance_settlement',
+          referenceId: 'deduction-1',
+          employee: { name: 'موظف تجريبي' },
+        }]),
+      },
+      invoice: { findMany: jest.fn().mockResolvedValue([]) },
+      dailySalesChannel: { findMany: jest.fn() },
+    };
+
+    const rows = await loadPlDetailFromLedger(
+      prisma,
+      'company-1',
+      2026,
+      7,
+      'expenses',
+      'account:salary-expense',
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toEqual(expect.objectContaining({
+      invoiceNumber: 'تسوية سلفة — موظف تجريبي',
+      kindLabelAr: 'تسوية سلفة مع راتب',
+      supplierNameAr: 'موظف تجريبي',
+      reportAmount: '15400.0000',
     }));
   });
 

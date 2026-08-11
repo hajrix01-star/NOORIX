@@ -196,12 +196,16 @@ export async function reversePayrollAdvanceSettlementsForDelete(
   companyId: string,
   runNumber: string,
 ): Promise<void> {
+  const deductionWhere: Prisma.EmployeeDeductionWhereInput = {
+    companyId,
+    deductionType: 'advance',
+    OR: [
+      { notes: { contains: `مسير ${runNumber}` } },
+      { notes: { contains: `[PAYROLL_ADVANCE_RECONCILIATION] run=${runNumber},` } },
+    ],
+  };
   const deductions = await db.employeeDeduction.findMany({
-    where: {
-      companyId,
-      deductionType: 'advance',
-      notes: { contains: `مسير ${runNumber}` },
-    },
+    where: deductionWhere,
   });
 
   if (deductions.length) {
@@ -248,11 +252,7 @@ export async function reversePayrollAdvanceSettlementsForDelete(
 
   if (deductions.length) {
     await db.employeeDeduction.deleteMany({
-      where: {
-        companyId,
-        deductionType: 'advance',
-        notes: { contains: `مسير ${runNumber}` },
-      },
+      where: deductionWhere,
     });
   }
 }

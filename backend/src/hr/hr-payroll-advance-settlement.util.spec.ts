@@ -1,5 +1,8 @@
 import { Prisma } from '@prisma/client';
-import { applyPayrollAdvanceSettlements } from './hr-payroll-advance-settlement.util';
+import {
+  applyPayrollAdvanceSettlements,
+  reversePayrollAdvanceSettlementsForDelete,
+} from './hr-payroll-advance-settlement.util';
 
 describe('payroll advance settlement selections', () => {
   it('settles only the explicitly checked advance', async () => {
@@ -80,5 +83,31 @@ describe('payroll advance settlement selections', () => {
         }),
       }),
     );
+  });
+
+  it('recognizes historical reconciled deductions when reversing a payroll run', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const deleteMany = jest.fn().mockResolvedValue({ count: 0 });
+    const updateMany = jest.fn().mockResolvedValue({ count: 0 });
+    const db = {
+      invoice: { findFirst: jest.fn(), update: jest.fn() },
+      employeeDeduction: { findMany, deleteMany },
+      ledgerEntry: { updateMany },
+    };
+
+    await reversePayrollAdvanceSettlementsForDelete(db, 'company-1', 'PR-2607-001');
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        companyId: 'company-1',
+        deductionType: 'advance',
+        OR: [
+          { notes: { contains: 'مسير PR-2607-001' } },
+          { notes: { contains: '[PAYROLL_ADVANCE_RECONCILIATION] run=PR-2607-001,' } },
+        ],
+      },
+    });
+    expect(deleteMany).not.toHaveBeenCalled();
+    expect(updateMany).not.toHaveBeenCalled();
   });
 });

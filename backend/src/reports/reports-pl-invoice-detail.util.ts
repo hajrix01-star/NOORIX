@@ -73,6 +73,7 @@ export async function loadPlDetailFromLedger(
       transactionDate: true,
       referenceType: true,
       referenceId: true,
+      employee: { select: { name: true } },
     },
   });
 
@@ -174,7 +175,9 @@ export async function loadPlDetailFromLedger(
       : resolvedItemMeta;
     result.push({
       id: e.id,
-      invoiceNumber: inv?.invoiceNumber || e.referenceId?.slice(0, 12) || '—',
+      invoiceNumber: isAdvanceSettlement
+        ? `تسوية سلفة — ${e.employee?.name || 'موظف'}`
+        : (inv?.invoiceNumber || e.referenceId?.slice(0, 12) || '—'),
       supplierInvoiceNumber: inv?.supplierInvoiceNumber || null,
       transactionDate: e.transactionDate.toISOString(),
       kind,
@@ -184,8 +187,8 @@ export async function loadPlDetailFromLedger(
       itemKey,
       itemLabelAr: '',
       itemLabelEn: '',
-      supplierNameAr: inv?.supplier?.nameAr || null,
-      supplierNameEn: inv?.supplier?.nameEn || null,
+      supplierNameAr: isAdvanceSettlement ? (e.employee?.name || null) : (inv?.supplier?.nameAr || null),
+      supplierNameEn: isAdvanceSettlement ? (e.employee?.name || null) : (inv?.supplier?.nameEn || null),
       expenseLineNameAr: inv?.expenseLine?.nameAr || null,
       expenseLineNameEn: inv?.expenseLine?.nameEn || null,
       summaryNumber: inv?.dailySalesSummary?.summaryNumber || null,
@@ -200,7 +203,7 @@ export async function loadPlDetailFromLedger(
       totalAmount: formatReportMoneyInteger(displayTotal),
       netAmount: formatReportMoneyInteger(displayNet),
       taxAmount: formatReportTaxAmount(displayTax),
-      notes: inv?.notes || null,
+      notes: isAdvanceSettlement ? 'تسوية سلفة موظف ضمن مسير الرواتب دون حركة نقدية جديدة.' : (inv?.notes || null),
     });
   }
 

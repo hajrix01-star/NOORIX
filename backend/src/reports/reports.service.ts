@@ -159,6 +159,7 @@ export class ReportsService {
       ]);
       const acceptedItemKeys = new Set([
         ...[...categoryIds].map((categoryId) => `category:${categoryId}`),
+        ...categoryAccountKeys,
         ...invoiceItems.map((invoiceItem) => invoiceItem.itemKey),
       ]);
       detailItems = mergePlCategoryDetailItems(

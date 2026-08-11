@@ -64,4 +64,30 @@ describe('P&L detail reconciliation', () => {
     expect(result.documentsAmount).toBe('49744');
     expect(result.documentsMatchContext).toBe(true);
   });
+
+  it('keeps direct payroll advance settlements posted to the category account', () => {
+    const invoiceItems = [
+      { id: 'salary-invoice', itemKey: 'category:salaries', reportAmount: '30951' },
+    ];
+    const ledgerItems = [
+      {
+        id: 'advance-settlement',
+        sourceReferenceId: 'deduction-1',
+        itemKey: 'account:salary-expense',
+        sourceItemKey: 'account:salary-expense',
+        reportAmount: '15400',
+      },
+    ];
+
+    const merged = mergePlCategoryDetailItems(
+      invoiceItems,
+      ledgerItems,
+      new Set(['category:salaries', 'account:salary-expense']),
+    );
+    const result = reconcilePlDetailItems(merged, '301167', '46351');
+
+    expect(merged).toHaveLength(2);
+    expect(result.documentsAmount).toBe('46351');
+    expect(result.documentsMatchContext).toBe(true);
+  });
 });
