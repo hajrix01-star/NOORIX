@@ -1,6 +1,10 @@
 import React from 'react';
 import { useApiQuery } from '../../../hooks/useApiQuery';
-import { getPayrollReconciliation } from '../../../services/api';
+import {
+  confirmProvenPayrollLegacySubset,
+  getPayrollReconciliation,
+  previewProvenPayrollLegacySubset,
+} from '../../../services/api';
 import { hrKeys } from '../../../services/queryKeys';
 import { Button, FmtNum, cn } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
@@ -68,8 +72,72 @@ function Metric({ label, value, tone }: { label: string; value: number; tone?: '
   );
 }
 
-function MonthReview({ item }: { item: PayrollReconciliationMonth }) {
+type ProvenSubsetPreview = {
+  correctionMode: 'proven_subset';
+  selectedLegacyTotal: number;
+  differenceAfter: number;
+  previewHash: string;
+  ledgerEntryIds: string[];
+};
+
+function MonthReview({
+  item,
+  companyId,
+  onCorrected,
+}: {
+  item: PayrollReconciliationMonth;
+  companyId: string;
+  onCorrected: () => void;
+}) {
   const hasDifference = Math.abs(item.difference) >= 0.005;
+  const [pendingRun, setPendingRun] = React.useState<string | null>(null);
+  const [correctionError, setCorrectionError] = React.useState<string | null>(null);
+  const provenGroups = React.useMemo(() => {
+    const groups = new Map<string, string[]>();
+    for (const row of item.rows) {
+      if (row.source !== 'legacy_ledger' || !row.id || row.runNumber === '—') continue;
+      const ids = groups.get(row.runNumber) ?? [];
+      ids.push(row.id);
+      groups.set(row.runNumber, ids);
+    }
+    return [...groups.entries()].map(([runNumber, ledgerEntryIds]) => ({ runNumber, ledgerEntryIds }));
+  }, [item.rows]);
+
+  const applyProvenSubset = async (runNumber: string, ledgerEntryIds: string[]) => {
+    setCorrectionError(null);
+    setPendingRun(runNumber);
+    try {
+      const previewResult = await previewProvenPayrollLegacySubset(companyId, {
+        targetMonth: item.month,
+        sourceRunNumber: runNumber,
+        ledgerEntryIds,
+      });
+      const preview = previewResult.success ? previewResult.data as ProvenSubsetPreview : null;
+      if (!preview || preview.correctionMode !== 'proven_subset' || !preview.previewHash) {
+        throw new Error(previewResult.error || 'لم يثبت النظام أن القيود المحددة مكررة.');
+      }
+      const accepted = window.confirm(
+        `سيُلغي النظام ${preview.selectedLegacyTotal.toLocaleString('en-US')} ر.س من القيود التاريخية المثبتة فقط.\n\n`
+        + `سيبقى فرق ${preview.differenceAfter.toLocaleString('en-US')} ر.س للمراجعة، ولن تتغير الفواتير أو الخزائن أو السلف أو المسيرات.\n\nهل تعتمد التصحيح؟`,
+      );
+      if (!accepted) return;
+      const confirmResult = await confirmProvenPayrollLegacySubset(companyId, {
+        targetMonth: item.month,
+        sourceRunNumber: runNumber,
+        ledgerEntryIds: preview.ledgerEntryIds,
+        previewHash: preview.previewHash,
+        idempotencyKey: `payroll-subset-${companyId}-${item.month}-${runNumber}-${Date.now()}`,
+        reason: 'إلغاء قيود تسوية سلف تاريخية مكررة ومثبتة مع إبقاء الفروقات الأخرى للمراجعة.',
+        confirmation: 'CANCEL_PROVEN_PAYROLL_DUPLICATE_SUBSET',
+      });
+      if (!confirmResult.success) throw new Error(confirmResult.error || 'تعذر حفظ التصحيح.');
+      onCorrected();
+    } catch (error) {
+      setCorrectionError(error instanceof Error ? error.message : 'تعذر تنفيذ التصحيح المحكوم.');
+    } finally {
+      setPendingRun(null);
+    }
+  };
 
   return (
     <details className="group overflow-hidden rounded-2xl border border-noorix-border bg-white shadow-sm">
@@ -99,6 +167,28 @@ function MonthReview({ item }: { item: PayrollReconciliationMonth }) {
           <Metric label="تكلفة الرواتب في السجل" value={item.ledgerPayrollCostTotal} />
           <Metric label="الفرق" value={item.difference} tone={hasDifference ? 'danger' : 'success'} />
         </div>
+
+        {provenGroups.length ? (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-900">
+            <div className="font-bold">قيود تاريخية مرشحة لتصحيح مثبت</div>
+            <div className="mt-1 text-amber-800">المعاينة على الخادم هي التي تحدد المبلغ النهائي؛ لا يمكن اختيار مبلغ أو قيد يدويًا.</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {provenGroups.map((group) => (
+                <Button
+                  key={group.runNumber}
+                  size="sm"
+                  variant="primary"
+                  loading={pendingRun === group.runNumber}
+                  disabled={pendingRun !== null}
+                  onClick={() => applyProvenSubset(group.runNumber, group.ledgerEntryIds)}
+                >
+                  معاينة تصحيح {group.runNumber}
+                </Button>
+              ))}
+            </div>
+            {correctionError ? <div className="mt-2 font-semibold text-red-700">{correctionError}</div> : null}
+          </div>
+        ) : null}
 
         {item.rows.length ? (
           <div className="mt-3 space-y-2">
@@ -161,7 +251,9 @@ export function PayrollReconciliationPanel({ companyId, year, onClose }: Payroll
         </div>
       ) : query.data?.length ? (
         <div className="space-y-2">
-          {query.data.map((item) => <MonthReview key={item.month} item={item} />)}
+          {query.data.map((item) => (
+            <MonthReview key={item.month} item={item} companyId={companyId} onCorrected={() => { void query.refetch(); }} />
+          ))}
         </div>
       ) : (
         <div className="rounded-xl border border-noorix-border bg-white px-4 py-8 text-center text-[13px] text-noorix-muted">

@@ -25,6 +25,7 @@ const money = (value: Prisma.Decimal | number | string | null | undefined) =>
   Number(new Prisma.Decimal(value ?? 0).toDecimalPlaces(2));
 const key = (date: Date) => `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
 const ymd = (date: Date) => date.toISOString().slice(0, 10);
+const LEGACY_SETTLEMENT_NOTE_RE = /^خصم سلفة تلقائي من مسير\s+(.+?)\s*-\s*سلفة\s+(.+)$/;
 
 @Injectable()
 export class HrPayrollReconciliationService {
@@ -95,6 +96,16 @@ export class HrPayrollReconciliationService {
     }
     const documentedHistoricalRepairLedger = advanceLedger.filter((row) => documentedRepairContext.has(row.id));
     const legacyLedger = advanceLedger.filter((row) => !documentedRepairContext.has(row.id));
+    const legacySettlementContext = new Map<string, { runNumber: string; advanceInvoiceNumber: string }>();
+    for (const ledger of legacyLedger) {
+      const note = String(deductionById.get(ledger.referenceId)?.notes ?? '').trim();
+      const match = note.match(LEGACY_SETTLEMENT_NOTE_RE);
+      if (!match) continue;
+      legacySettlementContext.set(ledger.id, {
+        runNumber: match[1].trim(),
+        advanceInvoiceNumber: match[2].trim(),
+      });
+    }
 
     const months = Array.from({ length: 12 }, (_, index) => {
       const month = `${year}-${String(index + 1).padStart(2, '0')}`;
@@ -153,8 +164,9 @@ export class HrPayrollReconciliationService {
         });
         for (const row of monthLegacy) rows.push({
           source: 'legacy_ledger', id: row.id, date: ymd(row.transactionDate), employeeId: row.employeeId,
-          employeeName: row.employee?.name ?? null, runId: null, runNumber: null, payrollItemId: null,
-          advanceInvoiceId: null, advanceInvoiceNumber: null, deductionId: row.referenceId,
+          employeeName: row.employee?.name ?? null, runId: null,
+          runNumber: legacySettlementContext.get(row.id)?.runNumber ?? null, payrollItemId: null,
+          advanceInvoiceId: null, advanceInvoiceNumber: legacySettlementContext.get(row.id)?.advanceInvoiceNumber ?? null, deductionId: row.referenceId,
           ledgerEntryId: row.id, amount: money(row.amount), status: row.status,
           confidence: 'low', reason: 'Legacy text/reference link requires review',
         });
