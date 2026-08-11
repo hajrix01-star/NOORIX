@@ -1,0 +1,173 @@
+import React from 'react';
+import { useApiQuery } from '../../../hooks/useApiQuery';
+import { getPayrollReconciliation } from '../../../services/api';
+import { hrKeys } from '../../../services/queryKeys';
+import { Button, FmtNum, cn } from '../../../ui';
+import { formatSaudiDate } from '../../../utils/saudiDate';
+import {
+  normalizePayrollReconciliationResponse,
+  type PayrollReconciliationConfidence,
+  type PayrollReconciliationMonth,
+  type PayrollReconciliationReviewStatus,
+} from './payrollReconciliationModel';
+
+type PayrollReconciliationPanelProps = {
+  companyId: string;
+  year: number;
+  onClose: () => void;
+};
+
+const confidenceLabels: Record<PayrollReconciliationConfidence, string> = {
+  high: 'ثقة عالية',
+  medium: 'ثقة متوسطة',
+  low: 'ثقة منخفضة',
+  unknown: 'غير مصنف',
+};
+
+const reviewStatusLabels: Record<PayrollReconciliationReviewStatus, string> = {
+  matched: 'متطابق',
+  needs_review: 'يحتاج مراجعة',
+  reviewed: 'تمت مراجعته',
+  unknown: 'غير مراجع',
+};
+
+const sourceLabels: Record<string, string> = {
+  documented_historical_repair: 'تسوية تاريخية موثقة',
+  structured_advance_settlement: 'تسوية مرتبطة جديدة',
+  legacy_advance_settlement: 'تسوية قديمة غير مرتبطة',
+  salary_invoice: 'فاتورة راتب',
+  payroll_run: 'مسير راتب',
+};
+
+function formatMonth(month: string): string {
+  const match = /^(\d{4})-(\d{2})/.exec(month);
+  if (!match) return month;
+  return new Intl.DateTimeFormat('ar-SA-u-ca-gregory', { month: 'long', year: 'numeric' })
+    .format(new Date(Number(match[1]), Number(match[2]) - 1, 1));
+}
+
+function statusClass(status: PayrollReconciliationReviewStatus): string {
+  if (status === 'matched' || status === 'reviewed') return 'border-emerald-200 bg-emerald-50 text-emerald-800';
+  if (status === 'needs_review') return 'border-amber-200 bg-amber-50 text-amber-800';
+  return 'border-noorix-border bg-noorix-surface-muted text-noorix-muted';
+}
+
+function Metric({ label, value, tone }: { label: string; value: number; tone?: 'danger' | 'success' }) {
+  return (
+    <div className="min-w-0 rounded-xl border border-noorix-border bg-white px-3 py-2.5 text-center">
+      <div className="text-[11px] text-noorix-muted">{label}</div>
+      <FmtNum
+        n={value}
+        className={cn(
+          'mt-1 block text-[15px] font-black',
+          tone === 'danger' && 'text-red-600',
+          tone === 'success' && 'text-noorix-green',
+        )}
+      />
+    </div>
+  );
+}
+
+function MonthReview({ item }: { item: PayrollReconciliationMonth }) {
+  const hasDifference = Math.abs(item.difference) >= 0.005;
+
+  return (
+    <details className="group overflow-hidden rounded-2xl border border-noorix-border bg-white shadow-sm">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-3 marker:hidden">
+        <div className="min-w-0">
+          <div className="font-black text-noorix-text">{formatMonth(item.month)}</div>
+          <div className="mt-0.5 text-[11px] text-noorix-muted">
+            الفرق: <FmtNum n={item.difference} className={cn('font-bold', hasDifference ? 'text-red-600' : 'text-noorix-green')} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={cn('rounded-full border px-2.5 py-1 text-[11px] font-bold', statusClass(item.reviewStatus))}>
+            {reviewStatusLabels[item.reviewStatus]}
+          </span>
+          <span className="text-[11px] text-noorix-muted">{confidenceLabels[item.confidence]}</span>
+          <span aria-hidden="true" className="text-noorix-muted transition-transform group-open:rotate-180">⌄</span>
+        </div>
+      </summary>
+
+      <div className="border-t border-noorix-border bg-noorix-surface-muted/40 p-3 sm:p-4">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-7">
+          <Metric label="إجمالي المسيرات" value={item.payrollRunsTotal} />
+          <Metric label="فواتير الرواتب" value={item.salaryInvoicesTotal} />
+          <Metric label="تسويات مرتبطة جديدة" value={item.structuredAdvanceSettlementsTotal} />
+          <Metric label="تسويات تاريخية موثقة" value={item.documentedHistoricalRepairTotal} />
+          <Metric label="تسويات قديمة غير مرتبطة" value={item.legacyAdvanceSettlementLedgerTotal} tone={item.legacyAdvanceSettlementLedgerTotal ? 'danger' : undefined} />
+          <Metric label="تكلفة الرواتب في السجل" value={item.ledgerPayrollCostTotal} />
+          <Metric label="الفرق" value={item.difference} tone={hasDifference ? 'danger' : 'success'} />
+        </div>
+
+        {item.rows.length ? (
+          <div className="mt-3 space-y-2">
+            <div className="text-[12px] font-bold text-noorix-text">تفاصيل القيود والتسويات</div>
+            {item.rows.map((row) => (
+              <div key={row.id} className="grid gap-2 rounded-xl border border-noorix-border bg-white px-3 py-2 text-[12px] sm:grid-cols-[1fr_auto] sm:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <strong>{row.employeeName}</strong>
+                    <span className="text-noorix-muted">{row.runNumber}</span>
+                    <span className="text-noorix-muted">{row.advanceInvoiceNumber}</span>
+                    {row.date ? <span className="text-noorix-muted">{formatSaudiDate(row.date)}</span> : null}
+                  </div>
+                  {row.reason ? <div className="mt-1 text-[11px] text-noorix-muted">{row.reason}</div> : null}
+                </div>
+                <div className="flex items-center justify-between gap-3 sm:justify-end">
+                  {row.source ? <span className="text-[10px] font-semibold text-noorix-muted">{sourceLabels[row.source] || row.source}</span> : null}
+                  <span className="text-[10px] text-noorix-muted">{confidenceLabels[row.confidence]}</span>
+                  <FmtNum n={row.amount} className="font-black" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-3 rounded-xl border border-dashed border-noorix-border bg-white px-3 py-4 text-center text-[12px] text-noorix-muted">
+            لا توجد قيود تفصيلية لهذا الشهر.
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
+export function PayrollReconciliationPanel({ companyId, year, onClose }: PayrollReconciliationPanelProps) {
+  const query = useApiQuery<unknown, PayrollReconciliationMonth[]>({
+    queryKey: hrKeys.payrollReconciliation(companyId, year),
+    queryFn: () => getPayrollReconciliation(companyId, year),
+    select: normalizePayrollReconciliationResponse,
+    enabled: !!companyId,
+    staleTime: 30_000,
+  });
+
+  return (
+    <section className="rounded-2xl border border-noorix-border bg-noorix-surface-muted/30 p-3 sm:p-4" aria-label="مراجعة الرواتب الشهرية">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-[16px] font-black text-noorix-text">مراجعة الرواتب الشهرية</h3>
+          <p className="mt-1 max-w-3xl text-[12px] leading-5 text-noorix-muted">
+            عرض للقراءة فقط يقارن إجمالي المسيرات مع تكلفة الرواتب في السجل المحاسبي. الفواتير وتسويات السلف معلومات تشخيصية، ولا يحذف العرض أو يصحح أي قيد تلقائيًا.
+          </p>
+        </div>
+        <Button size="sm" variant="ghost" onClick={onClose}>إغلاق المراجعة</Button>
+      </div>
+
+      {query.isLoading ? (
+        <div className="rounded-xl border border-noorix-border bg-white px-4 py-8 text-center text-[13px] text-noorix-muted">جارٍ تحميل المراجعة…</div>
+      ) : query.isError ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-[13px] text-red-700">
+          تعذر تحميل مراجعة الرواتب. لم يتم تغيير أي بيانات.
+        </div>
+      ) : query.data?.length ? (
+        <div className="space-y-2">
+          {query.data.map((item) => <MonthReview key={item.month} item={item} />)}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-noorix-border bg-white px-4 py-8 text-center text-[13px] text-noorix-muted">
+          لا توجد بيانات مراجعة لسنة {year}.
+        </div>
+      )}
+    </section>
+  );
+}

@@ -22,6 +22,13 @@ export class HrYearQueryDto extends HrCompanyQueryDto {
   year?: number;
 }
 
+export class HrPayrollReconciliationQueryDto extends HrYearQueryDto {
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === '1')
+  @IsBoolean()
+  includeRows?: boolean = false;
+}
+
 export class HrPayrollRunItemsQueryDto extends HrCompanyQueryDto {
   @IsString()
   @IsNotEmpty()

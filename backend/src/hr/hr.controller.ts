@@ -46,6 +46,7 @@ import {
   HrLeaveSalarySettlementsQueryDto,
   HrLeavesQueryDto,
   HrPayrollRunItemsQueryDto,
+  HrPayrollReconciliationQueryDto,
   HrResidenciesQueryDto,
   HrYearQueryDto,
 } from './dto/hr-query.dto';
@@ -141,6 +142,19 @@ export class HRController {
     @CurrentUser() user: JwtUser,
   ) {
     return this.hrService.issuePayrollPayment(dto, user.sub);
+  }
+
+  @Get('payroll/reconciliation')
+  @RequirePermission('HR_READ')
+  getPayrollReconciliation(
+    @CompanyId() companyId: string,
+    @Query() query: HrPayrollReconciliationQueryDto,
+  ) {
+    return this.hrService.getPayrollReconciliation(
+      companyId,
+      query.year ?? new Date().getFullYear(),
+      query.includeRows ?? false,
+    );
   }
 
   @Post('payroll-runs/issue-individual-payment')

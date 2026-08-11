@@ -475,12 +475,15 @@ export async function runBackupLogicalImportInTransaction(
           });
         }
 
+        const employeeDeductionMap = new Map<string, string>();
         for (const row of arr<Record<string, unknown>>(data.employeeDeductions)) {
           const eid = employeeMap.get(String(row.employeeId));
           if (!eid) continue;
+          const deductionId = nid();
+          employeeDeductionMap.set(String(row.id), deductionId);
           await tx.employeeDeduction.create({
             data: {
-              id: nid(),
+              id: deductionId,
               tenantId,
               companyId: newCompanyId,
               employeeId: eid,
@@ -492,6 +495,47 @@ export async function runBackupLogicalImportInTransaction(
                 ? invoiceMap.get(String(row.referenceId)) ?? (row.referenceId as string)
                 : null,
               createdAt: ddate(row.createdAt),
+            },
+          });
+        }
+
+        const settlementRows = [...arr<Record<string, unknown>>(data.payrollAdvanceSettlements ?? [])]
+          .sort((a, b) => Number(Boolean(a.reversalOfId)) - Number(Boolean(b.reversalOfId)));
+        if (counts.payrollAdvanceSettlements != null && counts.payrollAdvanceSettlements !== settlementRows.length) {
+          throw new BadRequestException('PAYROLL_ADVANCE_SETTLEMENT_RESTORE_COUNT_MISMATCH');
+        }
+        const settlementMap = new Map(settlementRows.map((row) => [String(row.id), nid()]));
+        for (const row of settlementRows) {
+          const employeeId = employeeMap.get(String(row.employeeId));
+          const advanceInvoiceId = invoiceMap.get(String(row.advanceInvoiceId));
+          if (!employeeId || !advanceInvoiceId) {
+            throw new BadRequestException(`PAYROLL_ADVANCE_SETTLEMENT_RESTORE_REFERENCE_MISSING:${String(row.id)}`);
+          }
+          const reversalOfId = row.reversalOfId ? settlementMap.get(String(row.reversalOfId)) : null;
+          if (row.reversalOfId && !reversalOfId) {
+            throw new BadRequestException(`PAYROLL_ADVANCE_SETTLEMENT_RESTORE_REVERSAL_MISSING:${String(row.id)}`);
+          }
+          await tx.payrollAdvanceSettlement.create({
+            data: {
+              id: settlementMap.get(String(row.id))!,
+              tenantId,
+              companyId: newCompanyId,
+              payrollRunId: row.payrollRunId ? payrollRunMap.get(String(row.payrollRunId)) ?? null : null,
+              payrollRunItemId: row.payrollRunItemId ? payrollRunItemMap.get(String(row.payrollRunItemId)) ?? null : null,
+              advanceInvoiceId,
+              employeeId,
+              deductionId: row.deductionId ? employeeDeductionMap.get(String(row.deductionId)) ?? null : null,
+              ledgerEntryId: row.ledgerEntryId ? ledgerEntryMap.get(String(row.ledgerEntryId)) ?? null : null,
+              amount: dec(row.amount),
+              settlementDate: ddate(row.settlementDate),
+              status: String(row.status ?? 'active'),
+              origin: 'restored',
+              idempotencyKey: `restore:${String(row.id)}`,
+              reversalOfId,
+              reversedAt: row.reversedAt ? ddate(row.reversedAt) : null,
+              notes: (row.notes as string | null) ?? null,
+              createdAt: ddate(row.createdAt),
+              updatedAt: ddate(row.updatedAt),
             },
           });
         }

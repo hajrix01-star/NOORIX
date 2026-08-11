@@ -38,6 +38,9 @@ export const hrKeys = {
 
   payrollRuns: (companyId: string, year: unknown) => ['payroll-runs', companyId, year] as const,
 
+  payrollReconciliation: (companyId: string, year: unknown) =>
+    ['payroll-reconciliation', companyId, year] as const,
+
   payrollRun: (runId: unknown, companyId: string) => ['payroll-run', runId, companyId] as const,
 
   payrollRunItems: (companyId: string, employeeId: unknown) =>
@@ -67,6 +70,8 @@ export const hrKeys = {
   customAllowancesByCompany: (companyId: string) => ['custom-allowances', companyId] as const,
 
   payrollRunsRoot: () => ['payroll-runs'] as const,
+
+  payrollReconciliationRoot: () => ['payroll-reconciliation'] as const,
 
   payrollRunRoot: () => ['payroll-run'] as const,
 

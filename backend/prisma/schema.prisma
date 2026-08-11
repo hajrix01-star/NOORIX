@@ -121,6 +121,7 @@ model Company {
   categories               Category[]
   employees                Employee[]
   payrollRuns              PayrollRun[]
+  payrollAdvanceSettlements PayrollAdvanceSettlement[]
   leaves                   Leave[]
   employeeResidencies      EmployeeResidency[]
   employeeDocuments        EmployeeDocument[]
@@ -499,6 +500,7 @@ model Employee {
   invoices               Invoice[]
   ledgerEntries          LedgerEntry[]
   payrollRuns            PayrollRunItem[]
+  payrollAdvanceSettlements PayrollAdvanceSettlement[]
   leaves                 Leave[]
   residencies            EmployeeResidency[]
   documents              EmployeeDocument[]
@@ -537,6 +539,7 @@ model PayrollRun {
   items          PayrollRunItem[]
   /// طھظˆط²ظٹط¹ طµط±ظپ ط§ظ„ظ…ط³ظٹط±ط© ط¹ظ„ظ‰ ط®ط²ط§ط¦ظ† (ظ…ط³طھظˆظ‰ ط§ظ„ظ…ط³ظٹط±ط© â€” ظپط§طھظˆط±ط© طµط±ظپ ظˆط§ط­ط¯ط© ط¹ظ†ط¯ ط§ظ„ط¥طµط¯ط§ط±)
   runVaultSplits PayrollRunVault[]
+  advanceSettlements PayrollAdvanceSettlement[]
 
   @@unique([companyId, runNumber])
   @@index([tenantId])
@@ -561,6 +564,7 @@ model PayrollRunItem {
   payrollRun  PayrollRun            @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
   employee    Employee              @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   vaultSplits PayrollRunItemVault[]
+  advanceSettlements PayrollAdvanceSettlement[]
 
   @@unique([payrollRunId, employeeId])
   @@index([employeeId])
@@ -765,11 +769,56 @@ model EmployeeDeduction {
 
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  payrollAdvanceSettlement PayrollAdvanceSettlement?
 
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, employeeId])
   @@map("employee_deductions")
+}
+
+/// Authoritative link between an employee advance and the payroll line that settled it.
+/// Historical unlinked deductions remain untouched and are exposed by the reconciliation API.
+model PayrollAdvanceSettlement {
+  id               String    @id @default(cuid())
+  tenantId         String    @map("tenant_id")
+  companyId        String    @map("company_id")
+  payrollRunId     String?   @map("payroll_run_id")
+  payrollRunItemId String?   @map("payroll_run_item_id")
+  advanceInvoiceId String    @map("advance_invoice_id")
+  employeeId       String    @map("employee_id")
+  deductionId      String?   @unique @map("deduction_id")
+  ledgerEntryId    String?   @map("ledger_entry_id")
+  amount           Decimal   @db.Decimal(18, 4)
+  settlementDate   DateTime  @map("settlement_date")
+  status           String    @default("active") // active | reversed
+  origin           String    @default("payroll") // payroll | restored | manual_review
+  idempotencyKey   String    @map("idempotency_key")
+  reversalOfId     String?   @unique @map("reversal_of_id")
+  reversedAt       DateTime? @map("reversed_at")
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  company        Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payrollRun     PayrollRun?         @relation(fields: [payrollRunId], references: [id], onDelete: SetNull)
+  payrollRunItem PayrollRunItem?     @relation(fields: [payrollRunItemId], references: [id], onDelete: SetNull)
+  advanceInvoice Invoice             @relation("PayrollAdvanceInvoice", fields: [advanceInvoiceId], references: [id], onDelete: Restrict)
+  employee       Employee            @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  deduction      EmployeeDeduction?  @relation(fields: [deductionId], references: [id], onDelete: SetNull)
+  ledgerEntry    LedgerEntry?        @relation(fields: [ledgerEntryId], references: [id], onDelete: SetNull)
+  reversalOf     PayrollAdvanceSettlement? @relation("PayrollAdvanceSettlementReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversal       PayrollAdvanceSettlement? @relation("PayrollAdvanceSettlementReversal")
+
+  @@unique([companyId, idempotencyKey])
+  @@index([tenantId])
+  @@index([companyId, settlementDate])
+  @@index([payrollRunId])
+  @@index([payrollRunItemId])
+  @@index([advanceInvoiceId, status])
+  @@index([employeeId, settlementDate])
+  @@index([ledgerEntryId])
+  @@map("payroll_advance_settlements")
 }
 
 model Category {
@@ -1186,6 +1235,7 @@ model Invoice {
   companyAssets         CompanyAsset[]
   purchaseDebtSource    PurchaseDebtRecord?      @relation("PurchaseDebtConvertedInvoice")
   loanLegacyInvoice     LoanLegacyInvoice?
+  payrollAdvanceSettlements PayrollAdvanceSettlement[] @relation("PayrollAdvanceInvoice")
 
   @@unique([companyId, invoiceNumber])
   @@index([tenantId])
@@ -1376,6 +1426,7 @@ model LedgerEntry {
   loanOpeningFor Loan? @relation("LoanOpeningLedgerEntry")
   loanPayment    LoanPayment? @relation("LoanPaymentLedgerEntry")
   sourceLoanPaymentFor LoanPayment? @relation("LoanPaymentSourceLedgerEntry")
+  payrollAdvanceSettlements PayrollAdvanceSettlement[]
 
   @@index([tenantId])
   @@index([companyId])

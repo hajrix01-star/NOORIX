@@ -11,6 +11,7 @@ import { HrCompensationSnapshotService } from './hr-compensation-snapshot.servic
 import { getHrAdvanceTotals } from './hr-advance-balance.util';
 import { computeEos } from '@noorix/finance-core';
 import { CalculateEosDto } from './dto/calculate-eos.dto';
+import { HrPayrollReconciliationService } from './hr-payroll-reconciliation.service';
 
 @Injectable()
 export class HRService {
@@ -20,6 +21,7 @@ export class HRService {
     private readonly residency: HrResidencyService,
     private readonly document: HrDocumentService,
     private readonly compensationSnapshot: HrCompensationSnapshotService,
+    private readonly payrollReconciliation: HrPayrollReconciliationService,
     private readonly prisma: TenantPrismaService,
   ) {}
 
@@ -122,6 +124,10 @@ export class HRService {
 
   createDeduction(...args: Parameters<HrPayrollService['createDeduction']>) {
     return this.payroll.createDeduction(...args);
+  }
+
+  getPayrollReconciliation(companyId: string, year: number, includeRows = false) {
+    return this.payrollReconciliation.getYear(companyId, year, includeRows);
   }
 
   issueIndividualSalaryPayment(...args: Parameters<HrPayrollService['issueIndividualSalaryPayment']>) {

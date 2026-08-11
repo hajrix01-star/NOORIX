@@ -29,6 +29,7 @@ import { HrTabToolbar } from '../components/HrTabToolbar';
 import { PayrollPayModal } from './PayrollPayModal';
 import { PayrollRunCompactRow, PayrollRunMobileCard } from './PayrollRunResponsiveRows';
 import { IndividualSalaryPaymentModal } from './IndividualSalaryPaymentModal';
+import { PayrollReconciliationPanel } from './PayrollReconciliationPanel';
 import {
   buildPayrollRunExportRows,
   buildPayrollRunPrintTable,
@@ -66,6 +67,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const [payModalRun, setPayModalRun] = useState<PayrollPayModalRun | null>(null);
   const [payTransactionDate, setPayTransactionDate] = useState(() => getSaudiToday());
   const [showIndividualSalaryPayment, setShowIndividualSalaryPayment] = useState(false);
+  const [showReconciliation, setShowReconciliation] = useState(false);
   const { showToast } = useToast();
   const { paymentVaults = [] } = useVaults({ companyId });
   const queryClient = useQueryClient();
@@ -255,12 +257,21 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
           leading={yearLeading}
           desktopActions={(
             <>
+              <Button
+                size="sm"
+                variant={showReconciliation ? 'primary' : 'default'}
+                className="hidden lg:inline-flex"
+                onClick={() => setShowReconciliation((open) => !open)}
+              >
+                مراجعة الرواتب
+              </Button>
               <Button size="sm" variant="success" className="hidden lg:inline-flex" onClick={() => setShowIndividualSalaryPayment(true)}>مسير إضافي</Button>
               <Button size="sm" className="hidden lg:inline-flex" onClick={handleExportExcel}>{t('exportExcel')}</Button>
               <Button size="sm" className="hidden lg:inline-flex" onClick={handlePrint}>{t('printPayroll')}</Button>
             </>
           )}
           menuItems={[
+            { key: 'reconciliation', label: showReconciliation ? 'إغلاق مراجعة الرواتب' : 'مراجعة الرواتب', onClick: () => setShowReconciliation((open) => !open) },
             { key: 'individual-salary', label: 'مسير إضافي', onClick: () => setShowIndividualSalaryPayment(true) },
             { key: 'export', label: t('exportExcel'), onClick: handleExportExcel },
             { key: 'print', label: t('printPayroll'), onClick: handlePrint },
@@ -271,6 +282,13 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
           }}
         />
       )}
+      beforeList={showReconciliation ? (
+        <PayrollReconciliationPanel
+          companyId={companyId}
+          year={year}
+          onClose={() => setShowReconciliation(false)}
+        />
+      ) : undefined}
       list={(
         <SmartTable
           compact

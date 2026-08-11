@@ -6,6 +6,8 @@ import { toYmd } from '../common/utils/to-ymd.util';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
 import type { IssueIndividualSalaryPaymentDto } from './dto/issue-individual-salary-payment.dto';
+import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
+import { postPayrollAccrualInTransaction } from './hr-payroll-accrual.util';
 
 export const INDIVIDUAL_SALARY_BATCH_PREFIX = 'salary-individual:';
 
@@ -25,6 +27,7 @@ export class HrPayrollIndividualPaymentService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly accountingCore: AccountingCoreService,
+    private readonly fiscalPeriod: FiscalPeriodService,
   ) {}
 
   async issue(dto: IssueIndividualSalaryPaymentDto, userId?: string) {
@@ -47,7 +50,7 @@ export class HrPayrollIndividualPaymentService {
       const runNumber = token ? `SUP-${monthCode}-${token}` : `SUP-${monthCode}-${String(count + 1).padStart(3, '0')}`;
       const existing = await tx.payrollRun.findFirst({
         where: { companyId: dto.companyId, runNumber },
-        include: { items: true },
+        include: { items: { include: { employee: true } } },
       });
       if (existing) {
         const invoice = await tx.invoice.findFirst({
@@ -81,7 +84,20 @@ export class HrPayrollIndividualPaymentService {
           items: { create: { employeeId: dto.employeeId, grossSalary: amount, netSalary: amount, notes: note } },
           runVaultSplits: { create: { vaultId: dto.vaultId, amount } },
         },
-        include: { items: true },
+        include: { items: { include: { employee: true } } },
+      });
+      await postPayrollAccrualInTransaction(
+        tx,
+        this.fiscalPeriod,
+        this.accountingCore,
+        payrollRun,
+        tenantId,
+        userId,
+      );
+      const accruedAt = new Date();
+      await tx.payrollRun.update({
+        where: { id: payrollRun.id },
+        data: { payrollAccruedAt: accruedAt, advanceSettlementsAppliedAt: accruedAt },
       });
       const [result] = await this.accountingCore.postPayrollPaymentBatchInTransaction(tx, [{
         companyId: dto.companyId,

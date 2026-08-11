@@ -72,6 +72,7 @@ const FINANCIAL_QUERY_PREFIXES: readonly QueryKey[] = [
   expenseKeys.linePaymentsRoot(),
   ordersV4Keys.root,
   hrKeys.payrollRunsRoot(),
+  hrKeys.payrollReconciliationRoot(),
   hrKeys.payrollRunRoot(),
   hrKeys.payrollRunItemsRoot(),
   invoiceKeys.dayCloseRoot(),

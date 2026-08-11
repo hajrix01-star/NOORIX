@@ -68,6 +68,12 @@ type HrMutationResult = HrApiRecord | { success?: boolean; invoice?: HrApiRecord
 export async function getPayrollRuns(companyId: string, year?: string | number): Promise<ApiParsedResult<HrApiRecordList>> {
   return apiGet('/api/v1/hr/payroll-runs', companyYearQuery(companyId, year));
 }
+export async function getPayrollReconciliation(companyId: string, year?: string | number): Promise<ApiParsedResult<unknown>> {
+  return apiGet('/api/v1/hr/payroll/reconciliation', {
+    ...companyYearQuery(companyId, year),
+    includeRows: '1',
+  });
+}
 export async function getEmployeePayrollItems(companyId: string, employeeId: string): Promise<ApiParsedResult<HrApiRecordList>> {
   return apiGet('/api/v1/hr/payroll-run-items', companyEmployeeQuery(companyId, employeeId));
 }

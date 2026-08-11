@@ -9,12 +9,14 @@ type ApplyAdvanceSettlementDb = {
   employeeDeduction: Pick<TenantPrismaService['employeeDeduction'], 'create'>;
   account: Pick<TenantPrismaService['account'], 'findFirst'>;
   ledgerEntry: Pick<TenantPrismaService['ledgerEntry'], 'create'>;
+  payrollAdvanceSettlement: Pick<TenantPrismaService['payrollAdvanceSettlement'], 'create'>;
 };
 
 type ReverseAdvanceSettlementDb = {
   invoice: Pick<TenantPrismaService['invoice'], 'findFirst' | 'update'>;
   employeeDeduction: Pick<TenantPrismaService['employeeDeduction'], 'findMany' | 'deleteMany'>;
   ledgerEntry: Pick<TenantPrismaService['ledgerEntry'], 'updateMany'>;
+  payrollAdvanceSettlement: Pick<TenantPrismaService['payrollAdvanceSettlement'], 'updateMany'>;
 };
 
 export function parseAdvanceDeferMonth(notes?: string | null): string {
@@ -29,10 +31,12 @@ export function parseAdvanceDeferMonth(notes?: string | null): string {
 export async function applyPayrollAdvanceSettlements(
   db: ApplyAdvanceSettlementDb,
   run: {
+    id: string;
     companyId: string;
     runNumber: string;
     payrollMonth: Date;
     items: Array<{
+      id: string;
       employeeId: string;
       advancesDeduct: Prisma.Decimal | null;
       advanceSelections?: Prisma.JsonValue | null;
@@ -161,10 +165,11 @@ export async function applyPayrollAdvanceSettlements(
 
       // السلفة صُرفت سابقاً كأصل؛ هذه التسوية فقط تنقل الجزء المخصوم إلى تكلفة الرواتب
       // من دون حركة نقدية ثانية.
+      let ledgerEntryId: string | null = null;
       if (options.postExpenseLedger !== false) {
         const accounts = await resolveSettlementAccounts();
         const settlementDate = new Date(`${txDate}T00:00:00.000Z`);
-        await db.ledgerEntry.create({
+        const ledgerEntry = await db.ledgerEntry.create({
           data: {
             tenantId,
             companyId: run.companyId,
@@ -180,7 +185,29 @@ export async function applyPayrollAdvanceSettlements(
             status: 'active',
           },
         });
+        ledgerEntryId = ledgerEntry.id;
       }
+
+      // This register is the authoritative future link. It does not post any
+      // accounting entry; the payroll accrual already carries the full cost.
+      await db.payrollAdvanceSettlement.create({
+          data: {
+            tenantId,
+            companyId: run.companyId,
+            payrollRunId: run.id,
+            payrollRunItemId: item.id,
+            advanceInvoiceId: adv.id,
+            employeeId: item.employeeId,
+            deductionId: deduction.id,
+            ledgerEntryId,
+            amount: new Prisma.Decimal(allocate),
+            settlementDate: new Date(`${txDate}T00:00:00.000Z`),
+            status: 'active',
+            origin: 'payroll',
+            idempotencyKey: `${run.id}:${item.id}:${adv.id}`,
+            notes: `Payroll ${run.runNumber}; advance ${adv.invoiceNumber}`,
+          },
+      });
       remainingToDeduct -= allocate;
       allocatedTotal = allocatedTotal.plus(allocate);
     }
@@ -201,6 +228,10 @@ export async function reversePayrollAdvanceSettlementsForDelete(
   companyId: string,
   runNumber: string,
 ): Promise<void> {
+  await db.payrollAdvanceSettlement.updateMany({
+    where: { companyId, payrollRun: { runNumber }, status: 'active' },
+    data: { status: 'reversed', reversedAt: new Date() },
+  });
   const deductionWhere: Prisma.EmployeeDeductionWhereInput = {
     companyId,
     deductionType: 'advance',

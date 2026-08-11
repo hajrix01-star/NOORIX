@@ -20,6 +20,7 @@ describe('payroll accrual', () => {
     payrollMonth: new Date('2026-07-01T00:00:00.000Z'),
     totalAmount: new Prisma.Decimal(800),
     items: [{
+      id: 'item-1',
       employeeId: 'employee-1',
       netSalary: new Prisma.Decimal(800),
       advancesDeduct: new Prisma.Decimal(200),
@@ -38,7 +39,12 @@ describe('payroll accrual', () => {
   it('posts full payroll cost once and splits the credits between payable and advances', async () => {
     (applyPayrollAdvanceSettlements as jest.Mock).mockResolvedValue(new Prisma.Decimal(200));
     const tx = {
-      ledgerEntry: { findFirst: jest.fn().mockResolvedValue(null) },
+      $queryRaw: jest.fn().mockResolvedValue([{ pg_advisory_xact_lock: null }]),
+      ledgerEntry: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        findMany: jest.fn().mockResolvedValue([{ id: 'advance-ledger-1', employeeId: 'employee-1' }]),
+      },
+      payrollAdvanceSettlement: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       account: {
         findFirst: jest.fn()
           .mockResolvedValueOnce({ id: 'salary-expense' })
@@ -93,10 +99,15 @@ describe('payroll accrual', () => {
         ],
       }),
     );
+    expect((tx as any).payrollAdvanceSettlement.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({ payrollRunId: 'run-1', employeeId: 'employee-1', ledgerEntryId: null }),
+      data: { ledgerEntryId: 'advance-ledger-1' },
+    });
   });
 
   it('is idempotent when an active payroll accrual already exists', async () => {
     const tx = {
+      $queryRaw: jest.fn().mockResolvedValue([{ pg_advisory_xact_lock: null }]),
       ledgerEntry: { findFirst: jest.fn().mockResolvedValue({ id: 'entry-1' }) },
       account: { findFirst: jest.fn() },
     } as unknown as PayrollAccrualTx;

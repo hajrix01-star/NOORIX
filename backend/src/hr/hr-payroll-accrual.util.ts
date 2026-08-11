@@ -14,6 +14,7 @@ export type PayrollRunForAccrual = {
   payrollMonth: Date;
   totalAmount: Prisma.Decimal;
   items: Array<{
+    id: string;
     employeeId: string;
     netSalary: Prisma.Decimal;
     advancesDeduct: Prisma.Decimal | null;
@@ -42,6 +43,9 @@ export async function postPayrollAccrualInTransaction(
   tenantId: string,
   userId?: string,
 ): Promise<{ expense: Prisma.Decimal; payable: Prisma.Decimal; advances: Prisma.Decimal; idempotentReplay: boolean }> {
+  await tx.$queryRaw(Prisma.sql`
+    SELECT pg_advisory_xact_lock(hashtext(${`payroll-accrual:${run.companyId}:${run.id}`}))
+  `);
   const existing = await tx.ledgerEntry.findFirst({
     where: {
       companyId: run.companyId,
@@ -116,6 +120,31 @@ export async function postPayrollAccrualInTransaction(
     createdById: userId,
     lines,
   });
+  if (advanceAsset) {
+    const advanceLedgerEntries = await tx.ledgerEntry.findMany({
+      where: {
+        companyId: run.companyId,
+        referenceType: 'payroll_accrual',
+        referenceId: run.id,
+        creditAccountId: advanceAsset.id,
+        status: 'active',
+      },
+      select: { id: true, employeeId: true },
+    });
+    for (const entry of advanceLedgerEntries) {
+      if (!entry.employeeId) continue;
+      await tx.payrollAdvanceSettlement.updateMany({
+        where: {
+          companyId: run.companyId,
+          payrollRunId: run.id,
+          employeeId: entry.employeeId,
+          status: 'active',
+          ledgerEntryId: null,
+        },
+        data: { ledgerEntryId: entry.id },
+      });
+    }
+  }
 
   return { expense, payable, advances, idempotentReplay: false };
 }
