@@ -164,7 +164,9 @@ export class HRController {
   }
 
   @Post('payroll/reconciliation/historical-part-time-links')
-  @Roles('owner')
+  // System owners have the same financial authority as owners. The UI must
+  // not offer a historical classification action that their API role rejects.
+  @Roles('owner', 'super_admin')
   createHistoricalPartTimePayrollLink(
     @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
