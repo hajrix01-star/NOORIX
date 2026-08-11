@@ -40,6 +40,7 @@ import { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
 import { IssueIndividualSalaryPaymentDto } from './dto/issue-individual-salary-payment.dto';
 import { CalculateEosDto } from './dto/calculate-eos.dto';
 import {
+  PayrollLegacyPartialCorrectionConfirmDto,
   PayrollLegacyCorrectionConfirmDto,
   PayrollLegacyCorrectionPreviewDto,
 } from './dto/payroll-legacy-correction.dto';
@@ -178,6 +179,25 @@ export class HRController {
     @Body() dto: PayrollLegacyCorrectionConfirmDto,
   ) {
     return this.hrService.confirmPayrollLegacyCorrection(companyId, user.sub, dto);
+  }
+
+  @Post('payroll/reconciliation/legacy-correction/proven-subset/preview')
+  @Roles('owner')
+  previewPayrollLegacyProvenSubset(
+    @CompanyId() companyId: string,
+    @Body() dto: PayrollLegacyCorrectionPreviewDto,
+  ) {
+    return this.hrService.previewPayrollLegacyProvenSubset(companyId, dto);
+  }
+
+  @Post('payroll/reconciliation/legacy-correction/proven-subset/confirm')
+  @Roles('owner')
+  confirmPayrollLegacyProvenSubset(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: JwtUser,
+    @Body() dto: PayrollLegacyPartialCorrectionConfirmDto,
+  ) {
+    return this.hrService.confirmPayrollLegacyProvenSubset(companyId, user.sub, dto);
   }
 
   @Post('payroll-runs/issue-individual-payment')

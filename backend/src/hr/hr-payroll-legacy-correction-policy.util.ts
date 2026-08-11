@@ -25,6 +25,7 @@ export type LegacyPayrollCorrectionCandidate = {
 };
 
 export type LegacyPayrollCorrectionPreview = {
+  correctionMode: 'full' | 'proven_subset';
   targetMonth: string;
   ledgerPayrollCostBefore: number;
   expectedPayrollCost: number;
@@ -50,6 +51,7 @@ export function buildLegacyPayrollCorrectionPreview(input: {
   expectedPayrollCost: number;
   ledgerPayrollCost: number;
   candidates: LegacyPayrollCorrectionCandidate[];
+  allowResidual?: boolean;
 }): LegacyPayrollCorrectionPreview {
   const ids = new Set<string>();
   const documentedRepairOwners = new Map<string, string>();
@@ -115,13 +117,24 @@ export function buildLegacyPayrollCorrectionPreview(input: {
   const differenceBefore = rounded(input.ledgerPayrollCost - input.expectedPayrollCost);
   const ledgerPayrollCostAfter = rounded(input.ledgerPayrollCost - selectedLegacyTotal);
   const differenceAfter = rounded(ledgerPayrollCostAfter - input.expectedPayrollCost);
-  if (Math.abs(selectedLegacyTotal - differenceBefore) > 0.02 || Math.abs(differenceAfter) > 0.02) {
+  const correctionMode = input.allowResidual ? 'proven_subset' : 'full';
+  if (input.allowResidual) {
+    if (
+      differenceBefore <= 0.02
+      || selectedLegacyTotal <= 0.02
+      || selectedLegacyTotal - differenceBefore > 0.02
+      || differenceAfter < -0.02
+    ) {
+      throw new Error('PROVEN_SUBSET_DOES_NOT_REDUCE_POSITIVE_PAYROLL_DIFFERENCE');
+    }
+  } else if (Math.abs(selectedLegacyTotal - differenceBefore) > 0.02 || Math.abs(differenceAfter) > 0.02) {
     throw new Error('SELECTED_ROWS_DO_NOT_EXACTLY_RECONCILE_PAYROLL');
   }
 
   const ledgerEntryIds = [...ids].sort();
   const fingerprint = JSON.stringify({
     companyId: input.companyId,
+    correctionMode,
     targetMonth: input.targetMonth,
     sourceRunNumber: input.sourceRunNumber,
     expectedPayrollCost: rounded(input.expectedPayrollCost),
@@ -147,6 +160,7 @@ export function buildLegacyPayrollCorrectionPreview(input: {
   });
 
   return {
+    correctionMode,
     targetMonth: input.targetMonth,
     ledgerPayrollCostBefore: rounded(input.ledgerPayrollCost),
     expectedPayrollCost: rounded(input.expectedPayrollCost),

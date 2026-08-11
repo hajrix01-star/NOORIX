@@ -46,3 +46,27 @@ export class PayrollLegacyCorrectionConfirmDto extends PayrollLegacyCorrectionPr
   @IsIn(['CANCEL_CONFIRMED_PAYROLL_DUPLICATES'])
   confirmation!: 'CANCEL_CONFIRMED_PAYROLL_DUPLICATES';
 }
+
+/**
+ * Used only when the server can prove a subset is duplicated but the month
+ * still contains other payroll activity that must remain under review.
+ */
+export class PayrollLegacyPartialCorrectionConfirmDto extends PayrollLegacyCorrectionPreviewDto {
+  @IsString()
+  @Matches(/^[a-f0-9]{64}$/)
+  previewHash!: string;
+
+  @IsString()
+  @MinLength(12)
+  @MaxLength(200)
+  idempotencyKey!: string;
+
+  @IsString()
+  @MinLength(10)
+  @MaxLength(500)
+  reason!: string;
+
+  @IsString()
+  @IsIn(['CANCEL_PROVEN_PAYROLL_DUPLICATE_SUBSET'])
+  confirmation!: 'CANCEL_PROVEN_PAYROLL_DUPLICATE_SUBSET';
+}
