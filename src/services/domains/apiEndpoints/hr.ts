@@ -74,6 +74,29 @@ export async function getPayrollReconciliation(companyId: string, year?: string 
     includeRows: '1',
   });
 }
+type PayrollLegacyCorrectionPreviewInput = {
+  targetMonth: string;
+  sourceRunNumber: string;
+  ledgerEntryIds: string[];
+};
+type PayrollLegacyCorrectionConfirmInput = PayrollLegacyCorrectionPreviewInput & {
+  previewHash: string;
+  idempotencyKey: string;
+  reason: string;
+  confirmation: 'CANCEL_PROVEN_PAYROLL_DUPLICATE_SUBSET';
+};
+export async function previewProvenPayrollLegacySubset(
+  companyId: string,
+  body: PayrollLegacyCorrectionPreviewInput,
+): Promise<ApiParsedResult<Record<string, unknown>>> {
+  return apiPost('/api/v1/hr/payroll/reconciliation/legacy-correction/proven-subset/preview', { companyId, ...body });
+}
+export async function confirmProvenPayrollLegacySubset(
+  companyId: string,
+  body: PayrollLegacyCorrectionConfirmInput,
+): Promise<ApiParsedResult<Record<string, unknown>>> {
+  return apiPost('/api/v1/hr/payroll/reconciliation/legacy-correction/proven-subset/confirm', { companyId, ...body });
+}
 export async function getEmployeePayrollItems(companyId: string, employeeId: string): Promise<ApiParsedResult<HrApiRecordList>> {
   return apiGet('/api/v1/hr/payroll-run-items', companyEmployeeQuery(companyId, employeeId));
 }
