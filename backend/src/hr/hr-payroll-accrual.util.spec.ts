@@ -99,7 +99,7 @@ describe('payroll accrual', () => {
         ],
       }),
     );
-    expect((tx as any).payrollAdvanceSettlement.updateMany).toHaveBeenCalledWith({
+    expect(tx.payrollAdvanceSettlement.updateMany).toHaveBeenCalledWith({
       where: expect.objectContaining({ payrollRunId: 'run-1', employeeId: 'employee-1', ledgerEntryId: null }),
       data: { ledgerEntryId: 'advance-ledger-1' },
     });

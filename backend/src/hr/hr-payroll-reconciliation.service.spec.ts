@@ -47,8 +47,8 @@ describe('HrPayrollReconciliationService', () => {
       expect.objectContaining({ source: 'legacy_ledger', amount: 13100, confidence: 'low' }),
       expect.objectContaining({ source: 'documented_historical_repair', amount: 30200, confidence: 'medium', payrollItemId: 'item-1' }),
     ]));
-    expect((prisma as any).payrollRun.update).toBeUndefined();
-    expect((prisma as any).ledgerEntry.updateMany).toBeUndefined();
+    expect(prisma.payrollRun.update).toBeUndefined();
+    expect(prisma.ledgerEntry.updateMany).toBeUndefined();
   });
 
   it('attributes a January-paid salary invoice to its December payroll run', async () => {
