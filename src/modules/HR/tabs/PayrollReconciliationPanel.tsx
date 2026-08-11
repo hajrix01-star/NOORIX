@@ -101,6 +101,7 @@ function MonthReview({
   const [pendingRun, setPendingRun] = React.useState<string | null>(null);
   const [pendingPartTimeLedgerId, setPendingPartTimeLedgerId] = React.useState<string | null>(null);
   const [correctionError, setCorrectionError] = React.useState<string | null>(null);
+  const [partTimeLinkSuccess, setPartTimeLinkSuccess] = React.useState<string | null>(null);
   const provenGroups = React.useMemo(() => {
     const groups = new Map<string, string[]>();
     for (const row of item.rows) {
@@ -150,6 +151,7 @@ function MonthReview({
 
   const linkHistoricalPartTime = async (ledgerEntryId: string) => {
     setCorrectionError(null);
+    setPartTimeLinkSuccess(null);
     setPendingPartTimeLedgerId(ledgerEntryId);
     try {
       const accepted = window.confirm('سيُربط هذا القيد الموجود فقط كراتب دوام جزئي تاريخي. لن يتغير أي قيد أو فاتورة أو خزينة أو سلفة. الاسم يُؤخذ من القيد أو الوصف عند التطابق المؤكد فقط؛ وإلا يُحفظ بدون اسم موظف. هل تعتمد الربط؟');
@@ -160,6 +162,7 @@ function MonthReview({
         confirmation: 'LINK_HISTORICAL_PART_TIME_PAYROLL',
       });
       if (!result.success) throw new Error(result.error || 'تعذر حفظ ربط الدوام الجزئي التاريخي.');
+      setPartTimeLinkSuccess('تم ربط القيد كدوام جزئي تاريخي وتحديث المطابقة، دون تغيير أي مبلغ أو فاتورة أو خزينة أو سلفة.');
       onCorrected();
     } catch (error) {
       setCorrectionError(error instanceof Error ? error.message : 'تعذر حفظ الربط الآمن.');
@@ -205,6 +208,18 @@ function MonthReview({
           </div>
         ) : null}
 
+        {partTimeLinkSuccess ? (
+          <div role="status" className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] font-bold text-emerald-800">
+            {partTimeLinkSuccess}
+          </div>
+        ) : null}
+
+        {correctionError ? (
+          <div role="alert" className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700">
+            {correctionError}
+          </div>
+        ) : null}
+
         {provenGroups.length ? (
           <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-900">
             <div className="font-bold">قيود تاريخية مرشحة لتصحيح مثبت</div>
@@ -223,7 +238,6 @@ function MonthReview({
                 </Button>
               ))}
             </div>
-            {correctionError ? <div className="mt-2 font-semibold text-red-700">{correctionError}</div> : null}
           </div>
         ) : null}
 
