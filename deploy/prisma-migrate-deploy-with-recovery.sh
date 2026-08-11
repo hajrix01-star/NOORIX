@@ -8,6 +8,7 @@ set -euo pipefail
 
 LEGACY_RETIREMENT_MIGRATION="20260803180000_retire_legacy_orders"
 ADVANCE_RECLASSIFICATION_MIGRATION="20260809010000_reclassify_employee_advances_as_assets"
+PAYROLL_COST_GAP_MIGRATION="20260811123000_reconcile_historical_payroll_cost_gap"
 LEGACY_TABLES=(
   order_categories order_sections order_catalog_units order_conversion_templates
   order_products orders order_items staff_orders staff_order_items
@@ -80,6 +81,33 @@ if [[ "$failed_advance_reclassification" != "0" ]]; then
   npx prisma migrate resolve --rolled-back "$ADVANCE_RECLASSIFICATION_MIGRATION"
 fi
 
+# The first payroll cost-gap attempt used ON COMMIT DROP temporary tables
+# without an explicit transaction. PostgreSQL therefore dropped the first
+# table before the following statement. Recover only that exact known failure,
+# and only when no migration-specific audit artifact exists.
+failed_payroll_cost_gap="$(psql --dbname="$DATABASE_URL" -Atqc "
+  SELECT count(*)
+  FROM \"_prisma_migrations\"
+  WHERE migration_name = '${PAYROLL_COST_GAP_MIGRATION}'
+    AND finished_at IS NULL
+    AND rolled_back_at IS NULL
+    AND POSITION('_payroll_cost_gap_paid_runs' IN COALESCE(logs, '')) > 0
+")"
+
+if [[ "$failed_payroll_cost_gap" != "0" ]]; then
+  payroll_cost_gap_artifacts="$(psql --dbname="$DATABASE_URL" -Atqc "
+    SELECT count(*)
+    FROM \"audit_logs\"
+    WHERE entity = 'payroll_cost_gap'
+      AND user_agent = 'prisma-migration'
+  ")"
+  if [[ "$payroll_cost_gap_artifacts" != "0" ]]; then
+    echo "ERROR: failed payroll cost-gap migration left accounting artifacts; manual recovery is required" >&2
+    exit 1
+  fi
+  echo "==> [prisma] verified the known temp-table failure; marking payroll cost-gap attempt rolled back"
+  npx prisma migrate resolve --rolled-back "$PAYROLL_COST_GAP_MIGRATION"
+fi
 echo "==> [prisma] migrate deploy (strict)"
 npx prisma migrate deploy
 echo "==> [prisma] migrate deploy succeeded"

@@ -10,6 +10,10 @@ describe('historical payroll cost-gap reconciliation migration', () => {
     'utf8',
   );
 
+  it('keeps all temporary-table work inside one explicit transaction', () => {
+    expect(sql).toMatch(/BEGIN;[\s\S]*CREATE TEMP TABLE "_payroll_cost_gap_paid_runs"/);
+    expect(sql.trimEnd()).toMatch(/COMMIT;$/);
+  });
   it('uses the authoritative payroll equation for paid runs with legacy invoice links', () => {
     expect(sql).toContain(
       'pri."gross_salary" + pri."allowances_add" - pri."deductions" - pri."net_salary"',

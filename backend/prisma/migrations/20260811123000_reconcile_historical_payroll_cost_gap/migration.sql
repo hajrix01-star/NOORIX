@@ -1,9 +1,14 @@
-﻿-- The first reconciliation required invoices.batch_id = payroll_runs.id and a
+-- The first reconciliation required invoices.batch_id = payroll_runs.id and a
 -- populated advances_deduct. Some paid legacy runs lack one of those modern
 -- links even though their payroll equation still proves the advance deduction:
 --   gross + allowances - ordinary deductions - net paid = advance settled.
 -- This migration accepts a paid salary invoice by batch, number, or run note,
 -- subtracts already-posted settlements, and posts only the remaining non-cash gap.
+
+-- Prisma does not implicitly wrap PostgreSQL migration files in one transaction.
+-- Keep the temporary reconciliation tables alive until every fail-closed check
+-- has passed, and make the accounting repair atomic.
+BEGIN;
 
 CREATE TEMP TABLE "_payroll_cost_gap_paid_runs" ON COMMIT DROP AS
 SELECT
@@ -152,3 +157,5 @@ UPDATE "payroll_runs" pr
 SET "advance_settlements_applied_at" = COALESCE(pr."advance_settlements_applied_at", NOW())
 FROM "_payroll_cost_gap_paid_runs" paid
 WHERE paid."payroll_run_id" = pr."id";
+
+COMMIT;
