@@ -9,9 +9,15 @@ import {
   type LegacyPayrollCorrectionPreview,
 } from './hr-payroll-legacy-correction-policy.util';
 import type {
+  PayrollLegacyPartialCorrectionConfirmDto,
   PayrollLegacyCorrectionConfirmDto,
   PayrollLegacyCorrectionPreviewDto,
 } from './dto/payroll-legacy-correction.dto';
+
+type CorrectionMode = 'full' | 'proven_subset';
+type PayrollLegacyAnyCorrectionConfirmDto =
+  | PayrollLegacyCorrectionConfirmDto
+  | PayrollLegacyPartialCorrectionConfirmDto;
 
 type CorrectionProof = LegacyPayrollCorrectionPreview & {
   sourceRunId: string;
@@ -23,8 +29,8 @@ type CorrectionProof = LegacyPayrollCorrectionPreview & {
 const DOCUMENTED_REPAIR_RE = /^\[(?:PAYROLL_COST_GAP_REPAIR_V2|PAYROLL_ADVANCE_RECONCILIATION)\]\s*run=([^,\s]+),\s*payrollItem=([^,\s]+)/;
 const money = (value: Prisma.Decimal | number | string | null | undefined) =>
   Number(new Prisma.Decimal(value ?? 0).toDecimalPlaces(2));
-const correctionAuditId = (companyId: string, idempotencyKey: string) =>
-  `plc_${createHash('sha256').update(`${companyId}:${idempotencyKey}`).digest('hex')}`;
+const correctionAuditId = (companyId: string, correctionMode: CorrectionMode, idempotencyKey: string) =>
+  `plc_${createHash('sha256').update(`${companyId}:${correctionMode}:${idempotencyKey}`).digest('hex')}`;
 const monthRange = (month: string) => {
   const [year, monthNumber] = month.split('-').map(Number);
   return {
@@ -49,15 +55,36 @@ export class HrPayrollLegacyCorrectionService {
     return this.prisma.withTenant(async (tx) => {
       const transaction = tx as unknown as Prisma.TransactionClient;
       await this.lock(transaction, companyId, dto.targetMonth);
-      return this.buildProof(transaction, companyId, dto);
+      return this.buildProof(transaction, companyId, dto, 'full');
     });
   }
 
   confirm(companyId: string, userId: string, dto: PayrollLegacyCorrectionConfirmDto) {
+    return this.confirmCorrection(companyId, userId, dto, 'full');
+  }
+
+  previewProvenSubset(companyId: string, dto: PayrollLegacyCorrectionPreviewDto) {
     return this.prisma.withTenant(async (tx) => {
       const transaction = tx as unknown as Prisma.TransactionClient;
       await this.lock(transaction, companyId, dto.targetMonth);
-      const auditId = correctionAuditId(companyId, dto.idempotencyKey);
+      return this.buildProof(transaction, companyId, dto, 'proven_subset');
+    });
+  }
+
+  confirmProvenSubset(companyId: string, userId: string, dto: PayrollLegacyPartialCorrectionConfirmDto) {
+    return this.confirmCorrection(companyId, userId, dto, 'proven_subset');
+  }
+
+  private confirmCorrection(
+    companyId: string,
+    userId: string,
+    dto: PayrollLegacyAnyCorrectionConfirmDto,
+    correctionMode: CorrectionMode,
+  ) {
+    return this.prisma.withTenant(async (tx) => {
+      const transaction = tx as unknown as Prisma.TransactionClient;
+      await this.lock(transaction, companyId, dto.targetMonth);
+      const auditId = correctionAuditId(companyId, correctionMode, dto.idempotencyKey);
       const replay = await transaction.auditLog.findUnique({ where: { id: auditId } });
       if (replay) {
         const stored = (replay.newValue ?? {}) as Record<string, unknown>;
@@ -67,7 +94,7 @@ export class HrPayrollLegacyCorrectionService {
         return { ...stored, replayed: true };
       }
 
-      const proof = await this.buildProof(transaction, companyId, dto);
+      const proof = await this.buildProof(transaction, companyId, dto, correctionMode);
       if (proof.previewHash !== dto.previewHash) {
         throw new ConflictException('تغيّرت بيانات المطابقة بعد المعاينة. أعد المعاينة قبل التأكيد.');
       }
@@ -83,7 +110,10 @@ export class HrPayrollLegacyCorrectionService {
 
       const afterLedgerTotal = await this.ledgerPayrollCost(transaction, companyId, dto.targetMonth);
       const afterDifference = money(afterLedgerTotal.minus(proof.expectedPayrollCost));
-      if (Math.abs(afterDifference) > 0.02 || Math.abs(money(afterLedgerTotal) - proof.ledgerPayrollCostAfter) > 0.02) {
+      const postconditionFailed = correctionMode === 'full'
+        ? Math.abs(afterDifference) > 0.02
+        : Math.abs(afterDifference - proof.differenceAfter) > 0.02 || afterDifference < -0.02;
+      if (postconditionFailed || Math.abs(money(afterLedgerTotal) - proof.ledgerPayrollCostAfter) > 0.02) {
         throw new ConflictException('لم تحقق النتيجة المطابقة الصفرية؛ تم إلغاء العملية بالكامل.');
       }
 
@@ -91,6 +121,7 @@ export class HrPayrollLegacyCorrectionService {
       if (!company) throw new NotFoundException('الشركة غير موجودة.');
       const result = {
         companyId,
+        correctionMode,
         targetMonth: dto.targetMonth,
         sourceRunNumber: dto.sourceRunNumber,
         cancelledLedgerEntryIds: proof.ledgerEntryIds,
@@ -112,7 +143,9 @@ export class HrPayrollLegacyCorrectionService {
           companyId,
           userId,
           action: 'cancel',
-          entity: 'payroll_legacy_duplicate_ledger_correction',
+          entity: correctionMode === 'full'
+            ? 'payroll_legacy_duplicate_ledger_correction'
+            : 'payroll_legacy_proven_subset_correction',
           entityId: `${dto.targetMonth}:${dto.sourceRunNumber}`,
           oldValue: {
             previewHash: proof.previewHash,
@@ -147,6 +180,7 @@ export class HrPayrollLegacyCorrectionService {
     tx: Prisma.TransactionClient,
     companyId: string,
     dto: PayrollLegacyCorrectionPreviewDto,
+    correctionMode: CorrectionMode,
   ): Promise<CorrectionProof> {
     const sourceRun = await tx.payrollRun.findFirst({
       where: { companyId, runNumber: dto.sourceRunNumber, status: 'completed' },
@@ -310,6 +344,7 @@ export class HrPayrollLegacyCorrectionService {
         expectedPayrollCost: money(expectedPayrollCost),
         ledgerPayrollCost: money(ledgerPayrollCost),
         candidates,
+        allowResidual: correctionMode === 'proven_subset',
       });
       return {
         ...preview,

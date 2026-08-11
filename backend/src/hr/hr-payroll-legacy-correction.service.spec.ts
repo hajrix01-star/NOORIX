@@ -7,6 +7,7 @@ const d = (value: number) => new Prisma.Decimal(value);
 
 function setup(options: {
   rowCount?: number;
+  ledgerBefore?: number;
   afterLedgerTotal?: number;
   extraEligibleRow?: boolean;
   malformedLegacyNote?: boolean;
@@ -71,7 +72,7 @@ function setup(options: {
         return Promise.resolve([]);
       }),
       aggregate: jest.fn().mockImplementation(() => Promise.resolve({
-        _sum: { amount: candidates.some((row) => row.status === 'active') ? d(61151) : d(options.afterLedgerTotal ?? 48051) },
+        _sum: { amount: candidates.some((row) => row.status === 'active') ? d(options.ledgerBefore ?? 61151) : d(options.afterLedgerTotal ?? 48051) },
       })),
       updateMany: jest.fn().mockImplementation(({ where }: { where: { id: { in: string[] }; status: string } }) => {
         const rows = candidates.filter((row) => where.id.in.includes(row.id) && row.status === 'active');
@@ -173,6 +174,34 @@ describe('HrPayrollLegacyCorrectionService', () => {
     expect(ctx.accountingCancel).not.toHaveBeenCalled();
   });
 
+  it('cancels a proven subset and preserves a separately reviewed residual', async () => {
+    const ctx = setup({ ledgerBefore: 63551, afterLedgerTotal: 50451 });
+    const preview = await ctx.service.previewProvenSubset('shami', base);
+    expect(preview).toMatchObject({
+      correctionMode: 'proven_subset',
+      selectedLegacyTotal: 13100,
+      differenceBefore: 15500,
+      differenceAfter: 2400,
+    });
+
+    const result = await ctx.service.confirmProvenSubset('shami', 'owner-1', {
+      ...base,
+      previewHash: preview.previewHash,
+      idempotencyKey: 'may-shami-proven-subset-v1',
+      reason: 'Cancel only the payroll duplicate rows proven by the matching repair record',
+      confirmation: 'CANCEL_PROVEN_PAYROLL_DUPLICATE_SUBSET',
+    });
+
+    expect(result).toMatchObject({ correctionMode: 'proven_subset', cancelledCount: 27, differenceAfter: 2400 });
+    expect(ctx.tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ entity: 'payroll_legacy_proven_subset_correction' }),
+    }));
+    expect(ctx.invoiceUpdate).not.toHaveBeenCalled();
+    expect(ctx.deductionUpdate).not.toHaveBeenCalled();
+    expect(ctx.payrollUpdate).not.toHaveBeenCalled();
+    expect(ctx.vaultUpdate).not.toHaveBeenCalled();
+  });
+
   it('replays the permanent audit result without cancelling twice', async () => {
     const ctx = setup();
     const preview = await ctx.service.preview('shami', base);
@@ -190,6 +219,8 @@ describe('HrPayrollLegacyCorrectionService', () => {
   it('exposes preview and confirm to owner only', () => {
     expect(Reflect.getMetadata(ROLES_KEY, HRController.prototype.previewPayrollLegacyCorrection)).toEqual(['owner']);
     expect(Reflect.getMetadata(ROLES_KEY, HRController.prototype.confirmPayrollLegacyCorrection)).toEqual(['owner']);
+    expect(Reflect.getMetadata(ROLES_KEY, HRController.prototype.previewPayrollLegacyProvenSubset)).toEqual(['owner']);
+    expect(Reflect.getMetadata(ROLES_KEY, HRController.prototype.confirmPayrollLegacyProvenSubset)).toEqual(['owner']);
   });
 
   it('rejects a stale preview hash before any update', async () => {

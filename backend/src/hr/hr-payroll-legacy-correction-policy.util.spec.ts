@@ -50,6 +50,26 @@ describe('legacy payroll correction policy', () => {
     })).toThrow('SELECTED_ROWS_DO_NOT_EXACTLY_RECONCILE_PAYROLL');
   });
 
+  it('accepts only a proved subset while preserving the month residual for review', () => {
+    const result = buildLegacyPayrollCorrectionPreview({
+      companyId: 'shami', targetMonth: '2026-05', sourceRunNumber: 'PR-2605-001', expectedPayrollCost: 48051,
+      ledgerPayrollCost: 59816, candidates: [candidate({
+        amount: 9500,
+        documentedRepairAmount: 9500,
+        transactionDate: new Date('2026-05-04T00:00:00.000Z'),
+        sourceRunNumber: 'PR-2605-001',
+        deductionNotes: 'Payroll PR-2605-001 advance ADV-001',
+      })],
+      allowResidual: true,
+    });
+    expect(result).toMatchObject({
+      correctionMode: 'proven_subset',
+      selectedLegacyTotal: 9500,
+      differenceBefore: 11765,
+      differenceAfter: 2265,
+    });
+  });
+
   it('rejects a legacy deduction that is not explicitly linked to the run and advance invoice', () => {
     expect(() => buildLegacyPayrollCorrectionPreview({
       companyId: 'shami', targetMonth: '2026-07', sourceRunNumber: 'PR-2607-001', expectedPayrollCost: 48051,

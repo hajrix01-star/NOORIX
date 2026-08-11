@@ -14,6 +14,7 @@ import { CalculateEosDto } from './dto/calculate-eos.dto';
 import { HrPayrollReconciliationService } from './hr-payroll-reconciliation.service';
 import { HrPayrollLegacyCorrectionService } from './hr-payroll-legacy-correction.service';
 import type {
+  PayrollLegacyPartialCorrectionConfirmDto,
   PayrollLegacyCorrectionConfirmDto,
   PayrollLegacyCorrectionPreviewDto,
 } from './dto/payroll-legacy-correction.dto';
@@ -142,6 +143,18 @@ export class HRService {
 
   confirmPayrollLegacyCorrection(companyId: string, userId: string, dto: PayrollLegacyCorrectionConfirmDto) {
     return this.payrollLegacyCorrection.confirm(companyId, userId, dto);
+  }
+
+  previewPayrollLegacyProvenSubset(companyId: string, dto: PayrollLegacyCorrectionPreviewDto) {
+    return this.payrollLegacyCorrection.previewProvenSubset(companyId, dto);
+  }
+
+  confirmPayrollLegacyProvenSubset(
+    companyId: string,
+    userId: string,
+    dto: PayrollLegacyPartialCorrectionConfirmDto,
+  ) {
+    return this.payrollLegacyCorrection.confirmProvenSubset(companyId, userId, dto);
   }
 
   issueIndividualSalaryPayment(...args: Parameters<HrPayrollService['issueIndividualSalaryPayment']>) {
