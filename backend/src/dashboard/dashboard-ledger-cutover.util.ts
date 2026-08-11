@@ -4,11 +4,14 @@ export type DashboardLedgerCutoverCandidate<TLedger> = {
 };
 
 /**
- * The dashboard may use ledger amounts only after the reconciliation gate has
- * proven the classified ledger covers the entire operating period.
+ * Monetary dashboard values are always sourced from the classified ledger.
+ * Reconciliation is returned as a quality flag, never as permission to fall
+ * back silently to invoice aggregates.
  */
 export function selectDashboardLedgerSource<TLedger>(candidate: DashboardLedgerCutoverCandidate<TLedger>) {
-  return candidate.readyForCutover
-    ? { source: 'classified_ledger_v1' as const, ledger: candidate.ledger }
-    : { source: 'legacy_fallback_v1' as const, ledger: undefined };
+  return {
+    source: 'classified_ledger_v2' as const,
+    ledger: candidate.ledger,
+    reconciliationReady: candidate.readyForCutover,
+  };
 }

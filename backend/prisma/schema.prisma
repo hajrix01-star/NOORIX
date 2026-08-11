@@ -1354,6 +1354,10 @@ model LedgerEntry {
   referenceId     String   @map("reference_id")
   /// Reporting classification for the current posted ledger state; outflow correction is audited separately.
   reportingClass  String   @default("unclassified") @map("reporting_class")
+  /// Category snapshot captured at posting time for ledger-first reporting.
+  reportingCategoryId     String? @map("reporting_category_id")
+  reportingCategoryNameAr String? @map("reporting_category_name_ar")
+  reportingCategoryNameEn String? @map("reporting_category_name_en")
   vaultId         String?  @map("vault_id")
   employeeId      String?  @map("employee_id") // ظ…ط±طھط¨ط· ط¨ط§ظ„ظ…ظˆط¸ظپ (ط±ط§طھط¨/ط³ظ„ظپظٹط©)
   createdById     String?  @map("created_by_id") // âœ… ط¨طµظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ…
@@ -1375,7 +1379,8 @@ model LedgerEntry {
   @@index([companyId])
   @@index([companyId, transactionDate])
   @@index([companyId, status, transactionDate])
-  @@index([companyId, status, transactionDate, reportingClass])
+  @@index([companyId, status, transactionDate, reportingClass], map: "ledger_entries_company_status_txdate_reporting_class_idx")
+  @@index([companyId, status, transactionDate, reportingCategoryId], map: "ledger_entries_company_status_txdate_reporting_category_idx")
   @@index([companyId, entryDate])
   @@index([referenceType, referenceId])
   @@index([vaultId])

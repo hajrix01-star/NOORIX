@@ -70,11 +70,20 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
         {canRunReconciliation && <Button size="sm" variant="secondary" onClick={() => setReconciliationOpen(true)}>فحص المطابقة</Button>}
         <Button size="sm" variant="secondary" onClick={handlePrint}>{t('print')} / A4</Button>
       </div>
+      <div
+        role="status"
+        className={m.ledgerReporting?.readyForCutover
+          ? 'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800'
+          : 'rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900'}
+      >
+        {m.ledgerReporting?.readyForCutover
+          ? (m.lang === 'ar' ? 'مصدر جميع الأرقام المالية: السجل المحاسبي — المطابقة مكتملة.' : 'All financial figures source: accounting ledger — reconciliation complete.')
+          : (m.lang === 'ar' ? 'تنبيه: السجل المحاسبي يحتاج مراجعة مطابقة؛ لا تعتمد الأرقام قبل إكمالها.' : 'Warning: accounting-ledger reconciliation requires review.')}
+      </div>
       <DashboardOverviewKpis
         kpiCardsByKey={m.kpiCardsByKey}
         filter={m.filter}
         year={m.year}
-        salesShiftPeriodTotals={m.salesShiftPeriodTotals}
         revenueDailyAvgCalendar={m.revenueDailyAvgCalendar}
         revenueDailyAvgPrevMonthCalendar={m.revenueDailyAvgPrevMonthCalendar}
         customerDailyAvgCalendar={m.customerDailyAvgCalendar}

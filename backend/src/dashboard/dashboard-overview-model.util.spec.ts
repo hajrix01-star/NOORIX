@@ -1,4 +1,4 @@
-import { buildKpiCards, buildLedgerKpiCards } from './dashboard-overview-model.util';
+import { buildDashboardLedgerSalesAverage, buildKpiCards, buildLedgerKpiCards } from './dashboard-overview-model.util';
 
 describe('buildKpiCards', () => {
   it('includes salaries in custom-range operating expenses and outflow', () => {
@@ -36,5 +36,30 @@ describe('buildLedgerKpiCards', () => {
       expect.objectContaining({ key: 'outflow', value: 600 }),
       expect.objectContaining({ key: 'netProfit', value: 550 }),
     ]));
+  });
+});
+
+describe('buildDashboardLedgerSalesAverage', () => {
+  it('uses ledger gross sales for monetary averages and operational data only for denominators', () => {
+    const average = buildDashboardLedgerSalesAverage(
+      { sales: '1000', taxCollected: '150' },
+      { customerCount: 10, calendarDays: 5 },
+    );
+
+    expect(average).toEqual({
+      total: 1150,
+      customerCount: 10,
+      calendarDays: 5,
+      revenueAvgDaily: 230,
+      customerAvgDaily: 2,
+      basketAvg: 115,
+    });
+  });
+
+  it('does not accept a sales-summary amount as a monetary fallback', () => {
+    expect(buildDashboardLedgerSalesAverage(
+      { sales: '0', taxCollected: '0' },
+      { customerCount: 4, calendarDays: 2 },
+    )?.total).toBe(0);
   });
 });

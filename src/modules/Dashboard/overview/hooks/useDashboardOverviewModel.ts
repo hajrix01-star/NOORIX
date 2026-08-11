@@ -173,8 +173,8 @@ export function useDashboardOverviewModel(
   }, [overviewData.presentation?.kpiCards]);
 
   // ─── حزمتا المقارنة الأسبوعية — تبقيان منفصلتين لأنهما تفاعليتان ───
-  const monthAverageForDailyAvg = salesMetrics?.monthAverage;
-  const prevMonthAverageForDailyAvg = overviewData.presentation?.previousMonthAverage ?? null;
+  const monthAverageForDailyAvg = overviewData.presentation?.salesAverage?.current ?? null;
+  const prevMonthAverageForDailyAvg = overviewData.presentation?.salesAverage?.previous ?? null;
 
   const saudiNow = getSaudiNow();
 
@@ -190,7 +190,6 @@ export function useDashboardOverviewModel(
     );
   }, [year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day, monthSalesForDailyAvg]);
 
-  const salesShiftPeriodTotals = salesMetrics?.shiftTotals ?? null;
 
   const yearlyDailyAvgRows = useMemo(() => {
     const capMonth = yearMonthlyDailyAvgCapMonth(year, saudiYM.year, saudiYM.month);
@@ -325,6 +324,7 @@ export function useDashboardOverviewModel(
     periodData,
     vaultActivity: overviewData.vaultActivity,
     operationalOverview: overviewData.operationalOverview,
+    ledgerReporting: overviewData.ledgerReporting,
     cards,
     kpiCardsByKey,
     performanceData,
@@ -344,7 +344,6 @@ export function useDashboardOverviewModel(
     basketAvgCalendar: selectedMonth != null ? monthAverageForDailyAvg?.basketAvg ?? null : null,
     basketAvgPrevMonthCalendar: selectedMonth != null ? prevMonthAverageForDailyAvg?.basketAvg ?? null : null,
     basketAvgDeltaPct: selectedMonth != null ? overviewData.presentation?.basketAvgDeltaPct ?? null : null,
-    salesShiftPeriodTotals,
     yearlyDailyAvgRows,
     hiddenSeries,
     toggleSeries,

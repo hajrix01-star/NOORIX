@@ -10,18 +10,16 @@ import type { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.d
 import {
   EMPTY_SALES_PACK,
   buildDashboardOverviewRanges,
-  buildDashboardTimelineDailyRows,
-  buildDashboardTimelineMonthlyRows,
-  buildKpiCards,
+  buildDashboardLedgerTimelineDailyRows,
+  buildDashboardLedgerTimelineMonthlyRows,
+  buildDashboardLedgerSalesAverage,
   buildLedgerKpiCards,
   percentChangeNullable,
-  type DashboardProfitLossReport,
 } from './dashboard-overview-model.util';
 import { buildDashboardVaultActivity } from './dashboard-vault-activity.util';
 import { buildDashboardOperationalOverview } from './dashboard-operational-overview.util';
 import { buildDashboardExecutiveKpis } from './dashboard-executive-kpis.util';
 import { DashboardLedgerProjectionService } from './dashboard-ledger-projection.service';
-import { selectDashboardLedgerSource } from './dashboard-ledger-cutover.util';
 
 @Injectable()
 export class DashboardService {
@@ -128,7 +126,11 @@ export class DashboardService {
         )
       : Promise.resolve(EMPTY_SALES_PACK);
 
-    const [report, salesPack, weeklyPack, previousMonthPack, insights, periodData, vaultPeriodRows, ledgerReconciliation] = await Promise.all([
+    const previousMonthLedgerPromise = pms && pme
+      ? this.dashboardLedgerProjectionService.getPeriodProjection(companyId, pms, pme)
+      : Promise.resolve(null);
+
+    const [report, salesPack, weeklyPack, previousMonthPack, insights, periodData, vaultPeriodRows, ledgerReconciliation, previousMonthLedger] = await Promise.all([
       this.reportsService.getGeneralProfitLoss(companyId, year),
       salesPackPromise,
       weeklyPackPromise,
@@ -152,34 +154,31 @@ export class DashboardService {
       this.reportsService.getPeriodAnalytics(companyId, periodStart, periodEnd),
       this.vaultsService.findAll(companyId, true, periodStart, periodEnd),
       this.dashboardLedgerProjectionService.getPeriodReconciliation(companyId, periodStart, periodEnd),
+      previousMonthLedgerPromise,
     ]);
 
-    const reportLike = report as DashboardProfitLossReport | null;
     const salesMetrics = salesPack.metrics;
-    const legacyKpiCards = buildKpiCards({
-      report: reportLike,
-      periodData,
-      dailyRows: salesMetrics?.dailyDaily ?? [],
-      selectedMonth: selectedMonth ?? null,
-      isCustomRange: selectedMonth == null && (periodStart !== yearStart || periodEnd !== yearEnd),
-    });
-    // Cut over only after the owner-facing reconciliation proves that every
-    // operating dimension matches and no ledger row is unclassified.
-    const ledgerSelection = selectDashboardLedgerSource(ledgerReconciliation);
-    const ledgerIsReady = ledgerSelection.source === 'classified_ledger_v1';
+    // Monetary dashboard figures are ledger-first. Reconciliation remains visible
+    // as a quality signal, but it never sends the UI back to invoice aggregates.
     const ledgerProjection = ledgerReconciliation.ledger;
-    const operatingLedgerProjection = ledgerSelection.ledger;
+    const ledgerIsReady = ledgerReconciliation.readyForCutover;
+    const operatingLedgerProjection = ledgerProjection;
+    const currentSalesAverage = buildDashboardLedgerSalesAverage(ledgerProjection, salesMetrics?.monthAverage);
+    const previousSalesAverage = previousMonthLedger?.coverage.unclassifiedRowCount === 0
+      ? buildDashboardLedgerSalesAverage(previousMonthLedger, previousMonthPack.metrics?.monthAverage)
+      : null;
     const presentation = {
-      kpiCards: operatingLedgerProjection ? buildLedgerKpiCards(operatingLedgerProjection) : legacyKpiCards,
+      kpiCards: buildLedgerKpiCards(operatingLedgerProjection),
       timeline: {
-        monthly: buildDashboardTimelineMonthlyRows(reportLike, salesMetrics?.yearDaily ?? []),
-        daily: buildDashboardTimelineDailyRows(salesMetrics?.dailyDaily ?? [], ds, de),
+        monthly: buildDashboardLedgerTimelineMonthlyRows(ledgerProjection.timeline.monthly, year, salesMetrics?.yearDaily ?? []),
+        daily: buildDashboardLedgerTimelineDailyRows(ledgerProjection.timeline.daily, salesMetrics?.dailyDaily ?? [], ds, de),
       },
       weeklyComparison: weeklyPack.metrics?.dailyWeeklyComparison ?? [],
-      previousMonthAverage: previousMonthPack.metrics?.monthAverage ?? null,
+      previousMonthAverage: previousSalesAverage,
+      salesAverage: { current: currentSalesAverage, previous: previousSalesAverage },
       basketAvgDeltaPct: percentChangeNullable(
-        salesMetrics?.monthAverage?.basketAvg,
-        previousMonthPack.metrics?.monthAverage?.basketAvg,
+        currentSalesAverage?.basketAvg,
+        previousSalesAverage?.basketAvg,
       ),
     };
 
@@ -197,7 +196,7 @@ export class DashboardService {
       periodData,
       vaultActivity: buildDashboardVaultActivity(vaultPeriodRows),
       ledgerReporting: {
-        source: ledgerSelection.source,
+        source: ledgerProjection.source,
         readyForCutover: ledgerIsReady,
         coverage: ledgerProjection.coverage,
         dimensions: ledgerReconciliation.dimensions,

@@ -14,6 +14,7 @@ import { FinancialCoreSupportService } from './financial-core-support.service';
 import {
   replaceOutflowInvoiceLedgerAndAllocations,
   scaleVaultAllocationsToTotal,
+  type ReportingCategorySnapshot,
 } from './financial-outflow-ledger.util';
 import { persistOutflowInvoiceWithLedger } from './financial-outflow-persist.util';
 import { reportingClassForOutflowKind, type LedgerReportingClass } from './financial-reporting-classification.util';
@@ -23,6 +24,7 @@ type LedgerRebuildOptions = {
   preserveDebitAccount?: boolean;
   debitAccountId?: string;
   reportingClass?: LedgerReportingClass;
+  reportingCategory?: ReportingCategorySnapshot | null;
 };
 import type { OutflowDto } from './dto/financial-operation.dto';
 import type { TxClient } from './financial-core-helpers.util';
@@ -205,6 +207,7 @@ export class FinancialOutflowService {
         entryDate: true,
         dailySalesSummaryId: true,
         employeeId: true,
+        categoryId: true,
       },
     });
 
@@ -252,9 +255,15 @@ export class FinancialOutflowService {
         status: 'active',
       },
       orderBy: { createdAt: 'asc' },
-      select: { entryDate: true, debitAccountId: true, reportingClass: true },
+      select: { entryDate: true, debitAccountId: true, reportingClass: true, reportingCategoryId: true, reportingCategoryNameAr: true, reportingCategoryNameEn: true },
     });
     const entryDate = first?.entryDate ?? inv.entryDate;
+    const currentCategory = inv.categoryId
+      ? await tx.category.findFirst({
+          where: { id: inv.categoryId, companyId },
+          select: { nameAr: true, nameEn: true },
+        })
+      : null;
     const debitAccountId =
       ledgerOpts?.debitAccountId ??
       (ledgerOpts?.preserveDebitAccount === false
@@ -264,6 +273,13 @@ export class FinancialOutflowService {
 
     const referenceType =
       inv.kind === 'salary' ? 'salary' : inv.kind === 'advance' ? 'advance' : 'invoice';
+    const reportingCategory = ledgerOpts && Object.prototype.hasOwnProperty.call(ledgerOpts, 'reportingCategory')
+      ? ledgerOpts.reportingCategory ?? null
+      : first?.reportingCategoryId
+        ? { id: first.reportingCategoryId, nameAr: first.reportingCategoryNameAr ?? '', nameEn: first.reportingCategoryNameEn }
+        : inv.categoryId && currentCategory
+          ? { id: inv.categoryId, nameAr: currentCategory.nameAr, nameEn: currentCategory.nameEn }
+          : null;
 
     await replaceOutflowInvoiceLedgerAndAllocations(
       tx,
@@ -278,6 +294,7 @@ export class FinancialOutflowService {
         (ledgerOpts?.preserveDebitAccount === false
           ? reportingClassForOutflowKind(inv.kind)
           : (first?.reportingClass as LedgerReportingClass | undefined) ?? reportingClassForOutflowKind(inv.kind)),
+      reportingCategory,
       userId,
       (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );
@@ -310,6 +327,7 @@ export class FinancialOutflowService {
         entryDate: true,
         dailySalesSummaryId: true,
         employeeId: true,
+        categoryId: true,
         vaultId: true,
         vaultAllocations: {
           orderBy: { id: 'asc' },
@@ -363,9 +381,15 @@ export class FinancialOutflowService {
         status: 'active',
       },
       orderBy: { createdAt: 'asc' },
-      select: { entryDate: true, debitAccountId: true, reportingClass: true },
+      select: { entryDate: true, debitAccountId: true, reportingClass: true, reportingCategoryId: true, reportingCategoryNameAr: true, reportingCategoryNameEn: true },
     });
     const entryDate = first?.entryDate ?? inv.entryDate;
+    const currentCategory = inv.categoryId
+      ? await tx.category.findFirst({
+          where: { id: inv.categoryId, companyId },
+          select: { nameAr: true, nameEn: true },
+        })
+      : null;
     const debitAccountId =
       ledgerOpts?.debitAccountId ??
       (ledgerOpts?.preserveDebitAccount === false
@@ -375,6 +399,13 @@ export class FinancialOutflowService {
 
     const referenceType =
       inv.kind === 'salary' ? 'salary' : inv.kind === 'advance' ? 'advance' : 'invoice';
+    const reportingCategory = ledgerOpts && Object.prototype.hasOwnProperty.call(ledgerOpts, 'reportingCategory')
+      ? ledgerOpts.reportingCategory ?? null
+      : first?.reportingCategoryId
+        ? { id: first.reportingCategoryId, nameAr: first.reportingCategoryNameAr ?? '', nameEn: first.reportingCategoryNameEn }
+        : inv.categoryId && currentCategory
+          ? { id: inv.categoryId, nameAr: currentCategory.nameAr, nameEn: currentCategory.nameEn }
+          : null;
 
     await replaceOutflowInvoiceLedgerAndAllocations(
       tx,
@@ -389,6 +420,7 @@ export class FinancialOutflowService {
         (ledgerOpts?.preserveDebitAccount === false
           ? reportingClassForOutflowKind(inv.kind)
           : (first?.reportingClass as LedgerReportingClass | undefined) ?? reportingClassForOutflowKind(inv.kind)),
+      reportingCategory,
       userId,
       (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );

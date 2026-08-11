@@ -329,7 +329,7 @@ export async function buildCompanyLogicalSnapshot(
   return {
     meta: {
       format: 'noorix-company-logical',
-      version: 12,
+      version: 13,
       exportedAt: new Date().toISOString(),
       companyId,
       tenantId: company.tenantId,

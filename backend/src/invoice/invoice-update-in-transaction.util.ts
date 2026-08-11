@@ -127,7 +127,14 @@ export async function updateInvoiceInTransaction(
     const ledgerSyncOpts = {
       preserveDebitAccount: !(kindChanged || categoryChanged),
       ...(categoryPosting?.accountId ? { debitAccountId: categoryPosting.accountId } : {}),
-      ...(categoryPosting ? { reportingClass: categoryPosting.reportingClass } : {}),
+      ...(categoryPosting ? {
+        reportingClass: categoryPosting.reportingClass,
+        reportingCategory: {
+          id: categoryPosting.categoryId,
+          nameAr: categoryPosting.categoryNameAr,
+          nameEn: categoryPosting.categoryNameEn,
+        },
+      } : (kindChanged || categoryChanged) ? { reportingCategory: null } : {}),
     } as const;
 
     if (vaultRebuildPayload) {

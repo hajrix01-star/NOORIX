@@ -39,6 +39,14 @@ export async function runBackupLogicalImportInTransaction(
   });
   await importBackupLogicalPurchaseDebts(tx, p, { supplierMap, invoiceMap });
 
+  const legacyCategoryById = new Map(
+    arr<Record<string, unknown>>(data.categories).map((row) => [String(row.id), row]),
+  );
+  const legacyInvoiceCategoryById = new Map(
+    arr<Record<string, unknown>>(data.invoices)
+      .filter((row) => row.categoryId)
+      .map((row) => [String(row.id), String(row.categoryId)]),
+  );
   const legacyInvoiceKindById = new Map(
     arr<Record<string, unknown>>(data.invoices).map((row) => [String(row.id), String(row.kind ?? '')]),
   );
@@ -145,6 +153,12 @@ export async function runBackupLogicalImportInTransaction(
             loanPaymentMap,
             ledgerEntryId: String(le.id),
           });
+          const legacyReportingCategoryId = le.reportingCategoryId
+            ? String(le.reportingCategoryId)
+            : legacyInvoiceCategoryById.get(String(le.referenceId));
+          const legacyReportingCategory = legacyReportingCategoryId
+            ? legacyCategoryById.get(legacyReportingCategoryId)
+            : undefined;
           const newLedgerEntryId = nid();
           ledgerEntryMap.set(String(le.id), newLedgerEntryId);
           await tx.ledgerEntry.create({
@@ -159,6 +173,13 @@ export async function runBackupLogicalImportInTransaction(
               entryDate: ddate(le.entryDate),
               referenceType: refType,
               referenceId: refId,
+              reportingCategoryId: legacyReportingCategoryId ? categoryMap.get(legacyReportingCategoryId) ?? null : null,
+              reportingCategoryNameAr: typeof le.reportingCategoryNameAr === 'string'
+                ? le.reportingCategoryNameAr
+                : typeof legacyReportingCategory?.nameAr === 'string' ? legacyReportingCategory.nameAr : null,
+              reportingCategoryNameEn: typeof le.reportingCategoryNameEn === 'string'
+                ? le.reportingCategoryNameEn
+                : typeof legacyReportingCategory?.nameEn === 'string' ? legacyReportingCategory.nameEn : null,
               reportingClass: typeof le.reportingClass === 'string'
                 ? le.reportingClass
                 : reportingClassForHistoricalLedgerEntry(refType, {

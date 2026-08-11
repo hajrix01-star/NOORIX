@@ -9,6 +9,11 @@ type LedgerProjectionDbRow = {
   amount: string;
   reporting_class: string | null;
   reference_type: string;
+  reference_id: string;
+  transaction_date: Date;
+  reporting_category_id: string | null;
+  reporting_category_name_ar: string | null;
+  reporting_category_name_en: string | null;
   debit_type: string;
   debit_code: string;
   credit_type: string;
@@ -27,7 +32,8 @@ export class DashboardLedgerProjectionService {
     const startDate = new Date(`${toYmd(startDateText)}T00:00:00.000Z`);
     const endDate = new Date(`${toYmd(endDateText)}T23:59:59.999Z`);
     const rows = await this.prisma.withTenant((tx) => tx.$queryRaw<LedgerProjectionDbRow[]>`
-      SELECT le.amount::text AS amount, le.reporting_class, le.reference_type,
+      SELECT le.amount::text AS amount, le.reporting_class, le.reference_type, le.reference_id, le.transaction_date,
+        le.reporting_category_id, le.reporting_category_name_ar, le.reporting_category_name_en,
         da.type AS debit_type, da.code AS debit_code, ca.type AS credit_type, ca.code AS credit_code
       FROM ledger_entries le
       JOIN accounts da ON da.id = le.debit_account_id
@@ -39,6 +45,9 @@ export class DashboardLedgerProjectionService {
     `);
     return buildDashboardLedgerProjection(rows.map((row): DashboardLedgerProjectionRow => ({
       amount: row.amount, reportingClass: row.reporting_class, referenceType: row.reference_type,
+      referenceId: row.reference_id, transactionDate: row.transaction_date,
+      reportingCategoryId: row.reporting_category_id, reportingCategoryNameAr: row.reporting_category_name_ar,
+      reportingCategoryNameEn: row.reporting_category_name_en,
       debitType: row.debit_type, debitCode: row.debit_code, creditType: row.credit_type, creditCode: row.credit_code,
     })));
   }

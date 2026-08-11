@@ -1,4 +1,4 @@
-﻿import { buildDashboardLedgerProjection, fallbackReportingClassForLedgerRow, type DashboardLedgerProjectionRow } from './dashboard-ledger-projection.util';
+import { buildDashboardLedgerProjection, fallbackReportingClassForLedgerRow, type DashboardLedgerProjectionRow } from './dashboard-ledger-projection.util';
 
 const row = (overrides: Partial<DashboardLedgerProjectionRow>): DashboardLedgerProjectionRow => ({
   amount: '0', reportingClass: 'unclassified', referenceType: 'invoice', debitType: 'expense', debitCode: 'EXP-005', creditType: 'asset', creditCode: 'V-001', ...overrides,
@@ -45,5 +45,28 @@ describe('dashboard ledger parallel projection', () => {
     expect(result.coverage.fallbackClassifiedRowCount).toBe(2);
     expect(result.coverage.unclassifiedRowCount).toBe(1);
     expect(result.coverage.classifiedPct).toBeCloseTo(90, 4);
+  });
+
+  it('groups category snapshots, payroll, record counts, and timeline entirely from ledger rows', () => {
+    const result = buildDashboardLedgerProjection([
+      row({ amount: '60', reportingClass: 'operating_purchase', referenceId: 'inv-1', transactionDate: '2026-07-02', reportingCategoryId: 'food', reportingCategoryNameAr: 'مواد غذائية', reportingCategoryNameEn: 'Food' }),
+      row({ amount: '40', reportingClass: 'operating_purchase', referenceId: 'inv-1', transactionDate: '2026-07-02', reportingCategoryId: 'food', reportingCategoryNameAr: 'مواد غذائية', reportingCategoryNameEn: 'Food' }),
+      row({ amount: '200', reportingClass: 'operating_payroll', referenceType: 'salary', referenceId: 'salary-1', transactionDate: '2026-07-03' }),
+      row({ amount: '15', reportingClass: 'tax_collected', referenceType: 'sale', referenceId: 'sale-1', transactionDate: '2026-07-03' }),
+      row({ amount: '100', reportingClass: 'operating_revenue', referenceType: 'sale', referenceId: 'sale-1', transactionDate: '2026-07-03' }),
+    ]);
+
+    expect(result.categories.purchases).toEqual([
+      expect.objectContaining({ categoryId: 'food', nameAr: 'مواد غذائية', amount: '100.0000', sharePct: 100 }),
+    ]);
+    expect(result.categories.payroll).toEqual([
+      expect.objectContaining({ id: '__payroll__', nameAr: 'رواتب وأجور', amount: '200.0000' }),
+    ]);
+    expect(result.reportingClassCounts.operating_purchase).toBe(2);
+    expect(result.reportingClassRecordCounts.operating_purchase).toBe(1);
+    expect(result.timeline.daily).toEqual([
+      { periodKey: '2026-07-02', sales: '0.0000', purchases: '100.0000', expenses: '0.0000' },
+      { periodKey: '2026-07-03', sales: '115.0000', purchases: '0.0000', expenses: '200.0000' },
+    ]);
   });
 });

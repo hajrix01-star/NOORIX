@@ -7,6 +7,12 @@ import { validateJournalBalance } from './financial-core-helpers.util';
 import type { TxClient } from './financial-core-helpers.util';
 import type { LedgerReportingClass } from './financial-reporting-classification.util';
 
+export type ReportingCategorySnapshot = {
+  id: string;
+  nameAr: string;
+  nameEn: string | null;
+};
+
 export type OutflowLedgerInvoiceSlice = {
   tenantId: string;
   id: string;
@@ -55,6 +61,7 @@ export async function replaceOutflowInvoiceLedgerAndAllocations(
   entryDate: Date,
   referenceType: string,
   reportingClass: LedgerReportingClass,
+  reportingCategory: ReportingCategorySnapshot | null,
   userId: string,
   getVaultAccount: (t: TxClient, cid: string, vaultId: string) => Promise<string>,
 ): Promise<void> {
@@ -86,6 +93,9 @@ export async function replaceOutflowInvoiceLedgerAndAllocations(
         referenceType,
         referenceId: invoiceId,
         reportingClass,
+        reportingCategoryId: reportingCategory?.id ?? null,
+        reportingCategoryNameAr: reportingCategory?.nameAr ?? null,
+        reportingCategoryNameEn: reportingCategory?.nameEn ?? null,
         vaultId: split.vaultId,
         employeeId: inv.employeeId ?? null,
         createdById: userId,

@@ -6,14 +6,10 @@ import { cn } from '../../../../ui/cn';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../../../constants/kpiCardTheme';
 import type {
   DashboardKpiCardMetric,
-  DashboardSalesShiftTotals,
 } from '../../../../types/api/domains/dashboard';
 import type { DashboardOverviewFilter } from '../types';
 import type { KpiFooterRow } from '../utils/dashboardOverviewKpiInsightFooters';
 import { kpiFooterRowColorClass } from '../utils/dashboardOverviewKpiInsightFooters';
-import {
-  formatSalesShiftSharePercent,
-} from '../utils/dashboardSalesShiftTotals';
 import { DashboardOverviewRevenueDailyAvgPanel } from './DashboardOverviewRevenueDailyAvgPanel';
 
 type MetricKey = 'sales' | 'purchases' | 'expenses' | 'outflow' | 'grossProfit' | 'netProfit';
@@ -22,7 +18,6 @@ type Props = {
   kpiCardsByKey: Map<string, DashboardKpiCardMetric>;
   filter: DashboardOverviewFilter | undefined;
   year: number;
-  salesShiftPeriodTotals: DashboardSalesShiftTotals | null;
   revenueDailyAvgCalendar: number | null;
   revenueDailyAvgPrevMonthCalendar: number | null;
   customerDailyAvgCalendar: number | null;
@@ -143,53 +138,10 @@ function ExecutiveRows({
   );
 }
 
-function RevenueShiftSummary({
-  totals,
-  t,
-}: {
-  totals: DashboardSalesShiftTotals | null;
-  t: (key: string) => string;
-}) {
-  if (!totals) return null;
-
-  const rows = [
-    { key: 'morning' as const, label: t('salesShiftMorning'), value: totals.morning },
-    { key: 'evening' as const, label: t('salesShiftEvening'), value: totals.evening },
-  ].filter((row) => row.value.amount > 0);
-
-  if (rows.length === 0) return null;
-
-  return (
-    <MetricCard.Section className="mt-3 px-4 pb-1">
-      <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted/25 px-4 py-3">
-        <div className="mb-2 text-[13px] font-bold text-noorix-muted">
-          {t('dashboardSalesByShift')}
-        </div>
-        <div className="flex flex-col divide-y divide-noorix-border/80">
-          {rows.map((row) => (
-            <div key={row.key} className="flex items-center justify-between gap-3 py-2">
-              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-noorix-muted">
-                {row.label}
-              </span>
-              <span dir="ltr" className="shrink-0 text-[15px] font-extrabold text-nx-sales nx-font-numbers">
-                <FmtNum n={row.value.amount} /> <span className="nx-sar text-[12px]">SR</span>
-              </span>
-              <span dir="ltr" className="w-12 shrink-0 text-end text-[12px] font-extrabold text-noorix-blue nx-font-numbers">
-                {row.value.sharePct != null ? `${formatSalesShiftSharePercent(row.value.sharePct)}%` : '0%'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </MetricCard.Section>
-  );
-}
-
 export function DashboardOverviewKpis({
   kpiCardsByKey,
   filter,
   year,
-  salesShiftPeriodTotals,
   revenueDailyAvgCalendar,
   revenueDailyAvgPrevMonthCalendar,
   customerDailyAvgCalendar,
@@ -247,7 +199,6 @@ export function DashboardOverviewKpis({
             basketDeltaPct={basketAvgDeltaPct}
             t={t}
           />
-          <RevenueShiftSummary totals={salesShiftPeriodTotals} t={t} />
           <FooterPeriod label={periodLabel} />
         </MetricCard>
 

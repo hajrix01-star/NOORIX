@@ -18,6 +18,8 @@ export type OperationalCategoryPosting = {
   accountId: string | null;
   reportingClass: LedgerReportingClass;
   categoryId: string;
+  categoryNameAr: string;
+  categoryNameEn: string | null;
   supplierId?: string;
 };
 
@@ -57,7 +59,7 @@ export async function resolveOperationalCategoryPosting(
   if (!categoryId) return null;
   const category = await tx.category.findFirst({
     where: { id: categoryId, companyId: dto.companyId, isActive: true },
-    select: { accountId: true, reportingClass: true, type: true },
+    select: { accountId: true, reportingClass: true, type: true, nameAr: true, nameEn: true },
   });
   if (!category) {
     throw new BadRequestException('الفئة المختارة غير موجودة أو غير نشطة لهذه الشركة.');
@@ -72,6 +74,8 @@ export async function resolveOperationalCategoryPosting(
     accountId: category.accountId,
     reportingClass: category.reportingClass as LedgerReportingClass,
     categoryId,
+    categoryNameAr: category.nameAr,
+    categoryNameEn: category.nameEn,
     ...(supplierId ? { supplierId } : {}),
   };
 }
@@ -171,6 +175,9 @@ export async function persistOutflowInvoiceWithLedger(
         referenceType,
         referenceId:     invoice.id,
         reportingClass,
+        reportingCategoryId: categoryPosting?.categoryId ?? null,
+        reportingCategoryNameAr: categoryPosting?.categoryNameAr ?? null,
+        reportingCategoryNameEn: categoryPosting?.categoryNameEn ?? null,
         vaultId:         split.vaultId,
         employeeId:      dto.employeeId ?? null,
         createdById:     userId,

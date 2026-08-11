@@ -1,100 +1,51 @@
 import { buildDashboardOperationalOverview } from './dashboard-operational-overview.util';
 
-describe('buildDashboardOperationalOverview', () => {
-  it('reuses period totals and purchase category shares in one presentation model', () => {
+const ledger = (overrides: Record<string, unknown> = {}) => ({
+  sales: '1000', taxCollected: '150', purchases: '300', recurringExpenses: '100', otherExpenses: '50', payroll: '150',
+  operatingCosts: '600', operatingResult: '550',
+  categories: {
+    purchases: [{ id: 'food', categoryId: 'food', nameAr: 'مواد غذائية', nameEn: 'Food', amount: '300.0000', sharePct: 100 }],
+    recurringExpenses: [{ id: 'rent', categoryId: 'rent', nameAr: 'إيجار', nameEn: 'Rent', amount: '100.0000', sharePct: 100 }],
+    otherExpenses: [{ id: 'maintenance', categoryId: 'maintenance', nameAr: 'صيانة', nameEn: 'Maintenance', amount: '50.0000', sharePct: 100 }],
+    payroll: [{ id: '__payroll__', categoryId: null, nameAr: 'رواتب وأجور', nameEn: 'Payroll and wages', amount: '150.0000', sharePct: 100 }],
+  },
+  reportingClassRecordCounts: {
+    operating_revenue: 1, operating_purchase: 1, operating_recurring_expense: 2,
+    operating_other_expense: 1, operating_payroll: 3, non_operating_advance: 0,
+    non_operating_loan: 0, internal_transfer: 0, tax_collected: 1, unclassified: 0,
+  },
+  ...overrides,
+});
+
+describe('buildDashboardOperationalOverview ledger-only', () => {
+  it('builds all monetary sections and category rows from the classified ledger', () => {
     const result = buildDashboardOperationalOverview(
-      {
-        totalsByKind: {
-          fixed_expense: { totalAmount: '2000', invoiceCount: 3 },
-        },
-        purchaseCategoryTotal: '3000',
-        purchaseCategoryBreakdown: [
-          { categoryId: 'food', nameAr: 'مواد غذائية', amount: '1800', sharePct: 60 },
-          { categoryId: 'other', nameAr: 'أخرى', amount: '1200', sharePct: 40 },
-        ],
-        recurringCostCategoryBreakdown: [
-          {
-            id: 'rent', nameAr: 'إيجار', amount: '2000', sharePct: 100,
-          },
-        ],
-        otherExpenseTotal: '500',
-        otherExpenseCategoryBreakdown: [{ id: 'maintenance', nameAr: 'صيانة', amount: '500', sharePct: 100 }],
-      },
-      [{ key: 'sales', value: 10000 }],
+      { purchaseCategoryTotal: '999999', fixedExpenseTotal: '999999', otherExpenseTotal: '999999' },
+      [{ key: 'sales', value: 1 }],
+      ledger(),
     );
 
-    expect(result).toEqual({
-      sales: '10000',
-      recurringCosts: {
-        amount: '2000', recordCount: 3, shareOfSalesPct: 20,
-        categories: [{ id: 'rent', nameAr: 'إيجار', amount: '2000', sharePct: 100 }],
-      },
-      otherExpenses: {
-        amount: '500', shareOfSalesPct: 5,
-        categories: [{ id: 'maintenance', nameAr: 'صيانة', amount: '500', sharePct: 100 }],
-      },
-      purchases: {
-        amount: '3000',
-        shareOfSalesPct: 30,
-        categories: [
-          { categoryId: 'food', nameAr: 'مواد غذائية', amount: '1800', sharePct: 60 },
-          { categoryId: 'other', nameAr: 'أخرى', amount: '1200', sharePct: 40 },
-        ],
-      },
-      operatingCosts: { amount: '5500', shareOfSalesPct: 55 },
-    });
+    expect(result.sales).toBe('1150');
+    expect(result.purchases.amount).toBe('300');
+    expect(result.purchases.categories[0]).toMatchObject({ categoryId: 'food', amount: '300.0000' });
+    expect(result.recurringCosts.amount).toBe('250');
+    expect(result.recurringCosts.recordCount).toBe(5);
+    expect(result.recurringCosts.categories.map((row) => row.nameAr)).toEqual(['رواتب وأجور', 'إيجار']);
+    expect(result.recurringCosts.categories.map((row) => row.sharePct)).toEqual([60, 40]);
+    expect(result.otherExpenses.amount).toBe('50');
+    expect(result.operatingCosts.amount).toBe('600');
   });
 
-  it('does not produce a misleading percentage when sales are zero', () => {
-    const result = buildDashboardOperationalOverview(
-      {
-        totalsByKind: { fixed_expense: { totalAmount: '500', invoiceCount: 1 } },
-        purchaseCategoryTotal: '250',
-      },
-      [{ key: 'sales', value: 0 }],
-    );
-
+  it('does not produce misleading percentages when ledger sales are zero', () => {
+    const result = buildDashboardOperationalOverview(null, [{ key: 'sales', value: 999 }], ledger({ sales: '0', taxCollected: '0' }));
     expect(result.recurringCosts.shareOfSalesPct).toBeNull();
     expect(result.otherExpenses.shareOfSalesPct).toBeNull();
     expect(result.operatingCosts.shareOfSalesPct).toBeNull();
     expect(result.purchases.shareOfSalesPct).toBeNull();
   });
 
-  it('reconciles purchases, recurring costs, and other expenses into one operating-cost total', () => {
-    const result = buildDashboardOperationalOverview(
-      {
-        totalsByKind: { fixed_expense: { totalAmount: '200', invoiceCount: 1 } },
-        purchaseCategoryTotal: '250',
-        fixedExpenseTotal: '550',
-        fixedExpenseInvoiceCount: 3,
-        otherExpenseTotal: '250',
-      },
-      [{ key: 'sales', value: 1100 }],
-    );
-
-    expect(result.recurringCosts.amount).toBe('550');
-    expect(result.recurringCosts.recordCount).toBe(3);
-    expect(result.recurringCosts.shareOfSalesPct).toBe(50);
-    expect(result.otherExpenses.amount).toBe('250');
-    expect(result.operatingCosts.amount).toBe('1050');
-    expect(result.operatingCosts.shareOfSalesPct).toBeCloseTo(95.45, 2);
+  it('fails closed when a classified ledger projection is missing', () => {
+    expect(() => buildDashboardOperationalOverview(null, [], undefined as never))
+      .toThrow('Classified ledger projection is required');
   });
-
-  it('uses classified ledger totals and includes payroll in recurring operating costs', () => {
-    const result = buildDashboardOperationalOverview(
-      { purchaseCategoryTotal: '1', fixedExpenseTotal: '1', otherExpenseTotal: '1' },
-      [{ key: 'sales', value: 1 }],
-      {
-        sales: '1000', taxCollected: '150', purchases: '300', recurringExpenses: '100', otherExpenses: '50', payroll: '150',
-        operatingCosts: '600', operatingResult: '400',
-        reportingClassCounts: { operating_recurring_expense: 2, operating_payroll: 3 },
-      },
-    );
-
-    expect(result.sales).toBe('1150');
-    expect(result.purchases.amount).toBe('300');
-    expect(result.recurringCosts.amount).toBe('250');
-    expect(result.recurringCosts.recordCount).toBe(5);
-    expect(result.otherExpenses.amount).toBe('50');
-    expect(result.operatingCosts.amount).toBe('600');
-  });});
+});

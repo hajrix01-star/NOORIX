@@ -120,6 +120,12 @@ function normalizeDashboardOverview(raw: DashboardOverviewData | null | undefine
         shareOfSalesPct: raw.operationalOverview?.operatingCosts?.shareOfSalesPct ?? null,
       },
     },
+    ledgerReporting: raw.ledgerReporting ? {
+      source: String(raw.ledgerReporting.source || ''),
+      readyForCutover: raw.ledgerReporting.readyForCutover === true,
+      coverage: raw.ledgerReporting.coverage ?? {},
+      dimensions: Array.isArray(raw.ledgerReporting.dimensions) ? raw.ledgerReporting.dimensions : [],
+    } : undefined,
     presentation: {
       kpiCards: Array.isArray(raw.presentation?.kpiCards) ? raw.presentation.kpiCards : [],
       timeline: {
@@ -128,6 +134,11 @@ function normalizeDashboardOverview(raw: DashboardOverviewData | null | undefine
       },
       weeklyComparison: Array.isArray(raw.presentation?.weeklyComparison) ? raw.presentation.weeklyComparison : [],
       previousMonthAverage: raw.presentation?.previousMonthAverage ?? null,
+      salesAverage: {
+        current: raw.presentation?.salesAverage?.current ?? null,
+        previous: raw.presentation?.salesAverage?.previous ?? null,
+      },
+      basketAvgDeltaPct: raw.presentation?.basketAvgDeltaPct ?? null,
     },
   };
 }

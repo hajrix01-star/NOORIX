@@ -329,7 +329,29 @@ export type DashboardOverviewPresentation = {
   };
   weeklyComparison?: DashboardSalesMetricWeeklyComparisonRow[];
   previousMonthAverage?: DashboardSalesMetricAverage | null;
+  salesAverage?: {
+    current?: DashboardSalesMetricAverage | null;
+    previous?: DashboardSalesMetricAverage | null;
+  };
   basketAvgDeltaPct?: number | null;
+};
+
+export type DashboardLedgerReportingQuality = {
+  source: string;
+  readyForCutover: boolean;
+  coverage: {
+    persistedClassifiedAmount?: string | number;
+    fallbackClassifiedAmount?: string | number;
+    totalAmount?: string | number;
+    classifiedPct?: number | null;
+    rowCount?: number;
+    persistedClassifiedRowCount?: number;
+    fallbackClassifiedRowCount?: number;
+    unclassifiedRowCount?: number;
+  };
+  dimensions: Array<{
+    key: string; currentValue: string; ledgerValue: string; delta: string; matches: boolean;
+  }>;
 };
 
 export type DashboardVaultActivityRow = {
@@ -385,5 +407,6 @@ export type DashboardOverviewData = {
   periodData: DashboardPeriodDataLike;
   vaultActivity: DashboardVaultActivity;
   operationalOverview: DashboardOperationalOverview;
+  ledgerReporting?: DashboardLedgerReportingQuality;
   presentation?: DashboardOverviewPresentation;
 };

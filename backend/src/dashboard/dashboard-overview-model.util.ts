@@ -49,6 +49,12 @@ export type DashboardProfitLossReport = {
   groups?: DashboardProfitLossGroup[];
 };
 
+export type DashboardLedgerTimelineAmountRow = {
+  periodKey: string;
+  sales: string | number;
+  purchases: string | number;
+  expenses: string | number;
+};
 export type DashboardTimelineRow = {
   label: string;
   sales: number;
@@ -80,6 +86,36 @@ export type DashboardOperatingLedgerTotals = {
   taxCollected?: string | number;
 };
 
+export type DashboardLedgerSalesAverageInput = {
+  customerCount?: number | null;
+  calendarDays?: number | null;
+};
+
+export type DashboardLedgerSalesAverage = {
+  total: number;
+  customerCount: number;
+  calendarDays: number;
+  revenueAvgDaily: number | null;
+  customerAvgDaily: number | null;
+  basketAvg: number | null;
+};
+
+/** Monetary numerator is always the classified ledger; only customer/day counts are operational. */
+export function buildDashboardLedgerSalesAverage(
+  ledger: Pick<DashboardOperatingLedgerTotals, 'sales' | 'taxCollected'> | null | undefined,
+  operational: DashboardLedgerSalesAverageInput | null | undefined,
+): DashboardLedgerSalesAverage | null {
+  if (!ledger) return null;
+  const total = Number(ledger.sales || 0) + Number(ledger.taxCollected || 0);
+  const customerCount = Math.max(0, Number(operational?.customerCount || 0));
+  const calendarDays = Math.max(0, Number(operational?.calendarDays || 0));
+  return {
+    total, customerCount, calendarDays,
+    revenueAvgDaily: calendarDays > 0 ? total / calendarDays : null,
+    customerAvgDaily: calendarDays > 0 ? customerCount / calendarDays : null,
+    basketAvg: customerCount > 0 ? total / customerCount : null,
+  };
+}
 export type DashboardPeriodData = {
   totalsByKind?: Record<string, { totalAmount?: string | number | null }>;
 } | null;
@@ -313,6 +349,67 @@ export function buildKpiCards(params: {
   });
 }
 
+export function buildDashboardLedgerTimelineMonthlyRows(
+  ledgerRows: readonly DashboardLedgerTimelineAmountRow[],
+  year: number,
+  customerRows: readonly DashboardDailyMetricRow[],
+): DashboardTimelineRow[] {
+  const ledgerByMonth = new Map(ledgerRows.map((row) => [row.periodKey, row]));
+  const customersByMonth = new Map<number, number>();
+  for (const row of customerRows) {
+    const month = monthNumberFromYmd(String(row.transactionDate));
+    if (month == null) continue;
+    customersByMonth.set(month, (customersByMonth.get(month) ?? 0) + Number(row.customerCount || 0));
+  }
+  return Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    const current = ledgerByMonth.get(`${year}-${String(month).padStart(2, '0')}`);
+    const sales = Number(current?.sales ?? 0);
+    const customers = customersByMonth.get(month) ?? 0;
+    return {
+      label: String(month),
+      sales,
+      purchases: Number(current?.purchases ?? 0),
+      expenses: Number(current?.expenses ?? 0),
+      customers,
+      avgInvoice: customers > 0 ? sales / customers : 0,
+    };
+  });
+}
+
+export function buildDashboardLedgerTimelineDailyRows(
+  ledgerRows: readonly DashboardLedgerTimelineAmountRow[],
+  customerRows: readonly DashboardDailyMetricRow[],
+  startDate: string | null,
+  endDate: string | null,
+): DashboardTimelineRow[] {
+  const ledgerByDate = new Map(ledgerRows.map((row) => [row.periodKey, row]));
+  const customersByDate = new Map<string, number>();
+  for (const row of customerRows) {
+    const date = toYmd(String(row.transactionDate));
+    customersByDate.set(date, (customersByDate.get(date) ?? 0) + Number(row.customerCount || 0));
+  }
+  if (!startDate || !endDate) return [];
+  const start = toYmd(startDate);
+  const end = toYmd(endDate);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) return [];
+  const rows: DashboardTimelineRow[] = [];
+  for (let cursor = new Date(`${start}T00:00:00.000Z`); cursor <= new Date(`${end}T00:00:00.000Z`); cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+    const date = cursor.toISOString().slice(0, 10);
+    const current = ledgerByDate.get(date);
+    const sales = Number(current?.sales ?? 0);
+    const customers = customersByDate.get(date) ?? 0;
+    rows.push({
+      label: String(cursor.getUTCDate()),
+      sales,
+      purchases: Number(current?.purchases ?? 0),
+      expenses: Number(current?.expenses ?? 0),
+      customers,
+      avgInvoice: customers > 0 ? sales / customers : 0,
+    });
+  }
+  return rows;
+}
 export function buildDashboardTimelineMonthlyRows(
   report: DashboardProfitLossReport | null,
   yearDaily: readonly DashboardDailyMetricRow[],
