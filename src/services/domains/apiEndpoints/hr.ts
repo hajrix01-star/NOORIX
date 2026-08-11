@@ -86,16 +86,16 @@ type PayrollLegacyCorrectionConfirmInput = PayrollLegacyCorrectionPreviewInput &
   confirmation: 'CANCEL_PROVEN_PAYROLL_DUPLICATE_SUBSET';
 };
 export async function previewProvenPayrollLegacySubset(
-  companyId: string,
+  _companyId: string,
   body: PayrollLegacyCorrectionPreviewInput,
 ): Promise<ApiParsedResult<Record<string, unknown>>> {
-  return apiPost('/api/v1/hr/payroll/reconciliation/legacy-correction/proven-subset/preview', { companyId, ...body });
+  return apiPost('/api/v1/hr/payroll/reconciliation/legacy-correction/proven-subset/preview', body);
 }
 export async function confirmProvenPayrollLegacySubset(
-  companyId: string,
+  _companyId: string,
   body: PayrollLegacyCorrectionConfirmInput,
 ): Promise<ApiParsedResult<Record<string, unknown>>> {
-  return apiPost('/api/v1/hr/payroll/reconciliation/legacy-correction/proven-subset/confirm', { companyId, ...body });
+  return apiPost('/api/v1/hr/payroll/reconciliation/legacy-correction/proven-subset/confirm', body);
 }
 export async function getEmployeePayrollItems(companyId: string, employeeId: string): Promise<ApiParsedResult<HrApiRecordList>> {
   return apiGet('/api/v1/hr/payroll-run-items', companyEmployeeQuery(companyId, employeeId));
