@@ -51,6 +51,37 @@ describe('HrPayrollReconciliationService', () => {
     expect(prisma.ledgerEntry.updateMany).toBeUndefined();
   });
 
+  it('lists an unlinked payroll-cost ledger entry without treating it as a salary run', async () => {
+    const prisma = {
+      account: { findFirst: jest.fn().mockResolvedValue({ id: 'salary-expense' }) },
+      payrollRun: { findMany: jest.fn().mockResolvedValue([{
+        id: 'run-apr', runNumber: 'PR-2605-001', payrollMonth: new Date('2026-04-01T00:00:00.000Z'),
+        totalAmount: new Prisma.Decimal(41300), status: 'completed', items: [],
+      }]) },
+      invoice: { findMany: jest.fn().mockResolvedValue([]) },
+      payrollAdvanceSettlement: { findMany: jest.fn().mockResolvedValue([]) },
+      ledgerEntry: { findMany: jest.fn().mockResolvedValue([
+        { id: 'accrual', referenceType: 'payroll_accrual', referenceId: 'run-apr', amount: new Prisma.Decimal(41300), transactionDate: new Date('2026-04-30T00:00:00.000Z'), status: 'active', employeeId: null, employee: null },
+        { id: 'unlinked', referenceType: 'historical_manual_salary', referenceId: 'legacy-1', amount: new Prisma.Decimal(1700), transactionDate: new Date('2026-04-30T00:00:00.000Z'), status: 'active', employeeId: 'emp-1', employee: { name: 'Employee' } },
+      ]) },
+    } as unknown as TenantPrismaService;
+
+    const result = await new HrPayrollReconciliationService(prisma).getYear('company-1', 2026, true);
+    const april = result.months.find((month) => month.month === '2026-04')!;
+
+    expect(april).toMatchObject({
+      payrollRunsTotal: 41300,
+      unexplainedPayrollLedgerTotal: 1700,
+      ledgerPayrollCostTotal: 43000,
+      difference: 1700,
+      reviewStatus: 'needs_review',
+    });
+    expect(april.rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ source: 'unexplained_payroll_ledger', ledgerEntryId: 'unlinked', amount: 1700, confidence: 'low' }),
+    ]));
+    expect(prisma.ledgerEntry.updateMany).toBeUndefined();
+  });
+
   it('attributes a January-paid salary invoice to its December payroll run', async () => {
     const prisma = {
       account: { findFirst: jest.fn().mockResolvedValue({ id: 'salary-expense' }) },

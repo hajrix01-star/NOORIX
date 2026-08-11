@@ -36,6 +36,8 @@ const reviewStatusLabels: Record<PayrollReconciliationReviewStatus, string> = {
 };
 
 const sourceLabels: Record<string, string> = {
+  structured: 'تسوية مرتبطة جديدة',
+  unexplained_payroll_ledger: 'قيد رواتب غير مفسّر',
   documented_historical_repair: 'تسوية تاريخية موثقة',
   structured_advance_settlement: 'تسوية مرتبطة جديدة',
   legacy_advance_settlement: 'تسوية قديمة غير مرتبطة',
@@ -160,9 +162,10 @@ function MonthReview({
       </summary>
 
       <div className="border-t border-noorix-border bg-noorix-surface-muted/40 p-3 sm:p-4">
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-8">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-9">
           <Metric label="إجمالي المسيرات" value={item.payrollRunsTotal} />
           <Metric label="رواتب إضافية تاريخية" value={item.standaloneSalaryPaymentsTotal} />
+          <Metric label="قيود رواتب غير مفسّرة" value={item.unexplainedPayrollLedgerTotal} tone={item.unexplainedPayrollLedgerTotal ? 'danger' : undefined} />
           <Metric label="فواتير الرواتب" value={item.salaryInvoicesTotal} />
           <Metric label="تسويات مرتبطة جديدة" value={item.structuredAdvanceSettlementsTotal} />
           <Metric label="تسويات تاريخية موثقة" value={item.documentedHistoricalRepairTotal} />
