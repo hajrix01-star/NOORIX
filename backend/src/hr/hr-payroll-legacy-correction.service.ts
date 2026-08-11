@@ -46,17 +46,19 @@ export class HrPayrollLegacyCorrectionService {
   ) {}
 
   preview(companyId: string, dto: PayrollLegacyCorrectionPreviewDto) {
-    return this.prisma.$transaction(async (tx) => {
-      await this.lock(tx, companyId, dto.targetMonth);
-      return this.buildProof(tx, companyId, dto);
+    return this.prisma.withTenant(async (tx) => {
+      const transaction = tx as unknown as Prisma.TransactionClient;
+      await this.lock(transaction, companyId, dto.targetMonth);
+      return this.buildProof(transaction, companyId, dto);
     });
   }
 
   confirm(companyId: string, userId: string, dto: PayrollLegacyCorrectionConfirmDto) {
-    return this.prisma.$transaction(async (tx) => {
-      await this.lock(tx, companyId, dto.targetMonth);
+    return this.prisma.withTenant(async (tx) => {
+      const transaction = tx as unknown as Prisma.TransactionClient;
+      await this.lock(transaction, companyId, dto.targetMonth);
       const auditId = correctionAuditId(companyId, dto.idempotencyKey);
-      const replay = await tx.auditLog.findUnique({ where: { id: auditId } });
+      const replay = await transaction.auditLog.findUnique({ where: { id: auditId } });
       if (replay) {
         const stored = (replay.newValue ?? {}) as Record<string, unknown>;
         if (stored.previewHash !== dto.previewHash) {
@@ -65,13 +67,13 @@ export class HrPayrollLegacyCorrectionService {
         return { ...stored, replayed: true };
       }
 
-      const proof = await this.buildProof(tx, companyId, dto);
+      const proof = await this.buildProof(transaction, companyId, dto);
       if (proof.previewHash !== dto.previewHash) {
         throw new ConflictException('تغيّرت بيانات المطابقة بعد المعاينة. أعد المعاينة قبل التأكيد.');
       }
 
       const cancelled = await this.accountingCore.cancelProvenPayrollLegacyLedgerRowsInTransaction(
-        tx,
+        transaction,
         companyId,
         proof.ledgerEntryIds,
       );
@@ -79,13 +81,13 @@ export class HrPayrollLegacyCorrectionService {
         throw new ConflictException('تغيّرت إحدى القيود أثناء التصحيح؛ لم يتم حفظ أي تغيير.');
       }
 
-      const afterLedgerTotal = await this.ledgerPayrollCost(tx, companyId, dto.targetMonth);
+      const afterLedgerTotal = await this.ledgerPayrollCost(transaction, companyId, dto.targetMonth);
       const afterDifference = money(afterLedgerTotal.minus(proof.expectedPayrollCost));
       if (Math.abs(afterDifference) > 0.02 || Math.abs(money(afterLedgerTotal) - proof.ledgerPayrollCostAfter) > 0.02) {
         throw new ConflictException('لم تحقق النتيجة المطابقة الصفرية؛ تم إلغاء العملية بالكامل.');
       }
 
-      const company = await tx.company.findUnique({ where: { id: companyId }, select: { tenantId: true } });
+      const company = await transaction.company.findUnique({ where: { id: companyId }, select: { tenantId: true } });
       if (!company) throw new NotFoundException('الشركة غير موجودة.');
       const result = {
         companyId,
@@ -103,7 +105,7 @@ export class HrPayrollLegacyCorrectionService {
         reason: dto.reason,
         replayed: false,
       };
-      await tx.auditLog.create({
+      await transaction.auditLog.create({
         data: {
           id: auditId,
           tenantId: company.tenantId,

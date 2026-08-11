@@ -11,7 +11,7 @@
  * ملاحظة: SET LOCAL يكون مؤثراً داخل الـ transaction فقط — آمن مع connection pooling.
  */
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient }                              from '@prisma/client';
+import { Prisma, PrismaClient }                      from '@prisma/client';
 import { TenantContext }                             from '../common/tenant-context';
 import { connectPrismaWithRetry }                    from './prisma-connect-retry';
 
@@ -82,7 +82,14 @@ export class TenantPrismaService extends PrismaClient implements OnModuleInit, O
    *   return invoice;
    * });
    */
-  async withTenant<T>(fn: (tx: Omit<TenantPrismaService, 'withTenant' | '$transaction' | '$connect' | '$disconnect' | '$on' | '$use' | '$extends'>) => Promise<T>): Promise<T> {
+  async withTenant<T>(
+    fn: (tx: Omit<TenantPrismaService, 'withTenant' | '$transaction' | '$connect' | '$disconnect' | '$on' | '$use' | '$extends'>) => Promise<T>,
+    options: {
+      timeout?: number;
+      maxWait?: number;
+      isolationLevel?: Prisma.TransactionIsolationLevel;
+    } = {},
+  ): Promise<T> {
     const tenantId = TenantContext.getTenantId();
 
     return this.$transaction(
@@ -97,7 +104,11 @@ export class TenantPrismaService extends PrismaClient implements OnModuleInit, O
           TenantContext.setSkipSetConfigForTransaction(false);
         }
       },
-      { timeout: TenantPrismaService.TX_TIMEOUT_MS, maxWait: 10_000 } as { timeout?: number; maxWait?: number },
+      {
+        timeout: options.timeout ?? TenantPrismaService.TX_TIMEOUT_MS,
+        maxWait: options.maxWait ?? 10_000,
+        ...(options.isolationLevel ? { isolationLevel: options.isolationLevel } : {}),
+      },
     );
   }
 

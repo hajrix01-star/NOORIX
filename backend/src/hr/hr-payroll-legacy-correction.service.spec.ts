@@ -103,7 +103,7 @@ function setup(options: {
     },
   };
   const prisma = {
-    $transaction: jest.fn().mockImplementation((fn: (client: typeof tx) => unknown) => fn(tx)),
+    withTenant: jest.fn().mockImplementation((fn: (client: typeof tx) => unknown) => fn(tx)),
   };
   const accountingCancel = jest.fn().mockImplementation((
     _tx: unknown,
@@ -118,7 +118,7 @@ function setup(options: {
     service: new HrPayrollLegacyCorrectionService(prisma as never, {
       cancelProvenPayrollLegacyLedgerRowsInTransaction: accountingCancel,
     } as never),
-    tx, candidates, accountingCancel, invoiceUpdate, deductionUpdate, payrollUpdate, vaultUpdate,
+    prisma, tx, candidates, accountingCancel, invoiceUpdate, deductionUpdate, payrollUpdate, vaultUpdate,
   };
 }
 
@@ -132,6 +132,7 @@ describe('HrPayrollLegacyCorrectionService', () => {
     const ctx = setup();
     const preview = await ctx.service.preview('shami', base);
     expect(preview).toMatchObject({ selectedLegacyTotal: 13100, differenceAfter: 0, candidateCount: 27 });
+    expect(ctx.prisma.withTenant).toHaveBeenCalledTimes(1);
     expect(ctx.accountingCancel).not.toHaveBeenCalled();
 
     const result = await ctx.service.confirm('shami', 'owner-1', {
@@ -156,6 +157,19 @@ describe('HrPayrollLegacyCorrectionService', () => {
     expect(ctx.deductionUpdate).not.toHaveBeenCalled();
     expect(ctx.payrollUpdate).not.toHaveBeenCalled();
     expect(ctx.vaultUpdate).not.toHaveBeenCalled();
+    expect(ctx.prisma.withTenant.mock.calls[1][1]).toEqual({
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
+  });
+
+  it('accepts the live 26-row shape when its total and proof still reconcile to 13,100', async () => {
+    const ctx = setup({ rowCount: 26 });
+    const preview = await ctx.service.preview('shami', {
+      ...base,
+      ledgerEntryIds: Array.from({ length: 26 }, (_, index) => `legacy-ledger-${index + 1}`),
+    });
+    expect(preview).toMatchObject({ candidateCount: 26, selectedLegacyTotal: 13100, differenceAfter: 0 });
+    expect(ctx.accountingCancel).not.toHaveBeenCalled();
   });
 
   it('replays the permanent audit result without cancelling twice', async () => {
