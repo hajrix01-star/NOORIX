@@ -18,7 +18,7 @@ describe('supplier directory seed governance', () => {
     const categoryByCode = new Map(
       SUPPLIER_DIRECTORY_SEEDS.map((entry) => [entry.code, entry.defaultCategoryCode]),
     );
-    expect(categoryByCode.get('GOV-GOSI')).toBe('E2-8');
+    expect(categoryByCode.get('GOV-GOSI')).toBe('E9-3');
     expect(categoryByCode.get('GOV-MOMAH')).toBe('E2-2');
     expect(categoryByCode.get('PLT-ABSHER-BUSINESS')).toBe('E2-10');
     expect(categoryByCode.get('PLT-QIWA')).toBe('E2-10');

@@ -10,6 +10,9 @@ describe('category reporting classification', () => {
     expect(reportingClassForCategorySeed('PUR-001', 'purchase')).toBe('operating_purchase');
     expect(reportingClassForCategorySeed('REV-001', 'sale')).toBe('operating_revenue');
     expect(reportingClassForCategorySeed('EXP-004', 'expense')).toBe('operating_payroll');
+    expect(reportingClassForCategorySeed('E9-1', 'expense')).toBe('operating_other_expense');
+    expect(reportingClassForCategorySeed('E9-2', 'expense')).toBe('operating_recurring_expense');
+    expect(reportingClassForCategorySeed('E9-3', 'expense')).toBe('operating_recurring_expense');
     expect(reportingClassForCategorySeed('E3-2', 'expense')).toBe('operating_recurring_expense');
   });
 
