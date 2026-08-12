@@ -8,11 +8,8 @@ export function resolveOrdersV4DocumentUnitPrice(params: {
   requestedPrice?: string | null;
   salePrice?: Prisma.Decimal | null;
 }) {
-  const requestedPrice = params.requestedPrice == null || params.requestedPrice === ''
-    ? null
-    : new Prisma.Decimal(params.requestedPrice);
   const unitPrice = new Prisma.Decimal(params.documentType === 'registration'
-    ? (requestedPrice?.gt(0) ? requestedPrice : params.salePrice ?? new Prisma.Decimal(0))
+    ? params.salePrice ?? new Prisma.Decimal(0)
     : params.requestedPrice ?? 0);
 
   if (params.documentType === 'registration' && !params.isRegistrationCancellation && unitPrice.lte(0)) {

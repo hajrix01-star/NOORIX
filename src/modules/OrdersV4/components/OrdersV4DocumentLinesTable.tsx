@@ -59,7 +59,12 @@ export function OrdersV4DocumentLinesTable({
       render: (_value, line) => {
         const item = itemById.get(line.itemId);
         const itemName = ordersV4LocalizedName(item, lang, '');
-        return <OrdersV4Select aria-label={t('ordersV4InputUnitFor', itemName)} className="min-w-[120px]" value={line.unitId} onChange={(event) => onPatch(line.key, { unitId: event.target.value })}>{(item?.units ?? []).filter((row) => row.isActive).map((row) => <option key={row.unitId} value={row.unitId}>{ordersV4LocalizedName(row.unit, lang)}</option>)}</OrdersV4Select>;
+        return <OrdersV4Select aria-label={t('ordersV4InputUnitFor', itemName)} className="min-w-[120px]" value={line.unitId} onChange={(event) => {
+          const unit = item?.units.find((row) => row.unitId === event.target.value);
+          onPatch(line.key, isPurchase
+            ? { unitId: event.target.value }
+            : { unitId: event.target.value, priceUnitId: event.target.value, unitPrice: String(unit?.salePrice ?? '0') });
+        }}>{(item?.units ?? []).filter((row) => row.isActive).map((row) => <option key={row.unitId} value={row.unitId}>{ordersV4LocalizedName(row.unit, lang)}</option>)}</OrdersV4Select>;
       },
     },
     {
@@ -114,13 +119,15 @@ export function OrdersV4DocumentLinesTable({
       } as SimpleTableColumn<OrdersV4DocumentDraftLine>,
       columns.find((column) => column.key === 'actions')!,
     ]
-    : columns;
+    : isPurchase
+      ? columns
+      : columns.filter((column) => !['unitPrice', 'priceUnitId'].includes(String(column.key)));
 
   return (
     <SimpleTable
       columns={visibleColumns}
       data={lines}
-      tableMinWidth={isCancellation ? 720 : 860}
+      tableMinWidth={isCancellation ? 720 : isPurchase ? 860 : 600}
       emptyMessage={t('ordersV4EmptyDraft')}
     />
   );
