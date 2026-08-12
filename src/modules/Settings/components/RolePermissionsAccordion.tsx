@@ -7,13 +7,16 @@ import ModulePermissionPanel from './ModulePermissionPanel';
 import {
   countModuleSelected,
   getModulePermValues,
+  groupPermissionModules,
   isModuleFull,
   isModulePartial,
   type PermissionModuleShape,
+  type PermissionModuleGroupShape,
 } from './rolePermissionGroups';
 
 type RolePermissionsAccordionProps = {
   modules: PermissionModuleShape[];
+  groups: PermissionModuleGroupShape[];
   levels: Record<string, { ar: string; en: string }>;
   permissions: string[];
   onChange: (next: string[]) => void;
@@ -35,6 +38,7 @@ function moduleToggleAll(
 
 export default function RolePermissionsAccordion({
   modules,
+  groups,
   levels,
   permissions,
   onChange,
@@ -51,6 +55,10 @@ export default function RolePermissionsAccordion({
   );
 
   const [openKeys, setOpenKeys] = useState<Set<string>>(() => new Set());
+  const groupedModules = useMemo(
+    () => groupPermissionModules(modules, groups),
+    [groups, modules],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -105,7 +113,15 @@ export default function RolePermissionsAccordion({
       </div>
 
       <div className="flex flex-col">
-        {modules.map((mod, index) => {
+        {groupedModules.map(({ group, modules: groupModules }, groupIndex) => (
+          <section key={group.key} className={cn(groupIndex > 0 && 'border-t border-noorix-border')}>
+            <div className="bg-noorix-bg-muted px-3 py-2 sm:px-4">
+              <h4 className="m-0 text-[12px] font-extrabold text-noorix-muted uppercase tracking-wide">
+                {isAr ? group.labelAr : group.labelEn}
+              </h4>
+            </div>
+            <div className="flex flex-col">
+        {groupModules.map((mod, index) => {
           const selected = countModuleSelected(mod, permissions);
           const total = getModulePermValues(mod).length;
           const isOpen = openKeys.has(mod.key);
@@ -135,6 +151,11 @@ export default function RolePermissionsAccordion({
                     <span className="block text-[14px] font-bold text-noorix-text truncate">
                       {label}
                     </span>
+                    {(mod.descriptionAr || mod.descriptionEn) && (
+                      <span className="block text-[11px] text-noorix-muted font-normal truncate">
+                        {isAr ? mod.descriptionAr : mod.descriptionEn}
+                      </span>
+                    )}
                     <span className="block text-[11px] text-noorix-muted font-normal">
                       {selected}/{total}
                       {full && !partial
@@ -179,6 +200,9 @@ export default function RolePermissionsAccordion({
             </section>
           );
         })}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );

@@ -1,11 +1,15 @@
 export type SettingsTabId = 'companies' | 'tax' | 'users' | 'roles' | 'backup' | 'ai' | 'branding';
 
-export type SettingsPermission = 'MANAGE_COMPANIES' | 'MANAGE_SETTINGS' | 'MANAGE_USERS';
+export type SettingsPermission =
+  | 'MANAGE_COMPANIES'
+  | 'MANAGE_SETTINGS'
+  | 'MANAGE_TAX_SETTINGS'
+  | 'MANAGE_USERS';
 
 export type SettingsTabDefinition = {
   id: SettingsTabId;
   label: string;
-  permission?: SettingsPermission;
+  permission?: SettingsPermission | readonly SettingsPermission[];
 };
 
 export type SettingsCompany = {

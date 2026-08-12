@@ -51,7 +51,7 @@ export class CompanyController {
 
   @Patch(':id')
   @SkipCompanyCheck()
-  @RequireAnyPermission('MANAGE_COMPANIES', 'MANAGE_TAX_SETTINGS')
+  @RequireAnyPermission('MANAGE_COMPANIES', 'MANAGE_TAX_SETTINGS', 'MANAGE_SETTINGS')
   async update(
     @Param('id') id: string,
     @Body() body: unknown,
@@ -65,7 +65,10 @@ export class CompanyController {
       (key) => key !== 'vatEnabledForSales' && key !== 'vatRatePercent',
     );
 
-    if (hasTaxFields && !hasPermission(role, PERMISSIONS.MANAGE_TAX_SETTINGS, permissions)) {
+    const canManageTax =
+      hasPermission(role, PERMISSIONS.MANAGE_TAX_SETTINGS, permissions) ||
+      hasPermission(role, PERMISSIONS.MANAGE_SETTINGS, permissions);
+    if (hasTaxFields && !canManageTax) {
       throw new ForbiddenException('تحتاج صلاحية إدارة إعدادات الضريبة.');
     }
     if (hasCompanyFields && !hasPermission(role, PERMISSIONS.MANAGE_COMPANIES, permissions)) {

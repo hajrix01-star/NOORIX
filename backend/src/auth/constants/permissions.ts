@@ -19,6 +19,10 @@ export interface PermissionModule {
   labelAr: string;
   labelEn: string;
   icon: string;
+  /** تجميع عرضي فقط في محرّر الأدوار؛ لا يدخل في التخزين أو التحقق من الصلاحيات. */
+  group?: string;
+  descriptionAr?: string;
+  descriptionEn?: string;
   permissions: Record<string, string>;
 }
 
@@ -32,14 +36,16 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     permissions: { view: 'VIEW_OWNER' },
   },
   {
-    key: 'sales', labelAr: 'المبيعات', labelEn: 'Sales', icon: '🛒',
+    key: 'sales', labelAr: 'المبيعات اليومية', labelEn: 'Daily Sales', icon: '🛒',
     permissions: {
       view: 'VIEW_SALES', read: 'SALES_READ', write: 'SALES_WRITE', delete: 'SALES_DELETE',
       actions: 'SALES_ACTIONS', history: 'SALES_FULL_HISTORY', list: 'SALES_VIEW_SUMMARIES_LIST',
     },
   },
   {
-    key: 'invoices', labelAr: 'فواتير المبيعات', labelEn: 'Sales Invoices', icon: '🧾',
+    key: 'invoices', labelAr: 'سجل الفواتير', labelEn: 'Invoice Register', icon: '🧾',
+    descriptionAr: 'فواتير المشتريات والمصروفات والحركات المرتبطة بها.',
+    descriptionEn: 'Purchase, expense, and related transaction invoices.',
     permissions: {
       view: 'VIEW_INVOICES', read: 'INVOICES_READ', write: 'INVOICES_WRITE', delete: 'INVOICES_DELETE',
       actions: 'INVOICES_ACTIONS', create: 'CREATE_INVOICE',
@@ -48,12 +54,14 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   },
   {
     key: 'purchases', labelAr: 'المشتريات', labelEn: 'Purchases', icon: '🛍️',
+    descriptionAr: 'إدخال المشتريات وإدارة بياناتها.',
+    descriptionEn: 'Purchase entry and management.',
     permissions: {
       view: 'VIEW_PURCHASES', read: 'PURCHASES_READ', write: 'PURCHASES_WRITE', delete: 'PURCHASES_DELETE',
     },
   },
   {
-    key: 'suppliers', labelAr: 'الموردين والتصنيفات', labelEn: 'Suppliers & Categories', icon: '🚚',
+    key: 'suppliers', labelAr: 'الموردون والتصنيفات', labelEn: 'Suppliers & Categories', icon: '🚚',
     permissions: { view: 'VIEW_SUPPLIERS', read: 'SUPPLIERS_READ', write: 'SUPPLIERS_WRITE', delete: 'SUPPLIERS_DELETE' },
   },
   {
@@ -61,15 +69,15 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     permissions: { view: 'VIEW_VAULTS', read: 'VAULTS_READ', write: 'VAULTS_WRITE', delete: 'VAULTS_DELETE' },
   },
   {
-    key: 'expenses', labelAr: 'المصروفات', labelEn: 'Expenses', icon: '💸',
+    key: 'expenses', labelAr: 'المصروفات والالتزامات', labelEn: 'Expenses & Obligations', icon: '💸',
     permissions: { view: 'VIEW_EXPENSES', read: 'EXPENSES_READ', write: 'EXPENSES_WRITE', delete: 'EXPENSES_DELETE' },
   },
   {
-    key: 'assets', labelAr: 'سجل الأصول', labelEn: 'Assets Register', icon: '🖥️',
+    key: 'assets', labelAr: 'سجل الأصول والضمان', labelEn: 'Assets & Warranty Register', icon: '🖥️',
     permissions: { view: 'VIEW_ASSETS', read: 'ASSETS_READ', write: 'ASSETS_WRITE', delete: 'ASSETS_DELETE' },
   },
   {
-    key: 'ordersV4', labelAr: 'طلبات', labelEn: 'Orders', icon: '📦',
+    key: 'ordersV4', labelAr: 'الطلبات', labelEn: 'Orders', icon: '📦',
     permissions: {
       view: 'VIEW_ORDERS_V4',
       read: 'ORDERS_V4_READ',
@@ -83,15 +91,17 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     },
   },
   {
-    key: 'employees', labelAr: 'الموظفين', labelEn: 'Employees', icon: '👥',
+    key: 'employees', labelAr: 'بيانات الموظفين', labelEn: 'Employee Records', icon: '👥', group: 'humanResources',
     permissions: { view: 'VIEW_EMPLOYEES', read: 'EMPLOYEES_READ', write: 'EMPLOYEES_WRITE', delete: 'EMPLOYEES_DELETE' },
   },
   {
-    key: 'hr', labelAr: 'الموارد البشرية (رواتب، إجازات)', labelEn: 'HR (Payroll, Leaves)', icon: '🏢',
+    key: 'hr', labelAr: 'عمليات الموارد البشرية', labelEn: 'HR Operations', icon: '🏢', group: 'humanResources',
+    descriptionAr: 'الرواتب والإجازات والسلف والخصومات والتسويات.',
+    descriptionEn: 'Payroll, leaves, advances, deductions, and settlements.',
     permissions: { view: 'VIEW_HR', read: 'HR_READ', write: 'HR_WRITE', delete: 'HR_DELETE', leaveSalaryOverride: 'HR_LEAVE_SALARY_OVERRIDE' },
   },
   {
-    key: 'reports', labelAr: 'التقارير', labelEn: 'Reports', icon: '📈',
+    key: 'reports', labelAr: 'التقارير', labelEn: 'Reports', icon: '📈', group: 'reportsAndTax',
     permissions: {
       view: 'VIEW_REPORTS',
       read: 'REPORTS_READ',
@@ -102,7 +112,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     },
   },
   {
-    key: 'hajriTax', labelAr: 'HAJRI TAX (سجل ضريبي)', labelEn: 'HAJRI TAX (VAT registry)', icon: '📋',
+    key: 'hajriTax', labelAr: 'HAJRI TAX — السجل الضريبي', labelEn: 'HAJRI TAX — Tax Registry', icon: '📋', group: 'reportsAndTax',
     permissions: { view: 'VIEW_HAJRI_TAX', read: 'HAJRI_TAX_READ', write: 'HAJRI_TAX_WRITE' },
   },
   {
@@ -122,15 +132,17 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     },
   },
   {
-    key: 'settings', labelAr: 'الإعدادات', labelEn: 'Settings', icon: '⚙️',
+    key: 'settings', labelAr: 'إعدادات النظام', labelEn: 'System Settings', icon: '⚙️', group: 'settings',
+    descriptionAr: 'الأدوار والصلاحيات والنسخ الاحتياطي وتكامل الذكاء الاصطناعي وهوية التطبيق.',
+    descriptionEn: 'Roles, permissions, backup, AI integration, and app branding.',
     permissions: { view: 'MANAGE_SETTINGS' },
   },
   {
-    key: 'users', labelAr: 'إدارة المستخدمين', labelEn: 'User Management', icon: '🔐',
+    key: 'users', labelAr: 'المستخدمون', labelEn: 'Users', icon: '🔐', group: 'settings',
     permissions: { read: 'MANAGE_USERS', delete: 'USERS_DELETE' },
   },
   {
-    key: 'companies', labelAr: 'إدارة الشركات', labelEn: 'Company Management', icon: '🏗️',
+    key: 'companies', labelAr: 'إدارة الشركات وإعدادات الضريبة', labelEn: 'Companies & Tax Settings', icon: '🏗️', group: 'settings',
     permissions: { write: 'MANAGE_COMPANIES', taxSettings: 'MANAGE_TAX_SETTINGS', delete: 'DELETE_COMPANY' },
   },
 ];
@@ -147,15 +159,16 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   history:    { ar: 'التاريخ الكامل', en: 'Full History' },
   list:       { ar: 'قائمة الملخصات', en: 'Summaries List' },
   summary:    { ar: 'كروت الداخل/الخارج', en: 'In/Out summary cards' },
-  general:    { ar: 'تقرير عام (ربح/خسارة)', en: 'General P&L report' },
-  costApps:   { ar: 'تكلفة تطبيقات', en: 'Cost accounting apps' },
-  taxReport:  { ar: 'تقرير الضريبة', en: 'Tax report' },
-  bankStatement: { ar: 'تحليل كشف البنك', en: 'Bank statement' },
+  general:    { ar: 'التقرير العام', en: 'General report' },
+  costApps:   { ar: 'حاسبة التكاليف والتطبيقات', en: 'Cost calculator & apps' },
+  taxReport:  { ar: 'الضرائب', en: 'Taxes' },
+  bankStatement: { ar: 'تحليل كشف الحسابات', en: 'Bank statement analysis' },
   submit:     { ar: 'تسجيل/إرسال', en: 'Submit' },
   staffSubmit: { ar: 'إرسال طلب قسم', en: 'Submit department order' },
   internalView: { ar: 'عرض التسجيل الداخلي', en: 'View internal registration' },
   internalRead: { ar: 'قراءة التسجيل الداخلي', en: 'Read internal registration' },
   internalSubmit: { ar: 'تسجيل داخلي', en: 'Submit internal registration' },
+  cashierReceive: { ar: 'استلام الطلب وتعديله', en: 'Receive and edit order' },
   reports: { ar: 'قراءة التقارير', en: 'Read reports' },
   inventory: { ar: 'إدارة المخزون والجرد', en: 'Manage inventory and stocktakes' },
   chatAdv:    { ar: 'محادثة · سلف', en: 'Chat · Advances' },
@@ -177,6 +190,18 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   faqEmpCount:  { ar: 'سؤال · عدد الموظفين', en: 'FAQ · Employee count' },
   faqHelp:      { ar: 'سؤال · مساعدة', en: 'FAQ · Help' },
 };
+
+/** مجموعات العرض في محرّر الأدوار. لا تغيّر مفاتيح الصلاحيات أو الأدوار المخزنة. */
+export const PERMISSION_MODULE_GROUPS = [
+  { key: 'operations', labelAr: 'الأقسام التشغيلية', labelEn: 'Operations' },
+  { key: 'humanResources', labelAr: 'الموارد البشرية وشؤون الموظفين', labelEn: 'Human Resources & Staff' },
+  { key: 'reportsAndTax', labelAr: 'التقارير والضرائب', labelEn: 'Reports & Tax' },
+  { key: 'settings', labelAr: 'الإعدادات والإدارة', labelEn: 'Settings & Administration' },
+] as const;
+
+for (const permissionModule of PERMISSION_MODULES) {
+  permissionModule.group ||= 'operations';
+}
 
 // ── صلاحيات الأدوار النظامية (تُزرع في DB عند أول تشغيل) ──
 

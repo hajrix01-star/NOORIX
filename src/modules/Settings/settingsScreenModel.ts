@@ -1,4 +1,4 @@
-import { hasPermission } from '../../constants/permissions';
+import { hasAnyOfPermissions, hasPermission } from '../../constants/permissions';
 import type {
   SettingsCompany,
   SettingsTabDefinition,
@@ -9,7 +9,7 @@ import type {
 export function buildSettingsTabs(t: TranslationFn): SettingsTabDefinition[] {
   return [
     { id: 'companies', label: t('companiesTab'), permission: 'MANAGE_COMPANIES' },
-    { id: 'tax', label: t('taxTab'), permission: 'MANAGE_SETTINGS' },
+    { id: 'tax', label: t('taxTab'), permission: ['MANAGE_TAX_SETTINGS', 'MANAGE_SETTINGS'] },
     { id: 'users', label: t('usersTab'), permission: 'MANAGE_USERS' },
     { id: 'roles', label: t('rolesTab'), permission: 'MANAGE_SETTINGS' },
     { id: 'backup', label: t('backupTab'), permission: 'MANAGE_SETTINGS' },
@@ -23,7 +23,12 @@ export function filterSettingsTabs(
   userRole: string | null | undefined,
   userPermissions: readonly string[],
 ) {
-  return tabs.filter((tab) => !tab.permission || hasPermission(userRole, tab.permission, userPermissions));
+  return tabs.filter((tab) => {
+    if (!tab.permission) return true;
+    return Array.isArray(tab.permission)
+      ? hasAnyOfPermissions(userRole, tab.permission, userPermissions)
+      : hasPermission(userRole, tab.permission, userPermissions);
+  });
 }
 
 export function getSettingsTabIds(tabs: SettingsTabDefinition[]): SettingsTabId[] {

@@ -6,7 +6,7 @@ export default {
   employeeDocuments: { ar: 'ملفات الموظف', en: 'Employee files' },
   operationType: { ar: 'نوع العملية', en: 'Operation type' },
   salaryBreakdown: { ar: 'تفصيل الراتب', en: 'Salary breakdown' },
-  staffTitle: { ar: 'شؤون الموظفين', en: 'Staff & HR' },
+  staffTitle: { ar: 'الموارد البشرية وشؤون الموظفين', en: 'Human Resources & Staff' },
   staffDesc: { ar: 'إدارة الموظفين والرواتب والسلفيات.', en: 'Manage employees, payroll and advances.' },
   addEmployee: { ar: '+ إضافة موظف', en: '+ Add employee' },
   editEmployee: { ar: 'تعديل الموظف', en: 'Edit employee' },

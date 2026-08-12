@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PermissionCacheService } from '../auth/permission-cache.service';
 import {
   PERMISSION_MODULES,
+  PERMISSION_MODULE_GROUPS,
   PERMISSION_LEVELS,
   SYSTEM_ROLE_SEEDS,
 } from '../auth/constants/permissions';
@@ -80,6 +81,7 @@ export class RolesService implements OnModuleInit {
   getPermissionsSchema() {
     return {
       modules: PERMISSION_MODULES,
+      groups: PERMISSION_MODULE_GROUPS,
       levels: PERMISSION_LEVELS,
     };
   }

@@ -7,7 +7,7 @@ import { Button, Input } from '../../../ui';
 import { normalizeModuleViewAccess } from '../../../constants/permissions';
 import RolePermissionsAccordion from './RolePermissionsAccordion';
 import { ROLE_PRESETS } from './rolePermissionPresets';
-import { getModulePermValues, type PermissionModuleShape } from './rolePermissionGroups';
+import { getModulePermValues, type PermissionModuleGroupShape, type PermissionModuleShape } from './rolePermissionGroups';
 
 export type RoleEditorFormState = {
   name?: string;
@@ -25,6 +25,7 @@ export type RoleEditorOverlayProps = {
   form: RoleEditorFormState;
   onFormChange: (patch: Partial<RoleEditorFormState>) => void;
   modules: PermissionModuleShape[];
+  groups: PermissionModuleGroupShape[];
   levels: Record<string, { ar: string; en: string }>;
   onClose: () => void;
   onSave: () => void;
@@ -46,6 +47,7 @@ export default function RoleEditorOverlay({
   form,
   onFormChange,
   modules,
+  groups,
   levels,
   onClose,
   onSave,
@@ -196,6 +198,7 @@ export default function RoleEditorOverlay({
         <RolePermissionsAccordion
           open={open}
           modules={modules}
+          groups={groups}
           levels={levels}
           permissions={form.permissions}
           onChange={(perms) => onFormChange({ permissions: perms })}

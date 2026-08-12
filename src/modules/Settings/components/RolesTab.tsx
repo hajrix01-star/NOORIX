@@ -12,10 +12,11 @@ import { Button } from '../../../ui';
 import { appKeys, settingsKeys } from '../../../services/queryKeys';
 import { normalizeModuleViewAccess } from '../../../constants/permissions';
 import RoleEditorOverlay, { type RoleEditorFormState } from './RoleEditorOverlay';
-import type { PermissionModuleShape } from './rolePermissionGroups';
+import type { PermissionModuleGroupShape, PermissionModuleShape } from './rolePermissionGroups';
 
 type PermissionSchema = {
   modules?: PermissionModuleShape[];
+  groups?: PermissionModuleGroupShape[];
   levels?: Record<string, { ar: string; en: string }>;
 };
 
@@ -56,6 +57,7 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
   });
 
   const modules: PermissionModuleShape[] = schema?.modules || [];
+  const groups: PermissionModuleGroupShape[] = schema?.groups || [];
   const levels = schema?.levels || {};
 
   const { data: roles = [], isLoading, isError } = useApiListQuery<SettingsRoleListItem>({
@@ -264,6 +266,7 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
         form={createState}
         onFormChange={(patch) => setCreateState((p) => ({ ...p, ...patch }))}
         modules={modules}
+        groups={groups}
         levels={levels}
         onClose={() => !createMutation.isPending && setShowForm(false)}
         onSave={() => {
@@ -305,6 +308,7 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
           setEditing((p) => (p ? { ...p, ...patch } : p));
         }}
         modules={modules}
+        groups={groups}
         levels={levels}
         onClose={() => !updateMutation.isPending && setEditing(null)}
         onSave={() => {

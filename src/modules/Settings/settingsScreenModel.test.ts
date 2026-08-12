@@ -31,6 +31,19 @@ describe('settingsScreenModel', () => {
     expect(filterSettingsTabs(tabs, 'cashier', ['MANAGE_USERS']).map((tab) => tab.id)).toEqual(['users']);
   });
 
+  it('maps the dedicated tax permission to the tax settings tab without removing legacy access', () => {
+    const tabs = buildSettingsTabs(t);
+
+    expect(filterSettingsTabs(tabs, 'accountant', ['MANAGE_TAX_SETTINGS']).map((tab) => tab.id)).toEqual(['tax']);
+    expect(filterSettingsTabs(tabs, 'accountant', ['MANAGE_SETTINGS']).map((tab) => tab.id)).toEqual([
+      'tax',
+      'roles',
+      'backup',
+      'ai',
+      'branding',
+    ]);
+  });
+
   it('keeps all tabs for owner role and resolves labels', () => {
     const tabs = filterSettingsTabs(buildSettingsTabs(t), 'owner', []);
 

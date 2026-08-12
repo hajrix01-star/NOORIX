@@ -137,7 +137,7 @@ export const SETTINGS_APP_ACCESS = [
   PERMISSIONS.MANAGE_TAX_SETTINGS,
 ];
 
-/** فواتير المبيعات: مسار واحد يخدم عارضي المبيعات أو المشتريات */
+/** سجل الفواتير: مسار واحد يخدم عارضي المبيعات أو المشتريات */
 export const INVOICES_ROUTE_ACCESS = [PERMISSIONS.VIEW_INVOICES, PERMISSIONS.VIEW_PURCHASES];
 
 /** مسارات الصفحات → صلاحية مطلوبة */

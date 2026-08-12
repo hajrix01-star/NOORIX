@@ -8,7 +8,7 @@ export default {
   rolesTab: { ar: 'الأدوار والصلاحيات', en: 'Roles & permissions' },
   taxTab: { ar: 'إعدادات الضريبة', en: 'Tax settings' },
   backupTab: { ar: 'النسخ الاحتياطي', en: 'Backup' },
-  aiTab: { ar: 'الذكاء المستخدم', en: 'AI integration' },
+  aiTab: { ar: 'تكامل الذكاء الاصطناعي', en: 'AI integration' },
   brandingTab: { ar: 'هوية التطبيق', en: 'App branding' },
   preferredLang: { ar: 'اللغة المفضلة', en: 'Preferred language' },
   langAr: { ar: 'العربية', en: 'Arabic' },

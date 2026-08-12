@@ -56,8 +56,61 @@ export type PermissionModuleShape = {
   labelAr: string;
   labelEn: string;
   icon?: string;
+  group?: string;
+  descriptionAr?: string;
+  descriptionEn?: string;
   permissions: Record<string, string>;
 };
+
+export type PermissionModuleGroupShape = {
+  key: string;
+  labelAr: string;
+  labelEn: string;
+};
+
+/** توافق عرضي مع استجابة API أقدم لا تحتوي groups/group. */
+const FALLBACK_PERMISSION_MODULE_GROUPS: PermissionModuleGroupShape[] = [
+  { key: 'operations', labelAr: 'الأقسام التشغيلية', labelEn: 'Operations' },
+  { key: 'humanResources', labelAr: 'الموارد البشرية وشؤون الموظفين', labelEn: 'Human Resources & Staff' },
+  { key: 'reportsAndTax', labelAr: 'التقارير والضرائب', labelEn: 'Reports & Tax' },
+  { key: 'settings', labelAr: 'الإعدادات والإدارة', labelEn: 'Settings & Administration' },
+];
+
+function inferLegacyModuleGroup(moduleKey: string): string {
+  if (moduleKey === 'employees' || moduleKey === 'hr') return 'humanResources';
+  if (moduleKey === 'reports' || moduleKey === 'hajriTax') return 'reportsAndTax';
+  if (moduleKey === 'settings' || moduleKey === 'users' || moduleKey === 'companies') return 'settings';
+  return 'operations';
+}
+
+export function groupPermissionModules(
+  modules: PermissionModuleShape[],
+  groups: PermissionModuleGroupShape[],
+): Array<{ group: PermissionModuleGroupShape; modules: PermissionModuleShape[] }> {
+  const effectiveGroups = groups.length > 0 ? groups : FALLBACK_PERMISSION_MODULE_GROUPS;
+  const knownGroups = new Map(effectiveGroups.map((group) => [group.key, group]));
+  const fallbackGroup: PermissionModuleGroupShape = {
+    key: 'other',
+    labelAr: 'أقسام أخرى',
+    labelEn: 'Other modules',
+  };
+  const buckets = new Map<string, PermissionModuleShape[]>();
+
+  for (const mod of modules) {
+    const requestedGroup = mod.group || inferLegacyModuleGroup(mod.key);
+    const groupKey = knownGroups.has(requestedGroup) ? requestedGroup : fallbackGroup.key;
+    const bucket = buckets.get(groupKey) || [];
+    bucket.push(mod);
+    buckets.set(groupKey, bucket);
+  }
+
+  const result = effectiveGroups
+    .map((group) => ({ group, modules: buckets.get(group.key) || [] }))
+    .filter((entry) => entry.modules.length > 0);
+  const ungrouped = buckets.get(fallbackGroup.key) || [];
+  if (ungrouped.length > 0) result.push({ group: fallbackGroup, modules: ungrouped });
+  return result;
+}
 
 export function getModulePermValues(mod: PermissionModuleShape): string[] {
   return Object.values(mod.permissions).filter(Boolean);

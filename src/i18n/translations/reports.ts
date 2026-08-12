@@ -485,7 +485,7 @@ export default {
   },
   reportVatRegistry: { ar: 'سجل الضريبة التخطيطي', en: 'VAT planning registry' },
   /** قسم رئيسي — الاسم ثابت باللاتينية */
-  hajriTax: { ar: 'HAJRI TAX', en: 'HAJRI TAX' },
+  hajriTax: { ar: 'HAJRI TAX — السجل الضريبي', en: 'HAJRI TAX — Tax Registry' },
   hajriTaxTabRegistry: { ar: 'السجل والتحرير', en: 'Registry & edit' },
   hajriTaxTabQuarters: { ar: 'عرض الأرباع', en: 'Quarter overview' },
   hajriTaxQuarterDashboard: { ar: 'لوحة الأرباع', en: 'Quarter dashboard' },
