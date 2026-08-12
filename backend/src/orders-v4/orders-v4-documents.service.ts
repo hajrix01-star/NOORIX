@@ -2,21 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import {
-  calculateOrdersV4AverageUnitCost,
-  calculateOrdersV4ConvertedUnitPrice,
-  calculateOrdersV4InventoryUnitPrice,
-  calculateOrdersV4LastFiveAverage,
-  calculateOrdersV4Line,
-  calculateOrdersV4RecipeComponentCost,
-  calculateOrdersV4RecipeUsage,
-} from './orders-v4-calculation.kernel';
+import { calculateOrdersV4AverageUnitCost, calculateOrdersV4ConvertedUnitPrice, calculateOrdersV4InventoryUnitPrice, calculateOrdersV4LastFiveAverage, calculateOrdersV4Line, calculateOrdersV4RecipeComponentCost, calculateOrdersV4RecipeUsage } from './orders-v4-calculation.kernel';
 import type { OrdersV4DocumentInput, OrdersV4DocumentType, OrdersV4ReceiveInput } from './orders-v4.contracts';
-import {
-  ordersV4EdgeDefinitions,
-  ordersV4UnitDefinitions,
-  resolveOrdersV4ContextConversion,
-} from './orders-v4-conversion.context';
+import { ordersV4EdgeDefinitions, ordersV4UnitDefinitions, resolveOrdersV4ContextConversion } from './orders-v4-conversion.context';
 import { ordersV4DateOnly, ordersV4RangeBounds } from './orders-v4-date.util';
 import { OrdersV4LedgerPostingService } from './orders-v4-ledger-posting.service';
 import { calculateOrdersV4CashAvailable } from './orders-v4-funds.kernel';
@@ -33,6 +21,7 @@ import {
 import { OrdersV4DocumentReversalService } from './orders-v4-document-reversal.service';
 import { ordersV4PurchaseWindowLockKey } from './orders-v4-document-effect.policy';
 import { OrdersV4PurchaseCorrectionService, type OrdersV4CorrectionPreparation } from './orders-v4-purchase-correction.service';
+import { resolveOrdersV4DocumentUnitPrice } from './orders-v4-registration-price.util';
 import {
   ordersV4ConversionSnapshot,
   ordersV4DocumentNumber,
@@ -293,9 +282,16 @@ export class OrdersV4DocumentsService {
           units: unitDefinitions,
           edges: definitionEdges,
         });
+        const effectiveUnitPrice = resolveOrdersV4DocumentUnitPrice({
+          documentType: input.documentType,
+          isRegistrationCancellation,
+          itemName: item.nameAr,
+          requestedPrice: line.unitPrice,
+          salePrice: priceUnit.salePrice,
+        });
         const calculation = calculateOrdersV4Line({
           inputQuantity: line.quantity,
-          unitPrice: line.unitPrice ?? 0,
+          unitPrice: effectiveUnitPrice,
           inputConversion,
           priceConversion,
         });

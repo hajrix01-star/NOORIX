@@ -73,8 +73,8 @@ function ReportActions({ rows, filename, title }: { rows: Record<string, unknown
   </div>{printPreviewModal}</>;
 }
 
-function metricLabel(metric: OrdersV4ReportMetric): string {
-  return metric === 'amount' ? 'المبلغ' : metric === 'quantity' ? 'الكمية المعيارية' : 'عدد العمليات';
+function metricLabel(metric: OrdersV4ReportMetric, registration = false): string {
+  return metric === 'amount' ? (registration ? 'إيراد البيع' : 'قيمة الشراء') : metric === 'quantity' ? 'الكمية المعيارية' : 'عدد العمليات';
 }
 
 function HorizontalBars({ rows, metric, color = '#15803d', limit }: { rows: OrdersV4ReportGroup[]; metric: OrdersV4ReportMetric; color?: string; limit?: number }) {
@@ -93,8 +93,18 @@ function HorizontalBars({ rows, metric, color = '#15803d', limit }: { rows: Orde
   </div>;
 }
 
-function TrendChart({ documents, metric }: { documents: OrdersV4Document[]; metric: OrdersV4ReportMetric }) {
-  const data = useMemo(() => aggregateDocumentsByDay(documents, metric), [documents, metric]);
+function TrendChart({
+  documents,
+  metric,
+  amountSource = 'revenue',
+  amountLabel,
+}: {
+  documents: OrdersV4Document[];
+  metric: OrdersV4ReportMetric;
+  amountSource?: 'revenue' | 'cost';
+  amountLabel?: string;
+}) {
+  const data = useMemo(() => aggregateDocumentsByDay(documents, metric, amountSource), [documents, metric, amountSource]);
   const sections = useMemo(() => [...new Set(documents.map((row) => row.section?.nameAr || 'غير محدد'))], [documents]);
   if (!data.length) return <div className="flex h-56 items-center justify-center text-[13px] text-noorix-muted">لا توجد حركة لعرضها</div>;
   return <div className="h-[280px] w-full" dir="ltr">
@@ -104,7 +114,7 @@ function TrendChart({ documents, metric }: { documents: OrdersV4Document[]; metr
         <XAxis dataKey="date" tickFormatter={(value) => String(value).slice(5)} tick={{ fontSize: 11 }} />
         <YAxis tick={{ fontSize: 11 }} width={55} />
         <Tooltip
-          formatter={(value) => [v4ReportNumber(value), metricLabel(metric)]}
+          formatter={(value) => [v4ReportNumber(value), metric === 'amount' ? amountLabel ?? metricLabel(metric) : metricLabel(metric)]}
           labelFormatter={(value) => `\u200E${String(value).slice(0, 10)}\u200E`}
           contentStyle={{ direction: 'rtl', textAlign: 'right' }}
         />
@@ -202,8 +212,9 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
   }), [filteredDocuments, rows]);
   const loading = activityQuery.isLoading;
   const error = activityQuery.error as Error | null;
+  const isRegistration = documentType === 'registration';
   const reset = () => { setSearch(''); setSectionIds([]); setCategoryIds([]); setItemIds([]); setBaseUnitIds([]); setInputUnitIds([]); setPaymentMethods([]); setRanking('all'); setRankingCount(10); };
-  const exportRows = displayedRows.map((row) => ({ القسم: row.sections, الصنف: row.nameAr, الفئة: row.categoryName, التغليف: row.inputUnits, 'الكمية المسجلة': row.recordedQuantities, 'وحدة المخزون': row.inventoryUnit, 'الكمية المعيارية': Number(row.baseQuantity), القيمة: Number(row.totalAmount), العمليات: row.documentCount, 'متوسط الوحدة': Number(row.averageUnitCost), 'آخر حركة': row.lastDate }));
+  const exportRows = displayedRows.map((row) => ({ القسم: row.sections, الصنف: row.nameAr, الفئة: row.categoryName, التغليف: row.inputUnits, 'الكمية المسجلة': row.recordedQuantities, 'وحدة المخزون': row.inventoryUnit, 'الكمية المعيارية': Number(row.baseQuantity), [isRegistration ? 'إيراد البيع' : 'قيمة الشراء']: Number(row.totalAmount), العمليات: row.documentCount, [isRegistration ? 'متوسط سعر البيع' : 'متوسط سعر الوحدة']: Number(row.averageUnitCost), 'آخر حركة': row.lastDate }));
   const columns: SimpleTableColumn<DetailedItemRow>[] = [
     { key: 'sections', label: 'القسم', minWidth: 130 },
     { key: 'nameAr', label: 'الصنف', minWidth: 170, render: (value, row) => <Button type="button" variant="ghost" className="font-bold text-blue-700 underline" onClick={(event) => { event.stopPropagation(); setHistory({ itemId: row.itemId, title: row.nameAr }); }}>{String(value)}</Button> },
@@ -212,9 +223,9 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
     { key: 'recordedQuantities', label: 'الكمية المسجلة', minWidth: 150 },
     { key: 'inventoryUnit', label: 'وحدة المخزون' },
     { key: 'baseQuantity', label: 'الكمية المعيارية', numeric: true, render: (value) => v4ReportNumber(value) },
-    { key: 'totalAmount', label: 'القيمة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
+    { key: 'totalAmount', label: isRegistration ? 'إيراد البيع' : 'قيمة الشراء', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
     { key: 'documentCount', label: 'العمليات', numeric: true },
-    { key: 'averageUnitCost', label: 'متوسط السعر', numeric: true, render: (value) => v4ReportNumber(value) },
+    { key: 'averageUnitCost', label: isRegistration ? 'متوسط سعر البيع' : 'متوسط السعر', numeric: true, render: (value) => v4ReportNumber(value) },
     { key: 'lastDate', label: 'آخر حركة', render: (value) => v4Date(String(value)) },
   ];
   return <div className="flex flex-col gap-4">
@@ -228,21 +239,22 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
         <OrdersV4Field label="وحدة المخزون"><SearchableOptionsPicker mode="multiple" values={baseUnitIds} onChange={setBaseUnitIds} options={(facets?.units ?? []).map((unit) => ({ value: unit.id, label: unit.nameAr }))} emptyLabel="كل الوحدات" showClearAll /></OrdersV4Field>
         <OrdersV4Field label="التغليف / وحدة الإدخال"><SearchableOptionsPicker mode="multiple" values={inputUnitIds} onChange={setInputUnitIds} options={(facets?.units ?? []).map((unit) => ({ value: unit.id, label: unit.nameAr }))} emptyLabel="كل التغليفات" showClearAll /></OrdersV4Field>
         <OrdersV4Field label="طريقة الدفع"><SearchableOptionsPicker mode="multiple" values={paymentMethods} onChange={setPaymentMethods} options={[{ value: 'custody', label: 'عهدة' }, { value: 'cash', label: 'نقد' }, { value: 'transfer', label: 'تحويل' }]} emptyLabel="كل طرق الدفع" showClearAll disabled={documentType === 'registration'} /></OrdersV4Field>
-        <OrdersV4Field label="مقياس الرسم والترتيب"><OrdersV4Select value={metric} onChange={(event) => setMetric(event.target.value as OrdersV4ReportMetric)}><option value="amount">المبلغ</option><option value="quantity">الكمية المعيارية</option><option value="documents">عدد العمليات</option></OrdersV4Select></OrdersV4Field>
+        <OrdersV4Field label="مقياس الرسم والترتيب"><OrdersV4Select value={metric} onChange={(event) => setMetric(event.target.value as OrdersV4ReportMetric)}><option value="amount">{isRegistration ? 'إيراد البيع' : 'قيمة الشراء'}</option><option value="quantity">الكمية المعيارية</option><option value="documents">عدد العمليات</option></OrdersV4Select></OrdersV4Field>
         <OrdersV4Field label="عرض النتائج"><div className="flex gap-2"><OrdersV4Select value={ranking} onChange={(event) => setRanking(event.target.value as typeof ranking)} className="flex-1"><option value="all">كل النتائج</option><option value="top">الأعلى</option><option value="bottom">الأقل</option></OrdersV4Select>{ranking !== 'all' && <Input type="number" min={1} max={100} value={rankingCount} onChange={(event) => setRankingCount(Math.max(1, Math.min(100, Number(event.target.value) || 10)))} className="w-[72px]" />}<Button size="sm" variant="ghost" onClick={reset}>إعادة ضبط</Button></div></OrdersV4Field>
       </ReportsFilterBar>
     </OrdersV4Panel>
     <OrdersV4QueryState loading={loading} error={error} />
     {!loading && !error && <>
+      {isRegistration && totals.documents > 0 && totals.amount === 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-900">هذه تسجيلات قديمة بلا لقطة سعر بيع؛ لا يمكن استنتاج إيرادها من سعر اليوم. حدّد سعر البيع للأصناف قبل التسجيلات الجديدة، واستكمل التاريخ فقط من مصدر بيع موثوق.</div>}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <OrdersV4Kpi label="إجمالي الفترة" value={`${v4ReportNumber(totals.amount)} ر.س`} tone="green" />
+        <OrdersV4Kpi label={isRegistration ? 'إجمالي إيراد البيع' : 'إجمالي الفترة'} value={`${v4ReportNumber(totals.amount)} ر.س`} tone="green" />
         <OrdersV4Kpi label="العمليات الفعلية" value={totals.documents} />
         <OrdersV4Kpi label="الأصناف المختلفة" value={rows.length} />
         <OrdersV4Kpi label="الأقسام الظاهرة" value={sectionSummary.length} tone="amber" />
       </div>
       <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <OrdersV4Panel title="مقارنة الأقسام"><HorizontalBars rows={sectionSummary} metric={metric} /></OrdersV4Panel>
-        <OrdersV4Panel title={`اتجاه الحركة حسب القسم — ${metricLabel(metric)}`}><TrendChart documents={filteredDocuments} metric={metric} /></OrdersV4Panel>
+        <OrdersV4Panel title={`اتجاه الحركة حسب القسم — ${metricLabel(metric, isRegistration)}`}><TrendChart documents={filteredDocuments} metric={metric} amountLabel={isRegistration ? 'إيراد البيع' : 'قيمة الشراء'} /></OrdersV4Panel>
       </div>
       <OrdersV4Panel title="أعلى الأصناف داخل كل قسم">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{sectionItems.map((section, index) => <div key={section.sectionId} className="rounded-xl border border-noorix-border p-3"><div className="mb-3 text-[13px] font-extrabold">{section.sectionName}</div><HorizontalBars rows={section.items.map((item) => ({ id: item.itemId, label: item.nameAr, documents: item.documentCount, quantity: Number(item.baseQuantity), amount: Number(item.totalAmount) }))} metric={metric} color={CHART_COLORS[index % CHART_COLORS.length]} /></div>)}</div>
@@ -309,13 +321,13 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
   }, [companyId]);
   const users = useMemo(() => [...new Map(documents.filter((row) => row.createdByUser).map((row) => [row.createdByUser!.id, row.createdByUser!])).values()].sort((a, b) => v4UserLabel(a).localeCompare(v4UserLabel(b), 'ar')), [documents]);
   const filteredDocuments = useMemo(() => documents.filter((document) => !createdByUserId || document.createdByUser?.id === createdByUserId), [createdByUserId, documents]);
-  const byItem = useMemo(() => aggregateItems(filteredDocuments).map((item) => ({
+  const byItem = useMemo(() => aggregateItems(filteredDocuments, 'cost').map((item) => ({
     ...item,
     sections: [...new Set(filteredDocuments.filter((document) => document.lines.some((line) => line.itemId === item.itemId)).map((document) => document.section?.nameAr || 'غير محدد'))].join('، '),
   })), [filteredDocuments]);
-  const bySection = useMemo(() => aggregateDocumentsBySection(filteredDocuments), [filteredDocuments]);
-  const byEmployee = useMemo(() => aggregateDocumentsByEmployee(filteredDocuments), [filteredDocuments]);
-  const byDay = useMemo(() => aggregateDocumentsByDay(filteredDocuments), [filteredDocuments]);
+  const bySection = useMemo(() => aggregateDocumentsBySection(filteredDocuments, 'cost'), [filteredDocuments]);
+  const byEmployee = useMemo(() => aggregateDocumentsByEmployee(filteredDocuments, 'cost'), [filteredDocuments]);
+  const byDay = useMemo(() => aggregateDocumentsByDay(filteredDocuments, 'amount', 'cost'), [filteredDocuments]);
   const missingDays = (report?.registrationCoverage.missingDays ?? []).filter((row) => !sectionIds.length || sectionIds.includes(row.sectionId));
   const totalQuantity = filteredDocuments.reduce((sum, row) => sum + row.lines.reduce((lineSum, line) => lineSum + Number(line.baseQuantity || 0), 0), 0);
   const totalAmount = filteredDocuments.reduce((sum, row) => sum + Number(row.operationalCost || 0), 0);
@@ -384,7 +396,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
             onClick={() => setChartMetric(option.id)}
           >{option.label}</Button>)}
         </div>}
-      ><TrendChart documents={filteredDocuments} metric={chartMetric} /></OrdersV4Panel>
+      ><TrendChart documents={filteredDocuments} metric={chartMetric} amountSource="cost" amountLabel="تكلفة التشغيل" /></OrdersV4Panel>
       <ReportViewTabs value={activeView} onChange={setActiveView} items={[{ id: 'operations', label: 'بالعملية' }, { id: 'missing', label: `أيام بلا تسجيل (${missingDays.length})` }, { id: 'items', label: 'بالصنف' }, { id: 'sections', label: 'بالقسم' }, { id: 'employees', label: 'بالموظف' }, { id: 'daily', label: 'يومياً' }]} />
       <OrdersV4Panel title={activeView === 'operations' ? 'سجل العمليات' : activeView === 'missing' ? 'أيام بلا تسجيل' : activeView === 'items' ? 'التسجيل حسب الصنف' : activeView === 'sections' ? 'التسجيل حسب القسم' : activeView === 'employees' ? 'التسجيل حسب الموظف' : 'التسجيل اليومي'}>
         {activeView === 'operations' && <SmartTable

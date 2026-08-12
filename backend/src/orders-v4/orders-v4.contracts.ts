@@ -54,6 +54,7 @@ export type OrdersV4ItemInput = {
     purchaseLabel?: string | null;
     isOrderEnabled?: boolean;
     lastPrice?: string | null;
+    salePrice?: string | null;
     sortOrder?: number;
   }>;
 };
@@ -65,6 +66,7 @@ export type OrdersV4ItemUnitsInput = {
     purchaseLabel?: string | null;
     isOrderEnabled?: boolean;
     lastPrice?: string | null;
+    salePrice?: string | null;
     sortOrder?: number;
   }>;
 };

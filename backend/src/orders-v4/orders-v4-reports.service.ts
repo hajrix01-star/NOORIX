@@ -132,15 +132,15 @@ export class OrdersV4ReportsService {
         ].filter(Boolean).join(' ')).includes(term);
       });
       if (!lines.length) return [];
-      const amount = lines.reduce(
-        (total, line) => total.plus(document.documentType === 'registration' ? line.operationalCost : line.lineTotal),
-        new Prisma.Decimal(0),
-      ).toDecimalPlaces(6);
+      const revenueAmount = document.documentType === 'registration' && document.registrationEntryType === 'cancellation'
+        ? new Prisma.Decimal(0)
+        : lines.reduce((total, line) => total.plus(line.lineTotal ?? 0), new Prisma.Decimal(0)).toDecimalPlaces(6);
+      const operationalCost = lines.reduce((total, line) => total.plus(line.operationalCost), new Prisma.Decimal(0)).toDecimalPlaces(6);
       return [{
         ...document,
-        subtotal: document.documentType === 'purchase' ? amount : document.subtotal,
-        totalAmount: document.documentType === 'purchase' ? amount : document.totalAmount,
-        operationalCost: amount,
+        subtotal: revenueAmount,
+        totalAmount: revenueAmount,
+        operationalCost,
         lines,
         createdByUser: identity,
       }];

@@ -84,7 +84,7 @@ export function OrdersV4DocumentLinesTable({
             value={line.priceUnitId}
             onChange={(event) => {
               const priceUnit = item?.units.find((row) => row.unitId === event.target.value);
-              onPatch(line.key, { priceUnitId: event.target.value, unitPrice: String(priceUnit?.lastPrice ?? line.unitPrice) });
+              onPatch(line.key, { priceUnitId: event.target.value, unitPrice: String(isPurchase ? priceUnit?.lastPrice ?? line.unitPrice : priceUnit?.salePrice ?? line.unitPrice) });
             }}
           >
             {(item?.units ?? []).filter((row) => row.isActive && (!isPurchase || isReceiving || (row.isOrderEnabled && row.lastPrice != null))).map((row) => <option key={row.unitId} value={row.unitId}>{ordersV4LocalizedName(row.unit, lang)}</option>)}

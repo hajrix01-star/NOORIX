@@ -47,6 +47,8 @@ export class OrdersV4ItemUnitDto {
   @IsOptional() @IsString() @MaxLength(160) purchaseLabel?: string | null;
   @IsOptional() @IsBoolean() isOrderEnabled?: boolean;
   @IsOptional() @IsString() @Matches(NON_NEGATIVE_DECIMAL) lastPrice?: string | null;
+  /** Selling price used as the default snapshot for internal-sale registrations. */
+  @IsOptional() @IsString() @Matches(NON_NEGATIVE_DECIMAL) salePrice?: string | null;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(1_000_000) sortOrder?: number;
 }
 

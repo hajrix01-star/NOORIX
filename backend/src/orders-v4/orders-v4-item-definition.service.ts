@@ -146,6 +146,7 @@ export class OrdersV4ItemDefinitionService {
       for (const [sortOrder, unitId] of definition.unitIds.entries()) {
         const requested = requestedByUnit.get(unitId);
         const lastPrice = optionalPositiveDecimal(requested?.lastPrice, `سعر ${sortOrder + 1}`);
+        const salePrice = optionalPositiveDecimal(requested?.salePrice, `سعر بيع ${sortOrder + 1}`);
         await tx.ordersV4ItemUnit.upsert({
           where: { itemId_unitId: { itemId, unitId } },
           create: {
@@ -156,6 +157,7 @@ export class OrdersV4ItemDefinitionService {
             purchaseLabel: requested?.purchaseLabel?.trim() || null,
             isOrderEnabled: requested?.isOrderEnabled === true && lastPrice != null,
             lastPrice,
+            salePrice,
             isActive: true,
             sortOrder,
           },
@@ -163,6 +165,7 @@ export class OrdersV4ItemDefinitionService {
             purchaseLabel: requested?.purchaseLabel?.trim() || null,
             isOrderEnabled: requested?.isOrderEnabled === true && lastPrice != null,
             lastPrice,
+            salePrice,
             isActive: true,
             sortOrder,
           },

@@ -1677,6 +1677,7 @@ model OrdersV4ItemUnit {
   isOrderEnabled Boolean   @default(false) @map("is_order_enabled")
   lastPrice      Decimal?  @map("last_price") @db.Decimal(20, 6)
   lastPriceAt    DateTime? @map("last_price_at")
+  salePrice      Decimal?  @map("sale_price") @db.Decimal(20, 6)
   isActive       Boolean   @default(true) @map("is_active")
   sortOrder      Int       @default(0) @map("sort_order")
   createdAt      DateTime  @default(now()) @map("created_at")

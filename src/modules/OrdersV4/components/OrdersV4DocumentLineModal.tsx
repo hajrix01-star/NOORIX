@@ -42,10 +42,11 @@ export function OrdersV4DocumentLineModal({
 
   useEffect(() => {
     if (!item) return;
-    const preferred = selectableUnits.find((row) => row.isOrderEnabled && row.lastPrice != null)
-      ?? selectableUnits[0];
+    const preferred = isPurchase
+      ? selectableUnits.find((row) => row.isOrderEnabled && row.lastPrice != null) ?? selectableUnits[0]
+      : selectableUnits.find((row) => row.salePrice != null) ?? selectableUnits[0];
     setUnitId(preferred?.unitId ?? item.inventoryUnitId);
-    setUnitPrice(String(preferred?.lastPrice ?? '0'));
+    setUnitPrice(String(isPurchase ? preferred?.lastPrice ?? '0' : preferred?.salePrice ?? '0'));
     setQuantity('1');
     setCancellationReasons([]);
     setCancellationNote('');
@@ -59,7 +60,7 @@ export function OrdersV4DocumentLineModal({
   function changeUnit(nextUnitId: string) {
     const nextUnit = selectableUnits.find((row) => row.unitId === nextUnitId);
     setUnitId(nextUnitId);
-    setUnitPrice(String(nextUnit?.lastPrice ?? '0'));
+    setUnitPrice(String(isPurchase ? nextUnit?.lastPrice ?? '0' : nextUnit?.salePrice ?? '0'));
   }
 
   function confirm() {
@@ -92,7 +93,7 @@ export function OrdersV4DocumentLineModal({
           <OrdersV4Select value={unitId} onChange={(event) => changeUnit(event.target.value)}>
             {selectableUnits.map((row) => (
               <option key={row.unitId} value={row.unitId}>
-                {lang === 'en' ? ordersV4LocalizedName(row.unit, lang) : (row.purchaseLabel || ordersV4LocalizedName(row.unit, lang))}{row.lastPrice != null ? ` - ${v4Number(row.lastPrice)} ${lang === 'en' ? 'SR' : 'ر.س'}` : ''}
+                {lang === 'en' ? ordersV4LocalizedName(row.unit, lang) : (row.purchaseLabel || ordersV4LocalizedName(row.unit, lang))}{(isPurchase ? row.lastPrice : row.salePrice) != null ? ` - ${v4Number(isPurchase ? row.lastPrice : row.salePrice)} ${lang === 'en' ? 'SR' : 'ر.س'}` : ''}
               </option>
             ))}
           </OrdersV4Select>
@@ -152,8 +153,8 @@ export function OrdersV4DocumentLineModal({
           </div>
         )}
 
-        {isPurchase ? (
-          <OrdersV4Field label={`${t('ordersV4UnitPrice')} (${lang === 'en' ? 'SR' : 'ر.س'})`}>
+        {isPurchase || !isCancellation ? (
+          <OrdersV4Field label={`${isPurchase ? t('ordersV4UnitPrice') : 'سعر البيع'} (${lang === 'en' ? 'SR' : 'ر.س'})`}>
             <Input type="number" min="0" step="any" value={unitPrice} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setUnitPrice(event.target.value)} />
           </OrdersV4Field>
         ) : Number(unitPrice) > 0 ? (
