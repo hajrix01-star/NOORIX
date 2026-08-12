@@ -79,11 +79,17 @@ jobs:
         run: |
           PROD=/var/www/noorix/backend
           WORKSPACE="${{ github.workspace }}"
+          api_quiesced=0
 
-          # إسعاف: إعادة تشغيل API عبر systemd (خارج دورة الـ runner)
+          # الإسعاف مطلوب فقط بعد إيقاف الـAPI. إذا أخفق تجهيز الاعتماديات
+          # قبل ذلك، فإعادة التشغيل ستقتل النسخة العاملة بلا داعٍ.
           recover_api() {
-            echo "==> [trap] خطأ — systemctl restart noorix-backend"
-            sudo bash "$WORKSPACE/deploy/install-noorix-backend-systemd.sh" || true
+            if [[ "$api_quiesced" == "1" ]]; then
+              echo "==> [trap] خطأ بعد إيقاف API — systemctl restart noorix-backend"
+              sudo bash "$WORKSPACE/deploy/install-noorix-backend-systemd.sh" || true
+            else
+              echo "==> [trap] فشل قبل إيقاف API؛ اترك النسخة العاملة دون إعادة تشغيل"
+            fi
           }
           trap recover_api ERR
 
@@ -107,6 +113,12 @@ jobs:
           npm install --prefix /var/www/noorix/packages/permissions-core
 
           cd "$PROD"
+
+          echo "==> ensure native Node build prerequisites"
+          if ! command -v make >/dev/null 2>&1 || ! command -v g++ >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential
+          fi
 
           echo "==> تنظيف node_modules القديمة لضمان npm ci نظيف"
           rm -rf node_modules
@@ -132,6 +144,7 @@ jobs:
 
           echo "==> quiesce API so backup and retirement observe one exact database state"
           sudo systemctl stop noorix-backend
+          api_quiesced=1
 
           echo "==> protected backup before legacy Orders retirement"
           bash "$WORKSPACE/deploy/backup-legacy-orders-before-retirement.sh" "$PROD"
