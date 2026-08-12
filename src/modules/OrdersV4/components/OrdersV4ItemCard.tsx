@@ -14,7 +14,7 @@ import {
 
 type Mutations = ReturnType<typeof useOrdersV4CatalogMutations>;
 type CardTab = 'data' | 'prices' | 'definition';
-type UnitRow = { unitId: string; purchaseLabel: string; lastPrice: string; isOrderEnabled: boolean };
+type UnitRow = { unitId: string; purchaseLabel: string; lastPrice: string; salePrice: string; isOrderEnabled: boolean };
 type RecipeRow = { key: string; componentItemId: string; quantity: string; unitId: string };
 
 const conversionRow = (fromUnitId = ''): OrdersV4DefinitionRow => ({ key: crypto.randomUUID(), fromUnitId, toUnitId: '', factor: '1' });
@@ -77,9 +77,10 @@ export function OrdersV4ItemCard({
       unitId: row.unitId,
       purchaseLabel: row.purchaseLabel ?? '',
       lastPrice: String(row.lastPrice ?? ''),
+      salePrice: String(row.salePrice ?? ''),
       isOrderEnabled: row.isOrderEnabled,
     })) ?? []);
-    setPriceUnitIds(item?.units.filter((row) => row.isActive && (row.lastPrice != null || row.isOrderEnabled || row.purchaseLabel)).map((row) => row.unitId) ?? []);
+    setPriceUnitIds(item?.units.filter((row) => row.isActive && (row.lastPrice != null || row.salePrice != null || row.isOrderEnabled || row.purchaseLabel)).map((row) => row.unitId) ?? []);
     const savedEdges = currentConversion?.edges.map((edge) => ({
       key: edge.id,
       fromUnitId: edge.fromUnitId,
@@ -110,7 +111,7 @@ export function OrdersV4ItemCard({
   const selectedCategory = data.categories.find((row) => row.id === categoryId);
   const selectedInventoryUnit = data.units.find((unit) => unit.id === inventoryUnitId);
   const activeUnitCount = item?.units.filter((row) => row.isActive).length ?? (inventoryUnitId ? 1 : 0);
-  const pricedUnitCount = item?.units.filter((row) => row.isActive && row.lastPrice != null).length ?? 0;
+  const pricedUnitCount = item?.units.filter((row) => row.isActive && (row.lastPrice != null || row.salePrice != null)).length ?? 0;
   const enabledOrderUnitCount = item?.units.filter((row) => row.isActive && row.isOrderEnabled && row.lastPrice != null).length ?? 0;
 
   function toggleSection(sectionId: string, checked: boolean) {
@@ -134,6 +135,7 @@ export function OrdersV4ItemCard({
           unitId,
           purchaseLabel: priced ? row?.purchaseLabel.trim() || null : null,
           lastPrice: priced && row?.lastPrice ? row.lastPrice : null,
+          salePrice: priced && row?.salePrice ? row.salePrice : null,
           isOrderEnabled: priced && row?.isOrderEnabled === true && !!row.lastPrice,
           sortOrder,
         };
@@ -144,7 +146,7 @@ export function OrdersV4ItemCard({
   function patchPriceUnit(unitId: string, patch: Partial<UnitRow>) {
     setUnitRows((current) => {
       const existing = current.find((row) => row.unitId === unitId);
-      if (!existing) return [...current, { unitId, purchaseLabel: '', lastPrice: '', isOrderEnabled: false, ...patch }];
+      if (!existing) return [...current, { unitId, purchaseLabel: '', lastPrice: '', salePrice: '', isOrderEnabled: false, ...patch }];
       return current.map((row) => row.unitId === unitId ? { ...row, ...patch } : row);
     });
   }
@@ -186,7 +188,7 @@ export function OrdersV4ItemCard({
         inventoryUnitId,
         sectionIds,
         trackInventory,
-        units: [{ unitId: inventoryUnitId, purchaseLabel: '', isOrderEnabled: false, lastPrice: null }],
+        units: [{ unitId: inventoryUnitId, purchaseLabel: '', isOrderEnabled: false, lastPrice: null, salePrice: null }],
       });
       if (created.data) onSaved(created.data);
       return;
@@ -230,7 +232,7 @@ export function OrdersV4ItemCard({
       <div className="flex flex-col gap-4">
         <div className={ordersV4NavigationBarClassName}>
           {tabButton('data', 'معلومات عامة')}
-          {item && tabButton('prices', 'السعر')}
+          {item && tabButton('prices', item.itemType === 'sale' ? 'سعر البيع' : 'سعر الشراء')}
           {item && tabButton('definition', item.itemType === 'purchased' ? 'الوحدات والتحويلات' : 'الرسبي')}
         </div>
 
@@ -276,7 +278,7 @@ export function OrdersV4ItemCard({
 
         {tab === 'prices' && item && (
           <div className="flex flex-col gap-3">
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-6 text-blue-900">التغليف هنا مستورد حصراً من سلسلة «الوحدات والتحويلات». لا يظهر في الطلبات إلا التغليف الذي حُفظ له سعر وفُعّل.</div>
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-6 text-blue-900">{item.itemType === 'sale' ? 'سعر البيع هنا هو السعر الافتراضي للتسجيل الداخلي، ويُحفظ كل مرة كلقطة إيراد مستقلة في العملية.' : 'التغليف هنا مستورد حصراً من سلسلة «الوحدات والتحويلات». لا يظهر في الطلبات إلا التغليف الذي حُفظ له سعر شراء وفُعّل.'}</div>
             {!definitionUnitIds.length ? (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-[13px] font-bold text-amber-900">أضف وحدات الصنف وتحويلاته أولًا.</div>
             ) : (
@@ -294,17 +296,17 @@ export function OrdersV4ItemCard({
             )}
             {priceUnitIds.map((unitId) => {
               if (!definitionUnitIds.includes(unitId)) return <div key={unitId} className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-[12px] text-red-800"><span>التغليف «{data.units.find((unit) => unit.id === unitId)?.nameAr}» لم يعد ضمن سلسلة الصنف. احذفه أو أعده إلى السلسلة قبل الحفظ.</span><Button variant="danger" size="sm" onClick={() => setPriceUnitIds((current) => current.filter((candidate) => candidate !== unitId))}>حذف السعر</Button></div>;
-              const row = unitRows.find((entry) => entry.unitId === unitId) ?? { unitId, purchaseLabel: '', lastPrice: '', isOrderEnabled: false };
+              const row = unitRows.find((entry) => entry.unitId === unitId) ?? { unitId, purchaseLabel: '', lastPrice: '', salePrice: '', isOrderEnabled: false };
               const availablePackaging = definitionUnitIds.filter((candidate) => candidate === unitId || !priceUnitIds.includes(candidate));
               return <div key={unitId} className="grid items-end gap-2 rounded-xl border border-noorix-border bg-noorix-bg-surface p-3 lg:grid-cols-[1fr_1.3fr_1fr_auto_auto]">
                 <OrdersV4Field label="التغليف"><OrdersV4Select value={unitId} onChange={(event) => {
                   const nextUnitId = event.target.value;
                   setPriceUnitIds((current) => current.map((candidate) => candidate === unitId ? nextUnitId : candidate));
-                  patchPriceUnit(nextUnitId, { purchaseLabel: row.purchaseLabel, lastPrice: row.lastPrice, isOrderEnabled: row.isOrderEnabled });
+                  patchPriceUnit(nextUnitId, { purchaseLabel: row.purchaseLabel, lastPrice: row.lastPrice, salePrice: row.salePrice, isOrderEnabled: row.isOrderEnabled });
                 }}>{availablePackaging.map((candidate) => <option key={candidate} value={candidate}>{data.units.find((unit) => unit.id === candidate)?.nameAr}</option>)}</OrdersV4Select></OrdersV4Field>
                 <OrdersV4Field label="وصف الشراء / الحجم"><Input value={row.purchaseLabel} onChange={(event) => patchPriceUnit(unitId, { purchaseLabel: event.target.value })} placeholder="مثال: كبير" /></OrdersV4Field>
-                <OrdersV4Field label="السعر الظاهر"><Input type="number" min="0" step="any" value={row.lastPrice} onChange={(event) => patchPriceUnit(unitId, { lastPrice: event.target.value })} /></OrdersV4Field>
-                <label className="flex items-center gap-2 pb-2 text-[12px]"><Checkbox checked={row.isOrderEnabled} disabled={!row.lastPrice} onChange={(event) => patchPriceUnit(unitId, { isOrderEnabled: event.target.checked })} />يظهر في الطلبات</label>
+                <OrdersV4Field label={item.itemType === 'sale' ? 'سعر البيع' : 'سعر الشراء'}><Input type="number" min="0" step="any" value={item.itemType === 'sale' ? row.salePrice : row.lastPrice} onChange={(event) => patchPriceUnit(unitId, item.itemType === 'sale' ? { salePrice: event.target.value } : { lastPrice: event.target.value })} /></OrdersV4Field>
+                {item.itemType === 'sale' ? <div className="pb-2 text-[11px] text-noorix-muted">يظهر في التسجيل الداخلي</div> : <label className="flex items-center gap-2 pb-2 text-[12px]"><Checkbox checked={row.isOrderEnabled} disabled={!row.lastPrice} onChange={(event) => patchPriceUnit(unitId, { isOrderEnabled: event.target.checked })} />يظهر في الطلبات</label>}
                 <Button variant="danger" size="sm" onClick={() => setPriceUnitIds((current) => current.filter((candidate) => candidate !== unitId))}>حذف</Button>
               </div>;
             })}

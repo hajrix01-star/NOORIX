@@ -328,6 +328,7 @@ export class OrdersV4CatalogService {
               purchaseLabel: row.purchaseLabel?.trim() || null,
               isOrderEnabled: row.isOrderEnabled === true && row.lastPrice != null && row.lastPrice !== '',
               lastPrice: row.lastPrice == null || row.lastPrice === '' ? null : positiveDecimal(row.lastPrice, 'السعر'),
+              salePrice: row.salePrice == null || row.salePrice === '' ? null : positiveDecimal(row.salePrice, 'سعر البيع'),
               sortOrder: Number(row.sortOrder ?? index),
             })),
           },

@@ -76,4 +76,15 @@ describe('orders V4 report analytics', () => {
     expect(groups.map((row) => row.sectionName)).toEqual(['بار', 'مطبخ']);
     expect(groups.find((row) => row.sectionId === 'kitchen')?.items[0].totalAmount).toBe('35');
   });
+
+  it('keeps sales revenue separate from operational cost', () => {
+    const registration = documentFixture({ id: 'sale-1', date: '2026-08-03', sectionId: 'bar', sectionName: 'بار', quantity: 2, amount: 2_000 });
+    registration.operationalCost = '0';
+    registration.lines[0].operationalCost = '0';
+
+    expect(aggregateDocumentsBySection([registration])[0].amount).toBe(2_000);
+    expect(aggregateDocumentsBySection([registration], 'cost')[0].amount).toBe(0);
+    expect(aggregateItems([registration])[0].totalAmount).toBe('2000');
+    expect(aggregateItems([registration], 'cost')[0].totalAmount).toBe('0');
+  });
 });

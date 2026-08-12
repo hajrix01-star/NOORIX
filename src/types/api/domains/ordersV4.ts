@@ -32,6 +32,7 @@ export type OrdersV4Item = {
     isOrderEnabled: boolean;
     lastPrice?: string | null;
     lastPriceAt?: string | null;
+    salePrice?: string | null;
     isActive: boolean;
     sortOrder: number;
     unit: OrdersV4Unit;
