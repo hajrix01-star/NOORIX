@@ -408,19 +408,29 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
         {activeView === 'items' && <SimpleTable columns={itemColumns} data={byItem} emptyMessage="لا توجد بيانات مطابقة" tableMinWidth={700} />}
         {activeView === 'sections' && <SimpleTable columns={sectionColumns} data={bySection} emptyMessage="لا توجد بيانات مطابقة" />}
         {activeView === 'employees' && <SimpleTable columns={employeeColumns} data={byEmployee} emptyMessage="لا توجد بيانات مطابقة" tableMinWidth={700} />}
-        {activeView === 'daily' && (byDay.length ? <div className="grid gap-3 lg:grid-cols-2">
-          {byDay.map((day) => <section key={day.date} className="overflow-hidden rounded-xl border border-noorix-border bg-white">
-            <header className="flex items-center justify-between gap-3 border-b border-noorix-border bg-noorix-bg-muted/40 px-4 py-3">
-              <div><div className="font-extrabold">{v4Date(day.date)}</div><div className="mt-1 text-[11px] text-noorix-muted">{day.documents} عملية · {v4ReportNumber(day.quantity)} كمية</div></div>
-              <div className="text-left"><div className="text-[11px] text-noorix-muted">إجمالي البيع</div><div className="text-[19px] font-extrabold tabular-nums text-emerald-700">{v4ReportNumber(day.amount)} ر.س</div></div>
-            </header>
-            <div className="divide-y divide-noorix-border">
-              {day.sections.map((section) => <div key={section.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                <div><div className="font-bold">{section.label}</div><div className="mt-0.5 text-[11px] text-noorix-muted">{section.documents} عملية</div></div>
-                <strong className="tabular-nums text-emerald-700">{v4ReportNumber(section.amount)} ر.س</strong>
-              </div>)}
-            </div>
-          </section>)}
+        {activeView === 'daily' && (byDay.length ? <div className="overflow-hidden rounded-xl border border-noorix-border bg-white">
+          <div className="hidden grid-cols-[minmax(140px,0.9fr)_minmax(160px,1fr)_minmax(120px,0.8fr)_minmax(120px,0.8fr)] gap-4 border-b border-noorix-border bg-noorix-bg-muted/50 px-5 py-3 text-[11px] font-extrabold text-noorix-muted md:grid">
+            <span>التاريخ</span><span>الأقسام المسجلة</span><span className="text-center">العمليات والكمية</span><span className="text-left">إجمالي البيع</span>
+          </div>
+          <div className="divide-y divide-noorix-border">
+            {byDay.map((day) => <section key={day.date}>
+              <header className="grid gap-3 px-4 py-4 md:grid-cols-[minmax(140px,0.9fr)_minmax(160px,1fr)_minmax(120px,0.8fr)_minmax(120px,0.8fr)] md:items-center md:gap-4 md:px-5">
+                <div className="flex items-center justify-between gap-3 md:block"><div className="font-extrabold">{v4Date(day.date)}</div><div className="mt-0.5 text-[11px] text-noorix-muted md:hidden">{day.sections.length} أقسام مسجلة</div></div>
+                <div className="hidden text-[12px] font-bold text-noorix-muted md:block">{day.sections.length} أقسام مسجلة</div>
+                <div className="flex items-center justify-between gap-3 text-[12px] md:block md:text-center"><span className="text-noorix-muted md:hidden">النشاط</span><span>{day.documents} عملية · {v4ReportNumber(day.quantity)} كمية</span></div>
+                <div className="flex items-center justify-between gap-3 md:text-left"><span className="text-[11px] text-noorix-muted md:hidden">إجمالي البيع</span><strong className="text-[18px] tabular-nums text-emerald-700">{v4ReportNumber(day.amount)} ر.س</strong></div>
+              </header>
+              <div className="border-t border-noorix-border bg-noorix-bg-muted/25 px-4 py-2.5 md:px-5">
+                <div className="mb-1 text-[11px] font-bold text-noorix-muted">تفصيل الأقسام</div>
+                <div className="divide-y divide-noorix-border/70 rounded-lg border border-noorix-border bg-white">
+                  {day.sections.map((section) => <div key={section.id} className="flex items-center justify-between gap-3 px-3 py-2 text-[12px]">
+                    <div className="min-w-0"><span className="font-bold">{section.label}</span><span className="mx-2 text-noorix-muted">·</span><span className="text-noorix-muted">{section.documents} عملية</span></div>
+                    <strong className="shrink-0 tabular-nums text-emerald-700">{v4ReportNumber(section.amount)} ر.س</strong>
+                  </div>)}
+                </div>
+              </div>
+            </section>)}
+          </div>
         </div> : <div className="py-8 text-center text-[13px] text-noorix-muted">لا توجد مبيعات مطابقة</div>)}
       </OrdersV4Panel>
     </>}
