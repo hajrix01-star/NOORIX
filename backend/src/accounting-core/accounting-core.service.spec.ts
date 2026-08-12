@@ -9,6 +9,7 @@ type FinancialCoreAccountingDelegate = Pick<
   | 'processPayrollPaymentBatchInTransaction'
   | 'postPayrollAccrualLedgerInTransaction'
   | 'cancelPayrollAccrualLedgerInTransaction'
+  | 'cancelProvenDirectAdvancePayrollDuplicateLedgerRowsInTransaction'
   | 'cancelProvenPayrollLegacyLedgerRowsInTransaction'
   | 'cancelOperation'
 >;
@@ -28,6 +29,7 @@ describe('AccountingCoreService', () => {
       processPayrollPaymentBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-2' } }]),
       postPayrollAccrualLedgerInTransaction: jest.fn().mockResolvedValue(undefined),
       cancelPayrollAccrualLedgerInTransaction: jest.fn().mockResolvedValue({ count: 1 }),
+      cancelProvenDirectAdvancePayrollDuplicateLedgerRowsInTransaction: jest.fn().mockResolvedValue({ count: 1 }),
       cancelProvenPayrollLegacyLedgerRowsInTransaction: jest.fn().mockResolvedValue({ count: 27 }),
       cancelOperation: jest.fn().mockResolvedValue({ cancelled: true }),
     };

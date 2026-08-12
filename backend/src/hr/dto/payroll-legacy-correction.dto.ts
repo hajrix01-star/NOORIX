@@ -70,3 +70,23 @@ export class PayrollLegacyPartialCorrectionConfirmDto extends PayrollLegacyCorre
   @IsIn(['CANCEL_PROVEN_PAYROLL_DUPLICATE_SUBSET'])
   confirmation!: 'CANCEL_PROVEN_PAYROLL_DUPLICATE_SUBSET';
 }
+
+export class PayrollDirectAdvanceCorrectionConfirmDto extends PayrollLegacyCorrectionPreviewDto {
+  @IsString()
+  @Matches(/^[a-f0-9]{64}$/)
+  previewHash!: string;
+
+  @IsString()
+  @MinLength(12)
+  @MaxLength(200)
+  idempotencyKey!: string;
+
+  @IsString()
+  @MinLength(10)
+  @MaxLength(500)
+  reason!: string;
+
+  @IsString()
+  @IsIn(['CANCEL_PROVEN_DIRECT_ADVANCE_PAYROLL_DUPLICATE'])
+  confirmation!: 'CANCEL_PROVEN_DIRECT_ADVANCE_PAYROLL_DUPLICATE';
+}

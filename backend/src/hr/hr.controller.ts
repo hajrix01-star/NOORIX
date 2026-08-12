@@ -43,6 +43,7 @@ import {
   PayrollLegacyPartialCorrectionConfirmDto,
   PayrollLegacyCorrectionConfirmDto,
   PayrollLegacyCorrectionPreviewDto,
+  PayrollDirectAdvanceCorrectionConfirmDto,
 } from './dto/payroll-legacy-correction.dto';
 import { CreateHistoricalPartTimePayrollLinkDto } from './dto/historical-part-time-payroll.dto';
 import {
@@ -211,6 +212,25 @@ export class HRController {
     @Body() dto: PayrollLegacyPartialCorrectionConfirmDto,
   ) {
     return this.hrService.confirmPayrollLegacyProvenSubset(companyId, user.sub, dto);
+  }
+
+  @Post('payroll/reconciliation/direct-advance-correction/preview')
+  @Roles('owner')
+  previewPayrollDirectAdvanceCorrection(
+    @CompanyId() companyId: string,
+    @Body() dto: PayrollLegacyCorrectionPreviewDto,
+  ) {
+    return this.hrService.previewPayrollDirectAdvanceCorrection(companyId, dto);
+  }
+
+  @Post('payroll/reconciliation/direct-advance-correction/confirm')
+  @Roles('owner')
+  confirmPayrollDirectAdvanceCorrection(
+    @CompanyId() companyId: string,
+    @CurrentUser() user: JwtUser,
+    @Body() dto: PayrollDirectAdvanceCorrectionConfirmDto,
+  ) {
+    return this.hrService.confirmPayrollDirectAdvanceCorrection(companyId, user.sub, dto);
   }
 
   @Post('payroll-runs/issue-individual-payment')

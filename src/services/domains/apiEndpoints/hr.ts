@@ -103,6 +103,23 @@ export async function confirmProvenPayrollLegacySubset(
 ): Promise<ApiParsedResult<Record<string, unknown>>> {
   return apiPost('/api/v1/hr/payroll/reconciliation/legacy-correction/proven-subset/confirm', body);
 }
+export async function previewProvenDirectAdvancePayrollDuplicate(
+  _companyId: string,
+  body: PayrollLegacyCorrectionPreviewInput,
+): Promise<ApiParsedResult<Record<string, unknown>>> {
+  return apiPost('/api/v1/hr/payroll/reconciliation/direct-advance-correction/preview', body);
+}
+export async function confirmProvenDirectAdvancePayrollDuplicate(
+  _companyId: string,
+  body: PayrollLegacyCorrectionPreviewInput & {
+    previewHash: string;
+    idempotencyKey: string;
+    reason: string;
+    confirmation: 'CANCEL_PROVEN_DIRECT_ADVANCE_PAYROLL_DUPLICATE';
+  },
+): Promise<ApiParsedResult<Record<string, unknown>>> {
+  return apiPost('/api/v1/hr/payroll/reconciliation/direct-advance-correction/confirm', body);
+}
 export async function getEmployeePayrollItems(companyId: string, employeeId: string): Promise<ApiParsedResult<HrApiRecordList>> {
   return apiGet('/api/v1/hr/payroll-run-items', companyEmployeeQuery(companyId, employeeId));
 }

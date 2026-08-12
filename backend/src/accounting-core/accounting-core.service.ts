@@ -9,6 +9,7 @@ type FinancialCoreAccountingDelegate = Pick<
   | 'processPayrollPaymentBatchInTransaction'
   | 'postPayrollAccrualLedgerInTransaction'
   | 'cancelPayrollAccrualLedgerInTransaction'
+  | 'cancelProvenDirectAdvancePayrollDuplicateLedgerRowsInTransaction'
   | 'cancelProvenPayrollLegacyLedgerRowsInTransaction'
   | 'cancelOperation'
 >;
@@ -19,6 +20,7 @@ type PayrollPaymentBatchInTxArgs = Parameters<FinancialCoreService['processPayro
 type PayrollAccrualLedgerArgs = Parameters<FinancialCoreService['postPayrollAccrualLedgerInTransaction']>;
 type CancelPayrollAccrualLedgerArgs = Parameters<FinancialCoreService['cancelPayrollAccrualLedgerInTransaction']>;
 type CancelProvenPayrollLegacyLedgerRowsArgs = Parameters<FinancialCoreService['cancelProvenPayrollLegacyLedgerRowsInTransaction']>;
+type CancelProvenDirectAdvancePayrollDuplicateLedgerRowsArgs = Parameters<FinancialCoreService['cancelProvenDirectAdvancePayrollDuplicateLedgerRowsInTransaction']>;
 type CancelArgs = Parameters<FinancialCoreService['cancelOperation']>;
 
 @Injectable()
@@ -60,6 +62,12 @@ export class AccountingCoreService {
 
   cancelProvenPayrollLegacyLedgerRowsInTransaction(...args: CancelProvenPayrollLegacyLedgerRowsArgs) {
     return this.financialCore.cancelProvenPayrollLegacyLedgerRowsInTransaction(...args);
+  }
+
+  cancelProvenDirectAdvancePayrollDuplicateLedgerRowsInTransaction(
+    ...args: CancelProvenDirectAdvancePayrollDuplicateLedgerRowsArgs
+  ) {
+    return this.financialCore.cancelProvenDirectAdvancePayrollDuplicateLedgerRowsInTransaction(...args);
   }
 
   reverseFinancialOperation(...args: CancelArgs) {

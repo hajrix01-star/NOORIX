@@ -84,3 +84,30 @@ export function cancelProvenPayrollLegacyLedgerRowsInTransaction(
     data: { status: 'cancelled' },
   });
 }
+
+/**
+ * Governed writer for a proven historical advance that was posted once as a
+ * payroll cost and then included again in its completed payroll run.
+ *
+ * HR establishes the invoice/run/item proof.  This boundary only permits the
+ * non-cash EXP-004 -> ADV-001 ledger shape and never touches the advance
+ * invoice, its settled balance, a payroll run, or a vault movement.
+ */
+export function cancelProvenDirectAdvancePayrollDuplicateLedgerRowsInTransaction(
+  tx: Prisma.TransactionClient,
+  companyId: string,
+  ledgerEntryIds: string[],
+) {
+  return tx.ledgerEntry.updateMany({
+    where: {
+      companyId,
+      id: { in: ledgerEntryIds },
+      status: 'active',
+      referenceType: 'invoice',
+      vaultId: null,
+      debitAccount: { code: 'EXP-004' },
+      creditAccount: { code: 'ADV-001' },
+    },
+    data: { status: 'cancelled' },
+  });
+}

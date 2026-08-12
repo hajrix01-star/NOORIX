@@ -25,6 +25,7 @@ import { HrDocumentService } from './hr-document.service';
 import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 import { HrPayrollReconciliationService } from './hr-payroll-reconciliation.service';
 import { HrPayrollLegacyCorrectionService } from './hr-payroll-legacy-correction.service';
+import { HrPayrollDirectAdvanceCorrectionService } from './hr-payroll-direct-advance-correction.service';
 import { HrHistoricalPartTimePayrollService } from './hr-historical-part-time-payroll.service';
 
 const uploadDir = ensureUploadsSubdir('hr-documents');
@@ -64,6 +65,7 @@ const uploadDir = ensureUploadsSubdir('hr-documents');
     HrCompensationSnapshotService,
     HrPayrollReconciliationService,
     HrPayrollLegacyCorrectionService,
+    HrPayrollDirectAdvanceCorrectionService,
     HrHistoricalPartTimePayrollService,
     HRService,
   ],

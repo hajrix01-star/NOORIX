@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 
 type ReconciliationRow = {
-  source: 'structured' | 'documented_historical_repair' | 'legacy_ledger' | 'salary_invoice' | 'historical_standalone_salary' | 'historical_part_time_payroll' | 'unexplained_payroll_ledger' | 'payroll_run';
+  source: 'structured' | 'documented_historical_repair' | 'legacy_ledger' | 'direct_advance_invoice_duplicate' | 'salary_invoice' | 'historical_standalone_salary' | 'historical_part_time_payroll' | 'unexplained_payroll_ledger' | 'payroll_run';
   id: string;
   date: string;
   employeeId: string | null;
@@ -25,6 +25,7 @@ const money = (value: Prisma.Decimal | number | string | null | undefined) =>
   Number(new Prisma.Decimal(value ?? 0).toDecimalPlaces(2));
 const key = (date: Date) => `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
 const ymd = (date: Date) => date.toISOString().slice(0, 10);
+const ADVANCE_PAYROLL_NOTE_RE = /(?:^|\r?\n)\[ADV_PAYROLL\]\s*run=([^,\s]+),\s*amount=([0-9]+(?:\.[0-9]{1,2})?),\s*date=\d{4}-\d{2}-\d{2}\s*$/;
 const LEGACY_SETTLEMENT_NOTE_RE = /^خصم سلفة تلقائي من مسير\s+(.+?)\s*-\s*سلفة\s+(.+)$/;
 
 @Injectable()
@@ -119,6 +120,32 @@ export class HrPayrollReconciliationService {
       legacySettlementContext.set(ledger.id, {
         runNumber: match[1].trim(),
         advanceInvoiceNumber: match[2].trim(),
+      });
+    }
+
+    const directAdvanceInvoiceLedgers = salaryLedger.filter((row) => row.referenceType === 'invoice');
+    const directAdvanceInvoices = directAdvanceInvoiceLedgers.length
+      ? await this.prisma.invoice.findMany({
+          where: { companyId, id: { in: directAdvanceInvoiceLedgers.map((row) => row.referenceId) }, kind: 'advance', status: 'active' },
+          select: { id: true, employeeId: true, invoiceNumber: true, totalAmount: true, notes: true },
+        })
+      : [];
+    const directAdvanceInvoiceById = new Map(directAdvanceInvoices.map((row) => [row.id, row]));
+    const directAdvanceContext = new Map<string, { runId: string; runNumber: string; payrollItemId: string; advanceInvoiceId: string; advanceInvoiceNumber: string }>();
+    for (const ledger of directAdvanceInvoiceLedgers) {
+      const advance = directAdvanceInvoiceById.get(ledger.referenceId);
+      const tag = String(advance?.notes ?? '').match(ADVANCE_PAYROLL_NOTE_RE);
+      const run = tag ? runs.find((row) => row.runNumber === tag[1]) : undefined;
+      const item = advance?.employeeId ? run?.items.find((row) => row.employeeId === advance.employeeId) : undefined;
+      if (!advance || !tag || !run || !item || !advance.employeeId || (ledger.employeeId && ledger.employeeId !== advance.employeeId)) continue;
+      if (
+        money(ledger.amount) !== money(advance.totalAmount)
+        || money(ledger.amount) !== money(item.advancesDeduct)
+        || Number(tag[2]) !== money(ledger.amount)
+      ) continue;
+      directAdvanceContext.set(ledger.id, {
+        runId: run.id, runNumber: run.runNumber, payrollItemId: item.id,
+        advanceInvoiceId: advance.id, advanceInvoiceNumber: advance.invoiceNumber,
       });
     }
 
@@ -249,11 +276,18 @@ export class HrPayrollReconciliationService {
           confidence: 'high', reason: `Historical part-time payroll link (${row.employeeMatchSource})`,
         });
         for (const row of monthUnexplainedPayrollLedger) rows.push({
-          source: 'unexplained_payroll_ledger', id: row.id, date: ymd(row.transactionDate), employeeId: row.employeeId,
-          employeeName: row.employee?.name ?? null, runId: null, runNumber: null,
-          payrollItemId: null, advanceInvoiceId: null, advanceInvoiceNumber: null, deductionId: null,
-          ledgerEntryId: row.id, amount: money(row.amount), status: row.status, confidence: 'low',
-          reason: `Unlinked payroll-cost ledger entry (reference: ${row.referenceType || 'none'})`,
+          source: directAdvanceContext.has(row.id) ? 'direct_advance_invoice_duplicate' : 'unexplained_payroll_ledger',
+          id: row.id, date: ymd(row.transactionDate), employeeId: row.employeeId,
+          employeeName: row.employee?.name ?? null, runId: directAdvanceContext.get(row.id)?.runId ?? null,
+          runNumber: directAdvanceContext.get(row.id)?.runNumber ?? null,
+          payrollItemId: directAdvanceContext.get(row.id)?.payrollItemId ?? null,
+          advanceInvoiceId: directAdvanceContext.get(row.id)?.advanceInvoiceId ?? null,
+          advanceInvoiceNumber: directAdvanceContext.get(row.id)?.advanceInvoiceNumber ?? null, deductionId: null,
+          ledgerEntryId: row.id, amount: money(row.amount), status: row.status,
+          confidence: directAdvanceContext.has(row.id) ? 'high' : 'low',
+          reason: directAdvanceContext.has(row.id)
+            ? 'Direct advance invoice was also posted as payroll cost; server confirmation is required before cancellation'
+            : `Unlinked payroll-cost ledger entry (reference: ${row.referenceType || 'none'})`,
         });
       }
 

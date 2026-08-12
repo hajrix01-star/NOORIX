@@ -13,11 +13,13 @@ import { computeEos } from '@noorix/finance-core';
 import { CalculateEosDto } from './dto/calculate-eos.dto';
 import { HrPayrollReconciliationService } from './hr-payroll-reconciliation.service';
 import { HrPayrollLegacyCorrectionService } from './hr-payroll-legacy-correction.service';
+import { HrPayrollDirectAdvanceCorrectionService } from './hr-payroll-direct-advance-correction.service';
 import { HrHistoricalPartTimePayrollService } from './hr-historical-part-time-payroll.service';
 import type {
   PayrollLegacyPartialCorrectionConfirmDto,
   PayrollLegacyCorrectionConfirmDto,
   PayrollLegacyCorrectionPreviewDto,
+  PayrollDirectAdvanceCorrectionConfirmDto,
 } from './dto/payroll-legacy-correction.dto';
 import type { CreateHistoricalPartTimePayrollLinkDto } from './dto/historical-part-time-payroll.dto';
 
@@ -31,6 +33,7 @@ export class HRService {
     private readonly compensationSnapshot: HrCompensationSnapshotService,
     private readonly payrollReconciliation: HrPayrollReconciliationService,
     private readonly payrollLegacyCorrection: HrPayrollLegacyCorrectionService,
+    private readonly payrollDirectAdvanceCorrection: HrPayrollDirectAdvanceCorrectionService,
     private readonly historicalPartTimePayroll: HrHistoricalPartTimePayrollService,
     private readonly prisma: TenantPrismaService,
   ) {}
@@ -162,6 +165,14 @@ export class HRService {
     dto: PayrollLegacyPartialCorrectionConfirmDto,
   ) {
     return this.payrollLegacyCorrection.confirmProvenSubset(companyId, userId, dto);
+  }
+
+  previewPayrollDirectAdvanceCorrection(companyId: string, dto: PayrollLegacyCorrectionPreviewDto) {
+    return this.payrollDirectAdvanceCorrection.preview(companyId, dto);
+  }
+
+  confirmPayrollDirectAdvanceCorrection(companyId: string, userId: string, dto: PayrollDirectAdvanceCorrectionConfirmDto) {
+    return this.payrollDirectAdvanceCorrection.confirm(companyId, userId, dto);
   }
 
   issueIndividualSalaryPayment(...args: Parameters<HrPayrollService['issueIndividualSalaryPayment']>) {

@@ -2,9 +2,11 @@ import React from 'react';
 import { useApiQuery } from '../../../hooks/useApiQuery';
 import {
   confirmProvenPayrollLegacySubset,
+  confirmProvenDirectAdvancePayrollDuplicate,
   createHistoricalPartTimePayrollLink,
   getPayrollReconciliation,
   previewProvenPayrollLegacySubset,
+  previewProvenDirectAdvancePayrollDuplicate,
 } from '../../../services/api';
 import { hrKeys } from '../../../services/queryKeys';
 import { Button, FmtNum, cn } from '../../../ui';
@@ -81,7 +83,7 @@ function Metric({ label, value, tone }: { label: string; value: number; tone?: '
 }
 
 type ProvenSubsetPreview = {
-  correctionMode: 'proven_subset';
+  correctionMode: 'proven_subset' | 'direct_advance_invoice';
   selectedLegacyTotal: number;
   differenceAfter: number;
   previewHash: string;
@@ -100,6 +102,7 @@ function MonthReview({
   const hasDifference = Math.abs(item.difference) >= 0.005;
   const [pendingRun, setPendingRun] = React.useState<string | null>(null);
   const [pendingPartTimeLedgerId, setPendingPartTimeLedgerId] = React.useState<string | null>(null);
+  const [pendingDirectAdvanceLedgerId, setPendingDirectAdvanceLedgerId] = React.useState<string | null>(null);
   const [correctionError, setCorrectionError] = React.useState<string | null>(null);
   const [partTimeLinkSuccess, setPartTimeLinkSuccess] = React.useState<string | null>(null);
   const provenGroups = React.useMemo(() => {
@@ -168,6 +171,37 @@ function MonthReview({
       setCorrectionError(error instanceof Error ? error.message : 'تعذر حفظ الربط الآمن.');
     } finally {
       setPendingPartTimeLedgerId(null);
+    }
+  };
+
+  const applyDirectAdvanceCorrection = async (ledgerEntryId: string, runNumber: string) => {
+    setCorrectionError(null);
+    setPendingDirectAdvanceLedgerId(ledgerEntryId);
+    try {
+      const previewResult = await previewProvenDirectAdvancePayrollDuplicate(companyId, {
+        targetMonth: item.month, sourceRunNumber: runNumber, ledgerEntryIds: [ledgerEntryId],
+      });
+      const preview = previewResult.success ? previewResult.data as ProvenSubsetPreview : null;
+      if (!preview || preview.correctionMode !== 'direct_advance_invoice' || !preview.previewHash || preview.differenceAfter !== 0) {
+        throw new Error(previewResult.error || 'لم يثبت النظام أن القيد المربوط بالسلفة مكرر بالكامل.');
+      }
+      const accepted = window.confirm(
+        `سيُلغي النظام ${preview.selectedLegacyTotal.toLocaleString('en-US')} ر.س من تكلفة الرواتب المكررة فقط.\n\nلن تتغير السلفة أو خصمها في المسير أو الفاتورة أو الخزينة.\n\nهل تعتمد التصحيح؟`,
+      );
+      if (!accepted) return;
+      const result = await confirmProvenDirectAdvancePayrollDuplicate(companyId, {
+        targetMonth: item.month, sourceRunNumber: runNumber, ledgerEntryIds: preview.ledgerEntryIds,
+        previewHash: preview.previewHash,
+        idempotencyKey: `payroll-direct-advance-${companyId}-${item.month}-${ledgerEntryId}-${Date.now()}`,
+        reason: 'إلغاء تكلفة رواتب تاريخية مكررة لسلفة مربوطة صراحةً بالمسير.',
+        confirmation: 'CANCEL_PROVEN_DIRECT_ADVANCE_PAYROLL_DUPLICATE',
+      });
+      if (!result.success) throw new Error(result.error || 'تعذر حفظ التصحيح المحكوم.');
+      onCorrected();
+    } catch (error) {
+      setCorrectionError(error instanceof Error ? error.message : 'تعذر تنفيذ تصحيح السلفة المثبت.');
+    } finally {
+      setPendingDirectAdvanceLedgerId(null);
     }
   };
 
@@ -265,6 +299,17 @@ function MonthReview({
                       onClick={() => linkHistoricalPartTime(row.ledgerEntryId!)}
                     >
                       ربط كدوام جزئي
+                    </Button>
+                  ) : null}
+                  {row.source === 'direct_advance_invoice_duplicate' && row.ledgerEntryId && row.runNumber ? (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      loading={pendingDirectAdvanceLedgerId === row.ledgerEntryId}
+                      disabled={pendingDirectAdvanceLedgerId !== null}
+                      onClick={() => applyDirectAdvanceCorrection(row.ledgerEntryId!, row.runNumber!)}
+                    >
+                      تصحيح سلفة مكررة
                     </Button>
                   ) : null}
                   {row.source ? <span className="text-[10px] font-semibold text-noorix-muted">{sourceLabels[row.source] || row.source}</span> : null}
