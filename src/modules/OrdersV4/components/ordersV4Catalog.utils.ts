@@ -32,6 +32,14 @@ export function ordersV4ItemLastPrice(item: OrdersV4Item) {
   return prices.length ? Math.max(...prices) : null;
 }
 
+/** The configured price used only by internal-sale registrations. */
+export function ordersV4ItemSalePrice(item: OrdersV4Item) {
+  const prices = item.units
+    .map((row) => Number(row.salePrice))
+    .filter((value) => Number.isFinite(value) && value >= 0);
+  return prices.length ? Math.max(...prices) : null;
+}
+
 export function ordersV4ConversionEquations(
   conversion: OrdersV4ConversionVersion | undefined,
 ) {

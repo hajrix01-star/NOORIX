@@ -6,6 +6,7 @@ import { OrdersV4Select, OrdersV4Table as SimpleTable, v4Number } from '../Order
 import {
   filterOrdersV4CatalogItems,
   ordersV4ItemLastPrice,
+  ordersV4ItemSalePrice,
   ordersV4ItemUnitsSummary,
   type OrdersV4CatalogItemKind,
 } from './ordersV4Catalog.utils';
@@ -31,6 +32,10 @@ export function OrdersV4CatalogItems({
   const totalForKind = data.items.filter((item) => item.isActive && item.itemType === kind).length;
   const rows = useMemo(() => filterOrdersV4CatalogItems(data.items, { kind, search, categoryId, sectionId }), [categoryId, data.items, kind, search, sectionId]);
   const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
+  const priceLabel = kind === 'sale' ? 'سعر البيع' : 'آخر سعر';
+  const priceForRow = (row: OrdersV4Item) => kind === 'sale'
+    ? ordersV4ItemSalePrice(row)
+    : ordersV4ItemLastPrice(row);
 
   function toggleAll() {
     setSelected((current) => allSelected
@@ -53,8 +58,8 @@ export function OrdersV4CatalogItems({
     { key: 'category', label: 'الفئة', render: (_value, row) => row.category?.nameAr || '—' },
     { key: 'sections', label: 'الأقسام', minWidth: 140, render: (_value, row) => row.sections.map((link) => link.section.nameAr).join(' · ') || '—' },
     { key: 'units', label: 'المواصفات', minWidth: 220, render: (_value, row) => <span className="text-[12px] text-noorix-muted">{ordersV4ItemUnitsSummary(row)}</span> },
-    { key: 'price', label: 'آخر سعر', numeric: true, render: (_value, row) => { const price = ordersV4ItemLastPrice(row); return price == null ? '—' : v4Number(price, 2); } },
-  ], [allSelected, onEdit, rows, selected]);
+    { key: 'price', label: priceLabel, numeric: true, render: (_value, row) => { const price = priceForRow(row); return price == null ? '—' : v4Number(price, 2); } },
+  ], [allSelected, kind, onEdit, priceLabel, rows, selected]);
 
   return <div className="flex flex-col gap-4">
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -71,7 +76,7 @@ export function OrdersV4CatalogItems({
           'الفئة': row.category?.nameAr || '',
           'الأقسام': row.sections.map((link) => link.section.nameAr).join(' | '),
           'الوحدات': ordersV4ItemUnitsSummary(row),
-          'آخر سعر': ordersV4ItemLastPrice(row) ?? '',
+          [priceLabel]: priceForRow(row) ?? '',
         })), `orders-v4-${kind}.xlsx`, { title: kind === 'purchased' ? 'أصناف الطلبات' : 'أصناف التسجيل الداخلي' })}>تصدير Excel</Button>
         <Button size="sm" variant="ghost" onClick={() => exportToExcel([{
           'الاسم العربي': '', 'الاسم الإنجليزي': '', SKU: '', 'النوع': kind,

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { OrdersV4Item } from '../../../types/api';
-import { filterOrdersV4CatalogItems, ordersV4ItemLastPrice } from './ordersV4Catalog.utils';
+import { filterOrdersV4CatalogItems, ordersV4ItemLastPrice, ordersV4ItemSalePrice } from './ordersV4Catalog.utils';
 
 const item = {
   id: 'item-1', nameAr: 'قهوة عربية', nameEn: 'Arabic Coffee', sku: 'COF-1',
   itemType: 'purchased', categoryId: 'cat-1', isActive: true,
   sections: [{ section: { id: 'section-1', nameAr: 'بار' } }],
-  units: [{ isActive: true, lastPrice: '18.5' }, { isActive: true, lastPrice: '20' }],
+  units: [{ isActive: true, lastPrice: '18.5', salePrice: '21' }, { isActive: true, lastPrice: '20', salePrice: '24' }],
 } as OrdersV4Item;
 
 describe('Orders V4 catalog presentation', () => {
@@ -21,5 +21,6 @@ describe('Orders V4 catalog presentation', () => {
 
   it('selects the latest visible price summary safely', () => {
     expect(ordersV4ItemLastPrice(item)).toBe(20);
+    expect(ordersV4ItemSalePrice(item)).toBe(24);
   });
 });
