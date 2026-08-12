@@ -16,6 +16,10 @@ export type OrdersV4DailyReportRow = OrdersV4ReportGroup & {
   [sectionName: string]: string | number;
 };
 
+export type OrdersV4DailySalesRow = OrdersV4DailyReportRow & {
+  sections: OrdersV4ReportGroup[];
+};
+
 export type OrdersV4EmployeeReportRow = OrdersV4ReportGroup & { username: string };
 
 function number(value: unknown): number {
@@ -92,6 +96,36 @@ export function aggregateDocumentsByDay(
     groups.set(date, current);
   }
   return [...groups.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Daily sales total with a transparent breakdown by department. */
+export function aggregateDailySalesBySection(documents: OrdersV4Document[]): OrdersV4DailySalesRow[] {
+  const byDay = new Map<string, { row: OrdersV4DailySalesRow; sections: Map<string, OrdersV4ReportGroup> }>();
+  for (const document of documents) {
+    if (document.documentType === 'registration' && document.registrationEntryType === 'cancellation') continue;
+    const date = ymd(document.documentDate);
+    const sectionId = document.sectionId || 'unassigned';
+    const sectionName = document.section?.nameAr || 'غير محدد';
+    const current = byDay.get(date) ?? {
+      row: { id: date, date, label: date, documents: 0, quantity: 0, amount: 0, sections: [] },
+      sections: new Map<string, OrdersV4ReportGroup>(),
+    };
+    const amount = documentAmount(document, 'revenue');
+    const quantity = documentQuantity(document);
+    current.row.documents += 1;
+    current.row.quantity += quantity;
+    current.row.amount += amount;
+    const section = current.sections.get(sectionId) ?? { id: sectionId, label: sectionName, documents: 0, quantity: 0, amount: 0 };
+    section.documents += 1;
+    section.quantity += quantity;
+    section.amount += amount;
+    current.sections.set(sectionId, section);
+    byDay.set(date, current);
+  }
+  return [...byDay.values()].map(({ row, sections }) => ({
+    ...row,
+    sections: [...sections.values()].sort((a, b) => b.amount - a.amount),
+  })).sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export function aggregateItems(documents: OrdersV4Document[], source: OrdersV4AmountSource = 'revenue'): OrdersV4ItemsReportRow[] {

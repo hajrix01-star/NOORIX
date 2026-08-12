@@ -36,6 +36,7 @@ import {
   aggregateDocumentsByDay,
   aggregateDocumentsByEmployee,
   aggregateDocumentsBySection,
+  aggregateDailySalesBySection,
   aggregateItems,
   metricValue,
   topItemsBySection,
@@ -216,17 +217,15 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
   const reset = () => { setSearch(''); setSectionIds([]); setCategoryIds([]); setItemIds([]); setBaseUnitIds([]); setInputUnitIds([]); setPaymentMethods([]); setRanking('all'); setRankingCount(10); };
   const exportRows = displayedRows.map((row) => ({ القسم: row.sections, الصنف: row.nameAr, الفئة: row.categoryName, التغليف: row.inputUnits, 'الكمية المسجلة': row.recordedQuantities, 'وحدة المخزون': row.inventoryUnit, 'الكمية المعيارية': Number(row.baseQuantity), [isRegistration ? 'إيراد البيع' : 'قيمة الشراء']: Number(row.totalAmount), العمليات: row.documentCount, [isRegistration ? 'متوسط سعر البيع' : 'متوسط سعر الوحدة']: Number(row.averageUnitCost), 'آخر حركة': row.lastDate }));
   const columns: SimpleTableColumn<DetailedItemRow>[] = [
-    { key: 'sections', label: 'القسم', minWidth: 130 },
-    { key: 'nameAr', label: 'الصنف', minWidth: 170, render: (value, row) => <Button type="button" variant="ghost" className="font-bold text-blue-700 underline" onClick={(event) => { event.stopPropagation(); setHistory({ itemId: row.itemId, title: row.nameAr }); }}>{String(value)}</Button> },
-    { key: 'categoryName', label: 'الفئة', render: (value) => value ? <Button type="button" variant="ghost" className="text-blue-700 underline" onClick={(event) => { event.stopPropagation(); setHistory({ categoryName: String(value), title: String(value) }); }}>{String(value)}</Button> : '—' },
-    { key: 'inputUnits', label: 'التغليف / وحدة الإدخال', minWidth: 150 },
-    { key: 'recordedQuantities', label: 'الكمية المسجلة', minWidth: 150 },
-    { key: 'inventoryUnit', label: 'وحدة المخزون' },
-    { key: 'baseQuantity', label: 'الكمية المعيارية', numeric: true, render: (value) => v4ReportNumber(value) },
-    { key: 'totalAmount', label: isRegistration ? 'إيراد البيع' : 'قيمة الشراء', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
-    { key: 'documentCount', label: 'العمليات', numeric: true },
-    { key: 'averageUnitCost', label: isRegistration ? 'متوسط سعر البيع' : 'متوسط السعر', numeric: true, render: (value) => v4ReportNumber(value) },
-    { key: 'lastDate', label: 'آخر حركة', render: (value) => v4Date(String(value)) },
+    { key: 'sections', label: 'القسم', minWidth: 110 },
+    { key: 'nameAr', label: 'الصنف', minWidth: 190, render: (value, row) => <Button type="button" variant="ghost" className="font-bold text-blue-700 underline" onClick={(event) => { event.stopPropagation(); setHistory({ itemId: row.itemId, title: row.nameAr }); }}>{String(value)}</Button> },
+    { key: 'categoryName', label: 'الفئة', minWidth: 110, render: (value) => value ? <Button type="button" variant="ghost" className="text-blue-700 underline" onClick={(event) => { event.stopPropagation(); setHistory({ categoryName: String(value), title: String(value) }); }}>{String(value)}</Button> : '—' },
+    { key: 'recordedQuantities', label: 'الوحدة والكمية المسجلة', minWidth: 145 },
+    { key: 'baseQuantity', label: 'كمية المخزون', width: 110, numeric: true, render: (value, row) => `${v4ReportNumber(value)} ${row.inventoryUnit}` },
+    { key: 'totalAmount', label: isRegistration ? 'إيراد البيع' : 'قيمة الشراء', width: 125, numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
+    { key: 'documentCount', label: 'العمليات', width: 82, numeric: true },
+    { key: 'averageUnitCost', label: isRegistration ? 'متوسط البيع' : 'متوسط السعر', width: 110, numeric: true, render: (value) => v4ReportNumber(value) },
+    { key: 'lastDate', label: 'آخر حركة', width: 110, render: (value) => v4Date(String(value)) },
   ];
   return <div className="flex flex-col gap-4">
     <OrdersV4Panel title="فلاتر تقرير الأصناف" action={<ReportActions rows={exportRows} filename={`orders-v4-items-${startDate}-${endDate}.xlsx`} title="تقرير أصناف طلبات V4" />}>
@@ -263,8 +262,8 @@ export function OrdersV4ItemsReportTab({ companyId, startDate, endDate }: { comp
         columns={columns.map((column) => ({ ...column, align: 'center' }))}
         data={displayedRows}
         emptyMessage="لا توجد حركة مطابقة للفلاتر"
-        tableMinWidth={1380}
-        footerCells={displayedRows.length ? <><td colSpan={6} className="px-3 py-2 text-center text-[12px] font-bold text-noorix-muted">إجمالي الفلاتر الحالية</td><td className="px-3 py-2 text-center font-bold tabular-nums">{v4ReportNumber(totals.quantity)}</td><td className="px-3 py-2 text-center font-bold text-emerald-700 tabular-nums">{v4ReportNumber(totals.amount)} ر.س</td><td className="px-3 py-2 text-center font-bold tabular-nums">{totals.documents}</td><td colSpan={2} /></> : null}
+        tableMinWidth={1080}
+        footerCells={displayedRows.length ? <><td colSpan={4} className="px-3 py-2 text-center text-[12px] font-bold text-noorix-muted">إجمالي الفلاتر الحالية</td><td className="px-3 py-2 text-center font-bold tabular-nums">{v4ReportNumber(totals.quantity)}</td><td className="px-3 py-2 text-center font-bold text-emerald-700 tabular-nums">{v4ReportNumber(totals.amount)} ر.س</td><td className="px-3 py-2 text-center font-bold tabular-nums">{totals.documents}</td><td colSpan={2} /></> : null}
         renderCompactRow={(row) => <button type="button" className="w-full cursor-pointer text-start" onClick={() => setHistory({ itemId: row.itemId, title: row.nameAr })}><div className="flex items-center justify-between gap-2"><strong className="text-blue-700">{row.nameAr}</strong><strong className="text-emerald-700">{v4ReportNumber(row.totalAmount)} ر.س</strong></div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-noorix-muted"><span>{row.sections}</span><span>{row.recordedQuantities}</span><span>معياري: {v4ReportNumber(row.baseQuantity)} {row.inventoryUnit}</span><span>{row.documentCount} عملية</span></div></button>}
         renderMobileCard={(row) => <button type="button" className="flex w-full flex-col gap-1.5 text-start" onClick={() => setHistory({ itemId: row.itemId, title: row.nameAr })}><div className="flex w-full items-center justify-between gap-2"><strong className="text-blue-700">{row.nameAr}</strong><strong className="text-emerald-700">{v4ReportNumber(row.totalAmount)} ر.س</strong></div><div className="text-[11px] text-noorix-muted">{row.categoryName || '—'} · {row.sections}</div><div className="text-[12px]">المسجلة: {row.recordedQuantities}</div><div className="text-[12px]">المعيارية: {v4ReportNumber(row.baseQuantity)} {row.inventoryUnit}</div></button>}
       /></OrdersV4Panel>
@@ -321,31 +320,28 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
   }, [companyId]);
   const users = useMemo(() => [...new Map(documents.filter((row) => row.createdByUser).map((row) => [row.createdByUser!.id, row.createdByUser!])).values()].sort((a, b) => v4UserLabel(a).localeCompare(v4UserLabel(b), 'ar')), [documents]);
   const filteredDocuments = useMemo(() => documents.filter((document) => !createdByUserId || document.createdByUser?.id === createdByUserId), [createdByUserId, documents]);
-  const byItem = useMemo(() => aggregateItems(filteredDocuments, 'cost').map((item) => ({
+  const byItem = useMemo(() => aggregateItems(filteredDocuments).map((item) => ({
     ...item,
     sections: [...new Set(filteredDocuments.filter((document) => document.lines.some((line) => line.itemId === item.itemId)).map((document) => document.section?.nameAr || 'غير محدد'))].join('، '),
   })), [filteredDocuments]);
-  const bySection = useMemo(() => aggregateDocumentsBySection(filteredDocuments, 'cost'), [filteredDocuments]);
-  const byEmployee = useMemo(() => aggregateDocumentsByEmployee(filteredDocuments, 'cost'), [filteredDocuments]);
-  const byDay = useMemo(() => aggregateDocumentsByDay(filteredDocuments, 'amount', 'cost'), [filteredDocuments]);
+  const bySection = useMemo(() => aggregateDocumentsBySection(filteredDocuments), [filteredDocuments]);
+  const byEmployee = useMemo(() => aggregateDocumentsByEmployee(filteredDocuments), [filteredDocuments]);
+  const byDay = useMemo(() => aggregateDailySalesBySection(filteredDocuments), [filteredDocuments]);
   const missingDays = (report?.registrationCoverage.missingDays ?? []).filter((row) => !sectionIds.length || sectionIds.includes(row.sectionId));
   const totalQuantity = filteredDocuments.reduce((sum, row) => sum + row.lines.reduce((lineSum, line) => lineSum + Number(line.baseQuantity || 0), 0), 0);
-  const totalAmount = filteredDocuments.reduce((sum, row) => sum + Number(row.operationalCost || 0), 0);
+  const totalAmount = filteredDocuments.reduce((sum, row) => sum + Number(row.totalAmount || 0), 0);
   const affectedSections = new Set(missingDays.map((row) => row.sectionId)).size;
-  const exportRows = filteredDocuments.map((row) => ({ المرجع: row.documentNumber, التاريخ: row.documentDate, النوع: (row.registrationEntryType ?? 'issue') === 'cancellation' ? 'إلغاء' : 'تسجيل', القسم: row.section?.nameAr || '', الموظف: v4UserLabel(row.createdByUser), الأصناف: row.lines.length, الكمية: row.lines.reduce((sum, line) => sum + Number(line.baseQuantity || 0), 0), التكلفة: Number(row.operationalCost || 0), الحالة: statusLabel(row.status) }));
+  const exportRows = filteredDocuments.map((row) => ({ المرجع: row.documentNumber, التاريخ: row.documentDate, النوع: (row.registrationEntryType ?? 'issue') === 'cancellation' ? 'إلغاء' : 'تسجيل', القسم: row.section?.nameAr || '', الموظف: v4UserLabel(row.createdByUser), الأصناف: row.lines.length, الكمية: row.lines.reduce((sum, line) => sum + Number(line.baseQuantity || 0), 0), 'إيراد البيع': Number(row.totalAmount || 0), الحالة: statusLabel(row.status) }));
   const itemColumns: SimpleTableColumn<(typeof byItem)[number]>[] = [
     { key: 'nameAr', label: 'الصنف', minWidth: 170 }, { key: 'categoryName', label: 'الفئة' }, { key: 'sections', label: 'الأقسام', minWidth: 140 }, { key: 'documentCount', label: 'التسجيلات', numeric: true },
     { key: 'baseQuantity', label: 'الكمية المعيارية', numeric: true, render: (value, row) => `${v4ReportNumber(value)} ${row.inventoryUnit}` },
-    { key: 'totalAmount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
+    { key: 'totalAmount', label: 'إيراد البيع', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
   ];
   const sectionColumns: SimpleTableColumn<(typeof bySection)[number]>[] = [
-    { key: 'label', label: 'القسم' }, { key: 'documents', label: 'التسجيلات', numeric: true }, { key: 'quantity', label: 'الكمية', numeric: true, render: v4ReportNumber }, { key: 'amount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` }, { key: 'average', label: 'متوسط العملية', numeric: true, render: (_value, row) => `${v4ReportNumber(row.documents ? row.amount / row.documents : 0)} ر.س` },
+    { key: 'label', label: 'القسم' }, { key: 'documents', label: 'التسجيلات', numeric: true }, { key: 'quantity', label: 'الكمية', numeric: true, render: v4ReportNumber }, { key: 'amount', label: 'إيراد البيع', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` }, { key: 'average', label: 'متوسط العملية', numeric: true, render: (_value, row) => `${v4ReportNumber(row.documents ? row.amount / row.documents : 0)} ر.س` },
   ];
   const employeeColumns: SimpleTableColumn<(typeof byEmployee)[number]>[] = [
-    { key: 'label', label: 'اسم الموظف' }, { key: 'username', label: 'اسم المستخدم', render: (value) => String(value || '—').split('@')[0] }, { key: 'documents', label: 'التسجيلات', numeric: true }, { key: 'quantity', label: 'الكمية', numeric: true, render: v4ReportNumber }, { key: 'amount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
-  ];
-  const dailyColumns: SimpleTableColumn<(typeof byDay)[number]>[] = [
-    { key: 'date', label: 'التاريخ', render: (value) => v4Date(String(value)) }, { key: 'documents', label: 'التسجيلات', numeric: true }, { key: 'quantity', label: 'الكمية', numeric: true, render: v4ReportNumber }, { key: 'amount', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
+    { key: 'label', label: 'اسم الموظف' }, { key: 'username', label: 'اسم المستخدم', render: (value) => String(value || '—').split('@')[0] }, { key: 'documents', label: 'التسجيلات', numeric: true }, { key: 'quantity', label: 'الكمية', numeric: true, render: v4ReportNumber }, { key: 'amount', label: 'إيراد البيع', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` },
   ];
   const missingColumns: SimpleTableColumn<(typeof missingDays)[number]>[] = [
     { key: 'date', label: 'التاريخ', render: (value) => v4Date(String(value)) }, { key: 'sectionName', label: 'القسم' }, { key: 'status', label: 'الحالة', render: () => <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-700">لم يسجل</span> },
@@ -354,7 +350,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
     { key: 'documentNumber', label: 'مرجع العملية', minWidth: 170 }, { key: 'documentDate', label: 'التاريخ', render: (value) => v4Date(String(value)) },
     { key: 'registrationEntryType', label: 'النوع', render: (_value, row) => (row.registrationEntryType ?? 'issue') === 'cancellation' ? <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">إلغاء</span> : 'تسجيل داخلي' },
     { key: 'section', label: 'القسم', render: (_value, row) => row.section?.nameAr || '—' }, { key: 'createdByUser', label: 'الموظف (المستخدم)', minWidth: 180, render: (_value, row) => v4UserLabel(row.createdByUser) },
-    { key: 'lines', label: 'الأصناف', numeric: true, render: (_value, row) => row.lines.length }, { key: 'quantity', label: 'الكمية', numeric: true, render: (_value, row) => v4ReportNumber(row.lines.reduce((sum, line) => sum + Number(line.baseQuantity || 0), 0)) }, { key: 'operationalCost', label: 'التكلفة', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` }, { key: 'average', label: 'متوسط تكلفة الصنف', numeric: true, render: (_value, row) => `${v4ReportNumber(row.lines.length ? Number(row.operationalCost || 0) / row.lines.length : 0)} ر.س` }, { key: 'status', label: 'الحالة', render: (value) => statusLabel(String(value)) },
+    { key: 'lines', label: 'الأصناف', numeric: true, render: (_value, row) => row.lines.length }, { key: 'quantity', label: 'الكمية', numeric: true, render: (_value, row) => v4ReportNumber(row.lines.reduce((sum, line) => sum + Number(line.baseQuantity || 0), 0)) }, { key: 'totalAmount', label: 'إيراد البيع', numeric: true, render: (value) => `${v4ReportNumber(value)} ر.س` }, { key: 'average', label: 'متوسط البيع للصنف', numeric: true, render: (_value, row) => `${v4ReportNumber(row.lines.length ? Number(row.totalAmount || 0) / row.lines.length : 0)} ر.س` }, { key: 'status', label: 'الحالة', render: (value) => statusLabel(String(value)) },
     { key: 'cancellationReasons', label: 'أسباب الإلغاء', minWidth: 220, render: (_value, row) => { const reasons = [...new Set(row.lines.flatMap((line) => line.cancellationReasons ?? []))]; return reasons.length ? reasons.map((reason) => ordersV4CancellationReasonLabel(reason, t)).join(lang === 'en' ? ', ' : '، ') : '—'; } },
   ];
   return <div className="flex flex-col gap-4">
@@ -378,15 +374,15 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
       </div>
       {report?.costCoverage.zeroCostLines ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-800">تنبيه جودة التكلفة: {report.costCoverage.zeroCostLines} من {report.costCoverage.lines} سطر تكلفتها التشغيلية صفر. الكميات والحركات صحيحة، لكن تقارير التكلفة تحتاج استكمال أسعار المكونات أو الرسبي.</div> : null}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <OrdersV4Kpi label="العمليات" value={filteredDocuments.length} /><OrdersV4Kpi label="إجمالي الكميات" value={v4ReportNumber(totalQuantity)} tone="green" /><OrdersV4Kpi label="إجمالي التكلفة" value={`${v4ReportNumber(totalAmount)} ر.س`} tone="green" /><OrdersV4Kpi label="متوسط العملية" value={`${v4ReportNumber(filteredDocuments.length ? totalAmount / filteredDocuments.length : 0)} ر.س`} /><OrdersV4Kpi label="الأصناف" value={byItem.length} /><OrdersV4Kpi label="الأقسام" value={bySection.length} tone="amber" />
+        <OrdersV4Kpi label="عمليات التسجيل" value={filteredDocuments.length} /><OrdersV4Kpi label="إجمالي الكميات" value={v4ReportNumber(totalQuantity)} tone="green" /><OrdersV4Kpi label="إجمالي البيع" value={`${v4ReportNumber(totalAmount)} ر.س`} tone="green" /><OrdersV4Kpi label="متوسط العملية" value={`${v4ReportNumber(filteredDocuments.length ? totalAmount / filteredDocuments.length : 0)} ر.س`} /><OrdersV4Kpi label="الأصناف" value={byItem.length} /><OrdersV4Kpi label="الأقسام" value={bySection.length} tone="amber" />
       </div>
       <OrdersV4Panel
-        title={`الاتجاه اليومي للتسجيل حسب القسم — ${metricLabel(chartMetric)}`}
+        title={`اتجاه المبيعات اليومية حسب القسم — ${metricLabel(chartMetric, true)}`}
         action={<div className="flex max-w-full gap-1 overflow-x-auto print:hidden">
           {([
             { id: 'quantity', label: 'الكمية' },
             { id: 'documents', label: 'العمليات' },
-            { id: 'amount', label: 'التكلفة' },
+            { id: 'amount', label: 'إيراد البيع' },
           ] as Array<{ id: OrdersV4ReportMetric; label: string }>).map((option) => <Button
             key={option.id}
             type="button"
@@ -396,7 +392,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
             onClick={() => setChartMetric(option.id)}
           >{option.label}</Button>)}
         </div>}
-      ><TrendChart documents={filteredDocuments} metric={chartMetric} amountSource="cost" amountLabel="تكلفة التشغيل" /></OrdersV4Panel>
+      ><TrendChart documents={filteredDocuments} metric={chartMetric} amountLabel="إيراد البيع" /></OrdersV4Panel>
       <ReportViewTabs value={activeView} onChange={setActiveView} items={[{ id: 'operations', label: 'بالعملية' }, { id: 'missing', label: `أيام بلا تسجيل (${missingDays.length})` }, { id: 'items', label: 'بالصنف' }, { id: 'sections', label: 'بالقسم' }, { id: 'employees', label: 'بالموظف' }, { id: 'daily', label: 'يومياً' }]} />
       <OrdersV4Panel title={activeView === 'operations' ? 'سجل العمليات' : activeView === 'missing' ? 'أيام بلا تسجيل' : activeView === 'items' ? 'التسجيل حسب الصنف' : activeView === 'sections' ? 'التسجيل حسب القسم' : activeView === 'employees' ? 'التسجيل حسب الموظف' : 'التسجيل اليومي'}>
         {activeView === 'operations' && <SmartTable
@@ -405,14 +401,27 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
           emptyMessage="لا توجد تسجيلات مطابقة"
           tableMinWidth={1380}
           footerCells={filteredDocuments.length ? <><td colSpan={6} className="px-3 py-2 text-center text-[12px] font-bold text-noorix-muted">إجمالي الفلاتر الحالية</td><td className="px-3 py-2 text-center font-bold tabular-nums">{v4ReportNumber(totalQuantity)}</td><td className="px-3 py-2 text-center font-bold text-emerald-700 tabular-nums">{v4ReportNumber(totalAmount)} ر.س</td><td className="px-3 py-2 text-center font-bold tabular-nums">{v4ReportNumber(filteredDocuments.length ? totalAmount / filteredDocuments.length : 0)} ر.س</td><td colSpan={2} /></> : null}
-          renderCompactRow={(row) => <div><div className="flex items-center justify-between gap-2"><strong>{row.documentNumber}</strong><strong className="text-emerald-700">{v4ReportNumber(row.operationalCost)} ر.س</strong></div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-noorix-muted"><span>{v4Date(row.documentDate)}</span><span>{row.section?.nameAr || 'غير محدد'}</span><span>{v4UserLabel(row.createdByUser)}</span><span>{row.lines.length} صنف</span></div></div>}
-          renderMobileCard={(row) => <div className="flex flex-col gap-1.5"><div className="flex items-center justify-between gap-2"><strong>{row.documentNumber}</strong><strong className="text-emerald-700">{v4ReportNumber(row.operationalCost)} ر.س</strong></div><div className="text-[11px] text-noorix-muted">{v4Date(row.documentDate)} · {row.section?.nameAr || 'غير محدد'}</div><div className="text-[12px]">{v4UserLabel(row.createdByUser)} · {row.lines.length} صنف · {v4ReportNumber(row.lines.reduce((sum, line) => sum + Number(line.baseQuantity || 0), 0))}</div></div>}
+          renderCompactRow={(row) => <div><div className="flex items-center justify-between gap-2"><strong>{row.documentNumber}</strong><strong className="text-emerald-700">{v4ReportNumber(row.totalAmount)} ر.س</strong></div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-noorix-muted"><span>{v4Date(row.documentDate)}</span><span>{row.section?.nameAr || 'غير محدد'}</span><span>{v4UserLabel(row.createdByUser)}</span><span>{row.lines.length} صنف</span></div></div>}
+          renderMobileCard={(row) => <div className="flex flex-col gap-1.5"><div className="flex items-center justify-between gap-2"><strong>{row.documentNumber}</strong><strong className="text-emerald-700">{v4ReportNumber(row.totalAmount)} ر.س</strong></div><div className="text-[11px] text-noorix-muted">{v4Date(row.documentDate)} · {row.section?.nameAr || 'غير محدد'}</div><div className="text-[12px]">{v4UserLabel(row.createdByUser)} · {row.lines.length} صنف · {v4ReportNumber(row.lines.reduce((sum, line) => sum + Number(line.baseQuantity || 0), 0))}</div></div>}
         />}
         {activeView === 'missing' && <SimpleTable columns={missingColumns} data={missingDays} emptyMessage="لا توجد أيام ناقصة خلال الفترة" />}
         {activeView === 'items' && <SimpleTable columns={itemColumns} data={byItem} emptyMessage="لا توجد بيانات مطابقة" tableMinWidth={700} />}
         {activeView === 'sections' && <SimpleTable columns={sectionColumns} data={bySection} emptyMessage="لا توجد بيانات مطابقة" />}
         {activeView === 'employees' && <SimpleTable columns={employeeColumns} data={byEmployee} emptyMessage="لا توجد بيانات مطابقة" tableMinWidth={700} />}
-        {activeView === 'daily' && <SimpleTable columns={dailyColumns} data={byDay} emptyMessage="لا توجد بيانات مطابقة" />}
+        {activeView === 'daily' && (byDay.length ? <div className="grid gap-3 lg:grid-cols-2">
+          {byDay.map((day) => <section key={day.date} className="overflow-hidden rounded-xl border border-noorix-border bg-white">
+            <header className="flex items-center justify-between gap-3 border-b border-noorix-border bg-noorix-bg-muted/40 px-4 py-3">
+              <div><div className="font-extrabold">{v4Date(day.date)}</div><div className="mt-1 text-[11px] text-noorix-muted">{day.documents} عملية · {v4ReportNumber(day.quantity)} كمية</div></div>
+              <div className="text-left"><div className="text-[11px] text-noorix-muted">إجمالي البيع</div><div className="text-[19px] font-extrabold tabular-nums text-emerald-700">{v4ReportNumber(day.amount)} ر.س</div></div>
+            </header>
+            <div className="divide-y divide-noorix-border">
+              {day.sections.map((section) => <div key={section.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <div><div className="font-bold">{section.label}</div><div className="mt-0.5 text-[11px] text-noorix-muted">{section.documents} عملية</div></div>
+                <strong className="tabular-nums text-emerald-700">{v4ReportNumber(section.amount)} ر.س</strong>
+              </div>)}
+            </div>
+          </section>)}
+        </div> : <div className="py-8 text-center text-[13px] text-noorix-muted">لا توجد مبيعات مطابقة</div>)}
       </OrdersV4Panel>
     </>}
   </div>;

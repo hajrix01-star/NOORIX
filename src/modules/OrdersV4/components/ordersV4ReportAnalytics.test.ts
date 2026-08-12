@@ -3,6 +3,7 @@ import type { OrdersV4Document } from '../../../types/api';
 import {
   aggregateDocumentsByDay,
   aggregateDocumentsBySection,
+  aggregateDailySalesBySection,
   aggregateItems,
   topItemsBySection,
 } from './ordersV4ReportAnalytics';
@@ -86,5 +87,14 @@ describe('orders V4 report analytics', () => {
     expect(aggregateDocumentsBySection([registration], 'cost')[0].amount).toBe(0);
     expect(aggregateItems([registration])[0].totalAmount).toBe('2000');
     expect(aggregateItems([registration], 'cost')[0].totalAmount).toBe('0');
+  });
+
+  it('shows each day total and its department sales', () => {
+    const rows = aggregateDailySalesBySection(documents);
+    expect(rows[0]).toMatchObject({ date: '2026-08-02', amount: 25 });
+    expect(rows[0].sections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'bar', amount: 15 }),
+      expect.objectContaining({ id: 'kitchen', amount: 10 }),
+    ]));
   });
 });
