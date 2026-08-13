@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4DocumentPreview, OrdersV4Item, OrdersV4ReceivePayload, OrdersV4Summary } from '../../../types/api';
+import type { OrdersV4Bootstrap, OrdersV4Document, OrdersV4DocumentPayload, OrdersV4DocumentPreview, OrdersV4Item, OrdersV4ReceivePayload, OrdersV4RegistrationCorrectionPayload, OrdersV4Summary } from '../../../types/api';
 import { AdaptiveSheet, Button, DialogActions, Input, Modal, type SimpleTableColumn, TransactionDatePicker, usePrintPreview } from '../../../ui';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintTableHtml } from '../../../utils/printTableHtml';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { OrdersV4Field, OrdersV4Kpi, OrdersV4Panel, OrdersV4QueryState, OrdersV4Select, OrdersV4Table as SimpleTable, v4Date, v4Number } from '../OrdersV4Shared';
-import { useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, usePreviewOrdersV4Document, useReceiveOrdersV4Document, useReopenOrdersV4Document, useReverseOrdersV4Document, useUndoReverseOrdersV4Document } from '../useOrdersV4';
+import { useCorrectOrdersV4Registration, useCreateOrdersV4Document, useOrdersV4Documents, useOrdersV4Summary, usePreviewOrdersV4Document, useReceiveOrdersV4Document, useReopenOrdersV4Document, useReverseOrdersV4Document, useUndoReverseOrdersV4Document } from '../useOrdersV4';
 import { OrdersV4DocumentItemPicker } from './OrdersV4DocumentItemPicker';
 import { OrdersV4DocumentLinesTable, type OrdersV4DocumentDraftLine } from './OrdersV4DocumentLinesTable';
 import { OrdersV4DocumentLineModal, type OrdersV4DocumentLineDraft } from './OrdersV4DocumentLineModal';
@@ -144,6 +144,7 @@ export function OrdersV4DocumentsTab({
   canReverse = false,
   canUndoReverse = false,
   canReopen = false,
+  canCorrectRegistration = false,
   ownerReopenForStaff = false,
   reopenAsCashier = false,
   canReceive = false,
@@ -163,6 +164,7 @@ export function OrdersV4DocumentsTab({
   canReverse?: boolean;
   canUndoReverse?: boolean;
   canReopen?: boolean;
+  canCorrectRegistration?: boolean;
   ownerReopenForStaff?: boolean;
   reopenAsCashier?: boolean;
   canReceive?: boolean;
@@ -178,6 +180,7 @@ export function OrdersV4DocumentsTab({
   const [cancellationOpen, setCancellationOpen] = useState(false);
   const [viewing, setViewing] = useState<OrdersV4Document | null>(null);
   const [receiving, setReceiving] = useState<OrdersV4Document | null>(null);
+  const [correctingRegistration, setCorrectingRegistration] = useState<OrdersV4Document | null>(null);
   const [reverseTarget, setReverseTarget] = useState<OrdersV4Document | null>(null);
   const [undoReverseTarget, setUndoReverseTarget] = useState<OrdersV4Document | null>(null);
   const [reopenTarget, setReopenTarget] = useState<OrdersV4Document | null>(null);
@@ -341,9 +344,11 @@ export function OrdersV4DocumentsTab({
       {canCreate && <OrdersV4DocumentModal open={createOpen} onClose={() => setCreateOpen(false)} companyId={companyId} documentType={documentType} bootstrap={bootstrap} allowFlexibleDocumentDates={allowFlexibleDocumentDates} />}
       {canCreate && !isPurchase && <OrdersV4DocumentModal open={cancellationOpen} onClose={() => setCancellationOpen(false)} companyId={companyId} documentType="registration" registrationEntryType="cancellation" bootstrap={bootstrap} allowFlexibleDocumentDates={allowFlexibleDocumentDates} />}
       {canReceive && receiving && <OrdersV4DocumentModal open={!!receiving} onClose={() => setReceiving(null)} companyId={companyId} documentType="purchase" bootstrap={bootstrap} initialDocument={receiving} allowFlexibleDocumentDates={allowFlexibleDocumentDates} />}
+      {canCorrectRegistration && correctingRegistration && <OrdersV4DocumentModal open={!!correctingRegistration} onClose={() => setCorrectingRegistration(null)} companyId={companyId} documentType="registration" bootstrap={bootstrap} initialDocument={correctingRegistration} allowFlexibleDocumentDates />}
       <OrdersV4DocumentDetails
         document={viewing}
         canReopen={canReopen}
+        canCorrectRegistration={canCorrectRegistration}
         canReverse={canReverse}
         canUndoReverse={canUndoReverse}
         canDelegateReopen={ownerReopenForStaff}
@@ -354,6 +359,10 @@ export function OrdersV4DocumentsTab({
         onReopen={(document) => {
           setViewing(null);
           setReopenTarget(document);
+        }}
+        onCorrectRegistration={(document) => {
+          setViewing(null);
+          setCorrectingRegistration(document);
         }}
         onDelegate={(document) => {
           setViewing(null);
@@ -424,9 +433,11 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
   const { t, lang } = useTranslation();
   const createMutation = useCreateOrdersV4Document(companyId);
   const receiveMutation = useReceiveOrdersV4Document(companyId);
+  const correctRegistrationMutation = useCorrectOrdersV4Registration(companyId);
   const previewMutation = usePreviewOrdersV4Document(companyId);
   const previewDocument = previewMutation.mutateAsync;
-  const mutation = initialDocument ? receiveMutation : createMutation;
+  const isRegistrationCorrection = !!initialDocument && documentType === 'registration';
+  const mutation = isRegistrationCorrection ? correctRegistrationMutation : initialDocument ? receiveMutation : createMutation;
   const [date, setDate] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'custody' | 'cash' | 'transfer'>('custody');
   const [sectionId, setSectionId] = useState('');
@@ -590,7 +601,12 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       idempotencyKey: crypto.randomUUID(),
       lines: lines.map((line) => ({ itemId: line.itemId, quantity: line.quantity, unitId: line.unitId, unitPrice: line.unitPrice || '0', priceUnitId: line.priceUnitId || line.unitId, cancellationReasons: isCancellation ? line.cancellationReasons ?? [] : undefined, cancellationNote: isCancellation ? line.cancellationNote || null : undefined })),
     };
-    if (initialDocument) {
+    if (isRegistrationCorrection && initialDocument) {
+      await correctRegistrationMutation.mutateAsync({
+        id: initialDocument.id,
+        body: { ...payload, revision: initialDocument.revision } as OrdersV4RegistrationCorrectionPayload,
+      });
+    } else if (initialDocument) {
       const { documentType: _documentType, ...receiveBody } = payload;
       await receiveMutation.mutateAsync({
         id: initialDocument.id,
@@ -612,7 +628,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       onClose={onClose}
       size="2xl"
       side="start"
-      title={initialDocument ? `${initialDocument.editMode === 'correction' ? '\u062a\u0639\u062f\u064a\u0644' : '\u0627\u0633\u062a\u0644\u0627\u0645 \u0648\u062a\u0639\u062f\u064a\u0644'} ${initialDocument.documentNumber}` : isPurchase ? '\u0637\u0644\u0628\u0020\u0634\u0631\u0627\u0621\u0020\u062c\u062f\u064a\u062f\u0020\u2014\u0020\u0637\u0644\u0628\u0627\u062a\u0020V4' : isCancellation ? t('ordersV4CancellationTitle') : t('ordersV4NewInternalRegistrationTitle')}
+      title={isRegistrationCorrection ? `تصحيح التسجيل ${initialDocument?.documentNumber}` : initialDocument ? `${initialDocument.editMode === 'correction' ? '\u062a\u0639\u062f\u064a\u0644' : '\u0627\u0633\u062a\u0644\u0627\u0645 \u0648\u062a\u0639\u062f\u064a\u0644'} ${initialDocument.documentNumber}` : isPurchase ? '\u0637\u0644\u0628\u0020\u0634\u0631\u0627\u0621\u0020\u062c\u062f\u064a\u062f\u0020\u2014\u0020\u0637\u0644\u0628\u0627\u062a\u0020V4' : isCancellation ? t('ordersV4CancellationTitle') : t('ordersV4NewInternalRegistrationTitle')}
       footer={<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {isPurchase && <div data-testid="orders-v4-live-purchase-total" aria-live="polite" className="flex min-h-11 items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 sm:min-w-64">
           <div>
@@ -631,6 +647,7 @@ function OrdersV4DocumentModal({ open, onClose, companyId, documentType, registr
       </div>}
     >
       <div className="flex flex-col gap-4">
+        {isRegistrationCorrection && <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[12px] font-semibold leading-6 text-amber-900">سيُعكس أثر التسجيل السابق ويُنشأ تسجيل بديل تلقائيًا عند الحفظ، مع بقاء السجل السابق للمراجعة.</div>}
         {isCancellation && <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-[12px] font-semibold leading-6 text-red-900">{t('ordersV4CancellationIndependentHint')}</div>}
         <div className={`grid gap-3 sm:grid-cols-2 ${isPurchase ? 'lg:grid-cols-3' : ''}`}>
           <OrdersV4Field label={t('ordersV4Date')}><TransactionDatePicker required value={date} min={dateBounds.min} max={dateBounds.max} initialViewDate={todayYmd} onValueChange={setDate} /></OrdersV4Field>
@@ -799,9 +816,10 @@ function OrdersV4ReopenConfirmModal({
   </Modal>;
 }
 
-function OrdersV4DocumentDetails({ document, canReopen, canDelegateReopen, canReverse, canUndoReverse, onClose, onPrint, onExport, onWhatsApp, onReopen, onDelegate, onReverse, onUndoReverse }: {
+function OrdersV4DocumentDetails({ document, canReopen, canCorrectRegistration, canDelegateReopen, canReverse, canUndoReverse, onClose, onPrint, onExport, onWhatsApp, onReopen, onCorrectRegistration, onDelegate, onReverse, onUndoReverse }: {
   document: OrdersV4Document | null;
   canReopen: boolean;
+  canCorrectRegistration: boolean;
   canDelegateReopen: boolean;
   canReverse: boolean;
   canUndoReverse: boolean;
@@ -810,6 +828,7 @@ function OrdersV4DocumentDetails({ document, canReopen, canDelegateReopen, canRe
   onExport: (document: OrdersV4Document) => void;
   onWhatsApp: (document: OrdersV4Document) => void;
   onReopen: (document: OrdersV4Document) => void;
+  onCorrectRegistration: (document: OrdersV4Document) => void;
   onDelegate: (document: OrdersV4Document) => void;
   onReverse: (document: OrdersV4Document) => void;
   onUndoReverse: (document: OrdersV4Document) => void;
@@ -846,6 +865,9 @@ function OrdersV4DocumentDetails({ document, canReopen, canDelegateReopen, canRe
       { key: 'whatsapp', label: t('ordersV4Whatsapp'), role: 'save', onClick: () => onWhatsApp(document) },
       ...(canReopen && document.documentType === 'purchase' && document.canReopen
         ? [{ key: 'reopen', label: 'تعديل الطلب', role: 'edit' as const, onClick: () => onReopen(document) }]
+        : []),
+      ...(canCorrectRegistration && document.documentType === 'registration' && document.registrationEntryType === 'issue' && document.status === 'received'
+        ? [{ key: 'correct-registration', label: 'تصحيح التسجيل', role: 'edit' as const, onClick: () => onCorrectRegistration(document) }]
         : []),
       ...(canDelegateReopen && document.documentType === 'purchase' && document.status === 'received'
         ? [{ key: 'delegate', label: 'إعادة فتح للموظف', role: 'edit' as const, onClick: () => onDelegate(document) }]

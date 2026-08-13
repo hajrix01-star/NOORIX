@@ -9,6 +9,7 @@ import type {
   OrdersV4DocumentPreview,
   OrdersV4DocumentPreviewPayload,
   OrdersV4ReceivePayload,
+  OrdersV4RegistrationCorrectionPayload,
   OrdersV4InventoryBalance,
   OrdersV4Item,
   OrdersV4ItemsReportRow,
@@ -61,6 +62,10 @@ export function previewOrdersV4Document(companyId: string, body: OrdersV4Documen
 
 export function receiveOrdersV4Document(companyId: string, id: string, body: OrdersV4ReceivePayload): Promise<ApiParsedResult<OrdersV4Document>> {
   return apiPatch(`${BASE}/documents/${encodeURIComponent(id)}/receive?companyId=${encodeURIComponent(companyId)}`, body);
+}
+
+export function correctOrdersV4Registration(companyId: string, id: string, body: OrdersV4RegistrationCorrectionPayload): Promise<ApiParsedResult<OrdersV4Document>> {
+  return apiPost(`${BASE}/documents/${encodeURIComponent(id)}/correct-registration?companyId=${encodeURIComponent(companyId)}`, body);
 }
 
 export function reverseOrdersV4Document(companyId: string, id: string, idempotencyKey: string): Promise<ApiParsedResult<OrdersV4Document>> {
