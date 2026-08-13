@@ -9,6 +9,7 @@ const ordersV4DocumentsMock = vi.hoisted(() => ({ documents: [] as unknown[] }))
 const previewDocumentMock = vi.hoisted(() => vi.fn());
 const reopenDocumentMock = vi.hoisted(() => vi.fn());
 const receiveDocumentMock = vi.hoisted(() => vi.fn());
+const correctRegistrationMock = vi.hoisted(() => vi.fn());
 const reverseDocumentMock = vi.hoisted(() => vi.fn());
 const undoReverseDocumentMock = vi.hoisted(() => vi.fn());
 
@@ -26,6 +27,7 @@ vi.mock('../useOrdersV4', () => ({
   useCreateOrdersV4Document: () => ({ isPending: false, mutateAsync: vi.fn() }),
   usePreviewOrdersV4Document: () => ({ isPending: false, mutateAsync: previewDocumentMock }),
   useReceiveOrdersV4Document: () => ({ isPending: false, mutateAsync: receiveDocumentMock }),
+  useCorrectOrdersV4Registration: () => ({ isPending: false, mutateAsync: correctRegistrationMock }),
   useReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: reverseDocumentMock }),
   useUndoReverseOrdersV4Document: () => ({ isPending: false, mutateAsync: undoReverseDocumentMock }),
   useReopenOrdersV4Document: () => ({ isPending: false, mutateAsync: reopenDocumentMock }),
@@ -49,6 +51,7 @@ beforeEach(() => {
   previewDocumentMock.mockReset();
   reopenDocumentMock.mockReset();
   receiveDocumentMock.mockReset();
+  correctRegistrationMock.mockReset();
   reverseDocumentMock.mockReset();
   undoReverseDocumentMock.mockReset();
   previewDocumentMock.mockResolvedValue({ data: {

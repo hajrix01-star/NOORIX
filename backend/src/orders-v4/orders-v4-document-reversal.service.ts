@@ -42,6 +42,14 @@ export class OrdersV4DocumentReversalService {
     return this.toggle(companyId, id, idempotencyKey, false);
   }
 
+  /**
+   * Used by an atomic correction: reverse the posted effect without opening a
+   * second transaction. The caller owns the outer tenant transaction.
+   */
+  reverseInTransaction(tx: OrdersV4Transaction, companyId: string, id: string, idempotencyKey: string) {
+    return this.toggleInTransaction(tx, companyId, id, idempotencyKey, false);
+  }
+
   undoReverse(companyId: string, id: string, idempotencyKey: string) {
     return this.toggle(companyId, id, idempotencyKey, true);
   }

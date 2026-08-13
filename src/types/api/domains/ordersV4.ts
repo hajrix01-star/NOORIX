@@ -343,3 +343,4 @@ export type OrdersV4DocumentPreview = {
 export type OrdersV4DocumentPreviewPayload = Pick<OrdersV4DocumentPayload, 'lines'>;
 
 export type OrdersV4ReceivePayload = Omit<OrdersV4DocumentPayload, 'documentType'> & { revision: number; editMode?: 'standard' | 'correction' };
+export type OrdersV4RegistrationCorrectionPayload = OrdersV4DocumentPayload & { revision: number };

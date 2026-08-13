@@ -152,6 +152,10 @@ export class OrdersV4ReceiveDto {
   lines!: OrdersV4DocumentLineDto[];
 }
 
+export class OrdersV4RegistrationCorrectionDto extends OrdersV4DocumentDto {
+  @Type(() => Number) @IsInt() @Min(1) revision!: number;
+}
+
 export class OrdersV4StocktakeUnitDto {
   @IsString() unitId!: string;
   @IsString() @Matches(NON_NEGATIVE_DECIMAL) quantity!: string;

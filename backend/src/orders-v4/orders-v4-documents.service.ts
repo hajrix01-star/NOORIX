@@ -34,7 +34,7 @@ import {
   type OrdersV4ReopenAccess,
   type OrdersV4DocumentDateAccess,
 } from './orders-v4-reopen.policy';
-
+import { correctOrdersV4Registration } from './orders-v4-registration-correction.util';
 @Injectable()
 export class OrdersV4DocumentsService {
   constructor(
@@ -44,7 +44,6 @@ export class OrdersV4DocumentsService {
     private readonly reversal: OrdersV4DocumentReversalService,
     private readonly purchaseCorrection: OrdersV4PurchaseCorrectionService,
   ) {}
-
   async list(
     companyId: string,
     documentType?: OrdersV4DocumentType,
@@ -78,18 +77,16 @@ export class OrdersV4DocumentsService {
       createdByUser: ordersV4UserIdentity(identities, document.createdByUserId),
     }));
   }
-
   /**
    * Read-only purchase total preview. It deliberately uses the same conversion
    * resolver and calculation kernel as document creation, without creating a
    * document, ledger entry, price history row, or funds movement.
    */
   async previewPurchase(companyId: string, lines: OrdersV4DocumentInput['lines']) {
-    if (!lines?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
+    if (!lines?.length) throw new BadRequestException('Ã™Å Ã˜Â¬Ã˜Â¨ Ã˜Â¥Ã˜Â¯Ã˜Â®Ã˜Â§Ã™â€ž Ã˜ÂµÃ™â€ Ã™Â Ã™Ë†Ã˜Â§Ã˜Â­Ã˜Â¯ Ã˜Â¹Ã™â€žÃ™â€° Ã˜Â§Ã™â€žÃ˜Â£Ã™â€šÃ™â€ž');
     if (new Set(lines.map((line) => line.itemId)).size !== lines.length) {
-      throw new BadRequestException('لا يمكن تكرار الصنف نفسه في الطلب؛ عدّل الكمية في السطر الموجود');
+      throw new BadRequestException('Ã™â€žÃ˜Â§ Ã™Å Ã™â€¦Ã™Æ’Ã™â€  Ã˜ÂªÃ™Æ’Ã˜Â±Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â Ã™â€ Ã™ÂÃ˜Â³Ã™â€¡ Ã™ÂÃ™Å  Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨Ã˜â€º Ã˜Â¹Ã˜Â¯Ã™â€˜Ã™â€ž Ã˜Â§Ã™â€žÃ™Æ’Ã™â€¦Ã™Å Ã˜Â© Ã™ÂÃ™Å  Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â·Ã˜Â± Ã˜Â§Ã™â€žÃ™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯');
     }
-
     const itemIds = lines.map((line) => line.itemId);
     const [items, units] = await Promise.all([
       this.prisma.ordersV4Item.findMany({
@@ -106,19 +103,18 @@ export class OrdersV4DocumentsService {
       }),
       this.prisma.ordersV4Unit.findMany({ where: { companyId, isActive: true } }),
     ]);
-    if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف الطلب غير موجود أو غير فعال');
-
+    if (items.length !== itemIds.length) throw new BadRequestException('Ã˜Â£Ã˜Â­Ã˜Â¯ Ã˜Â£Ã˜ÂµÃ™â€ Ã˜Â§Ã™Â Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨ Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â£Ã™Ë† Ã˜ÂºÃ™Å Ã˜Â± Ã™ÂÃ˜Â¹Ã˜Â§Ã™â€ž');
     const itemById = new Map(items.map((item) => [item.id, item]));
     const unitDefinitions = ordersV4UnitDefinitions(units);
     const calculatedLines = lines.map((line, index) => {
       const item = itemById.get(line.itemId);
-      if (!item || item.itemType === 'sale') throw new BadRequestException('صنف بيع لا يقبل طلب شراء');
+      if (!item || item.itemType === 'sale') throw new BadRequestException('Ã˜ÂµÃ™â€ Ã™Â Ã˜Â¨Ã™Å Ã˜Â¹ Ã™â€žÃ˜Â§ Ã™Å Ã™â€šÃ˜Â¨Ã™â€ž Ã˜Â·Ã™â€žÃ˜Â¨ Ã˜Â´Ã˜Â±Ã˜Â§Ã˜Â¡');
       if (!item.units.some((row) => row.unitId === line.unitId && row.isActive)) {
-        throw new BadRequestException(`${item.nameAr}: وحدة الكمية غير مضافة إلى بطاقة الصنف`);
+        throw new BadRequestException(`${item.nameAr}: Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã˜Â§Ã™â€žÃ™Æ’Ã™â€¦Ã™Å Ã˜Â© Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜Â¥Ã™â€žÃ™â€° Ã˜Â¨Ã˜Â·Ã˜Â§Ã™â€šÃ˜Â© Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â`);
       }
       const priceUnitId = line.priceUnitId || line.unitId;
       if (!item.units.some((row) => row.unitId === priceUnitId && row.isActive)) {
-        throw new BadRequestException(`${item.nameAr}: وحدة السعر غير مضافة إلى بطاقة الصنف`);
+        throw new BadRequestException(`${item.nameAr}: Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â± Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜Â¥Ã™â€žÃ™â€° Ã˜Â¨Ã˜Â·Ã˜Â§Ã™â€šÃ˜Â© Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â`);
       }
       const edges = ordersV4EdgeDefinitions(item.conversionVersions[0]?.edges);
       const calculation = calculateOrdersV4Line({
@@ -147,7 +143,6 @@ export class OrdersV4DocumentsService {
     const totalAmount = calculatedLines
       .reduce((sum, line) => sum.plus(line.lineTotal), new Prisma.Decimal(0))
       .toDecimalPlaces(6);
-
     return {
       kernelVersion: 4 as const,
       calculationVersion: 1,
@@ -156,23 +151,27 @@ export class OrdersV4DocumentsService {
       lines: calculatedLines,
     };
   }
-
-  async create(companyId: string, input: OrdersV4DocumentInput, dateAccess: OrdersV4DocumentDateAccess = 'staff') {
+  async create(
+    companyId: string,
+    input: OrdersV4DocumentInput,
+    dateAccess: OrdersV4DocumentDateAccess = 'staff',
+    existingTransaction?: Prisma.TransactionClient,
+  ) {
     const tenantId = TenantContext.getTenantId();
     const userId = TenantContext.getUserId();
-    if (!['purchase', 'registration'].includes(input.documentType)) throw new BadRequestException('نوع مستند V4 غير صالح');
-    if (!input.idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
-    if (!input.lines?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
+    if (!['purchase', 'registration'].includes(input.documentType)) throw new BadRequestException('Ã™â€ Ã™Ë†Ã˜Â¹ Ã™â€¦Ã˜Â³Ã˜ÂªÃ™â€ Ã˜Â¯ V4 Ã˜ÂºÃ™Å Ã˜Â± Ã˜ÂµÃ˜Â§Ã™â€žÃ˜Â­');
+    if (!input.idempotencyKey?.trim()) throw new BadRequestException('Ã™â€¦Ã™ÂÃ˜ÂªÃ˜Â§Ã˜Â­ Ã™â€¦Ã™â€ Ã˜Â¹ Ã˜Â§Ã™â€žÃ˜ÂªÃ™Æ’Ã˜Â±Ã˜Â§Ã˜Â± Ã™â€¦Ã˜Â·Ã™â€žÃ™Ë†Ã˜Â¨');
+    if (!input.lines?.length) throw new BadRequestException('Ã™Å Ã˜Â¬Ã˜Â¨ Ã˜Â¥Ã˜Â¯Ã˜Â®Ã˜Â§Ã™â€ž Ã˜ÂµÃ™â€ Ã™Â Ã™Ë†Ã˜Â§Ã˜Â­Ã˜Â¯ Ã˜Â¹Ã™â€žÃ™â€° Ã˜Â§Ã™â€žÃ˜Â£Ã™â€šÃ™â€ž');
     if (new Set(input.lines.map((line) => line.itemId)).size !== input.lines.length) {
-      throw new BadRequestException('لا يمكن تكرار الصنف نفسه في المستند؛ عدّل الكمية في السطر الموجود');
+      throw new BadRequestException('Ã™â€žÃ˜Â§ Ã™Å Ã™â€¦Ã™Æ’Ã™â€  Ã˜ÂªÃ™Æ’Ã˜Â±Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â Ã™â€ Ã™ÂÃ˜Â³Ã™â€¡ Ã™ÂÃ™Å  Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â³Ã˜ÂªÃ™â€ Ã˜Â¯Ã˜â€º Ã˜Â¹Ã˜Â¯Ã™â€˜Ã™â€ž Ã˜Â§Ã™â€žÃ™Æ’Ã™â€¦Ã™Å Ã˜Â© Ã™ÂÃ™Å  Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â·Ã˜Â± Ã˜Â§Ã™â€žÃ™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯');
     }
     const registrationEntry = resolveOrdersV4RegistrationEntry(input);
     const isRegistrationCancellation = registrationEntry.entryType === 'cancellation';
     if (input.documentType === 'purchase' && !['custody', 'cash', 'transfer'].includes(input.paymentMethod || 'custody')) {
-      throw new BadRequestException('طريقة الدفع غير صالحة');
+      throw new BadRequestException('Ã˜Â·Ã˜Â±Ã™Å Ã™â€šÃ˜Â© Ã˜Â§Ã™â€žÃ˜Â¯Ã™ÂÃ˜Â¹ Ã˜ÂºÃ™Å Ã˜Â± Ã˜ÂµÃ˜Â§Ã™â€žÃ˜Â­Ã˜Â©');
     }
-    if (input.documentType === 'registration' && input.paymentMethod) throw new BadRequestException('التسجيل الداخلي لا يقبل طريقة دفع');
-    const documentDate = ordersV4DateOnly(input.documentDate, 'تاريخ المستند');
+    if (input.documentType === 'registration' && input.paymentMethod) throw new BadRequestException('Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â³Ã˜Â¬Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â¯Ã˜Â§Ã˜Â®Ã™â€žÃ™Å  Ã™â€žÃ˜Â§ Ã™Å Ã™â€šÃ˜Â¨Ã™â€ž Ã˜Â·Ã˜Â±Ã™Å Ã™â€šÃ˜Â© Ã˜Â¯Ã™ÂÃ˜Â¹');
+    const documentDate = ordersV4DateOnly(input.documentDate, 'Ã˜ÂªÃ˜Â§Ã˜Â±Ã™Å Ã˜Â® Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â³Ã˜ÂªÃ™â€ Ã˜Â¯');
     if (dateAccess === 'staff' && !isOrdersV4StaffDocumentDateEligible(documentDate)) {
       throw new BadRequestException('\u064a\u0645\u0643\u0646\u0020\u0644\u0644\u0645\u0648\u0638\u0641\u0020\u0627\u062e\u062a\u064a\u0627\u0631\u0020\u0627\u0644\u064a\u0648\u0645\u0020\u0623\u0648\u0020\u0622\u062e\u0631\u0020\u0039\u0020\u0623\u064a\u0627\u0645\u0020\u0623\u0648\u0020\u0627\u0644\u063a\u062f\u0020\u0641\u0642\u0637');
     }
@@ -182,12 +181,11 @@ export class OrdersV4DocumentsService {
       try {
         pettyCashAmount = new Prisma.Decimal(input.pettyCashAmount);
       } catch {
-        throw new BadRequestException('مبلغ العهدة غير صالح');
+        throw new BadRequestException('Ã™â€¦Ã˜Â¨Ã™â€žÃ˜Âº Ã˜Â§Ã™â€žÃ˜Â¹Ã™â€¡Ã˜Â¯Ã˜Â© Ã˜ÂºÃ™Å Ã˜Â± Ã˜ÂµÃ˜Â§Ã™â€žÃ˜Â­');
       }
-      if (!pettyCashAmount.isFinite() || pettyCashAmount.lt(0)) throw new BadRequestException('مبلغ العهدة لا يمكن أن يكون سالباً');
+      if (!pettyCashAmount.isFinite() || pettyCashAmount.lt(0)) throw new BadRequestException('Ã™â€¦Ã˜Â¨Ã™â€žÃ˜Âº Ã˜Â§Ã™â€žÃ˜Â¹Ã™â€¡Ã˜Â¯Ã˜Â© Ã™â€žÃ˜Â§ Ã™Å Ã™â€¦Ã™Æ’Ã™â€  Ã˜Â£Ã™â€  Ã™Å Ã™Æ’Ã™Ë†Ã™â€  Ã˜Â³Ã˜Â§Ã™â€žÃ˜Â¨Ã˜Â§Ã™â€¹');
     }
-
-    return this.prisma.withTenant(async (tx) => {
+    const createInTransaction = async (tx: Prisma.TransactionClient) => {
       if (input.documentType === 'purchase') {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ordersV4PurchaseWindowLockKey(companyId)}))`;
       }
@@ -196,17 +194,15 @@ export class OrdersV4DocumentsService {
         include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true } } },
       });
       if (duplicate) {
-        if (duplicate.requestHash !== inputRequestHash) throw new BadRequestException('مفتاح منع التكرار مستخدم لمحتوى مختلف');
+        if (duplicate.requestHash !== inputRequestHash) throw new BadRequestException('Ã™â€¦Ã™ÂÃ˜ÂªÃ˜Â§Ã˜Â­ Ã™â€¦Ã™â€ Ã˜Â¹ Ã˜Â§Ã™â€žÃ˜ÂªÃ™Æ’Ã˜Â±Ã˜Â§Ã˜Â± Ã™â€¦Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â¯Ã™â€¦ Ã™â€žÃ™â€¦Ã˜Â­Ã˜ÂªÃ™Ë†Ã™â€° Ã™â€¦Ã˜Â®Ã˜ÂªÃ™â€žÃ™Â');
         return duplicate;
       }
-
       const location = await tx.ordersV4Location.findFirst({ where: { id: input.locationId, companyId, isActive: true } });
-      if (!location) throw new BadRequestException('موقع مخزون V4 غير موجود');
+      if (!location) throw new BadRequestException('Ã™â€¦Ã™Ë†Ã™â€šÃ˜Â¹ Ã™â€¦Ã˜Â®Ã˜Â²Ã™Ë†Ã™â€  V4 Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯');
       if (input.sectionId) {
         const section = await tx.ordersV4Section.findFirst({ where: { id: input.sectionId, companyId, isActive: true } });
-        if (!section) throw new BadRequestException('قسم V4 غير موجود');
+        if (!section) throw new BadRequestException('Ã™â€šÃ˜Â³Ã™â€¦ V4 Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯');
       }
-
       const itemIds = [...new Set(input.lines.map((line) => line.itemId))];
       const items = await tx.ordersV4Item.findMany({
         where: { companyId, id: { in: itemIds }, isActive: true },
@@ -244,22 +240,21 @@ export class OrdersV4DocumentsService {
           },
         },
       });
-      if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف V4 غير موجود أو غير فعال');
+      if (items.length !== itemIds.length) throw new BadRequestException('Ã˜Â£Ã˜Â­Ã˜Â¯ Ã˜Â£Ã˜ÂµÃ™â€ Ã˜Â§Ã™Â V4 Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â£Ã™Ë† Ã˜ÂºÃ™Å Ã˜Â± Ã™ÂÃ˜Â¹Ã˜Â§Ã™â€ž');
       const itemById = new Map(items.map((item) => [item.id, item]));
       const units = await tx.ordersV4Unit.findMany({ where: { companyId, isActive: true } });
       const unitDefinitions = ordersV4UnitDefinitions(units);
-
       const prepared = input.lines.map((line, index) => {
         const item = itemById.get(line.itemId);
-        if (!item) throw new BadRequestException('صنف V4 غير موجود');
-        if (input.documentType === 'purchase' && item.itemType === 'sale') throw new BadRequestException(`${item.nameAr}: صنف بيع لا يقبل مستند شراء`);
-        if (input.documentType === 'registration' && item.itemType === 'purchased') throw new BadRequestException(`${item.nameAr}: مادة مشتراة لا تقبل التسجيل الداخلي المباشر`);
+        if (!item) throw new BadRequestException('Ã˜ÂµÃ™â€ Ã™Â V4 Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯');
+        if (input.documentType === 'purchase' && item.itemType === 'sale') throw new BadRequestException(`${item.nameAr}: Ã˜ÂµÃ™â€ Ã™Â Ã˜Â¨Ã™Å Ã˜Â¹ Ã™â€žÃ˜Â§ Ã™Å Ã™â€šÃ˜Â¨Ã™â€ž Ã™â€¦Ã˜Â³Ã˜ÂªÃ™â€ Ã˜Â¯ Ã˜Â´Ã˜Â±Ã˜Â§Ã˜Â¡`);
+        if (input.documentType === 'registration' && item.itemType === 'purchased') throw new BadRequestException(`${item.nameAr}: Ã™â€¦Ã˜Â§Ã˜Â¯Ã˜Â© Ã™â€¦Ã˜Â´Ã˜ÂªÃ˜Â±Ã˜Â§Ã˜Â© Ã™â€žÃ˜Â§ Ã˜ÂªÃ™â€šÃ˜Â¨Ã™â€ž Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â³Ã˜Â¬Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â¯Ã˜Â§Ã˜Â®Ã™â€žÃ™Å  Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â±`);
         if (input.sectionId && !item.sections.some((entry) => entry.sectionId === input.sectionId)) {
-          throw new BadRequestException(`${item.nameAr}: الصنف غير مرتبط بالقسم المختار`);
+          throw new BadRequestException(`${item.nameAr}: Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã˜Â±Ã˜ÂªÃ˜Â¨Ã˜Â· Ã˜Â¨Ã˜Â§Ã™â€žÃ™â€šÃ˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â®Ã˜ÂªÃ˜Â§Ã˜Â±`);
         }
         const definition = item.conversionVersions[0];
         if (!item.units.some((row) => row.unitId === line.unitId && row.isActive)) {
-          throw new BadRequestException(`${item.nameAr}: وحدة الكمية غير مضافة إلى بطاقة الصنف`);
+          throw new BadRequestException(`${item.nameAr}: Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã˜Â§Ã™â€žÃ™Æ’Ã™â€¦Ã™Å Ã˜Â© Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜Â¥Ã™â€žÃ™â€° Ã˜Â¨Ã˜Â·Ã˜Â§Ã™â€šÃ˜Â© Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â`);
         }
         const definitionEdges = ordersV4EdgeDefinitions(definition?.edges);
         const inputConversion = resolveOrdersV4ContextConversion({
@@ -271,10 +266,10 @@ export class OrdersV4DocumentsService {
         const priceUnitId = line.priceUnitId || line.unitId;
         const priceUnit = item.units.find((row) => row.unitId === priceUnitId && row.isActive);
         if (!priceUnit) {
-          throw new BadRequestException(`${item.nameAr}: وحدة السعر غير مضافة إلى بطاقة الصنف`);
+          throw new BadRequestException(`${item.nameAr}: Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â± Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜Â¥Ã™â€žÃ™â€° Ã˜Â¨Ã˜Â·Ã˜Â§Ã™â€šÃ˜Â© Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â`);
         }
         if (input.documentType === 'purchase' && (!priceUnit.isOrderEnabled || priceUnit.lastPrice == null)) {
-          throw new BadRequestException(`${item.nameAr}: تغليف السعر غير مفعل للطلبات أو لا يحتوي على سعر`);
+          throw new BadRequestException(`${item.nameAr}: Ã˜ÂªÃ˜ÂºÃ™â€žÃ™Å Ã™Â Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â± Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™ÂÃ˜Â¹Ã™â€ž Ã™â€žÃ™â€žÃ˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Âª Ã˜Â£Ã™Ë† Ã™â€žÃ˜Â§ Ã™Å Ã˜Â­Ã˜ÂªÃ™Ë†Ã™Å  Ã˜Â¹Ã™â€žÃ™â€° Ã˜Â³Ã˜Â¹Ã˜Â±`);
         }
         const priceConversion = resolveOrdersV4ContextConversion({
           fromUnitId: priceUnitId,
@@ -298,7 +293,6 @@ export class OrdersV4DocumentsService {
         const recipe = input.documentType === 'registration' ? item.recipeVersions[0] : undefined;
         return { index, item, definition, recipe, line, priceUnitId, calculation };
       });
-
       const subtotal = prepared.reduce((sum, row) => sum.plus(row.calculation.lineTotal), new Prisma.Decimal(0)).toDecimalPlaces(6);
       // A cancellation is an independent waste/control record, not a reversal of an earlier
       // registration. Its quantities and cost therefore stay positive while inventory posting
@@ -311,7 +305,7 @@ export class OrdersV4DocumentsService {
         return row.item.trackInventory ? [{ itemId: row.item.id, locationId: location.id }] : [];
       });
       if (isRegistrationCancellation) {
-        if (!input.sectionId) throw new BadRequestException('يجب اختيار القسم عند تسجيل الإلغاء');
+        if (!input.sectionId) throw new BadRequestException('Ã™Å Ã˜Â¬Ã˜Â¨ Ã˜Â§Ã˜Â®Ã˜ÂªÃ™Å Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ™â€šÃ˜Â³Ã™â€¦ Ã˜Â¹Ã™â€ Ã˜Â¯ Ã˜ÂªÃ˜Â³Ã˜Â¬Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â¥Ã™â€žÃ˜ÂºÃ˜Â§Ã˜Â¡');
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`orders-v4:registration-cancellation:${companyId}:${documentDate.toISOString()}:${input.sectionId}:${location.id}`}))`;
       }
       if (input.documentType === 'registration') await this.posting.lockKeys(tx, companyId, inventoryKeys);
@@ -346,7 +340,6 @@ export class OrdersV4DocumentsService {
           createdByUserId: userId,
         },
       });
-
       let registrationOperationalCost = new Prisma.Decimal(0);
       for (const row of prepared) {
         const lineDirection = new Prisma.Decimal(1);
@@ -386,7 +379,6 @@ export class OrdersV4DocumentsService {
             },
           },
         });
-
         if (input.documentType === 'registration') {
           if (row.recipe) {
             let recipeCost = new Prisma.Decimal(0);
@@ -438,7 +430,7 @@ export class OrdersV4DocumentsService {
                 LIMIT 5
               `);
               if (!recentPrices.length) {
-                throw new BadRequestException(`${component.componentItem.nameAr}: لا توجد طلبات شراء مستلمة لحساب تكلفة الرسبي`);
+                throw new BadRequestException(`${component.componentItem.nameAr}: Ã™â€žÃ˜Â§ Ã˜ÂªÃ™Ë†Ã˜Â¬Ã˜Â¯ Ã˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Âª Ã˜Â´Ã˜Â±Ã˜Â§Ã˜Â¡ Ã™â€¦Ã˜Â³Ã˜ÂªÃ™â€žÃ™â€¦Ã˜Â© Ã™â€žÃ˜Â­Ã˜Â³Ã˜Â§Ã˜Â¨ Ã˜ÂªÃ™Æ’Ã™â€žÃ™ÂÃ˜Â© Ã˜Â§Ã™â€žÃ˜Â±Ã˜Â³Ã˜Â¨Ã™Å `);
               }
               const normalizedPrices = recentPrices.map((price) => calculateOrdersV4ConvertedUnitPrice(
                 price.inventoryUnitPrice,
@@ -549,7 +541,6 @@ export class OrdersV4DocumentsService {
           }
         }
       }
-
       if (input.documentType === 'registration') {
         const operationalCost = registrationOperationalCost.toDecimalPlaces(6);
         await tx.ordersV4Document.update({
@@ -569,24 +560,44 @@ export class OrdersV4DocumentsService {
           },
         });
       }
-
       return tx.ordersV4Document.findUniqueOrThrow({
         where: { id: document.id },
         include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
       });
+    };
+    return existingTransaction
+      ? createInTransaction(existingTransaction)
+      : this.prisma.withTenant(createInTransaction);
+  }
+  /**
+   * A received internal registration has already affected stock and cost. It
+   * therefore cannot be edited in place: this operation reverses the original
+   * effect and posts one replacement document in the same transaction.
+   */
+  async correctRegistration(
+    companyId: string,
+    id: string,
+    input: OrdersV4DocumentInput & { revision: number },
+  ) {
+    return correctOrdersV4Registration({
+      prisma: this.prisma,
+      reversal: this.reversal,
+      createRegistration: (targetCompanyId, documentInput, dateAccess, transaction) => this.create(targetCompanyId, documentInput, dateAccess, transaction),
+      companyId,
+      id,
+      input,
     });
   }
-
   async receivePurchase(companyId: string, id: string, input: OrdersV4ReceiveInput, access: OrdersV4ReopenAccess = 'owner') {
-    if (!input.idempotencyKey?.trim()) throw new BadRequestException('مفتاح منع التكرار مطلوب');
-    if (!input.lines?.length) throw new BadRequestException('يجب تسجيل صنف مستلم واحد على الأقل');
+    if (!input.idempotencyKey?.trim()) throw new BadRequestException('Ã™â€¦Ã™ÂÃ˜ÂªÃ˜Â§Ã˜Â­ Ã™â€¦Ã™â€ Ã˜Â¹ Ã˜Â§Ã™â€žÃ˜ÂªÃ™Æ’Ã˜Â±Ã˜Â§Ã˜Â± Ã™â€¦Ã˜Â·Ã™â€žÃ™Ë†Ã˜Â¨');
+    if (!input.lines?.length) throw new BadRequestException('Ã™Å Ã˜Â¬Ã˜Â¨ Ã˜ÂªÃ˜Â³Ã˜Â¬Ã™Å Ã™â€ž Ã˜ÂµÃ™â€ Ã™Â Ã™â€¦Ã˜Â³Ã˜ÂªÃ™â€žÃ™â€¦ Ã™Ë†Ã˜Â§Ã˜Â­Ã˜Â¯ Ã˜Â¹Ã™â€žÃ™â€° Ã˜Â§Ã™â€žÃ˜Â£Ã™â€šÃ™â€ž');
     if (new Set(input.lines.map((line) => line.itemId)).size !== input.lines.length) {
-      throw new BadRequestException('لا يمكن تكرار الصنف نفسه في الاستلام؛ عدّل الكمية في السطر الموجود');
+      throw new BadRequestException('Ã™â€žÃ˜Â§ Ã™Å Ã™â€¦Ã™Æ’Ã™â€  Ã˜ÂªÃ™Æ’Ã˜Â±Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â Ã™â€ Ã™ÂÃ˜Â³Ã™â€¡ Ã™ÂÃ™Å  Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦Ã˜â€º Ã˜Â¹Ã˜Â¯Ã™â€˜Ã™â€ž Ã˜Â§Ã™â€žÃ™Æ’Ã™â€¦Ã™Å Ã˜Â© Ã™ÂÃ™Å  Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â·Ã˜Â± Ã˜Â§Ã™â€žÃ™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯');
     }
-    if (!Number.isInteger(input.revision) || input.revision < 1) throw new BadRequestException('رقم مراجعة الطلب غير صالح');
+    if (!Number.isInteger(input.revision) || input.revision < 1) throw new BadRequestException('Ã˜Â±Ã™â€šÃ™â€¦ Ã™â€¦Ã˜Â±Ã˜Â§Ã˜Â¬Ã˜Â¹Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨ Ã˜ÂºÃ™Å Ã˜Â± Ã˜ÂµÃ˜Â§Ã™â€žÃ˜Â­');
     const tenantId = TenantContext.getTenantId();
     const userId = TenantContext.getUserId();
-    const receivedDate = ordersV4DateOnly(input.documentDate, 'تاريخ الاستلام');
+    const receivedDate = ordersV4DateOnly(input.documentDate, 'Ã˜ÂªÃ˜Â§Ã˜Â±Ã™Å Ã˜Â® Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦');
     const receiveRequestHash = ordersV4RequestHash({
       documentId: id,
       editMode: input.editMode === 'correction' ? 'correction' : 'standard',
@@ -608,13 +619,12 @@ export class OrdersV4DocumentsService {
     const correctionMode = input.editMode === 'correction';
     const correctionRequestHash = ordersV4RequestHash({ operation: 'correct-received-purchase', documentId: id, receiveRequestHash });
     const receiveOperationKeyHash = ordersV4OperationKeyHash('receive-purchase', input.idempotencyKey);
-
     return this.prisma.withTenant(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ordersV4PurchaseWindowLockKey(companyId)}))`;
       const replay = await readOrdersV4OperationReplay(tx, tenantId, companyId, receiveOperationKeyHash);
       if (replay) {
         if (replay.requestHash !== receiveRequestHash) {
-          throw new BadRequestException('مفتاح منع تكرار الاستلام مستخدم لطلب أو محتوى مختلف');
+          throw new BadRequestException('Ã™â€¦Ã™ÂÃ˜ÂªÃ˜Â§Ã˜Â­ Ã™â€¦Ã™â€ Ã˜Â¹ Ã˜ÂªÃ™Æ’Ã˜Â±Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã™â€¦Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â¯Ã™â€¦ Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨ Ã˜Â£Ã™Ë† Ã™â€¦Ã˜Â­Ã˜ÂªÃ™Ë†Ã™â€° Ã™â€¦Ã˜Â®Ã˜ÂªÃ™â€žÃ™Â');
         }
         return replay.response;
       }
@@ -627,7 +637,6 @@ export class OrdersV4DocumentsService {
       let inheritedPaymentMethod: 'custody' | 'cash' | 'transfer' | null = null;
       let inheritedPettyCashAmount: Prisma.Decimal | null = null;
       let correctionOriginal: OrdersV4CorrectionPreparation['original'] = null;
-
       if (correctionMode) {
         const correction = await this.purchaseCorrection.prepareInTransaction(tx, input, {
           tenantId,
@@ -649,11 +658,11 @@ export class OrdersV4DocumentsService {
         const purchase = await tx.ordersV4Document.findFirst({
           where: { id, companyId, documentType: 'purchase', reversalOfId: null },
         });
-        if (!purchase) throw new BadRequestException('طلب الشراء غير موجود');
+        if (!purchase) throw new BadRequestException('Ã˜Â·Ã™â€žÃ˜Â¨ Ã˜Â§Ã™â€žÃ˜Â´Ã˜Â±Ã˜Â§Ã˜Â¡ Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯');
         const previousSnapshot = purchase.calculationSnapshot as Record<string, unknown>;
         if (purchase.status === 'received' && previousSnapshot.receiveIdempotencyKey === input.idempotencyKey.trim()) {
           if (previousSnapshot.receiveRequestHash !== receiveRequestHash) {
-            throw new BadRequestException('مفتاح منع تكرار الاستلام مستخدم لمحتوى مختلف');
+            throw new BadRequestException('Ã™â€¦Ã™ÂÃ˜ÂªÃ˜Â§Ã˜Â­ Ã™â€¦Ã™â€ Ã˜Â¹ Ã˜ÂªÃ™Æ’Ã˜Â±Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã™â€¦Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â¯Ã™â€¦ Ã™â€žÃ™â€¦Ã˜Â­Ã˜ÂªÃ™Ë†Ã™â€° Ã™â€¦Ã˜Â®Ã˜ÂªÃ™â€žÃ™Â');
           }
           const result = await tx.ordersV4Document.findUniqueOrThrow({
             where: { id },
@@ -663,20 +672,20 @@ export class OrdersV4DocumentsService {
           return result;
         }
         if (access === 'cashier' && !isOrdersV4CashierEditEligible(purchase.documentDate)) {
-          throw new BadRequestException('يمكن للكاشير استلام طلبات آخر 10 أيام فقط');
+          throw new BadRequestException('Ã™Å Ã™â€¦Ã™Æ’Ã™â€  Ã™â€žÃ™â€žÃ™Æ’Ã˜Â§Ã˜Â´Ã™Å Ã˜Â± Ã˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Âª Ã˜Â¢Ã˜Â®Ã˜Â± 10 Ã˜Â£Ã™Å Ã˜Â§Ã™â€¦ Ã™ÂÃ™â€šÃ˜Â·');
         }
-        if (purchase.status !== 'prepared') throw new BadRequestException('الطلب ليس في حالة انتظار الاستلام');
+        if (purchase.status !== 'prepared') throw new BadRequestException('Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨ Ã™â€žÃ™Å Ã˜Â³ Ã™ÂÃ™Å  Ã˜Â­Ã˜Â§Ã™â€žÃ˜Â© Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â¸Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦');
         if (access === 'cashier' && !isOrdersV4CashierEditEligible(receivedDate)) {
           throw new BadRequestException('\u064a\u0645\u0643\u0646\u0020\u0644\u0644\u0643\u0627\u0634\u064a\u0631\u0020\u062a\u0633\u062c\u064a\u0644\u0020\u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645\u0020\u0628\u062a\u0627\u0631\u064a\u062e\u0020\u0627\u0644\u064a\u0648\u0645\u0020\u0623\u0648\u0020\u0622\u062e\u0631\u0020\u0039\u0020\u0623\u064a\u0627\u0645\u0020\u0641\u0642\u0637');
         }
-        if (purchase.revision !== input.revision) throw new BadRequestException('تم تعديل الطلب؛ أعد تحميله قبل الاستلام');
+        if (purchase.revision !== input.revision) throw new BadRequestException('Ã˜ÂªÃ™â€¦ Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨Ã˜â€º Ã˜Â£Ã˜Â¹Ã˜Â¯ Ã˜ÂªÃ˜Â­Ã™â€¦Ã™Å Ã™â€žÃ™â€¡ Ã™â€šÃ˜Â¨Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦');
         receivedFromRevision = purchase.revision;
       }
       const correctionEffect = await this.purchaseCorrection.loadEffectInTransaction(tx, companyId, correctionOriginal);
       const correctionInventoryEntries = correctionEffect.inventoryEntries;
       const correctionCustodyEntries = correctionEffect.custodyEntries;
       const location = await tx.ordersV4Location.findFirst({ where: { id: input.locationId, companyId, isActive: true } });
-      if (!location) throw new BadRequestException('موقع المخزون غير موجود');
+      if (!location) throw new BadRequestException('Ã™â€¦Ã™Ë†Ã™â€šÃ˜Â¹ Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â®Ã˜Â²Ã™Ë†Ã™â€  Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯');
       const requestedItemIds = [...new Set(input.lines.map((line) => line.itemId))];
       const itemIds = [...new Set([...requestedItemIds, ...correctionInventoryEntries.map((entry) => entry.itemId)])];
       const items = await tx.ordersV4Item.findMany({
@@ -685,24 +694,24 @@ export class OrdersV4DocumentsService {
           where: { status: 'published' }, include: { edges: true }, orderBy: { version: 'desc' }, take: 1,
         } },
       });
-      if (items.length !== itemIds.length) throw new BadRequestException('أحد أصناف الاستلام أو نسخته السابقة غير صالح');
+      if (items.length !== itemIds.length) throw new BadRequestException('Ã˜Â£Ã˜Â­Ã˜Â¯ Ã˜Â£Ã˜ÂµÃ™â€ Ã˜Â§Ã™Â Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã˜Â£Ã™Ë† Ã™â€ Ã˜Â³Ã˜Â®Ã˜ÂªÃ™â€¡ Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â§Ã˜Â¨Ã™â€šÃ˜Â© Ã˜ÂºÃ™Å Ã˜Â± Ã˜ÂµÃ˜Â§Ã™â€žÃ˜Â­');
       const activeRequestedIds = new Set(items.filter((item) => item.isActive).map((item) => item.id));
-      if (requestedItemIds.some((itemId) => !activeRequestedIds.has(itemId))) throw new BadRequestException('أحد أصناف الاستلام غير موجود أو غير فعال');
+      if (requestedItemIds.some((itemId) => !activeRequestedIds.has(itemId))) throw new BadRequestException('Ã˜Â£Ã˜Â­Ã˜Â¯ Ã˜Â£Ã˜ÂµÃ™â€ Ã˜Â§Ã™Â Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â£Ã™Ë† Ã˜ÂºÃ™Å Ã˜Â± Ã™ÂÃ˜Â¹Ã˜Â§Ã™â€ž');
       const units = await tx.ordersV4Unit.findMany({ where: correctionMode ? { companyId } : { companyId, isActive: true } });
       const unitDefinitions = ordersV4UnitDefinitions(units);
       const itemById = new Map(items.map((item) => [item.id, item]));
       const prepared = input.lines.map((line, index) => {
         const item = itemById.get(line.itemId);
-        if (!item) throw new BadRequestException('صنف الاستلام غير موجود');
+        if (!item) throw new BadRequestException('Ã˜ÂµÃ™â€ Ã™Â Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯');
         if (input.sectionId && !item.sections.some((entry) => entry.sectionId === input.sectionId)) {
-          throw new BadRequestException(`${item.nameAr}: الصنف غير مرتبط بالقسم المختار`);
+          throw new BadRequestException(`${item.nameAr}: Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã˜Â±Ã˜ÂªÃ˜Â¨Ã˜Â· Ã˜Â¨Ã˜Â§Ã™â€žÃ™â€šÃ˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â®Ã˜ÂªÃ˜Â§Ã˜Â±`);
         }
         if (!item.units.some((row) => row.unitId === line.unitId && row.isActive)) {
-          throw new BadRequestException(`${item.nameAr}: وحدة الكمية غير مضافة إلى بطاقة الصنف`);
+          throw new BadRequestException(`${item.nameAr}: Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã˜Â§Ã™â€žÃ™Æ’Ã™â€¦Ã™Å Ã˜Â© Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜Â¥Ã™â€žÃ™â€° Ã˜Â¨Ã˜Â·Ã˜Â§Ã™â€šÃ˜Â© Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â`);
         }
         const priceUnitId = line.priceUnitId || line.unitId;
         if (!item.units.some((row) => row.unitId === priceUnitId && row.isActive)) {
-          throw new BadRequestException(`${item.nameAr}: وحدة السعر غير مضافة إلى بطاقة الصنف`);
+          throw new BadRequestException(`${item.nameAr}: Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â± Ã˜ÂºÃ™Å Ã˜Â± Ã™â€¦Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜Â¥Ã™â€žÃ™â€° Ã˜Â¨Ã˜Â·Ã˜Â§Ã™â€šÃ˜Â© Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â`);
         }
         const definition = item.conversionVersions[0];
         const edges = ordersV4EdgeDefinitions(definition?.edges);
@@ -718,24 +727,23 @@ export class OrdersV4DocumentsService {
           inputConversion,
           priceConversion,
         });
-        if (calculation.unitPrice.lt(0)) throw new BadRequestException('سعر الاستلام لا يمكن أن يكون سالبًا');
+        if (calculation.unitPrice.lt(0)) throw new BadRequestException('Ã˜Â³Ã˜Â¹Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã™â€žÃ˜Â§ Ã™Å Ã™â€¦Ã™Æ’Ã™â€  Ã˜Â£Ã™â€  Ã™Å Ã™Æ’Ã™Ë†Ã™â€  Ã˜Â³Ã˜Â§Ã™â€žÃ˜Â¨Ã™â€¹Ã˜Â§');
         return { index, item, line, priceUnitId, definition, calculation };
       });
       const subtotal = prepared.reduce((sum, row) => sum.plus(row.calculation.lineTotal), new Prisma.Decimal(0)).toDecimalPlaces(6);
       const paymentMethod = input.paymentMethod || inheritedPaymentMethod || 'custody';
-      if (!['custody', 'cash', 'transfer'].includes(paymentMethod)) throw new BadRequestException('طريقة الدفع غير صالحة');
+      if (!['custody', 'cash', 'transfer'].includes(paymentMethod)) throw new BadRequestException('Ã˜Â·Ã˜Â±Ã™Å Ã™â€šÃ˜Â© Ã˜Â§Ã™â€žÃ˜Â¯Ã™ÂÃ˜Â¹ Ã˜ÂºÃ™Å Ã˜Â± Ã˜ÂµÃ˜Â§Ã™â€žÃ˜Â­Ã˜Â©');
       let pettyCashAmount: Prisma.Decimal | null = null;
       if (paymentMethod === 'custody' && input.pettyCashAmount != null && input.pettyCashAmount !== '') {
         try {
           pettyCashAmount = new Prisma.Decimal(input.pettyCashAmount);
         } catch {
-          throw new BadRequestException('مبلغ العهدة غير صالح');
+          throw new BadRequestException('Ã™â€¦Ã˜Â¨Ã™â€žÃ˜Âº Ã˜Â§Ã™â€žÃ˜Â¹Ã™â€¡Ã˜Â¯Ã˜Â© Ã˜ÂºÃ™Å Ã˜Â± Ã˜ÂµÃ˜Â§Ã™â€žÃ˜Â­');
         }
       } else if (paymentMethod === 'custody') {
         pettyCashAmount = inheritedPettyCashAmount;
       }
-      if (pettyCashAmount?.lt(0)) throw new BadRequestException('العهدة لا يمكن أن تكون سالبة');
-
+      if (pettyCashAmount?.lt(0)) throw new BadRequestException('Ã˜Â§Ã™â€žÃ˜Â¹Ã™â€¡Ã˜Â¯Ã˜Â© Ã™â€žÃ˜Â§ Ã™Å Ã™â€¦Ã™Æ’Ã™â€  Ã˜Â£Ã™â€  Ã˜ÂªÃ™Æ’Ã™Ë†Ã™â€  Ã˜Â³Ã˜Â§Ã™â€žÃ˜Â¨Ã˜Â©');
       if (paymentMethod === 'cash') {
         const [cashSales] = await tx.$queryRaw<Array<{ total: Prisma.Decimal | null }>>(Prisma.sql`
           SELECT COALESCE(SUM(channel.amount), 0) AS total
@@ -752,9 +760,8 @@ export class OrdersV4DocumentsService {
           _sum: { totalAmount: true },
         });
         const available = calculateOrdersV4CashAvailable(cashSales?.total ?? 0, used._sum.totalAmount ?? 0);
-        if (subtotal.gt(available)) throw new BadRequestException(`رصيد نقد المحل غير كافٍ. المتاح ${available.toFixed(2)}`);
+        if (subtotal.gt(available)) throw new BadRequestException(`Ã˜Â±Ã˜ÂµÃ™Å Ã˜Â¯ Ã™â€ Ã™â€šÃ˜Â¯ Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â­Ã™â€ž Ã˜ÂºÃ™Å Ã˜Â± Ã™Æ’Ã˜Â§Ã™ÂÃ™Â. Ã˜Â§Ã™â€žÃ™â€¦Ã˜ÂªÃ˜Â§Ã˜Â­ ${available.toFixed(2)}`);
       }
-
       const inventoryLocks = prepared.filter((row) => row.item.trackInventory)
         .map((row) => ({ itemId: row.item.id, locationId: location.id }));
       inventoryLocks.push(...correctionInventoryEntries
@@ -792,11 +799,9 @@ export class OrdersV4DocumentsService {
           calculationSnapshot,
         },
       });
-
       await this.purchaseCorrection.reverseInventoryInTransaction(tx, {
         tenantId, companyId, targetId, effectiveAt: receivedDate, entries: correctionInventoryEntries, items, units,
       });
-
       for (const row of prepared) {
         const line = await tx.ordersV4DocumentLine.create({
           data: {
@@ -849,7 +854,6 @@ export class OrdersV4DocumentsService {
           });
         }
       }
-
       await this.purchaseCorrection.reverseCustodyInTransaction(tx, {
         tenantId, companyId, targetId, effectiveAt: receivedDate, entries: correctionCustodyEntries,
       });
@@ -859,9 +863,7 @@ export class OrdersV4DocumentsService {
           purchaseAmount: subtotal, fundingAmount: pettyCashAmount,
         });
       }
-
       await this.purchaseCorrection.refreshHistoricalPricesInTransaction(tx, companyId, correctionOriginal);
-
       const result = await tx.ordersV4Document.findUniqueOrThrow({
         where: { id: targetId },
         include: { section: true, location: true, lines: { include: { item: true, inputUnit: true, baseUnit: true, priceUnit: true }, orderBy: { lineNumber: 'asc' } } },
@@ -870,15 +872,12 @@ export class OrdersV4DocumentsService {
       return result;
     });
   }
-
   reverse(companyId: string, id: string, idempotencyKey: string) {
     return this.reversal.reverse(companyId, id, idempotencyKey);
   }
-
   undoReverse(companyId: string, id: string, idempotencyKey: string) {
     return this.reversal.undoReverse(companyId, id, idempotencyKey);
   }
-
   reopenPurchase(
     companyId: string,
     id: string,

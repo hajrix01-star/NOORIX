@@ -27,6 +27,7 @@ import {
   OrdersV4LocationDto,
   OrdersV4NamedDto,
   OrdersV4ReceiveDto,
+  OrdersV4RegistrationCorrectionDto,
   OrdersV4RecipePublishDto,
   OrdersV4StocktakeDto,
   OrdersV4UnitDto,
@@ -249,6 +250,16 @@ export class OrdersV4Controller {
       body,
       isOwner ? 'owner' : 'cashier',
     );
+  }
+
+  @Post('documents/:id/correct-registration')
+  @Roles('owner')
+  correctRegistration(
+    @CompanyId() companyId: string,
+    @Param('id') id: string,
+    @Body() body: OrdersV4RegistrationCorrectionDto,
+  ) {
+    return this.documents.correctRegistration(requireCompanyId(companyId), id, body);
   }
 
   @Post('documents/:id/reverse')

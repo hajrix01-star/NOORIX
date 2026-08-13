@@ -1,6 +1,7 @@
 import {
   createOrdersV4Category,
   createOrdersV4Document,
+  correctOrdersV4Registration,
   createOrdersV4Item,
   createOrdersV4Location,
   createOrdersV4Section,
@@ -37,6 +38,7 @@ import type {
   OrdersV4DocumentPayload,
   OrdersV4DocumentPreviewPayload,
   OrdersV4ReceivePayload,
+  OrdersV4RegistrationCorrectionPayload,
   OrdersV4InventoryBalance,
   OrdersV4ItemsReportRow,
   OrdersV4LedgerEntry,
@@ -197,6 +199,15 @@ export function useReceiveOrdersV4Document(companyId: string) {
     mutationFn: ({ id, body }: { id: string; body: OrdersV4ReceivePayload }) => receiveOrdersV4Document(companyId, id, body),
     invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
     successToast: 'تم حفظ الطلب وترحيل المخزون والأسعار وطريقة الدفع',
+    showErrorToast: true,
+  });
+}
+
+export function useCorrectOrdersV4Registration(companyId: string) {
+  return useApiMutation({
+    mutationFn: ({ id, body }: { id: string; body: OrdersV4RegistrationCorrectionPayload }) => correctOrdersV4Registration(companyId, id, body),
+    invalidateQueries: [ordersV4Keys.documentsRoot(companyId), ordersV4Keys.reports(companyId), ordersV4Keys.inventory(companyId), ordersV4Keys.bootstrap(companyId)],
+    successToast: 'تم تصحيح التسجيل مع حفظ السجل السابق للمراجعة',
     showErrorToast: true,
   });
 }
