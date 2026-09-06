@@ -43,7 +43,7 @@ export async function postPayrollAccrualInTransaction(
   tenantId: string,
   userId?: string,
 ): Promise<{ expense: Prisma.Decimal; payable: Prisma.Decimal; advances: Prisma.Decimal; idempotentReplay: boolean }> {
-  await tx.$queryRaw(Prisma.sql`
+  await tx.$executeRaw(Prisma.sql`
     SELECT pg_advisory_xact_lock(hashtext(${`payroll-accrual:${run.companyId}:${run.id}`}))
   `);
   const existing = await tx.ledgerEntry.findFirst({

@@ -39,7 +39,7 @@ describe('payroll accrual', () => {
   it('posts full payroll cost once and splits the credits between payable and advances', async () => {
     (applyPayrollAdvanceSettlements as jest.Mock).mockResolvedValue(new Prisma.Decimal(200));
     const tx = {
-      $queryRaw: jest.fn().mockResolvedValue([{ pg_advisory_xact_lock: null }]),
+      $executeRaw: jest.fn().mockResolvedValue(1),
       ledgerEntry: {
         findFirst: jest.fn().mockResolvedValue(null),
         findMany: jest.fn().mockResolvedValue([{ id: 'advance-ledger-1', employeeId: 'employee-1' }]),
@@ -69,6 +69,7 @@ describe('payroll accrual', () => {
     );
 
     expect(result.expense.toFixed(2)).toBe('1000.00');
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
     expect(applyPayrollAdvanceSettlements).toHaveBeenCalledWith(
       tx,
       run,
@@ -107,7 +108,7 @@ describe('payroll accrual', () => {
 
   it('is idempotent when an active payroll accrual already exists', async () => {
     const tx = {
-      $queryRaw: jest.fn().mockResolvedValue([{ pg_advisory_xact_lock: null }]),
+      $executeRaw: jest.fn().mockResolvedValue(1),
       ledgerEntry: { findFirst: jest.fn().mockResolvedValue({ id: 'entry-1' }) },
       account: { findFirst: jest.fn() },
     } as unknown as PayrollAccrualTx;
@@ -127,6 +128,7 @@ describe('payroll accrual', () => {
     );
 
     expect(result.idempotentReplay).toBe(true);
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
     expect(accountingCore.postPayrollAccrualLedgerInTransaction).not.toHaveBeenCalled();
     expect(fiscal.assertPeriodOpenForDate).not.toHaveBeenCalled();
   });
