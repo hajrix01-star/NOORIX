@@ -49,7 +49,8 @@ jobs:
           psql --dbname="$DATABASE_URL" --set=ON_ERROR_STOP=1 --no-psqlrc -v run_number="$RUN_NUMBER" -v company_name="$COMPANY_NAME" <<'SQL'
           BEGIN TRANSACTION READ ONLY;
           WITH target AS (
-            SELECT pr.id, pr.company_id, pr.run_number, pr.payroll_month
+            SELECT pr.id, pr.tenant_id, pr.company_id, pr.run_number, pr.payroll_month,
+                   pr.status, pr.payroll_accrued_at, pr.advance_settlements_applied_at
             FROM payroll_runs pr
             JOIN companies c ON c.id = pr.company_id
             WHERE pr.status = 'completed' AND c.is_archived = false
@@ -97,13 +98,34 @@ jobs:
              AND d.deduction_type = 'advance' AND STRPOS(COALESCE(d.notes, ''), t.run_number) > 0
             LEFT JOIN ledger_entries le ON le.company_id = t.company_id AND le.reference_type = 'advance_settlement' AND le.reference_id = d.id
             GROUP BY t.id
+          ), required_accounts AS (
+            SELECT t.id AS payroll_run_id,
+              jsonb_object_agg(a.code, jsonb_build_object('type', a.type, 'active', a.is_active)) AS configuration
+            FROM target t
+            JOIN accounts a ON a.company_id = t.company_id AND a.code IN ('EXP-004', 'PAY-001')
+            GROUP BY t.id
+          ), fiscal_period AS (
+            SELECT t.id AS payroll_run_id,
+              COALESCE(jsonb_agg(jsonb_build_object('status', fp.status) ORDER BY fp.start_date), '[]'::jsonb) AS matching_periods
+            FROM target t
+            LEFT JOIN fiscal_periods fp ON fp.company_id = t.company_id
+              AND (t.payroll_month + INTERVAL '1 month - 1 day')::date BETWEEN fp.start_date::date AND fp.end_date::date
+            GROUP BY t.id
           )
           SELECT jsonb_pretty(jsonb_build_object(
             'runCount', (SELECT COUNT(*) FROM target),
-            'run', (SELECT jsonb_build_object('number', t.run_number, 'month', to_char(t.payroll_month, 'YYYY-MM')) FROM target t LIMIT 1),
+            'run', (SELECT jsonb_build_object(
+              'number', t.run_number,
+              'month', to_char(t.payroll_month, 'YYYY-MM'),
+              'status', t.status,
+              'payrollAccruedAt', t.payroll_accrued_at IS NOT NULL,
+              'advanceSettlementsAppliedAt', t.advance_settlements_applied_at IS NOT NULL
+            ) FROM target t LIMIT 1),
             'items', (SELECT to_jsonb(i) - 'payroll_run_id' FROM items i LIMIT 1),
             'tracedLedgerByReferenceType', COALESCE((SELECT jsonb_object_agg(reference_type, amount) FROM traced_ledger), '{}'::jsonb),
-            'matchingAdvanceEvidence', COALESCE((SELECT to_jsonb(r) - 'payroll_run_id' FROM repair_candidates r LIMIT 1), '{}'::jsonb)
+            'matchingAdvanceEvidence', COALESCE((SELECT to_jsonb(r) - 'payroll_run_id' FROM repair_candidates r LIMIT 1), '{}'::jsonb),
+            'requiredAccounts', COALESCE((SELECT configuration FROM required_accounts LIMIT 1), '{}'::jsonb),
+            'periodsAtPayrollDate', COALESCE((SELECT matching_periods FROM fiscal_period LIMIT 1), '[]'::jsonb)
           ));
           ROLLBACK;
           SQL
