@@ -179,6 +179,7 @@ export const SuppliersTab = memo(function SuppliersTab({
       <SupplierImportExport
         companyId={companyId}
         suppliers={suppliers}
+        categories={supplierCategories}
         onImport={handleImportOne}
       />
 

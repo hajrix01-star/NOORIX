@@ -1,18 +1,21 @@
 import React, { useRef, useState, type ChangeEvent } from 'react';
 import { Button, FileInput } from '../../../ui';
-import type { SupplierCreatePayload, SupplierRecord } from '../supplierTypes';
+import { exportToExcel } from '../../../utils/exportUtils';
+import type { SupplierCategoryRecord, SupplierCreatePayload, SupplierRecord } from '../supplierTypes';
 import {
-  buildSupplierExportCsv,
   buildSupplierExportFilename,
+  buildSupplierExportRows,
   buildSupplierTemplateCsv,
   importSupplierRows,
   parseSupplierCsv,
+  SUPPLIER_EXPORT_COLUMNS,
   type SupplierImportResult,
 } from '../supplierImportExportModel';
 
 export type SupplierImportExportProps = {
   companyId: string;
   suppliers?: SupplierRecord[];
+  categories?: SupplierCategoryRecord[];
   onImport: (body: SupplierCreatePayload) => Promise<unknown>;
 };
 
@@ -29,6 +32,7 @@ function downloadCsv(content: string, filename: string) {
 export default function SupplierImportExport({
   companyId,
   suppliers = [],
+  categories = [],
   onImport,
 }: SupplierImportExportProps) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -41,7 +45,15 @@ export default function SupplierImportExport({
 
   function handleExport() {
     if (!suppliers.length) return;
-    downloadCsv(buildSupplierExportCsv(suppliers), buildSupplierExportFilename());
+    void exportToExcel({
+      data: buildSupplierExportRows(suppliers, categories),
+      filename: buildSupplierExportFilename(),
+      title: 'دليل الموردين',
+      sheetName: 'الموردون',
+      columns: SUPPLIER_EXPORT_COLUMNS,
+      textColumnKeys: ['taxNumber', 'phone'],
+      rtl: true,
+    });
   }
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -87,7 +99,7 @@ export default function SupplierImportExport({
           onClick={handleExport}
           disabled={!suppliers.length}
         >
-          تصدير ({suppliers.length})
+          تصدير Excel ({suppliers.length})
         </Button>
       </div>
 

@@ -1,5 +1,10 @@
 import { getSaudiToday } from '../../utils/saudiDate';
-import type { SupplierCreatePayload, SupplierImportRow, SupplierRecord } from './supplierTypes';
+import type {
+  SupplierCategoryRecord,
+  SupplierCreatePayload,
+  SupplierImportRow,
+  SupplierRecord,
+} from './supplierTypes';
 
 const CSV_HEADERS_AR = ['الاسم بالعربي *', 'الاسم بالإنجليزي', 'الرقم الضريبي', 'الهاتف', 'نوع المورد (purchases/expenses)'];
 
@@ -29,19 +34,42 @@ export function buildSupplierTemplateCsv() {
   return buildSupplierCsv([CSV_HEADERS_AR, ...SAMPLE_ROWS]);
 }
 
-export function buildSupplierExportCsv(suppliers: SupplierRecord[]) {
-  const rows = suppliers.map((supplier) => [
-    supplier.nameAr || '',
-    supplier.nameEn || '',
-    supplier.taxNumber || '',
-    supplier.phone || '',
-    supplier.supplierType || 'purchases',
-  ]);
-  return buildSupplierCsv([CSV_HEADERS_AR, ...rows]);
+export const SUPPLIER_EXPORT_COLUMNS = [
+  { key: 'nameAr', label: 'الاسم بالعربي' },
+  { key: 'nameEn', label: 'الاسم بالإنجليزي' },
+  { key: 'taxNumber', label: 'الرقم الضريبي' },
+  { key: 'isTaxRegistered', label: 'حالة التسجيل الضريبي' },
+  { key: 'supplierCategory', label: 'فئة المورد' },
+  { key: 'phone', label: 'الهاتف' },
+  { key: 'supplierType', label: 'نوع المورد' },
+] as const;
+
+export function buildSupplierExportRows(
+  suppliers: SupplierRecord[],
+  categories: SupplierCategoryRecord[],
+) {
+  const categoryNames = new Map(
+    categories.map((category) => [
+      category.id,
+      category.nameAr || category.nameEn || category.code || '',
+    ]),
+  );
+
+  return suppliers.map((supplier) => ({
+    nameAr: supplier.nameAr || '',
+    nameEn: supplier.nameEn || '',
+    taxNumber: supplier.taxNumber || '',
+    isTaxRegistered: supplier.isTaxRegistered === false ? 'غير مسجل' : 'مسجل',
+    supplierCategory: supplier.supplierCategoryId
+      ? categoryNames.get(supplier.supplierCategoryId) || ''
+      : '',
+    phone: supplier.phone || '',
+    supplierType: supplier.supplierType || 'purchases',
+  }));
 }
 
 export function buildSupplierExportFilename() {
-  return `الموردين_${getSaudiToday()}.csv`;
+  return `الموردين_${getSaudiToday()}.xlsx`;
 }
 
 function splitCsvLine(line: string) {

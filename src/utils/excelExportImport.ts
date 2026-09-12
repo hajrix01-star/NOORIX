@@ -12,6 +12,8 @@ type ExportToExcelConfigOpts = {
   rtl?: boolean;
   headerColor?: string;
   money2ColumnKeys?: string[];
+  /** مفاتيح تحفظ كنص صريح، مثل أرقام الهواتف والضرائب التي لا يجب أن يعيد Excel تفسيرها. */
+  textColumnKeys?: string[];
   moneyColumnFractionDigits?: number;
 };
 
@@ -23,6 +25,7 @@ type ExportToExcelObjectArg = {
   sheetName?: string;
   columns?: unknown;
   money2ColumnKeys?: string[];
+  textColumnKeys?: string[];
   moneyColumnFractionDigits?: number;
   /** صف واحد لكل صف بيانات — تنسيق تقرير ربح وخسارة (xlsx-js-style) */
   profitLossRowMeta?: Array<{ rowType?: string; groupKey?: string | null; tone?: string }>;
@@ -85,6 +88,7 @@ export async function exportToExcel(
       data: innerData, filename: cfgFile, title: cfgTitle,
       companyName: cfgCo, sheetName: cfgSheet, columns: cfgColumns,
       money2ColumnKeys: cfgMoney2,
+      textColumnKeys: cfgText,
       moneyColumnFractionDigits: cfgMoneyFrac,
       profitLossRowMeta: cfgPlMeta,
       rtl: cfgRtl,
@@ -95,6 +99,7 @@ export async function exportToExcel(
     if (cfgSheet && !configOpts.sheetName) configOpts = { sheetName: cfgSheet, ...configOpts };
     if (Array.isArray(cfgColumns) && cfgColumns.length) columnDefs = cfgColumns;
     if (cfgMoney2) configOpts = { ...configOpts, money2ColumnKeys: cfgMoney2 };
+    if (cfgText) configOpts = { ...configOpts, textColumnKeys: cfgText };
     if (typeof cfgMoneyFrac === 'number') {
       configOpts = { ...configOpts, moneyColumnFractionDigits: cfgMoneyFrac };
     }
@@ -112,12 +117,16 @@ export async function exportToExcel(
     rtl = true,
     headerColor = '185FA5',
     money2ColumnKeys: money2ColumnKeysOpt,
+    textColumnKeys: textColumnKeysOpt,
     /** @type {number|undefined} 0 = ريال كامل في التقرير (بدون كسور)؛ 2 = بهللتان */
     moneyColumnFractionDigits: moneyColumnFractionDigitsOpt,
   } = configOpts;
 
   const money2KeySet = new Set(
     Array.isArray(money2ColumnKeysOpt) ? money2ColumnKeysOpt.filter(Boolean) : [],
+  );
+  const textKeySet = new Set(
+    Array.isArray(textColumnKeysOpt) ? textColumnKeysOpt.filter(Boolean) : [],
   );
 
   const moneyFrac =
@@ -146,6 +155,7 @@ export async function exportToExcel(
     dataKeys.map((k) => {
       const v = row[k];
       if (v == null || v === '') return '';
+      if (textKeySet.has(k)) return String(v);
       if (money2KeySet.has(k)) {
         const raw = typeof v === 'number' ? v : Number(String(v).replace(/,/g, '').trim());
         if (!Number.isFinite(raw)) return '';
