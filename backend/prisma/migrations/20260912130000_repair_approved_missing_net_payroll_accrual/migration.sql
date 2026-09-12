@@ -101,8 +101,8 @@ BEGIN
 
   SELECT
     COUNT(*),
-    COUNT(*) FILTER (WHERE pri."net_salary" > 0.01),
-    COUNT(*) FILTER (WHERE pri."net_salary" < -0.01),
+    COUNT(*) FILTER (WHERE pri."net_salary" > 0),
+    COUNT(*) FILTER (WHERE pri."net_salary" < 0),
     COALESCE(SUM(pri."gross_salary" + pri."allowances_add" - pri."deductions"), 0),
     COALESCE(SUM(pri."net_salary"), 0),
     COALESCE(SUM(pri."advances_deduct"), 0),
@@ -174,7 +174,7 @@ BEGIN
     v_transaction_date, NOW(), 'payroll_accrual', v_run."id", 'operating_payroll',
     NULL, pri."employee_id", NULL, 'active', NOW()
   FROM "payroll_run_items" pri
-  WHERE pri."payroll_run_id" = v_run."id" AND pri."net_salary" > 0.01
+  WHERE pri."payroll_run_id" = v_run."id" AND pri."net_salary" > 0
   ON CONFLICT ("id") DO NOTHING;
 
   SELECT
@@ -188,7 +188,7 @@ BEGIN
         AND EXISTS (
           SELECT 1 FROM "payroll_run_items" pri
           WHERE pri."payroll_run_id" = v_run."id" AND pri."employee_id" = le."employee_id"
-            AND pri."net_salary" > 0.01 AND ABS(pri."net_salary" - le."amount") <= 0.01
+            AND pri."net_salary" > 0 AND pri."net_salary" = le."amount"
         )
     )
   INTO v_posted_accrual_count, v_posted_accrual_amount, v_distinct_employee_count, v_compliant_accrual_count

@@ -17,7 +17,10 @@ describe('approved missing net-payroll accrual repair migration', () => {
     expect(sql).toContain('APPROVED_MISSING_NET_PAYROLL_ACCRUAL_ADVANCE_EVIDENCE_MISMATCH');
     expect(sql).toContain('APPROVED_MISSING_NET_PAYROLL_ACCRUAL_ALREADY_POSTED');
     expect(sql).toContain('v_positive_net_item_count < 1');
-    expect(sql).toContain('v_negative_net_item_count <> 0');
+    expect(sql).toContain('pri."net_salary" < 0');
+    expect(sql).toContain('pri."net_salary" > 0');
+    expect(sql).not.toContain('pri."net_salary" < -0.01');
+    expect(sql).not.toContain('pri."net_salary" > 0.01');
     expect(sql).toMatch(/BEGIN;[\s\S]*COMMIT;\s*$/);
   });
 
@@ -39,5 +42,17 @@ describe('approved missing net-payroll accrual repair migration', () => {
     expect(sql).not.toContain('INSERT INTO "invoices"');
     expect(sql).not.toContain('INSERT INTO "employee_deductions"');
     expect(sql).not.toContain('UPDATE "employee_deductions"');
+  });
+
+  it('recovers the failed zero-net guard only after proving the ledger was untouched', () => {
+    const recovery = readFileSync(
+      join(__dirname, '../../../deploy/prisma-migrate-deploy-with-recovery.sh'),
+      'utf8',
+    );
+    expect(recovery).toContain('APPROVED_NET_PAYROLL_ACCRUAL_MIGRATION');
+    expect(recovery).toContain('approved_target_count');
+    expect(recovery).toContain('approved_artifacts');
+    expect(recovery).toContain('failed approved payroll accrual left accounting artifacts');
+    expect(recovery).toContain('prisma migrate resolve --rolled-back "$APPROVED_NET_PAYROLL_ACCRUAL_MIGRATION"');
   });
 });
