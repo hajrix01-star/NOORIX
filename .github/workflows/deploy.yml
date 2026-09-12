@@ -137,6 +137,11 @@ jobs:
           echo "==> build the replacement API before any destructive migration"
           npm run build
 
+          echo "==> verify the approved financial migration before API quiesce"
+          npx jest --config jest.config.cjs \
+            src/hr/hr-approved-missing-net-payroll-accrual-migration.util.spec.ts \
+            src/hr/hr-payroll-cost-gap-migration.util.spec.ts
+
           if ! grep -rq 'saudi-occasions' "$PROD/dist/dashboard/"; then
             echo "ERROR: dist built without saudi-occasions route" >&2
             exit 1
