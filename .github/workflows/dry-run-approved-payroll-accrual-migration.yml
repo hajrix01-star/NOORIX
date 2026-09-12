@@ -1,0 +1,29 @@
+name: Dry-run Approved Payroll Accrual Migration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - name: Execute the exact migration and force rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROD=/var/www/noorix/backend
+          MIGRATION="$PROD/prisma/migrations/20260912130000_repair_approved_missing_net_payroll_accrual/migration.sql"
+          cd "$PROD"
+          DATABASE_URL="$(node -e "require('dotenv').config({path:'.env',quiet:true}); process.stdout.write(process.env.DATABASE_URL || '')")"
+          if [[ -z "$DATABASE_URL" || ! -f "$MIGRATION" ]]; then
+            echo "ERROR: migration dry-run prerequisites unavailable" >&2
+            exit 1
+          fi
+          # The only COMMIT in this migration is its final statement. Replacing it
+          # with ROLLBACK exercises the production schema and role without persisting data.
+          sed '$s/^COMMIT;$/ROLLBACK;/' "$MIGRATION" \
+            | psql --dbname="$DATABASE_URL" --set=ON_ERROR_STOP=1 --no-psqlrc
