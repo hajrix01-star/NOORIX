@@ -111,6 +111,15 @@ jobs:
             LEFT JOIN fiscal_periods fp ON fp.company_id = t.company_id
               AND (t.payroll_month + INTERVAL '1 month - 1 day')::date BETWEEN fp.start_date::date AND fp.end_date::date
             GROUP BY t.id
+          ), target_migration AS (
+            SELECT jsonb_build_object(
+              'recordCount', COUNT(*),
+              'finished', BOOL_OR(m.finished_at IS NOT NULL),
+              'rolledBack', BOOL_OR(m.rolled_back_at IS NOT NULL),
+              'error', LEFT(REGEXP_REPLACE(COALESCE(MAX(m.logs), ''), E'[\\n\\r]+', ' ', 'g'), 500)
+            ) AS state
+            FROM "_prisma_migrations" m
+            WHERE m.migration_name = '20260912130000_repair_approved_missing_net_payroll_accrual'
           )
           SELECT jsonb_pretty(jsonb_build_object(
             'runCount', (SELECT COUNT(*) FROM target),
@@ -125,7 +134,8 @@ jobs:
             'tracedLedgerByReferenceType', COALESCE((SELECT jsonb_object_agg(reference_type, amount) FROM traced_ledger), '{}'::jsonb),
             'matchingAdvanceEvidence', COALESCE((SELECT to_jsonb(r) - 'payroll_run_id' FROM repair_candidates r LIMIT 1), '{}'::jsonb),
             'requiredAccounts', COALESCE((SELECT configuration FROM required_accounts LIMIT 1), '{}'::jsonb),
-            'periodsAtPayrollDate', COALESCE((SELECT matching_periods FROM fiscal_period LIMIT 1), '[]'::jsonb)
+            'periodsAtPayrollDate', COALESCE((SELECT matching_periods FROM fiscal_period LIMIT 1), '[]'::jsonb),
+            'targetMigration', (SELECT state FROM target_migration)
           ));
           ROLLBACK;
           SQL
