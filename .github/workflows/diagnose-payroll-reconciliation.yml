@@ -1,0 +1,97 @@
+name: Diagnose Payroll Reconciliation
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_number:
+        description: Completed payroll run number to inspect
+        required: true
+        default: PR-2605-001
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Read-only payroll and ledger diagnosis
+        shell: bash
+        env:
+          RUN_NUMBER: ${{ inputs.run_number }}
+        run: |
+          set -euo pipefail
+          PROD=/var/www/noorix/backend
+          cd "$PROD"
+          DATABASE_URL="$(node -e "require('dotenv').config({path:'.env',quiet:true}); process.stdout.write(process.env.DATABASE_URL || '')")"
+          if [[ -z "$DATABASE_URL" ]]; then
+            echo "ERROR: DATABASE_URL unavailable" >&2
+            exit 1
+          fi
+          # The query emits aggregates only: no employee names, identifiers, or credentials.
+          export PGOPTIONS='-c default_transaction_read_only=on'
+          psql --dbname="$DATABASE_URL" --set=ON_ERROR_STOP=1 --no-psqlrc -v run_number="$RUN_NUMBER" <<'SQL'
+          BEGIN TRANSACTION READ ONLY;
+          WITH target AS (
+            SELECT pr.id, pr.company_id, pr.run_number, pr.payroll_month
+            FROM payroll_runs pr
+            JOIN companies c ON c.id = pr.company_id
+            WHERE pr.status = 'completed' AND c.is_archived = false AND pr.run_number = :'run_number'
+          ), items AS (
+            SELECT
+              t.id AS payroll_run_id,
+              COUNT(*) AS item_count,
+              COALESCE(SUM(pri.gross_salary + pri.allowances_add - pri.deductions), 0) AS expected_cost,
+              COALESCE(SUM(pri.net_salary), 0) AS net_salary,
+              COALESCE(SUM(pri.advances_deduct), 0) AS declared_advance_deduction,
+              COALESCE(SUM(GREATEST(pri.gross_salary + pri.allowances_add - pri.deductions - pri.net_salary, 0)), 0) AS equation_advance_deduction
+            FROM target t
+            JOIN payroll_run_items pri ON pri.payroll_run_id = t.id
+            GROUP BY t.id
+          ), traced_ledger AS (
+            SELECT t.id AS payroll_run_id, le.reference_type, COALESCE(SUM(le.amount), 0) AS amount
+            FROM target t
+            JOIN accounts expense_account
+              ON expense_account.company_id = t.company_id AND expense_account.code = 'EXP-004' AND expense_account.type = 'expense'
+            JOIN ledger_entries le
+              ON le.company_id = t.company_id AND le.debit_account_id = expense_account.id AND le.status = 'active'
+            LEFT JOIN invoices salary_invoice
+              ON salary_invoice.company_id = t.company_id AND salary_invoice.id = le.reference_id
+             AND salary_invoice.kind = 'salary' AND salary_invoice.status = 'active'
+            LEFT JOIN employee_deductions advance_deduction
+              ON advance_deduction.company_id = t.company_id AND advance_deduction.id = le.reference_id
+             AND advance_deduction.deduction_type = 'advance'
+            WHERE (le.reference_type = 'payroll_accrual' AND le.reference_id = t.id)
+               OR (le.reference_type IN ('salary', 'invoice') AND salary_invoice.id IS NOT NULL AND (
+                    salary_invoice.batch_id = t.id OR salary_invoice.invoice_number = 'SAL-' || t.run_number
+                    OR STRPOS(COALESCE(salary_invoice.notes, ''), t.run_number) > 0
+                  ))
+               OR (le.reference_type = 'advance_settlement' AND advance_deduction.id IS NOT NULL
+                   AND STRPOS(COALESCE(advance_deduction.notes, ''), t.run_number) > 0)
+            GROUP BY t.id, le.reference_type
+          ), repair_candidates AS (
+            SELECT t.id AS payroll_run_id,
+              COUNT(*) AS matching_advance_deduction_count,
+              COALESCE(SUM(d.amount), 0) AS matching_advance_deduction_total,
+              COALESCE(SUM(le.amount) FILTER (WHERE le.status = 'active'), 0) AS posted_advance_settlement_total
+            FROM target t
+            JOIN payroll_run_items pri ON pri.payroll_run_id = t.id
+            JOIN employee_deductions d ON d.company_id = t.company_id AND d.employee_id = pri.employee_id
+             AND d.deduction_type = 'advance' AND STRPOS(COALESCE(d.notes, ''), t.run_number) > 0
+            LEFT JOIN ledger_entries le ON le.company_id = t.company_id AND le.reference_type = 'advance_settlement' AND le.reference_id = d.id
+            GROUP BY t.id
+          )
+          SELECT jsonb_pretty(jsonb_build_object(
+            'runCount', (SELECT COUNT(*) FROM target),
+            'run', (SELECT jsonb_build_object('number', t.run_number, 'month', to_char(t.payroll_month, 'YYYY-MM')) FROM target t LIMIT 1),
+            'items', (SELECT to_jsonb(i) - 'payroll_run_id' FROM items i LIMIT 1),
+            'tracedLedgerByReferenceType', COALESCE((SELECT jsonb_object_agg(reference_type, amount) FROM traced_ledger), '{}'::jsonb),
+            'matchingAdvanceEvidence', COALESCE((SELECT to_jsonb(r) - 'payroll_run_id' FROM repair_candidates r LIMIT 1), '{}'::jsonb)
+          ));
+          ROLLBACK;
+          SQL
