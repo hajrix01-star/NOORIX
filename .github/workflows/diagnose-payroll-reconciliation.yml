@@ -1,6 +1,9 @@
 name: Diagnose Payroll Reconciliation
 
 on:
+  push:
+    branches:
+      - payroll-reconciliation-diagnostic
   workflow_dispatch:
     inputs:
       run_number:
