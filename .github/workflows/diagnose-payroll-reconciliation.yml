@@ -11,6 +11,11 @@ on:
         required: true
         default: PR-2605-001
         type: string
+      company_name:
+        description: Exact Arabic company name to inspect
+        required: true
+        default: وقت الكرك
+        type: string
 
 permissions:
   contents: read
@@ -27,10 +32,12 @@ jobs:
         shell: bash
         env:
           RUN_NUMBER: ${{ inputs.run_number }}
+          COMPANY_NAME: ${{ inputs.company_name }}
         run: |
           set -euo pipefail
           PROD=/var/www/noorix/backend
           RUN_NUMBER="${RUN_NUMBER:-PR-2605-001}"
+          COMPANY_NAME="${COMPANY_NAME:-وقت الكرك}"
           cd "$PROD"
           DATABASE_URL="$(node -e "require('dotenv').config({path:'.env',quiet:true}); process.stdout.write(process.env.DATABASE_URL || '')")"
           if [[ -z "$DATABASE_URL" ]]; then
@@ -39,13 +46,14 @@ jobs:
           fi
           # The query emits aggregates only: no employee names, identifiers, or credentials.
           export PGOPTIONS='-c default_transaction_read_only=on'
-          psql --dbname="$DATABASE_URL" --set=ON_ERROR_STOP=1 --no-psqlrc -v run_number="$RUN_NUMBER" <<'SQL'
+          psql --dbname="$DATABASE_URL" --set=ON_ERROR_STOP=1 --no-psqlrc -v run_number="$RUN_NUMBER" -v company_name="$COMPANY_NAME" <<'SQL'
           BEGIN TRANSACTION READ ONLY;
           WITH target AS (
             SELECT pr.id, pr.company_id, pr.run_number, pr.payroll_month
             FROM payroll_runs pr
             JOIN companies c ON c.id = pr.company_id
-            WHERE pr.status = 'completed' AND c.is_archived = false AND pr.run_number = :'run_number'
+            WHERE pr.status = 'completed' AND c.is_archived = false
+              AND pr.run_number = :'run_number' AND c.name_ar = :'company_name'
           ), items AS (
             SELECT
               t.id AS payroll_run_id,
