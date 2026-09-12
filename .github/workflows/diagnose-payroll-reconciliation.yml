@@ -49,7 +49,7 @@ jobs:
           psql --dbname="$DATABASE_URL" --set=ON_ERROR_STOP=1 --no-psqlrc -v run_number="$RUN_NUMBER" -v company_name="$COMPANY_NAME" <<'SQL'
           BEGIN TRANSACTION READ ONLY;
           WITH target AS (
-            SELECT pr.id, pr.tenant_id, pr.company_id, pr.run_number, pr.payroll_month,
+            SELECT pr.id, pr.tenant_id, pr.company_id, pr.run_number, pr.payroll_month, pr.total_amount,
                    pr.status, pr.payroll_accrued_at, pr.advance_settlements_applied_at
             FROM payroll_runs pr
             JOIN companies c ON c.id = pr.company_id
@@ -120,6 +120,29 @@ jobs:
             ) AS state
             FROM "_prisma_migrations" m
             WHERE m.migration_name = '20260912130000_repair_approved_missing_net_payroll_accrual'
+          ), migration_preconditions AS (
+            SELECT t.id AS payroll_run_id,
+              t.total_amount AS run_total_amount,
+              COALESCE((
+                SELECT COUNT(*) FROM ledger_entries le
+                WHERE le.tenant_id = t.tenant_id AND le.company_id = t.company_id
+                  AND le.reference_type = 'payroll_accrual' AND le.reference_id = t.id AND le.status = 'active'
+              ), 0) AS active_accrual_count,
+              COALESCE((
+                SELECT COUNT(*) FROM ledger_entries le
+                JOIN employee_deductions d ON d.id = le.reference_id AND d.company_id = t.company_id
+                JOIN accounts debit ON debit.id = le.debit_account_id AND debit.company_id = t.company_id
+                JOIN accounts credit ON credit.id = le.credit_account_id AND credit.company_id = t.company_id
+                WHERE le.company_id = t.company_id AND le.reference_type = 'advance_settlement' AND le.status = 'active'
+                  AND le.vault_id IS NULL AND debit.code = 'EXP-004' AND credit.code = 'ADV-001'
+                  AND d.deduction_type = 'advance' AND STRPOS(COALESCE(d.notes, ''), t.run_number) > 0
+              ), 0) AS exact_advance_ledger_count,
+              COALESCE((
+                SELECT COUNT(*) FROM audit_logs al
+                WHERE al.tenant_id = t.tenant_id AND al.company_id = t.company_id
+                  AND al.entity = 'payroll_accrual' AND al.entity_id = t.id
+              ), 0) AS payroll_accrual_audit_count
+            FROM target t
           )
           SELECT jsonb_pretty(jsonb_build_object(
             'runCount', (SELECT COUNT(*) FROM target),
@@ -135,7 +158,8 @@ jobs:
             'matchingAdvanceEvidence', COALESCE((SELECT to_jsonb(r) - 'payroll_run_id' FROM repair_candidates r LIMIT 1), '{}'::jsonb),
             'requiredAccounts', COALESCE((SELECT configuration FROM required_accounts LIMIT 1), '{}'::jsonb),
             'periodsAtPayrollDate', COALESCE((SELECT matching_periods FROM fiscal_period LIMIT 1), '[]'::jsonb),
-            'targetMigration', (SELECT state FROM target_migration)
+            'targetMigration', (SELECT state FROM target_migration),
+            'migrationPreconditions', COALESCE((SELECT to_jsonb(p) - 'payroll_run_id' FROM migration_preconditions p LIMIT 1), '{}'::jsonb)
           ));
           ROLLBACK;
           SQL
