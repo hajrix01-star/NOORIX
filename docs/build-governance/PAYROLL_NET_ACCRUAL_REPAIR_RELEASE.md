@@ -23,3 +23,5 @@ Before a write, the migration requires one exact target, an open or absent fisca
 ## G3 — verification and release
 
 Postconditions require the exact per-item ledger rows, exact total, no vault, no duplicate employee posting, an unchanged advance-settlement total, one audit row, and a non-null payroll-accrual marker. The deployment payroll gate must then pass before the frontend is published.
+
+The deployment creates and verifies a full, local logical database backup before Prisma applies this financial migration. An isolated PostgreSQL 16 rehearsal created the eight expected accrual rows totaling 10,216.6700, zero cash rows, one audit row, and the accrual marker; it completed without SQL or schema errors.
