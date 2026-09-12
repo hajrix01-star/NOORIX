@@ -16,6 +16,8 @@ describe('approved missing net-payroll accrual repair migration', () => {
     expect(sql).toContain('APPROVED_MISSING_NET_PAYROLL_ACCRUAL_FISCAL_PERIOD_NOT_OPEN');
     expect(sql).toContain('APPROVED_MISSING_NET_PAYROLL_ACCRUAL_ADVANCE_EVIDENCE_MISMATCH');
     expect(sql).toContain('APPROVED_MISSING_NET_PAYROLL_ACCRUAL_ALREADY_POSTED');
+    expect(sql).toContain('v_positive_net_item_count < 1');
+    expect(sql).toContain('v_negative_net_item_count <> 0');
     expect(sql).toMatch(/BEGIN;[\s\S]*COMMIT;\s*$/);
   });
 

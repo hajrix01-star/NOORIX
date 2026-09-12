@@ -9,6 +9,7 @@ set -euo pipefail
 LEGACY_RETIREMENT_MIGRATION="20260803180000_retire_legacy_orders"
 ADVANCE_RECLASSIFICATION_MIGRATION="20260809010000_reclassify_employee_advances_as_assets"
 PAYROLL_COST_GAP_MIGRATION="20260811123000_reconcile_historical_payroll_cost_gap"
+APPROVED_NET_PAYROLL_ACCRUAL_MIGRATION="20260912130000_repair_approved_missing_net_payroll_accrual"
 LEGACY_TABLES=(
   order_categories order_sections order_catalog_units order_conversion_templates
   order_products orders order_items staff_orders staff_order_items
@@ -108,6 +109,58 @@ if [[ "$failed_payroll_cost_gap" != "0" ]]; then
   fi
   echo "==> [prisma] verified the known BOM parse failure; marking payroll cost-gap attempt rolled back"
   npx prisma migrate resolve --rolled-back "$PAYROLL_COST_GAP_MIGRATION"
+fi
+
+# This approved repair initially treated a legitimate zero-net payroll item as
+# an error. PostgreSQL rolled the whole transaction back. Retry only after the
+# exact target still has no migration-owned ledger, audit, or run-marker state.
+failed_approved_net_payroll_accrual="$(psql --dbname="$DATABASE_URL" -Atqc "
+  SELECT count(*)
+  FROM \"_prisma_migrations\"
+  WHERE migration_name = '${APPROVED_NET_PAYROLL_ACCRUAL_MIGRATION}'
+    AND finished_at IS NULL
+    AND rolled_back_at IS NULL
+")"
+
+if [[ "$failed_approved_net_payroll_accrual" != "0" ]]; then
+  approved_target_count="$(psql --dbname="$DATABASE_URL" -Atqc "
+    SELECT count(*)
+    FROM \"payroll_runs\" pr
+    JOIN \"companies\" c ON c.id = pr.company_id
+    WHERE c.name_ar = 'وقت الكرك' AND c.is_archived = false
+      AND pr.run_number = 'PR-2605-001'
+      AND pr.payroll_month >= TIMESTAMP '2026-04-01'
+      AND pr.payroll_month < TIMESTAMP '2026-05-01'
+      AND pr.status = 'completed'
+  ")"
+  if [[ "$approved_target_count" != "1" ]]; then
+    echo "ERROR: approved payroll accrual recovery target mismatch" >&2
+    exit 1
+  fi
+  approved_artifacts="$(psql --dbname="$DATABASE_URL" -Atqc "
+    WITH target AS (
+      SELECT pr.id, pr.tenant_id, pr.company_id, pr.payroll_accrued_at
+      FROM \"payroll_runs\" pr
+      JOIN \"companies\" c ON c.id = pr.company_id
+      WHERE c.name_ar = 'وقت الكرك' AND c.is_archived = false
+        AND pr.run_number = 'PR-2605-001'
+        AND pr.payroll_month >= TIMESTAMP '2026-04-01'
+        AND pr.payroll_month < TIMESTAMP '2026-05-01'
+        AND pr.status = 'completed'
+    )
+    SELECT
+      (SELECT count(*) FROM \"ledger_entries\" le JOIN target t ON t.company_id = le.company_id
+        WHERE le.reference_type = 'payroll_accrual' AND le.reference_id = t.id AND le.status = 'active')
+      + (SELECT count(*) FROM \"audit_logs\" al JOIN target t ON t.tenant_id = al.tenant_id AND t.company_id = al.company_id
+        WHERE al.entity = 'payroll_accrual' AND al.entity_id = t.id)
+      + (SELECT count(*) FROM target WHERE payroll_accrued_at IS NOT NULL)
+  ")"
+  if [[ "$approved_artifacts" != "0" ]]; then
+    echo "ERROR: failed approved payroll accrual left accounting artifacts; manual recovery is required" >&2
+    exit 1
+  fi
+  echo "==> [prisma] verified rollback of the zero-net payroll guard attempt; retrying the corrected approved migration"
+  npx prisma migrate resolve --rolled-back "$APPROVED_NET_PAYROLL_ACCRUAL_MIGRATION"
 fi
 echo "==> [prisma] migrate deploy (strict)"
 npx prisma migrate deploy

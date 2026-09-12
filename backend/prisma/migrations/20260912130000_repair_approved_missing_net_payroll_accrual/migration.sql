@@ -15,6 +15,7 @@ DECLARE
   v_open_period_count integer;
   v_item_count integer;
   v_positive_net_item_count integer;
+  v_negative_net_item_count integer;
   v_expected_cost numeric;
   v_net_salary numeric;
   v_declared_advance numeric;
@@ -101,16 +102,18 @@ BEGIN
   SELECT
     COUNT(*),
     COUNT(*) FILTER (WHERE pri."net_salary" > 0.01),
+    COUNT(*) FILTER (WHERE pri."net_salary" < -0.01),
     COALESCE(SUM(pri."gross_salary" + pri."allowances_add" - pri."deductions"), 0),
     COALESCE(SUM(pri."net_salary"), 0),
     COALESCE(SUM(pri."advances_deduct"), 0),
     COALESCE(SUM(pri."gross_salary" + pri."allowances_add" - pri."deductions" - pri."net_salary"), 0)
-  INTO v_item_count, v_positive_net_item_count, v_expected_cost, v_net_salary, v_declared_advance, v_equation_advance
+  INTO v_item_count, v_positive_net_item_count, v_negative_net_item_count, v_expected_cost, v_net_salary, v_declared_advance, v_equation_advance
   FROM "payroll_run_items" pri
   WHERE pri."payroll_run_id" = v_run."id";
 
   IF v_item_count <> 8
-     OR v_positive_net_item_count <> 8
+     OR v_positive_net_item_count < 1
+     OR v_negative_net_item_count <> 0
      OR ABS(v_run."total_amount" - v_net_salary) > 0.01
      OR ABS(v_expected_cost - 19266.6700) > 0.01
      OR ABS(v_net_salary - 10216.6700) > 0.01

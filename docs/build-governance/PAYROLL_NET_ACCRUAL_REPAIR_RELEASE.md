@@ -18,7 +18,7 @@ The migration appends exactly one `payroll_accrual` ledger row for each positive
 
 ## G2 — safety gate
 
-Before a write, the migration requires one exact target, an open or absent fiscal period, active correctly typed accounts, eight payroll items, matching payroll equations and fixed totals, an already-complete advance settlement, zero prior payroll-accrual rows, and a null `payroll_accrued_at` marker. It locks the target and aborts the whole transaction on any mismatch.
+Before a write, the migration requires one exact target, an open or absent fiscal period, active correctly typed accounts, eight payroll items, matching payroll equations and fixed totals, an already-complete advance settlement, zero prior payroll-accrual rows, and a null `payroll_accrued_at` marker. A zero-net item is valid and creates no payable row; a negative net is rejected. It locks the target and aborts the whole transaction on any mismatch.
 
 ## G3 — verification and release
 
