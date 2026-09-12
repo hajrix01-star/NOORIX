@@ -30,6 +30,7 @@ jobs:
         run: |
           set -euo pipefail
           PROD=/var/www/noorix/backend
+          RUN_NUMBER="${RUN_NUMBER:-PR-2605-001}"
           cd "$PROD"
           DATABASE_URL="$(node -e "require('dotenv').config({path:'.env',quiet:true}); process.stdout.write(process.env.DATABASE_URL || '')")"
           if [[ -z "$DATABASE_URL" ]]; then
