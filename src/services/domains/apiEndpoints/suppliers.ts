@@ -6,7 +6,7 @@ import type {
   SupplierRecord,
   SupplierUpdatePayload,
 } from '../../../modules/Suppliers/supplierTypes';
-import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
+import { apiGet, apiPost, apiPatch, apiDelete, throwIfApiFailed } from '../../core/apiHttp';
 import { suppliersListQueryParams } from './suppliers-query';
 
 type SuppliersListResult = SupplierRecord[] | {
@@ -23,6 +23,47 @@ export async function getSuppliers(
   q?: string,
 ): Promise<ApiParsedResult<SuppliersListResult>> {
   return apiGet('/api/v1/suppliers', suppliersListQueryParams({ companyId, page, pageSize, q }));
+}
+
+/** يجلب كل صفحات الموردين للتصدير فقط؛ لا يعيد ملفاً جزئياً إذا فشلت صفحة لاحقة. */
+export async function fetchAllSuppliersForExport(companyId: string): Promise<SupplierRecord[]> {
+  if (!companyId) return [];
+  const pageSize = 200;
+  const maximumPages = 500;
+  const all: SupplierRecord[] = [];
+  let expectedTotal: number | undefined;
+
+  for (let page = 1; page <= maximumPages; page += 1) {
+    const res = await getSuppliers(companyId, page, pageSize);
+    throwIfApiFailed(res, 'فشل تحميل الموردين للتصدير');
+    const pack = res.data;
+    if (Array.isArray(pack) || !pack || !Array.isArray(pack.items) || typeof pack.total !== 'number' || !Number.isSafeInteger(pack.total) || pack.total < 0) {
+      throw new Error('بيانات الموردين غير مكتملة؛ أعد المحاولة قبل التصدير');
+    }
+    const reportedTotal = pack.total;
+
+    if (expectedTotal === undefined) {
+      expectedTotal = reportedTotal;
+      if (expectedTotal > maximumPages * pageSize) {
+        throw new Error('عدد الموردين يتجاوز الحد الآمن للتصدير');
+      }
+    } else if (reportedTotal !== expectedTotal) {
+      throw new Error('تغيرت بيانات الموردين أثناء التصدير؛ أعد المحاولة');
+    }
+    const targetTotal = expectedTotal;
+    if (targetTotal === undefined) {
+      throw new Error('بيانات الموردين غير مكتملة؛ أعد المحاولة قبل التصدير');
+    }
+
+    const items = pack.items;
+    all.push(...items);
+    if (all.length === targetTotal) return all;
+    if (all.length > targetTotal || items.length < pageSize) {
+      throw new Error('بيانات الموردين غير مكتملة؛ أعد المحاولة قبل التصدير');
+    }
+  }
+
+  throw new Error('تجاوز تصدير الموردين الحد الآمن للصفحات');
 }
 
 export async function createSupplier(body: SupplierCreatePayload): Promise<ApiParsedResult<SupplierRecord>> {

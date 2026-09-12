@@ -1,6 +1,8 @@
 import React, { useRef, useState, type ChangeEvent } from 'react';
 import { Button, FileInput } from '../../../ui';
 import { exportToExcel } from '../../../utils/exportUtils';
+import { fetchAllSuppliersForExport } from '../../../services/api';
+import { useToast } from '../../../context/ToastContext';
 import type { SupplierCategoryRecord, SupplierCreatePayload, SupplierRecord } from '../supplierTypes';
 import {
   buildSupplierExportFilename,
@@ -37,23 +39,34 @@ export default function SupplierImportExport({
 }: SupplierImportExportProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [result, setResult] = useState<SupplierImportResult | null>(null);
+  const { showToast } = useToast();
 
   function handleDownloadTemplate() {
     downloadCsv(buildSupplierTemplateCsv(), 'نموذج_استيراد_الموردين.csv');
   }
 
-  function handleExport() {
-    if (!suppliers.length) return;
-    void exportToExcel({
-      data: buildSupplierExportRows(suppliers, categories),
-      filename: buildSupplierExportFilename(),
-      title: 'دليل الموردين',
-      sheetName: 'الموردون',
-      columns: SUPPLIER_EXPORT_COLUMNS,
-      textColumnKeys: ['taxNumber', 'phone'],
-      rtl: true,
-    });
+  async function handleExport() {
+    if (!companyId || exporting) return;
+    setExporting(true);
+    try {
+      const allSuppliers = await fetchAllSuppliersForExport(companyId);
+      if (!allSuppliers.length) return;
+      await exportToExcel({
+        data: buildSupplierExportRows(allSuppliers, categories),
+        filename: buildSupplierExportFilename(),
+        title: 'دليل الموردين',
+        sheetName: 'الموردون',
+        columns: SUPPLIER_EXPORT_COLUMNS,
+        textColumnKeys: ['taxNumber', 'phone'],
+        rtl: true,
+      });
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'تعذر تصدير الموردين', 'error');
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -96,10 +109,11 @@ export default function SupplierImportExport({
 
         <Button
           variant="success"
-          onClick={handleExport}
-          disabled={!suppliers.length}
+          onClick={() => void handleExport()}
+          disabled={!companyId || exporting}
+          loading={exporting}
         >
-          تصدير Excel ({suppliers.length})
+          {exporting ? 'جاري تصدير الموردين...' : 'تصدير Excel'}
         </Button>
       </div>
 
