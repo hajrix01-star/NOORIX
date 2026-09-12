@@ -16,6 +16,11 @@ on:
         required: true
         default: وقت الكرك
         type: string
+      dry_run:
+        description: Execute the approved accrual migration and force rollback
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -163,3 +168,25 @@ jobs:
           ));
           ROLLBACK;
           SQL
+
+  dry-run-approved-accrual:
+    if: ${{ inputs.dry_run == true }}
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - name: Execute the exact migration and force rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROD=/var/www/noorix/backend
+          MIGRATION="$PROD/prisma/migrations/20260912130000_repair_approved_missing_net_payroll_accrual/migration.sql"
+          cd "$PROD"
+          DATABASE_URL="$(node -e "require('dotenv').config({path:'.env',quiet:true}); process.stdout.write(process.env.DATABASE_URL || '')")"
+          if [[ -z "$DATABASE_URL" || ! -f "$MIGRATION" ]]; then
+            echo "ERROR: migration dry-run prerequisites unavailable" >&2
+            exit 1
+          fi
+          # The only COMMIT in this migration is the final statement. Replacing it
+          # with ROLLBACK exercises the production schema and role without persisting data.
+          sed '$s/^COMMIT;$/ROLLBACK;/' "$MIGRATION" \
+            | psql --dbname="$DATABASE_URL" --set=ON_ERROR_STOP=1 --no-psqlrc
