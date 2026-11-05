@@ -16,6 +16,15 @@ PACKAGES_ROOT="${APP_ROOT}/packages"
 DEPLOY_ROOT="${APP_ROOT}/deploy"
 SOURCE_TARBALL="/tmp/noorix-staging-source.tar.gz"
 FRONTEND_TARBALL="/tmp/noorix-staging-frontend.tar.gz"
+RESET_STAGING_SCHEMA=0
+
+# This one-time branch-only recovery switch is deliberately an exact value so
+# the normal staging workflow cannot reset data by accident.  It is consumed
+# before CORS configuration, so it is never persisted as an origin.
+if [[ "$PUBLIC_URL" == "RESET_NOORIX_STAGING" ]]; then
+  RESET_STAGING_SCHEMA=1
+  PUBLIC_URL=""
+fi
 
 log() { printf '%s\n' "$*"; }
 
@@ -112,6 +121,16 @@ cd "$BACKEND_ROOT"
 rm -rf node_modules
 npm ci
 npx prisma generate
+if [[ "$RESET_STAGING_SCHEMA" == "1" ]]; then
+  DATABASE_URL="$(node -e 'require("dotenv").config({path:".env",quiet:true}); process.stdout.write(process.env.DATABASE_URL || "")')"
+  case "$DATABASE_URL" in
+    *noorix_staging*) ;;
+    *) echo "ERROR: refusing to reset a database other than noorix_staging." >&2; exit 1 ;;
+  esac
+  log "==> Resetting the isolated noorix_staging schema"
+  sudo systemctl stop "$SERVICE_NAME" || true
+  npx prisma migrate reset --force --skip-seed
+fi
 bash "$DEPLOY_ROOT/prisma-migrate-deploy-with-recovery.sh"
 npm run build
 
