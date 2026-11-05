@@ -1,6 +1,7 @@
 import { Module, Logger }        from '@nestjs/common';
 import { JwtModule }    from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import type { StringValue } from 'ms';
 import { AuthController }    from './auth.controller';
 import { AuthService }       from './auth.service';
 import { CompanyAccessGuard } from './guards/company-access.guard';
@@ -21,7 +22,7 @@ if (!secretFromEnv) {
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret:      secretFromEnv || JWT_DEV_FALLBACK,
-      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN ?? '8h' },
+      signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN ?? '8h') as StringValue },
     }),
   ],
   controllers: [AuthController],

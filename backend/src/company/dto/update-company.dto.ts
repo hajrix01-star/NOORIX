@@ -10,7 +10,9 @@ const optionalUrlOrDataUrl = z
 export const updateCompanySchema = z.object({
   nameAr: z.string().min(1).optional(),
   nameEn: z.string().optional().nullable(),
-  logoUrl: optionalUrlOrDataUrl,
+  // In Zod 4, an inner optional value does not make the object key optional
+  // after a transform. Keep this as a genuine PATCH field.
+  logoUrl: optionalUrlOrDataUrl.optional(),
   phone: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   taxNumber: z.string().optional().nullable(),

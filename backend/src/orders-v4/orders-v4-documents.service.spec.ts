@@ -6,6 +6,10 @@ import { OrdersV4PurchaseCorrectionService } from './orders-v4-purchase-correcti
 import { isOrdersV4StaffDocumentDateEligible, ordersV4CashierEditDateRange } from './orders-v4-reopen.policy';
 
 describe('OrdersV4DocumentsService purchase workflow', () => {
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-03T12:00:00.000Z'));
+  });
+
   it('allows staff to create documents through tomorrow, but not beyond it', () => {
     expect(isOrdersV4StaffDocumentDateEligible(new Date('2026-08-03T00:00:00.000Z'), '2026-08-03')).toBe(true);
     expect(isOrdersV4StaffDocumentDateEligible(new Date('2026-08-04T00:00:00.000Z'), '2026-08-03')).toBe(true);

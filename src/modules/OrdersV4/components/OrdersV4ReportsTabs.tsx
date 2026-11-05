@@ -14,7 +14,7 @@ import type {
   OrdersV4Document,
   OrdersV4ItemsReportRow,
 } from '../../../types/api';
-import { Button, DataBar, Input, SearchableOptionsPicker, SmartTable, usePrintPreview, type SimpleTableColumn } from '../../../ui';
+import { Button, DataBar, Input, SearchableOptionsPicker, SmartTable, usePrintPreview, type SimpleTableColumn, type SmartTableColumn } from '../../../ui';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { buildPrintTableHtml } from '../../../utils/printTableHtml';
 import {
@@ -346,7 +346,7 @@ export function OrdersV4SalesReportTab({ companyId, startDate, endDate }: { comp
   const missingColumns: SimpleTableColumn<(typeof missingDays)[number]>[] = [
     { key: 'date', label: 'التاريخ', render: (value) => v4Date(String(value)) }, { key: 'sectionName', label: 'القسم' }, { key: 'status', label: 'الحالة', render: () => <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-700">لم يسجل</span> },
   ];
-  const documentColumns: SimpleTableColumn<OrdersV4Document>[] = [
+  const documentColumns: SmartTableColumn<OrdersV4Document>[] = [
     { key: 'documentNumber', label: 'رقم السند', kind: 'id', size: 'document', minWidth: 155 }, { key: 'documentDate', label: 'التاريخ', kind: 'date', size: 'date', render: (value) => v4Date(String(value)) },
     { key: 'registrationEntryType', label: 'النوع', kind: 'status', minWidth: 105, render: (_value, row) => (row.registrationEntryType ?? 'issue') === 'cancellation' ? <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">إلغاء</span> : 'تسجيل داخلي' },
     { key: 'section', label: 'القسم', kind: 'text', minWidth: 105, render: (_value, row) => row.section?.nameAr || '—' }, { key: 'createdByUser', label: 'الموظف', kind: 'text', size: 'name', minWidth: 140, render: (_value, row) => v4UserLabel(row.createdByUser) },

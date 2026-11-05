@@ -32,7 +32,7 @@ export class BankStatementsController {
   constructor(private readonly service: BankStatementsService) {}
 
   @Post('upload')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async upload(@Body() body: { companyId: string; fileName: string; fileFormat: string; raw: string[][] }) {
     if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     if (!body.raw?.length) throw new HttpException('raw مطلوب وغير فارغ', HttpStatus.BAD_REQUEST);
@@ -44,7 +44,7 @@ export class BankStatementsController {
   }
 
   @Post('suggest-header-metadata')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async suggestHeaderMetadata(@Body() body: { companyId: string; raw: string[][] }) {
     if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     if (!body.raw?.length) throw new HttpException('raw مطلوب', HttpStatus.BAD_REQUEST);
@@ -52,14 +52,14 @@ export class BankStatementsController {
   }
 
   @Post(':id/reclassify')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async reclassify(@Param('id') id: string, @Body() body: { companyId: string }) {
     if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.reclassifyStatement(body.companyId, id);
   }
 
   @Patch(':id/confirm-mapping')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async confirmMapping(
     @Param('id') id: string,
     @Body()
@@ -111,7 +111,7 @@ export class BankStatementsController {
   }
 
   @Patch('templates/:templateId')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async setTemplateIsActive(
     @Param('templateId') templateId: string,
     @Body() body: { companyId: string; isActive: boolean },
@@ -124,7 +124,7 @@ export class BankStatementsController {
   }
 
   @Delete('templates/:templateId')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async deleteTemplate(@CompanyId() companyId: string, @Param('templateId') templateId: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.deleteTemplate(companyId, templateId);
@@ -138,7 +138,7 @@ export class BankStatementsController {
   }
 
   @Post('tree-categories')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async createTreeCategory(
     @Body()
     body: {
@@ -156,7 +156,7 @@ export class BankStatementsController {
   }
 
   @Patch('tree-categories/:cid')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async updateTreeCategory(
     @Param('cid') cid: string,
     @Body()
@@ -177,14 +177,14 @@ export class BankStatementsController {
   }
 
   @Delete('tree-categories/:cid')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async deleteTreeCategory(@CompanyId() companyId: string, @Param('cid') cid: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.deleteTreeCategory(companyId, cid);
   }
 
   @Post('tree-categories/seed-defaults')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async seedDefaultTreeCategories(@Body() body: { companyId: string }) {
     if (!body?.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.seedDefaultTreeCategoriesIfEmpty(body.companyId);
@@ -205,7 +205,7 @@ export class BankStatementsController {
   }
 
   @Post('classification-rules')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async createRule(
     @Body()
     body: {
@@ -223,14 +223,14 @@ export class BankStatementsController {
   }
 
   @Delete('classification-rules/:rid')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async deleteRule(@CompanyId() companyId: string, @Param('rid') rid: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.deleteClassificationRule(companyId, rid);
   }
 
   @Post('classification-rules/import-pack')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async importClassificationPack(
     @Body() body: { companyId: string; mode?: string; pack: unknown },
   ) {
@@ -241,7 +241,7 @@ export class BankStatementsController {
   }
 
   @Post('classification-rules/import-from-company')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async importClassificationFromCompany(
     @Body() body: { companyId: string; sourceCompanyId: string; mode?: string },
     @Req() req: Request & { user: { companyIds?: string[]; role?: string } },
@@ -265,7 +265,7 @@ export class BankStatementsController {
   }
 
   @Patch(':id/transactions/:txId/category')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async updateTxCategory(
     @Param('id') statementId: string,
     @Param('txId') txId: string,
@@ -276,7 +276,7 @@ export class BankStatementsController {
   }
 
   @Patch(':id/transactions/:txId/note')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async updateTxNote(
     @Param('id') statementId: string,
     @Param('txId') txId: string,
@@ -287,21 +287,21 @@ export class BankStatementsController {
   }
 
   @Delete(':id')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async delete(@CompanyId() companyId: string, @Param('id') id: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.delete(companyId, id);
   }
 
   @Post('categories')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async createCategory(@Body() body: { companyId: string; nameAr: string; nameEn?: string; color?: string }) {
     if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.createCategory(body.companyId, body);
   }
 
   @Delete('categories/:id')
-  @RequirePermission('VIEW_REPORTS_BANK')
+  @RequirePermission('BANK_STATEMENTS_WRITE')
   async deleteCategory(@CompanyId() companyId: string, @Param('id') id: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.deleteCategory(companyId, id);

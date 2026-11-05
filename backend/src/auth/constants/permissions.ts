@@ -29,7 +29,7 @@ export interface PermissionModule {
 export const PERMISSION_MODULES: PermissionModule[] = [
   {
     key: 'dashboard', labelAr: 'لوحة التحكم', labelEn: 'Dashboard', icon: '📊',
-    permissions: { view: 'VIEW_DASHBOARD' },
+    permissions: { view: 'VIEW_DASHBOARD', calendarWrite: 'DASHBOARD_CALENDAR_WRITE' },
   },
   {
     key: 'ownerDashboard', labelAr: 'لوحة المالك', labelEn: 'Owner Dashboard', icon: '👑',
@@ -62,7 +62,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   },
   {
     key: 'suppliers', labelAr: 'الموردون والتصنيفات', labelEn: 'Suppliers & Categories', icon: '🚚',
-    permissions: { view: 'VIEW_SUPPLIERS', read: 'SUPPLIERS_READ', write: 'SUPPLIERS_WRITE', delete: 'SUPPLIERS_DELETE' },
+    permissions: { view: 'VIEW_SUPPLIERS', read: 'SUPPLIERS_READ', write: 'SUPPLIERS_WRITE', delete: 'SUPPLIERS_DELETE', bookmarkWrite: 'SUPPLIERS_BOOKMARK_WRITE' },
   },
   {
     key: 'vaults', labelAr: 'الخزائن', labelEn: 'Vaults (Treasury)', icon: '💰',
@@ -108,7 +108,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       general: 'VIEW_REPORTS_GENERAL',
       costApps: 'VIEW_REPORTS_COST_APPS',
       taxReport: 'VIEW_REPORTS_TAX',
-      bankStatement: 'VIEW_REPORTS_BANK',
+      bankStatement: 'VIEW_REPORTS_BANK', bankStatementsWrite: 'BANK_STATEMENTS_WRITE',
     },
   },
   {
@@ -151,6 +151,9 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   view:       { ar: 'عرض الصفحة', en: 'View Page' },
   read:       { ar: 'قراءة البيانات', en: 'Read Data' },
   write:      { ar: 'إنشاء وتعديل', en: 'Create & Edit' },
+  calendarWrite: { ar: 'تعديل تقويم لوحة التحكم', en: 'Edit dashboard calendar' },
+  bookmarkWrite: { ar: 'تعديل مفضلة الموردين', en: 'Edit supplier bookmarks' },
+  bankStatementsWrite: { ar: 'تعديل كشوف البنك', en: 'Edit bank statements' },
   taxSettings:{ ar: 'إدارة إعدادات الضريبة', en: 'Manage tax settings' },
   delete:     { ar: 'حذف', en: 'Delete' },
   leaveSalaryOverride: { ar: 'تعديل مبلغ تسوية راتب الإجازة', en: 'Override leave salary settlement' },
@@ -214,6 +217,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
     nameAr: 'المحاسب',
     permissions: [
       PERMISSIONS.VIEW_DASHBOARD, PERMISSIONS.VIEW_CHAT, PERMISSIONS.VIEW_INVOICES,
+      PERMISSIONS.DASHBOARD_CALENDAR_WRITE,
       PERMISSIONS.VIEW_SUPPLIERS, PERMISSIONS.VIEW_VAULTS, PERMISSIONS.VIEW_REPORTS,
       PERMISSIONS.VIEW_SALES, PERMISSIONS.VIEW_EMPLOYEES,
       PERMISSIONS.VIEW_EXPENSES, PERMISSIONS.VIEW_ASSETS,
@@ -223,7 +227,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.VIEW_PURCHASES, PERMISSIONS.PURCHASES_READ, PERMISSIONS.PURCHASES_WRITE, PERMISSIONS.PURCHASES_DELETE,
       PERMISSIONS.SALES_READ, PERMISSIONS.SALES_WRITE, PERMISSIONS.SALES_ACTIONS,
       PERMISSIONS.SALES_FULL_HISTORY, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST,
-      PERMISSIONS.SUPPLIERS_READ, PERMISSIONS.VAULTS_READ,
+      PERMISSIONS.SUPPLIERS_READ, PERMISSIONS.SUPPLIERS_BOOKMARK_WRITE, PERMISSIONS.VAULTS_READ,
       PERMISSIONS.EXPENSES_READ, PERMISSIONS.EXPENSES_WRITE,
       PERMISSIONS.ASSETS_READ, PERMISSIONS.ASSETS_WRITE,
       PERMISSIONS.VIEW_ORDERS_V4, PERMISSIONS.ORDERS_V4_READ, PERMISSIONS.ORDERS_V4_WRITE,
@@ -231,7 +235,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.ORDERS_V4_INVENTORY_WRITE,
       PERMISSIONS.REPORTS_READ,
       PERMISSIONS.VIEW_REPORTS_GENERAL, PERMISSIONS.VIEW_REPORTS_COST_APPS,
-      PERMISSIONS.VIEW_REPORTS_TAX, PERMISSIONS.VIEW_REPORTS_BANK,
+      PERMISSIONS.VIEW_REPORTS_TAX, PERMISSIONS.VIEW_REPORTS_BANK, PERMISSIONS.BANK_STATEMENTS_WRITE,
       PERMISSIONS.VIEW_HAJRI_TAX, PERMISSIONS.HAJRI_TAX_READ, PERMISSIONS.HAJRI_TAX_WRITE,
       PERMISSIONS.EMPLOYEES_READ, PERMISSIONS.EMPLOYEES_WRITE,
       PERMISSIONS.VIEW_HR, PERMISSIONS.HR_READ, PERMISSIONS.HR_WRITE, PERMISSIONS.HR_DELETE,
@@ -250,11 +254,13 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
     nameAr: 'الكاشير',
     permissions: [
       PERMISSIONS.VIEW_CHAT, PERMISSIONS.VIEW_SALES, PERMISSIONS.VIEW_INVOICES,
+      PERMISSIONS.VIEW_SUPPLIERS,
       PERMISSIONS.SALES_READ, PERMISSIONS.SALES_WRITE, PERMISSIONS.SALES_ACTIONS,
       /** يسمح بعرض ملخصات المبيعات والتقارير لأي تاريخ (بدون قصّ آخر 7 أيام). */
       PERMISSIONS.SALES_FULL_HISTORY,
       PERMISSIONS.SALES_VIEW_SUMMARIES_LIST,
       PERMISSIONS.INVOICES_READ, PERMISSIONS.INVOICES_WRITE, PERMISSIONS.INVOICES_ACTIONS,
+      PERMISSIONS.SUPPLIERS_BOOKMARK_WRITE,
       // الكاشير: عرض المشتريات فقط (بدون تعديل/حذف)
       PERMISSIONS.VIEW_PURCHASES, PERMISSIONS.PURCHASES_READ,
       PERMISSIONS.VIEW_ORDERS_V4, PERMISSIONS.ORDERS_V4_READ, PERMISSIONS.ORDERS_V4_CASHIER_RECEIVE,

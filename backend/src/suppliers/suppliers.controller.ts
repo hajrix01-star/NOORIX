@@ -43,7 +43,7 @@ export class SuppliersController {
       return this.suppliersService.create(dto);
     } catch (e) {
       if (e instanceof ZodError) {
-        const msg = e.errors?.[0]?.message ?? 'بيانات غير صحيحة';
+        const msg = e.issues[0]?.message ?? 'بيانات غير صحيحة';
         throw new BadRequestException(msg);
       }
       throw e;
@@ -63,7 +63,7 @@ export class SuppliersController {
       return this.suppliersService.update(id, resolvedCompanyId, dto);
     } catch (e) {
       if (e instanceof ZodError) {
-        const msg = e.errors?.[0]?.message ?? 'بيانات غير صحيحة';
+        const msg = e.issues[0]?.message ?? 'بيانات غير صحيحة';
         throw new BadRequestException(msg);
       }
       throw e;
@@ -71,7 +71,7 @@ export class SuppliersController {
   }
 
   @Patch(':id/bookmark')
-  @RequireAnyPermission('SUPPLIERS_READ', 'SUPPLIERS_WRITE', 'VIEW_INVOICES', 'INVOICES_READ')
+  @RequirePermission('SUPPLIERS_BOOKMARK_WRITE')
   async setBookmark(
     @Param('id') id: string,
     @CompanyId() companyId: string,

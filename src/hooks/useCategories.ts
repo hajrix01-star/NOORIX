@@ -30,7 +30,7 @@ export function useCategories(companyId: string | null | undefined) {
   });
 
   const flatCategories = useMemo(() => {
-    const list: unknown[] = [];
+    const list: CategoryNode[] = [];
     for (const cat of categories) {
       list.push(cat);
       for (const child of cat.children || []) list.push(child);
