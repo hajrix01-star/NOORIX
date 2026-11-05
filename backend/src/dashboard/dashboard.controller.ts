@@ -68,7 +68,7 @@ export class DashboardController {
   }
 
   @Put('calendar/targets')
-  @RequirePermission('VIEW_DASHBOARD')
+  @RequirePermission('DASHBOARD_CALENDAR_WRITE')
   async putCalendarTargets(
     @Query('companyId') companyId: string,
     @Query('year') year: string,
@@ -88,7 +88,7 @@ export class DashboardController {
   }
 
   @Delete('calendar/targets')
-  @RequirePermission('VIEW_DASHBOARD')
+  @RequirePermission('DASHBOARD_CALENDAR_WRITE')
   async resetCalendarTargets(
     @Query('companyId') companyId: string,
     @Query('year') year: string,
@@ -137,7 +137,7 @@ export class DashboardController {
   }
 
   @Post('calendar/special-days/apply-occasions')
-  @RequirePermission('VIEW_DASHBOARD')
+  @RequirePermission('DASHBOARD_CALENDAR_WRITE')
   async applySaudiOccasions(
     @Query('companyId') companyId: string,
     @Body() body: ApplySpecialOccasionsDto,
@@ -158,7 +158,7 @@ export class DashboardController {
   }
 
   @Post('calendar/special-days/apply-school-holidays')
-  @RequirePermission('VIEW_DASHBOARD')
+  @RequirePermission('DASHBOARD_CALENDAR_WRITE')
   async applySchoolAcademicHolidays(
     @Query('companyId') companyId: string,
     @Body() body: ApplySchoolHolidaysDto,
@@ -179,7 +179,7 @@ export class DashboardController {
   }
 
   @Put('calendar/special-days')
-  @RequirePermission('VIEW_DASHBOARD')
+  @RequirePermission('DASHBOARD_CALENDAR_WRITE')
   async putCalendarSpecialDays(
     @Query('companyId') companyId: string,
     @Query('year') year: string,
@@ -197,7 +197,7 @@ export class DashboardController {
   }
 
   @Put('calendar/day-notes')
-  @RequirePermission('VIEW_DASHBOARD')
+  @RequirePermission('DASHBOARD_CALENDAR_WRITE')
   async putCalendarDayNotes(
     @Query('companyId') companyId: string,
     @Query('year') year: string,

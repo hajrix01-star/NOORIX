@@ -65,8 +65,10 @@ export class PermissionCacheService {
               `Auto-healed ${trulyNewPerms.length} perm(s) for role "${key}": [${trulyNewPerms.join(', ')}]`,
             ),
           )
-          .catch((e) =>
-            this.logger.warn(`Permission auto-heal failed for "${key}": ${e?.message}`),
+          .catch((error: unknown) =>
+            this.logger.warn(
+              `Permission auto-heal failed for "${key}": ${error instanceof Error ? error.message : String(error)}`,
+            ),
           );
         perms = merged;
       }

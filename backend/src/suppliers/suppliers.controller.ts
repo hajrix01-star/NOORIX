@@ -71,7 +71,7 @@ export class SuppliersController {
   }
 
   @Patch(':id/bookmark')
-  @RequireAnyPermission('SUPPLIERS_READ', 'SUPPLIERS_WRITE', 'VIEW_INVOICES', 'INVOICES_READ')
+  @RequirePermission('SUPPLIERS_BOOKMARK_WRITE')
   async setBookmark(
     @Param('id') id: string,
     @CompanyId() companyId: string,
