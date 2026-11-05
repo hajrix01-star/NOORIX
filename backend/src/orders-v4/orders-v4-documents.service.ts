@@ -624,7 +624,7 @@ export class OrdersV4DocumentsService {
       const replay = await readOrdersV4OperationReplay(tx, tenantId, companyId, receiveOperationKeyHash);
       if (replay) {
         if (replay.requestHash !== receiveRequestHash) {
-          throw new BadRequestException('Ã™â€¦Ã™ÂÃ˜ÂªÃ˜Â§Ã˜Â­ Ã™â€¦Ã™â€ Ã˜Â¹ Ã˜ÂªÃ™Æ’Ã˜Â±Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã™â€¦Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â¯Ã™â€¦ Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨ Ã˜Â£Ã™Ë† Ã™â€¦Ã˜Â­Ã˜ÂªÃ™Ë†Ã™â€° Ã™â€¦Ã˜Â®Ã˜ÂªÃ™â€žÃ™Â');
+          throw new BadRequestException('مفتاح منع تكرار الاستلام مستخدم لطلب أو محتوى مختلف');
         }
         return replay.response;
       }
