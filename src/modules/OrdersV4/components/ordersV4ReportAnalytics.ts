@@ -13,7 +13,7 @@ export type OrdersV4ReportGroup = {
 
 export type OrdersV4DailyReportRow = OrdersV4ReportGroup & {
   date: string;
-  [sectionName: string]: string | number;
+  [sectionName: string]: string | number | OrdersV4ReportGroup[];
 };
 
 export type OrdersV4DailySalesRow = OrdersV4DailyReportRow & {

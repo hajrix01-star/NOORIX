@@ -56,12 +56,13 @@ type InvoiceEditModalProps = {
 export function InvoiceEditModal({
   invoice,
   suppliers,
-  categories = [],
+  categories: categoriesProp,
   companyId,
   vaultsList = [],
   onSaved,
   onClose,
 }: InvoiceEditModalProps) {
+  const categories = categoriesProp ?? [];
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const { companies } = useApp();

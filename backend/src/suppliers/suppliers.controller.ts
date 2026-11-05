@@ -43,7 +43,7 @@ export class SuppliersController {
       return this.suppliersService.create(dto);
     } catch (e) {
       if (e instanceof ZodError) {
-        const msg = e.errors?.[0]?.message ?? 'بيانات غير صحيحة';
+        const msg = e.issues[0]?.message ?? 'بيانات غير صحيحة';
         throw new BadRequestException(msg);
       }
       throw e;
@@ -63,7 +63,7 @@ export class SuppliersController {
       return this.suppliersService.update(id, resolvedCompanyId, dto);
     } catch (e) {
       if (e instanceof ZodError) {
-        const msg = e.errors?.[0]?.message ?? 'بيانات غير صحيحة';
+        const msg = e.issues[0]?.message ?? 'بيانات غير صحيحة';
         throw new BadRequestException(msg);
       }
       throw e;

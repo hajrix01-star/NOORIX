@@ -66,7 +66,7 @@ export class VaultsController {
       return this.vaultsService.transfer(dto, user.sub);
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات التحويل غير صحيحة');
+        throw new BadRequestException(e.issues[0]?.message ?? 'بيانات التحويل غير صحيحة');
       }
       throw e;
     }
@@ -88,7 +88,7 @@ export class VaultsController {
       return this.vaultsService.reverseTransfer(id, dto, user.sub);
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات عكس التحويل غير صحيحة');
+        throw new BadRequestException(e.issues[0]?.message ?? 'بيانات عكس التحويل غير صحيحة');
       }
       throw e;
     }
@@ -131,7 +131,7 @@ export class VaultsController {
       return this.vaultsService.reorder(resolvedCompanyId, dto.vaultIds);
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات الترتيب غير صحيحة');
+        throw new BadRequestException(e.issues[0]?.message ?? 'بيانات الترتيب غير صحيحة');
       }
       throw e;
     }
@@ -148,7 +148,7 @@ export class VaultsController {
       return this.vaultsService.create(dto, user.sub);
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات غير صحيحة');
+        throw new BadRequestException(e.issues[0]?.message ?? 'بيانات غير صحيحة');
       }
       throw e;
     }
@@ -167,7 +167,7 @@ export class VaultsController {
       return this.vaultsService.update(id, requireCompanyId(companyId), dto, user.sub);
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات غير صحيحة');
+        throw new BadRequestException(e.issues[0]?.message ?? 'بيانات غير صحيحة');
       }
       throw e;
     }
